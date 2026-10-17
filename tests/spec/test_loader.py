@@ -68,3 +68,23 @@ def test_research_fan_example_stays_short() -> None:
 def test_published_schema_matches_models() -> None:
     published = json.loads((ROOT / "spec" / "schema" / "device-file.schema.json").read_text())
     assert published == json.loads(json.dumps(device_file_schema(), sort_keys=True))
+
+
+def test_yaml_12_booleans_only() -> None:
+    device = loads(
+        "device: x\nconnect: {driver: mock}\nwrite:\n  mode: {type: enum, values: [off, on, yes, no]}\n"
+        "  enabled: {type: bool}\nsafe_state: {mode: off, enabled: false}\nconfirmed: {by: t, at: 2026-10-24}\n"
+    )
+    assert device.write["mode"].values == ["off", "on", "yes", "no"]
+    assert device.safe_state[0].values == {"mode": "off", "enabled": False}
+
+
+@pytest.mark.parametrize("path", EXAMPLES, ids=lambda path: path.name)
+def test_examples_round_trip(path: Path) -> None:
+    from openhal.spec.models import DeviceFile
+
+    device = validate_path(path).file
+    assert device is not None
+    dumped = device.model_dump(mode="json", by_alias=True, exclude={"extensions"})
+    again = DeviceFile.model_validate(dumped)
+    assert again == device

@@ -19,8 +19,10 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     Field,
+    PlainSerializer,
     WithJsonSchema,
     field_validator,
+    model_serializer,
     model_validator,
 )
 
@@ -80,7 +82,17 @@ _LIMIT_SCHEMA: Final = {
     "description": "A number in the channel unit, or a quantity string such as '30 degC'.",
 }
 
-Seconds = Annotated[float, BeforeValidator(parse_duration), WithJsonSchema(_DURATION_SCHEMA)]
+
+def _format_seconds(value: float) -> str:
+    return f"{value:g} s"
+
+
+Seconds = Annotated[
+    float,
+    BeforeValidator(parse_duration),
+    PlainSerializer(_format_seconds, return_type=str),
+    WithJsonSchema(_DURATION_SCHEMA),
+]
 Limit = Annotated[float, WithJsonSchema(_LIMIT_SCHEMA)]
 
 
@@ -101,13 +113,15 @@ def _check_regex(value: str | None) -> str | None:
 
 
 Pattern = Annotated[str, BeforeValidator(_check_regex)]
+When = Annotated[dt.date | dt.datetime, Field(union_mode="left_to_right")]
+"""A date (2026-10-24) or a date and time (2026-10-24T14:02:00Z). Dates stay dates."""
 
 
 class Confirmation(_Strict):
     """A human confirmed limits. Only the human side of the limits interview or a human edit adds it."""
 
     by: str = Field(min_length=1, max_length=80)
-    at: dt.datetime | dt.date
+    at: When
 
 
 class Verification(_Strict):
@@ -124,7 +138,7 @@ class Verification(_Strict):
 class Provenance(_Strict):
     source: Source = "hand-written"
     by: str | None = Field(default=None, max_length=120)
-    at: dt.datetime | dt.date | None = None
+    at: When | None = None
     from_: str | None = Field(default=None, alias="from", max_length=300)
     tool: str | None = Field(default=None, max_length=80)
     verification: Verification = Verification()
@@ -269,7 +283,7 @@ class _ValueSpec(_Strict):
         for key in ("min", "max", "step"):
             if key in converted:
                 converted[key] = _to_unit(converted[key], unit, key)
-        if "max_change_per_s" in converted and isinstance(unit, str):
+        if converted.get("max_change_per_s") is not None and isinstance(unit, str):
             try:
                 converted["max_change_per_s"] = parse_rate(converted["max_change_per_s"], unit)
             except UnitError as exc:
@@ -374,6 +388,10 @@ class SafeStep(_Strict):
     def _expand(cls, data: Any) -> Any:
         if not isinstance(data, dict):
             raise ValueError("Each safe state step must be a mapping.")
+        if set(data) <= {"values", "action", "args"} and "values" in data:
+            if data.get("action") is None:
+                return {"values": data["values"]}
+            return {"action": data["action"], "args": data.get("args") or {}}
         if "action" in data:
             extra = set(data) - {"action", "args"}
             if extra:
@@ -388,6 +406,12 @@ class SafeStep(_Strict):
         if not self.values and self.action is None:
             raise ValueError("A safe state step can't be empty.")
         return self
+
+    @model_serializer(mode="plain")
+    def _compact(self) -> dict[str, Any]:
+        if self.action is not None:
+            return {"action": self.action, "args": self.args} if self.args else {"action": self.action}
+        return dict(self.values)
 
 
 class Interlock(_Strict):

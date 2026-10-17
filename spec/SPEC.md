@@ -24,6 +24,7 @@ It loads read-only, because no human has confirmed its limits yet (section 12). 
 - A device file MUST be a single YAML document whose top level is a mapping.
 - Files MUST be UTF-8, at most 256 KiB.
 - YAML anchors and aliases MUST NOT be used. Loaders MUST reject them, along with custom tags.
+- Only `true` and `false` are booleans (YAML 1.2). Words such as `on`, `off`, `yes` and `no` are strings, so they can be enum values.
 - Unknown top-level keys MUST be rejected, except keys starting with `x-`, which are ignored by OpenHAL and preserved by tools.
 - `openhal` MAY give the spec version as a string, for example `"0.1"`. If absent, the current version is assumed. A loader MUST reject a file whose major version it does not support, and SHOULD warn on a newer minor version.
 

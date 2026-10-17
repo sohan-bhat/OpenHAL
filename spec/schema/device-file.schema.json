@@ -257,11 +257,11 @@
         "at": {
           "anyOf": [
             {
-              "format": "date-time",
+              "format": "date",
               "type": "string"
             },
             {
-              "format": "date",
+              "format": "date-time",
               "type": "string"
             }
           ],
@@ -578,11 +578,11 @@
         "at": {
           "anyOf": [
             {
-              "format": "date-time",
+              "format": "date",
               "type": "string"
             },
             {
-              "format": "date",
+              "format": "date-time",
               "type": "string"
             },
             {
@@ -1240,7 +1240,7 @@
     "watchdog": {
       "$ref": "#/$defs/Watchdog",
       "default": {
-        "heartbeat": 5.0,
+        "heartbeat": "5 s",
         "max_duration": [],
         "on_loss": null
       }

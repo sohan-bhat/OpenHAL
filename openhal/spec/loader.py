@@ -6,6 +6,7 @@ billion-laughs style expansion. Files are size-limited before parsing.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Final
@@ -48,6 +49,19 @@ class _NoAliasLoader(yaml.SafeLoader):
                 None, None, f"Custom YAML tags such as {tag} are not allowed.", mark
             )
         return super().compose_node(parent, index)
+
+
+# YAML 1.2 booleans only. In YAML 1.1, on, off, yes and no are booleans, which would turn an
+# enum value such as `off` into False. Device files accept only true and false.
+_NoAliasLoader.yaml_implicit_resolvers = {
+    key: [(tag, regexp) for tag, regexp in resolvers if tag != "tag:yaml.org,2002:bool"]
+    for key, resolvers in yaml.SafeLoader.yaml_implicit_resolvers.items()
+}
+_NoAliasLoader.add_implicit_resolver(
+    "tag:yaml.org,2002:bool",
+    re.compile(r"^(?:true|True|TRUE|false|False|FALSE)$"),
+    list("tTfF"),
+)
 
 
 def _location(loc: tuple[int | str, ...]) -> str:
