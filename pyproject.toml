@@ -1,0 +1,82 @@
+[project]
+name = "openhal-hub"
+version = "0.1.0.dev0"
+description = "Open hardware abstraction layer that lets AI agents safely discover, read, control and automate real hardware."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+authors = [{ name = "OpenHAL contributors" }]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: System :: Hardware",
+]
+dependencies = [
+  "pydantic>=2.9",
+  "pint>=0.24",
+  "pyyaml>=6.0.2",
+  "typer>=0.15",
+  "rich>=13.9",
+]
+
+[project.optional-dependencies]
+hub = [
+  "fastapi>=0.115",
+  "uvicorn>=0.32",
+  "websockets>=13",
+  "httpx>=0.28",
+  "mcp>=1.2",
+  "zeroconf>=0.136",
+]
+
+[project.scripts]
+openhal = "openhal.cli.main:app"
+openhald = "openhal.hub.daemon:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "pytest-cov>=6.0",
+  "hypothesis>=6.120",
+  "ruff>=0.8",
+  "mypy>=1.13",
+  "types-PyYAML>=6.0",
+]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["openhal"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "S", "PT", "ASYNC"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "B011"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["openhal.kernel.*", "openhal.spec.*", "openhal.audit.*", "openhal.drivers.base", "openhal._brand"]
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-ra"
