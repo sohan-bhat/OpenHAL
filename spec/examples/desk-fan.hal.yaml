@@ -1,0 +1,8 @@
+device: Desk fan controller
+connect: { serial: auto, board: arduino-uno }
+read:
+  temperature: { unit: degC, every: 1s }
+write:
+  fan_speed: { unit: percent, min: 0, max: 100, max_change_per_s: 20 }
+safe_state: { fan_speed: 0 }
+notes: "Fan is next to the plant. Never run above 80 for more than 10 minutes."

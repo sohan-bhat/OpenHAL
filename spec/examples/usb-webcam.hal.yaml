@@ -1,0 +1,9 @@
+# A USB webcam, read-only frames for an agent to look at the bench.
+device: Bench camera
+id: bench-camera
+match:
+  usb_class: video
+connect: { uvc: auto, width: 1280, height: 720 }
+read:
+  frame: { type: image }
+hazard: low

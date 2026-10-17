@@ -1,0 +1,11 @@
+# A BLE environmental sensing peripheral using the standard GATT Environmental Sensing service.
+device: Room climate sensor
+id: room-sensor
+match:
+  ble_services: ["181a"]
+  ble_name: "^ENV-"
+connect: { ble: auto }
+read:
+  temperature: { unit: degC, stream: true, map: { characteristic: "2a6e", scale: 0.01, format: sint16 } }
+  humidity: { unit: percent, stream: true, map: { characteristic: "2a6f", scale: 0.01, format: uint16 } }
+hazard: low

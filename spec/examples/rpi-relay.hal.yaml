@@ -1,0 +1,9 @@
+# A relay on a Raspberry Pi GPIO pin driving a 12 V aquarium light, plus a physical stop button.
+device: Aquarium light relay
+id: aquarium-light
+connect: { rpi-gpio: { relay: 17, stop_button: 27 }, active_high: false }
+write:
+  relay: { type: bool }
+safe_state: { relay: false }
+hazard: low
+confirmed: { by: sohan, at: 2026-10-24 }

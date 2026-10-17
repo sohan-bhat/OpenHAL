@@ -1,0 +1,19 @@
+# Soil moisture sensor and pump on ESPHome. The pump may run at most 20 seconds at a time.
+device: Plant waterer
+id: plant
+match:
+  mdns: _esphomelib._tcp
+  esphome: { name: "plant-*" }
+connect: { esphome: plant.local, port: 6053, noise_psk_env: PLANT_PSK }
+read:
+  soil_moisture: { unit: percent, every: 10 s, range: [0, 100] }
+write:
+  pump: { type: bool }
+safe_state: { pump: false }
+watchdog:
+  max_duration:
+    - when: "pump == true"
+      for: 20 s
+      reset_after: 5 min
+hazard: low
+confirmed: { by: sohan, at: 2026-10-24 }

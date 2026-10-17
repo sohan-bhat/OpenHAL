@@ -1,0 +1,29 @@
+# The research desk fan after the limits interview, running the OpenHAL firmware library.
+openhal: "0.1"
+device: Desk fan controller
+id: desk-fan
+match:
+  usb: ["2341:0043"]
+  firmware: { product: desk-fan }
+connect: { openhal-firmware: auto, baud: 115200 }
+read:
+  temperature: { unit: degC, every: 1 s, range: [-20, 80] }
+write:
+  fan_speed: { unit: percent, min: 0, max: 100, step: 1, max_change_per_s: 20 }
+safe_state: { fan_speed: 0 }
+watchdog:
+  heartbeat: 2 s
+  on_loss: safe_state
+  max_duration:
+    - when: "fan_speed > 80 %"
+      for: 10 min
+      then: { fan_speed: 50 }
+hazard: low
+notes: "Fan is next to the plant. The firmware also falls to 0 % if the hub stops sending heartbeats."
+provenance:
+  source: sketch
+  by: openhal writer with sohan
+  at: 2026-10-24
+  from: firmware/arduino/OpenHAL/examples/DeskFan/DeskFan.ino
+  verification: { status: unverified }
+confirmed: { by: sohan, at: 2026-10-24 }

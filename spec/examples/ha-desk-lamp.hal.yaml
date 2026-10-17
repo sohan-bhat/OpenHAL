@@ -1,0 +1,13 @@
+# A lamp bridged from Home Assistant. Only this entity is exposed.
+device: Desk lamp
+id: desk-lamp
+match:
+  homeassistant: light.desk_lamp
+connect: { homeassistant: homeassistant.local, port: 8123, token_env: HA_TOKEN, entity: light.desk_lamp }
+write:
+  power: { type: bool }
+  brightness: { unit: percent, min: 1, max: 100, step: 1 }
+safe_state: { power: false }
+hazard: low
+provenance: { source: bridge, by: openhal homeassistant describe, at: 2026-10-24 }
+confirmed: { by: sohan, at: 2026-10-24 }

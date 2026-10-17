@@ -1,0 +1,14 @@
+# A MIDI controller. Knobs are read, and the pad LEDs can be set.
+device: { name: Pad controller, model: LPD8, manufacturer: Akai }
+id: pads
+match:
+  usb: ["09e8:0076"]
+  usb_class: midi
+connect: { midi: "LPD8" }
+read:
+  knob_1: { unit: dimensionless, stream: true, range: [0, 127], map: { cc: 1 } }
+write:
+  pad_1_led: { type: bool, map: { note: 36 } }
+safe_state: { pad_1_led: false }
+hazard: low
+confirmed: { by: sohan, at: 2026-10-24 }

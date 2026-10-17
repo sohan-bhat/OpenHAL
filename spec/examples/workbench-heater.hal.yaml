@@ -1,0 +1,19 @@
+# A resin curing heater that may only run while the desk fan moves air. The interlock spans two devices.
+device: Resin curing heater
+id: curing-heater
+connect: { mqtt: mqtt.local, port: 1883, topics: { power_set: bench/heater/set, power_state: bench/heater/state } }
+write:
+  power: { unit: W, min: 0, max: 60, max_change_per_s: 10 }
+safe_state: { power: 0 }
+interlocks:
+  - if: "power > 0 W"
+    require: "desk-fan.fan_speed >= 30 %"
+    message: "The heater needs the desk fan at 30 % or more."
+watchdog:
+  heartbeat: 2 s
+  on_loss: safe_state
+  max_duration:
+    - when: "power > 40 W"
+      for: 15 min
+hazard: medium
+confirmed: { by: sohan, at: 2026-10-24 }

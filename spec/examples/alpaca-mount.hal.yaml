@@ -1,0 +1,19 @@
+# A telescope mount through ASCOM Alpaca. Slews are confirmed and parked is the safe state.
+device: { name: Telescope mount, model: EQ6-R, manufacturer: Sky-Watcher }
+id: mount
+connect: { alpaca: astro-pi.local, port: 11111, device_number: 0 }
+read:
+  ra: { unit: hour, every: 1 s }
+  dec: { unit: degree, every: 1 s, range: [-90, 90] }
+  slewing: { type: bool, every: 1 s }
+actions:
+  slew_to:
+    args:
+      ra: { unit: hour, min: 0, max: 24 }
+      dec: { unit: degree, min: -20, max: 90 }
+    require: ["slewing == false"]
+    confirm: confirm
+  park: {}
+safe_state: { action: park }
+hazard: medium
+confirmed: { by: sohan, at: 2026-10-24 }

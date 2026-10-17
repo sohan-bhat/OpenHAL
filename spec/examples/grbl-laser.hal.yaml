@@ -1,0 +1,38 @@
+# A diode laser engraver on GRBL. High hazard. Every motion and laser command is confirmed each time.
+device: { name: Laser engraver, model: xTool D1, manufacturer: xTool }
+id: laser
+match:
+  usb: ["1a86:7523"]
+connect: { grbl: auto, baud: 115200 }
+read:
+  state: { type: enum, values: [Idle, Run, Hold, Alarm, Door, Home], every: 250 ms }
+  door_closed: { type: bool, stream: true }
+write:
+  laser_power: { unit: percent, min: 0, max: 30, max_change_per_s: 30 }
+actions:
+  home: { require: ["state == Idle"] }
+  run_job:
+    args:
+      file: { type: string, max_length: 200, pattern: "^[A-Za-z0-9_./-]+\\.nc$" }
+    require: ["state == Idle", "door_closed == true"]
+    effects: [laser_power]
+  feed_hold: {}
+safe_state:
+  - { action: feed_hold }
+  - { laser_power: 0 }
+interlocks:
+  - if: "laser_power > 0 %"
+    require: "door_closed == true"
+    message: "The enclosure door must be closed before the laser fires."
+watchdog:
+  heartbeat: 1 s
+  on_loss: safe_state
+hazard: high
+approvals:
+  - routine: engrave-logo
+    sha256: 9f2c3a4b5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f701
+    by: sohan
+    at: 2026-10-24T14:02:00Z
+    signature: 4b1d2c3e4f5061728394a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8f90
+notes: "Wear the supplied goggles. Never leave the laser running unattended."
+confirmed: { by: sohan, at: 2026-10-24 }

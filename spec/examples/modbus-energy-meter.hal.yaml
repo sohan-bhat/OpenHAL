@@ -1,0 +1,16 @@
+# A read-only DIN rail energy meter over Modbus RTU. No write channels, so no limits to confirm.
+device: { name: Energy meter, model: SDM120, manufacturer: Eastron }
+id: energy-meter
+match:
+  modbus_id: 1
+connect:
+  driver: modbus
+  transport: rtu
+  port: /dev/ttyUSB0
+  baud: 9600
+  unit: 1
+read:
+  voltage: { unit: V, every: 2 s, range: [180, 260], map: { register: 0, kind: input, format: float32 } }
+  power: { unit: W, every: 2 s, range: [0, 4000], map: { register: 12, kind: input, format: float32 } }
+  energy: { unit: kWh, every: 60 s, map: { register: 342, kind: input, format: float32 } }
+hazard: low

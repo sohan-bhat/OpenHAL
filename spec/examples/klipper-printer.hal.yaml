@@ -1,0 +1,34 @@
+# A Klipper printer through Moonraker. Heater targets are rate limited and homing needs an idle printer.
+device: { name: Voron 2.4, manufacturer: Voron Design }
+id: voron
+match:
+  mdns: _moonraker._tcp
+  moonraker: { hostname: "voron*" }
+connect: { moonraker: voron.local, port: 7125 }
+read:
+  state: { type: enum, values: [standby, printing, paused, complete, cancelled, error], every: 1 s }
+  extruder_temp: { unit: degC, every: 1 s, range: [0, 320] }
+  bed_temp: { unit: degC, every: 1 s, range: [0, 130] }
+write:
+  extruder_target: { unit: degC, min: 0, max: 260, max_change_per_s: 50, confirm: confirm }
+  bed_target: { unit: degC, min: 0, max: 110, max_change_per_s: 20 }
+  fan_speed: { unit: percent, min: 0, max: 100 }
+actions:
+  home:
+    args:
+      axes: { type: enum, values: [x, y, z, all] }
+    require: ["state != printing"]
+    confirm: confirm
+  pause: { require: ["state == printing"] }
+  cancel: { confirm: confirm }
+safe_state:
+  - { extruder_target: 0, bed_target: 0 }
+interlocks:
+  - if: "extruder_target > 0 degC"
+    require: "state != error"
+    message: "Clear the printer error before heating."
+watchdog:
+  heartbeat: 5 s
+  on_loss: hold
+hazard: medium
+confirmed: { by: sohan, at: 2026-10-24 }
