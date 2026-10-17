@@ -1,0 +1,1265 @@
+{
+  "$defs": {
+    "Action": {
+      "additionalProperties": false,
+      "properties": {
+        "args": {
+          "default": {},
+          "patternProperties": {
+            "^[a-z][a-z0-9_]{0,47}$": {
+              "$ref": "#/$defs/ArgSpec"
+            }
+          },
+          "title": "Args",
+          "type": "object"
+        },
+        "confirm": {
+          "default": "none",
+          "enum": [
+            "none",
+            "confirm",
+            "confirm-each-time"
+          ],
+          "title": "Confirm",
+          "type": "string"
+        },
+        "confirmed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confirmation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "effects": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Effects",
+          "type": "array"
+        },
+        "map": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Map"
+        },
+        "require": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Require",
+          "type": "array"
+        },
+        "suggested": {
+          "default": false,
+          "title": "Suggested",
+          "type": "boolean"
+        }
+      },
+      "title": "Action",
+      "type": "object"
+    },
+    "Approval": {
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        },
+        "by": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "By",
+          "type": "string"
+        },
+        "routine": {
+          "pattern": "^[a-z][a-z0-9-]{0,47}$",
+          "title": "Routine",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "signature": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Signature",
+          "type": "string"
+        }
+      },
+      "required": [
+        "routine",
+        "sha256",
+        "by",
+        "at",
+        "signature"
+      ],
+      "title": "Approval",
+      "type": "object"
+    },
+    "ArgSpec": {
+      "additionalProperties": false,
+      "description": "One typed action argument.",
+      "properties": {
+        "max": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "A number in the channel unit, or a quantity string such as '30 degC'."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max"
+        },
+        "max_length": {
+          "anyOf": [
+            {
+              "maximum": 4096,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Length"
+        },
+        "min": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "A number in the channel unit, or a quantity string such as '30 degC'."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min"
+        },
+        "pattern": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pattern"
+        },
+        "step": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "A number in the channel unit, or a quantity string such as '30 degC'."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step"
+        },
+        "type": {
+          "default": "number",
+          "enum": [
+            "number",
+            "bool",
+            "string",
+            "enum"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "values": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "title": "ArgSpec",
+      "type": "object"
+    },
+    "Confirmation": {
+      "additionalProperties": false,
+      "description": "A human confirmed limits. Only the human side of the limits interview or a human edit adds it.",
+      "properties": {
+        "at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "format": "date",
+              "type": "string"
+            }
+          ],
+          "title": "At"
+        },
+        "by": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "By",
+          "type": "string"
+        }
+      },
+      "required": [
+        "by",
+        "at"
+      ],
+      "title": "Confirmation",
+      "type": "object"
+    },
+    "Connect": {
+      "additionalProperties": false,
+      "description": "Which driver talks to the device, and its parameters (validated by the driver itself).",
+      "properties": {
+        "driver": {
+          "title": "Driver",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "default": {},
+          "title": "Params",
+          "type": "object"
+        }
+      },
+      "required": [
+        "driver"
+      ],
+      "title": "Connect",
+      "type": "object"
+    },
+    "Identity": {
+      "additionalProperties": false,
+      "properties": {
+        "manufacturer": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Manufacturer"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "name": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Identity",
+      "type": "object"
+    },
+    "Interlock": {
+      "additionalProperties": false,
+      "properties": {
+        "if": {
+          "maxLength": 256,
+          "title": "If",
+          "type": "string"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message"
+        },
+        "require": {
+          "maxLength": 256,
+          "title": "Require",
+          "type": "string"
+        }
+      },
+      "required": [
+        "if",
+        "require"
+      ],
+      "title": "Interlock",
+      "type": "object"
+    },
+    "Match": {
+      "additionalProperties": false,
+      "properties": {
+        "ble_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ble Name"
+        },
+        "ble_services": {
+          "default": [],
+          "items": {
+            "pattern": "^[0-9a-fA-F-]{4,36}$",
+            "type": "string"
+          },
+          "title": "Ble Services",
+          "type": "array"
+        },
+        "esphome": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Esphome",
+          "type": "object"
+        },
+        "firmware": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Firmware",
+          "type": "object"
+        },
+        "homeassistant": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Homeassistant"
+        },
+        "mdns": {
+          "anyOf": [
+            {
+              "pattern": "^_[a-z0-9-]+\\._(tcp|udp)$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mdns"
+        },
+        "modbus_id": {
+          "anyOf": [
+            {
+              "maximum": 247,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Modbus Id"
+        },
+        "moonraker": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Moonraker",
+          "type": "object"
+        },
+        "scpi_idn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scpi Idn"
+        },
+        "serial_number": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Serial Number"
+        },
+        "usb": {
+          "default": [],
+          "items": {
+            "pattern": "^[0-9a-fA-F]{4}:[0-9a-fA-F]{4}$",
+            "type": "string"
+          },
+          "title": "Usb",
+          "type": "array"
+        },
+        "usb_class": {
+          "anyOf": [
+            {
+              "enum": [
+                "cdc",
+                "hid",
+                "audio",
+                "video",
+                "midi",
+                "usbtmc",
+                "vendor"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Usb Class"
+        }
+      },
+      "title": "Match",
+      "type": "object"
+    },
+    "MaxDuration": {
+      "additionalProperties": false,
+      "properties": {
+        "for": {
+          "description": "A duration with a unit, for example 5 s, 500ms or 10 min.",
+          "title": "For",
+          "type": "string"
+        },
+        "reset_after": {
+          "anyOf": [
+            {
+              "description": "A duration with a unit, for example 5 s, 500ms or 10 min.",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reset After"
+        },
+        "then": {
+          "anyOf": [
+            {
+              "const": "safe_state",
+              "type": "string"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          ],
+          "default": "safe_state",
+          "title": "Then"
+        },
+        "when": {
+          "maxLength": 256,
+          "title": "When",
+          "type": "string"
+        }
+      },
+      "required": [
+        "when",
+        "for"
+      ],
+      "title": "MaxDuration",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "At"
+        },
+        "by": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "By"
+        },
+        "from": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From"
+        },
+        "source": {
+          "default": "hand-written",
+          "enum": [
+            "library",
+            "self-described",
+            "bridge",
+            "driver-describe",
+            "sketch",
+            "manual",
+            "hand-written"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "tool": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool"
+        },
+        "verification": {
+          "$ref": "#/$defs/Verification",
+          "default": {
+            "report": null,
+            "status": "unverified"
+          }
+        }
+      },
+      "title": "Provenance",
+      "type": "object"
+    },
+    "ReadChannel": {
+      "additionalProperties": false,
+      "properties": {
+        "every": {
+          "anyOf": [
+            {
+              "description": "A duration with a unit, for example 5 s, 500ms or 10 min.",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Every"
+        },
+        "map": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Map"
+        },
+        "range": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "description": "A number in the channel unit, or a quantity string such as '30 degC'."
+                },
+                {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ],
+                  "description": "A number in the channel unit, or a quantity string such as '30 degC'."
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Range"
+        },
+        "stream": {
+          "default": false,
+          "title": "Stream",
+          "type": "boolean"
+        },
+        "type": {
+          "default": "number",
+          "enum": [
+            "number",
+            "bool",
+            "string",
+            "enum",
+            "image"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "values": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "title": "ReadChannel",
+      "type": "object"
+    },
+    "SafeStep": {
+      "additionalProperties": false,
+      "description": "One step of a safe state, either channel values or an action.",
+      "properties": {
+        "action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Action"
+        },
+        "args": {
+          "additionalProperties": true,
+          "default": {},
+          "title": "Args",
+          "type": "object"
+        },
+        "values": {
+          "additionalProperties": true,
+          "default": {},
+          "title": "Values",
+          "type": "object"
+        }
+      },
+      "title": "SafeStep",
+      "type": "object"
+    },
+    "Verification": {
+      "additionalProperties": false,
+      "properties": {
+        "report": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Report"
+        },
+        "status": {
+          "default": "unverified",
+          "enum": [
+            "unverified",
+            "tested-reads",
+            "verified-on-hardware"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "title": "Verification",
+      "type": "object"
+    },
+    "Watchdog": {
+      "additionalProperties": false,
+      "properties": {
+        "heartbeat": {
+          "default": 5.0,
+          "description": "A duration with a unit, for example 5 s, 500ms or 10 min.",
+          "title": "Heartbeat",
+          "type": "string"
+        },
+        "max_duration": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/MaxDuration"
+          },
+          "title": "Max Duration",
+          "type": "array"
+        },
+        "on_loss": {
+          "anyOf": [
+            {
+              "enum": [
+                "safe_state",
+                "hold"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "On Loss"
+        }
+      },
+      "title": "Watchdog",
+      "type": "object"
+    },
+    "WriteChannel": {
+      "additionalProperties": false,
+      "properties": {
+        "confirm": {
+          "default": "none",
+          "enum": [
+            "none",
+            "confirm",
+            "confirm-each-time"
+          ],
+          "title": "Confirm",
+          "type": "string"
+        },
+        "confirmed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confirmation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "every": {
+          "anyOf": [
+            {
+              "description": "A duration with a unit, for example 5 s, 500ms or 10 min.",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Every"
+        },
+        "map": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Map"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "A number in the channel unit, or a quantity string such as '30 degC'."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max"
+        },
+        "max_change_per_s": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "A number in the channel unit, or a quantity string such as '30 degC'."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Change Per S"
+        },
+        "max_length": {
+          "anyOf": [
+            {
+              "maximum": 4096,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Length"
+        },
+        "min": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "A number in the channel unit, or a quantity string such as '30 degC'."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min"
+        },
+        "pattern": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pattern"
+        },
+        "step": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "A number in the channel unit, or a quantity string such as '30 degC'."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step"
+        },
+        "suggested": {
+          "default": false,
+          "title": "Suggested",
+          "type": "boolean"
+        },
+        "type": {
+          "default": "number",
+          "enum": [
+            "number",
+            "bool",
+            "string",
+            "enum"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "values": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "title": "WriteChannel",
+      "type": "object"
+    }
+  },
+  "$id": "https://openhal.dev/schema/0.1/device-file.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "An OpenHAL device file, spec version 0.1. See spec/SPEC.md.",
+  "patternProperties": {
+    "^x-": {}
+  },
+  "properties": {
+    "actions": {
+      "default": {},
+      "patternProperties": {
+        "^[a-z][a-z0-9_]{0,47}$": {
+          "$ref": "#/$defs/Action"
+        }
+      },
+      "title": "Actions",
+      "type": "object"
+    },
+    "approvals": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Approval"
+      },
+      "title": "Approvals",
+      "type": "array"
+    },
+    "confirmed": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Confirmation"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "connect": {
+      "$ref": "#/$defs/Connect"
+    },
+    "device": {
+      "anyOf": [
+        {
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/Identity"
+        }
+      ]
+    },
+    "hazard": {
+      "anyOf": [
+        {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Hazard"
+    },
+    "id": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z][a-z0-9-]{0,47}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Id"
+    },
+    "interlocks": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Interlock"
+      },
+      "title": "Interlocks",
+      "type": "array"
+    },
+    "match": {
+      "$ref": "#/$defs/Match",
+      "default": {
+        "ble_name": null,
+        "ble_services": [],
+        "esphome": {},
+        "firmware": {},
+        "homeassistant": null,
+        "mdns": null,
+        "modbus_id": null,
+        "moonraker": {},
+        "scpi_idn": null,
+        "serial_number": null,
+        "usb": [],
+        "usb_class": null
+      }
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "maxLength": 4000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notes"
+    },
+    "openhal": {
+      "default": "0.1",
+      "title": "Openhal",
+      "type": "string"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance",
+      "default": {
+        "at": null,
+        "by": null,
+        "from": null,
+        "source": "hand-written",
+        "tool": null,
+        "verification": {
+          "report": null,
+          "status": "unverified"
+        }
+      }
+    },
+    "read": {
+      "default": {},
+      "patternProperties": {
+        "^[a-z][a-z0-9_]{0,47}$": {
+          "$ref": "#/$defs/ReadChannel"
+        }
+      },
+      "title": "Read",
+      "type": "object"
+    },
+    "safe_state": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SafeStep"
+          },
+          "title": "Safe State",
+          "type": "array"
+        }
+      ]
+    },
+    "safe_state_note": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Safe State Note"
+    },
+    "watchdog": {
+      "$ref": "#/$defs/Watchdog",
+      "default": {
+        "heartbeat": 5.0,
+        "max_duration": [],
+        "on_loss": null
+      }
+    },
+    "write": {
+      "default": {},
+      "patternProperties": {
+        "^[a-z][a-z0-9_]{0,47}$": {
+          "$ref": "#/$defs/WriteChannel"
+        }
+      },
+      "title": "Write",
+      "type": "object"
+    }
+  },
+  "required": [
+    "device",
+    "connect"
+  ],
+  "title": "OpenHAL device file",
+  "type": "object"
+}
