@@ -41,7 +41,7 @@ Semantic states. Each state has a color, an icon or pattern, and a word, so colo
 | stopped | `--caution` and `--ink` 45 degree stripes | striped band | STOPPED |
 | unverified | `--ink-3` | dashed outline | UNVERIFIED |
 
-Contrast. Body text is `--ink` on `--panel` (light 14.6 to 1, dark 13.4 to 1). `--signal` on `--panel` is 5.8 to 1 light and 6.6 to 1 dark. Blocked red is 5.4 to 1 and ok green 5.3 to 1 (light) and 6.8 to 1 (dark) on `--panel`. Ink on `--caution` is 9.8 to 1. All pairs and are checked by the Playwright accessibility suite.
+Contrast. Body text is `--ink` on `--panel` (light 14.6 to 1, dark 13.4 to 1). `--signal` on `--panel` is 5.8 to 1 light and 6.6 to 1 dark. Blocked red is 5.4 to 1 and ok green 5.3 to 1 (light) and 6.8 to 1 (dark) on `--panel`. Ink on `--caution` is 9.8 to 1. All pairs are checked by the Playwright accessibility suite.
 
 ## Typography
 
