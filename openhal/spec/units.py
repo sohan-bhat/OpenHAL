@@ -116,7 +116,10 @@ def convert_rate(quantity: pint.Quantity, channel_unit: str) -> float:
     """Convert a rate quantity into channel units per second."""
     target = rate_unit(channel_unit)
     unit_text = str(quantity.units)
-    for absolute, delta in (("degree_Celsius", "delta_degree_Celsius"), ("degree_Fahrenheit", "delta_degree_Fahrenheit")):
+    for absolute, delta in (
+        ("degree_Celsius", "delta_degree_Celsius"),
+        ("degree_Fahrenheit", "delta_degree_Fahrenheit"),
+    ):
         if absolute in unit_text and delta not in unit_text:
             quantity = Quantity(quantity.magnitude, unit_text.replace(absolute, delta))
             break

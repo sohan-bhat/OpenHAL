@@ -246,14 +246,14 @@ def references(node: Node) -> set[Ref]:
 
 
 def _literal_quantity(lit: Lit) -> pint.Quantity | None:
-    if isinstance(lit.value, bool) or isinstance(lit.value, str):
+    if isinstance(lit.value, bool | str):
         return None
     if lit.unit is None:
         return None
     return parse_quantity(f"{lit.value} {lit.unit}")
 
 
-def _resolve(node: Node, resolver: Resolver) -> Value | None | Literal["word"]:
+def _resolve(node: Node, resolver: Resolver) -> Value | Literal["word"] | None:
     if isinstance(node, Ref):
         found = resolver(node)
         if found is None and node.device is None:
@@ -344,7 +344,9 @@ def check_units(node: Node, unit_of: Callable[[Ref], str | None]) -> None:
                 try:
                     convert(quantity, unit)
                 except UnitError as exc:
-                    raise ExpressionError(f"{other.value:g} {other.unit} can't be compared with {side} in {unit}.") from exc
+                    raise ExpressionError(
+                        f"{other.value:g} {other.unit} can't be compared with {side} in {unit}."
+                    ) from exc
         return
     if isinstance(node, Not):
         check_units(node.operand, unit_of)

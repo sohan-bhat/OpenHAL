@@ -26,19 +26,31 @@ class DeviceFileError(ValueError):
         super().__init__("; ".join(problems))
 
 
+_ALLOWED_TAGS: Final = frozenset(
+    {"!"} | {f"tag:yaml.org,2002:{name}" for name in ("str", "int", "float", "bool", "null", "seq", "map", "timestamp")}
+)
+
+
 class _NoAliasLoader(yaml.SafeLoader):
     """A safe loader that refuses anchors, aliases and non-standard tags."""
 
-    def compose_node(self, parent: Any, index: Any) -> Any:  # noqa: ANN401
-        event = self.peek_event()
-        if isinstance(event, yaml.AliasEvent):
-            raise yaml.constructor.ConstructorError(None, None, "YAML aliases are not allowed in device files.", event.start_mark)
+    def compose_node(self, parent: Any, index: Any) -> Any:
+        event: Any = self.peek_event()  # type: ignore[no-untyped-call]
+        mark: Any = getattr(event, "start_mark", None)
+        if type(event).__name__ == "AliasEvent":
+            raise yaml.constructor.ConstructorError(
+                None, None, "YAML aliases are not allowed in device files.", mark
+            )
         anchor = getattr(event, "anchor", None)
         if anchor is not None:
-            raise yaml.constructor.ConstructorError(None, None, "YAML anchors are not allowed in device files.", event.start_mark)
+            raise yaml.constructor.ConstructorError(
+                None, None, "YAML anchors are not allowed in device files.", mark
+            )
         tag = getattr(event, "tag", None)
-        if tag is not None and not tag.startswith("tag:yaml.org,2002:") and tag != "!":
-            raise yaml.constructor.ConstructorError(None, None, f"Custom YAML tags such as {tag} are not allowed.", event.start_mark)
+        if tag is not None and tag not in _ALLOWED_TAGS:
+            raise yaml.constructor.ConstructorError(
+                None, None, f"Custom YAML tags such as {tag} are not allowed.", mark
+            )
         return super().compose_node(parent, index)
 
 
@@ -47,7 +59,9 @@ def _location(loc: tuple[int | str, ...]) -> str:
     for item in loc:
         if isinstance(item, int):
             parts.append(f"[{item}]")
-        elif item not in ("function-after[_cross_checks()]",) and not str(item).startswith(("function-", "json-or-python")):
+        elif item not in ("function-after[_cross_checks()]",) and not str(item).startswith(
+            ("function-", "json-or-python")
+        ):
             parts.append(f".{item}" if parts else str(item))
     return "".join(parts) or "file"
 
@@ -70,7 +84,8 @@ def from_data(data: Any) -> DeviceFile:
         problems = []
         for error in exc.errors():
             message = str(error["msg"]).removeprefix("Value error, ")
-            problems.append(f"{_location(tuple(error['loc']))}: {message}")
+            location = _location(tuple(error["loc"]))
+            problems.append(message if location == "file" else f"{location}: {message}")
         raise DeviceFileError(problems) from exc
 
 
@@ -108,7 +123,9 @@ def warnings_for(device: DeviceFile) -> list[str]:
         if device.safe_state_note:
             found.append(f"No safe state. Reason given: {device.safe_state_note}")
         else:
-            found.append("Writable device with no safe_state. Stop can't make it safe. Add safe_state or safe_state_note.")
+            found.append(
+                "Writable device with no safe_state. Stop can't make it safe. Add safe_state or safe_state_note."
+            )
     unconfirmed = device.unconfirmed()
     if unconfirmed:
         found.append("Loads read-only until a human confirms limits for " + ", ".join(unconfirmed) + ".")

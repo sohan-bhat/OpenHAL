@@ -32,10 +32,34 @@ NAME_PATTERN: Final = r"^[a-z][a-z0-9_]{0,47}$"
 ID_PATTERN: Final = r"^[a-z][a-z0-9-]{0,47}$"
 KNOWN_DRIVERS: Final = frozenset(
     {
-        "serial", "firmata", "openhal-firmware", "scpi", "moonraker", "octoprint", "marlin",
-        "homeassistant", "esphome", "rpi-gpio", "rpi-camera", "mqtt", "modbus", "ble", "midi",
-        "hid", "uvc", "http", "grbl", "ros2", "opcua", "sila2", "indi", "alpaca", "onvif",
-        "pylabrobot", "lerobot", "mock",
+        "serial",
+        "firmata",
+        "openhal-firmware",
+        "scpi",
+        "moonraker",
+        "octoprint",
+        "marlin",
+        "homeassistant",
+        "esphome",
+        "rpi-gpio",
+        "rpi-camera",
+        "mqtt",
+        "modbus",
+        "ble",
+        "midi",
+        "hid",
+        "uvc",
+        "http",
+        "grbl",
+        "ros2",
+        "opcua",
+        "sila2",
+        "indi",
+        "alpaca",
+        "onvif",
+        "pylabrobot",
+        "lerobot",
+        "mock",
     }
 )
 """Driver names recognised by the `connect` shorthand. Drivers are registered under these names."""
@@ -164,18 +188,45 @@ class Connect(_Strict):
     @classmethod
     def _no_secrets(cls, value: dict[str, Any]) -> dict[str, Any]:
         for key in value:
-            if any(word in key.lower() for word in ("password", "secret", "apikey", "api_key")) or key.lower() == "token":
-                raise ValueError(f"Device files must not hold secrets. Use {key}_env with an environment variable name.")
+            if (
+                any(word in key.lower() for word in ("password", "secret", "apikey", "api_key"))
+                or key.lower() == "token"
+            ):
+                raise ValueError(
+                    f"Device files must not hold secrets. Use {key}_env with an environment variable name."
+                )
         return value
 
 
 _PRIMARY_PARAM: Final = {
-    "serial": "port", "firmata": "port", "openhal-firmware": "port", "marlin": "port", "grbl": "port",
-    "scpi": "resource", "moonraker": "host", "octoprint": "host", "homeassistant": "host",
-    "esphome": "host", "http": "base_url", "mqtt": "host", "modbus": "transport", "ble": "address",
-    "midi": "name", "hid": "name", "uvc": "name", "rpi-gpio": "pins", "rpi-camera": "camera",
-    "ros2": "host", "opcua": "endpoint", "sila2": "host", "indi": "host", "alpaca": "host",
-    "onvif": "host", "pylabrobot": "backend", "lerobot": "robot", "mock": "name",
+    "serial": "port",
+    "firmata": "port",
+    "openhal-firmware": "port",
+    "marlin": "port",
+    "grbl": "port",
+    "scpi": "resource",
+    "moonraker": "host",
+    "octoprint": "host",
+    "homeassistant": "host",
+    "esphome": "host",
+    "http": "base_url",
+    "mqtt": "host",
+    "modbus": "transport",
+    "ble": "address",
+    "midi": "name",
+    "hid": "name",
+    "uvc": "name",
+    "rpi-gpio": "pins",
+    "rpi-camera": "camera",
+    "ros2": "host",
+    "opcua": "endpoint",
+    "sila2": "host",
+    "indi": "host",
+    "alpaca": "host",
+    "onvif": "host",
+    "pylabrobot": "backend",
+    "lerobot": "robot",
+    "mock": "name",
 }
 
 
@@ -498,8 +549,7 @@ class DeviceFile(_Strict):
             magnitude = _to_unit(value, spec.unit, where)
             if not isinstance(magnitude, float | int) or isinstance(magnitude, bool):
                 raise ValueError(f"{where}: {channel} needs a number.")
-            assert spec.min is not None and spec.max is not None
-            if not spec.min <= magnitude <= spec.max:
+            if spec.min is None or spec.max is None or not spec.min <= magnitude <= spec.max:
                 raise ValueError(f"{where}: {value} is outside {channel}'s limits.")
         elif spec.type == "bool" and not isinstance(value, bool):
             raise ValueError(f"{where}: {channel} needs true or false.")
