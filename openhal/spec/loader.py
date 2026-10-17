@@ -38,14 +38,10 @@ class _NoAliasLoader(yaml.SafeLoader):
         event: Any = self.peek_event()  # type: ignore[no-untyped-call]
         mark: Any = getattr(event, "start_mark", None)
         if type(event).__name__ == "AliasEvent":
-            raise yaml.constructor.ConstructorError(
-                None, None, "YAML aliases are not allowed in device files.", mark
-            )
+            raise yaml.constructor.ConstructorError(None, None, "YAML aliases are not allowed in device files.", mark)
         anchor = getattr(event, "anchor", None)
         if anchor is not None:
-            raise yaml.constructor.ConstructorError(
-                None, None, "YAML anchors are not allowed in device files.", mark
-            )
+            raise yaml.constructor.ConstructorError(None, None, "YAML anchors are not allowed in device files.", mark)
         tag = getattr(event, "tag", None)
         if tag is not None and tag not in _ALLOWED_TAGS:
             raise yaml.constructor.ConstructorError(
