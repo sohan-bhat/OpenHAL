@@ -48,11 +48,17 @@ A command that passes every check gets a grant and runs. A command that reaches 
 |---|---|---|---|
 | low | sensors, LEDs, small fans, displays | `control_low` | as the device file says |
 | medium | motors, pumps, printers, heaters under the file's threshold | `control_medium` | as the device file says |
-| high | lasers, CNC spindles, high voltage, high-power heaters, robots that can injure | no agent scope covers it | every write and action, every time |
+| high | lasers, CNC spindles, high voltage, high-power heaters, robots that can injure | `control_medium` to request, never to execute | every write and action waits for a human, every time |
 
 A device file with write channels or actions and no `hazard` is treated as medium.
 
 High hazard devices can be driven by a routine only when the device file holds a human-signed approval for that routine's content hash (spec section 9). Changing the routine invalidates the approval.
+
+## Who confirms
+
+- **Agents** never confirm. A command that needs confirmation is queued.
+- **Humans** are the confirmers, so a command sent by a human principal (CLI with the human token, dashboard with a human session) counts as confirmed. Every other check still applies to it.
+- **Routines** run unattended, so they can't wait for a person. A routine command that needs confirmation is blocked with `needs_confirmation` and the run fails, except on a high hazard device whose file carries a valid signed approval for that routine, where the approval is the confirmation.
 
 ## Confirmation queue
 

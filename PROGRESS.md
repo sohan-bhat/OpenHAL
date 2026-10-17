@@ -2,7 +2,7 @@
 
 ## Current milestone
 
-M1 Spec and validator.
+M2 Hub core and safety kernel.
 
 ## Active subagents
 
@@ -18,9 +18,19 @@ Concurrency cap is 3 subagents at once, lower than the 5 the build prompt allows
 
 - M0 complete. ARCHITECTURE, SAFETY, THREAT_MODEL, DESIGN, COVERAGE plan, ADRs 0001 to 0012 and the spec draft are written and committed.
 
+- M1 complete. Pydantic models, JSON Schema, 14 examples, `openhal file validate` and `openhal file schema`, spec CHANGELOG and versioning policy, MHS mapping, DEPENDENCIES. 128 tests, ruff and mypy clean.
+
 ## Next
 
-- M1. Pydantic models, JSON Schema export, ten or more examples, `openhal file validate`, CHANGELOG, MHS mapping, then freeze contracts.
+- M2. Driver base and grants, safety kernel, audit log, confirmation queue, stop, dry run, tokens, registry, mock framework, conformance skeleton, minimal local API, then the independent safety review.
+
+## Milestone 1 review
+
+Built. The spec models with every section of SPEC.md, a restricted YAML loader (no anchors, aliases or custom tags, size limit), unit handling that converts degF against degC limits and uses delta units for temperature rates, a three-valued expression language with its own parser, the generated JSON Schema with a test that it matches the models, fourteen example files and the validate CLI.
+
+Weak. Location strings for errors raised inside model validators come from the message text rather than the error path. Driver parameters are not validated until drivers exist. The schema describes limits as number or string, so editors can't check units.
+
+Would change. Move per-driver parameter models next to each driver and reference them from the schema with a discriminated union once all drivers exist.
 
 ## Milestone 0 review
 
