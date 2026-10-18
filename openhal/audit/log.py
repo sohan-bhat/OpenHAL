@@ -66,10 +66,16 @@ def _digest(prev_hash: str, canonical_body: str) -> str:
 
 
 class AuditLog:
-    """Append-only audit log stored in SQLite. Use `:memory:` for tests."""
+    """Append-only audit log stored in SQLite. Use `:memory:` for tests.
+
+    For a file-backed log, the latest sequence number and hash are also written to `<db>.head`
+    after every append, so cutting entries off the end of the database is detectable by `verify()`
+    (review finding F10). Publish that head somewhere else for stronger guarantees.
+    """
 
     def __init__(self, path: str | Path = ":memory:") -> None:
         self._lock = threading.Lock()
+        self._head_path = None if str(path) == ":memory:" else Path(f"{path}.head")
         self._conn = sqlite3.connect(str(path), check_same_thread=False, isolation_level=None)
         if str(path) != ":memory:":
             self._conn.execute("PRAGMA journal_mode=WAL")
@@ -116,6 +122,10 @@ class AuditLog:
             )
             self._head = digest
             seq = int(cursor.lastrowid or 0)
+            if self._head_path is not None:
+                temporary = self._head_path.with_suffix(".tmp")
+                temporary.write_text(f"{seq} {digest}\n", encoding="utf-8")
+                temporary.replace(self._head_path)
         entry = Entry(seq, at, event, principal, device, target, status, code, body, prev, digest)
         for listener in list(self._listeners):
             try:
@@ -148,23 +158,63 @@ class AuditLog:
         )
         with self._lock:
             rows = self._conn.execute(sql, params).fetchall()
-        return [
-            Entry(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], json.loads(row[8]), row[9], row[10])
-            for row in rows
-        ]
+        entries = []
+        for row in rows:
+            body = json.loads(row[8])
+            entries.append(
+                Entry(
+                    row[0],
+                    body.get("at", row[1]),
+                    body.get("event", row[2]),
+                    body.get("principal", row[3]),
+                    body.get("device"),
+                    body.get("target"),
+                    body.get("status"),
+                    body.get("code"),
+                    body,
+                    row[9],
+                    row[10],
+                )
+            )
+        return entries
 
-    def _all(self) -> Iterator[tuple[int, str, str, str]]:
+    def _all(self) -> Iterator[tuple[Any, ...]]:
         with self._lock:
-            rows = self._conn.execute("SELECT seq, body, prev_hash, hash FROM audit ORDER BY seq").fetchall()
+            rows = self._conn.execute(
+                "SELECT seq, at, event, principal, device, target, status, code, body, prev_hash, hash FROM audit"
+                " ORDER BY seq"
+            ).fetchall()
         yield from rows
 
     def verify(self) -> tuple[bool, int | None]:
-        """Recompute the chain. Returns (ok, first broken sequence number)."""
+        """Recompute the chain and check every column against the hashed body.
+
+        Returns (ok, first broken sequence number). A missing tail is reported at the sequence
+        number the head file expected.
+        """
         prev = GENESIS
-        for seq, body, prev_hash, digest in self._all():
+        last_seq = 0
+        for seq, at, event, principal, device, target, status, code, body, prev_hash, digest in self._all():
             if prev_hash != prev or _digest(prev, body) != digest:
                 return False, seq
+            parsed = json.loads(body)
+            columns = {
+                "at": at,
+                "event": event,
+                "principal": principal,
+                "device": device,
+                "target": target,
+                "status": status,
+                "code": code,
+            }
+            if any(parsed.get(name) != value for name, value in columns.items()):
+                return False, seq
             prev = digest
+            last_seq = seq
+        if self._head_path is not None and self._head_path.exists():
+            recorded = self._head_path.read_text(encoding="utf-8").split()
+            if len(recorded) == 2 and (int(recorded[0]) != last_seq or recorded[1] != prev):
+                return False, min(int(recorded[0]), last_seq + 1)
         return True, None
 
     @property
