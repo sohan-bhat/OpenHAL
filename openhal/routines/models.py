@@ -77,7 +77,7 @@ class IfStep(_Strict):
     @model_validator(mode="after")
     def _parse(self) -> IfStep:
         try:
-            expressions.parse(self.if_)
+            expressions.parse(self.if_, frozenset())
         except expressions.ExpressionError as exc:
             raise ValueError(f"if: {exc}") from exc
         return self
@@ -100,7 +100,7 @@ class WhenTrigger(_Strict):
     @model_validator(mode="after")
     def _parse(self) -> WhenTrigger:
         try:
-            expressions.parse(self.when)
+            expressions.parse(self.when, frozenset())
         except expressions.ExpressionError as exc:
             raise ValueError(f"when: {exc}") from exc
         return self

@@ -114,7 +114,10 @@ class Kernel:
         if device_id in self.devices:
             raise ValueError(f"A device with id {device_id!r} is already registered.")
         driver.attach(self._verify_grant)
-        rules = [RuleState(rule, expressions.parse(rule.when)) for rule in file.watchdog.max_duration]
+        rules = [
+            RuleState(rule, expressions.parse_cached(rule.when, file.channel_names()))
+            for rule in file.watchdog.max_duration
+        ]
         runtime = DeviceRuntime(file=file, driver=driver, rules=rules)
         self.devices[device_id] = runtime
         self.audit.append(
@@ -330,7 +333,7 @@ class Kernel:
         resolver = self._resolver(runtime, changes, now, shadow)
         if isinstance(command, Action) and action_spec is not None:
             for condition in action_spec.require:
-                result = expressions.evaluate(expressions.parse(condition), resolver)
+                result = expressions.evaluate(expressions.parse_cached(condition, file.channel_names()), resolver)
                 if result is not True:
                     held = "is unknown" if result is None else "doesn't hold"
                     raise Block("interlock", f"Blocked. {command.action} needs {condition}, which {held} right now.")
@@ -483,8 +486,9 @@ class Kernel:
     def _check_interlocks(self, device_id: str, changed: set[str], resolver: expressions.Resolver) -> None:
         for runtime in self.devices.values():
             for interlock in runtime.file.interlocks:
-                if_tree = expressions.parse(interlock.if_)
-                require_tree = expressions.parse(interlock.require)
+                channels = runtime.file.channel_names()
+                if_tree = expressions.parse_cached(interlock.if_, channels)
+                require_tree = expressions.parse_cached(interlock.require, channels)
                 refs = expressions.references(if_tree) | expressions.references(require_tree)
                 touches = any(
                     (ref.device is None and runtime.device_id == device_id and ref.name in changed)
@@ -974,7 +978,7 @@ class Kernel:
 
     def evaluate_expression(self, text: str) -> bool | None:
         """Evaluate an expression against current state. References must name their device."""
-        tree = expressions.parse(text)
+        tree = expressions.parse(text, frozenset())
         now = self.clock()
 
         def resolve(ref: expressions.Ref) -> expressions.Value | None:

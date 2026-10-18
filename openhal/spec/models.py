@@ -546,16 +546,23 @@ class DeviceFile(_Strict):
             return self.read[name].values
         return []
 
+    def channel_names(self) -> frozenset[str]:
+        """Every read and write channel name. Bare names in expressions are resolved against these."""
+        return frozenset(self.read) | frozenset(self.write)
+
     def _check_expression(self, text: str, where: str) -> None:
         try:
-            tree = expressions.parse(text)
+            tree = expressions.parse(text, self.channel_names())
         except expressions.ExpressionError as exc:
             raise ValueError(f"{where}: {exc}") from exc
-        known = set(self.read) | set(self.write)
-        words = {value for name in known for value in self._enum_values(name)}
-        for ref in expressions.references(tree):
-            if ref.device is None and ref.name not in known and ref.name not in words:
-                raise ValueError(f"{where}: {ref.name!r} is not a channel of this device.")
+        local_words = {value for name in self.channel_names() for value in self._enum_values(name)}
+        for word, other in expressions.words(tree):
+            compared_with_other_device = isinstance(other, expressions.Ref) and other.device is not None
+            if word not in local_words and not compared_with_other_device:
+                raise ValueError(f"{where}: {word!r} is not a channel of this device or one of its enum values.")
+            peer_values = self._enum_values(other.name) if isinstance(other, expressions.Ref) else []
+            if isinstance(other, expressions.Ref) and other.device is None and peer_values and word not in peer_values:
+                raise ValueError(f"{where}: {word!r} is not one of {other.name}'s values.")
 
         def unit_of(ref: expressions.Ref) -> str | None:
             return self.channel_unit(ref.name) if ref.device is None else None
