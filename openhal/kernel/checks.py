@@ -89,7 +89,7 @@ def _number(name: str, spec: WriteChannel | ArgSpec, raw: Any, tightened: dict[s
         value = convert(parse_quantity(raw), unit)
     except UnitError as exc:
         raise Block("bad_unit", f"{name}: {exc}") from exc
-    if not math.isfinite(value):
+    if not math.isfinite(value):  # pragma: no cover (convert already refuses non-finite values, kept as a backstop)
         raise Block("bad_unit", f"{name} must be a finite number.")
     limits = effective_limits(spec, tightened)
     asked = format_quantity(value, unit)

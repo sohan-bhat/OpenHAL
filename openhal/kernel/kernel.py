@@ -454,8 +454,6 @@ class Kernel:
                 sample = target.latest(ref.name, now)
                 raw = None if sample is None else sample.value
             if raw is None or raw is _UNKNOWN:
-                if ref.device is None and ref.name not in target.file.read and ref.name not in target.file.write:
-                    return None
                 return None
             if isinstance(raw, bool | str):
                 return expressions.Value(raw)
@@ -582,20 +580,20 @@ class Kernel:
                 for effect in spec.effects:
                     runtime.accepted.pop(effect, None)
                 result = decision.model_copy(update={"status": "done", "message": f"Done. {command.action} ran."})
-        except (DriverError, OSError, TimeoutError) as exc:
-            result = decision.model_copy(
-                update={
-                    "status": "failed",
-                    "code": "driver_error",
-                    "message": f"The device didn't complete {command.target}. {exc}",
-                }
-            )
         except GrantError as exc:
             result = decision.model_copy(
                 update={
                     "status": "blocked",
                     "code": "internal_error",
                     "message": f"Blocked. Grant check failed ({exc}).",
+                }
+            )
+        except (DriverError, OSError, TimeoutError) as exc:
+            result = decision.model_copy(
+                update={
+                    "status": "failed",
+                    "code": "driver_error",
+                    "message": f"The device didn't complete {command.target}. {exc}",
                 }
             )
         self._log(command, principal, result, before=before, request=request)
