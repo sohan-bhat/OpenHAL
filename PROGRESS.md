@@ -6,7 +6,7 @@ M2 Hub core and safety kernel.
 
 ## Active subagents
 
-None. Phase A runs on the orchestrator alone.
+- safety-review (fresh reviewer, Opus). Owns docs/agents/REVIEW-safety.md, docs/agents/REPORT-safety-review.md and tests/review_safety/. Brief in docs/agents/BRIEF-safety-review.md. Started during M2 once the kernel was complete.
 
 Concurrency cap is 3 subagents at once, lower than the 5 the build prompt allows, because the owner's standing rule caps parallel agents at 3. Every coding subagent runs on Opus 5.5 and may not start subagents of its own.
 
