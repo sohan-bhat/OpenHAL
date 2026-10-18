@@ -55,10 +55,26 @@ class StopReport:
 
 
 @dataclass
-class _Shadow:
-    """Values a dry run has already 'written', so a plan's later steps see earlier ones."""
+class Shadow:
+    """Values a dry run has already 'written', so a plan's later steps see earlier ones.
+
+    `now` is simulated seconds since the dry run started. A routine's wait steps advance it, so
+    rate limits are judged as they would be in a real run.
+    """
 
     values: dict[tuple[str, str], Any] = field(default_factory=dict)
+    stamps: dict[tuple[str, str], float] = field(default_factory=dict)
+    now: float = 0.0
+
+    def record(self, device: str, channel: str, value: Any) -> None:
+        self.values[(device, channel)] = value
+        self.stamps[(device, channel)] = self.now
+
+    def copy(self) -> Shadow:
+        return Shadow(dict(self.values), dict(self.stamps), self.now)
+
+
+_Shadow = Shadow
 
 
 def approval_message(device_id: str, routine: str, sha256: str, by: str, at: str) -> bytes:
@@ -425,7 +441,8 @@ class Kernel:
         self, runtime: DeviceRuntime, channel: str, spec: WriteChannel, now: float, shadow: _Shadow | None
     ) -> tuple[float | None, float]:
         if shadow is not None and (runtime.device_id, channel) in shadow.values:
-            return float(shadow.values[(runtime.device_id, channel)]), 0.0
+            key = (runtime.device_id, channel)
+            return float(shadow.values[key]), shadow.now - shadow.stamps.get(key, shadow.now)
         candidates = [
             sample
             for sample in (runtime.accepted.get(channel), runtime.reads.get(channel))
@@ -647,13 +664,13 @@ class Kernel:
 
     def dry_run(self, commands: Iterable[Command], principal: Principal) -> list[Decision]:
         """Evaluate commands in order as if each allowed one had run. Nothing is sent anywhere."""
-        shadow = _Shadow()
+        shadow = Shadow()
         decisions = []
         for command in commands:
             decision = self.evaluate(command, principal, shadow=shadow)
             decisions.append(decision)
             if decision.status in ("allowed", "needs_confirmation") and isinstance(command, Write):
-                shadow.values[(command.device, command.channel)] = decision.value
+                shadow.record(command.device, command.channel, decision.value)
         return decisions
 
     # ------------------------------------------------------------------ confirmations
@@ -952,6 +969,31 @@ class Kernel:
                     self.audit.append(
                         "watchdog", SYSTEM.label, device=runtime.device_id, status="failed", detail=repr(exc)
                     )
+
+    # ------------------------------------------------------------------ expressions for routines
+
+    def evaluate_expression(self, text: str) -> bool | None:
+        """Evaluate an expression against current state. References must name their device."""
+        tree = expressions.parse(text)
+        now = self.clock()
+
+        def resolve(ref: expressions.Ref) -> expressions.Value | None:
+            if ref.device is None:
+                return None
+            target = self.devices.get(ref.device)
+            if target is None:
+                return None
+            sample = target.latest(ref.name, now)
+            if sample is None:
+                return None
+            raw = sample.value
+            if isinstance(raw, bool | str):
+                return expressions.Value(raw)
+            if isinstance(raw, int | float):
+                return expressions.Value(float(raw), target.file.channel_unit(ref.name))
+            return None
+
+        return expressions.evaluate(tree, resolve)
 
     # ------------------------------------------------------------------ helpers
 
