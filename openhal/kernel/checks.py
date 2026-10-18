@@ -7,12 +7,16 @@ names the rule, the limit and what to do (docs/SAFETY.md, checks 6 to 9).
 from __future__ import annotations
 
 import math
-import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Final
+
+import regex
 
 from openhal.spec.models import ArgSpec, WriteChannel
 from openhal.spec.units import UnitError, convert, format_quantity, parse_quantity
+
+PATTERN_TIMEOUT_S: Final = 0.05
+"""Patterns run on the regex engine with a time budget, so no value can stall the kernel (review F07)."""
 
 
 @dataclass
@@ -72,8 +76,15 @@ def normalize(
         assert spec.max_length is not None
         if len(raw) > spec.max_length:
             raise Block("bad_value", f"{name} may be at most {spec.max_length} characters.")
-        if spec.pattern is not None and not re.fullmatch(spec.pattern, raw):
-            raise Block("bad_value", f"{name} doesn't match the allowed pattern.")
+        if spec.pattern is not None:
+            try:
+                matched = regex.fullmatch(spec.pattern, raw, timeout=PATTERN_TIMEOUT_S)
+            except TimeoutError:
+                raise Block(
+                    "bad_value", f"{name} took too long to check against its pattern, so it is refused."
+                ) from None
+            if not matched:
+                raise Block("bad_value", f"{name} doesn't match the allowed pattern.")
         return raw
     return _number(name, spec, raw, tightened)
 
