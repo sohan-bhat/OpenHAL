@@ -7,6 +7,9 @@ M2 Hub core and safety kernel.
 ## Active subagents
 
 - safety-review (fresh reviewer, Opus). Owns docs/agents/REVIEW-safety.md, docs/agents/REPORT-safety-review.md and tests/review_safety/. Brief in docs/agents/BRIEF-safety-review.md. Started during M2 once the kernel was complete.
+- interfaces (Opus, own worktree and branch). Owns openhal/client/, openhal/mcp/, openhal/cli/ except file_cmd.py, docs/interfaces/, tests/interfaces/. Brief in docs/agents/BRIEF-interfaces.md. Covers M5.
+- drivers-1 (Opus, own worktree and branch). Owns the serial, firmata, scpi, moonraker, octoprint, marlin, homeassistant and esphome driver packages, their tests and docs. Brief in docs/agents/BRIEF-drivers-1.md. Covers M3 drivers.
+- Orchestrator meanwhile builds discovery and library matching (M3), the routine engine (M6) and the ADR 0014 server endpoints.
 
 Concurrency cap is 3 subagents at once, lower than the 5 the build prompt allows, because the owner's standing rule caps parallel agents at 3. Every coding subagent runs on Opus 5.5 and may not start subagents of its own.
 
