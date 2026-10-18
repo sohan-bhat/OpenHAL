@@ -129,7 +129,7 @@ def test_garbage_values_never_reach_the_driver(value: object) -> None:
         clock.advance(1000)
         try:
             command = Write(device="prop", channel="level", value=value)  # type: ignore[arg-type]
-        except Exception:
+        except Exception:  # noqa: BLE001
             return
         decision = await kernel.execute(command, agent("prop", "control_low"))
         if decision.status == "done":

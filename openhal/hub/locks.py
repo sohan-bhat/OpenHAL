@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import IO
 
 
-class DeviceLocked(RuntimeError):
+class DeviceLocked(RuntimeError):  # noqa: N818
     """Another OpenHAL process already has this device open."""
 
 

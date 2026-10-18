@@ -120,7 +120,7 @@ class AuditLog:
         for listener in list(self._listeners):
             try:
                 listener(entry)
-            except Exception:  # noqa: S112 (a broken view must never stop logging)
+            except Exception:  # noqa: S112, BLE001 (a broken view must never stop logging)
                 continue
         return entry
 

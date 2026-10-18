@@ -141,7 +141,7 @@ class Kernel:
         for channel in channels:
             try:
                 reading = await asyncio.wait_for(runtime.driver.read(channel), DRIVER_TIMEOUT_S)
-            except Exception:  # noqa: S112 (a channel that can't be read stays unknown)
+            except Exception:  # noqa: S112, BLE001 (a channel that can't be read stays unknown)
                 continue
             self.note_reading(device_id, reading)
 
@@ -218,7 +218,7 @@ class Kernel:
                 target=target,
                 limit=block.limit,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             return Decision(
                 status="blocked",
                 code="internal_error",
@@ -812,7 +812,7 @@ class Kernel:
                     outcome = hook(reason)
                     if asyncio.iscoroutine(outcome):
                         await outcome
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     self.audit.append("stop_hook", SYSTEM.label, status="failed", detail=repr(exc))
             report = StopReport(reason=reason, by=principal.label, cancelled_requests=len(cancelled))
             results = await asyncio.gather(
@@ -877,7 +877,7 @@ class Kernel:
 
             await asyncio.wait_for(apply(), STOP_DEVICE_TIMEOUT_S)
             return DeviceStopResult(runtime.device_id, "safe", reason)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             return DeviceStopResult(runtime.device_id, "failed", f"{type(exc).__name__}: {exc}")
         finally:
             runtime.applying_safe_state = False
@@ -948,7 +948,7 @@ class Kernel:
                 try:
                     await asyncio.wait_for(runtime.driver.write(channel, value, grant), DRIVER_TIMEOUT_S)
                     runtime.accepted[channel] = Sample(value, self.clock(), commanded=True)
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     self.audit.append(
                         "watchdog", SYSTEM.label, device=runtime.device_id, status="failed", detail=repr(exc)
                     )

@@ -16,7 +16,7 @@ from openhal.spec.units import UnitError, convert, format_quantity, parse_quanti
 
 
 @dataclass
-class Block(Exception):
+class Block(Exception):  # noqa: N818
     """A command is blocked. `code` is one of commands.BLOCK_CODES."""
 
     code: str

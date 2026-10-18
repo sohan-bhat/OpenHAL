@@ -154,7 +154,7 @@ class Hub:
         info = self.info.setdefault(device_id, DeviceInfo(None))
         try:
             await self.kernel.connect(device_id)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             info.last_error = f"{type(exc).__name__}: {exc}"
             self.audit.append("connect", SYSTEM.label, device=device_id, status="failed", detail=info.last_error)
             self._emit({"type": "state", "device": device_id})
@@ -185,7 +185,7 @@ class Hub:
                 due[channel] = now + interval
                 try:
                     reading = await asyncio.wait_for(runtime.driver.read(channel), 5.0)
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     log.debug("poll %s.%s failed: %s", device_id, channel, exc)
                     continue
                 self._record(device_id, reading)
@@ -216,7 +216,7 @@ class Hub:
                     health = await asyncio.wait_for(runtime.driver.health(), interval)
                     healthy = health.connected
                     detail = health.detail
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     healthy, detail = False, f"{type(exc).__name__}: {exc}"
                 if not healthy:
                     await self.kernel.connection_lost(device_id, detail or "heartbeat failed")
@@ -230,7 +230,7 @@ class Hub:
             await asyncio.sleep(self.config.watchdog_tick_s)
             try:
                 fired = await self.kernel.tick()
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 self.audit.append("watchdog", SYSTEM.label, status="failed", detail=repr(exc))
                 continue
             for rule in fired:
@@ -253,7 +253,7 @@ class Hub:
         for listener in list(self._listeners):
             try:
                 listener(event)
-            except Exception:  # noqa: S112 (one broken view can't stop the hub)
+            except Exception:  # noqa: S112, BLE001 (one broken view can't stop the hub)
                 continue
 
     def _on_audit(self, entry: Entry) -> None:
