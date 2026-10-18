@@ -12,6 +12,7 @@ import hashlib
 import json
 import secrets
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Final
 
@@ -79,6 +80,22 @@ class GrantBook:
             raise GrantError(f"This grant is for {issued.device_id} {issued.target}, not {device_id} {target}.")
         if issued.digest != value_digest(value):
             raise GrantError("This grant is for a different value.")
+
+    def verifier_for(self, device_id: str) -> Callable[[object, str, str, object], None]:
+        """A callable a driver uses to consume grants for its own device and nothing else.
+
+        Drivers get this closure instead of a bound method of the kernel, so the kernel and other
+        devices aren't one attribute away (review finding F08). In-process code can still reach
+        anything through introspection, so this guards against accidents, not malice (THREAT_MODEL T17).
+        """
+        consume = self.consume
+
+        def verify(grant: object, requested_device: str, target: str, value: object) -> None:
+            if requested_device != device_id:
+                raise GrantError(f"This driver belongs to {device_id}, not {requested_device}.")
+            consume(grant, device_id, target, value)
+
+        return verify
 
     def revoke_all(self, device_id: str | None = None) -> None:
         """Drop live grants, for one device or all of them."""

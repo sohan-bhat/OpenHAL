@@ -30,6 +30,8 @@ BLOCK_CODES = (
     "driver_error",
     "expired",
     "rejected",
+    "queue_full",
+    "misconfigured",
 )
 
 

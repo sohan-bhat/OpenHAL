@@ -1,8 +1,14 @@
-"""The confirmation queue. Commands that need a human wait here until approved, rejected or expired."""
+"""The confirmation queue. Commands that need a human wait here until approved, rejected or expired.
+
+Every status change is reported through `on_change` so the kernel can log it (review finding F09).
+Each principal may have at most `per_principal` pending requests. A full queue refuses new
+requests instead of evicting someone else's (review finding F22).
+"""
 
 from __future__ import annotations
 
 import secrets
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -10,6 +16,10 @@ from openhal.kernel.commands import Command, Decision
 from openhal.kernel.principals import Principal
 
 RequestStatus = Literal["pending", "approved", "rejected", "expired", "cancelled", "blocked", "done", "failed"]
+
+
+class QueueFull(Exception):  # noqa: N818 (a refusal, not an error)
+    """The principal, or the whole queue, already has the maximum number of pending requests."""
 
 
 @dataclass
@@ -31,18 +41,34 @@ class Request:
 class ConfirmationQueue:
     """Pending requests, keyed by id. The kernel owns the only instance."""
 
-    def __init__(self, ttl_s: float = 300.0, max_pending: int = 100) -> None:
+    def __init__(
+        self,
+        ttl_s: float = 300.0,
+        max_pending: int = 100,
+        per_principal: int = 20,
+        on_change: Callable[[Request, str], None] | None = None,
+    ) -> None:
         self.ttl_s = ttl_s
         self.max_pending = max_pending
+        self.per_principal = per_principal
+        self.on_change = on_change
         self._requests: dict[str, Request] = {}
+
+    def _changed(self, request: Request, reason: str) -> None:
+        request.history.append(reason)
+        if self.on_change is not None:
+            self.on_change(request, reason)
 
     def add(self, command: Command, principal: Principal, dry_run: Decision, now: float) -> Request:
         self.expire(now)
         pending = [request for request in self._requests.values() if request.status == "pending"]
+        mine = [request for request in pending if request.principal.label == principal.label]
+        if len(mine) >= self.per_principal:
+            raise QueueFull(
+                f"This client already has {len(mine)} requests waiting for a human. Wait for them to be decided."
+            )
         if len(pending) >= self.max_pending:
-            oldest = min(pending, key=lambda request: request.created_at)
-            oldest.status = "cancelled"
-            oldest.history.append("cancelled because the queue was full")
+            raise QueueFull("The confirmation queue is full. Wait for pending requests to be decided.")
         request = Request(
             request_id=secrets.token_hex(8),
             command=command,
@@ -72,7 +98,7 @@ class ConfirmationQueue:
         for request in self._requests.values():
             if request.status == "pending" and now > request.expires_at:
                 request.status = "expired"
-                request.history.append("expired")
+                self._changed(request, "expired")
                 expired.append(request)
         return expired
 
@@ -81,6 +107,6 @@ class ConfirmationQueue:
         for request in self._requests.values():
             if request.status == "pending":
                 request.status = "cancelled"
-                request.history.append(reason)
+                self._changed(request, reason)
                 cancelled.append(request)
         return cancelled
