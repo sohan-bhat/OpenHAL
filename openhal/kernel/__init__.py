@@ -10,10 +10,10 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from openhal.kernel.commands import Action, Command, Decision, Write
-    from openhal.kernel.grants import Grant, GrantBook, GrantError
-    from openhal.kernel.kernel import Kernel, StopReport
-    from openhal.kernel.principals import Principal, agent, human, routine
+    from openhal.kernel.commands import Action, Command, Decision, Write  # noqa: F401
+    from openhal.kernel.grants import Grant, GrantBook, GrantError  # noqa: F401
+    from openhal.kernel.kernel import Kernel, StopReport  # noqa: F401
+    from openhal.kernel.principals import Principal, agent, human, routine  # noqa: F401
 
 _EXPORTS = {
     "Action": "commands",

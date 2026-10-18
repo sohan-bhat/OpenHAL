@@ -81,16 +81,16 @@ class MockDriver(Driver):
                 self.values[name] = spec.values[0]
             else:
                 self.values[name] = ""
-        for name, spec in self.device.read.items():
+        for name, read_spec in self.device.read.items():
             if name in self.settings.initial:
                 self.values[name] = self.settings.initial[name]
-            elif spec.type == "number":
+            elif read_spec.type == "number":
                 self.values[name] = self._temperature if self.settings.simulate != "none" else 0.0
-            elif spec.type == "bool":
+            elif read_spec.type == "bool":
                 self.values[name] = False
-            elif spec.type == "enum":
+            elif read_spec.type == "enum":
                 self.values[name] = spec.values[0]
-            elif spec.type == "image":
+            elif read_spec.type == "image":
                 self.values[name] = b""
             else:
                 self.values[name] = ""

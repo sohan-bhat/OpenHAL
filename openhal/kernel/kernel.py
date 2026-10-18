@@ -25,6 +25,7 @@ from openhal.kernel.grants import GrantBook, GrantError, value_digest
 from openhal.kernel.principals import SYSTEM, Principal
 from openhal.kernel.runtime import DeviceRuntime, RuleState, Sample
 from openhal.spec import expressions
+from openhal.spec.models import Action as ActionSpec
 from openhal.spec.models import Approval, DeviceFile, WriteChannel
 from openhal.spec.units import UnitError, convert, format_quantity, parse_quantity, parse_rate
 
@@ -236,6 +237,8 @@ class Kernel:
         if runtime is None:
             raise Block("unknown_target", f"Blocked. There is no device {command.device!r}. Run openhal devices.")
         file = runtime.file
+        spec: WriteChannel | None = None
+        action_spec: ActionSpec | None = None
         if isinstance(command, Write):
             spec = file.write.get(command.channel)
             if spec is None:
@@ -294,12 +297,13 @@ class Kernel:
             digest_value: Any = value
             changes = {command.channel: value}
         else:
+            assert action_spec is not None
             args = {name: normalize(name, action_spec.args[name], raw) for name, raw in command.args.items()}
             value = args
             digest_value = args
             changes = {effect: _UNKNOWN for effect in action_spec.effects}
         # 10. Rate of change.
-        if isinstance(command, Write) and spec.type == "number":
+        if isinstance(command, Write) and spec is not None and spec.type == "number":
             assert spec.unit is not None
             limits = effective_limits(
                 spec, self._session_limits.get((principal.label, command.device, command.channel))
@@ -308,12 +312,12 @@ class Kernel:
             check_rate(command.channel, spec.unit, limits.rate, float(value), reference, elapsed)
         # 11. Interlocks and action preconditions.
         resolver = self._resolver(runtime, changes, now, shadow)
-        if isinstance(command, Action):
+        if isinstance(command, Action) and action_spec is not None:
             for condition in action_spec.require:
                 result = expressions.evaluate(expressions.parse(condition), resolver)
                 if result is not True:
-                    state = "is unknown" if result is None else "doesn't hold"
-                    raise Block("interlock", f"Blocked. {command.action} needs {condition}, which {state} right now.")
+                    held = "is unknown" if result is None else "doesn't hold"
+                    raise Block("interlock", f"Blocked. {command.action} needs {condition}, which {held} right now.")
         self._check_interlocks(command.device, set(changes), resolver)
         # 12. Watchdog budgets.
         for state in runtime.rules:
@@ -327,14 +331,18 @@ class Kernel:
                     f"{_seconds(state.rule.for_)} limit. Wait for the budget to reset.",
                 )
         # 14. Confirmation.
-        unit = spec.unit if isinstance(command, Write) else None
+        unit = spec.unit if spec is not None else None
         decision_kwargs: dict[str, Any] = {
             "device": command.device,
             "target": command.target,
             "value": _jsonable(value),
             "unit": unit,
         }
-        tier = file.write[command.channel].confirm if isinstance(command, Write) else action_spec.confirm
+        if spec is not None:
+            tier = spec.confirm
+        else:
+            assert action_spec is not None
+            tier = action_spec.confirm
         if hazard == "high":
             tier = "confirm-each-time"
         if self._confirmation_satisfied(command, principal, runtime, tier, digest_value, confirmed, now):

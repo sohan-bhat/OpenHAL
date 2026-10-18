@@ -82,7 +82,7 @@ On real gauges, the red line marks where you must not go. In OpenHAL, every limi
 
 - **Form.** A 2 px vertical (or horizontal) rule in the blocked red, with a small `--caution` flag at its end carrying the legend, for example `MAX 100 %`, in Sofia Sans Condensed uppercase at `--t-0` with `--ink` text.
 - **Where it appears.** Slider tracks (the thumb physically stops at the line), sparklines (a dashed horizontal line at min and max), range bars in device tables, the playground on the website, and the hero.
-- **On a block.** The attempted value is drawn as a hollow marker beyond the line for one second, the line pulses once, and the block reason appears directly under it, for example `Blocked. fan_speed max is 100 %. Asked for 150 %.`
+- **On a block.** The attempted value is drawn as a hollow marker beyond the line for one second, the line pulses once, and the block reason appears directly under it, for example `Blocked. The fan_speed limit is 100 % (max). Asked for 150 %.`
 - **Rate limits** are drawn as a short diagonal bracket on the track showing how far the value may move right now.
 - It is used for limits only. Never as decoration.
 

@@ -141,13 +141,17 @@ class AuditLog:
                 clauses.append(f"{column} = ?")
                 params.append(value)
         params.append(max(1, min(limit, 5000)))
+        where = " AND ".join(clauses)  # only fixed column names, values are bound parameters
         sql = (
-            "SELECT seq, at, event, principal, device, target, status, code, body, prev_hash, hash FROM audit"
-            f" WHERE {' AND '.join(clauses)} ORDER BY seq DESC LIMIT ?"
+            "SELECT seq, at, event, principal, device, target, status, code, body, prev_hash, hash FROM audit"  # noqa: S608
+            f" WHERE {where} ORDER BY seq DESC LIMIT ?"
         )
         with self._lock:
             rows = self._conn.execute(sql, params).fetchall()
-        return [Entry(*row[:8], json.loads(row[8]), row[9], row[10]) for row in rows]
+        return [
+            Entry(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], json.loads(row[8]), row[9], row[10])
+            for row in rows
+        ]
 
     def _all(self) -> Iterator[tuple[int, str, str, str]]:
         with self._lock:
