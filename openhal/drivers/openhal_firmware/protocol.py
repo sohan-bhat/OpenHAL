@@ -111,15 +111,25 @@ def description_to_sections(data: dict[str, Any]) -> dict[str, Any]:
         read[item["n"]] = channel
     write: dict[str, Any] = {}
     safe: dict[str, Any] = {}
+    notes: list[str] = []
     for item in data.get("w", []):
-        channel = {"unit": item["u"], "min": item["min"], "max": item["max"], "suggested": True}
-        if isinstance(item.get("rate"), int | float) and item["rate"] > 0:
-            channel["max_change_per_s"] = item["rate"]
-        write[item["n"]] = channel
-        safe[item["n"]] = item["safe"]
+        name = item["n"]
+        if item["u"] == "bool":
+            write[name] = {"type": "bool", "suggested": True}
+            safe[name] = bool(item["safe"])
+        else:
+            channel = {"unit": item["u"], "min": item["min"], "max": item["max"], "suggested": True}
+            if isinstance(item.get("rate"), int | float) and item["rate"] > 0:
+                channel["max_change_per_s"] = item["rate"]
+            write[name] = channel
+            safe[name] = item["safe"]
+        if isinstance(item.get("t"), int | float) and item["t"] > 0:
+            notes.append(f"The board returns {name} to its safe value after {item['t'] / 1000:g} s without a write.")
     sections: dict[str, Any] = {"match": {"firmware": {"product": data["p"]}}, "read": read, "write": write}
     if safe:
         sections["safe_state"] = safe
     if data.get("hb"):
         sections["watchdog"] = {"heartbeat": f"{max(int(data['hb']) // 2, 100)} ms", "on_loss": "safe_state"}
+    if notes:
+        sections["notes"] = " ".join(notes)
     return sections

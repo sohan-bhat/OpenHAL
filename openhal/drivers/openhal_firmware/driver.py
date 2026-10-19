@@ -299,12 +299,16 @@ class OpenHalFirmwareDriver(Driver):
         sections["device"] = {"name": description["p"].replace("-", " ").capitalize()}
         return sections
 
+    def _typed(self, channel: str, value: float) -> float | bool:
+        spec = self.device.read.get(channel) or self.device.write.get(channel)
+        return value != 0 if spec is not None and spec.type == "bool" else value
+
     async def read(self, channel: str) -> Reading:
         link = self._require_link()
         unit = self.device.channel_unit(channel)
         streamed = link.events.get(channel)
         if streamed is not None and time.time() - streamed[1] < 5.0:
-            return Reading(channel, streamed[0], unit, at=streamed[1])
+            return Reading(channel, self._typed(channel, streamed[0]), unit, at=streamed[1])
         reply = await link.request("READ", channel)
         if len(reply.args) != 2 or reply.args[0] != channel:
             raise DriverError(f"The board answered READ {channel} with {' '.join(reply.args)}.")
@@ -312,7 +316,7 @@ class OpenHalFirmwareDriver(Driver):
             value = parse_number(reply.args[1])
         except ProtocolError as exc:
             raise DriverError(f"The board sent an unreadable value for {channel}.") from exc
-        return Reading(channel, value, unit)
+        return Reading(channel, self._typed(channel, value), unit)
 
     async def _write(self, channel: str, value: float | bool | str) -> Reading | None:
         if isinstance(value, str):
@@ -320,7 +324,7 @@ class OpenHalFirmwareDriver(Driver):
         reply = await self._require_link().request("WRITE", channel, format_number(float(value)))
         if len(reply.args) != 2 or reply.args[0] != channel:
             raise DriverError(f"The board answered WRITE {channel} with {' '.join(reply.args)}.")
-        return Reading(channel, parse_number(reply.args[1]), self.device.channel_unit(channel))
+        return Reading(channel, self._typed(channel, parse_number(reply.args[1])), self.device.channel_unit(channel))
 
     async def _safe_state(self) -> None:
         await self._require_link().request("SAFE")

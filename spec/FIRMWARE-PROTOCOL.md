@@ -36,8 +36,8 @@ The board enforces its own limits too. That is defense in depth. The hub's safet
 | Message | Meaning |
 |---|---|
 | `0 EVT <name> <value>` | A streamed value (the board's channel has `every` set) |
-| `0 SAFE <reason>` | The board applied its safe state on its own (heartbeat lost, its own limit tripped) |
-| `<seq> ERR <code> <detail>` | A request failed. Codes are `unknown` (verb or channel), `limit` (outside the board's own limits), `format` (bad argument), `checksum`, `busy` |
+| `0 SAFE <reason>` | The board applied its safe state on its own. Reasons include `heartbeat_lost`, `<name>_timeout` and whatever the sketch passes, such as `local_button` |
+| `<seq> ERR <code> <detail>` | A request failed. Codes are `unknown` (verb or channel), `limit` (outside the board's own limits), `format` (bad argument), `checksum`, `fault` (the sensor returned no value), `busy` (the board refused writes because its sketch registered channels wrongly) |
 
 ## Capability document
 
@@ -59,25 +59,26 @@ The `DESC` reply is a compact JSON object.
 | `v` | Firmware version |
 | `hb` | Heartbeat timeout in milliseconds (0 means none) |
 | `r` | Read channels. `n` name, `u` unit, `e` streaming interval in milliseconds (0 means on request), optional `lo` and `hi` sanity range |
-| `w` | Write channels. `n`, `u`, `min`, `max`, `safe` (the safe-state value), optional `rate` (unit per second) |
+| `w` | Write channels. `n`, `u`, `min`, `max`, `safe` (the safe-state value), optional `rate` (unit per second) and `t` (milliseconds after which the board returns the output to `safe` on its own). A unit of `bool` marks an on and off output with values 0 and 1 |
 
 The hub turns this into a draft device file with every limit marked `suggested: true`. A human still confirms the limits in the interview, and may tighten them below what the board allows.
 
 ## Example session
 
 ```
-host  1 HELLO*7A
-board 1 OK openhal 1 desk-fan 1.0.0*3C
-host  2 READ temperature*11
-board 2 VAL temperature 27.40*5F
-host  3 WRITE fan_speed 60*2D
-board 3 OK fan_speed 60*0B
-host  4 WRITE fan_speed 150*1A
-board 4 ERR limit fan_speed max 100*44
-board 0 EVT temperature 27.10*62
+host  1 HELLO*53
+board 1 OK openhal 1 desk-fan 1.0.0*39
+host  2 READ temperature*4C
+board 2 VAL temperature 27.4*3A
+host  3 WRITE fan_speed 60*19
+board 3 OK fan_speed 60*40
+host  4 WRITE fan_speed 150*2C
+board 4 ERR limit fan_speed max 100*30
+board 0 EVT temperature 27.1*21
+board 0 SAFE heartbeat_lost*02
 ```
 
-The checksums above are illustrative. `openhal.drivers.openhal_firmware.protocol.checksum` computes them.
+The checksums are real. `openhal.drivers.openhal_firmware.protocol.checksum` computes them, and the Arduino library computes the same value while it prints.
 
 ## Versioning
 
