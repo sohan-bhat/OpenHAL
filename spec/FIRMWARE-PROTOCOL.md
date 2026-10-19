@@ -1,0 +1,84 @@
+# OpenHAL firmware protocol, version 1
+
+The wire protocol between the hub's `openhal-firmware` driver and a board running the OpenHAL Arduino library (firmware/arduino/OpenHAL/). A board that speaks it describes itself, so the hub can build its device file without a person typing channels.
+
+The board enforces its own limits too. That is defense in depth. The hub's safety kernel is still the authority, and nothing in this protocol can widen a limit the device file sets.
+
+## Transport
+
+- A serial line (USB CDC, UART). Default 115200 baud, 8N1.
+- ASCII text, one message per line, lines end with `\n` (a preceding `\r` is ignored).
+- Lines are at most 250 bytes, except the `DESC` reply, which may be up to 1,500 bytes.
+
+## Message format
+
+```
+<seq> <verb> [arg ...]*<checksum>
+```
+
+- `seq` is a decimal number from 1 to 65535 chosen by the host. The board echoes it in its reply. Unsolicited board messages use `0`.
+- `verb` is an uppercase word. Arguments are separated by single spaces. Names match `[a-z][a-z0-9_]{0,23}`. Numbers are decimal, with an optional sign and decimal point.
+- `*<checksum>` is two uppercase hex digits, the XOR of every byte before the `*`. Both sides check it and discard lines with a wrong or missing checksum.
+
+## Host to board
+
+| Verb | Arguments | Reply | Meaning |
+|---|---|---|---|
+| `HELLO` | | `OK openhal 1 <product> <firmware-version>` | Identify. Read-only. Safe to send to an unknown device during discovery |
+| `DESC` | | `DESC <json>` | The capability document below |
+| `READ` | `<name>` | `VAL <name> <value>` | Read one channel |
+| `WRITE` | `<name> <value>` | `OK <name> <value>` or `ERR <code> <detail>` | Set one write channel. The board checks its own min and max first |
+| `HB` | | `OK` | Heartbeat. The board falls to its safe state if heartbeats stop for `hb` milliseconds |
+| `SAFE` | | `OK` | Apply the safe state now |
+
+## Board to host
+
+| Message | Meaning |
+|---|---|
+| `0 EVT <name> <value>` | A streamed value (the board's channel has `every` set) |
+| `0 SAFE <reason>` | The board applied its safe state on its own (heartbeat lost, its own limit tripped) |
+| `<seq> ERR <code> <detail>` | A request failed. Codes are `unknown` (verb or channel), `limit` (outside the board's own limits), `format` (bad argument), `checksum`, `busy` |
+
+## Capability document
+
+The `DESC` reply is a compact JSON object.
+
+```json
+{
+  "p": "desk-fan",
+  "v": "1.0.0",
+  "hb": 2000,
+  "r": [{ "n": "temperature", "u": "degC", "e": 1000, "lo": -20, "hi": 80 }],
+  "w": [{ "n": "fan_speed", "u": "percent", "min": 0, "max": 100, "safe": 0, "rate": 20 }]
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `p` | Product name, matched by the library through `match.firmware.product` |
+| `v` | Firmware version |
+| `hb` | Heartbeat timeout in milliseconds (0 means none) |
+| `r` | Read channels. `n` name, `u` unit, `e` streaming interval in milliseconds (0 means on request), optional `lo` and `hi` sanity range |
+| `w` | Write channels. `n`, `u`, `min`, `max`, `safe` (the safe-state value), optional `rate` (unit per second) |
+
+The hub turns this into a draft device file with every limit marked `suggested: true`. A human still confirms the limits in the interview, and may tighten them below what the board allows.
+
+## Example session
+
+```
+host  1 HELLO*7A
+board 1 OK openhal 1 desk-fan 1.0.0*3C
+host  2 READ temperature*11
+board 2 VAL temperature 27.40*5F
+host  3 WRITE fan_speed 60*2D
+board 3 OK fan_speed 60*0B
+host  4 WRITE fan_speed 150*1A
+board 4 ERR limit fan_speed max 100*44
+board 0 EVT temperature 27.10*62
+```
+
+The checksums above are illustrative. `openhal.drivers.openhal_firmware.protocol.checksum` computes them.
+
+## Versioning
+
+The `1` in the `HELLO` reply is the protocol version. A board that speaks a newer major version than the hub refuses commands other than `HELLO` and `DESC`, and the hub reports it as unsupported.
