@@ -15,8 +15,8 @@ void setBrightness(float percent) { analogWrite(STRIP_PIN, static_cast<int>(perc
 void setup() {
   pinMode(STRIP_PIN, OUTPUT);
   Serial.begin(115200);
-  hal.reading("ambient_light", "percent", readLight).every(2000).range(0, 100);
-  hal.output("brightness", "percent", setBrightness).limits(0, 100).safe(0).rate(50);
+  hal.read("ambient_light", "percent", readLight).every(2000).range(0, 100);
+  hal.write("brightness", "percent", 0, 100, setBrightness).rate(50);  // safe value is the minimum
   hal.heartbeat(5000);
   hal.begin(Serial);
 }

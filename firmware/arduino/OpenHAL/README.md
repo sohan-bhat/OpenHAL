@@ -27,6 +27,8 @@ void loop() { hal.poll(); }
 
 `begin()` applies every safe value before it listens, so outputs start in their safe state after a reset.
 
+The short forms `hal.read("temperature", "degC", readTemperature)` and `hal.write("fan_speed", "percent", 0, 100, setFan)` do the same, and `write()` makes the minimum the safe value unless `.safe()` says otherwise.
+
 ## Readings and outputs
 
 | Call | What it does |
@@ -63,7 +65,7 @@ The wire protocol is in `spec/FIRMWARE-PROTOCOL.md` in the OpenHAL repository.
 
 ## Memory
 
-No heap allocation. On an Uno the library uses about 900 bytes of RAM with 8 readings and 8 outputs, mostly the 250 byte line buffer and the channel tables. Lower the limits to save RAM.
+No heap allocation. The DeskFan example on an Uno uses 9.5 KB of flash (29 %) and 1,369 bytes of RAM (66 %), including the Arduino serial buffers. Most of the library's share is the 250 byte line buffer and the tables for 8 readings and 8 outputs. Lower `OPENHAL_MAX_READS` and `OPENHAL_MAX_OUTPUTS` to save RAM.
 
 ## Building on a computer
 

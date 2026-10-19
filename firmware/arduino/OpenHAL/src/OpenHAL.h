@@ -76,6 +76,11 @@ class OpenHAL {
   // Register before begin(). Names are lowercase letters, digits and underscores.
   OpenHalReading& reading(const char* name, const char* unit, OpenHalReadFn read);
   OpenHalOutput& output(const char* name, const char* unit, OpenHalWriteFn write);
+  // Short forms. read() is reading(), and write() is output() with its limits in one call.
+  OpenHalReading& read(const char* name, const char* unit, OpenHalReadFn fn) { return reading(name, unit, fn); }
+  OpenHalOutput& write(const char* name, const char* unit, float min, float max, OpenHalWriteFn fn) {
+    return output(name, unit, fn).limits(min, max).safe(min);
+  }
   // Fall to the safe state when no heartbeat arrives for `ms` milliseconds (0 turns this off).
   void heartbeat(unsigned long ms);
 
