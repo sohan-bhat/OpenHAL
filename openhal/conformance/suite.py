@@ -139,7 +139,7 @@ async def run(case: ConformanceCase) -> Report:
             return "driver does not self-describe"
         if not isinstance(described, dict):
             raise AssertionError("describe() must return a mapping or None.")
-        unknown = set(described) - {"read", "write", "actions", "match", "device", "notes"}
+        unknown = set(described) - {"read", "write", "actions", "match", "device", "notes", "safe_state", "watchdog"}
         if unknown:
             raise AssertionError(f"describe() returned unknown sections {sorted(unknown)}.")
         return f"sections {sorted(described)}"
