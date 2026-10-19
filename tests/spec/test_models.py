@@ -47,7 +47,7 @@ def test_research_fan_is_valid_and_read_only() -> None:
     assert fan.write["fan_speed"].max_change_per_s == 20
     assert fan.effective_hazard == "medium"
     assert not fan.writable
-    assert fan.unconfirmed() == ["write.fan_speed"]
+    assert fan.unconfirmed() == ["file (interlocks, watchdog, safe state and hazard)", "write.fan_speed"]
 
 
 def test_confirmation_makes_it_writable() -> None:
@@ -65,7 +65,33 @@ def test_suggested_overrides_file_confirmation() -> None:
 def test_per_channel_confirmation() -> None:
     data = base()
     del data["confirmed"]
+    del data["safe_state"]
     data["write"]["level"]["confirmed"] = {"by": "tester", "at": "2026-10-24"}
+    assert from_data(data).writable
+
+
+def test_file_level_limits_need_a_file_confirmation() -> None:
+    """Review finding F15. Per-channel confirmations don't cover interlocks, safe state or hazard."""
+    data = base()
+    del data["confirmed"]
+    data["write"]["level"]["confirmed"] = {"by": "tester", "at": "2026-10-24"}
+    device = from_data(data)
+    assert not device.writable
+    assert device.unconfirmed() == ["file (interlocks, watchdog, safe state and hazard)"]
+
+
+def test_confirmation_bound_to_content() -> None:
+    data = base()
+    device = from_data(data)
+    data["confirmed"] = {"by": "tester", "at": "2026-10-24", "sha256": device.limits_sha256()}
+    bound = from_data(data)
+    assert bound.writable
+    data["write"]["level"]["max"] = 150
+    changed = from_data(data)
+    assert not changed.writable
+    assert changed.unconfirmed() == ["file (limits changed after they were confirmed)"]
+    data["write"]["level"]["max"] = 100
+    data["notes"] = "Notes can change freely."
     assert from_data(data).writable
 
 
