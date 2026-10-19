@@ -1,0 +1,11 @@
+device: Desk fan controller
+connect: { openhal-firmware: auto, boot_s: 2 }
+match:
+  firmware: { product: desk-fan }
+read:
+  temperature: { unit: degC, stream: true, range: [-20, 80] }
+write:
+  fan_speed: { unit: percent, min: 0, max: 100, max_change_per_s: 20, suggested: true }
+safe_state: { fan_speed: 0 }
+watchdog: { heartbeat: 1000 ms, on_loss: safe_state }
+notes: "Made from the board's own description. The limits are the sketch's and still need a person to confirm them."
