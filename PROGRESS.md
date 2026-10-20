@@ -2,11 +2,14 @@
 
 ## Current milestone
 
-M2 Hub core and safety kernel.
+Phase B. Drivers, interfaces, routines (M3 to M6), with M9 driver writer started by the orchestrator.
 
 ## Active subagents
 
-- safety-review (fresh reviewer, Opus). Owns docs/agents/REVIEW-safety.md, docs/agents/REPORT-safety-review.md and tests/review_safety/. Brief in docs/agents/BRIEF-safety-review.md. Started during M2 once the kernel was complete.
+- interfaces (Opus, own worktree and branch). Owns openhal/client/, openhal/mcp/, openhal/cli/ except file_cmd.py, docs/interfaces/, tests/interfaces/. Brief in docs/agents/BRIEF-interfaces.md. Covers M5.
+- drivers-1 (Opus, own worktree and branch). Owns the serial, firmata, scpi, moonraker, octoprint, marlin, homeassistant and esphome driver packages, their tests and docs. Brief in docs/agents/BRIEF-drivers-1.md. Covers M3 drivers.
+- drivers-2 (Opus, own worktree and branch). Owns the rpi-gpio, rpi-camera, mqtt, modbus, ble, midi, hid, uvc and http driver packages, their tests and docs. Brief in docs/agents/BRIEF-drivers-2.md. Covers M4.
+- Orchestrator builds the driver writer server side (M9) and the firmware library (M10) while these run.
 
 Concurrency cap is 3 subagents at once, lower than the 5 the build prompt allows, because the owner's standing rule caps parallel agents at 3. Every coding subagent runs on Opus 5.5 and may not start subagents of its own.
 
@@ -20,9 +23,21 @@ Concurrency cap is 3 subagents at once, lower than the 5 the build prompt allows
 
 - M1 complete. Pydantic models, JSON Schema, 14 examples, `openhal file validate` and `openhal file schema`, spec CHANGELOG and versioning policy, MHS mapping, DEPENDENCIES. 128 tests, ruff and mypy clean.
 
+- M2 complete. Driver base with sealed methods and single-use grants, the safety kernel with every check, audit log with hash chain and head file, confirmation queue, stop and unlock, dry runs, tokens and pairing, device locks, the hub with polling, heartbeats and reconnects, the local API v1, the conformance suite, driver discovery from packages. Independent safety review done, 22 findings, all fixed (docs/agents/REVIEW-safety.md).
+- M3 discovery and library matching done (openhal/hub/discovery.py). Drivers batch 1 running.
+- M6 routine engine done on the server side (YAML and Python routines, triggers, dry runs with simulated waits, approvals for high hazard, stop disables routines, API routes). CLI and MCP parts come with the interfaces workstream.
+
 ## Next
 
-- M2. Driver base and grants, safety kernel, audit log, confirmation queue, stop, dry run, tokens, registry, mock framework, conformance skeleton, minimal local API, then the independent safety review.
+- Driver writer (M9), firmware library and protocol (M10), wiring the Pi stop button once rpi-gpio lands, then merge the three workstreams one at a time.
+
+## Milestone 2 review
+
+Built. Everything in the M2 list, plus the safety review and its fixes. 326 tests pass, kernel branch coverage about 96 percent, ruff and mypy clean.
+
+Weak. Drivers run in-process, so a malicious driver remains a residual risk (T17). Rate-limited channels block after any failure until a fresh read, which is safe but can be sticky for devices with slow reads. Hub-wide blocking on a dangling reference is strict and will surprise people during setup, so the CLI and dashboard must explain it well.
+
+Would change. Move drivers out of process for third-party code. Give the kernel a single place that defines unknown, instead of the flags spread across runtime and kernel.
 
 ## Milestone 1 review
 

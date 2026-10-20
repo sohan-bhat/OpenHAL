@@ -25,11 +25,12 @@ from openhal import __version__
 from openhal._brand import PRODUCT_NAME, SPEC_VERSION
 from openhal.drivers import registry
 from openhal.drivers.base import DriverError
-from openhal.hub import views
+from openhal.hub import discovery, views
 from openhal.hub.hub import Hub
 from openhal.kernel.checks import Block
 from openhal.kernel.commands import Action, Write
 from openhal.kernel.principals import Principal
+from openhal.routines.engine import RoutineError
 
 SESSION_COOKIE = "openhal_session"
 CSRF_HEADER = "x-openhal-request"
@@ -74,6 +75,23 @@ class UnlockBody(BaseModel):
 class RejectBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
     reason: str = Field(default="", max_length=200)
+
+
+class RoutineBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str = Field(pattern=r"^[a-z][a-z0-9-]{0,47}$")
+    kind: Literal["yaml", "python"] = "yaml"
+    source: str = Field(max_length=128 * 1024)
+
+
+class ApproveRoutineBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    device: str
+
+
+class DiscoverBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    drivers: list[str] | None = None
 
 
 class PairBody(BaseModel):
@@ -314,6 +332,95 @@ def create_app(hub: Hub) -> FastAPI:
                 }
             )
         return found
+
+    # ------------------------------------------------------------------ routines (ADR 0014)
+
+    def routine_or_404(routine_id: str) -> Any:
+        try:
+            return hub.routines.get(routine_id)
+        except KeyError as exc:
+            raise HTTPException(404, f"There is no routine {routine_id!r}.") from exc
+
+    @app.get("/v1/routines")
+    async def routines(who: Who) -> list[dict[str, Any]]:
+        return [hub.routines.summary(record) for record in hub.routines.records.values()]
+
+    @app.get("/v1/routines/{routine_id}")
+    async def routine_detail(routine_id: str, who: Who) -> dict[str, Any]:
+        return hub.routines.detail(routine_or_404(routine_id))
+
+    @app.post("/v1/routines")
+    async def routine_create(body: RoutineBody, who: Who) -> dict[str, Any]:
+        try:
+            record = hub.routines.create(who, body.id, body.kind, body.source)
+        except RoutineError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        return hub.routines.detail(record)
+
+    @app.post("/v1/routines/{routine_id}/dry_run")
+    async def routine_dry_run(routine_id: str, who: Who) -> dict[str, Any]:
+        routine_or_404(routine_id)
+        return hub.routines.dry_run(routine_id)
+
+    @app.post("/v1/routines/{routine_id}/enable")
+    async def routine_enable(routine_id: str, who: Who) -> dict[str, Any]:
+        routine_or_404(routine_id)
+        try:
+            return hub.routines.detail(hub.routines.enable(who, routine_id))
+        except RoutineError as exc:
+            raise HTTPException(403, str(exc)) from exc
+
+    @app.post("/v1/routines/{routine_id}/disable")
+    async def routine_disable(routine_id: str, who: Who) -> dict[str, Any]:
+        routine_or_404(routine_id)
+        if who.kind == "agent" and who.scope == "read":
+            raise HTTPException(403, "A read-only token can't disable routines.")
+        return hub.routines.detail(hub.routines.disable(who, routine_id, f"disabled by {who.label}"))
+
+    @app.post("/v1/routines/{routine_id}/run")
+    async def routine_run(routine_id: str, who: Who) -> dict[str, Any]:
+        routine_or_404(routine_id)
+        human_only(who)
+        try:
+            return (await hub.routines.run(routine_id, "manual", by=who)).view()
+        except RoutineError as exc:
+            raise HTTPException(409, str(exc)) from exc
+
+    @app.delete("/v1/routines/{routine_id}")
+    async def routine_delete(routine_id: str, who: Who) -> dict[str, Any]:
+        routine_or_404(routine_id)
+        human_only(who)
+        hub.routines.delete(who, routine_id)
+        return {"ok": True}
+
+    @app.post("/v1/routines/{routine_id}/approve")
+    async def routine_approve(routine_id: str, body: ApproveRoutineBody, who: Who) -> dict[str, Any]:
+        record = routine_or_404(routine_id)
+        human_only(who)
+        device_or_404(body.device)
+        approval = hub.kernel.approve_routine(who, body.device, routine_id, record.sha256)
+        hub.add_approval(body.device, approval)
+        return approval.model_dump(mode="json")
+
+    # ------------------------------------------------------------------ discovery (ADR 0014)
+
+    @app.post("/v1/discover")
+    async def run_discovery(body: DiscoverBody, who: Who) -> dict[str, Any]:
+        result = await discovery.discover(body.drivers, registered=set(hub.kernel.devices))
+        hub.last_discovery = result
+        return result.view()
+
+    @app.get("/v1/discover/unknown")
+    async def unknown_devices(who: Who) -> list[dict[str, Any]]:
+        if hub.last_discovery is None:
+            return []
+        unknown: list[dict[str, Any]] = hub.last_discovery.view()["unknown"]
+        return unknown
+
+    @app.post("/v1/pair/code")
+    async def pair_code(who: Who) -> dict[str, Any]:
+        human_only(who)
+        return {"code": hub.tokens.new_pairing_code(), "expires_in_s": 300}
 
     @app.get("/v1/whoami")
     async def whoami(who: Who) -> dict[str, Any]:

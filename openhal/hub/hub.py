@@ -15,6 +15,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from openhal._brand import DEVICE_FILE_SUFFIX
 from openhal.audit.log import AuditLog, Entry
 from openhal.drivers import registry
@@ -26,7 +28,7 @@ from openhal.kernel.kernel import Kernel
 from openhal.kernel.principals import SYSTEM
 from openhal.kernel.runtime import DeviceRuntime
 from openhal.spec.loader import DeviceFileError, load, warnings_for
-from openhal.spec.models import DeviceFile
+from openhal.spec.models import Approval, DeviceFile
 
 log = logging.getLogger("openhal.hub")
 
@@ -65,7 +67,11 @@ class Hub:
         )
         self.in_memory = in_memory
         self.info: dict[str, DeviceInfo] = {}
+        from openhal.routines.engine import RoutineEngine
+
+        self.routines = RoutineEngine(self)
         self.load_problems: list[LoadProblem] = []
+        self.last_discovery: Any = None
         self.started_at: float | None = None
         self._locks: dict[str, DeviceLock] = {}
         self._tasks: list[asyncio.Task[None]] = []
@@ -88,12 +94,14 @@ class Hub:
         for device_id in list(self.kernel.devices):
             await self._connect(device_id)
         self.started_at = time.time()
+        await self.routines.start()
         self._tasks.append(asyncio.create_task(self._watchdog_loop(), name="openhal-watchdog"))
         for device_id in list(self.kernel.devices):
             self._start_device_tasks(device_id)
         self.audit.append("hub_start", SYSTEM.label, status="done", devices=len(self.kernel.devices))
 
     async def close(self) -> None:
+        await self.routines.close()
         for task in self._tasks:
             task.cancel()
         for task in self._tasks:
@@ -236,6 +244,30 @@ class Hub:
             for rule in fired:
                 self._emit({"type": "watchdog", "rule": rule})
             self.kernel.queue.expire(self.kernel.clock())
+
+    def add_approval(self, device_id: str, approval: Approval) -> None:
+        """Store a signed routine approval in a device file, on disk and in the running kernel."""
+        runtime = self.kernel.devices[device_id]
+        data = runtime.file.model_dump(mode="json", by_alias=True, exclude={"extensions"})
+        approvals = [item for item in data.get("approvals", []) if item["routine"] != approval.routine]
+        approvals.append(approval.model_dump(mode="json"))
+        data["approvals"] = approvals
+        updated = DeviceFile.model_validate(data)
+        runtime.file = updated
+        info = self.info.get(device_id)
+        if info is not None and info.path:
+            path = Path(info.path)
+            block = yaml.safe_dump({"approvals": approvals}, sort_keys=False)
+            text = path.read_text(encoding="utf-8")
+            if "\napprovals:" in f"\n{text}":
+                text = yaml.safe_dump(data, sort_keys=False)
+                text = "# Rewritten by openhal when a routine approval was added.\n" + text
+            else:
+                text = text.rstrip("\n") + "\n" + block
+            path.write_text(text, encoding="utf-8")
+        self.audit.append(
+            "approval_saved", SYSTEM.label, device=device_id, target=f"routine:{approval.routine}", status="done"
+        )
 
     # ------------------------------------------------------------------ live events
 

@@ -15,6 +15,8 @@ def resolver(values: dict[str, Value]) -> ex.Resolver:
     return resolve
 
 
+LOCAL = {"door_closed", "state", "temp"}
+
 STATE = resolver(
     {
         "fan.speed": Value(40.0, "percent"),
@@ -45,7 +47,7 @@ STATE = resolver(
     ],
 )
 def test_evaluates(text: str, expected: bool) -> None:
-    assert ex.evaluate(ex.parse(text), STATE) is expected
+    assert ex.evaluate(ex.parse(text, LOCAL), STATE) is expected
 
 
 @pytest.mark.parametrize(
@@ -59,7 +61,24 @@ def test_evaluates(text: str, expected: bool) -> None:
     ],
 )
 def test_unknown_values_stay_unknown(text: str) -> None:
-    assert ex.evaluate(ex.parse(text), STATE) is None
+    assert ex.evaluate(ex.parse(text, LOCAL), STATE) is None
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["guard_open != true", "guard_open == false", "not guard_open", "mode != jammed", "mode == idle", "moving == true"],
+)
+def test_unknown_local_channels_are_never_words(text: str) -> None:
+    """Review finding F01. An unknown channel must stay unknown, not turn into the word of its name."""
+    channels = {"guard_open", "mode", "moving"}
+    assert ex.evaluate(ex.parse(text, channels), resolver({})) is None
+
+
+def test_bare_names_split_into_channels_and_words() -> None:
+    tree = ex.parse("mode == idle and other.state == busy", {"mode"})
+    assert {str(ref) for ref in ex.references(tree)} == {"mode", "other.state"}
+    assert [word for word, _ in ex.words(tree)] == ["idle", "busy"]
+    assert ex.words(ex.parse("mode == 'idle'", {"mode"})) == []
 
 
 @pytest.mark.parametrize(

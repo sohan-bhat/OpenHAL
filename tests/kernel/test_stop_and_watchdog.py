@@ -93,7 +93,7 @@ async def test_stop_on_disconnected_device(kernel: Kernel, add: AddDevice) -> No
 async def test_stop_when_driver_fails(kernel: Kernel, add: AddDevice) -> None:
     await add(FAN, fail_writes=True)
     report = await kernel.stop_all(human(), "test")
-    assert report.devices[0].status == "failed"
+    assert report.devices[0].status == "partial", "the native step worked, the write failed (F16)"
     assert "DriverError" in report.devices[0].detail
 
 

@@ -122,6 +122,8 @@ class Confirmation(_Strict):
 
     by: str = Field(min_length=1, max_length=80)
     at: When
+    sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")] | None = None
+    """Hash of the file's limits when they were confirmed. If present, any later change unconfirms them."""
 
 
 class Verification(_Strict):
@@ -517,9 +519,39 @@ class DeviceFile(_Strict):
             return self.hazard
         return "medium" if (self.write or self.actions) else "low"
 
+    def limits_sha256(self) -> str:
+        """Hash of everything that counts as a limit (spec section 12), for binding confirmations.
+
+        It covers identity, connection, channels, actions, safe state, interlocks, watchdog rules and
+        hazard. It leaves out confirmations themselves, approvals, notes and provenance, which can
+        change without changing what the device is allowed to do.
+        """
+        import hashlib
+        import json
+
+        data = self.model_dump(
+            mode="json",
+            by_alias=True,
+            exclude={"confirmed", "approvals", "notes", "provenance", "extensions", "safe_state_note"},
+        )
+        for section in ("write", "actions"):
+            for entry in data.get(section, {}).values():
+                entry.pop("confirmed", None)
+        canonical = json.dumps(data, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+    def has_file_level_limits(self) -> bool:
+        """Interlocks, watchdog rules, a safe state or a hazard class need a file-level confirmation."""
+        return bool(self.interlocks or self.watchdog.max_duration or self.safe_state or self.hazard is not None)
+
     def unconfirmed(self) -> list[str]:
-        """Write channels and actions whose limits no human has confirmed yet."""
+        """Limits that no human has confirmed yet, or that changed after they were confirmed."""
         missing: list[str] = []
+        bound = self.confirmed.sha256 if self.confirmed is not None else None
+        if bound is not None and bound != self.limits_sha256():
+            return ["file (limits changed after they were confirmed)"]
+        if (self.write or self.actions) and self.has_file_level_limits() and self.confirmed is None:
+            missing.append("file (interlocks, watchdog, safe state and hazard)")
         for kind, entries in (("write", self.write), ("actions", self.actions)):
             for name, entry in entries.items():
                 if entry.suggested or (entry.confirmed is None and self.confirmed is None):
@@ -546,16 +578,23 @@ class DeviceFile(_Strict):
             return self.read[name].values
         return []
 
+    def channel_names(self) -> frozenset[str]:
+        """Every read and write channel name. Bare names in expressions are resolved against these."""
+        return frozenset(self.read) | frozenset(self.write)
+
     def _check_expression(self, text: str, where: str) -> None:
         try:
-            tree = expressions.parse(text)
+            tree = expressions.parse(text, self.channel_names())
         except expressions.ExpressionError as exc:
             raise ValueError(f"{where}: {exc}") from exc
-        known = set(self.read) | set(self.write)
-        words = {value for name in known for value in self._enum_values(name)}
-        for ref in expressions.references(tree):
-            if ref.device is None and ref.name not in known and ref.name not in words:
-                raise ValueError(f"{where}: {ref.name!r} is not a channel of this device.")
+        local_words = {value for name in self.channel_names() for value in self._enum_values(name)}
+        for word, other in expressions.words(tree):
+            compared_with_other_device = isinstance(other, expressions.Ref) and other.device is not None
+            if word not in local_words and not compared_with_other_device:
+                raise ValueError(f"{where}: {word!r} is not a channel of this device or one of its enum values.")
+            peer_values = self._enum_values(other.name) if isinstance(other, expressions.Ref) else []
+            if isinstance(other, expressions.Ref) and other.device is None and peer_values and word not in peer_values:
+                raise ValueError(f"{where}: {word!r} is not one of {other.name}'s values.")
 
         def unit_of(ref: expressions.Ref) -> str | None:
             return self.channel_unit(ref.name) if ref.device is None else None

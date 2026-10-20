@@ -139,6 +139,8 @@ def warnings_for(device: DeviceFile) -> list[str]:
     unconfirmed = device.unconfirmed()
     if unconfirmed:
         found.append("Loads read-only until a human confirms limits for " + ", ".join(unconfirmed) + ".")
+    if device.confirmed is not None and device.confirmed.sha256 is None and (device.write or device.actions):
+        found.append("The confirmation isn't bound to the file content. Run openhal file confirm to bind it.")
     if device.hazard is None and (device.write or device.actions):
         found.append("No hazard class given, so it is treated as medium.")
     return found

@@ -11,7 +11,8 @@ import math
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Final, Literal
+from functools import lru_cache
+from typing import Final
 
 import pint
 
@@ -47,6 +48,7 @@ class Lit:
 
     value: float | bool | str
     unit: str | None = None
+    quoted: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,9 +133,10 @@ def _tokenize(text: str) -> list[_Tok]:
 
 
 class _Parser:
-    def __init__(self, tokens: list[_Tok]) -> None:
+    def __init__(self, tokens: list[_Tok], channels: frozenset[str] | None) -> None:
         self.tokens = tokens
         self.pos = 0
+        self.channels = channels
 
     def peek(self) -> _Tok | None:
         return self.tokens[self.pos] if self.pos < len(self.tokens) else None
@@ -206,7 +209,7 @@ class _Parser:
                 raise ExpressionError("Numbers must be finite.")
             return Lit(number, tok.unit)
         if tok.kind == "string":
-            return Lit(tok.text[1:-1])
+            return Lit(tok.text[1:-1], quoted=True)
         if tok.kind == "name":
             lowered = tok.text.lower()
             if lowered in ("true", "false"):
@@ -216,17 +219,55 @@ class _Parser:
             if "." in tok.text:
                 device, name = tok.text.split(".", 1)
                 return Ref(device, name)
-            return Ref(None, tok.text)
+            if self.channels is None or tok.text in self.channels:
+                return Ref(None, tok.text)
+            return Lit(tok.text)
         raise ExpressionError(f"Unexpected {tok.text!r}.")
 
 
-def parse(text: str) -> Node:
-    """Parse an expression into a tree. Raises ExpressionError with a specific reason."""
+def parse(text: str, channels: frozenset[str] | set[str] | None = None) -> Node:
+    """Parse an expression into a tree. Raises ExpressionError with a specific reason.
+
+    `channels` names the owning device's channels. A bare name that is one of them becomes a
+    channel reference, and any other bare name becomes a word literal (an enum value such as
+    `idle`). Deciding this at parse time means an unknown channel value can only ever be unknown,
+    never mistaken for a word. With `channels=None` every bare name is a channel reference.
+    """
     if not isinstance(text, str) or not text.strip():
         raise ExpressionError("An expression can't be empty.")
     if len(text) > MAX_LENGTH:
         raise ExpressionError(f"Expressions may be at most {MAX_LENGTH} characters.")
-    return _Parser(_tokenize(text)).parse()
+    known = None if channels is None else frozenset(channels)
+    return _Parser(_tokenize(text), known).parse()
+
+
+@lru_cache(maxsize=4096)
+def parse_cached(text: str, channels: frozenset[str]) -> Node:
+    """Parse with a cache. Trees are immutable, so sharing them is safe."""
+    return parse(text, channels)
+
+
+def words(node: Node) -> list[tuple[str, Node | None]]:
+    """Every bare word literal and the operand it is compared with (None when it stands alone).
+
+    Quoted strings are explicit text and aren't included.
+    """
+    if isinstance(node, Lit):
+        return [(node.value, None)] if isinstance(node.value, str) and not node.quoted else []
+    if isinstance(node, Ref):
+        return []
+    if isinstance(node, Compare):
+        found: list[tuple[str, Node | None]] = []
+        for side, other in ((node.left, node.right), (node.right, node.left)):
+            if isinstance(side, Lit) and isinstance(side.value, str) and not side.quoted:
+                found.append((side.value, other))
+        return found
+    if isinstance(node, Not):
+        return words(node.operand)
+    result: list[tuple[str, Node | None]] = []
+    for part in node.operands:
+        result.extend(words(part))
+    return result
 
 
 def references(node: Node) -> set[Ref]:
@@ -253,12 +294,9 @@ def _literal_quantity(lit: Lit) -> pint.Quantity | None:
     return parse_quantity(f"{lit.value} {lit.unit}")
 
 
-def _resolve(node: Node, resolver: Resolver) -> Value | Literal["word"] | None:
+def _resolve(node: Node, resolver: Resolver) -> Value | None:
     if isinstance(node, Ref):
-        found = resolver(node)
-        if found is None and node.device is None:
-            return "word"
-        return found
+        return resolver(node)
     if isinstance(node, Lit):
         return Value(node.value, node.unit)
     raise ExpressionError("Comparisons take channels and values, not other comparisons.")
@@ -279,11 +317,7 @@ def _compare_numbers(op: str, left: float, right: float) -> bool:
 def _evaluate_compare(node: Compare, resolver: Resolver) -> Tri:
     left = _resolve(node.left, resolver)
     right = _resolve(node.right, resolver)
-    if left == "word" and isinstance(node.left, Ref):
-        left = Value(node.left.name)
-    if right == "word" and isinstance(node.right, Ref):
-        right = Value(node.right.name)
-    if left is None or right is None or left == "word" or right == "word":
+    if left is None or right is None:
         return None
     if isinstance(left.value, bool) or isinstance(right.value, bool):
         if node.op not in ("==", "!="):

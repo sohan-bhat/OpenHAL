@@ -19,6 +19,7 @@ dependencies = [
   "pyyaml>=6.0.2",
   "typer>=0.15",
   "rich>=13.9",
+  "regex>=2024.11",
 ]
 
 [project.optional-dependencies]
@@ -74,6 +75,10 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 module = ["openhal.kernel.*", "openhal.spec.*", "openhal.audit.*", "openhal.drivers.base", "openhal._brand"]
 strict = true
+
+[[tool.mypy.overrides]]
+module = ["regex"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

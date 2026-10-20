@@ -129,7 +129,7 @@ async def test_routine_on_high_hazard_without_key(clock: FakeClock) -> None:
         "needs_confirmation"
     )
     with pytest.raises(PermissionError):
-        kernel.sign("desk-fan", "r", "a" * 64, "me", "now")
+        kernel._sign("desk-fan", "r", "a" * 64, "me", "now")
 
 
 async def test_interlocks_owned_by_a_third_device(kernel: Kernel, add: AddDevice, clock: FakeClock) -> None:
@@ -157,7 +157,9 @@ async def test_interlocks_owned_by_a_third_device(kernel: Kernel, add: AddDevice
 async def test_interlock_reference_to_unknown_device(kernel: Kernel, add: AddDevice) -> None:
     text = LAMP + 'interlocks:\n  - if: "level > 1 %"\n    require: "ghost.flag == true"\n'
     await add(text)
-    assert (await kernel.execute(Write(device="lamp", channel="level", value="5 %"), CLAUDE)).code == "interlock"
+    decision = await kernel.execute(Write(device="lamp", channel="level", value="5 %"), CLAUDE)
+    assert decision.code == "misconfigured"
+    assert "ghost" in decision.message
 
 
 async def test_interlock_on_image_value_is_unknown(kernel: Kernel, add: AddDevice) -> None:
@@ -230,7 +232,11 @@ async def test_action_effects_forget_values(kernel: Kernel, add: AddDevice, cloc
     await kernel.execute(Write(device="heater", channel="power", value="10 W"), CLAUDE)
     done = await kernel.execute(Action(device="heater", action="purge"), human())
     assert done.status == "done"
-    assert "power" not in kernel.devices["heater"].accepted
+    runtime = kernel.devices["heater"]
+    assert "power" in runtime.unknown_since, "an action's effects become unknown (F05)"
+    latest = runtime.latest("power", kernel.clock())
+    assert latest is not None, "and are read back right away"
+    assert not latest.commanded
 
 
 async def test_grant_failure_during_run(kernel: Kernel, add: AddDevice, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -239,7 +245,7 @@ async def test_grant_failure_during_run(kernel: Kernel, add: AddDevice, monkeypa
     def refuse(*args: Any) -> None:
         raise GrantError("refused for the test")
 
-    monkeypatch.setattr(kernel.grants, "consume", refuse)
+    monkeypatch.setattr(kernel.devices["desk-fan"].driver, "_verify", refuse)
     decision = await kernel.execute(Write(device="desk-fan", channel="fan_speed", value="5 %"), CLAUDE)
     assert decision.code == "internal_error"
     assert "Grant check failed" in decision.message
@@ -282,15 +288,18 @@ async def test_stop_with_sync_hook_and_failing_device(
     assert statuses == {"desk-fan": "safe", "lamp": "failed"}
 
 
-async def test_stop_proceeds_when_device_lock_is_held(kernel: Kernel, add: AddDevice) -> None:
+async def test_stop_proceeds_when_device_lock_is_held(
+    kernel: Kernel, add: AddDevice, monkeypatch: pytest.MonkeyPatch
+) -> None:
     fan = await add(FAN)
+    monkeypatch.setattr(kernel_module, "STOP_LOCK_WAIT_S", 0.05)
     lock = kernel.devices["desk-fan"].lock
     await lock.acquire()
     try:
         report = await kernel.stop_all(human(), "test")
     finally:
         lock.release()
-    assert report.devices[0].status == "safe"
+    assert report.devices[0].status == "pending", "a held lock means an older command may still land (F03)"
     assert fan.values["fan_speed"] == 0.0
 
 
@@ -353,15 +362,21 @@ async def test_pending_list_and_decision_ok(kernel: Kernel, add: AddDevice, cloc
     assert kernel.queue.recent(1)[0].request_id == pending.request_id
 
 
-def test_queue_drops_oldest_when_full() -> None:
-    queue = ConfirmationQueue(ttl_s=60, max_pending=2)
+def test_queue_refuses_instead_of_evicting() -> None:
+    """Review finding F22. A full queue refuses new requests and never evicts someone else's."""
+    from openhal.kernel.confirmations import QueueFull
+
+    queue = ConfirmationQueue(ttl_s=60, max_pending=3, per_principal=2)
     decision = kernel_module.Decision(status="needs_confirmation", message="m", device="d", target="t")
     command = Write(device="d", channel="c", value="1 %")
     first = queue.add(command, CLAUDE, decision, 0)
     queue.add(command, CLAUDE, decision, 1)
-    queue.add(command, CLAUDE, decision, 2)
-    assert first.status == "cancelled"
-    assert len(queue.pending(3)) == 2
+    with pytest.raises(QueueFull, match="already has 2"):
+        queue.add(command, CLAUDE, decision, 2)
+    queue.add(command, agent("other", "control_low"), decision, 3)
+    with pytest.raises(QueueFull, match="queue is full"):
+        queue.add(command, agent("third", "control_low"), decision, 4)
+    assert first.status == "pending"
 
 
 async def test_runtime_states_block_commands(kernel: Kernel, add: AddDevice, clock: FakeClock) -> None:

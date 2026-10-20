@@ -268,7 +268,9 @@ confirmed: { by: sohan, at: 2026-10-24 }
 
 - Every limit (min, max, step, rate, values, interlocks, watchdog rules, safe state, hazard) MUST be confirmed by a human before the device can be written.
 - `confirmed` at the top level confirms every limit in the file. `confirmed` inside a write channel or action confirms that one.
-- A file is writable only if every write channel and action is covered by a confirmation and nothing is marked `suggested: true`. Otherwise it loads read-only, and the hub says which entries are unconfirmed.
+- Interlocks, watchdog rules, the safe state and the hazard class are file-level limits. A file that has any of them needs a top-level `confirmed`. Per-channel confirmations alone don't cover them.
+- `confirmed.sha256` MAY hold the hash of the file's limits at the moment they were confirmed (`openhal file confirm` writes it). When it is present and the limits have changed since, the whole file is unconfirmed again. Tools SHOULD always write it, and the validator warns when it is missing.
+- A file is writable only if every limit is covered by a confirmation, nothing is marked `suggested: true`, and any `confirmed.sha256` still matches. Otherwise it loads read-only, and the hub says which entries are unconfirmed.
 - Tools MUST NOT add `confirmed` on their own. Only the human side of the limits interview, or a human editing the file, may add it.
 
 ## Versioning

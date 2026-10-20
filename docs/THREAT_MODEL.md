@@ -39,10 +39,15 @@
 | T14 | Token theft from disk | Tokens stored hashed in the DB, human token file mode 0600 | tests/hub/test_tokens.py |
 | T15 | Audit history edited to hide an event | Append-only triggers, hash chain, `openhal log verify` | tests/audit/test_chain.py |
 | T16 | Malformed or malicious device file (huge numbers, NaN limits, recursive expressions, path traversal in fields) | Strict schema, finite checks, expression depth limit, no file paths from device files are opened | tests/spec/test_malicious_files.py |
-| T17 | Malicious in-process driver | Conformance suite and review for bundled drivers. Residual risk documented. Out-of-process drivers on the roadmap | redteam/test_malicious_driver.py (proves it can't use the kernel path to reach other devices) |
+| T17 | Malicious in-process driver | Drivers get a grant verifier bound to their own device, not the kernel. This stops accidents, not malice, because in-process code can reach any object through introspection. Bundled drivers pass the conformance suite and review. Out-of-process drivers are on the roadmap | review_safety/test_f08_driver_reaches_kernel.py |
 | T18 | Agent with shell access runs the CLI as the human | `confirm.require_tty`, typed phrases, dashboard pairing. Residual risk documented | manual, documented |
 | T19 | Discovery sends a harmful command to an unknown serial device | Only documented read-only identify commands per protocol, short timeouts, skip ports held by other processes | tests/hub/test_discovery_safety.py |
 | T20 | Driver writer turns manual text into a dangerous limit | Extracted commands marked unconfirmed, limits only from the human interview | tests/writer/test_interview.py |
+| T21 | A value crafted to make a string pattern backtrack, stalling the kernel and the stop path | Patterns run on the regex engine with a 50 ms budget | review_safety/test_f07_pattern_backtracking_freezes_kernel.py |
+| T22 | An agent floods the confirmation queue to push out requests the human was reviewing | Per-client quota of 20, queue refuses instead of evicting | kernel/test_review_fixes.py |
+| T23 | A misspelled device id in an interlock silently protects nothing | Dangling references block every write on the hub until fixed | review_safety/test_f17_unvalidated_device_reference.py |
+| T24 | A stop races an in-flight command, and the command lands after the safe state | In-flight commands are cancelled, and a command that returns after a stop reapplies the safe state | review_safety/test_f03_stop_during_inflight_write.py |
+| T25 | Concurrent writes to two devices both pass a cross-device interlock | In-flight channels are unknown to other devices' interlocks | review_safety/test_f02_cross_device_interlock_race.py |
 
 ## Residual risks we accept for v0.1
 

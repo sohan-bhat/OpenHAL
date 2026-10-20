@@ -184,8 +184,8 @@ async def test_check_11_interlock_across_devices(kernel: Kernel, add: AddDevice,
 async def test_check_11_unknown_blocks(kernel: Kernel, add: AddDevice) -> None:
     await add(HEATER)
     decision = await run(kernel, Write(device="heater", channel="power", value="10 W"))
-    assert decision.code == "interlock"
-    assert "unknown" in decision.message
+    assert decision.code == "misconfigured", "its interlock names desk-fan, which isn't registered (F17)"
+    assert "isn't registered" in decision.message
 
 
 async def test_check_11_action_preconditions(kernel: Kernel, add: AddDevice) -> None:
