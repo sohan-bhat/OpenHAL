@@ -16,7 +16,7 @@ import typer
 from rich.markup import escape
 
 from openhal.cli import _tty
-from openhal.cli._common import console, fail
+from openhal.cli._common import console, fail, show
 
 
 def _without_confirmed(text: str) -> list[str]:
@@ -63,8 +63,9 @@ def confirm(
         f"[bold]{escape(device.device.name)}[/bold]  {escape(device.device_id)}, {device.effective_hazard} hazard"
     )
     for name, spec in device.write.items():
-        limits = f"{spec.min} to {spec.max} {spec.unit}" if spec.unit else ", ".join(spec.values or []) or spec.type
-        rate = f", at most {spec.max_change_per_s} {spec.unit}/s" if spec.max_change_per_s else ""
+        limits = f"{show(spec.min, spec.unit)} to {show(spec.max, spec.unit)}" if spec.unit else ""
+        limits = limits or ", ".join(spec.values or []) or spec.type
+        rate = f", at most {show(spec.max_change_per_s, spec.unit)}/s" if spec.max_change_per_s else ""
         console.print(f"write   {escape(name)}  {escape(limits)}{escape(rate)}")
     for name in device.actions:
         console.print(f"action  {escape(name)}")
