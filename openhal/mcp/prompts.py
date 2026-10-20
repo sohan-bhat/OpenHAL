@@ -31,10 +31,23 @@ Help me write an OpenHAL routine. The goal is {goal}
 
 1. Call list_devices and describe_device for every device the routine would touch. Note each channel's
    unit, limits, max_change_per_s, interlocks and the device hazard class.
-2. Draft the routine as YAML with triggers, conditions, writes and waits. Every number needs a unit.
-   Keep every value inside the limits, with margin. Use plan_check on the writes to see the kernel's answer.
-3. Call draft_routine. Routines always start disabled. If the hub reports problems with the format,
-   fix them and draft again.
+2. Draft the routine as YAML in this shape. Every number needs a unit. Keep every value inside the limits,
+   with margin, and inside max_change_per_s between steps. Use plan_check on the writes first.
+
+   id: keep-cool
+   triggers:
+     - every: 30 s
+     - when: "desk-fan.temperature > 28 degC"
+   steps:
+     - if: "desk-fan.temperature > 28 degC"
+       then:
+         - write: { device: desk-fan, channel: fan_speed, value: 60 % }
+       else:
+         - write: { device: desk-fan, channel: fan_speed, value: 20 % }
+
+   Triggers can also be at (a time such as 07:00) or manual. Steps can also be action (device, action, args),
+   wait (a duration) and log (text).
+3. Call draft_routine. Routines always start disabled. If the hub reports a problem, fix it and draft again.
 4. Call run_routine_dry and show me each decision. Change the routine until nothing is blocked.
 5. Tell me how to enable it with openhal routine enable <id>. Leave enabling to me. The hub lets an agent
    enable a routine only when I turned on routines.agent_enable_low_hazard and every device it touches is low
@@ -49,6 +62,5 @@ def set_up_device(description: str = "", unknown_id: str = "") -> str:
 
 
 def write_routine(goal: str) -> str:
-    return WRITE_ROUTINE.format(
-        goal=goal.strip().rstrip(".") + "." if goal.strip() else "not set yet, so ask me first."
-    )
+    text = goal.strip().rstrip(".") + "." if goal.strip() else "not set yet, so ask me first."
+    return WRITE_ROUTINE.replace("{goal}", text)

@@ -17,6 +17,7 @@ from openhal.mcp.tools import Step
 from openhal.spec import loads
 from tests.interfaces.conftest import BASE_URL, SplitTransport, Tokens
 from tests.interfaces.fake_hub import FakeHub
+from tests.interfaces.test_client_routines import KEEP_COOL
 from tests.kernel.conftest import FakeClock
 
 REQUIRED = {
@@ -146,12 +147,14 @@ async def test_hub_not_running_says_how_to_start() -> None:
         await tools.list_devices()
 
 
-async def test_planned_routes(async_transport: httpx.ASGITransport, tokens: Tokens, fake: FakeHub) -> None:
+async def test_routines_discovery_and_writer(
+    async_transport: httpx.ASGITransport, tokens: Tokens, fake: FakeHub
+) -> None:
     fake.add_token(tokens.agent, "agent", "claude", "control_low")
     tools = tools_for(SplitTransport(fake, real_async=async_transport), tokens.agent)
-    found = await tools.discover_devices(["serial"])
-    assert found.unknown[0].id == "u1"
-    assert (await tools.list_unknown_devices())[0].address == "/dev/ttyACM0"
+    found = await tools.discover_devices(["mock"])
+    assert found.errors == []
+    assert len(await tools.list_unknown_devices()) == len(found.unknown)
     session = await tools.start_driver_writer(unknown_id="u1")
     assert session.sources[0].startswith("<device-data")
     proposed = await tools.propose_device_file(session.id, "device: Fan\n")
@@ -161,10 +164,10 @@ async def test_planned_routes(async_transport: httpx.ASGITransport, tokens: Toke
     assert interview.questions[0].field == "max"
     assert f"openhal writer interview {session.id}" in interview.next_step
     assert (await tools.get_test_plan(session.id)).steps
-    routine = await tools.draft_routine("keep-cool", "steps: []")
+    routine = await tools.draft_routine("keep-cool", KEEP_COOL)
     assert routine.enabled is False
     assert [item.id for item in await tools.list_routines()] == ["keep-cool"]
-    assert (await tools.get_routine("keep-cool")).source == "steps: []"
+    assert (await tools.get_routine("keep-cool")).source.startswith("<device-data")
     assert (await tools.run_routine_dry("keep-cool")).ok
     with pytest.raises(ToolError, match="Only a human"):
         await tools.enable_routine("keep-cool")

@@ -144,7 +144,7 @@ async def test_errors_are_specific(async_transport: httpx.ASGITransport, tokens:
             await wrong.status()
     async with aclient(async_transport, tokens.human) as human:
         with pytest.raises(NotSupported, match="older than this client"):
-            await human.routines()
+            await human.writer_session("s1")
     async with AsyncClient("http://127.0.0.1:9", "ohal_x", use_human_token_file=False, timeout=2) as nobody:
         with pytest.raises(HubNotRunning, match="openhald"):
             await nobody.status()
