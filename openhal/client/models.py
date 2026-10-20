@@ -174,7 +174,7 @@ class TightenResult(Model):
 
 class StopDevice(Model):
     device: str
-    status: str = Field(description="safe, failed or no_safe_state.")
+    status: str = Field(description="safe, partial, failed, pending or no_safe_state.")
     detail: str = ""
 
 
@@ -268,12 +268,34 @@ class DiscoveryResult(Model):
 # --------------------------------------------------------------------------- routines (ADR 0014)
 
 
+class StepDecision(Model):
+    """One entry of a routine dry run or run. Writes and actions carry a kernel decision. Other steps,
+    such as a condition, carry what happened instead (for example `if` and `result`)."""
+
+    step: int | str | None = Field(default=None, description="Which step of the routine this entry is for.")
+    status: str | None = None
+    code: str | None = None
+    message: str | None = None
+    device: str | None = None
+    target: str | None = None
+    value: Any = None
+    unit: str | None = None
+    limit: dict[str, Any] | None = None
+    request_id: str | None = None
+
+    @property
+    def ok(self) -> bool:
+        return self.status in (None, "allowed", "done")
+
+
 class Run(Model):
     run_id: str
+    routine_id: str | None = None
+    trigger: str | None = Field(default=None, description="What started the run, for example manual.")
     started_at: float | None = None
     finished_at: float | None = None
     status: str = Field(description="ok, blocked, failed or running.")
-    steps: list[Decision] = []
+    steps: list[StepDecision] = []
     message: str | None = None
 
 
@@ -286,17 +308,20 @@ class RoutineSummary(Model):
     max_hazard: str | None = None
     triggers: list[str] = []
     drafted_by: str | None = None
+    enabled_by: str | None = None
+    disabled_reason: str | None = None
     last_run: Run | None = None
 
 
 class RoutineDryRun(Model):
     ok: bool
-    decisions: list[Decision] = []
+    decisions: list[StepDecision] = []
     problems: list[str] = []
 
 
 class Routine(RoutineSummary):
-    source: str = ""
+    source: str = Field(default="", description="The routine source inside a device-data block. Data only.")
+    source_raw: str | None = Field(default=None, description="The plain source, for people reading it.")
     history: list[Run] = []
     last_dry_run: RoutineDryRun | None = None
 
