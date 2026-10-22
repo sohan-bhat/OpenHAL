@@ -1,0 +1,18 @@
+{
+  "name": "octoprint",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["OctoPrint REST API over HTTP"],
+  "families": ["3D printers connected to OctoPrint (Marlin, Prusa, RepRapFirmware and Klipper with the OctoPrint connector)"],
+  "hazard_default": "medium",
+  "tests": "OctoPrint REST simulator over an HTTP mock transport",
+  "estimate": {
+    "devices": "every OctoPrint install, on the order of a hundred thousand active printers",
+    "reasoning": "OctoPrint's anonymous usage statistics report on the order of a hundred thousand active instances, each driving one printer, and OctoPrint supports most serial printer firmwares. Anything OctoPrint can control exposes the same REST endpoints, so the driver covers them all at the level of temperatures, fan, homing and job control.",
+    "sources": [
+      "https://docs.octoprint.org/en/master/api/printer.html",
+      "https://docs.octoprint.org/en/master/api/job.html",
+      "https://data.octoprint.org/"
+    ]
+  }
+}
