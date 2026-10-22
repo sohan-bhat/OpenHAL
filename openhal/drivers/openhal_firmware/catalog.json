@@ -1,0 +1,14 @@
+{
+  "name": "openhal-firmware",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["OpenHAL firmware protocol 1 over USB serial or UART"],
+  "families": ["Arduino boards", "ESP32 boards", "maker projects that run the OpenHAL library"],
+  "hazard_default": "low",
+  "tests": "protocol simulator, and the real Arduino library built for the host computer",
+  "estimate": {
+    "devices": "any board the Arduino toolchain supports, once it runs the library",
+    "reasoning": "The library is plain C++ with no heap and no board-specific code, so it builds wherever the Arduino core provides Stream and millis. It is compile-checked for arduino:avr:uno and esp32:esp32. Coverage grows with every maker who adds it to a sketch, so there is no fixed model count.",
+    "sources": ["https://arduino.github.io/arduino-cli/latest/", "https://docs.espressif.com/projects/arduino-esp32/en/latest/"]
+  }
+}

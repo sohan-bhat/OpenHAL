@@ -1,0 +1,14 @@
+{
+  "name": "mock",
+  "tier": 0,
+  "status": "implemented",
+  "protocols": ["in-memory simulation"],
+  "families": ["simulated desk fan", "simulated heater", "any device file for testing and demos"],
+  "hazard_default": "low",
+  "tests": "reference driver for the conformance suite",
+  "estimate": {
+    "devices": "none (simulation only)",
+    "reasoning": "The mock driver never talks to hardware. It runs any device file in memory for tests, demos and the website playground.",
+    "sources": []
+  }
+}

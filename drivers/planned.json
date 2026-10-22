@@ -1,0 +1,231 @@
+[
+  {
+    "name": "grbl",
+    "tier": 2,
+    "status": "planned",
+    "protocols": [
+      "GRBL over serial"
+    ],
+    "families": [
+      "CNC routers",
+      "laser cutters"
+    ],
+    "hazard_default": "high",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "ros2",
+    "tier": 2,
+    "status": "planned",
+    "protocols": [
+      "ROS 2 through rosbridge"
+    ],
+    "families": [
+      "ROS 2 robots"
+    ],
+    "hazard_default": "high",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "opcua",
+    "tier": 2,
+    "status": "planned",
+    "protocols": [
+      "OPC UA"
+    ],
+    "families": [
+      "industrial controllers",
+      "LADS lab devices"
+    ],
+    "hazard_default": "medium",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "sila2",
+    "tier": 2,
+    "status": "planned",
+    "protocols": [
+      "SiLA 2"
+    ],
+    "families": [
+      "SiLA 2 lab devices"
+    ],
+    "hazard_default": "medium",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "indi",
+    "tier": 2,
+    "status": "planned",
+    "protocols": [
+      "INDI XML protocol"
+    ],
+    "families": [
+      "telescope mounts",
+      "astronomy cameras",
+      "focusers"
+    ],
+    "hazard_default": "medium",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "alpaca",
+    "tier": 2,
+    "status": "planned",
+    "protocols": [
+      "ASCOM Alpaca REST"
+    ],
+    "families": [
+      "ASCOM Alpaca devices"
+    ],
+    "hazard_default": "medium",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "onvif",
+    "tier": 2,
+    "status": "planned",
+    "protocols": [
+      "ONVIF"
+    ],
+    "families": [
+      "network cameras with PTZ"
+    ],
+    "hazard_default": "low",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "pylabrobot",
+    "tier": 2,
+    "status": "planned",
+    "protocols": [
+      "PyLabRobot"
+    ],
+    "families": [
+      "liquid handlers",
+      "lab robots"
+    ],
+    "hazard_default": "high",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "lerobot",
+    "tier": 2,
+    "status": "planned",
+    "protocols": [
+      "Hugging Face LeRobot"
+    ],
+    "families": [
+      "LeRobot arms"
+    ],
+    "hazard_default": "high",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "matter",
+    "tier": 3,
+    "status": "planned",
+    "protocols": [
+      "Matter, through the Home Assistant bridge first"
+    ],
+    "families": [
+      "Matter devices"
+    ],
+    "hazard_default": "low",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "zigbee-zwave",
+    "tier": 3,
+    "status": "planned",
+    "protocols": [
+      "Zigbee and Z-Wave through Home Assistant"
+    ],
+    "families": [
+      "Zigbee and Z-Wave devices"
+    ],
+    "hazard_default": "low",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "can",
+    "tier": 3,
+    "status": "planned",
+    "protocols": [
+      "CAN bus through python-can"
+    ],
+    "families": [
+      "CAN devices"
+    ],
+    "hazard_default": "medium",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "pi-i2c-spi",
+    "tier": 3,
+    "status": "planned",
+    "protocols": [
+      "I2C and SPI on Raspberry Pi"
+    ],
+    "families": [
+      "I2C and SPI sensors"
+    ],
+    "hazard_default": "low",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "upnp",
+    "tier": 3,
+    "status": "planned",
+    "protocols": [
+      "UPnP"
+    ],
+    "families": [
+      "UPnP devices"
+    ],
+    "hazard_default": "low",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "knx",
+    "tier": 3,
+    "status": "planned",
+    "protocols": [
+      "KNX"
+    ],
+    "families": [
+      "building automation"
+    ],
+    "hazard_default": "medium",
+    "tests": "",
+    "estimate": null
+  },
+  {
+    "name": "bambu",
+    "tier": 3,
+    "status": "planned",
+    "protocols": [
+      "Bambu Lab local API (terms to be checked first)"
+    ],
+    "families": [
+      "Bambu Lab printers"
+    ],
+    "hazard_default": "medium",
+    "tests": "",
+    "estimate": null
+  }
+]

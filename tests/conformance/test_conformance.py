@@ -33,3 +33,9 @@ async def test_suite_catches_a_driver_that_ignores_limits() -> None:
     assert "write outside limits is blocked before the driver" in names
     assert "no write without a kernel grant" in names
     assert report.ok
+
+
+def test_driver_catalog_is_current() -> None:
+    from openhal.drivers import catalog
+
+    assert catalog.TARGET.read_text() == catalog.document(), "Run uv run python -m openhal.drivers.catalog"
