@@ -244,6 +244,8 @@ _PRIMARY_PARAM: Final = {
     "lerobot": "robot",
     "mock": "name",
 }
+PRIMARY_PARAM: Final = _PRIMARY_PARAM
+"""The parameter the `connect` shorthand fills for each driver, for example port for serial."""
 
 
 def _to_unit(value: Any, unit: str | None, what: str) -> Any:

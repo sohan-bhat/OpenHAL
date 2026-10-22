@@ -74,6 +74,9 @@ class Hub:
         from openhal.routines.engine import RoutineEngine
 
         self.routines = RoutineEngine(self)
+        from openhal.writer.engine import WriterEngine
+
+        self.writer = WriterEngine(self)
         self.load_problems: list[LoadProblem] = []
         self.last_discovery: Any = None
         self.started_at: float | None = None
