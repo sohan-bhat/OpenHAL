@@ -333,3 +333,13 @@ async def test_real_pyserial_on_a_pty() -> None:
         await bench.close()
     finally:
         bridge.close()
+
+
+async def test_failed_fan_write_leaves_the_fan_unknown() -> None:
+    driver, _, bench = make()
+    await bench.connect()
+    assert_done(await bench.write("fan_speed", "30 %"))
+    bench.sim.silent = True  # type: ignore[attr-defined]
+    assert_failed(await bench.write("fan_speed", "40 %"), "didn't acknowledge")
+    assert (await driver.read("fan_speed")).value is None
+    await bench.close()

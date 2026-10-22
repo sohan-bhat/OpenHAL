@@ -366,6 +366,8 @@ class SerialDriver(Driver):
         spec = self.device.write[channel]
         raw = mapping.encode(value, spec, write_map, f"write.{channel}")
         line = mapping.render(write_map.command, {"value": raw}, f"write.{channel}")
+        # Until this write succeeds the device's value is unknown, so a readback must not repeat the old one.
+        self._written.pop(channel, None)
         await self._command(line, write_map.expect, write_map.error)
         reading = Reading(channel, value, self.device.channel_unit(channel))
         self._written[channel] = reading

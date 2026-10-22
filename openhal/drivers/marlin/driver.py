@@ -560,6 +560,8 @@ class MarlinDriver(Driver):
             await self._gcode(self._heater_command(write_map.heater, celsius))
         else:
             pwm = max(0, min(255, round(float(value) * 255 / 100)))
+            # Until this write succeeds the fan speed is unknown, so a readback must not repeat the old one.
+            self._fan_sent.pop(channel, None)
             await self._gcode(f"M106 P{write_map.fan} S{pwm}")
             self._fan_sent[channel] = Reading(channel, value, unit)
         return Reading(channel, value, unit)

@@ -398,3 +398,13 @@ async def test_missing_port_fails_with_a_clear_message() -> None:
     driver = SerialDriver(file)
     with pytest.raises(DriverError, match="Could not open"):
         await driver.connect()
+
+
+async def test_failed_write_leaves_the_channel_unknown() -> None:
+    driver, _, bench = make()
+    await bench.connect()
+    assert_done(await bench.write("raw_fan", "100 dimensionless"))
+    assert (await driver.read("raw_fan")).value == 100.0
+    assert_failed(await bench.write("raw_fan", "300 dimensionless"), "refused")
+    assert (await driver.read("raw_fan")).value is None
+    await bench.close()
