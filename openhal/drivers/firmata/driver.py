@@ -453,9 +453,9 @@ class FirmataDriver(Driver):
             return await self._read_output(channel)
         if channel.mode == p.ANALOG:
             assert channel.analog_channel is not None
-            sample = self.analog_values.get(channel.analog_channel)
             stale_after = max(1.0, 5 * self.settings.sampling)
-            if sample is None or time.monotonic() - sample[1] > stale_after:
+            sample = await self._fresh_sample(channel.analog_channel, stale_after)
+            if sample is None:
                 raise TimeoutError(
                     f"No analog report for {channel_name} in the last {stale_after:g} s. "
                     "The board may have stopped or reset."
@@ -463,10 +463,27 @@ class FirmataDriver(Driver):
             value = sample[0] * self._analog_scale(channel) + channel.map.offset
             return Reading(channel_name, value, channel.unit)
         bits = self.ports.get(channel.pin // 8)
+        deadline = time.monotonic() + self.settings.timeout
+        while bits is None and time.monotonic() < deadline:
+            await asyncio.sleep(0.01)
+            self._require_link()
+            bits = self.ports.get(channel.pin // 8)
         if bits is None:
             raise DriverError(f"The board hasn't reported pin {channel.pin} yet. Try again shortly.")
         level = bool((bits >> (channel.pin % 8)) & 1)
         return Reading(channel_name, level != channel.map.invert, None)
+
+    async def _fresh_sample(self, analog: int, stale_after: float) -> tuple[int, float] | None:
+        """The latest analog report, waiting up to `stale_after` for one if none is fresh."""
+        deadline = time.monotonic() + stale_after
+        while True:
+            sample = self.analog_values.get(analog)
+            if sample is not None and time.monotonic() - sample[1] <= stale_after:
+                return sample
+            if time.monotonic() >= deadline:
+                return None
+            await asyncio.sleep(0.01)
+            self._require_link()
 
     async def _read_output(self, channel: _Channel) -> Reading:
         mode, state = await self._pin_state(channel.pin)
