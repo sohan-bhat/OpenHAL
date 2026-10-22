@@ -37,6 +37,41 @@
         "title": "Action",
         "type": "object"
       },
+      "ApproveRoutineBody": {
+        "additionalProperties": false,
+        "properties": {
+          "device": {
+            "title": "Device",
+            "type": "string"
+          }
+        },
+        "required": [
+          "device"
+        ],
+        "title": "ApproveRoutineBody",
+        "type": "object"
+      },
+      "DiscoverBody": {
+        "additionalProperties": false,
+        "properties": {
+          "drivers": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drivers"
+          }
+        },
+        "title": "DiscoverBody",
+        "type": "object"
+      },
       "DryRunBody": {
         "additionalProperties": false,
         "properties": {
@@ -148,6 +183,36 @@
         "title": "RejectBody",
         "type": "object"
       },
+      "RoutineBody": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "pattern": "^[a-z][a-z0-9-]{0,47}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "default": "yaml",
+            "enum": [
+              "yaml",
+              "python"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "source": {
+            "maxLength": 131072,
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source"
+        ],
+        "title": "RoutineBody",
+        "type": "object"
+      },
       "StopBody": {
         "additionalProperties": false,
         "properties": {
@@ -211,6 +276,40 @@
           "channel"
         ],
         "title": "TightenBody",
+        "type": "object"
+      },
+      "TokenBody": {
+        "properties": {
+          "kind": {
+            "default": "agent",
+            "enum": [
+              "human",
+              "agent"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "scope": {
+            "default": "read",
+            "enum": [
+              "read",
+              "control_low",
+              "control_medium"
+            ],
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "TokenBody",
         "type": "object"
       },
       "UnlockBody": {
@@ -733,6 +832,69 @@
         "summary": "Device"
       }
     },
+    "/v1/discover": {
+      "post": {
+        "operationId": "run_discovery_v1_discover_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoverBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Run Discovery V1 Discover Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Discovery"
+      }
+    },
+    "/v1/discover/unknown": {
+      "get": {
+        "operationId": "unknown_devices_v1_discover_unknown_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Unknown Devices V1 Discover Unknown Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Unknown Devices"
+      }
+    },
     "/v1/drivers": {
       "get": {
         "operationId": "drivers_v1_drivers_get",
@@ -839,6 +1001,26 @@
         "summary": "Pair"
       }
     },
+    "/v1/pair/code": {
+      "post": {
+        "operationId": "pair_code_v1_pair_code_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Pair Code V1 Pair Code Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Pair Code"
+      }
+    },
     "/v1/read": {
       "post": {
         "operationId": "read_v1_read_post",
@@ -920,6 +1102,362 @@
           }
         },
         "summary": "Read Many"
+      }
+    },
+    "/v1/routines": {
+      "get": {
+        "operationId": "routines_v1_routines_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Routines V1 Routines Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Routines"
+      },
+      "post": {
+        "operationId": "routine_create_v1_routines_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoutineBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Routine Create V1 Routines Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Routine Create"
+      }
+    },
+    "/v1/routines/{routine_id}": {
+      "delete": {
+        "operationId": "routine_delete_v1_routines__routine_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "routine_id",
+            "required": true,
+            "schema": {
+              "title": "Routine Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Routine Delete V1 Routines  Routine Id  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Routine Delete"
+      },
+      "get": {
+        "operationId": "routine_detail_v1_routines__routine_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "routine_id",
+            "required": true,
+            "schema": {
+              "title": "Routine Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Routine Detail V1 Routines  Routine Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Routine Detail"
+      }
+    },
+    "/v1/routines/{routine_id}/approve": {
+      "post": {
+        "operationId": "routine_approve_v1_routines__routine_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "routine_id",
+            "required": true,
+            "schema": {
+              "title": "Routine Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRoutineBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Routine Approve V1 Routines  Routine Id  Approve Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Routine Approve"
+      }
+    },
+    "/v1/routines/{routine_id}/disable": {
+      "post": {
+        "operationId": "routine_disable_v1_routines__routine_id__disable_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "routine_id",
+            "required": true,
+            "schema": {
+              "title": "Routine Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Routine Disable V1 Routines  Routine Id  Disable Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Routine Disable"
+      }
+    },
+    "/v1/routines/{routine_id}/dry_run": {
+      "post": {
+        "operationId": "routine_dry_run_v1_routines__routine_id__dry_run_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "routine_id",
+            "required": true,
+            "schema": {
+              "title": "Routine Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Routine Dry Run V1 Routines  Routine Id  Dry Run Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Routine Dry Run"
+      }
+    },
+    "/v1/routines/{routine_id}/enable": {
+      "post": {
+        "operationId": "routine_enable_v1_routines__routine_id__enable_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "routine_id",
+            "required": true,
+            "schema": {
+              "title": "Routine Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Routine Enable V1 Routines  Routine Id  Enable Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Routine Enable"
+      }
+    },
+    "/v1/routines/{routine_id}/run": {
+      "post": {
+        "operationId": "routine_run_v1_routines__routine_id__run_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "routine_id",
+            "required": true,
+            "schema": {
+              "title": "Routine Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Routine Run V1 Routines  Routine Id  Run Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Routine Run"
       }
     },
     "/v1/status": {
@@ -1020,6 +1558,108 @@
           }
         },
         "summary": "Tighten"
+      }
+    },
+    "/v1/tokens": {
+      "get": {
+        "operationId": "list_tokens_v1_tokens_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response List Tokens V1 Tokens Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Tokens"
+      },
+      "post": {
+        "operationId": "create_token_v1_tokens_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Token V1 Tokens Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Token"
+      }
+    },
+    "/v1/tokens/{token_id}": {
+      "delete": {
+        "operationId": "revoke_token_v1_tokens__token_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token_id",
+            "required": true,
+            "schema": {
+              "title": "Token Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Revoke Token V1 Tokens  Token Id  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Token"
       }
     },
     "/v1/unlock": {
