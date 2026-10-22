@@ -1,0 +1,196 @@
+/* OpenHAL design tokens. The dashboard and the website both import this file.
+   docs/DESIGN.md is the source. Change that document first, then this file. */
+
+@font-face {
+  font-family: "Sofia Sans Condensed";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 1 1000;
+  src: url("./fonts/sofia-sans-condensed-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url("./fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url("./fonts/atkinson-hyperlegible-next-latin-wght-italic.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Martian Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("./fonts/martian-mono-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Fallbacks sized to the real faces so the swap doesn't move the layout. Tune with the
+   accessibility and layout shift checks if a face changes. */
+@font-face {
+  font-family: "Sofia Fallback";
+  src: local("Arial Narrow"), local("Helvetica Neue Condensed"), local("Arial");
+  size-adjust: 88%;
+  ascent-override: 96%;
+  descent-override: 26%;
+}
+
+@font-face {
+  font-family: "Atkinson Fallback";
+  src: local("Verdana"), local("DejaVu Sans");
+  size-adjust: 92%;
+  ascent-override: 98%;
+  descent-override: 24%;
+}
+
+@font-face {
+  font-family: "Martian Fallback";
+  src: local("Menlo"), local("DejaVu Sans Mono"), local("Courier New");
+  size-adjust: 104%;
+  ascent-override: 92%;
+  descent-override: 24%;
+}
+
+:root {
+  /* Core colors, light */
+  --ink: #15181b;
+  --panel: #e7e9e6;
+  --bezel: #2b3035;
+  --signal: #2d5b8c;
+  --caution: #f2b705;
+
+  /* Semantic, light */
+  --ok: #276b43;
+  --blocked: #b3261e;
+
+  /* Fixed for both themes */
+  --on-bezel: #e7e9e6;
+  --on-caution: #15181b;
+
+  /* Type */
+  --font-label: "Sofia Sans Condensed", "Sofia Fallback", sans-serif;
+  --font-text: "Atkinson Hyperlegible Next", "Atkinson Fallback", sans-serif;
+  --font-mono: "Martian Mono", "Martian Fallback", monospace;
+  --legend-tracking: 0.08em;
+
+  --t-0: 12px;
+  --t-1: 14px;
+  --t-2: 16px;
+  --t-3: 20px;
+  --t-4: 28px;
+  --t-5: 40px;
+  --lh-0: 16px;
+  --lh-1: 20px;
+  --lh-2: 26px;
+  --lh-3: 28px;
+  --lh-4: 36px;
+  --lh-5: 44px;
+
+  /* Space, base 4 px */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+
+  /* Grid */
+  --columns: 4;
+  --gutter: 16px;
+  --content-max: 1240px;
+  --radius: 2px;
+  --rule-width: 1px;
+
+  /* The limit line */
+  --limit-line-width: 2px;
+  --limit-line-color: var(--blocked);
+  --limit-flag-bg: var(--caution);
+  --limit-flag-ink: var(--on-caution);
+  --stripe: repeating-linear-gradient(-45deg, var(--caution) 0 12px, #15181b 12px 24px);
+
+  /* Motion, the three patterns */
+  --motion-readout: 150ms;
+  --motion-block-pulse: 200ms;
+  --motion-block-reason: 160ms;
+  --motion-stop-wipe: 240ms;
+  --motion-lamp: 120ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  color-scheme: light dark;
+}
+
+/* Neutrals mixed from ink and panel only */
+:root {
+  --ink-2: color-mix(in srgb, var(--ink) 72%, var(--panel));
+  --ink-3: color-mix(in srgb, var(--ink) 52%, var(--panel));
+  --rule: color-mix(in srgb, var(--ink) 18%, var(--panel));
+  --tint: color-mix(in srgb, var(--signal) 14%, var(--panel));
+}
+
+@media (min-width: 768px) {
+  :root {
+    --columns: 8;
+    --gutter: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --columns: 12;
+    --gutter: 24px;
+    --t-2: 17px;
+    --t-3: 22px;
+    --t-4: 34px;
+    --t-5: 60px;
+    --lh-4: 40px;
+    --lh-5: 64px;
+  }
+}
+
+/* Dark, from the system unless a page picks a theme */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #e7e9e6;
+    --panel: #1c2024;
+    --signal: #79a9da;
+    --ok: #5cb884;
+    --blocked: #ee6b62;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ink: #e7e9e6;
+  --panel: #1c2024;
+  --signal: #79a9da;
+  --ok: #5cb884;
+  --blocked: #ee6b62;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-readout: 0ms;
+    --motion-block-pulse: 0ms;
+    --motion-block-reason: 0ms;
+    --motion-stop-wipe: 0ms;
+    --motion-lamp: 0ms;
+  }
+}
