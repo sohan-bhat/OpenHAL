@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import ipaddress
+from dataclasses import asdict
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
@@ -35,6 +36,12 @@ from openhal.routines.engine import RoutineError
 SESSION_COOKIE = "openhal_session"
 CSRF_HEADER = "x-openhal-request"
 STATIC_DIR = Path(__file__).parent / "static"
+
+
+class TokenBody(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    kind: Literal["human", "agent"] = "agent"
+    scope: Literal["read", "control_low", "control_medium"] = "read"
 
 
 class ReadBody(BaseModel):
@@ -197,8 +204,10 @@ def create_app(hub: Hub) -> FastAPI:
         except LookupError as exc:
             raise HTTPException(404, str(exc)) from exc
         except (DriverError, TimeoutError, OSError) as exc:
-            return {"device": body.device, "channel": body.channel, "ok": False, "error": str(exc) or "timed out"}
-        value = reading.value if not isinstance(reading.value, bytes) else None
+            error = views.device_text(f"{body.device}.{body.channel} driver error", str(exc)) or "timed out"
+            return {"device": body.device, "channel": body.channel, "ok": False, "error": error}
+        file = hub.kernel.devices[body.device].file
+        value = views.device_value(file, body.device, body.channel, reading.value)
         return {
             "device": body.device,
             "channel": body.channel,
@@ -255,7 +264,7 @@ def create_app(hub: Hub) -> FastAPI:
         requests = hub.kernel.queue.recent(100) if include_done else hub.kernel.pending()
         if who.kind != "human":
             requests = [request for request in requests if request.principal.label == who.label]
-        return [views.request_view(request) for request in requests]
+        return [views.request_view(request, hub.kernel.clock()) for request in requests]
 
     @app.get("/v1/confirmations/{request_id}")
     async def confirmation(request_id: str, who: Who) -> dict[str, Any]:
@@ -263,7 +272,7 @@ def create_app(hub: Hub) -> FastAPI:
         if request is None or (who.kind != "human" and request.principal.label != who.label):
             raise HTTPException(404, f"There is no request {request_id}.")
         hub.kernel.queue.expire(hub.kernel.clock())
-        return views.request_view(request)
+        return views.request_view(request, hub.kernel.clock())
 
     @app.post("/v1/confirmations/{request_id}/approve")
     async def approve(request_id: str, who: Who) -> dict[str, Any]:
@@ -277,7 +286,7 @@ def create_app(hub: Hub) -> FastAPI:
     async def reject(request_id: str, body: RejectBody, who: Who) -> dict[str, Any]:
         human_only(who)
         try:
-            return views.request_view(hub.kernel.reject(request_id, who, body.reason))
+            return views.request_view(hub.kernel.reject(request_id, who, body.reason), hub.kernel.clock())
         except LookupError as exc:
             raise HTTPException(409, str(exc)) from exc
 
@@ -301,7 +310,7 @@ def create_app(hub: Hub) -> FastAPI:
                 "target": entry.target,
                 "status": entry.status,
                 "code": entry.code,
-                "details": entry.body.get("details", {}),
+                "details": views.audit_details(entry.device, entry.body.get("details", {})),
                 "hash": entry.hash,
             }
             for entry in entries
@@ -421,6 +430,28 @@ def create_app(hub: Hub) -> FastAPI:
     async def pair_code(who: Who) -> dict[str, Any]:
         human_only(who)
         return {"code": hub.tokens.new_pairing_code(), "expires_in_s": 300}
+
+    # ------------------------------------------------------------------ tokens (human only)
+
+    @app.post("/v1/tokens")
+    async def create_token(body: TokenBody, who: Who) -> dict[str, Any]:
+        human_only(who)
+        token, info = hub.tokens.create(body.name, body.kind, body.scope)
+        hub.audit.append("token_created", who.label, target=info.token_id, kind=info.kind, scope=info.scope)
+        return {"token": token, **asdict(info)}
+
+    @app.get("/v1/tokens")
+    async def list_tokens(who: Who) -> list[dict[str, Any]]:
+        human_only(who)
+        return [asdict(info) for info in hub.tokens.list()]
+
+    @app.delete("/v1/tokens/{token_id}")
+    async def revoke_token(token_id: str, who: Who) -> dict[str, Any]:
+        human_only(who)
+        if not hub.tokens.revoke(token_id):
+            raise HTTPException(404, f"There is no active token {token_id!r}.")
+        hub.audit.append("token_revoked", who.label, target=token_id)
+        return {"ok": True}
 
     @app.get("/v1/whoami")
     async def whoami(who: Who) -> dict[str, Any]:

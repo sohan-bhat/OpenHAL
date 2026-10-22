@@ -21,6 +21,7 @@ from openhal._brand import DEVICE_FILE_SUFFIX
 from openhal.audit.log import AuditLog, Entry
 from openhal.drivers import registry
 from openhal.drivers.base import Driver, Reading
+from openhal.hub import views
 from openhal.hub.config import HubConfig
 from openhal.hub.locks import DeviceLock, DeviceLocked
 from openhal.hub.tokens import TokenStore
@@ -57,6 +58,9 @@ class Hub:
         self.config = config
         if not in_memory:
             config.ensure_dirs()
+            # The database holds token hashes and the audit log, so only its owner may read it.
+            config.db_path.touch(mode=0o600, exist_ok=True)
+            config.db_path.chmod(0o600)
         self.audit = AuditLog(":memory:" if in_memory else config.db_path)
         self.tokens = TokenStore(":memory:" if in_memory else config.db_path)
         self.kernel = Kernel(
@@ -206,7 +210,9 @@ class Hub:
                 "type": "reading",
                 "device": device_id,
                 "channel": reading.channel,
-                "value": reading.value if not isinstance(reading.value, bytes) else None,
+                "value": views.device_value(
+                    self.kernel.devices[device_id].file, device_id, reading.channel, reading.value
+                ),
                 "unit": reading.unit,
                 "at": reading.at,
                 "suspect": reading.suspect,

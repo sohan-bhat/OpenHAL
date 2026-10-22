@@ -111,6 +111,9 @@ CONFIRMATION_NOTE: Final = (
 
 def wrap_device_text(source: str, text: str) -> str:
     """Mark text a device produced as data, the same way the hub marks device file notes."""
+    closing = f"</{DATA_BLOCK_TAG}>"
+    if text.startswith(f"<{DATA_BLOCK_TAG} ") and text.endswith(closing) and text.count(closing) == 1:
+        return text  # the hub already wrapped it
     cleaned = text.replace(f"</{DATA_BLOCK_TAG}>", f"</ {DATA_BLOCK_TAG}>")
     return (
         f'<{DATA_BLOCK_TAG} source="{source}">\n'
