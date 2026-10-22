@@ -1,0 +1,41 @@
+# A Voron 2.4 running Klipper, reached through Moonraker on the printer's host.
+# Heater targets are rate limited and homing needs a printer that isn't printing.
+# The limits stay unconfirmed until a human reviews them, so the file loads read-only.
+device: { name: Voron 2.4, manufacturer: Voron Design }
+id: voron
+match:
+  mdns: _moonraker._tcp
+  moonraker: { hostname: "voron*" }
+connect: { moonraker: voron.local, port: 7125, transport: websocket, token_env: MOONRAKER_API_KEY, timeout: 5 s }
+read:
+  state: { type: enum, values: [standby, printing, paused, complete, cancelled, error], every: 1 s }
+  extruder_temp: { unit: degC, every: 1 s, range: [0, 320] }
+  bed_temp: { unit: degC, every: 1 s, range: [0, 130] }
+  chamber_temp: { unit: degC, every: 5 s }
+  progress: { unit: percent, every: 5 s }
+write:
+  extruder_target: { unit: degC, min: 0, max: 260, max_change_per_s: 50, confirm: confirm }
+  bed_target: { unit: degC, min: 0, max: 110, max_change_per_s: 20 }
+  fan_speed: { unit: percent, min: 0, max: 100 }
+  exhaust_fan: { unit: percent, min: 0, max: 100, map: { fan: exhaust } }
+actions:
+  home:
+    args:
+      axes: { type: enum, values: [x, y, z, xy, all] }
+    require: ["state != printing"]
+    confirm: confirm
+  pause: { require: ["state == printing"] }
+  resume: { require: ["state == paused"] }
+  cancel: { confirm: confirm }
+safe_state:
+  - { extruder_target: 0, bed_target: 0 }
+interlocks:
+  - if: "extruder_target > 0 degC"
+    require: "state != error"
+    message: "Clear the printer error before heating."
+watchdog:
+  heartbeat: 5 s
+  on_loss: hold
+hazard: medium
+notes: "The exhaust fan is a fan_generic named exhaust in printer.cfg."
+provenance: { source: hand-written, by: openhal moonraker driver example, at: 2026-10-24 }
