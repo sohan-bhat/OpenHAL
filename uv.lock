@@ -877,6 +877,7 @@ name = "openhal-hub"
 version = "0.1.0.dev0"
 source = { editable = "." }
 dependencies = [
+    { name = "httpx" },
     { name = "pint" },
     { name = "pydantic" },
     { name = "pyyaml" },
@@ -888,7 +889,6 @@ dependencies = [
 [package.optional-dependencies]
 hub = [
     { name = "fastapi" },
-    { name = "httpx" },
     { name = "mcp" },
     { name = "uvicorn" },
     { name = "websockets" },
@@ -909,8 +909,8 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", marker = "extra == 'hub'", specifier = ">=0.115" },
-    { name = "httpx", marker = "extra == 'hub'", specifier = ">=0.28" },
-    { name = "mcp", marker = "extra == 'hub'", specifier = ">=1.2" },
+    { name = "httpx", specifier = ">=0.28" },
+    { name = "mcp", marker = "extra == 'hub'", specifier = ">=2.3" },
     { name = "pint", specifier = ">=0.24" },
     { name = "pydantic", specifier = ">=2.9" },
     { name = "pyyaml", specifier = ">=6.0.2" },
