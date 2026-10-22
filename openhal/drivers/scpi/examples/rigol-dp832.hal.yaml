@@ -1,0 +1,30 @@
+# A Rigol DP832 bench supply over USB-TMC. Channel 1 is wired to the circuit under test.
+# Output changes are confirmed each time. The limits stay unconfirmed until a human reviews them.
+device: { name: Bench power supply, model: DP832, manufacturer: Rigol }
+id: bench-psu
+match:
+  usb: ["1ab1:0e11"]
+  usb_class: usbtmc
+  scpi_idn: "^RIGOL TECHNOLOGIES,DP832"
+connect: { driver: scpi, resource: auto, timeout: 2 s, check_errors: true }
+read:
+  ch1_voltage: { unit: V, every: 500 ms, map: { query: "MEAS:VOLT? CH1" } }
+  ch1_current: { unit: A, every: 500 ms, map: { query: "MEAS:CURR? CH1" } }
+write:
+  ch1_output: { type: bool, confirm: confirm-each-time, map: { set: "OUTP CH1,{on_off}", get: "OUTP? CH1" } }
+actions:
+  set_ch1:
+    description: Set channel 1 voltage and current limit.
+    args:
+      volts: { unit: V, min: 0, max: 12, step: 0.01 }
+      amps: { unit: A, min: 0, max: 1, step: 0.001 }
+    confirm: confirm-each-time
+    map: { command: "APPL CH1,{volts},{amps}" }
+safe_state:
+  - { ch1_output: false }
+interlocks:
+  - if: "ch1_output == true"
+    require: "ch1_current <= 1 A"
+    message: "Channel 1 is limited to 1 A on this bench."
+hazard: medium
+provenance: { source: driver-describe, by: openhal scpi describe, at: 2026-10-24 }

@@ -1,0 +1,18 @@
+{
+  "name": "scpi",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["SCPI over USB-TMC", "SCPI over LAN (VXI-11, HiSLIP, raw socket)", "SCPI over serial", "SCPI over GPIB"],
+  "families": ["bench power supplies", "multimeters", "oscilloscopes", "function generators", "electronic loads"],
+  "hazard_default": "medium",
+  "tests": "TCP SCPI simulator through PyVISA and pyvisa-py, and pyvisa-sim",
+  "estimate": {
+    "devices": "thousands of models",
+    "reasoning": "SCPI has been the standard command language for programmable test equipment since 1990, and every major vendor (Keysight, Rohde and Schwarz, Tektronix and Keithley, Rigol, Siglent, GW Instek, B&K Precision) ships SCPI on its current bench lines. Any of them works with a device file. describe() proposes channels for the common supply, meter, load, generator and scope families from the IDN reply.",
+    "sources": [
+      "https://www.ivifoundation.org/specifications/default.html",
+      "https://pyvisa.readthedocs.io/en/latest/",
+      "https://pyvisa.readthedocs.io/projects/pyvisa-py/en/latest/"
+    ]
+  }
+}
