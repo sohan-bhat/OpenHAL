@@ -5,7 +5,8 @@ a timeout, `write`, `close`), so drivers run their real protocol code against it
 serves the same device model on a pseudo terminal, so tests can also open it with real pyserial.
 
 Device models implement `receive(data) -> bytes` and may implement `poll(now) -> bytes` for
-output the device sends on its own (Marlin temperature auto-reports, Firmata analog reports).
+output the device sends on its own (Marlin temperature auto-reports, Firmata analog reports)
+and `on_open() -> bytes` for a boot banner sent when the port opens.
 The serial, marlin and firmata drivers all reuse these classes.
 """
 
@@ -126,6 +127,9 @@ class SerialSimulator:
             raise DriverError("Could not open the simulated port (refuse_open is set).")
         self.opened += 1
         self.port = SimulatedPort(self)
+        on_open = getattr(self.model, "on_open", None)
+        if on_open is not None:
+            self.port.deliver(on_open())
         return self.port
 
     def unplug(self) -> None:

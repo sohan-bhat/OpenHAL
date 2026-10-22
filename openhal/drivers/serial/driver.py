@@ -32,8 +32,8 @@ Quirks.
   second command with an embedded newline.
 - Many Arduino boards reset when the port opens. Set `settle` (for example `2 s`) to wait for
   the boot banner before the first command. Anything received during that time is discarded.
-- Without `map.get`, reading a write channel returns the last value this driver sent and fails
-  before the first write. The driver never invents a value.
+- Without `map.get`, reading a write channel returns the last value this driver sent, and
+  `None` (unknown) before the first write. The driver never invents a value.
 - The serial protocol has no emergency behavior of its own. The safe state comes from the
   device file.
 """
@@ -336,11 +336,7 @@ class SerialDriver(Driver):
             if write_map.get is None:
                 self._require_link()
                 last = self._written.get(channel)
-                if last is None:
-                    raise DriverError(
-                        f"{channel} has no map.get query, so it can only report a value after the first write."
-                    )
-                return last
+                return last if last is not None else Reading(channel, None, unit)
             reply = await self._exchange(write_map.get)
             value = mapping.decode(channel, reply, self.device.write[channel], write_map, f"write.{channel}")
             return Reading(channel, value, unit)

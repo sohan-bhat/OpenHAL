@@ -279,8 +279,7 @@ async def _stream_is(driver: SerialDriver, value: float) -> bool:
 async def test_write_channel_without_get_reports_the_last_sent_value() -> None:
     driver, _, bench = make(STREAM)
     await bench.connect()
-    with pytest.raises(DriverError, match="after the first write"):
-        await driver.read("led")
+    assert (await driver.read("led")).value is None
     assert_done(await bench.write("led", True))
     assert (await driver.read("led")).value is True
     await bench.close()
