@@ -30,6 +30,14 @@ hub = [
   "mcp>=1.2",
   "zeroconf>=0.136",
 ]
+serial = ["pyserial>=3.5"]
+firmata = ["pyserial>=3.5"]
+marlin = ["pyserial>=3.5"]
+scpi = ["pyvisa>=1.16", "pyvisa-py>=0.8"]
+moonraker = ["httpx>=0.28", "websockets>=13"]
+octoprint = ["httpx>=0.28"]
+homeassistant = ["httpx>=0.28", "websockets>=13"]
+esphome = ["aioesphomeapi>=46"]
 
 [project.scripts]
 openhal = "openhal.cli.main:app"
@@ -44,6 +52,8 @@ dev = [
   "ruff>=0.8",
   "mypy>=1.13",
   "types-PyYAML>=6.0",
+  "types-pyserial>=3.5",
+  "pyvisa-sim>=0.7",
 ]
 
 [build-system]
