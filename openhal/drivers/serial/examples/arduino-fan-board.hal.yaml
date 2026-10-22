@@ -1,0 +1,48 @@
+# An Arduino Uno running a small text sketch (docs/hardware-tests/serial.md has the sketch).
+# The sketch answers one line per command. The fan PWM is 0 to 255 on the wire and percent here.
+device: { name: Arduino fan board, model: Uno R3, manufacturer: Arduino }
+id: fan-board
+match:
+  usb: ["2341:0043"]
+  usb_class: cdc
+connect:
+  serial: auto
+  baud: 115200
+  newline: lf
+  timeout: 1 s
+  settle: 2 s
+  identify: "ID?"
+  board: arduino-uno
+read:
+  temperature:
+    unit: degC
+    every: 1 s
+    range: [-10, 60]
+    map: { query: "TEMP?", parse: "^T=(?P<value>-?[0-9.]+)$" }
+write:
+  fan_speed:
+    unit: percent
+    min: 0
+    max: 100
+    step: 1
+    max_change_per_s: 25
+    map:
+      command: "FAN {value:.0f}"
+      scale: 0.39215686
+      expect: "^OK$"
+      error: "^ERR"
+      get: "FAN?"
+      parse: "^FAN=(\\d+)$"
+  led:
+    type: bool
+    map: { command: "LED {value}", on: "ON", off: "OFF", expect: "^OK$", get: "LED?", parse: "^LED=(ON|OFF)$" }
+actions:
+  beep:
+    description: Sound the buzzer a few times.
+    args:
+      count: { unit: dimensionless, min: 1, max: 5, step: 1 }
+    map: { command: "BEEP {count:.0f}", expect: "^OK$" }
+safe_state: { fan_speed: 0, led: false }
+hazard: low
+notes: "The fan is a 5 V PC fan driven through a logic-level MOSFET on pin 9."
+provenance: { source: hand-written, by: openhal serial driver example, at: 2026-10-24 }
