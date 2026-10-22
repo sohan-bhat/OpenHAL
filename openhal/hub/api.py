@@ -32,10 +32,34 @@ from openhal.kernel.checks import Block
 from openhal.kernel.commands import Action, Write
 from openhal.kernel.principals import Principal
 from openhal.routines.engine import RoutineError
+from openhal.spec.loader import DeviceFileError
+from openhal.writer.engine import NotHumanError, WriterError
 
 SESSION_COOKIE = "openhal_session"
 CSRF_HEADER = "x-openhal-request"
 STATIC_DIR = Path(__file__).parent / "static"
+
+
+class WriterStartBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    unknown_id: str | None = Field(default=None, max_length=64)
+    driver: str | None = Field(default=None, max_length=64)
+    params: dict[str, Any] | None = None
+    sketch_path: str | None = Field(default=None, max_length=1024)
+    manual_text: str | None = Field(default=None, max_length=400_000)
+
+
+class ProposeBody(BaseModel):
+    draft_yaml: str = Field(max_length=256_000)
+
+
+class AnswersBody(BaseModel):
+    answers: dict[str, Any]
+
+
+class FinishBody(BaseModel):
+    save_as: str | None = Field(default=None, max_length=80)
 
 
 class TokenBody(BaseModel):
@@ -430,6 +454,72 @@ def create_app(hub: Hub) -> FastAPI:
     async def pair_code(who: Who) -> dict[str, Any]:
         human_only(who)
         return {"code": hub.tokens.new_pairing_code(), "expires_in_s": 300}
+
+    # ------------------------------------------------------------------ driver writer (ADR 0014)
+
+    def session_or_404(session_id: str) -> Any:
+        try:
+            return hub.writer.get(session_id)
+        except KeyError as exc:
+            raise HTTPException(404, str(exc)) from exc
+
+    def writer_errors(exc: Exception) -> HTTPException:
+        if isinstance(exc, NotHumanError):
+            return HTTPException(403, str(exc))
+        if isinstance(exc, FileExistsError):
+            return HTTPException(409, str(exc))
+        return HTTPException(400, str(exc))
+
+    @app.post("/v1/writer/sessions")
+    async def writer_start(body: WriterStartBody, who: Who) -> dict[str, Any]:
+        if who.kind == "agent" and who.scope == "read":
+            raise HTTPException(403, "Starting the driver writer needs a control scope.")
+        try:
+            session = await hub.writer.start(who, **body.model_dump())
+        except (WriterError, ValueError, OSError) as exc:
+            raise writer_errors(exc) from exc
+        return hub.writer.view(session)
+
+    @app.get("/v1/writer/sessions/{session_id}")
+    async def writer_get(session_id: str, who: Who) -> dict[str, Any]:
+        return hub.writer.view(session_or_404(session_id))
+
+    @app.post("/v1/writer/sessions/{session_id}/propose")
+    async def writer_propose(session_id: str, body: ProposeBody, who: Who) -> dict[str, Any]:
+        session_or_404(session_id)
+        try:
+            return hub.writer.view(hub.writer.propose(who, session_id, body.draft_yaml))
+        except WriterError as exc:
+            raise writer_errors(exc) from exc
+
+    @app.get("/v1/writer/sessions/{session_id}/interview")
+    async def writer_interview(session_id: str, who: Who) -> dict[str, Any]:
+        session_or_404(session_id)
+        return {"questions": [question.view() for question in hub.writer.questions(session_id)]}
+
+    @app.post("/v1/writer/sessions/{session_id}/answers")
+    async def writer_answers(session_id: str, body: AnswersBody, who: Who) -> dict[str, Any]:
+        session_or_404(session_id)
+        try:
+            return hub.writer.view(hub.writer.answer(who, session_id, body.answers))
+        except (WriterError, NotHumanError) as exc:
+            raise writer_errors(exc) from exc
+
+    @app.post("/v1/writer/sessions/{session_id}/finish")
+    async def writer_finish(session_id: str, body: FinishBody, who: Who) -> dict[str, Any]:
+        session_or_404(session_id)
+        try:
+            return await hub.writer.finish(who, session_id, body.save_as)
+        except (WriterError, NotHumanError, FileExistsError, DeviceFileError) as exc:
+            raise writer_errors(exc) from exc
+
+    @app.get("/v1/writer/sessions/{session_id}/test_plan")
+    async def writer_test_plan(session_id: str, who: Who) -> dict[str, Any]:
+        session_or_404(session_id)
+        try:
+            return await hub.writer.test_plan(session_id)
+        except WriterError as exc:
+            raise writer_errors(exc) from exc
 
     # ------------------------------------------------------------------ tokens (human only)
 
