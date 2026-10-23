@@ -1,0 +1,30 @@
+# An ESP32 plant waterer running ESPHome with API encryption. The encryption key lives in the
+# PLANT_PSK environment variable, never in this file. The pump may run at most 20 seconds at a time.
+# The limits stay unconfirmed until a human reviews them, so the file loads read-only.
+device: { name: Plant waterer, model: esp32dev, manufacturer: Espressif }
+id: plant
+match:
+  mdns: _esphomelib._tcp
+  esphome: { name: "plant-*" }
+connect: { esphome: plant-node.local, port: 6053, noise_psk_env: PLANT_PSK, timeout: 5 s }
+read:
+  soil_moisture: { unit: percent, every: 10 s, range: [0, 100] }
+  tank_empty: { type: bool, every: 10 s }
+write:
+  pump: { type: bool }
+  grow_light_brightness: { unit: percent, min: 0, max: 80, step: 1 }
+actions:
+  calibrate: { description: "Run the soil sensor calibration.", confirm: confirm }
+safe_state: { pump: false, grow_light_brightness: 0 }
+safe_state_note: "The node also stops the pump on its own after 20 s (on_turn_on with a delay in its YAML)."
+interlocks:
+  - if: "pump == true"
+    require: "tank_empty == false"
+    message: "The tank is empty. Refill it before running the pump."
+watchdog:
+  max_duration:
+    - when: "pump == true"
+      for: 20 s
+      reset_after: 5 min
+hazard: low
+provenance: { source: hand-written, by: openhal esphome driver example, at: 2026-10-24 }
