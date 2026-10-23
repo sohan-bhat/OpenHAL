@@ -1,0 +1,31 @@
+# A bridged office corner. Only the four entities listed under entities are reachable,
+# whatever else the Home Assistant instance has. The token lives in HA_TOKEN, never here.
+# The limits stay unconfirmed until a human reviews them, so the file loads read-only.
+device: Office corner
+id: office
+match:
+  homeassistant: "*.office_*"
+connect:
+  homeassistant: homeassistant.local
+  port: 8123
+  token_env: HA_TOKEN
+  transport: websocket
+  entities:
+    - light.office_lamp
+    - fan.office_fan
+    - sensor.office_temperature
+    - binary_sensor.office_window
+read:
+  temperature: { unit: degC, every: 30 s, range: [0, 45], map: { entity: sensor.office_temperature } }
+  window_open: { type: bool, every: 5 s, map: { entity: binary_sensor.office_window } }
+write:
+  lamp: { type: bool, map: { entity: light.office_lamp } }
+  lamp_brightness: { unit: percent, min: 1, max: 100, step: 1, map: { entity: light.office_lamp } }
+  fan_speed: { unit: percent, min: 0, max: 75, step: 25, map: { entity: fan.office_fan } }
+safe_state: { fan_speed: 0, lamp: false }
+interlocks:
+  - if: "fan_speed > 50 %"
+    require: "window_open == false"
+    message: "Close the window before running the fan fast."
+hazard: low
+provenance: { source: bridge, by: openhal homeassistant example, at: 2026-10-24 }

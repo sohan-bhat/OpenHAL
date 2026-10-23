@@ -1,0 +1,25 @@
+{
+  "name": "homeassistant",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["Home Assistant REST API", "Home Assistant WebSocket API"],
+  "families": [
+    "lights",
+    "switches and smart plugs",
+    "fans",
+    "number and select helpers",
+    "sensors and binary sensors",
+    "Zigbee, Z-Wave, Matter and Wi-Fi devices that Home Assistant integrates"
+  ],
+  "hazard_default": "low",
+  "tests": "Home Assistant simulator over an HTTP mock transport and a real local WebSocket server",
+  "estimate": {
+    "devices": "tens of thousands of device models, through more than two thousand integrations",
+    "reasoning": "Home Assistant lists over two thousand integrations, and each brand integration covers many models. Every device Home Assistant shows as a light, switch, fan, number, select, sensor or binary sensor entity works through this bridge with no extra code. Zigbee, Z-Wave and Matter devices are reached the same way.",
+    "sources": [
+      "https://www.home-assistant.io/integrations/",
+      "https://developers.home-assistant.io/docs/api/rest/",
+      "https://developers.home-assistant.io/docs/api/websocket/"
+    ]
+  }
+}
