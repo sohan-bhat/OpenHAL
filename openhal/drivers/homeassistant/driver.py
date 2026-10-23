@@ -54,37 +54,6 @@ from openhal.spec.models import DeviceFile, ReadChannel, WriteChannel
 from openhal.spec.units import Quantity, UnitError, convert, parse_unit
 
 ENTITY = r"^[a-z_]+\.[a-z0-9_]+$"
-HA_UNITS = {
-    "°C": "degC",
-    "°F": "degF",
-    "K": "K",
-    "%": "percent",
-    "lx": "lux",
-    "W": "W",
-    "kW": "kW",
-    "Wh": "Wh",
-    "kWh": "kWh",
-    "V": "V",
-    "mV": "mV",
-    "A": "A",
-    "mA": "mA",
-    "Pa": "Pa",
-    "hPa": "hPa",
-    "kPa": "kPa",
-    "mbar": "mbar",
-    "bar": "bar",
-    "ppm": "ppm",
-    "s": "s",
-    "min": "min",
-    "h": "h",
-    "m": "m",
-    "cm": "cm",
-    "mm": "mm",
-    "L": "L",
-    "m³": "m**3",
-    "Hz": "Hz",
-    "dBm": None,
-}
 NAME_ATTRIBUTE = {
     "power": None,
     "state": None,
@@ -186,15 +155,7 @@ def _name_attribute(name: str) -> str | None:
 
 def ha_unit(text: Any) -> str | None:
     """Home Assistant's unit_of_measurement as a unit the OpenHAL registry knows, if any."""
-    if not isinstance(text, str) or not text:
-        return None
-    if text in HA_UNITS:
-        return HA_UNITS[text]
-    try:
-        parse_unit(text)
-    except UnitError:
-        return None
-    return text
+    return mapping.device_unit(text)
 
 
 class HomeAssistantDriver(Driver):

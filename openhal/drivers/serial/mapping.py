@@ -30,6 +30,53 @@ TRUE_WORDS: Final = frozenset({"1", "on", "true", "high", "yes", "enabled"})
 FALSE_WORDS: Final = frozenset({"0", "off", "false", "low", "no", "disabled"})
 MAX_TEMPLATE: Final = 200
 
+# Unit symbols that home automation systems report (Home Assistant, ESPHome), by registry name.
+# None marks a unit that is known but has no registry equivalent.
+DEVICE_UNITS: Final[dict[str, str | None]] = {
+    "°C": "degC",
+    "°F": "degF",
+    "K": "K",
+    "%": "percent",
+    "lx": "lux",
+    "W": "W",
+    "kW": "kW",
+    "Wh": "Wh",
+    "kWh": "kWh",
+    "V": "V",
+    "mV": "mV",
+    "A": "A",
+    "mA": "mA",
+    "Pa": "Pa",
+    "hPa": "hPa",
+    "kPa": "kPa",
+    "mbar": "mbar",
+    "bar": "bar",
+    "ppm": "ppm",
+    "s": "s",
+    "min": "min",
+    "h": "h",
+    "m": "m",
+    "cm": "cm",
+    "mm": "mm",
+    "L": "L",
+    "m³": "m**3",
+    "Hz": "Hz",
+    "dBm": None,
+}
+
+
+def device_unit(text: Any) -> str | None:
+    """A unit symbol a device or bridge reported, as a unit the OpenHAL registry knows, if any."""
+    if not isinstance(text, str) or not text:
+        return None
+    if text in DEVICE_UNITS:
+        return DEVICE_UNITS[text]
+    try:
+        parse_unit(text)
+    except UnitError:
+        return None
+    return text
+
 
 def duration(value: Any) -> float:
     """A parameter duration, written as a quantity (`2 s`, `500 ms`). Bare numbers are refused."""
