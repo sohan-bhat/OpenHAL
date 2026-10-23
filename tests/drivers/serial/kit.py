@@ -48,6 +48,7 @@ class Bench:
 
     async def close(self) -> None:
         await self.driver.close()
+        self.kernel.audit.close()
 
 
 async def eventually(check: Callable[[], Awaitable[bool]], within: float = 2.0) -> None:
