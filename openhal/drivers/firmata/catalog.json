@@ -1,0 +1,18 @@
+{
+  "name": "firmata",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["Firmata 2.x over USB serial (StandardFirmata)"],
+  "families": ["Arduino AVR boards", "Arduino-compatible clones", "Teensy", "ESP8266 and ESP32 with Firmata over serial"],
+  "hazard_default": "low",
+  "tests": "StandardFirmata simulator over a simulated port and a real pty",
+  "estimate": {
+    "devices": "tens of board models, millions of units",
+    "reasoning": "StandardFirmata ships with the Arduino IDE and runs on every AVR Arduino board and most compatible clones. The firmata/arduino Boards.h file lists support for roughly forty board families, including Teensy and ESP boards. What is attached to the pins is up to the device file.",
+    "sources": [
+      "https://github.com/firmata/protocol/blob/master/protocol.md",
+      "https://github.com/firmata/arduino/blob/main/Boards.h",
+      "https://docs.arduino.cc/retired/hacking/software/FirmataLibrary/"
+    ]
+  }
+}

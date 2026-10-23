@@ -1,0 +1,21 @@
+{
+  "name": "esphome",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["ESPHome native API over TCP, plaintext or Noise encrypted"],
+  "families": [
+    "ESP32, ESP8266, RP2040 and BK72xx boards running ESPHome",
+    "sensors, switches, lights, fans, numbers, selects and buttons defined in ESPHome YAML"
+  ],
+  "hazard_default": "low",
+  "tests": "native API simulator over a local TCP socket, driven by the real aioesphomeapi client",
+  "estimate": {
+    "devices": "every ESPHome node, hundreds of thousands of installs",
+    "reasoning": "ESPHome is the most common firmware for DIY ESP-based devices and is preinstalled on a growing set of commercial products under the Made for ESPHome program. Every node speaks the same native API, and the driver maps the common entity types without per-device code.",
+    "sources": [
+      "https://esphome.io/components/api.html",
+      "https://esphome.io/guides/made_for_esphome.html",
+      "https://github.com/esphome/aioesphomeapi"
+    ]
+  }
+}

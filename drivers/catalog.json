@@ -21,6 +21,152 @@
       }
     },
     {
+      "name": "esphome",
+      "tier": 1,
+      "status": "implemented",
+      "protocols": [
+        "ESPHome native API over TCP, plaintext or Noise encrypted"
+      ],
+      "families": [
+        "ESP32, ESP8266, RP2040 and BK72xx boards running ESPHome",
+        "sensors, switches, lights, fans, numbers, selects and buttons defined in ESPHome YAML"
+      ],
+      "hazard_default": "low",
+      "tests": "native API simulator over a local TCP socket, driven by the real aioesphomeapi client",
+      "estimate": {
+        "devices": "every ESPHome node, hundreds of thousands of installs",
+        "reasoning": "ESPHome is the most common firmware for DIY ESP-based devices and is preinstalled on a growing set of commercial products under the Made for ESPHome program. Every node speaks the same native API, and the driver maps the common entity types without per-device code.",
+        "sources": [
+          "https://esphome.io/components/api.html",
+          "https://esphome.io/guides/made_for_esphome.html",
+          "https://github.com/esphome/aioesphomeapi"
+        ]
+      }
+    },
+    {
+      "name": "firmata",
+      "tier": 1,
+      "status": "implemented",
+      "protocols": [
+        "Firmata 2.x over USB serial (StandardFirmata)"
+      ],
+      "families": [
+        "Arduino AVR boards",
+        "Arduino-compatible clones",
+        "Teensy",
+        "ESP8266 and ESP32 with Firmata over serial"
+      ],
+      "hazard_default": "low",
+      "tests": "StandardFirmata simulator over a simulated port and a real pty",
+      "estimate": {
+        "devices": "tens of board models, millions of units",
+        "reasoning": "StandardFirmata ships with the Arduino IDE and runs on every AVR Arduino board and most compatible clones. The firmata/arduino Boards.h file lists support for roughly forty board families, including Teensy and ESP boards. What is attached to the pins is up to the device file.",
+        "sources": [
+          "https://github.com/firmata/protocol/blob/master/protocol.md",
+          "https://github.com/firmata/arduino/blob/main/Boards.h",
+          "https://docs.arduino.cc/retired/hacking/software/FirmataLibrary/"
+        ]
+      }
+    },
+    {
+      "name": "homeassistant",
+      "tier": 1,
+      "status": "implemented",
+      "protocols": [
+        "Home Assistant REST API",
+        "Home Assistant WebSocket API"
+      ],
+      "families": [
+        "lights",
+        "switches and smart plugs",
+        "fans",
+        "number and select helpers",
+        "sensors and binary sensors",
+        "Zigbee, Z-Wave, Matter and Wi-Fi devices that Home Assistant integrates"
+      ],
+      "hazard_default": "low",
+      "tests": "Home Assistant simulator over an HTTP mock transport and a real local WebSocket server",
+      "estimate": {
+        "devices": "tens of thousands of device models, through more than two thousand integrations",
+        "reasoning": "Home Assistant lists over two thousand integrations, and each brand integration covers many models. Every device Home Assistant shows as a light, switch, fan, number, select, sensor or binary sensor entity works through this bridge with no extra code. Zigbee, Z-Wave and Matter devices are reached the same way.",
+        "sources": [
+          "https://www.home-assistant.io/integrations/",
+          "https://developers.home-assistant.io/docs/api/rest/",
+          "https://developers.home-assistant.io/docs/api/websocket/"
+        ]
+      }
+    },
+    {
+      "name": "marlin",
+      "tier": 1,
+      "status": "implemented",
+      "protocols": [
+        "Marlin G-code over USB serial, with line numbers and checksums"
+      ],
+      "families": [
+        "FDM 3D printers",
+        "pen plotters and other Marlin machines"
+      ],
+      "hazard_default": "medium",
+      "tests": "Marlin protocol simulator over a simulated port and a real pty",
+      "estimate": {
+        "devices": "hundreds of printer models, millions of units",
+        "reasoning": "Marlin ships on most consumer FDM printers (Creality, Prusa before Buddy, Anycubic, Artillery, Sovol and many kit printers) and its configuration repository lists several hundred board and printer configurations. Forks that keep the host protocol (Prusa Firmware for the MK3) also work for temperatures, targets, fan and homing.",
+        "sources": [
+          "https://marlinfw.org/docs/gcode/G000-G001.html",
+          "https://marlinfw.org/docs/gcode/M105.html",
+          "https://github.com/MarlinFirmware/Configurations",
+          "https://reprap.org/wiki/G-code"
+        ]
+      }
+    },
+    {
+      "name": "moonraker",
+      "tier": 1,
+      "status": "implemented",
+      "protocols": [
+        "Moonraker JSON-RPC over HTTP",
+        "Moonraker JSON-RPC over WebSocket"
+      ],
+      "families": [
+        "Klipper 3D printers (Voron, RatRig, Creality K1 and Sonic Pad, Sovol SV08, Elegoo Neptune 4, Qidi)"
+      ],
+      "hazard_default": "medium",
+      "tests": "Moonraker simulator over an HTTP mock transport and a real local WebSocket server",
+      "estimate": {
+        "devices": "every Klipper install with Moonraker, hundreds of printer models",
+        "reasoning": "Moonraker is the API server that Mainsail and Fluidd need, so practically every Klipper printer runs it. Klipper's config folder ships several hundred printer and board configurations, and several vendors now ship Klipper with Moonraker from the factory.",
+        "sources": [
+          "https://moonraker.readthedocs.io/en/latest/web_api/",
+          "https://moonraker.readthedocs.io/en/latest/printer_objects/",
+          "https://www.klipper3d.org/G-Codes.html",
+          "https://github.com/Klipper3d/klipper/tree/master/config"
+        ]
+      }
+    },
+    {
+      "name": "octoprint",
+      "tier": 1,
+      "status": "implemented",
+      "protocols": [
+        "OctoPrint REST API over HTTP"
+      ],
+      "families": [
+        "3D printers connected to OctoPrint (Marlin, Prusa, RepRapFirmware and Klipper with the OctoPrint connector)"
+      ],
+      "hazard_default": "medium",
+      "tests": "OctoPrint REST simulator over an HTTP mock transport",
+      "estimate": {
+        "devices": "every OctoPrint install, on the order of a hundred thousand active printers",
+        "reasoning": "OctoPrint's anonymous usage statistics report on the order of a hundred thousand active instances, each driving one printer, and OctoPrint supports most serial printer firmwares. Anything OctoPrint can control exposes the same REST endpoints, so the driver covers them all at the level of temperatures, fan, homing and job control.",
+        "sources": [
+          "https://docs.octoprint.org/en/master/api/printer.html",
+          "https://docs.octoprint.org/en/master/api/job.html",
+          "https://data.octoprint.org/"
+        ]
+      }
+    },
+    {
       "name": "openhal-firmware",
       "tier": 1,
       "status": "implemented",
@@ -40,6 +186,62 @@
         "sources": [
           "https://arduino.github.io/arduino-cli/latest/",
           "https://docs.espressif.com/projects/arduino-esp32/en/latest/"
+        ]
+      }
+    },
+    {
+      "name": "scpi",
+      "tier": 1,
+      "status": "implemented",
+      "protocols": [
+        "SCPI over USB-TMC",
+        "SCPI over LAN (VXI-11, HiSLIP, raw socket)",
+        "SCPI over serial",
+        "SCPI over GPIB"
+      ],
+      "families": [
+        "bench power supplies",
+        "multimeters",
+        "oscilloscopes",
+        "function generators",
+        "electronic loads"
+      ],
+      "hazard_default": "medium",
+      "tests": "TCP SCPI simulator through PyVISA and pyvisa-py, and pyvisa-sim",
+      "estimate": {
+        "devices": "thousands of models",
+        "reasoning": "SCPI has been the standard command language for programmable test equipment since 1990, and every major vendor (Keysight, Rohde and Schwarz, Tektronix and Keithley, Rigol, Siglent, GW Instek, B&K Precision) ships SCPI on its current bench lines. Any of them works with a device file. describe() proposes channels for the common supply, meter, load, generator and scope families from the IDN reply.",
+        "sources": [
+          "https://www.ivifoundation.org/specifications/default.html",
+          "https://pyvisa.readthedocs.io/en/latest/",
+          "https://pyvisa.readthedocs.io/projects/pyvisa-py/en/latest/"
+        ]
+      }
+    },
+    {
+      "name": "serial",
+      "tier": 1,
+      "status": "implemented",
+      "protocols": [
+        "line-based text over USB CDC serial",
+        "UART",
+        "RFC 2217",
+        "raw TCP (socket://)"
+      ],
+      "families": [
+        "Arduino and other microcontroller sketches",
+        "bench instruments with ASCII command sets",
+        "sensor modules with text output",
+        "lab equipment with RS-232 ports"
+      ],
+      "hazard_default": "medium",
+      "tests": "simulated pyserial port and a real pty opened with pyserial",
+      "estimate": {
+        "devices": "unbounded, tens of thousands of models in practice",
+        "reasoning": "The driver has no built-in command set. Any device whose serial protocol is one text command and one text reply per line can be described in a device file. That covers most hobby microcontroller sketches and a large share of RS-232 lab and industrial equipment. The real limit is how many devices have documented commands, not the driver.",
+        "sources": [
+          "https://pyserial.readthedocs.io/en/latest/",
+          "https://docs.arduino.cc/language-reference/en/functions/communication/serial/"
         ]
       }
     },

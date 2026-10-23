@@ -1,0 +1,19 @@
+{
+  "name": "moonraker",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["Moonraker JSON-RPC over HTTP", "Moonraker JSON-RPC over WebSocket"],
+  "families": ["Klipper 3D printers (Voron, RatRig, Creality K1 and Sonic Pad, Sovol SV08, Elegoo Neptune 4, Qidi)"],
+  "hazard_default": "medium",
+  "tests": "Moonraker simulator over an HTTP mock transport and a real local WebSocket server",
+  "estimate": {
+    "devices": "every Klipper install with Moonraker, hundreds of printer models",
+    "reasoning": "Moonraker is the API server that Mainsail and Fluidd need, so practically every Klipper printer runs it. Klipper's config folder ships several hundred printer and board configurations, and several vendors now ship Klipper with Moonraker from the factory.",
+    "sources": [
+      "https://moonraker.readthedocs.io/en/latest/web_api/",
+      "https://moonraker.readthedocs.io/en/latest/printer_objects/",
+      "https://www.klipper3d.org/G-Codes.html",
+      "https://github.com/Klipper3d/klipper/tree/master/config"
+    ]
+  }
+}

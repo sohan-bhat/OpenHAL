@@ -1,0 +1,19 @@
+{
+  "name": "marlin",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["Marlin G-code over USB serial, with line numbers and checksums"],
+  "families": ["FDM 3D printers", "pen plotters and other Marlin machines"],
+  "hazard_default": "medium",
+  "tests": "Marlin protocol simulator over a simulated port and a real pty",
+  "estimate": {
+    "devices": "hundreds of printer models, millions of units",
+    "reasoning": "Marlin ships on most consumer FDM printers (Creality, Prusa before Buddy, Anycubic, Artillery, Sovol and many kit printers) and its configuration repository lists several hundred board and printer configurations. Forks that keep the host protocol (Prusa Firmware for the MK3) also work for temperatures, targets, fan and homing.",
+    "sources": [
+      "https://marlinfw.org/docs/gcode/G000-G001.html",
+      "https://marlinfw.org/docs/gcode/M105.html",
+      "https://github.com/MarlinFirmware/Configurations",
+      "https://reprap.org/wiki/G-code"
+    ]
+  }
+}

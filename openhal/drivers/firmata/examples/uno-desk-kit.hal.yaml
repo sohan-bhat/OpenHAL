@@ -1,0 +1,29 @@
+# An Arduino Uno running StandardFirmata (File > Examples > Firmata > StandardFirmata).
+# A light sensor on A0, a button to ground on pin 2, an LED on 13, a small fan on PWM pin 9
+# and a hobby servo on pin 6. The limits stay unconfirmed until a human reviews them.
+device: { name: Uno desk kit, model: Uno R3, manufacturer: Arduino }
+id: desk-kit
+match:
+  usb: ["2341:0043"]
+connect:
+  firmata: auto
+  baud: 57600
+  settle: 2 s
+  sampling: 100 ms
+  vref: 5 V
+read:
+  light: { unit: V, every: 500 ms, range: [0, 5], map: { pin: A0 } }
+  button: { type: bool, every: 200 ms, map: { pin: 2, mode: pullup, invert: true } }
+write:
+  led: { type: bool, map: { pin: 13 } }
+  fan: { unit: percent, min: 0, max: 80, step: 1, max_change_per_s: 40, map: { pin: 9 } }
+  pointer:
+    unit: degree
+    min: 10
+    max: 170
+    max_change_per_s: 90
+    map: { pin: 6, mode: servo, min_pulse: 544, max_pulse: 2400 }
+safe_state: { led: false, fan: 0 }
+safe_state_note: "The servo keeps its last angle after a stop. Unplug it to free the arm."
+hazard: low
+provenance: { source: hand-written, by: openhal firmata driver example, at: 2026-10-24 }
