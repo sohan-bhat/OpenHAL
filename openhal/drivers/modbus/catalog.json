@@ -1,0 +1,19 @@
+{
+  "name": "modbus",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["Modbus RTU", "Modbus TCP"],
+  "families": ["energy and power meters", "PLCs", "variable frequency drives", "temperature controllers", "solar inverters", "industrial sensors and I/O modules"],
+  "hazard_default": "medium",
+  "tests": "pymodbus server with a simulated fan controller, TCP and RTU framing",
+  "estimate": {
+    "devices": "thousands of models",
+    "reasoning": "Modbus has been the default fieldbus for meters, drives and controllers since 1979 and is an open standard maintained by the Modbus Organization. Almost every vendor of energy meters, VFDs, PID controllers and inverters publishes a Modbus register map, and any device with a published map can be described in a device file without new code. Devices that only speak a vendor extension on top of Modbus are not covered.",
+    "sources": [
+      "https://www.modbus.org/docs/Modbus_Application_Protocol_V1_1b3.pdf",
+      "https://www.modbus.org/docs/Modbus_over_serial_line_V1_02.pdf",
+      "https://www.modbus.org/docs/Modbus_Messaging_Implementation_Guide_V1_0b.pdf",
+      "https://pymodbus.readthedocs.io/"
+    ]
+  }
+}
