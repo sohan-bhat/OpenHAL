@@ -1,0 +1,36 @@
+# A Shelly Plus Plug S smart plug through its local Gen2 RPC API over plain HTTP.
+# Endpoints from https://shelly-api-docs.shelly.cloud/gen2/ComponentsAndServices/Switch
+# It loads read-only until a human checks the limits and adds confirmed: { by: <name>, at: <date> }.
+device: { name: Bench smart plug, model: Plus Plug S, manufacturer: Shelly }
+id: bench-plug
+connect:
+  http: "http://192.168.1.50"
+  timeout: 3 s
+  identify: /rpc/Shelly.GetDeviceInfo
+  health: /rpc/Shelly.GetStatus
+read:
+  power:
+    unit: W
+    every: 2 s
+    range: [0, 2500]
+    map: { path: /rpc/Switch.GetStatus, query: { id: 0 }, json: apower }
+  voltage:
+    unit: V
+    every: 10 s
+    range: [200, 250]
+    map: { path: /rpc/Switch.GetStatus, query: { id: 0 }, json: voltage }
+  plug_temperature:
+    unit: degC
+    every: 30 s
+    map: { path: /rpc/Switch.GetStatus, query: { id: 0 }, json: temperature.tC }
+write:
+  output:
+    type: bool
+    map:
+      path: /rpc/Switch.Set
+      method: GET
+      query: { id: 0, on: "{value}" }
+      state: { path: /rpc/Switch.GetStatus, query: { id: 0 }, json: output }
+safe_state: { output: false }
+hazard: medium
+notes: "Switches a mains load. The hazard depends on what is plugged in. Raise it to high for heaters or tools."
