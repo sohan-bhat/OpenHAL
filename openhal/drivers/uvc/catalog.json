@@ -1,0 +1,19 @@
+{
+  "name": "uvc",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["USB Video Class 1.1 and 1.5 through V4L2, AVFoundation, Media Foundation or DirectShow"],
+  "families": ["USB webcams", "USB microscopes", "HDMI to USB capture cards", "document cameras"],
+  "hazard_default": "low",
+  "tests": "fake cv2.VideoCapture with a simulated camera, real cv2 JPEG encoding",
+  "estimate": {
+    "devices": "thousands of models",
+    "reasoning": "UVC is the class every mainstream USB webcam, microscope camera and capture card implements so that it works without a vendor driver, and the Linux UVC driver alone lists hundreds of tested models. The driver only captures frames, so it works with any of them the operating system can open. Cameras that need a vendor SDK, such as many machine vision cameras, are not covered.",
+    "sources": [
+      "https://www.usb.org/document-library/video-class-v15-document-set",
+      "https://www.ideasonboard.org/uvc/",
+      "https://docs.opencv.org/4.x/d8/dfe/classcv_1_1VideoCapture.html",
+      "https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/v4l2.html"
+    ]
+  }
+}
