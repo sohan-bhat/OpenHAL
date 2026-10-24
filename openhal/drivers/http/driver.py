@@ -400,8 +400,7 @@ class HttpDriver(Driver):
             chosen = wmap.on if value else wmap.off
             payload = value if chosen is None else chosen
         elif isinstance(value, int | float):
-            device_value = (float(value) - wmap.offset) / wmap.scale
-            payload = round(device_value) if abs(device_value - round(device_value)) < 1e-9 else device_value
+            payload = v.device_number(value, wmap.scale, wmap.offset)
         values = {"value": payload}
         path = v.render_text(wmap.path, values, quote=lambda text: quote(text, safe=""))
         query = {key: v.show(item) for key, item in v.render(wmap.query, values).items()}

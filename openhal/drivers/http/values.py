@@ -121,6 +121,15 @@ def to_number(raw: Any, where: str) -> float:
     return value
 
 
+def device_number(value: float, scale: float, offset: float) -> int | float:
+    """Undo `channel = device * scale + offset`. Results within 1e-6 of a whole number become ints."""
+    exact = (float(value) - offset) / scale
+    nearest = round(exact)
+    if abs(exact - nearest) <= 1e-6 * max(1.0, abs(exact)):
+        return int(nearest)
+    return exact
+
+
 def to_bool(raw: Any, on: tuple[str, ...], off: tuple[str, ...], where: str) -> bool:
     if isinstance(raw, bool):
         return raw
