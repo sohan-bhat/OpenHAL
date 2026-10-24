@@ -1,0 +1,19 @@
+{
+  "name": "rpi-gpio",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["Raspberry Pi GPIO through gpiozero (lgpio, RPi.GPIO, pigpio)"],
+  "families": ["relays and relay boards", "LEDs", "buttons, reed switches and limit switches", "PWM fans and dimmers", "hobby servos"],
+  "hazard_default": "low",
+  "tests": "gpiozero's mock pin factory",
+  "estimate": {
+    "devices": "every Raspberry Pi with a 40-pin header, and thousands of add-on parts",
+    "reasoning": "Every Raspberry Pi since the 2014 B+ has the same 40-pin header with 26 usable GPIO pins, and gpiozero supports all of them including the Pi 5 through lgpio. What hangs off the pins (relays, LEDs, switches, fans, servos) is described in the device file, so any part driven by a digital level, PWM or a servo pulse is covered. Parts that need I2C, SPI or one-wire need other drivers.",
+    "sources": [
+      "https://gpiozero.readthedocs.io/en/stable/",
+      "https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#gpio",
+      "https://pinout.xyz/",
+      "https://abyz.me.uk/lg/py_lgpio.html"
+    ]
+  }
+}
