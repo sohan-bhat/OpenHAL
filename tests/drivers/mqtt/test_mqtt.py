@@ -298,7 +298,12 @@ async def test_dropped_connection_is_noticed_and_reconnects(broker: MqttBroker, 
 
 async def test_identify_and_discover(broker: MqttBroker) -> None:
     driver = MqttDriver(device_file(broker))
-    assert await driver.identify() == {"broker": f"127.0.0.1:{broker.port}", "client_id": "openhal-conformance-mqt"}
+    identity = await driver.identify()
+    assert identity["broker"] == f"127.0.0.1:{broker.port}"
+    assert identity["client_id"].startswith("oh-conformance-m-")
+    assert len(identity["client_id"]) == 23
+    other = MqttDriver(loads(device_file(broker).model_dump_json().replace("conformance-mqtt", "conformance-mqtt-2")))
+    assert (await other.identify())["client_id"] != identity["client_id"]
     assert await MqttDriver.discover() == []
 
 

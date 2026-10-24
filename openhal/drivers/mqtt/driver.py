@@ -24,6 +24,7 @@ Behavior worth knowing.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import os
 import threading
@@ -251,7 +252,16 @@ class MqttDriver(Driver):
         return {"broker": f"{self.settings.host}:{self.settings.port}", "client_id": self._client_id()}
 
     def _client_id(self) -> str:
-        return self.settings.client_id or f"openhal-{self.device.device_id}"[:23]
+        """A stable id of at most 23 characters, unique per device id.
+
+        Brokers drop an existing session when a second client connects with the same id, so two
+        devices must never share one, even when their ids start the same way.
+        """
+        if self.settings.client_id:
+            return self.settings.client_id
+        device_id = self.device.device_id
+        digest = hashlib.sha256(device_id.encode()).hexdigest()[:6]
+        return f"oh-{device_id[:13]}-{digest}"
 
     async def connect(self) -> None:
         await self.close()

@@ -25,7 +25,7 @@ You need a broker the hub can reach. Mosquitto works well and runs on a Raspberr
 |---|---|---|
 | `host` | required | Broker address. The shorthand `mqtt: 192.168.1.10` sets it |
 | `port` | `1883` | Broker port. TLS brokers usually use `8883` |
-| `client_id` | `openhal-<device id>` | At most 23 characters, as MQTT 3.1.1 servers must accept |
+| `client_id` | `oh-` and the device id with a short hash | At most 23 characters, as MQTT 3.1.1 servers must accept. Each device needs its own, because a broker drops the older session when two clients share an id |
 | `username` | none | Broker user name |
 | `token_env` | none | Name of an environment variable holding the broker password |
 | `tls`, `ca_file` | `false`, none | Use TLS, optionally with a CA bundle |
