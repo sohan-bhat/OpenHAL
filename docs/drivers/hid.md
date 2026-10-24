@@ -96,4 +96,4 @@ The default hazard is low, because HID devices are mostly inputs and indicators.
 - HID Usage Tables 1.5, USB-IF, https://www.usb.org/document-library/hid-usage-tables-15
 - hidapi, https://github.com/libusb/hidapi
 - cython-hidapi (the `hidapi` Python package), https://github.com/trezor/cython-hidapi
-- pid.codes test PID 1209:0001, https://pid.codes/1209/0001/
+- pid.codes test PID `1209:0001`, https://pid.codes/1209/0001/
