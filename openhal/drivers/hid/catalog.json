@@ -1,0 +1,20 @@
+{
+  "name": "hid",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["USB HID 1.11", "Bluetooth HID through the operating system"],
+  "families": ["macropads and button boxes", "knobs and jog wheels", "foot switches", "USB status lights", "custom HID gadgets on RP2040, ESP32-S2/S3 and ATmega32U4 boards"],
+  "hazard_default": "low",
+  "tests": "fake hidapi module with a simulated macropad and a real report descriptor",
+  "estimate": {
+    "devices": "thousands of models",
+    "reasoning": "HID needs no vendor driver on Linux, macOS and Windows, so it is the default class for small USB input and indicator devices and for homemade gadgets built with TinyUSB or the Arduino HID library. Any device whose report layout is documented or readable from its report descriptor can be described in a device file. Keyboards and mice that the operating system claims exclusively, and devices that need a vendor command protocol on top of HID, are not covered.",
+    "sources": [
+      "https://www.usb.org/document-library/device-class-definition-hid-111",
+      "https://www.usb.org/document-library/hid-usage-tables-15",
+      "https://github.com/libusb/hidapi",
+      "https://github.com/trezor/cython-hidapi",
+      "https://pid.codes/1209/0001/"
+    ]
+  }
+}
