@@ -1,0 +1,15 @@
+# A BLE room sensor that implements the standard Environmental Sensing service (0x181A) and the
+# Battery service (0x180F), such as boards running the Zephyr or Arduino environmental sensing
+# examples. Formats and scales come from the GATT Specification Supplement.
+device: Room climate sensor
+id: room-climate
+match:
+  ble_services: ["181a"]
+  ble_name: "^ENV-"
+connect: { ble: auto, scan_timeout: 5 s, timeout: 10 s }
+read:
+  temperature: { unit: degC, stream: true, range: [-20, 60], map: { characteristic: 2a6e, format: sint16, scale: 0.01 } }
+  humidity: { unit: percent, stream: true, range: [0, 100], map: { characteristic: 2a6f, format: uint16, scale: 0.01 } }
+  pressure: { unit: hPa, every: 60 s, range: [870, 1085], map: { characteristic: 2a6d, format: uint32, scale: 0.001 } }
+  battery: { unit: percent, every: 10 min, map: { characteristic: 2a19, format: uint8 } }
+hazard: low
