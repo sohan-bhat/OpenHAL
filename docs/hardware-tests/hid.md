@@ -127,11 +127,12 @@ confirmed: { by: <your name>, at: <today's date> }
 
 ```sh
 uv run python hwtest.py my-pad.hal.yaml write key_1_led true
-uv run python hwtest.py my-pad.hal.yaml write led_brightness "40 dimensionless"
 uv run python hwtest.py my-pad.hal.yaml write key_1_led false
 ```
 
-Expected. `done` for each write, and the key 1 LED lights, dims to the new brightness, and goes dark. Each write sends the whole output report, so it should match what `hidapitester --vidpid 1209:0001 --open --send-output 2,1,40` does by hand. Each run of the script is a fresh connection whose report buffer starts at zero, so the second command also turns the LED off again on devices that read every bit.
+Expected. `done` for each write, and the key 1 LED lights and goes dark. The first write sends output report 2 as `02 01 00`, which you can compare with `hidapitester --vidpid 1209:0001 --open --send-output 2,1,0`.
+
+The driver keeps each output report's buffer for as long as the driver object lives, and every run of `hwtest.py` is a new one, so fields not written in a run go out as zero. In the hub the buffer lasts for the whole session.
 
 ### 8. Stop
 
