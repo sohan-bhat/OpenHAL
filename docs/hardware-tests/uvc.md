@@ -68,7 +68,7 @@ asyncio.run(main(*sys.argv[1:]))
 
 ### 1. The camera is listed
 
-On Linux:
+On Linux, run
 
 ```sh
 uv run python -c "import asyncio; from openhal.drivers.uvc.driver import UvcDriver; print(*asyncio.run(UvcDriver.discover()), sep='\n')"
