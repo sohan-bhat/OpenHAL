@@ -35,7 +35,7 @@
           type="text"
           inputmode="numeric"
           autocomplete="one-time-code"
-          pattern="[0-9]{6}"
+          pattern={"[0-9]{6}"}
           maxlength="6"
           bind:value={code}
           aria-describedby={error ? "pair-error" : "pair-help"}
