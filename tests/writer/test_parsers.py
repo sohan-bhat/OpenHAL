@@ -38,16 +38,24 @@ def test_text_protocol_draft_is_read_only_until_confirmed() -> None:
     assert file.provenance.source == "sketch"
 
 
-@pytest.mark.parametrize("example", ["DeskFan", "LedStrip", "ServoArm", "SoilPump"])
+@pytest.mark.parametrize("example", ["DeskFan", "LedStrip", "ServoArm", "SoilPump", "PlantWaterer"])
 def test_openhal_library_sketches_describe_themselves_in_code(example: str) -> None:
     findings = sketch.parse((EXAMPLES / example / f"{example}.ino").read_text())
     assert findings.uses_openhal_library
     assert not findings.commands, "OpenHAL sketches are described by their declarations, not guessed commands"
     file = from_data(sketch.draft(findings))
     assert file.connect.driver == "openhal-firmware"
-    assert file.write
-    assert all(channel.suggested for channel in file.write.values())
+    assert file.write or file.actions
+    assert all(entry.suggested for entry in [*file.write.values(), *file.actions.values()])
     assert not file.writable
+
+
+def test_plant_waterer_sketch_offers_actions_and_hides_the_pump() -> None:
+    draft = sketch.draft(sketch.parse((EXAMPLES / "PlantWaterer" / "PlantWaterer.ino").read_text()))
+    assert draft["read"]["tank"] == {"type": "enum", "values": ["empty", "ok"], "stream": True}
+    assert draft["actions"]["water"]["args"] == {"duration": {"unit": "s", "min": 1.0, "max": 30.0}}
+    assert draft["actions"]["stop"] == {"suggested": True}
+    assert "write" not in draft
 
 
 def test_desk_fan_sketch_limits_match_the_board() -> None:

@@ -57,6 +57,18 @@ _OPENHAL_WRITE = re.compile(
     + r""")\s*,\s*\w+\s*\)((?:\s*\.\s*\w+\s*\([^)]*\))*)"""
 )
 _CHAIN = re.compile(r"\.\s*(\w+)\s*\(([^)]*)\)")
+_OPENHAL_ACTION = re.compile(
+    r"""\.\s*action\s*\(\s*"([a-z][a-z0-9_]{0,23})"\s*,\s*\w+\s*\)((?:\s*\.\s*\w+\s*\([^)]*\))*)"""
+)
+_ACTION_ARG = re.compile(
+    r"""\.\s*arg\s*\(\s*"([a-z][a-z0-9_]{0,23})"\s*,\s*"([^"]{1,24})"\s*,\s*("""
+    + _NUMBER
+    + r""")\s*,\s*("""
+    + _NUMBER
+    + r""")\s*\)"""
+)
+_STATES = re.compile(r"\.\s*states\s*\(\s*(\w+)\s*,")
+_LABELS = re.compile(r"""(\w+)\s*\[\s*\]\s*=\s*\{((?:\s*"[a-z][a-z0-9_]{0,23}"\s*,?)+)\}""")
 _OPENHAL_PRODUCT = re.compile(r"""OpenHAL\s+\w+\s*\(\s*"([^"]{1,40})"\s*,\s*"([^"]{1,20})"\s*\)""")
 _HEARTBEAT = re.compile(r"\.\s*heartbeat\s*\(\s*(\d+)\s*\)")
 
@@ -89,6 +101,7 @@ class SketchFindings:
     heartbeat_ms: int | None = None
     openhal_reads: list[dict[str, Any]] = field(default_factory=list)
     openhal_outputs: list[dict[str, Any]] = field(default_factory=list)
+    openhal_actions: list[dict[str, Any]] = field(default_factory=list)
     commands: list[Command] = field(default_factory=list)
     outputs: dict[str, str] = field(default_factory=dict)
     inputs: dict[str, str] = field(default_factory=dict)
@@ -99,7 +112,7 @@ class SketchFindings:
 
     @property
     def uses_openhal_library(self) -> bool:
-        return bool(self.openhal_reads or self.openhal_outputs)
+        return bool(self.openhal_reads or self.openhal_outputs or self.openhal_actions)
 
     def view(self) -> dict[str, Any]:
         return {
@@ -109,6 +122,7 @@ class SketchFindings:
             "heartbeat_ms": self.heartbeat_ms,
             "openhal_reads": self.openhal_reads,
             "openhal_outputs": self.openhal_outputs,
+            "openhal_actions": self.openhal_actions,
             "commands": [command.view() for command in self.commands],
             "output_pins": self.outputs,
             "input_pins": self.inputs,
@@ -178,9 +192,13 @@ def parse(text: str) -> SketchFindings:
         findings.openhal_product, findings.openhal_version = product.group(1), product.group(2)
     heartbeat = _HEARTBEAT.search(code)
     findings.heartbeat_ms = int(heartbeat.group(1)) if heartbeat else None
+    labels = {name: re.findall(r'"([a-z][a-z0-9_]{0,23})"', body) for name, body in _LABELS.findall(code)}
     for name, unit, chain in _OPENHAL_READING.findall(code):
         calls = _chain(chain)
         entry: dict[str, Any] = {"name": name, "unit": unit}
+        states = _STATES.search(chain)
+        if states and labels.get(states.group(1)):
+            entry["states"] = labels[states.group(1)]
         if len(calls.get("range", [])) == 2:
             entry["range"] = calls["range"]
         if calls.get("every"):
@@ -204,7 +222,15 @@ def parse(text: str) -> SketchFindings:
         if "onOff" in calls or unit == "bool":
             entry.update(unit="bool", min=0.0, max=1.0)
             entry.setdefault("safe", 0.0)
+        if "internal" in calls:
+            entry["internal"] = True
         findings.openhal_outputs.append(entry)
+    for name, chain in _OPENHAL_ACTION.findall(code):
+        args = [
+            {"name": arg, "unit": unit, "min": float(low), "max": float(high)}
+            for arg, unit, low, high in _ACTION_ARG.findall(chain)
+        ]
+        findings.openhal_actions.append({"name": name, "args": args})
 
     seen: set[str] = set()
     for pattern, takes_value in ((_EXACT, False), (_PREFIX, True), (_CHAR, False)):
@@ -290,7 +316,9 @@ def _reply_pattern(replies: list[str]) -> str:
 def _openhal_draft(findings: SketchFindings, device_name: str) -> dict[str, Any]:
     read: dict[str, Any] = {}
     for entry in findings.openhal_reads:
-        channel: dict[str, Any] = {"unit": entry["unit"]}
+        channel: dict[str, Any] = (
+            {"type": "enum", "values": entry["states"]} if entry.get("states") else {"unit": entry["unit"]}
+        )
         if entry.get("every_ms"):
             channel["stream"] = True
         if entry.get("range"):
@@ -299,6 +327,8 @@ def _openhal_draft(findings: SketchFindings, device_name: str) -> dict[str, Any]
     write: dict[str, Any] = {}
     safe: dict[str, Any] = {}
     for entry in findings.openhal_outputs:
+        if entry.get("internal"):
+            continue
         if entry["unit"] == "bool":
             write[entry["name"]] = {"type": "bool", "suggested": True}
             safe[entry["name"]] = bool(entry.get("safe", 0))
@@ -318,6 +348,17 @@ def _openhal_draft(findings: SketchFindings, device_name: str) -> dict[str, Any]
     if write:
         data["write"] = write
         data["safe_state"] = safe
+    actions = {
+        entry["name"]: {
+            "args": {arg["name"]: {"unit": arg["unit"], "min": arg["min"], "max": arg["max"]} for arg in entry["args"]},
+            "suggested": True,
+        }
+        if entry["args"]
+        else {"suggested": True}
+        for entry in findings.openhal_actions
+    }
+    if actions:
+        data["actions"] = actions
     if findings.heartbeat_ms:
         data["watchdog"] = {"heartbeat": f"{max(findings.heartbeat_ms // 2, 100)} ms", "on_loss": "safe_state"}
     data["provenance"] = {"source": "sketch", "tool": "openhal driver writer"}
