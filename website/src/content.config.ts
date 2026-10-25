@@ -1,10 +1,33 @@
 import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
 import { z } from "astro/zod";
-import { DOC_PATTERNS } from "./lib/markdown/routes.mjs";
+import type { Loader } from "astro/loaders";
+import { DOC_PATTERNS, SPEC_PATTERN } from "./lib/markdown/routes.mjs";
+import { readVersions } from "./lib/spec-meta.mjs";
+
+function whenPresent(present: () => boolean, inner: Loader): Loader {
+  return {
+    name: `optional-${inner.name}`,
+    load: async (context) => {
+      if (!present()) {
+        context.store.clear();
+        return;
+      }
+      await inner.load(context);
+    },
+  };
+}
 
 const docs = defineCollection({
   loader: glob({ base: "..", pattern: DOC_PATTERNS, generateId: ({ entry }) => entry }),
+  schema: z.object({ title: z.string().optional() }).passthrough(),
+});
+
+const spec = defineCollection({
+  loader: whenPresent(
+    () => readVersions().versions.length > 0,
+    glob({ base: "..", pattern: SPEC_PATTERN, generateId: ({ entry }) => entry }),
+  ),
   schema: z.object({ title: z.string().optional() }).passthrough(),
 });
 
@@ -24,4 +47,4 @@ const snippets = defineCollection({
   schema: z.object({ title: z.string() }),
 });
 
-export const collections = { docs, blog, snippets };
+export const collections = { docs, spec, blog, snippets };

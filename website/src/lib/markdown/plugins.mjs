@@ -1,13 +1,19 @@
 import { dirname, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { visit } from "unist-util-visit";
+import { SKIP, visit } from "unist-util-visit";
+import { LANGUAGE_NAMES, languageOf, tokenize } from "../highlight.mjs";
+import { REPO_ROOT, glossaryHref } from "../spec-meta.mjs";
 import { routeFor } from "./routes.mjs";
 
-export const REPO_ROOT = fileURLToPath(new URL("../../../../", import.meta.url));
+export { REPO_ROOT };
 
 function textOf(node) {
   if (node.type === "text" || node.type === "inlineCode") return node.value;
   return (node.children ?? []).map(textOf).join("");
+}
+
+function hastText(node) {
+  if (node.type === "text") return node.value;
+  return (node.children ?? []).map(hastText).join("");
 }
 
 export function remarkTitle() {
@@ -25,10 +31,18 @@ export function remarkTitle() {
 export function remarkRepoLinks() {
   return (tree, file) => {
     const source = file.path ? resolve(file.path) : null;
-    if (!source) return;
     visit(tree, "link", (node, index, parent) => {
       const url = node.url;
-      if (/^[a-z]+:/i.test(url) || url.startsWith("#") || url.startsWith("/")) return;
+      if (url.startsWith("glossary:")) {
+        const href = glossaryHref(url.slice(9));
+        if (href) node.url = href;
+        else if (parent && index !== undefined) {
+          parent.children.splice(index, 1, ...node.children);
+          return [SKIP, index];
+        }
+        return undefined;
+      }
+      if (!source || /^[a-z]+:/i.test(url) || url.startsWith("#") || url.startsWith("/")) return undefined;
       const [path, hash] = url.split("#");
       const repoPath = relative(REPO_ROOT, resolve(dirname(source), path)).split("\\").join("/");
       const route = routeFor(repoPath);
@@ -37,77 +51,45 @@ export function remarkRepoLinks() {
       } else if (parent && index !== undefined) {
         parent.children.splice(index, 1, { type: "inlineCode", value: textOf(node) || repoPath });
       }
+      return undefined;
     });
   };
 }
 
-const LANGUAGE_NAMES = {
-  sh: "Shell",
-  bash: "Shell",
-  console: "Shell",
-  shell: "Shell",
-  yaml: "YAML",
-  json: "JSON",
-  python: "Python",
-  py: "Python",
-  cpp: "C++",
-  ini: "INI",
-  text: "Text",
-};
+function el(tagName, properties, children) {
+  return { type: "element", tagName, properties, children };
+}
 
 function classList(node) {
   const value = node.properties?.className;
   return Array.isArray(value) ? value.map(String) : value ? String(value).split(" ") : [];
 }
 
+export function codeFigure(text, lang, tested) {
+  const language = languageOf(lang);
+  const spans = tokenize(text, language).map(([cls, value]) =>
+    cls ? el("span", { className: [`syn-${cls}`] }, [{ type: "text", value }]) : { type: "text", value },
+  );
+  const labels = [el("span", { className: ["legend"] }, [{ type: "text", value: LANGUAGE_NAMES[language] ?? language.toUpperCase() }])];
+  if (tested) labels.push(el("span", { className: ["legend", "tested"] }, [{ type: "text", value: "Tested" }]));
+  return el("figure", { className: ["code-block"], dataLanguage: language, ...(tested ? { dataTested: "true" } : {}) }, [
+    el("div", { className: ["code-head"] }, [el("span", { className: ["labels"] }, labels)]),
+    el("pre", { tabIndex: 0 }, [el("code", { className: [`language-${language}`] }, spans)]),
+  ]);
+}
+
 export function rehypeCodeBlocks() {
   return (tree) => {
     visit(tree, "element", (node, index, parent) => {
-      if (node.tagName !== "pre" || !parent || index === undefined) return;
+      if (node.tagName !== "pre" || !parent || index === undefined) return undefined;
       const code = node.children.find((child) => child.type === "element" && child.tagName === "code");
-      if (!code) return;
+      if (!code) return undefined;
       const language = classList(code).find((name) => name.startsWith("language-"))?.slice(9) ?? "text";
+      if (language === "mermaid") return undefined;
       const meta = String(code.data?.meta ?? "");
       const tested = /(^|\s)tested(\s|$)/.test(meta);
-      const shell = ["sh", "bash", "console", "shell"].includes(language);
-      if (shell) {
-        const text = code.children.map((child) => (child.type === "text" ? child.value : "")).join("");
-        code.children = text.split(/(?<=\n)/).flatMap((line) => {
-          const match = /^(\$ )(.*)$/s.exec(line);
-          if (!match) return [{ type: "text", value: line }];
-          return [
-            { type: "element", tagName: "span", properties: { className: ["prompt"], ariaHidden: "true" }, children: [{ type: "text", value: "$ " }] },
-            { type: "element", tagName: "span", properties: { className: ["command"] }, children: [{ type: "text", value: match[2] }] },
-          ];
-        });
-      }
-      const legend = [LANGUAGE_NAMES[language] ?? language.toUpperCase()];
-      const caption = {
-        type: "element",
-        tagName: "figcaption",
-        properties: { className: ["code-legend", "legend"] },
-        children: [
-          { type: "element", tagName: "span", properties: {}, children: [{ type: "text", value: legend[0] }] },
-          ...(tested
-            ? [
-                {
-                  type: "element",
-                  tagName: "span",
-                  properties: { className: ["tested"] },
-                  children: [{ type: "text", value: "Tested" }],
-                },
-              ]
-            : []),
-        ],
-      };
-      node.properties = { ...node.properties, tabIndex: 0 };
-      parent.children[index] = {
-        type: "element",
-        tagName: "figure",
-        properties: { className: ["code-block"], dataLanguage: language, ...(tested ? { dataTested: "true" } : {}) },
-        children: [caption, node],
-      };
-      return "skip";
+      parent.children[index] = codeFigure(hastText(code).replace(/\n$/, ""), language, tested);
+      return SKIP;
     });
   };
 }
@@ -115,10 +97,10 @@ export function rehypeCodeBlocks() {
 export function rehypeTables() {
   return (tree) => {
     visit(tree, "element", (node, index, parent) => {
-      if (node.tagName !== "table" || !parent || index === undefined) return;
+      if (node.tagName !== "table" || !parent || index === undefined) return undefined;
       const headers = [];
       visit(node, "element", (cell) => {
-        if (cell.tagName === "th") headers.push(textOfHast(cell));
+        if (cell.tagName === "th") headers.push(hastText(cell).trim());
       });
       visit(node, "element", (row) => {
         if (row.tagName !== "tr") return;
@@ -126,21 +108,51 @@ export function rehypeTables() {
         for (const cell of row.children) {
           if (cell.type !== "element" || cell.tagName !== "td") continue;
           cell.properties = { ...cell.properties, dataLabel: headers[column] ?? "" };
+          cell.children = [el("span", { className: ["cell"] }, cell.children)];
           column += 1;
         }
       });
-      parent.children[index] = {
-        type: "element",
-        tagName: "div",
-        properties: { className: ["table-wrap"] },
-        children: [node],
-      };
-      return "skip";
+      parent.children[index] = el("div", { className: ["table-wrap"] }, [node]);
+      return SKIP;
     });
   };
 }
 
-function textOfHast(node) {
-  if (node.type === "text") return node.value;
-  return (node.children ?? []).map(textOfHast).join("");
+export function rehypeHeadingLinks() {
+  return (tree) => {
+    visit(tree, "element", (node) => {
+      if (!/^h[2-4]$/.test(node.tagName) || !node.properties?.id) return;
+      node.children = [el("a", { className: ["heading-link"], href: `#${node.properties.id}` }, node.children)];
+    });
+  };
+}
+
+const UNIT = /(\d) (%|°C|°F|degC|degF|K|V|mV|A|mA|W|kW|kWh|Wh|s|ms|min|h|Hz|rpm|mm|deg|rad)(?![\w])/g;
+const BCP14 = /\b(MUST NOT|SHALL NOT|SHOULD NOT|NOT RECOMMENDED|MUST|SHALL|SHOULD|RECOMMENDED|REQUIRED|MAY|OPTIONAL)\b/g;
+
+export function rehypeTypography() {
+  return (tree) => {
+    const walk = (node) => {
+      if (node.type === "element" && ["code", "pre", "script", "style"].includes(node.tagName)) return;
+      if (!node.children) return;
+      const next = [];
+      for (const child of node.children) {
+        if (child.type !== "text") {
+          walk(child);
+          next.push(child);
+          continue;
+        }
+        const value = child.value.replace(UNIT, "$1\u00a0$2");
+        let last = 0;
+        for (const match of value.matchAll(BCP14)) {
+          if (match.index > last) next.push({ type: "text", value: value.slice(last, match.index) });
+          next.push(el("span", { className: ["bcp14"] }, [{ type: "text", value: match[0] }]));
+          last = match.index + match[0].length;
+        }
+        if (last < value.length) next.push({ type: "text", value: value.slice(last) });
+      }
+      node.children = next;
+    };
+    walk(tree);
+  };
 }
