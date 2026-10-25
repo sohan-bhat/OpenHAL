@@ -30,7 +30,7 @@ pipx install dist/openhal_hub-0.1.0.dev0-py3-none-any.whl
 ```
 
 - `--compile-bytecode` makes the first run about twice as fast.
-- Driver extras go in brackets, as in `"openhal-hub[esphome,openhal-firmware] @ git+https://github.com/sohan-bhat/OpenHAL"`. `openhal doctor` lists the drivers whose extras are missing.
+- Driver extras go in brackets, as in `"openhal-hub[esphome,openhal-firmware] @ git+https://github.com/sohan-bhat/OpenHAL"`. Installing again with other extras replaces the ones you had, so list every extra you use. `openhal doctor` lists the drivers whose extras are missing.
 - On an Intel Mac, add `--no-build` to uv, or `--pip-args=--only-binary=:all:` to pipx. A few dependencies have no Intel Mac wheels in their newest versions, and building them needs Rust.
 
 ## Set up
