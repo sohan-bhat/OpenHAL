@@ -6,7 +6,6 @@ write:
     unit: V
     min: 0
     max: 2.5
-    max_change_per_s: 1
     map: { data: [0x30, 0x00], length: 2, bits: 12, scale: 0.0008056640625 }
 actions:
   power_down:

@@ -16,7 +16,6 @@ write:
     unit: rpm
     min: 0
     max: 5000
-    max_change_per_s: 1000
     confirm: confirm
     map: { id: 0x301, extended: true, length: 4, signed: true }
 actions:

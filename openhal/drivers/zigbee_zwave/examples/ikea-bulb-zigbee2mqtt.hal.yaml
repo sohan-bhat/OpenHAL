@@ -10,7 +10,7 @@ read:
   linkquality: { unit: dimensionless, every: 30 s }
 write:
   state: { type: bool }
-  brightness: { unit: percent, min: 1, max: 100, max_change_per_s: 50, map: { scale: 0.39370078740157477 } }
+  brightness: { unit: percent, min: 1, max: 100, max_change_per_s: 100, map: { scale: 0.39370078740157477 } }
   color_temp: { unit: dimensionless, min: 250, max: 454 }
 safe_state: { state: false }
 hazard: low
