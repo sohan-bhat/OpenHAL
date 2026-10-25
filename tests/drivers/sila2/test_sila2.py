@@ -90,7 +90,7 @@ async def test_streams_structures_and_unit_conversion(sim: ThermoShakerSim) -> N
     await eventually(lambda: _value(bench, "temperature", pytest.approx(86.0)))
     assert (await bench.read("lid_closed")).value is True
     assert (await bench.read("mode")).value == "idle"
-    assert (await bench.read("speed")).value == 0.0
+    await eventually(lambda: _value(bench, "speed", 0.0))
     await bench.close()
 
 
