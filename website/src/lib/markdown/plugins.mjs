@@ -90,7 +90,7 @@ export function rehypeCodeBlocks() {
       const caption = {
         type: "element",
         tagName: "figcaption",
-        properties: { className: ["code-legend"] },
+        properties: { className: ["code-legend", "legend"] },
         children: [
           { type: "element", tagName: "span", properties: {}, children: [{ type: "text", value: legend[0] }] },
           ...(tested

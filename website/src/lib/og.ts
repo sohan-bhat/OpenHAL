@@ -33,7 +33,7 @@ h1{font-family:"Sofia Sans Condensed";font-weight:750;font-size:${size}px;line-h
 </style></head><body>
 <div class="plate">${markSvg({ size: 52 })}<span class="word">${PRODUCT_NAME}</span><span class="kind">${escape(kind)}</span></div>
 <main><h1>${escape(title)}</h1>
-<div class="track"><div class="rail"></div><div class="fill"></div><div class="line"></div><div class="flag">Max 100 %</div><div class="thumb"></div><div class="attempt"></div></div>
+<div class="track"><div class="rail"></div><div class="line"></div><div class="flag">Max 100 %</div><div class="thumb"></div><div class="attempt"></div></div>
 <p class="reason">${escape(decision.message)}</p></main>
 </body></html>`;
   return renderPng(html, 1200, 630);
