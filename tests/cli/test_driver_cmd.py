@@ -101,4 +101,4 @@ def test_new_refuses_a_bad_name(checkout: Path) -> None:
 def test_new_refuses_a_folder_that_is_not_a_checkout(tmp_path: Path) -> None:
     result = runner.invoke(app, ["driver", "new", "acme-pump", "--root", str(tmp_path)])
     assert result.exit_code == 2
-    assert "not an OpenHAL checkout" in result.output
+    assert "not an OpenHAL checkout" in " ".join(result.output.split())

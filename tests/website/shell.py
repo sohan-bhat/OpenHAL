@@ -29,6 +29,8 @@ from openhal.drivers.openhal_firmware.simulator import SIMULATORS
 from tests.website.embedded_hub import EmbeddedHub
 
 ROOT = Path(__file__).resolve().parents[2]
+ANSI = re.compile(r"\x1b\[[0-9;]*m")
+"""Terminal color codes. Typer forces them on GitHub Actions, and a reader never sees them."""
 PHRASES = {
     ("file", "confirm"): "confirm",
     ("unlock",): "unlock",
@@ -103,8 +105,8 @@ class Session:
         return text.replace("~/.openhal", str(self.home)).replace("$OPENHAL_HOME", str(self.home))
 
     def tidy(self, output: str) -> str:
-        """Show paths as a reader would see them, under ~/.openhal."""
-        return output.replace(str(self.home), "~/.openhal")
+        """Show paths as a reader would see them, under ~/.openhal, without terminal colors."""
+        return ANSI.sub("", output).replace(str(self.home), "~/.openhal")
 
     def run(self, line: str) -> Result:
         line = line.strip()
