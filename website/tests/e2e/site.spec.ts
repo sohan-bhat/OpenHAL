@@ -18,7 +18,7 @@ test.describe("landing page", () => {
   test("the hero shows a real block from the kernel port, before and after scripts run", async ({ page }) => {
     const errors = noErrors(page);
     await page.goto("/");
-    await expect(page.locator("h1")).toHaveText("Real hardware for AI agents. Limits set by people.");
+    await expect(page.locator("h1")).toHaveText("AI agents drive real hardware. People set the limits.");
     const demo = page.locator("[data-hero-demo]");
     await expect(demo.locator("[data-reason]")).toHaveText(BLOCK_150);
     await expect(demo.getByText("In-browser demo")).toBeVisible();

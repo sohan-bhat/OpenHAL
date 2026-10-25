@@ -82,7 +82,7 @@ const raw = JSON.stringify(heroRaw()).replaceAll("<", "\\u003c");
   <div class="stopbar" data-stopbar>
     <div class="stripes" aria-hidden="true"></div>
     <div class="stop-row" data-running>
-      <p class="legend stop-note">Any client may stop. Only a person may lift the stop.</p>
+      <p class="stop-note">Any client may stop. Only a person may lift the stop.</p>
       <button type="button" class="stop" data-stop disabled>Stop all</button>
     </div>
     <form class="stop-row stopped" data-stopped hidden>
@@ -97,8 +97,7 @@ const raw = JSON.stringify(heroRaw()).replaceAll("<", "\\u003c");
   </div>
 
   <p class="footnote">
-    Runs a TypeScript port of the kernel's checks on <a href="/playground/?example=desk-fan-confirmed">{HERO_FILE_PATH}</a>, with the same codes and messages
-    as the hub. Demo data. Nothing here talks to hardware.
+    Demo data. The kernel port runs on <a href="/playground/?example=desk-fan-confirmed">{HERO_FILE_PATH}</a> in your browser. Nothing here talks to hardware.
   </p>
   <script type="application/json" data-hero-file set:html={raw} />
 </div>
@@ -211,7 +210,7 @@ const raw = JSON.stringify(heroRaw()).replaceAll("<", "\\u003c");
   }
 
   .block-reason {
-    min-height: calc(2 * var(--lh-1));
+    min-height: calc(2 * var(--lh-2));
     margin-top: calc(-1 * var(--s-3));
   }
 
@@ -239,7 +238,7 @@ const raw = JSON.stringify(heroRaw()).replaceAll("<", "\\u003c");
   }
 
   input {
-    font-size: var(--t-1);
+    font-size: var(--t-2);
     min-height: 44px;
     padding: 0 var(--s-3);
     border: 1px solid var(--ink-2);
@@ -327,8 +326,7 @@ const raw = JSON.stringify(heroRaw()).replaceAll("<", "\\u003c");
 
   .stop-note {
     color: var(--on-bezel);
-    opacity: 0.8;
-    max-width: 30ch;
+    max-width: 34ch;
   }
 
   .stop {
@@ -370,8 +368,8 @@ const raw = JSON.stringify(heroRaw()).replaceAll("<", "\\u003c");
   }
 
   .muted-plate {
-    font-size: var(--t-1);
-    line-height: var(--lh-1);
+    font-size: var(--t-2);
+    line-height: var(--lh-2);
   }
 
   .unlock {
@@ -416,12 +414,12 @@ const raw = JSON.stringify(heroRaw()).replaceAll("<", "\\u003c");
     padding: var(--s-1) var(--s-3);
     background: var(--bezel);
     color: var(--on-bezel);
-    font-size: var(--t-1);
+    font-size: var(--t-2);
   }
 
   .footnote {
-    font-size: var(--t-0);
-    line-height: var(--lh-0);
+    font-size: var(--t-2);
+    line-height: var(--lh-2);
     color: var(--ink-2);
     padding: var(--s-3) 0 var(--s-4);
   }
@@ -449,6 +447,47 @@ const raw = JSON.stringify(heroRaw()).replaceAll("<", "\\u003c");
   @media (min-width: 1024px) {
     .instrument {
       padding-inline: var(--s-5);
+      grid-template-columns: 7fr 5fr;
+      column-gap: var(--s-7);
+      align-items: end;
+    }
+
+    .instrument > :not(.part-label, .readouts) {
+      grid-column: 1 / -1;
+    }
+
+    .instrument :global(.limit-track) {
+      height: 92px;
+      margin-top: var(--s-3);
+    }
+
+    .instrument :global(.limit-track .rail),
+    .instrument :global(.limit-track .fill) {
+      top: 56px;
+      height: 6px;
+    }
+
+    .instrument :global(.limit-track .thumb) {
+      top: 44px;
+      width: 16px;
+      height: 30px;
+      margin-left: -8px;
+    }
+
+    .instrument :global(.limit-track .attempt) {
+      top: 45px;
+      width: 28px;
+      height: 28px;
+      margin-left: -14px;
+    }
+
+    .instrument :global(.limit-track .rate) {
+      top: 44px;
+    }
+
+    .instrument :global(.limit-track .limit) {
+      width: 3px;
+      margin-left: -1.5px;
     }
 
     .stopbar {

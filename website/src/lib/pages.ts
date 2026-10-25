@@ -8,6 +8,9 @@ import { showDrafts } from "./drafts";
 import { docTitle } from "./docs-nav";
 import { specVersions } from "./spec-versions";
 
+/** The home page headline, also its title and Open Graph image. */
+export const HOME_TITLE = "AI agents drive real hardware. People set the limits.";
+
 export interface PageInfo {
   path: string;
   title: string;
@@ -26,7 +29,7 @@ export function ogSlug(pathname: string): string {
 
 export async function allPages(): Promise<PageInfo[]> {
   const pages: PageInfo[] = [
-    { path: "/", title: "Real hardware for AI agents, inside limits people set", kind: "OpenHAL" },
+    { path: "/", title: HOME_TITLE, kind: "OpenHAL" },
     { path: "/playground/", title: "Device file playground", kind: "Playground" },
     { path: "/devices/", title: "Supported devices", kind: "Devices" },
     { path: "/library/", title: "Device library", kind: "Library" },
