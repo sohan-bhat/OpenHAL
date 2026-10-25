@@ -1,0 +1,37 @@
+device: { name: Workshop PTZ camera, manufacturer: Hikvision, model: DS-2DE2A404IW-DE3 }
+id: workshop-ptz
+connect:
+  onvif: 192.168.1.40
+  port: 80
+  username: openhal
+  token_env: CAMERA_PASSWORD
+  profile: MainStream
+  timeout: 5 s
+read:
+  model: { type: string }
+  firmware: { type: string }
+  stream_uri: { type: string }
+  snapshot_uri: { type: string }
+  moving: { type: bool, every: 1 s }
+write:
+  pan: { unit: degree, min: -90, max: 90, map: { field: pan, scale: 180 } }
+  tilt: { unit: dimensionless, min: -0.4, max: 0.6 }
+  zoom: { unit: dimensionless, min: 0, max: 1 }
+actions:
+  move:
+    description: Turn at the given speeds until duration ends or stop is sent.
+    args:
+      pan: { unit: dimensionless, min: -0.5, max: 0.5 }
+      tilt: { unit: dimensionless, min: -0.5, max: 0.5 }
+      duration: { unit: s, min: 0.1, max: 2 }
+  goto_preset: { args: { preset: { type: enum, values: ["1", "2"] } } }
+  home: {}
+  stop: {}
+hazard: low
+notes: >-
+  A PTZ camera on the workshop wall. Pan and tilt are in ONVIF's generic space, where -1 to 1 spans
+  the camera's full range, and the scale turns pan into degrees for a camera that turns 360 degrees.
+  Set the camera's own PTZ limits in its web interface too, because move can turn it past the pan
+  limit until duration ends. Presets 1 and 2 are set up in the camera's web interface.
+safe_state_note: The driver stops pan, tilt and zoom natively. The camera holds its position if the hub stops.
+provenance: { source: hand-written, by: openhal onvif driver example, at: 2026-10-24, from: "https://www.onvif.org/profiles/specifications/" }
