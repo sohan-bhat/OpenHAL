@@ -1,0 +1,21 @@
+device: { name: 3D printer enclosure fan plug, manufacturer: Eve Systems, model: Eve Energy (Matter) }
+id: enclosure-plug
+connect: { matter: "ws://192.168.1.10:5580/ws", node: 12, timeout: 5 s }
+read:
+  active_power: { unit: W, every: 5 s, range: [0, 2500], map: { path: 2/144/8, scale: 0.001 } }
+write:
+  power: { type: bool, map: { path: 1/6/0, on_command: On, off_command: Off } }
+actions:
+  identify:
+    description: Blink the plug's LED so you can find it.
+    args: { seconds: { unit: s, min: 1, max: 30 } }
+    map: { endpoint: 1, cluster: 3, command: Identify, payload: { identifyTime: "{seconds}" } }
+safe_state: { power: false }
+hazard: low
+notes: >-
+  An Eve Energy plug commissioned into a Matter Server (the Home Assistant Matter Server add-on or
+  matterjs-server) as node 12. OnOff is on endpoint 1, and the power reading comes from
+  ElectricalPowerMeasurement on endpoint 2, in milliwatts. Check the endpoints with describe(), because
+  other plugs number them differently.
+safe_state_note: The plug keeps its state if the hub stops. Turning it off needs the Matter Server and the plug to be reachable.
+provenance: { source: hand-written, by: openhal matter driver example, at: 2026-10-24, from: "https://github.com/matter-js/python-matter-server/blob/main/docs/websockets_api.md" }

@@ -1,0 +1,17 @@
+{
+  "name": "upnp",
+  "tier": 3,
+  "status": "implemented",
+  "protocols": ["UPnP Device Architecture SOAP actions", "SSDP discovery"],
+  "families": ["UPnP AV media renderers and speakers", "smart TVs with DLNA rendering", "internet gateways (IGD)", "network media servers"],
+  "hazard_default": "low",
+  "tests": "async-upnp-client against a fake media renderer with real device and service descriptions and SOAP replies",
+  "estimate": {
+    "devices": "thousands of models",
+    "reasoning": "UPnP and DLNA are built into most networked speakers, TVs, media servers and home routers, and all of them describe their actions in standard XML that this driver checks maps against. Devices that only implement UPnP for discovery and use a private API for control, and features that need GENA events, are not covered.",
+    "sources": [
+      "https://openconnectivity.org/developer/specifications/upnp-resources/upnp/",
+      "https://github.com/StevenLooman/async_upnp_client"
+    ]
+  }
+}

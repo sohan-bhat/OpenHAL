@@ -1,0 +1,36 @@
+device: { name: Living room, model: KNX room with a dimmer actuator and a room thermostat }
+id: living-room-knx
+connect: { knx: 192.168.1.20, port: 3671, connection: tunneling, timeout: 2 s }
+read:
+  temperature: { unit: degC, every: 30 s, range: [5, 35], map: { group_address: 3/1/0, dpt: "9.001" } }
+  window_open: { type: bool, map: { group_address: 3/1/5, dpt: "1.019" } }
+write:
+  ceiling_light: { type: bool, map: { group_address: 1/1/0, dpt: "1.001", state_address: 1/1/1 } }
+  ceiling_dimmer:
+    unit: percent
+    min: 0
+    max: 100
+    max_change_per_s: 100
+    map: { group_address: 1/1/2, dpt: "5.001", state_address: 1/1/3 }
+  heating_setpoint:
+    unit: degC
+    min: 16
+    max: 24
+    map: { group_address: 3/1/1, dpt: "9.001", state_address: 3/1/2 }
+  hvac_mode:
+    type: enum
+    values: [auto, comfort, standby, economy, building_protection]
+    map: { group_address: 3/1/3, dpt: "20.102", state_address: 3/1/4 }
+safe_state: { ceiling_light: false }
+interlocks:
+  - if: "heating_setpoint > 21 degC"
+    require: "window_open == false"
+    message: "Close the window before raising the heating setpoint."
+hazard: low
+notes: >-
+  Group addresses follow a three-level plan, 1 for lighting and 3 for heating, as exported from ETS.
+  Each actuator reports on its status address, which the channels read back. The window contact must
+  have its read flag set, or window_open reads as unknown until the contact changes, which keeps the
+  interlock closed.
+safe_state_note: The light actuator keeps its state if the interface fails. Set its bus voltage failure behavior in ETS.
+provenance: { source: hand-written, by: openhal knx driver example, at: 2026-10-24, from: "https://xknx.io/" }

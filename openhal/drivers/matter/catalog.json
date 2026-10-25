@@ -1,0 +1,18 @@
+{
+  "name": "matter",
+  "tier": 3,
+  "status": "implemented",
+  "protocols": ["Matter through the Matter Server WebSocket API"],
+  "families": ["Matter lights and plugs", "Matter sensors", "Matter thermostats and fans", "Matter window coverings and locks", "Thread devices through a Matter Server"],
+  "hazard_default": "low",
+  "tests": "a WebSocket simulator of the python-matter-server message format with a bulb, a sensor and a thermostat",
+  "estimate": {
+    "devices": "thousands of certified products",
+    "reasoning": "The Connectivity Standards Alliance lists several thousand certified Matter products, and every one exposes its state as standard cluster attributes, which this driver reads by path. The count is limited to devices a Matter Server can commission and to clusters a device file maps, and was tested only against the python-matter-server message format.",
+    "sources": [
+      "https://csa-iot.org/csa-iot_products/",
+      "https://github.com/matter-js/python-matter-server",
+      "https://github.com/matter-js/matterjs-server"
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "bambu",
+  "tier": 3,
+  "status": "implemented",
+  "protocols": ["Bambu Lab LAN MQTT over TLS, Developer Mode"],
+  "families": ["Bambu Lab X1 series", "Bambu Lab P1 series", "Bambu Lab A1 and A1 mini"],
+  "hazard_default": "medium",
+  "tests": "real paho-mqtt client over TLS against a simulated printer on an in-process broker",
+  "estimate": {
+    "devices": "about ten printer models",
+    "reasoning": "Bambu Lab sells the X1, P1, A1 and newer H2 and P2 families, which share one report format on the local MQTT broker. Bambu Lab documents Developer Mode for X1, P1, A1 and A1 mini, and only printers in that mode accept the commands this driver sends. Reads work in normal LAN mode too. Bambu Lab doesn't publish the message format, so the field list follows community documentation and may miss model-specific fields.",
+    "sources": [
+      "https://blog.bambulab.com/updates-and-third-party-integration-with-bambu-connect/",
+      "https://blog.bambulab.com/firmware-update-introducing-new-authorization-control-system-2/",
+      "https://github.com/Doridian/OpenBambuAPI/blob/main/mqtt.md",
+      "https://bambulab.com/en/compare"
+    ]
+  }
+}

@@ -1,0 +1,37 @@
+device: { name: Bench motor drive, manufacturer: VESC Project, model: VESC 6 }
+id: bench-vesc
+connect: { can: can0, interface: socketcan, bitrate: 500000, timeout: 500 ms }
+read:
+  erpm: { unit: rpm, map: { id: 0x901, extended: true, byte: 0, length: 4, signed: true } }
+  motor_current: { unit: A, map: { id: 0x901, extended: true, byte: 4, length: 2, signed: true, scale: 0.1 } }
+  duty: { unit: percent, map: { id: 0x901, extended: true, byte: 6, length: 2, signed: true, scale: 0.1 } }
+  fet_temp: { unit: degC, range: [-20, 100], map: { id: 0x1001, extended: true, length: 2, signed: true, scale: 0.1 } }
+  motor_temp:
+    unit: degC
+    range: [-20, 120]
+    map: { id: 0x1001, extended: true, byte: 2, length: 2, signed: true, scale: 0.1 }
+  input_voltage: { unit: V, range: [10, 60], map: { id: 0x1B01, extended: true, byte: 4, length: 2, scale: 0.1 } }
+write:
+  erpm_target:
+    unit: rpm
+    min: 0
+    max: 5000
+    confirm: confirm
+    map: { id: 0x301, extended: true, length: 4, signed: true }
+actions:
+  coast:
+    description: Set the motor current to zero so the motor spins freely.
+    effects: [erpm_target]
+    map: { id: 0x101, extended: true, data: [0, 0, 0, 0] }
+safe_state:
+  - { action: coast }
+watchdog: { heartbeat: 1 s, on_loss: safe_state }
+hazard: medium
+notes: >-
+  A VESC with controller id 1 and status messages 1, 4 and 5 enabled in its App CAN settings. Ids are
+  (packet id x 256) + controller id, as in the VESC CAN documentation. ERPM is electrical rpm, which is
+  mechanical rpm times the motor's pole pairs. Set the VESC's own command timeout so the motor stops
+  when commands stop arriving. That timeout is the real fallback, because a CAN frame only reaches the
+  drive while the bus is up.
+safe_state_note: The coast frame only works while the bus and the drive are up. The VESC command timeout stops the motor otherwise.
+provenance: { source: hand-written, by: openhal can driver example, at: 2026-10-24, from: "https://github.com/vedderb/bldc/blob/master/documentation/comm_can.md" }

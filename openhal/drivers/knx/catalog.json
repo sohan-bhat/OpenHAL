@@ -1,0 +1,18 @@
+{
+  "name": "knx",
+  "tier": 3,
+  "status": "implemented",
+  "protocols": ["KNXnet/IP tunneling", "KNXnet/IP tunneling over TCP", "KNXnet/IP routing"],
+  "families": ["KNX switch and dimmer actuators", "KNX blind actuators", "KNX room thermostats", "KNX sensors and weather stations", "KNX scene and HVAC controllers"],
+  "hazard_default": "low",
+  "tests": "real xknx tunneling against a fake KNXnet/IP server built from xknx's frame classes, with a simulated room",
+  "estimate": {
+    "devices": "thousands of certified products",
+    "reasoning": "KNX is a single standard across hundreds of manufacturers, and every certified device talks in group telegrams with standard datapoint types, which this driver maps from a group address list. KNX Secure devices and device programming are not covered, and the group addresses must come from the installation's ETS project.",
+    "sources": [
+      "https://www.knx.org/knx-en/for-professionals/community/manufacturers/",
+      "https://xknx.io/",
+      "https://github.com/XKNX/xknx"
+    ]
+  }
+}

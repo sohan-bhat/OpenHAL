@@ -1,0 +1,19 @@
+{
+  "name": "pi-i2c-spi",
+  "tier": 3,
+  "status": "implemented",
+  "protocols": ["I2C through Linux i2c-dev", "SPI through Linux spidev"],
+  "families": ["I2C temperature and humidity sensors", "SPI and I2C ADCs", "SPI and I2C DACs", "port expanders and PWM drivers", "Raspberry Pi HATs"],
+  "hazard_default": "low",
+  "tests": "fake smbus2 and spidev buses with simulated TMP102, MCP3008 and MCP4921 chips",
+  "estimate": {
+    "devices": "hundreds of chip models",
+    "reasoning": "Most I2C and SPI sensors, converters and expanders expose fixed-width registers whose values are linear in the reading, which a register map covers. Distributors list thousands of I2C and SPI parts, but chips that need calibration math (BME280, most IMU fusion), SMBus block protocols with a length byte, or multi-step command sequences are not covered, so the estimate counts only the linear register-mapped ones that hobby and lab boards commonly carry.",
+    "sources": [
+      "https://docs.kernel.org/i2c/dev-interface.html",
+      "https://docs.kernel.org/spi/spidev.html",
+      "https://github.com/kplindegaard/smbus2",
+      "https://learn.adafruit.com/i2c-addresses/the-list"
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+device: { name: Workshop speaker, manufacturer: Sonos, model: Sonos One }
+id: workshop-speaker
+connect: { upnp: "http://192.168.1.30:1400/xml/device_description.xml", timeout: 3 s }
+read:
+  transport_state:
+    type: enum
+    values: [STOPPED, PLAYING, PAUSED_PLAYBACK, TRANSITIONING, NO_MEDIA_PRESENT]
+    every: 5 s
+    map: { service: AVTransport, action: GetTransportInfo, args: { InstanceID: 0 }, output: CurrentTransportState }
+write:
+  volume:
+    unit: percent
+    min: 0
+    max: 40
+    map:
+      service: RenderingControl
+      action: SetVolume
+      args: { InstanceID: 0, Channel: Master, DesiredVolume: "{value}" }
+      state: { service: RenderingControl, action: GetVolume, args: { InstanceID: 0, Channel: Master }, output: CurrentVolume }
+  mute:
+    type: bool
+    map:
+      service: RenderingControl
+      action: SetMute
+      args: { InstanceID: 0, Channel: Master, DesiredMute: "{value}" }
+      state: { service: RenderingControl, action: GetMute, args: { InstanceID: 0, Channel: Master }, output: CurrentMute }
+actions:
+  play: { require: ["transport_state != PLAYING"], map: { service: AVTransport, action: Play, args: { InstanceID: 0, Speed: "1" } } }
+  pause: { require: ["transport_state == PLAYING"], map: { service: AVTransport, action: Pause, args: { InstanceID: 0 } } }
+  stop: { map: { service: AVTransport, action: Stop, args: { InstanceID: 0 } } }
+safe_state:
+  - { action: stop }
+  - { volume: 10 }
+hazard: low
+notes: >-
+  A Sonos speaker, which serves its UPnP description on port 1400. Volume is capped at 40 % for the
+  workshop. Stop needs something in the queue on some firmware and answers UPnP error 701 otherwise,
+  which leaves the safe state partial while nothing is playing.
+provenance: { source: hand-written, by: openhal upnp driver example, at: 2026-10-24, from: "https://openconnectivity.org/developer/specifications/upnp-resources/upnp/" }

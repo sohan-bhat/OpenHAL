@@ -1,0 +1,21 @@
+device: { name: Soldering station plug, manufacturer: Zooz, model: ZEN04 }
+id: solder-plug
+connect: { zigbee-zwave: "ws://192.168.1.10:3000", node: 2, timeout: 5 s }
+read:
+  power: { unit: W, every: 10 s, range: [0, 1800], map: { command_class: 50, property: value, property_key: 66049 } }
+  energy: { unit: kWh, every: 60 s, map: { command_class: 50, property: value, property_key: 65537 } }
+write:
+  relay: { type: bool, confirm: confirm, map: { command_class: 37, property: currentValue } }
+safe_state: { relay: false }
+watchdog:
+  heartbeat: 30 s
+  max_duration:
+    - { when: "relay == true", for: 2 h, then: safe_state }
+hazard: medium
+notes: >-
+  A Zooz ZEN04 plug, node 2 on a Z-Wave JS UI or zwave-js-server install whose WebSocket server listens on
+  port 3000. The relay is read from the Binary Switch currentValue and set through targetValue. Power and
+  energy come from the Meter command class, whose property keys name electric watts (66049) and kilowatt
+  hours (65537). The watchdog turns the plug off after two hours on.
+safe_state_note: Setting the relay needs the controller and the node to be reachable. A Zooz plug keeps its state if the hub stops.
+provenance: { source: hand-written, by: openhal zigbee-zwave driver example, at: 2026-10-24, from: "https://zwave-js.github.io/zwave-js-server/" }
