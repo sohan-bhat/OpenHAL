@@ -69,7 +69,7 @@ Safety fixes made during verification, each with a test.
 
 PENDING. Filled in when the quality workstream (Lighthouse, axe, the orphan audit) and the fresh critic hand back.
 
-Known before that. The website builds 93 pages with zero warnings, and the Inspector builds clean. Both have unit tests and Playwright tests in Chromium and Firefox with axe in both themes. WebKit page loads stall on this Mac, so WebKit is item 4 in NEEDS_HUMAN.md.
+Known before that. The website builds 93 pages with zero warnings, and the Inspector builds clean. Both have unit tests and Playwright tests in Chromium and Firefox with axe in both themes. WebKit page loads stall on this Mac, so WebKit is item 3 in NEEDS_HUMAN.md.
 
 ## Subagent log
 
@@ -111,16 +111,14 @@ Not used or not working. The draw.io plugin and Mermaid CLI weren't needed, sinc
 - The Raspberry Pi script and the Pi drivers have never run on a Pi.
 - On an Intel Mac with an empty cache, installing needs `--no-build`, because cryptography and zeroconf ship Apple Silicon wheels only.
 - The CLI prints kernel codes (`blocked above_max`) where the protocol uses registry names (LIMIT_EXCEEDED). Both are documented, but a person sees two vocabularies.
-- The Linux CI run of the scpi fix waits on the push.
 
 ## Every NEEDS_HUMAN.md item, in order
 
-1. Push the local commits and check the CI run.
-2. Turn on private vulnerability reporting and content reports on GitHub.
-3. Run the first hardware test, the plant waterer.
-4. Run the WebKit browser tests on another machine.
-5. Decide the PyPI distribution name (`openhal-hub` until then).
-6. Check and buy a domain, then set it in website/astro.config.mjs.
+1. Turn on private vulnerability reporting and content reports on GitHub.
+2. Run the first hardware test, the plant waterer.
+3. Run the WebKit browser tests on another machine.
+4. Decide the PyPI distribution name (`openhal-hub` until then).
+5. Check and buy a domain, then point the Pages site at it.
 
 ## The first hardware test
 
@@ -135,7 +133,7 @@ The Arduino plant waterer, following examples/plant-waterer/TEST-PLAN.md. It is 
 
 ## Ten decisions to double-check
 
-1. ADR 0002. The distribution is `openhal-hub` because `openhal` is taken on PyPI. NEEDS_HUMAN item 5.
+1. ADR 0002. The distribution is `openhal-hub` because `openhal` is taken on PyPI. NEEDS_HUMAN item 4.
 2. ADR 0003. Drivers run in the hub's process, with the residual risk above.
 3. ADR 0004. Every hardware change goes through a single-use kernel grant for that exact device, target and value.
 4. ADR 0015. The hub protocol is JSON-RPC 2.0 with dated spec versions, positioned as an open protocol and not affiliated with Anthropic or MHS.
