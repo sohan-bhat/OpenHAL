@@ -6,7 +6,7 @@ match:
   esphome: { project_name: ApolloAutomation.AIR-1 }
 connect: { esphome: apollo-air-1.local, port: 6053, timeout: 5 s }
 read:
-  co2: { unit: ppm, every: 60 s, range: [400, 5000], map: { object_id: co2 } }
+  co2: { unit: ppm, every: 60 s, map: { object_id: co2 } }
   temperature: { unit: degC, every: 30 s, range: [-10, 50], map: { object_id: sen55_temperature } }
   humidity: { unit: percent, every: 30 s, range: [0, 100], map: { object_id: sen55_humidity } }
   pressure: { unit: hPa, every: 60 s, range: [870, 1085], map: { object_id: dps310_pressure } }

@@ -32,7 +32,7 @@ NO_MATCH_KEY = {
     "alpaca": "discovery reports alpaca.* identifiers, and match has no alpaca section",
     "mqtt": "discovery finds nothing, and match has no key for MQTT topics",
 }
-"""Drivers whose discovery can't report anything a match key holds. Proposed spec changes are in the report."""
+"""Drivers whose discovery can't report anything a match key holds yet, as docs/guide/library.md says."""
 
 
 def name(path: Path) -> str:

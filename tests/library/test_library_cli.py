@@ -64,12 +64,20 @@ def test_show_prints_the_match_and_the_file() -> None:
     assert (LIBRARY / "scpi" / "rigol-dp832.hal.yaml").read_text().splitlines()[1] in out
 
 
-def test_show_accepts_a_path_and_prints_limits_as_values_and_units() -> None:
+def test_show_accepts_a_path_and_prints_limits_like_the_hub_describes_them() -> None:
     code, out = run("library", "show", "scpi/rigol-dp832.hal.yaml", "--json")
     assert code == 0, out
     shown = json.loads(out)
-    assert shown["actions"]["set_ch1"]["args"]["volts"]["max"] == {"value": 5.0, "unit": "V"}
-    assert shown["write"]["ch1_output"]["suggested"] is True
+    assert shown["actions"]["set_ch1"]["args"]["volts"]["unit"] == "V"
+    assert shown["actions"]["set_ch1"]["args"]["volts"]["max"] == 5.0
+    assert shown["actions"]["set_ch1"]["confirm"] == "confirm-each-time"
+    assert shown["write"]["ch1_output"] == {
+        "type": "bool",
+        "values": [],
+        "confirm": "confirm-each-time",
+        "suggested": True,
+    }
+    assert "Suggested limits." in shown["notes"]
 
 
 def test_show_an_unknown_name_suggests_close_ones() -> None:

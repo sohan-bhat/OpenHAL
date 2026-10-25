@@ -107,24 +107,8 @@ def _match_text(match: Match) -> list[str]:
     return out
 
 
-def _quantity(value: float | None, unit: str | None) -> dict[str, Any] | None:
-    return None if value is None else {"value": value, "unit": unit}
-
-
-def _limits(spec: Any) -> dict[str, Any]:
-    view: dict[str, Any] = {"type": spec.type}
-    if spec.type == "number":
-        view["min"] = _quantity(spec.min, spec.unit)
-        view["max"] = _quantity(spec.max, spec.unit)
-        if spec.step is not None:
-            view["step"] = _quantity(spec.step, spec.unit)
-    if spec.values:
-        view["values"] = list(spec.values)
-    return view
-
-
 def view(entry: Entry, *, detail: bool = False) -> dict[str, Any]:
-    """An entry as JSON. Numbers travel as a value and a unit (ADR 0016)."""
+    """An entry as JSON. With detail, limits take the shape hal/devices/describe uses, a unit beside numbers."""
     file = entry.file
     data: dict[str, Any] = {
         "name": entry.name,
@@ -142,19 +126,22 @@ def view(entry: Entry, *, detail: bool = False) -> dict[str, Any]:
         "path": str(entry.path),
     }
     if detail:
+        high = file.effective_hazard == "high"
+        limits = {"type", "unit", "min", "max", "step", "max_change_per_s", "values", "max_length", "pattern"}
         data["write"] = {
             name: {
-                **_limits(spec),
-                "max_change_per_s": _quantity(spec.max_change_per_s, f"{spec.unit}/s" if spec.unit else None),
-                "confirm": spec.confirm,
+                **spec.model_dump(include=limits, exclude_none=True),
+                "confirm": "confirm-each-time" if high else spec.confirm,
                 "suggested": spec.suggested,
             }
             for name, spec in file.write.items()
         }
         data["actions"] = {
             name: {
-                "args": {arg: _limits(spec) for arg, spec in action.args.items()},
-                "confirm": action.confirm,
+                "description": action.description,
+                "args": {arg: spec.model_dump(exclude_none=True) for arg, spec in action.args.items()},
+                "require": [condition for condition, _message in action.conditions],
+                "confirm": "confirm-each-time" if high else action.confirm,
                 "suggested": action.suggested,
             }
             for name, action in file.actions.items()
