@@ -3,19 +3,50 @@ import { FLOW_DEFAULT, FLOW_NODES, readFlow } from "../lib/flow";
 
 const flow = readFlow();
 const arts = flow ? [{ name: "wide", art: flow.wide }, ...(flow.narrow ? [{ name: "narrow", art: flow.narrow }] : [])] : [];
+const variants = arts.flatMap(({ name, art }) => [
+  { key: `${name}-light`, html: art.light + art.lightFlows, width: art.width, height: art.height },
+  { key: `${name}-dark`, html: art.dark + art.darkFlows, width: art.width, height: art.height },
+]);
+const wide = flow?.wide;
+const narrow = flow?.narrow;
+const stamp = `(() => {
+  const art = document.currentScript.previousElementSibling;
+  const slot = art.querySelector(".flow-slot");
+  const narrowQuery = matchMedia("(max-width: 600px)");
+  const darkQuery = matchMedia("(prefers-color-scheme: dark)");
+  const show = () => {
+    const size = narrowQuery.matches && art.querySelector('template[data-variant^="narrow"]') ? "narrow" : "wide";
+    const key = size + "-" + (darkQuery.matches ? "dark" : "light");
+    if (art.dataset.shown === key) return;
+    const template = art.querySelector('template[data-variant="' + key + '"]');
+    if (!template) return;
+    slot.replaceChildren(template.content.cloneNode(true));
+    slot.style.aspectRatio = template.dataset.ratio;
+    slot.style.maxWidth = template.dataset.width + "px";
+    art.dataset.shown = key;
+    art.dispatchEvent(new Event("flow:stamp"));
+  };
+  show();
+  narrowQuery.addEventListener("change", show);
+  darkQuery.addEventListener("change", show);
+})();`;
 ---
 
 {
   flow && (
     <figure class:list={["flow", { "has-narrow": Boolean(flow.narrow) }]} data-flow>
-      <div class="flow-art paused">
-        {arts.map(({ name, art }) => (
-          <>
-            <div class={`flow-${name} flow-light`} style={`aspect-ratio: ${art.width} / ${art.height}; max-width: ${art.width}px`} set:html={art.light + art.lightFlows} />
-            <div class={`flow-${name} flow-dark`} style={`aspect-ratio: ${art.width} / ${art.height}; max-width: ${art.width}px`} set:html={art.dark + art.darkFlows} />
-          </>
+      <div
+        class="flow-art paused"
+        style={`--wide-ratio: ${wide!.width} / ${wide!.height}; --wide-width: ${wide!.width}px; --narrow-ratio: ${(narrow ?? wide)!.width} / ${(narrow ?? wide)!.height}; --narrow-width: ${(narrow ?? wide)!.width}px`}
+      >
+        {variants.map((variant) => (
+          <template data-variant={variant.key} data-ratio={`${variant.width} / ${variant.height}`} data-width={String(variant.width)} set:html={variant.html} />
         ))}
+        <div class="flow-slot">
+          <noscript set:html={wide!.light} />
+        </div>
       </div>
+      <script is:inline set:html={stamp} />
       <figcaption>
         <div class="flow-parts" role="group" aria-label="Parts of the flow">
           {FLOW_NODES.map((node) => (
@@ -58,7 +89,12 @@ const arts = flow ? [{ name: "wide", art: flow.wide }, ...(flow.narrow ? [{ name
       { threshold: 0.2 },
     );
     observer.observe(art);
-    const groups = [...art.querySelectorAll<SVGGElement>("svg.d2-svg > g:not(.oh-flows)")].map((group) => ({ group, tokens: tokensOf(group) }));
+    let groups: Array<{ group: SVGGElement; tokens: string[] }> = [];
+    const collect = () => {
+      groups = [...art.querySelectorAll<SVGGElement>(".flow-slot svg.d2-svg > g:not(.oh-flows)")].map((group) => ({ group, tokens: tokensOf(group) }));
+    };
+    collect();
+    art.addEventListener("flow:stamp", collect);
     const buttons = [...figure.querySelectorAll<HTMLButtonElement>("[data-node]")];
     const show = (key: string | null) => {
       figure.classList.toggle("focused", key !== null);
@@ -93,9 +129,19 @@ const arts = flow ? [{ name: "wide", art: flow.wide }, ...(flow.narrow ? [{ name
     margin: 0;
   }
 
-  .flow-art > div {
+  .flow-slot {
     position: relative;
     width: 100%;
+    max-width: var(--wide-width);
+    aspect-ratio: var(--wide-ratio);
+  }
+
+  @media (max-width: 600px) {
+    .flow-slot {
+      max-width: var(--narrow-width);
+      aspect-ratio: var(--narrow-ratio);
+      margin-inline: auto;
+    }
   }
 
   .flow-art :global(svg.flow-overlay) {
@@ -115,47 +161,6 @@ const arts = flow ? [{ name: "wide", art: flow.wide }, ...(flow.narrow ? [{ name
 
   .flow-art.paused :global(*) {
     animation-play-state: paused !important;
-  }
-
-  .flow-dark,
-  .flow-narrow {
-    display: none;
-  }
-
-  .flow-wide.flow-light {
-    display: block;
-  }
-
-  @media (max-width: 600px) {
-    .has-narrow .flow-wide.flow-light {
-      display: none;
-    }
-
-    .has-narrow .flow-narrow.flow-light {
-      display: block;
-      margin-inline: auto;
-    }
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .flow-art .flow-light {
-      display: none !important;
-    }
-
-    .flow-wide.flow-dark {
-      display: block;
-    }
-
-    @media (max-width: 600px) {
-      .has-narrow .flow-wide.flow-dark {
-        display: none;
-      }
-
-      .has-narrow .flow-narrow.flow-dark {
-        display: block;
-        margin-inline: auto;
-      }
-    }
   }
 
   .flow.focused .flow-art :global(svg.d2-svg > g:not(.flow-active):not(.oh-flows)) {
