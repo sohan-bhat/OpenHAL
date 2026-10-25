@@ -21,3 +21,15 @@ Options if you want a different public name, all checked free on PyPI and npm as
 ## 2. Domain
 
 openhal.com and openhal.org are registered by someone else. openhal.io looked unregistered on 2026-10-24. openhal.dev could not be checked. Check and buy at a registrar of your choice, then tell the website where it lives (website/astro.config.mjs, `site`).
+
+## 3. Turn on private vulnerability reporting
+
+SECURITY.md and CODE_OF_CONDUCT.md send reports through GitHub's private channels, and private vulnerability reporting is off for the repository (checked 2026-10-25).
+
+1. Open https://github.com/sohan-bhat/OpenHAL/settings/security_analysis.
+2. Turn on "Private vulnerability reporting".
+3. In Settings, Moderation options, turn on "Accept content reports" for the code of conduct route.
+
+## 4. Push the local commits
+
+The owner approved the push on 2026-10-25, and the local permission settings still block `git push` for the agent. Run `git -C ~/code/openhal push origin main`, then check that the GitHub CI run passes on Linux, which is the first Linux run of the scpi fix.
