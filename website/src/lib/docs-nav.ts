@@ -9,6 +9,8 @@ const SHORT: Record<string, string> = {
   "Command line reference": "Command line",
   "MCP server": "MCP server",
   "Spec changelog": "Device file changelog",
+  "Mapping to the Model Hardware Standard": "MHS mapping",
+  "OpenHAL firmware protocol, version 1": "Firmware protocol",
 };
 
 export function docTitle(entry: { id: string; body?: string; data: Record<string, unknown> }): string {
