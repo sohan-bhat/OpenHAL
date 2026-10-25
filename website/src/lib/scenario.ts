@@ -1,107 +1,36 @@
-import { parse } from "yaml";
-import { buildError } from "./protocol";
+import { SCENARIO_PATH, loadScenario as loadData, scenarioFrom as fromText } from "./scenario-data.mjs";
 import type { TraceEntry } from "./trace";
 
+export { SCENARIO_PATH };
+
 export interface Scenario {
-  device: string;
-  channel: string;
-  unit: string;
-  current: number;
-  requested: number;
-  limit: number;
-  rate: number;
-  granted: number;
-  readBack: number;
-  file: string;
-  confirmedBy: string;
-  confirmedAt: string;
+  path: string;
+  device: string | null;
+  file: string | null;
+  messages: Array<Record<string, unknown>>;
 }
 
-export const DEFAULT_SCENARIO: Scenario = {
-  device: "desk-fan",
-  channel: "fan_speed",
-  unit: "%",
-  current: 20,
-  requested: 150,
-  limit: 100,
-  rate: 20,
-  granted: 60,
-  readBack: 60,
-  file: "desk-fan.hal.yaml",
-  confirmedBy: "sohan",
-  confirmedAt: "2026-10-24",
-};
+export const scenarioFrom = (text: string, path?: string): Scenario => fromText(text, path) as Scenario;
+export const loadScenario = (): Scenario => loadData() as Scenario;
 
-const files = import.meta.glob<string>("../../../docs/demo/scenario.yaml", { query: "?raw", import: "default", eager: true });
-
-function find(data: unknown, keys: string[]): unknown {
-  if (!data || typeof data !== "object") return undefined;
-  for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
-    if (keys.includes(key.toLowerCase())) return value;
-    const nested = find(value, keys);
-    if (nested !== undefined) return nested;
-  }
-  return undefined;
+function isObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function number(value: unknown, fallback: number): number {
-  if (typeof value === "number") return value;
-  if (typeof value === "string") {
-    const match = /-?\d+(\.\d+)?/.exec(value);
-    if (match) return Number(match[0]);
-  }
-  return fallback;
-}
-
-export function scenarioFrom(text: string | undefined): Scenario {
-  if (!text) return DEFAULT_SCENARIO;
-  const data = parse(text) as unknown;
-  const pick = (keys: string[], fallback: number) => number(find(data, keys), fallback);
-  const str = (keys: string[], fallback: string) => {
-    const value = find(data, keys);
-    return typeof value === "string" ? value : fallback;
-  };
-  return {
-    device: str(["device"], DEFAULT_SCENARIO.device),
-    channel: str(["channel"], DEFAULT_SCENARIO.channel),
-    unit: DEFAULT_SCENARIO.unit,
-    current: pick(["current"], DEFAULT_SCENARIO.current),
-    requested: pick(["requested"], DEFAULT_SCENARIO.requested),
-    limit: pick(["limit", "max"], DEFAULT_SCENARIO.limit),
-    rate: pick(["rate", "max_change_per_s"], DEFAULT_SCENARIO.rate),
-    granted: pick(["granted"], DEFAULT_SCENARIO.granted),
-    readBack: pick(["read_back", "readback", "readBack"], DEFAULT_SCENARIO.readBack),
-    file: str(["file"], DEFAULT_SCENARIO.file),
-    confirmedBy: str(["confirmed_by", "confirmedby"], DEFAULT_SCENARIO.confirmedBy),
-    confirmedAt: str(["confirmed_at", "confirmedat"], DEFAULT_SCENARIO.confirmedAt),
-  };
-}
-
-export const SCENARIO: Scenario = scenarioFrom(Object.values(files)[0]);
-
-export function scenarioError(scenario: Scenario = SCENARIO) {
-  return buildError("above_max", {
-    device: scenario.device,
-    target: `write:${scenario.channel}`,
-    facts: {
-      file: scenario.file,
-      confirmedBy: scenario.confirmedBy,
-      confirmedAt: scenario.confirmedAt,
-      unit: scenario.unit,
-      number: true,
-      limits: { max: scenario.limit },
-    },
-    rawValue: `${scenario.requested} ${scenario.unit}`,
+export function traceOf(messages: Array<Record<string, unknown>>): TraceEntry[] {
+  return messages.map((message) => {
+    if (typeof message.method === "string") {
+      const params = isObject(message.params) ? message.params : {};
+      return "id" in message ? { kind: "request", method: message.method, params } : { kind: "notification", method: message.method, params };
+    }
+    if (isObject(message.error)) {
+      const data = isObject(message.error.data) ? message.error.data : {};
+      return { kind: "error", code: Number(message.error.code), name: String(data.name ?? ""), reason: String(message.error.message ?? "") };
+    }
+    return { kind: "result", result: message.result };
   });
 }
 
-export function scenarioTrace(scenario: Scenario = SCENARIO): TraceEntry[] {
-  const q = (value: number) => `${value} ${scenario.unit}`;
-  const error = scenarioError(scenario);
-  return [
-    { kind: "request", method: "hal/write", params: { device: scenario.device, channel: scenario.channel, value: q(scenario.requested) } },
-    { kind: "error", code: error.code, name: String(error.data.name), reason: error.message },
-    { kind: "request", method: "hal/write", params: { device: scenario.device, channel: scenario.channel, value: q(scenario.granted) } },
-    { kind: "result", result: { status: "done", value: scenario.readBack, unit: scenario.unit } },
-  ];
+export function scenarioTrace(scenario: Scenario = loadScenario()): TraceEntry[] {
+  return traceOf(scenario.messages);
 }

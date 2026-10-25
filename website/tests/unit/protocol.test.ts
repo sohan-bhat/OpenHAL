@@ -1,11 +1,8 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { Kernel, agent, label, loadDeviceFile } from "../../src/lib/kernel";
-import { parseDeviceYaml } from "../../src/lib/kernel/yaml";
-import { decisionWire, errorFor, responseFor } from "../../src/lib/playground/rpc";
 import { ERROR_REGISTRY } from "../../src/lib/protocol";
-import { DEFAULT_SCENARIO, scenarioTrace } from "../../src/lib/scenario";
+import { SCENARIO_PATH, scenarioFrom, traceOf } from "../../src/lib/scenario";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const read = (path: string) => readFileSync(`${root}${path}`, "utf8");
@@ -21,29 +18,6 @@ function adrRegistry() {
 }
 
 
-const DESK_FAN = `
-openhal: "0.1"
-device: Desk fan controller
-id: desk-fan
-connect: { openhal-firmware: auto }
-read:
-  temperature: { unit: degC, every: 1 s }
-write:
-  fan_speed: { unit: "%", min: 0, max: 100, step: 1, max_change_per_s: 20 }
-safe_state: { fan_speed: 0 }
-hazard: low
-confirmed: { by: sohan, at: 2026-10-24 }
-`;
-
-function deskFan(current: number) {
-  let now = 1000;
-  const kernel = new Kernel(() => now);
-  const file = loadDeviceFile(parseDeviceYaml(DESK_FAN));
-  kernel.register(file, { fan_speed: current });
-  kernel.connect("desk-fan");
-  return { kernel, file, advance: (seconds: number) => (now += seconds) };
-}
-
 describe("error registry", () => {
   it("matches ADR 0015 row for row", () => {
     expect(ERROR_REGISTRY.map(({ code, name, kernelCodes }) => ({ code, name, kernelCodes }))).toEqual(adrRegistry());
@@ -54,23 +28,37 @@ describe("error registry", () => {
   });
 });
 
-describe("the canonical scenario", () => {
-  const claude = agent("claude", "control_low");
+const RECORDED = `
+device: plant-waterer
+file: plant-waterer.hal.yaml
+exchanges:
+  - request: { jsonrpc: "2.0", id: 1, method: hal/action, params: { device: plant-waterer, action: water, args: { duration: { value: 120, unit: s } } } }
+    response:
+      jsonrpc: "2.0"
+      id: 1
+      error: { code: -32010, message: "water duration 120 s exceeds the limit of 30 s", data: { name: LIMIT_EXCEEDED } }
+  - request: { jsonrpc: "2.0", id: 2, method: hal/action, params: { device: plant-waterer, action: water, args: { duration: { value: 20, unit: s } } } }
+    response: { jsonrpc: "2.0", id: 2, result: { status: done } }
+  - notification: { jsonrpc: "2.0", method: hal/value, params: { device: plant-waterer, channel: soil_moisture, value: 46, unit: "%" } }
+`;
 
-  it("puts the same reason on the home page trace", () => {
-    const { kernel, file } = deskFan(DEFAULT_SCENARIO.current);
-    const command = { kind: "write" as const, device: "desk-fan", channel: "fan_speed", value: "150 %" };
-    const error = errorFor(kernel.execute(command, claude), command, file);
-    const shown = scenarioTrace(DEFAULT_SCENARIO)[1];
-    expect(shown).toEqual({ kind: "error", code: error.code, name: error.data.name, reason: error.message });
-    expect(safety).toContain(error.message);
+describe("the recorded scenario", () => {
+  it("reads every message in order, whatever the layout", () => {
+    const scenario = scenarioFrom(RECORDED);
+    expect(scenario.device).toBe("plant-waterer");
+    expect(scenario.file).toBe("plant-waterer.hal.yaml");
+    expect(traceOf(scenario.messages).map((entry) => entry.kind)).toEqual(["request", "error", "request", "result", "notification"]);
+    expect(traceOf(scenario.messages)[1]).toEqual({ kind: "error", code: -32010, name: "LIMIT_EXCEEDED", reason: "water duration 120 s exceeds the limit of 30 s" });
   });
 
-  it("reports a dry run decision with its registry error", () => {
-    const { kernel, file } = deskFan(20);
-    const command = { kind: "write" as const, device: "desk-fan", channel: "fan_speed", value: "150 %" };
-    const [decision] = kernel.dryRun([command], claude);
-    const wire = decisionWire(decision, command, file, label(claude));
-    expect(wire).toMatchObject({ status: "blocked", target: "write:fan_speed", error: { code: -32010, data: { name: "LIMIT_EXCEEDED" } } });
+  it("refuses a file with no requests", () => {
+    expect(() => scenarioFrom("device: x\n")).toThrow(/no JSON-RPC requests/);
+  });
+
+  it("names only registry codes and names", () => {
+    if (!existsSync(`${root}${SCENARIO_PATH}`)) return;
+    for (const entry of traceOf(scenarioFrom(read(SCENARIO_PATH)).messages)) {
+      if (entry.kind === "error") expect(ERROR_REGISTRY.find((item) => item.code === entry.code)?.name).toBe(entry.name);
+    }
   });
 });

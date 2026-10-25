@@ -57,11 +57,16 @@ class Snippet:
 
 
 def snippets(path: Path) -> list[Snippet]:
+    """Every fenced block. A block with `include=PATH` shows that repository file, so it is checked as that file."""
     text = path.read_text(encoding="utf-8")
-    return [
-        Snippet(path, match.group(1), match.group(2).strip(), match.group(3), text[: match.start()].count("\n") + 1)
-        for match in FENCE.finditer(text)
-    ]
+    found = []
+    for match in FENCE.finditer(text):
+        meta, body = match.group(2).strip(), match.group(3)
+        include = re.search(r"\binclude=(\S+)", meta)
+        if include:
+            body = (ROOT / include.group(1)).read_text(encoding="utf-8")
+        found.append(Snippet(path, match.group(1), meta, body, text[: match.start()].count("\n") + 1))
+    return found
 
 
 def squash(text: str) -> str:

@@ -1,8 +1,10 @@
-import { dirname, relative, resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 import GithubSlugger from "github-slugger";
 import { SKIP, visit } from "unist-util-visit";
 import { LANGUAGE_NAMES, languageOf, tokenize } from "../highlight.mjs";
 import { REPO_ROOT, glossaryHref, termAnchor } from "../spec-meta.mjs";
+import { scenarioTraceText } from "../scenario-data.mjs";
 import { linkFor } from "./routes.mjs";
 
 export { REPO_ROOT };
@@ -123,6 +125,17 @@ export function rehypeCodeBlocks() {
       if (language === "mermaid") return undefined;
       const meta = String(code.data?.meta ?? "");
       const tested = /(^|\s)tested(\s|$)/.test(meta);
+      if (language === "scenario") {
+        parent.children[index] = codeFigure(scenarioTraceText(), "json", false);
+        return SKIP;
+      }
+      const include = /(?:^|\s)include=(\S+)/.exec(meta)?.[1];
+      if (include) {
+        const path = join(REPO_ROOT, include);
+        if (!existsSync(path)) throw new Error(`A code block includes ${include}, which doesn't exist.`);
+        parent.children[index] = codeFigure(readFileSync(path, "utf8").replace(/\n$/, ""), language, tested);
+        return SKIP;
+      }
       parent.children[index] = codeFigure(hastText(code).replace(/\n$/, ""), language, tested);
       return SKIP;
     });

@@ -9,11 +9,15 @@ function escape(text: string): string {
 }
 
 export async function ogImage(title: string, kind: string): Promise<Uint8Array> {
-  const [request, error] = scenarioTrace();
+  const entries = scenarioTrace();
+  const at = entries.findIndex((entry) => entry.kind === "request");
+  const request = entries[at];
+  const answer = entries[at + 1];
   const size = title.length > 70 ? 54 : title.length > 40 ? 64 : 76;
-  const params = request.kind === "request" ? payloadHtml(request.params) : "";
-  const outcome = error.kind === "error" ? `error ${error.code} ${error.name}` : "";
-  const reason = error.kind === "error" ? escape(error.reason) : "";
+  const method = request?.kind === "request" ? escape(request.method) : "";
+  const params = request?.kind === "request" ? payloadHtml(request.params) : "";
+  const outcome = answer?.kind === "error" ? `error ${answer.code} ${answer.name}` : answer?.kind === "result" ? "result" : "";
+  const reason = answer?.kind === "error" ? escape(answer.reason) : answer?.kind === "result" ? payloadHtml(answer.result) : "";
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>
 ${fontFaces()}
 *{box-sizing:border-box;margin:0}
@@ -25,15 +29,15 @@ h1{margin-top:44px;font-size:${size}px;line-height:1.12;font-weight:700;letter-s
 .trace{margin-top:auto;background:#f4f5f7;border:1px solid #dadde2;border-radius:10px;padding:26px 30px;font-family:"Atkinson Hyperlegible Mono";font-size:22px;line-height:1.6;display:grid;grid-template-columns:30px 1fr;column-gap:14px;row-gap:6px;align-items:baseline}
 .trace svg{width:22px;height:12px;color:#15181c;align-self:center}
 .method{color:#1d5fb4;font-weight:700;margin-right:22px}
-.error{color:#b42318;font-weight:700}
+.error{color:#b42318;font-weight:700}.result{color:#1e7a44;font-weight:700}
 .syn-key,.syn-punct{color:#4f5661}.syn-str{color:#15181c}.syn-num{color:#1d5fb4}
 .reason{grid-column:2;color:#15181c;font-size:20px}
 </style></head><body>
 <div class="top">${markSvg({ size: 40, color: MARK_ACCENT.light })}<span class="word">${PRODUCT_NAME}</span><span class="kind">${escape(kind)}</span></div>
 <h1>${escape(title)}</h1>
 <div class="trace">
-${arrowSvg("out")}<div><span class="method">hal/write</span>${params}</div>
-${arrowSvg("in")}<div class="error">${outcome}</div>
+${arrowSvg("out")}<div><span class="method">${method}</span>${params}</div>
+${arrowSvg("in")}<div class="${answer?.kind === "error" ? "error" : "result"}">${outcome}</div>
 <div class="reason">${reason}</div>
 </div>
 </body></html>`;

@@ -1,4 +1,5 @@
 import { getCollection } from "astro:content";
+import { PITCH } from "../config/brand";
 import { drivers } from "./catalog";
 import { docTitle } from "./docs-nav";
 import { showDrafts } from "./drafts";
@@ -12,7 +13,7 @@ export interface PageInfo {
   kind: string;
 }
 
-export const HOME_TITLE = "OpenHAL is an open protocol for AI agents to discover, read and control hardware safely.";
+export const HOME_TITLE = PITCH;
 
 export function ogPath(pathname: string): string {
   const slug = pathname.replace(/^\/+|\/+$/g, "");
