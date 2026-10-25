@@ -25,6 +25,10 @@ export function directionWord(entry) {
   return "Response";
 }
 
+function keepUnits(html) {
+  return html.replace(/(\d) (?=(%|s|h|min|ms|V|A|W|degC|degF)\b|%)/g, "$1\u00a0");
+}
+
 export function reasonLines(reason) {
   const cut = reason.indexOf(" (");
   return cut > 0 && reason.endsWith(")") ? [reason.slice(0, cut), reason.slice(cut + 1)] : [reason];
@@ -33,14 +37,14 @@ export function reasonLines(reason) {
 function lineHtml(entry) {
   if (entry.kind === "error") {
     const reason = reasonLines(entry.reason)
-      .map((part) => `<span class="reason">${escapeHtml(part)}</span>`)
+      .map((part) => `<span class="reason">${keepUnits(escapeHtml(part))}</span>`)
       .join(" ");
     return `<span class="head error-head"><span class="outcome-error">error ${entry.code} ${escapeHtml(entry.name)}</span></span>${reason}`;
   }
   const head = entry.kind === "result" ? `<span class="outcome-result">result</span>` : `<span class="method">${escapeHtml(entry.method)}</span>`;
   const payload =
     typeof entry.text === "string"
-      ? `<span class="payload summary">${escapeHtml(entry.text)}</span>`
+      ? `<span class="payload summary">${keepUnits(escapeHtml(entry.text))}</span>`
       : `<span class="payload">${payloadHtml(entry.kind === "result" ? entry.result : entry.params)}</span>`;
   return `<span class="head">${head}${payload}</span>`;
 }

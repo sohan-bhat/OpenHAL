@@ -1,4 +1,5 @@
 import catalog from "../../../drivers/catalog.json";
+import groupData from "../data/driver-groups.json";
 
 export interface Estimate {
   devices: string;
@@ -54,4 +55,24 @@ export const TIER_NAMES: Record<number, string> = {
 
 export function conformanceOf(driver: Driver): string | null {
   return typeof driver.conformance === "string" && driver.conformance ? driver.conformance : null;
+}
+
+export interface DriverGroup {
+  name: string;
+  drivers: Driver[];
+  tested: number;
+  verified: number;
+}
+
+export function driverGroups(): DriverGroup[] {
+  const byName = new Map(drivers().map((driver) => [driver.name, driver]));
+  return groupData.groups.map((group) => {
+    const members = group.drivers.map((name) => byName.get(name)).filter((driver): driver is Driver => driver !== undefined);
+    return {
+      name: group.name,
+      drivers: members,
+      tested: members.filter((driver) => driver.status === "implemented").length,
+      verified: members.filter((driver) => driver.status === "verified").length,
+    };
+  });
 }

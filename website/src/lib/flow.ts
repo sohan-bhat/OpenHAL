@@ -12,10 +12,42 @@ export const FLOW_NODES: FlowNode[] = [
   { key: "hub", label: "OpenHAL hub", text: "Owns every device and passes each request to the Safety Kernel." },
   { key: "files", label: "Device files", text: "Hold each device's channels and the limits a person confirmed." },
   { key: "kernel", label: "Safety kernel", text: "Checks units, range, rate, interlocks and confirmation, in that order." },
-  { key: "blocked", label: "Blocked", text: "A request outside the limits ends here as error -32010 LIMIT_EXCEEDED." },
+  { key: "blocked", label: "Blocked", text: "A command that breaks a limit or an interlock ends here, with an error from the registry." },
   { key: "driver", label: "Driver", text: "Acts only with a single-use Grant for that one command." },
   { key: "device", label: "Device", text: "Applies the command and reports the new value back." },
 ];
+
+const KEYS: Record<string, string> = { "hub.files": "files" };
+
+function decodeEntities(text: string): string {
+  return text.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+}
+
+export function diagramLabels(svg: string): Map<string, string> {
+  const labels = new Map<string, string>();
+  for (const match of svg.matchAll(/<g class="([A-Za-z0-9+/=]+)(?: node)?">/g)) {
+    const encoded = match[1];
+    const body = svg.slice(match.index ?? 0);
+    let name: string;
+    try {
+      name = Buffer.from(encoded, "base64").toString("utf8");
+    } catch {
+      continue;
+    }
+    const key = KEYS[name] ?? name;
+    if (!FLOW_NODES.some((node) => node.key === key) || labels.has(key)) continue;
+    const text = /<text[^>]*>([\s\S]*?)<\/text>/.exec(body)?.[1];
+    if (!text) continue;
+    const parts = [...text.matchAll(/<tspan[^>]*>([\s\S]*?)<\/tspan>/g)].map((part) => part[1]);
+    labels.set(key, decodeEntities((parts.length ? parts.join(" ") : text).replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim());
+  }
+  return labels;
+}
+
+export function flowNodes(svg: string | null): FlowNode[] {
+  const labels = svg ? diagramLabels(svg) : new Map<string, string>();
+  return FLOW_NODES.map((node) => ({ ...node, label: labels.get(node.key) ?? node.label }));
+}
 
 export const FLOW_DEFAULT = "Every command passes the Safety Kernel before a Driver may act.";
 
