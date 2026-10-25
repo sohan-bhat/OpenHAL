@@ -334,7 +334,7 @@ async def test_a_bus_that_never_opens_times_out() -> None:
     def hang(settings: CanParams) -> Any:
         time.sleep(2.5)
 
-    driver = CanDriver(device_file("slow", extra=", timeout: 100 ms"), bus_factory=hang)
+    driver = CanDriver(device_file("slow", timeout="100 ms"), bus_factory=hang)
     with pytest.raises(TimeoutError, match="did not open"):
         await driver.connect()
 
@@ -374,7 +374,7 @@ async def test_a_refused_frame_fails_the_write() -> None:
 
 async def test_a_send_that_hangs_times_out() -> None:
     slow = _RefusingBus(delay=2)
-    driver = await connected(device_file("x", extra=", timeout: 100 ms"), bus_factory=lambda settings: slow)
+    driver = await connected(device_file("x", timeout="100 ms"), bus_factory=lambda settings: slow)
     kernel = await kernel_for(driver)
     decision = await kernel.execute(Write(device="conformance-can", channel="enable", value=True), WHO)
     assert decision.status == "failed"

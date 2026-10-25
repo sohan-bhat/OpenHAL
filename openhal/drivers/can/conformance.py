@@ -43,8 +43,8 @@ confirmed: { by: conformance, at: 2026-10-24 }
 """
 
 
-def device_file(channel: str, *, extra: str = "") -> DeviceFile:
-    connect = f"{{ can: {channel}, interface: virtual, timeout: 500 ms{extra} }}"
+def device_file(channel: str, *, extra: str = "", timeout: str = "500 ms") -> DeviceFile:
+    connect = f"{{ can: {channel}, interface: virtual, timeout: {timeout}{extra} }}"
     return loads(f"device: Conformance motor drive\nid: conformance-can\nconnect: {connect}\n{CHANNELS}")
 
 

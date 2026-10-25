@@ -305,7 +305,7 @@ async def test_other_failures_pass_the_error_on(i2c: FakeI2CBus, spi: FakeSpiBus
 
 
 async def test_slow_transactions_time_out(i2c: FakeI2CBus) -> None:
-    driver = await connected(device_file(extra=", timeout: 100 ms"), i2c_factory=i2c.i2c)
+    driver = await connected(device_file(timeout="100 ms"), i2c_factory=i2c.i2c)
     i2c.latency_s = 0.5
     with pytest.raises(TimeoutError, match="did not finish the read"):
         await driver.read("temperature")

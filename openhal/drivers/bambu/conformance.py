@@ -39,10 +39,12 @@ confirmed: { by: conformance, at: 2026-10-24 }
 """
 
 
-def device_file(broker: PrinterBroker, *, extra: str = "", serial: str = SERIAL) -> DeviceFile:
+def device_file(
+    broker: PrinterBroker, *, extra: str = "", serial: str = SERIAL, timeout: str = "2 s", reply_wait: str = "1 s"
+) -> DeviceFile:
     connect = (
         f"{{ bambu: 127.0.0.1, port: {broker.port}, serial: {serial}, token_env: {TOKEN_ENV}, "
-        f"cert_sha256: {broker.fingerprint}, timeout: 2 s, reply_wait: 1 s{extra} }}"
+        f"cert_sha256: {broker.fingerprint}, timeout: {timeout}, reply_wait: {reply_wait}{extra} }}"
     )
     return loads(f"device: Conformance printer\nid: conformance-bambu\nconnect: {connect}\n{CHANNELS}")
 

@@ -247,7 +247,7 @@ async def test_firmware_that_wants_authorization_is_explained(broker: PrinterBro
 
 async def test_a_printer_that_does_not_reply_still_takes_the_command(broker: PrinterBroker) -> None:
     printer = SimulatedPrinter(broker, SERIAL, silent=True).attach()
-    driver = await connected(device_file(broker, extra=", reply_wait: 200 ms"))
+    driver = await connected(device_file(broker, reply_wait="200 ms"))
     kernel = await kernel_for(driver)
     decision = await kernel.execute(Action(device="conformance-bambu", action="stop"), WHO)
     assert decision.status == "done", decision.message
@@ -305,7 +305,7 @@ async def test_ca_file_checks_the_serial_in_the_certificate(broker: PrinterBroke
 
 
 async def test_a_wrong_serial_gets_no_report(broker: PrinterBroker, printer: SimulatedPrinter) -> None:
-    driver = BambuDriver(device_file(broker, serial="01S00A000000001", extra=", timeout: 500 ms"), environ=environ)
+    driver = BambuDriver(device_file(broker, serial="01S00A000000001", timeout="500 ms"), environ=environ)
     with pytest.raises(DriverError, match="Check the serial number"):
         await driver.connect()
 
@@ -337,7 +337,7 @@ async def test_a_lost_session_is_reported_and_reconnects(broker: PrinterBroker, 
 
 
 async def test_a_missing_puback_drops_the_session(broker: PrinterBroker, printer: SimulatedPrinter) -> None:
-    driver = await connected(device_file(broker, extra=", timeout: 500 ms"))
+    driver = await connected(device_file(broker, timeout="500 ms"))
     kernel = await kernel_for(driver)
     broker.hold_acks = True
     decision = await kernel.execute(Action(device="conformance-bambu", action="stop"), WHO)

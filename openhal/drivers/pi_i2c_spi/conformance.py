@@ -43,8 +43,8 @@ confirmed: {{ by: conformance, at: 2026-10-24 }}
 """
 
 
-def device_file(*, extra: str = "") -> DeviceFile:
-    connect = f"{{ pi-i2c-spi: i2c-1, address: 0x48, timeout: 500 ms{extra} }}"
+def device_file(*, extra: str = "", timeout: str = "500 ms") -> DeviceFile:
+    connect = f"{{ pi-i2c-spi: i2c-1, address: 0x48, timeout: {timeout}{extra} }}"
     return loads(f"device: Conformance TMP102\nid: conformance-tmp102\nconnect: {connect}\n{CHANNELS}")
 
 
