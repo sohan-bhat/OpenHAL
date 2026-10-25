@@ -1,21 +1,41 @@
 # Design
 
-One theme for everything OpenHAL shows: the website, the Inspector, the README, diagrams, social images, CLI output and error messages. OpenHAL is a formal open protocol, so everything looks and reads like a well-run specification. Precise, versioned, calm and trustworthy. The tokens live in `design/tokens.css`, and every surface imports them. If something needs a value this document doesn't define, add it here first.
+OpenHAL has exactly one theme: a formal open protocol. Everything (website, Inspector, README, diagrams, CLI output, error messages, social images) looks and reads like a well-run modern protocol: precise, versioned, calm, trustworthy.
 
-This replaces the earlier instrument-panel theme (Sofia Sans Condensed, Martian Mono, the limit line as the signature). The limit line survives only as a control detail inside the Inspector and the playground, where a real limit is drawn.
+The tokens live in `design/tokens.css`, and every surface imports them. If something needs a value this document doesn't define, add it here first.
+
+Theme rules.
+1. The theme lives in structure, components, typography, terminology and copy, never in illustrations or decoration.
+2. Clarity beats theme. A term a newcomer may not know links to the glossary on first use.
+3. Everything is themed, including every empty state, error, 404, loading state, favicon, social image and README.
+4. Every visual element comes from a real part of the system. Before a surface ships, list its elements and remove any that come from nowhere.
+5. Every piece of UI chrome works, or it isn't drawn.
 
 ## Subject and job
 
 OpenHAL is an open protocol for AI agents to discover, read and control hardware safely. The reader is an engineer deciding whether to implement or adopt it. The site's job is to make the protocol legible: what a client sends, what the hub answers, and why a write is refused. The Inspector's job is to show every device and every message, and stop anything in one click.
 
-## Signature element: the message trace
+## Signature elements
 
-A two-column trace of a request and the hub's answer, the way a protocol spec shows an exchange. It appears in the website hero, the README, the Inspector's message log and social images, and it is the visual identity.
+Two elements carry the identity.
+
+### The animated flow diagram
+
+A clean flowchart of one write, left to right. AI client, then OpenHAL hub (with the Device files that feed the kernel), then Safety kernel, then Driver, then Device. A branch from the kernel goes down to a Blocked node, `LIMIT_EXCEEDED: 150 % > max 100 %`. Connector labels in the mono face read `hal/write`, `check`, `grant` and `command`, and a thin return line reads `reading`.
+
+- Rounded rectangles with 1.5 px strokes, equal heights and consistent widths on a grid. Orthogonal connectors with right-angle turns only, one arrowhead style, no crossings.
+- One neutral for nodes and wires, the accent for the active path, red only for the Blocked node and its connector.
+- Only the wires move. A dash flows along each connector in the direction data travels, 2 to 3 s per loop, staggered from client to device. The blocked branch flows to Blocked, then pauses. `prefers-reduced-motion` stops all of it.
+- Source `docs/diagrams/flow.d2`, built with `scripts/build-diagrams` into `docs/diagrams/flow-light.svg` and `flow-dark.svg`. The README hero and the website home hero use these files.
+
+### The message trace
+
+A two-column trace of a request and the hub's answer, the way a protocol spec shows an exchange. It appears below the hero on the website, in the README as a code block, in the spec and docs, in the Inspector's message log and in social images.
 
 ```
 → hal/write   { "device": "desk-fan", "channel": "fan_speed", "value": "150 %" }
 ← error -32010 LIMIT_EXCEEDED
-              fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-11-02)
+              fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)
 
 → hal/write   { "device": "desk-fan", "channel": "fan_speed", "value": "60 %" }
 ← result      { "status": "done", "value": 60, "unit": "%" }
@@ -25,6 +45,34 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
 - **Method or outcome column.** The method name in the accent color. `error` plus the numeric code and the registry name in the blocked red. `result` in the granted green. Each is paired with its word, never color alone.
 - **Payload.** JSON in the mono face with the house syntax theme. Reasons as plain mono text on their own line.
 - Method names, codes and names match ADR 0015 and the generated schema exactly, everywhere.
+
+## Canonical demo scenario
+
+Every example value in the README, website, Inspector screenshots, docs and social images comes from one file, `docs/demo/scenario.yaml`, generated from a real run of the hub against mocks. Device `desk-fan`, channel `fan_speed`, current 20 %, requested 150 %, limit 100 % (max, rate 20 %/s), granted 60 %, read back 60 %. A test checks that every surface using demo values matches the file. Demo values are labeled as demo data where shown.
+
+## Theme mapping
+
+| Surface, feature or state | How the theme expresses it |
+|---|---|
+| Home page | One sentence, the flow diagram, the message trace, a three-command quickstart, device families from the catalog, two sentences on MHS, links into the spec |
+| Spec pages | Dated version in the URL and a switcher, numbered sections, MUST, SHOULD and MAY, outline, anchors, previous and next, "Edit on GitHub" |
+| Schema reference | Generated tables of every message, type and field, monospace names |
+| Error codes | The registry table, the message trace with `error`, code and name in the blocked red with its shape |
+| Granted write | `result` in the granted green with its shape |
+| Confirmation required | Amber with the half-circle shape and the words "confirmation required" |
+| Stopped | The blocked red, the word "stopped", the STOP control turning into UNLOCK |
+| Unverified driver or device | Gray with a dashed outline and the word "unverified" |
+| Drivers and Device Library | Datasheet-style tables with conformance level, status and hazard default |
+| Playground | A spec-style editor and the message trace for each attempted command, labeled as an in-browser demo |
+| Inspector | Device list, device pane and message log as JSON-RPC traces |
+| Empty states | One sentence that says what is missing and the command or link that fills it |
+| 404 | A message trace of the request and `error -32004 UNKNOWN_TARGET` |
+| Loading | The layout at its final size with values shown as an em space until they arrive, no spinners on loaded content |
+| CLI output and errors | Plain text with `->` and `<-`, error name and code first, then the reason |
+| Social images | The message trace on the page's title, in the house style |
+| Favicon | The mark at 16 px |
+
+Anything that doesn't map gets plain, neutral treatment, never a second metaphor.
 
 ## Color
 
@@ -99,9 +147,9 @@ The dashboard is the OpenHAL Inspector, a protocol inspector.
 ## Motion
 
 Three patterns, nothing else.
-1. A message appearing in the trace or log. A 120 ms fade, 4 px rise.
-2. A status change. A 120 ms cross-fade.
-3. A page transition in the docs. A 150 ms fade.
+1. The flowing connectors in the flow diagram.
+2. A message appearing in the trace or log. A 120 ms fade, 4 px rise.
+3. A status change. A 120 ms cross-fade.
 
 With `prefers-reduced-motion: reduce`, nothing moves.
 
@@ -127,6 +175,8 @@ These rules apply to the website, the docs and the dashboard, and to every diagr
 - Marketing sections on the home page, such as feature grids, testimonials, stats or logos.
 - Calling anything a standard that isn't one.
 - Inconsistent names. Method names, error codes and terms match the schema exactly everywhere.
+- A failing CI badge. Show the CI badge only while CI passes.
+- Demo GIFs or demo panel images as the README hero.
 
 ### Never, no exceptions
 
@@ -219,25 +269,26 @@ Copy
 
 ## README and diagrams
 
-The repository README follows this structure, in this order.
+The repository README follows this structure, in this order, left-aligned.
 
-1. An SVG wordmark, left-aligned, then one sentence. "An open layer between AI agents and real hardware, with a safety kernel that checks every write." No subtitle that repeats it.
-2. The message trace. The blocked `hal/write` answered with LIMIT_EXCEEDED, then the successful one, as a light and dark image.
-3. Quickstart. Exactly three commands in one code block, then one line saying what you'll see.
-4. What it does. Three short bullets, no more.
-5. A sequence diagram, Client to Hub to Safety Kernel to Driver to Device, in the house style, light and dark.
-6. Supported devices. A table generated from drivers/catalog.json with driver, devices covered, status and hazard default. Status is honest, tested on simulator or verified on hardware.
-7. Safety model. Five bullets at most, linking to docs/SAFETY.md.
-8. Relationship to Anthropic's MHS. Two sentences.
-9. Contributing a driver or device file, then the license.
+1. The wordmark (SVG, light and dark) and one sentence. "An open protocol and hub that lets AI agents control real hardware, with a safety kernel that checks every write." No subtitle that repeats it.
+2. At most two neutral badges, the license and CI only while it passes. Status as a sentence. "v0.1, in development. Drivers are tested on simulators; hardware verification is in progress."
+3. The animated flow diagram.
+4. Quickstart. Three commands in one code block, then one line on what you'll see.
+5. The message trace, the blocked write then the granted write, as a code block.
+6. "What it does", three bullets.
+7. Supported devices, a table generated from drivers/catalog.json with driver, devices covered, status and hazard default.
+8. Safety model, at most five bullets, linking to docs/SAFETY.md.
+9. Relationship to MHS, two sentences.
+10. Contributing a driver or device file, then the license.
 
-Rules.
-- Everything left-aligned. No centered hero blocks.
-- At most two badges, license and CI status, in the same neutral style. Project status goes in a sentence.
-- No emoji in headings and no horizontal rules between sections.
-- Every image ships as SVG (GIF for the demo) in light and dark variants through `<picture>` with a `prefers-color-scheme: dark` source, on a transparent background or one that matches GitHub's canvas in each mode. Every image has descriptive alt text and is at most 900 px wide.
-- The sequence diagram tells the story of one request in the house style. The client's `hal/write` of 150 % reaches the Hub, the Safety Kernel checks it against the Device File's limit and the Hub answers LIMIT_EXCEEDED. The write of 60 % is granted, the Driver uses the single-use Grant, the Device applies it and a `hal/value` notification returns. It must fail the swap test for any other project.
-- Verify by rendering the README in GitHub's light and dark modes. Nothing may look like a slab, all image text must read at 100 % zoom, and the GIF and quickstart must be visible without scrolling at 1440 by 900.
+No demo GIF, no demo panel images, no emoji in headings, no rules between sections.
+
+Images ship as SVG in light and dark variants through `<picture>` with a `prefers-color-scheme: dark` source, on transparent backgrounds, at most 900 px wide, with descriptive alt text. Text in SVGs is converted to paths or uses an embedded subset font, since GitHub loads no web fonts. No JavaScript and no external files inside SVGs.
+
+All diagrams (flow, architecture, sequence, discovery, driver writer) use one D2 house style with light and dark variants.
+
+Verify by rendering the README in GitHub's light and dark modes and at phone width. The animation plays, reduced motion shows static lines, nothing looks like a slab, all image text reads at 100 % zoom, and the diagram and quickstart are visible without scrolling at 1440 by 900.
 
 ## Generic-ness tests
 
@@ -245,4 +296,4 @@ Run these on every screen before calling it done.
 
 1. **Swap.** Put another product's name on it. If it still fits, revise.
 2. **Thumbnail.** Blur a screenshot to 200 px wide. It should still read as a specification with message exchanges.
-3. **Memory.** What does a visitor remember ten minutes later? It should be the message trace with LIMIT_EXCEEDED.
+3. **Memory.** What does a visitor remember ten minutes later? It should be the flow diagram's blocked branch and the message trace with LIMIT_EXCEEDED.
