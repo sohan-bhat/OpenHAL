@@ -109,6 +109,7 @@ class RpiCameraDriver(Driver):
         protocols=("libcamera through picamera2",),
         hazard_default="low",
         summary="Raspberry Pi camera modules, read-only capture as JPEG.",
+        conformance="core",
         safe_state_support="none",
     )
     params_model: ClassVar[type[Any] | None] = RpiCameraParams

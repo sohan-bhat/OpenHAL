@@ -1,12 +1,14 @@
-"""Every protocol name in the specification matches ADR 0015, and every ADR name is specified.
+"""Every protocol name in the specification matches ADR 0015 and the registry in code.
 
-The ADR's Markdown tables are the source of truth until `openhal/protocol` lands, when the
-orchestrator points these tests at the registry in code.
+Each check runs twice, once against the ADR's Markdown tables and once against `openhal.protocol`
+(the error registry and the method and notification tables), so the spec, the ADR and the code
+can't drift apart.
 """
 
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -81,6 +83,22 @@ def adr() -> Registry:
     return Registry(methods, frozenset(notifications), errors, kernel_codes)
 
 
+@cache
+def code() -> Registry:
+    from openhal.protocol import errors, messages
+
+    return Registry(
+        methods=frozenset(messages.METHODS),
+        notifications=frozenset(messages.NOTIFICATIONS) | frozenset(messages.CLIENT_NOTIFICATIONS),
+        errors={spec.name: spec.code for spec in errors.REGISTRY},
+        kernel_codes={spec.name: spec.kernel_codes for spec in errors.REGISTRY},
+    )
+
+
+SOURCES: dict[str, Callable[[], Registry]] = {"adr": adr, "code": code}
+source = pytest.mark.parametrize("registry_of", list(SOURCES.values()), ids=list(SOURCES))
+
+
 def spec_files() -> list[Path]:
     files = sorted(VERSION.rglob("*.md"))
     files += [SPEC / name for name in TOP_LEVEL]
@@ -100,9 +118,14 @@ def test_the_adr_tables_parse() -> None:
     assert len(set(registry.errors.values())) == len(registry.errors)
 
 
+def test_the_code_registry_matches_the_adr() -> None:
+    assert code() == adr()
+
+
+@source
 @pytest.mark.parametrize("path", spec_files(), ids=lambda path: str(path.relative_to(SPEC)))
-def test_every_protocol_name_in_the_spec_is_in_the_adr(path: Path) -> None:
-    registry = adr()
+def test_every_protocol_name_in_the_spec_is_in_the_adr(path: Path, registry_of: Callable[[], Registry]) -> None:
+    registry = registry_of()
     text = path.read_text(encoding="utf-8")
     unknown_methods = set(METHOD.findall(text)) - registry.methods - registry.notifications
     unknown_errors = set(UPPER_SNAKE.findall(text)) - set(registry.errors) - NOT_ERROR_NAMES
@@ -110,8 +133,9 @@ def test_every_protocol_name_in_the_spec_is_in_the_adr(path: Path) -> None:
     assert not unknown_errors, f"{path.name} names errors the ADR doesn't have: {sorted(unknown_errors)}"
 
 
-def test_every_adr_name_is_in_the_spec() -> None:
-    registry = adr()
+@source
+def test_every_adr_name_is_in_the_spec(registry_of: Callable[[], Registry]) -> None:
+    registry = registry_of()
     text = spec_text()
     named = set(METHOD.findall(text))
     named |= {name for name in registry.errors if re.search(rf"(?<![\w/.-]){name}(?![\w-])", text)}
@@ -119,9 +143,10 @@ def test_every_adr_name_is_in_the_spec() -> None:
     assert not expected - named, f"the spec never names {sorted(expected - named)}"
 
 
+@source
 @pytest.mark.parametrize("path", spec_files(), ids=lambda path: str(path.relative_to(SPEC)))
-def test_every_code_shown_next_to_a_name_matches(path: Path) -> None:
-    registry = adr()
+def test_every_code_shown_next_to_a_name_matches(path: Path, registry_of: Callable[[], Registry]) -> None:
+    registry = registry_of()
     text = path.read_text(encoding="utf-8")
     pairs: set[tuple[str, int]] = set()
     for pattern in PAIRINGS:
@@ -133,8 +158,9 @@ def test_every_code_shown_next_to_a_name_matches(path: Path) -> None:
     assert not wrong, f"{path.name} pairs codes with the wrong names: {wrong}"
 
 
-def test_the_registry_table_matches_the_adr_row_for_row() -> None:
-    registry = adr()
+@source
+def test_the_registry_table_matches_the_adr_row_for_row(registry_of: Callable[[], Registry]) -> None:
+    registry = registry_of()
     text = (VERSION / "safety.md").read_text(encoding="utf-8")
     rows = _rows(_section(text, "## Error registry").split("### Reason messages")[0])
     table = {row[1]: (int(row[0]), tuple(re.findall(r"`([a-z_]+)`", row[2]))) for row in rows}
@@ -142,9 +168,10 @@ def test_the_registry_table_matches_the_adr_row_for_row() -> None:
     assert table == expected
 
 
-def test_every_kernel_code_maps_to_exactly_one_name() -> None:
+@source
+def test_every_kernel_code_maps_to_exactly_one_name(registry_of: Callable[[], Registry]) -> None:
     owners: dict[str, list[str]] = {}
-    for name, codes in adr().kernel_codes.items():
+    for name, codes in registry_of().kernel_codes.items():
         for code in codes:
             owners.setdefault(code, []).append(name)
     assert set(BLOCK_CODES) <= set(owners), f"unmapped kernel codes {sorted(set(BLOCK_CODES) - set(owners))}"

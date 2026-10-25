@@ -20,6 +20,7 @@ from openhal.cli import (
     log_cmd,
     mcp_cmd,
     routine_cmd,
+    rpc_cmd,
     token_cmd,
     writer_cmd,
 )
@@ -43,6 +44,7 @@ control_cmd.register(app)
 log_cmd.register(app)
 token_cmd.register(app)
 mcp_cmd.register(app)
+rpc_cmd.register(app)
 doctor_cmd.register(app)
 
 

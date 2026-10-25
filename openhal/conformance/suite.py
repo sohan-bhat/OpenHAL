@@ -15,7 +15,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from openhal.drivers.base import Driver, DriverError, Reading
+from openhal.drivers.base import Conformance, Driver, DriverError, Reading
 from openhal.kernel.commands import Write
 from openhal.kernel.grants import GrantError
 from openhal.kernel.kernel import Kernel
@@ -25,7 +25,11 @@ from openhal.spec.models import DeviceFile
 
 @dataclass
 class ConformanceCase:
-    """How to test one driver. `make` builds a fresh driver connected to its simulator."""
+    """How to test one driver. `make` builds a fresh driver connected to its simulator.
+
+    `level` is the conformance level under test. It defaults to the driver's own
+    `DriverInfo.conformance`, and checks above it are reported as skipped, never run (ADR 0015).
+    """
 
     name: str
     file: DeviceFile
@@ -33,6 +37,7 @@ class ConformanceCase:
     break_connection: Callable[[Driver], Awaitable[None]] | None = None
     make_slow: Callable[[Driver], Awaitable[None]] | None = None
     cleanup: Callable[[], Awaitable[None]] | None = None
+    level: Conformance | None = None
 
 
 @dataclass
@@ -47,6 +52,7 @@ class CheckResult:
 class Report:
     driver: str
     results: list[CheckResult] = field(default_factory=list)
+    level: Conformance = "control"
 
     @property
     def ok(self) -> bool:
@@ -56,7 +62,10 @@ class Report:
         passed = sum(result.ok for result in self.results)
         skipped = sum(result.skipped for result in self.results)
         failed = len(self.results) - passed - skipped
-        return f"{self.driver}: {passed} passed, {failed} failed, {skipped} skipped"
+        return f"{self.driver} ({self.level}): {passed} passed, {failed} failed, {skipped} skipped"
+
+
+LEVELS: dict[Conformance, int] = {"core": 0, "control": 1, "full": 2}
 
 
 class _Spy:
@@ -64,7 +73,7 @@ class _Spy:
 
     def __init__(self, driver: Driver) -> None:
         self.calls: list[tuple[str, Any]] = []
-        original_write = driver._write  # noqa: SLF001 (the suite spies on the protocol layer)
+        original_write = driver._write  # noqa: SLF001
         original_action = driver._action  # noqa: SLF001
 
         async def spy_write(channel: str, value: Any) -> Reading | None:
@@ -99,16 +108,21 @@ def _inside_value(file: DeviceFile) -> tuple[str, Any] | None:
 
 async def run(case: ConformanceCase) -> Report:
     """Run every check and return a report. Never raises for a failing driver."""
-    report = Report(case.name)
+    driver = case.make(case.file)
+    level: Conformance = case.level or driver.info.conformance
+    report = Report(case.name, level=level)
 
-    async def check(name: str, body: Callable[[], Awaitable[str | None]]) -> None:
+    async def check(name: str, needed: Conformance, body: Callable[[], Awaitable[str | None]]) -> None:
+        if LEVELS[needed] > LEVELS[level]:
+            report.results.append(CheckResult(name, False, f"above the declared {level} level", skipped=True))
+            return
         started = time.monotonic()
         try:
             detail = await asyncio.wait_for(body(), 30)
         except _Skip as skip:
             report.results.append(CheckResult(name, False, str(skip), skipped=True))
             return
-        except Exception as exc:  # noqa: BLE001 (a failing check is a result, not a crash)
+        except Exception as exc:  # noqa: BLE001
             report.results.append(CheckResult(name, False, f"{type(exc).__name__}: {exc}"))
             return
         elapsed = time.monotonic() - started
@@ -116,7 +130,6 @@ async def run(case: ConformanceCase) -> Report:
 
     clock_now = [10_000.0]
     kernel = Kernel(clock=lambda: clock_now[0])
-    driver = case.make(case.file)
     spy = _Spy(driver)
     kernel.register(case.file, driver)
     device_id = case.file.device_id
@@ -243,21 +256,22 @@ async def run(case: ConformanceCase) -> Report:
         await driver.close()
         return "closed"
 
-    for name, body in (
-        ("identify", identify),
-        ("connect", connect),
-        ("describe", describe),
-        ("read every channel", read_every_channel),
-        ("write inside limits", write_inside_limits),
-        ("write outside limits is blocked before the driver", write_outside_limits_is_blocked),
-        ("no write without a kernel grant", no_bypass_without_grant),
-        ("concurrent access", concurrent_access),
-        ("safe state", safe_state),
-        ("disconnect and reconnect", disconnect_and_reconnect),
-        ("timeout handling", timeout_handling),
-        ("close", close),
-    ):
-        await check(name, body)
+    checks: tuple[tuple[str, Conformance, Callable[[], Awaitable[str | None]]], ...] = (
+        ("identify", "core", identify),
+        ("connect", "core", connect),
+        ("describe", "core", describe),
+        ("read every channel", "core", read_every_channel),
+        ("write inside limits", "control", write_inside_limits),
+        ("write outside limits is blocked before the driver", "control", write_outside_limits_is_blocked),
+        ("no write without a kernel grant", "control", no_bypass_without_grant),
+        ("concurrent access", "control", concurrent_access),
+        ("safe state", "control", safe_state),
+        ("disconnect and reconnect", "core", disconnect_and_reconnect),
+        ("timeout handling", "core", timeout_handling),
+        ("close", "core", close),
+    )
+    for name, needed, body in checks:
+        await check(name, needed, body)
     if case.cleanup is not None:
         await case.cleanup()
     return report

@@ -1,0 +1,2993 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OpenHAL hub protocol 2026-10-24",
+  "description": "Generated from openhal/protocol/messages.py by python -m openhal.protocol.schema.",
+  "protocolVersion": "2026-10-24",
+  "methods": {
+    "hal/initialize": {
+      "level": "core",
+      "humanOnly": false,
+      "params": {
+        "$ref": "#/$defs/InitializeParams"
+      },
+      "result": {
+        "$ref": "#/$defs/InitializeResult"
+      }
+    },
+    "hal/devices/list": {
+      "level": "core",
+      "humanOnly": false,
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/DevicesListResult"
+      }
+    },
+    "hal/devices/describe": {
+      "level": "core",
+      "humanOnly": false,
+      "params": {
+        "$ref": "#/$defs/DescribeParams"
+      },
+      "result": {
+        "$ref": "#/$defs/DescribeResult"
+      }
+    },
+    "hal/read": {
+      "level": "core",
+      "humanOnly": false,
+      "params": {
+        "$ref": "#/$defs/ReadParams"
+      },
+      "result": {
+        "$ref": "#/$defs/Reading"
+      }
+    },
+    "hal/readMany": {
+      "level": "core",
+      "humanOnly": false,
+      "params": {
+        "$ref": "#/$defs/ReadManyParams"
+      },
+      "result": {
+        "$ref": "#/$defs/ReadManyResult"
+      }
+    },
+    "hal/write": {
+      "level": "control",
+      "humanOnly": false,
+      "params": {
+        "$ref": "#/$defs/WriteParams"
+      },
+      "result": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/WriteDone"
+          },
+          {
+            "$ref": "#/$defs/Pending"
+          }
+        ]
+      }
+    },
+    "hal/dryRun": {
+      "level": "control",
+      "humanOnly": false,
+      "params": {
+        "$ref": "#/$defs/DryRunParams"
+      },
+      "result": {
+        "$ref": "#/$defs/DryRunResult"
+      }
+    },
+    "hal/planCheck": {
+      "level": "control",
+      "humanOnly": false,
+      "params": {
+        "$ref": "#/$defs/PlanCheckParams"
+      },
+      "result": {
+        "$ref": "#/$defs/PlanResult"
+      }
+    },
+    "hal/stop": {
+      "level": "control",
+      "humanOnly": false,
+      "params": {
+        "$ref": "#/$defs/StopParams"
+      },
+      "result": {
+        "$ref": "#/$defs/StopResult"
+      }
+    },
+    "hal/unlock": {
+      "level": "control",
+      "humanOnly": true,
+      "params": {
+        "$ref": "#/$defs/UnlockParams"
+      },
+      "result": {
+        "$ref": "#/$defs/UnlockResult"
+      }
+    },
+    "hal/action": {
+      "level": "full",
+      "humanOnly": false,
+      "params": {
+        "$ref": "#/$defs/ActionParams"
+      },
+      "result": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ActionDone"
+          },
+          {
+            "$ref": "#/$defs/Pending"
+          }
+        ]
+      }
+    },
+    "hal/confirmations/list": {
+      "level": "full",
+      "humanOnly": false,
+      "params": {
+        "$ref": "#/$defs/ConfirmationsListParams"
+      },
+      "result": {
+        "$ref": "#/$defs/ConfirmationsListResult"
+      }
+    },
+    "hal/confirmations/approve": {
+      "level": "full",
+      "humanOnly": true,
+      "params": {
+        "$ref": "#/$defs/ApproveParams"
+      },
+      "result": {
+        "$ref": "#/$defs/Decision"
+      }
+    },
+    "hal/confirmations/reject": {
+      "level": "full",
+      "humanOnly": true,
+      "params": {
+        "$ref": "#/$defs/RejectParams"
+      },
+      "result": {
+        "$ref": "#/$defs/ConfirmationRequest"
+      }
+    },
+    "hal/routines/list": {
+      "level": "full",
+      "humanOnly": false,
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/RoutinesListResult"
+      }
+    },
+    "hal/routines/dryRun": {
+      "level": "full",
+      "humanOnly": false,
+      "params": {
+        "$ref": "#/$defs/RoutineDryRunParams"
+      },
+      "result": {
+        "$ref": "#/$defs/PlanResult"
+      }
+    },
+    "hal/audit/query": {
+      "level": "full",
+      "humanOnly": false,
+      "params": {
+        "$ref": "#/$defs/AuditQueryParams"
+      },
+      "result": {
+        "$ref": "#/$defs/AuditQueryResult"
+      }
+    }
+  },
+  "notifications": {
+    "hal/value": {
+      "level": "core",
+      "params": {
+        "$ref": "#/$defs/Reading"
+      }
+    },
+    "hal/blocked": {
+      "level": "control",
+      "params": {
+        "$ref": "#/$defs/BlockedParams"
+      }
+    },
+    "hal/stopped": {
+      "level": "control",
+      "params": {
+        "$ref": "#/$defs/StoppedParams"
+      }
+    },
+    "hal/deviceAdded": {
+      "level": "core",
+      "params": {
+        "$ref": "#/$defs/DeviceAddedParams"
+      }
+    },
+    "hal/deviceRemoved": {
+      "level": "core",
+      "params": {
+        "$ref": "#/$defs/DeviceRemovedParams"
+      }
+    },
+    "hal/confirmationRequested": {
+      "level": "full",
+      "params": {
+        "$ref": "#/$defs/ConfirmationRequestedParams"
+      }
+    }
+  },
+  "clientNotifications": {
+    "hal/initialized": {
+      "params": {
+        "$ref": "#/$defs/Empty"
+      }
+    },
+    "hal/shutdown": {
+      "params": {
+        "$ref": "#/$defs/Empty"
+      }
+    }
+  },
+  "errors": [
+    {
+      "code": -32700,
+      "name": "PARSE_ERROR",
+      "kernelCodes": [],
+      "meaning": "Invalid JSON"
+    },
+    {
+      "code": -32600,
+      "name": "INVALID_REQUEST",
+      "kernelCodes": [],
+      "meaning": "Not a JSON-RPC request"
+    },
+    {
+      "code": -32601,
+      "name": "METHOD_NOT_FOUND",
+      "kernelCodes": [],
+      "meaning": "Unknown method, or one above the hub's conformance level"
+    },
+    {
+      "code": -32602,
+      "name": "INVALID_PARAMS",
+      "kernelCodes": [
+        "bad_request"
+      ],
+      "meaning": "Params don't match the schema"
+    },
+    {
+      "code": -32603,
+      "name": "INTERNAL_ERROR",
+      "kernelCodes": [
+        "internal_error"
+      ],
+      "meaning": "A bug in the hub"
+    },
+    {
+      "code": -32001,
+      "name": "NOT_INITIALIZED",
+      "kernelCodes": [],
+      "meaning": "hal/initialize hasn't run"
+    },
+    {
+      "code": -32002,
+      "name": "UNAUTHORIZED",
+      "kernelCodes": [],
+      "meaning": "Missing or unknown token"
+    },
+    {
+      "code": -32003,
+      "name": "SCOPE_DENIED",
+      "kernelCodes": [
+        "not_permitted"
+      ],
+      "meaning": "The principal's token scope doesn't cover this device or method"
+    },
+    {
+      "code": -32004,
+      "name": "UNKNOWN_TARGET",
+      "kernelCodes": [
+        "unknown_target"
+      ],
+      "meaning": "No such device, channel or action"
+    },
+    {
+      "code": -32005,
+      "name": "DEVICE_UNAVAILABLE",
+      "kernelCodes": [
+        "device_unavailable"
+      ],
+      "meaning": "Disconnected or not ready"
+    },
+    {
+      "code": -32010,
+      "name": "LIMIT_EXCEEDED",
+      "kernelCodes": [
+        "above_max",
+        "below_min"
+      ],
+      "meaning": "Outside the device file's confirmed limits"
+    },
+    {
+      "code": -32011,
+      "name": "RATE_LIMITED",
+      "kernelCodes": [
+        "rate_limited"
+      ],
+      "meaning": "Faster than max_change_per_s allows right now"
+    },
+    {
+      "code": -32012,
+      "name": "INTERLOCK_BLOCKED",
+      "kernelCodes": [
+        "interlock"
+      ],
+      "meaning": "An interlock or action requirement doesn't hold, or a value it needs is unknown"
+    },
+    {
+      "code": -32013,
+      "name": "CONFIRMATION_REQUIRED",
+      "kernelCodes": [
+        "needs_confirmation"
+      ],
+      "meaning": "Queued for a person, data.requestId names the request"
+    },
+    {
+      "code": -32014,
+      "name": "STOPPED",
+      "kernelCodes": [
+        "stopped"
+      ],
+      "meaning": "The hub is stopped until a person unlocks"
+    },
+    {
+      "code": -32015,
+      "name": "UNVERIFIED_LIMITS",
+      "kernelCodes": [
+        "read_only_file"
+      ],
+      "meaning": "The device file's limits aren't confirmed by a person, so it is read-only"
+    },
+    {
+      "code": -32016,
+      "name": "INVALID_VALUE",
+      "kernelCodes": [
+        "bad_value",
+        "bad_step"
+      ],
+      "meaning": "Wrong type, step, enum value or pattern"
+    },
+    {
+      "code": -32017,
+      "name": "WATCHDOG_TRIPPED",
+      "kernelCodes": [
+        "duration_exceeded"
+      ],
+      "meaning": "A watchdog budget is used up"
+    },
+    {
+      "code": -32018,
+      "name": "BUSY",
+      "kernelCodes": [
+        "busy"
+      ],
+      "meaning": "Another command holds the device"
+    },
+    {
+      "code": -32019,
+      "name": "QUEUE_FULL",
+      "kernelCodes": [
+        "queue_full"
+      ],
+      "meaning": "The confirmation queue is full"
+    },
+    {
+      "code": -32020,
+      "name": "DRIVER_ERROR",
+      "kernelCodes": [
+        "driver_error"
+      ],
+      "meaning": "The device or its protocol failed, and the channel is unknown until a readback"
+    },
+    {
+      "code": -32021,
+      "name": "MISCONFIGURED",
+      "kernelCodes": [
+        "misconfigured",
+        "cannot_loosen"
+      ],
+      "meaning": "The hub's device files are inconsistent, or a change would loosen a confirmed limit"
+    },
+    {
+      "code": -32022,
+      "name": "REQUEST_CLOSED",
+      "kernelCodes": [
+        "expired",
+        "rejected"
+      ],
+      "meaning": "The confirmation request expired or was rejected"
+    },
+    {
+      "code": -32023,
+      "name": "UNIT_INVALID",
+      "kernelCodes": [
+        "bad_unit"
+      ],
+      "meaning": "A missing, unknown or incompatible unit, or a value that isn't finite"
+    }
+  ],
+  "$defs": {
+    "Action": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "action",
+          "default": "action",
+          "title": "Kind",
+          "type": "string"
+        },
+        "device": {
+          "description": "A device id, for example desk-fan.",
+          "maxLength": 48,
+          "minLength": 1,
+          "title": "Device",
+          "type": "string"
+        },
+        "action": {
+          "description": "An action, for example spin_test.",
+          "maxLength": 48,
+          "minLength": 1,
+          "title": "Action",
+          "type": "string"
+        },
+        "args": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "default": {},
+          "description": "Arguments by name. Numbers are quantity strings.",
+          "title": "Args",
+          "type": "object"
+        }
+      },
+      "required": [
+        "device",
+        "action"
+      ],
+      "title": "Action",
+      "type": "object"
+    },
+    "ActionDone": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "done",
+          "default": "done",
+          "title": "Status",
+          "type": "string"
+        },
+        "result": {
+          "$ref": "#/$defs/ActionOutcome"
+        }
+      },
+      "required": [
+        "result"
+      ],
+      "title": "ActionDone",
+      "type": "object"
+    },
+    "ActionInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "args": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Args",
+          "type": "object"
+        },
+        "require": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Require",
+          "type": "array"
+        },
+        "effects": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Effects",
+          "type": "array"
+        },
+        "confirm": {
+          "title": "Confirm",
+          "type": "string"
+        },
+        "suggested": {
+          "title": "Suggested",
+          "type": "boolean"
+        },
+        "confirmed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confirmed"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "args",
+        "require",
+        "effects",
+        "confirm",
+        "suggested"
+      ],
+      "title": "ActionInfo",
+      "type": "object"
+    },
+    "ActionOutcome": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "action": {
+          "title": "Action",
+          "type": "string"
+        },
+        "args": {
+          "additionalProperties": true,
+          "title": "Args",
+          "type": "object"
+        }
+      },
+      "required": [
+        "device",
+        "action",
+        "args"
+      ],
+      "title": "ActionOutcome",
+      "type": "object"
+    },
+    "ActionParams": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "description": "A device id, for example desk-fan.",
+          "maxLength": 48,
+          "minLength": 1,
+          "title": "Device",
+          "type": "string"
+        },
+        "action": {
+          "description": "An action, for example spin_test.",
+          "maxLength": 48,
+          "minLength": 1,
+          "title": "Action",
+          "type": "string"
+        },
+        "args": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "default": {},
+          "title": "Args",
+          "type": "object"
+        }
+      },
+      "required": [
+        "device",
+        "action"
+      ],
+      "title": "ActionParams",
+      "type": "object"
+    },
+    "ApproveParams": {
+      "additionalProperties": false,
+      "properties": {
+        "requestId": {
+          "description": "A confirmation request id.",
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Requestid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "requestId"
+      ],
+      "title": "ApproveParams",
+      "type": "object"
+    },
+    "AuditEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "at": {
+          "description": "An RFC 3339 time in UTC, for example 2026-10-24T14:02:00Z.",
+          "title": "At",
+          "type": "string"
+        },
+        "event": {
+          "title": "Event",
+          "type": "string"
+        },
+        "principal": {
+          "title": "Principal",
+          "type": "string"
+        },
+        "device": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Device"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code"
+        },
+        "body": {
+          "additionalProperties": true,
+          "description": "The entry's details. Text that quotes a device is a data block.",
+          "title": "Body",
+          "type": "object"
+        },
+        "hash": {
+          "title": "Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seq",
+        "at",
+        "event",
+        "principal",
+        "body",
+        "hash"
+      ],
+      "title": "AuditEntry",
+      "type": "object"
+    },
+    "AuditQueryParams": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "anyOf": [
+            {
+              "maxLength": 48,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Device"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        },
+        "event": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Event"
+        },
+        "since": {
+          "default": 0,
+          "description": "Only entries after this sequence number.",
+          "minimum": 0,
+          "title": "Since",
+          "type": "integer"
+        },
+        "limit": {
+          "default": 200,
+          "maximum": 5000,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        }
+      },
+      "title": "AuditQueryParams",
+      "type": "object"
+    },
+    "AuditQueryResult": {
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/AuditEntry"
+          },
+          "title": "Entries",
+          "type": "array"
+        }
+      },
+      "required": [
+        "entries"
+      ],
+      "title": "AuditQueryResult",
+      "type": "object"
+    },
+    "BlockedParams": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        },
+        "error": {
+          "$ref": "#/$defs/ErrorObject"
+        }
+      },
+      "required": [
+        "device",
+        "target",
+        "error"
+      ],
+      "title": "BlockedParams",
+      "type": "object"
+    },
+    "Capabilities": {
+      "additionalProperties": false,
+      "properties": {
+        "notifications": {
+          "description": "Every notification this hub sends.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Notifications",
+          "type": "array"
+        }
+      },
+      "required": [
+        "notifications"
+      ],
+      "title": "Capabilities",
+      "type": "object"
+    },
+    "ConfirmationRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "requestId": {
+          "title": "Requestid",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "approved",
+            "rejected",
+            "expired",
+            "cancelled",
+            "blocked",
+            "done",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "command": {
+          "discriminator": {
+            "mapping": {
+              "action": "#/$defs/Action",
+              "write": "#/$defs/Write"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Write"
+            },
+            {
+              "$ref": "#/$defs/Action"
+            }
+          ],
+          "title": "Command"
+        },
+        "requestedBy": {
+          "title": "Requestedby",
+          "type": "string"
+        },
+        "createdAt": {
+          "description": "An RFC 3339 time in UTC, for example 2026-10-24T14:02:00Z.",
+          "title": "Createdat",
+          "type": "string"
+        },
+        "expiresAt": {
+          "description": "An RFC 3339 time in UTC, for example 2026-10-24T14:02:00Z.",
+          "title": "Expiresat",
+          "type": "string"
+        },
+        "decidedBy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decidedby"
+        }
+      },
+      "required": [
+        "requestId",
+        "status",
+        "command",
+        "requestedBy",
+        "createdAt",
+        "expiresAt"
+      ],
+      "title": "ConfirmationRequest",
+      "type": "object"
+    },
+    "ConfirmationRequestedParams": {
+      "additionalProperties": false,
+      "properties": {
+        "request": {
+          "$ref": "#/$defs/ConfirmationRequest"
+        }
+      },
+      "required": [
+        "request"
+      ],
+      "title": "ConfirmationRequestedParams",
+      "type": "object"
+    },
+    "ConfirmationsListParams": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "anyOf": [
+            {
+              "enum": [
+                "pending",
+                "approved",
+                "rejected",
+                "expired",
+                "cancelled",
+                "blocked",
+                "done",
+                "failed"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Leave out to list pending requests.",
+          "title": "Status"
+        }
+      },
+      "title": "ConfirmationsListParams",
+      "type": "object"
+    },
+    "ConfirmationsListResult": {
+      "additionalProperties": false,
+      "properties": {
+        "requests": {
+          "items": {
+            "$ref": "#/$defs/ConfirmationRequest"
+          },
+          "title": "Requests",
+          "type": "array"
+        }
+      },
+      "required": [
+        "requests"
+      ],
+      "title": "ConfirmationsListResult",
+      "type": "object"
+    },
+    "Confirmed": {
+      "additionalProperties": false,
+      "description": "A human confirmation of limits.",
+      "properties": {
+        "by": {
+          "title": "By",
+          "type": "string"
+        },
+        "at": {
+          "description": "The date or time of the confirmation, as 2026-10-24.",
+          "title": "At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "by",
+        "at"
+      ],
+      "title": "Confirmed",
+      "type": "object"
+    },
+    "Decision": {
+      "additionalProperties": false,
+      "description": "The Safety Kernel's answer to one command. A blocked one carries its registry error.",
+      "properties": {
+        "status": {
+          "enum": [
+            "allowed",
+            "blocked",
+            "needs_confirmation",
+            "done",
+            "pending",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "target": {
+          "description": "write:<channel> or action:<name>.",
+          "title": "Target",
+          "type": "string"
+        },
+        "value": {
+          "default": null,
+          "title": "Value"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ErrorObject"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "requestId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Requestid"
+        }
+      },
+      "required": [
+        "status",
+        "device",
+        "target"
+      ],
+      "title": "Decision",
+      "type": "object"
+    },
+    "DescribeParams": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "description": "A device id, for example desk-fan.",
+          "maxLength": 48,
+          "minLength": 1,
+          "title": "Device",
+          "type": "string"
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "title": "DescribeParams",
+      "type": "object"
+    },
+    "DescribeResult": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "$ref": "#/$defs/DeviceDescription"
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "title": "DescribeResult",
+      "type": "object"
+    },
+    "DeviceAddedParams": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "$ref": "#/$defs/DeviceSummary"
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "title": "DeviceAddedParams",
+      "type": "object"
+    },
+    "DeviceDescription": {
+      "additionalProperties": false,
+      "description": "A DeviceSummary plus channels, actions, safe state, interlocks, watchdog rules and limits provenance.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "manufacturer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Manufacturer"
+        },
+        "driver": {
+          "title": "Driver",
+          "type": "string"
+        },
+        "hazard": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "title": "Hazard",
+          "type": "string"
+        },
+        "writable": {
+          "description": "False until a person confirms every limit.",
+          "title": "Writable",
+          "type": "boolean"
+        },
+        "connected": {
+          "title": "Connected",
+          "type": "boolean"
+        },
+        "conformance": {
+          "description": "The driver's declared conformance level.",
+          "enum": [
+            "core",
+            "control",
+            "full"
+          ],
+          "title": "Conformance",
+          "type": "string"
+        },
+        "verification": {
+          "description": "unverified, verified-on-simulator or verified-on-hardware.",
+          "title": "Verification",
+          "type": "string"
+        },
+        "read": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ReadChannelInfo"
+          },
+          "title": "Read",
+          "type": "object"
+        },
+        "write": {
+          "additionalProperties": {
+            "$ref": "#/$defs/WriteChannelInfo"
+          },
+          "title": "Write",
+          "type": "object"
+        },
+        "actions": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ActionInfo"
+          },
+          "title": "Actions",
+          "type": "object"
+        },
+        "safeState": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Safestate",
+          "type": "array"
+        },
+        "interlocks": {
+          "items": {
+            "$ref": "#/$defs/InterlockInfo"
+          },
+          "title": "Interlocks",
+          "type": "array"
+        },
+        "watchdog": {
+          "$ref": "#/$defs/WatchdogInfo"
+        },
+        "confirmed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confirmed"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The file-level confirmation of the limits."
+        },
+        "unconfirmed": {
+          "description": "Limits no person has confirmed yet.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Unconfirmed",
+          "type": "array"
+        },
+        "file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The Device File, for example desk-fan.hal.yaml.",
+          "title": "File"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Device File notes, inside a device-data block.",
+          "title": "Notes"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "driver",
+        "hazard",
+        "writable",
+        "connected",
+        "conformance",
+        "verification",
+        "read",
+        "write",
+        "actions",
+        "safeState",
+        "interlocks",
+        "watchdog",
+        "confirmed",
+        "unconfirmed",
+        "file"
+      ],
+      "title": "DeviceDescription",
+      "type": "object"
+    },
+    "DeviceRemovedParams": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "title": "Device",
+          "type": "string"
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "title": "DeviceRemovedParams",
+      "type": "object"
+    },
+    "DeviceSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "manufacturer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Manufacturer"
+        },
+        "driver": {
+          "title": "Driver",
+          "type": "string"
+        },
+        "hazard": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "title": "Hazard",
+          "type": "string"
+        },
+        "writable": {
+          "description": "False until a person confirms every limit.",
+          "title": "Writable",
+          "type": "boolean"
+        },
+        "connected": {
+          "title": "Connected",
+          "type": "boolean"
+        },
+        "conformance": {
+          "description": "The driver's declared conformance level.",
+          "enum": [
+            "core",
+            "control",
+            "full"
+          ],
+          "title": "Conformance",
+          "type": "string"
+        },
+        "verification": {
+          "description": "unverified, verified-on-simulator or verified-on-hardware.",
+          "title": "Verification",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "driver",
+        "hazard",
+        "writable",
+        "connected",
+        "conformance",
+        "verification"
+      ],
+      "title": "DeviceSummary",
+      "type": "object"
+    },
+    "DevicesListResult": {
+      "additionalProperties": false,
+      "properties": {
+        "devices": {
+          "items": {
+            "$ref": "#/$defs/DeviceSummary"
+          },
+          "title": "Devices",
+          "type": "array"
+        }
+      },
+      "required": [
+        "devices"
+      ],
+      "title": "DevicesListResult",
+      "type": "object"
+    },
+    "DryRunParams": {
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "action": "#/$defs/Action",
+                "write": "#/$defs/Write"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/Write"
+              },
+              {
+                "$ref": "#/$defs/Action"
+              }
+            ]
+          },
+          "maxItems": 200,
+          "title": "Commands",
+          "type": "array"
+        }
+      },
+      "required": [
+        "commands"
+      ],
+      "title": "DryRunParams",
+      "type": "object"
+    },
+    "DryRunResult": {
+      "additionalProperties": false,
+      "properties": {
+        "decisions": {
+          "items": {
+            "$ref": "#/$defs/Decision"
+          },
+          "title": "Decisions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "decisions"
+      ],
+      "title": "DryRunResult",
+      "type": "object"
+    },
+    "Empty": {
+      "additionalProperties": false,
+      "description": "Params for methods that take none.",
+      "properties": {},
+      "title": "Empty",
+      "type": "object"
+    },
+    "ErrorData": {
+      "additionalProperties": true,
+      "description": "`error.data`. `name` is the registry name clients branch on. Fields that don't apply are left out.",
+      "properties": {
+        "name": {
+          "description": "The registry name, for example LIMIT_EXCEEDED.",
+          "title": "Name",
+          "type": "string"
+        },
+        "kernelCode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The Safety Kernel's code, for example above_max.",
+          "title": "Kernelcode"
+        },
+        "kernelMessage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The Safety Kernel's own message.",
+          "title": "Kernelmessage"
+        },
+        "device": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Device"
+        },
+        "channel": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Channel"
+        },
+        "action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Action"
+        },
+        "limit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The limit that applied, as a quantity such as \"100 %\".",
+          "title": "Limit"
+        },
+        "requested": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The requested value in the channel unit, as \"150 %\".",
+          "title": "Requested"
+        },
+        "file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The Device File, for example desk-fan.hal.yaml.",
+          "title": "File"
+        },
+        "confirmedBy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Who confirmed the limit.",
+          "title": "Confirmedby"
+        },
+        "confirmedAt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "When the limit was confirmed, as 2026-10-24.",
+          "title": "Confirmedat"
+        },
+        "requestId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Requestid"
+        },
+        "tightenedBy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Who tightened the session limit that applied.",
+          "title": "Tightenedby"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ErrorData",
+      "type": "object"
+    },
+    "ErrorObject": {
+      "additionalProperties": false,
+      "description": "The JSON-RPC `error` member.",
+      "properties": {
+        "code": {
+          "description": "The registry number, stable across versions.",
+          "title": "Code",
+          "type": "integer"
+        },
+        "message": {
+          "description": "The human-readable reason, formed from data.",
+          "title": "Message",
+          "type": "string"
+        },
+        "data": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ErrorData"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "ErrorObject",
+      "type": "object"
+    },
+    "Failure": {
+      "additionalProperties": false,
+      "properties": {
+        "jsonrpc": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Jsonrpc",
+          "type": "string"
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Id"
+        },
+        "error": {
+          "$ref": "#/$defs/ErrorObject"
+        }
+      },
+      "required": [
+        "id",
+        "error"
+      ],
+      "title": "Failure",
+      "type": "object"
+    },
+    "Info": {
+      "additionalProperties": false,
+      "description": "`clientInfo` and `hubInfo`.",
+      "properties": {
+        "name": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "Info",
+      "type": "object"
+    },
+    "InitializeParams": {
+      "additionalProperties": false,
+      "properties": {
+        "protocolVersion": {
+          "description": "The newest version the client supports.",
+          "maxLength": 10,
+          "title": "Protocolversion",
+          "type": "string"
+        },
+        "clientInfo": {
+          "$ref": "#/$defs/Info"
+        },
+        "token": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The bearer token, if not sent as a header.",
+          "title": "Token"
+        }
+      },
+      "required": [
+        "protocolVersion",
+        "clientInfo"
+      ],
+      "title": "InitializeParams",
+      "type": "object"
+    },
+    "InitializeResult": {
+      "additionalProperties": false,
+      "properties": {
+        "protocolVersion": {
+          "title": "Protocolversion",
+          "type": "string"
+        },
+        "hubInfo": {
+          "$ref": "#/$defs/Info"
+        },
+        "conformance": {
+          "enum": [
+            "core",
+            "control",
+            "full"
+          ],
+          "title": "Conformance",
+          "type": "string"
+        },
+        "principal": {
+          "$ref": "#/$defs/PrincipalInfo"
+        },
+        "capabilities": {
+          "$ref": "#/$defs/Capabilities"
+        }
+      },
+      "required": [
+        "protocolVersion",
+        "hubInfo",
+        "conformance",
+        "principal",
+        "capabilities"
+      ],
+      "title": "InitializeResult",
+      "type": "object"
+    },
+    "InterlockInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "if": {
+          "title": "If",
+          "type": "string"
+        },
+        "require": {
+          "title": "Require",
+          "type": "string"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message"
+        }
+      },
+      "required": [
+        "if",
+        "require"
+      ],
+      "title": "InterlockInfo",
+      "type": "object"
+    },
+    "LogEntry": {
+      "additionalProperties": false,
+      "description": "One message in the Inspector's log, from `GET /v1/rpc/log`.",
+      "properties": {
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "at": {
+          "title": "At",
+          "type": "number"
+        },
+        "direction": {
+          "enum": [
+            "in",
+            "out"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "client": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Client"
+        },
+        "principal": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Principal"
+        },
+        "message": {
+          "title": "Message"
+        }
+      },
+      "required": [
+        "seq",
+        "at",
+        "direction",
+        "message"
+      ],
+      "title": "LogEntry",
+      "type": "object"
+    },
+    "MaxDurationInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "when": {
+          "title": "When",
+          "type": "string"
+        },
+        "forS": {
+          "title": "Fors",
+          "type": "number"
+        },
+        "resetAfterS": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resetafters"
+        },
+        "then": {
+          "title": "Then"
+        }
+      },
+      "required": [
+        "when",
+        "forS",
+        "then"
+      ],
+      "title": "MaxDurationInfo",
+      "type": "object"
+    },
+    "Notification": {
+      "additionalProperties": false,
+      "description": "A JSON-RPC notification. It has no id and gets no response.",
+      "properties": {
+        "jsonrpc": {
+          "const": "2.0",
+          "title": "Jsonrpc",
+          "type": "string"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "params": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Params"
+        }
+      },
+      "required": [
+        "jsonrpc",
+        "method"
+      ],
+      "title": "Notification",
+      "type": "object"
+    },
+    "Pending": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "pending",
+          "default": "pending",
+          "title": "Status",
+          "type": "string"
+        },
+        "requestId": {
+          "title": "Requestid",
+          "type": "string"
+        },
+        "expiresInS": {
+          "title": "Expiresins",
+          "type": "number"
+        }
+      },
+      "required": [
+        "requestId",
+        "expiresInS"
+      ],
+      "title": "Pending",
+      "type": "object"
+    },
+    "PlanCheckParams": {
+      "additionalProperties": false,
+      "properties": {
+        "steps": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "action": "#/$defs/Action",
+                "wait": "#/$defs/Wait",
+                "write": "#/$defs/Write"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/Write"
+              },
+              {
+                "$ref": "#/$defs/Action"
+              },
+              {
+                "$ref": "#/$defs/Wait"
+              }
+            ]
+          },
+          "maxItems": 200,
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "steps"
+      ],
+      "title": "PlanCheckParams",
+      "type": "object"
+    },
+    "PlanResult": {
+      "additionalProperties": false,
+      "properties": {
+        "ok": {
+          "description": "True only when every Decision is allowed and problems is empty.",
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "decisions": {
+          "items": {
+            "$ref": "#/$defs/Decision"
+          },
+          "title": "Decisions",
+          "type": "array"
+        },
+        "problems": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Problems",
+          "type": "array"
+        }
+      },
+      "required": [
+        "ok",
+        "decisions",
+        "problems"
+      ],
+      "title": "PlanResult",
+      "type": "object"
+    },
+    "PrincipalInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "human",
+            "agent",
+            "routine",
+            "system"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "scope": {
+          "enum": [
+            "read",
+            "control_low",
+            "control_medium"
+          ],
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "scope"
+      ],
+      "title": "PrincipalInfo",
+      "type": "object"
+    },
+    "ReadChannelInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "everyS": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Everys"
+        },
+        "stream": {
+          "default": false,
+          "title": "Stream",
+          "type": "boolean"
+        },
+        "range": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Range"
+        },
+        "values": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Values"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ReadChannelInfo",
+      "type": "object"
+    },
+    "ReadFailure": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "channel": {
+          "title": "Channel",
+          "type": "string"
+        },
+        "error": {
+          "$ref": "#/$defs/ErrorObject"
+        }
+      },
+      "required": [
+        "device",
+        "channel",
+        "error"
+      ],
+      "title": "ReadFailure",
+      "type": "object"
+    },
+    "ReadManyParams": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/ReadParams"
+          },
+          "maxItems": 100,
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "title": "ReadManyParams",
+      "type": "object"
+    },
+    "ReadManyResult": {
+      "additionalProperties": false,
+      "properties": {
+        "readings": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Reading"
+              },
+              {
+                "$ref": "#/$defs/ReadFailure"
+              }
+            ]
+          },
+          "title": "Readings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "readings"
+      ],
+      "title": "ReadManyResult",
+      "type": "object"
+    },
+    "ReadParams": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "description": "A device id, for example desk-fan.",
+          "maxLength": 48,
+          "minLength": 1,
+          "title": "Device",
+          "type": "string"
+        },
+        "channel": {
+          "description": "A channel, for example fan_speed.",
+          "maxLength": 48,
+          "minLength": 1,
+          "title": "Channel",
+          "type": "string"
+        }
+      },
+      "required": [
+        "device",
+        "channel"
+      ],
+      "title": "ReadParams",
+      "type": "object"
+    },
+    "Reading": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "channel": {
+          "title": "Channel",
+          "type": "string"
+        },
+        "value": {
+          "description": "A number in `unit`, a bool or text. Text is inside a device-data block.",
+          "title": "Value"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "at": {
+          "description": "An RFC 3339 time in UTC, for example 2026-10-24T14:02:00Z.",
+          "title": "At",
+          "type": "string"
+        },
+        "suspect": {
+          "default": false,
+          "description": "True when the reading lies outside the channel's range.",
+          "title": "Suspect",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "device",
+        "channel",
+        "value",
+        "at"
+      ],
+      "title": "Reading",
+      "type": "object"
+    },
+    "RejectParams": {
+      "additionalProperties": false,
+      "properties": {
+        "requestId": {
+          "description": "A confirmation request id.",
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Requestid",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        }
+      },
+      "required": [
+        "requestId"
+      ],
+      "title": "RejectParams",
+      "type": "object"
+    },
+    "Request": {
+      "additionalProperties": false,
+      "description": "A JSON-RPC request. It has an id and expects a response.",
+      "properties": {
+        "jsonrpc": {
+          "const": "2.0",
+          "title": "Jsonrpc",
+          "type": "string"
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Id"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "params": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Params"
+        }
+      },
+      "required": [
+        "jsonrpc",
+        "id",
+        "method"
+      ],
+      "title": "Request",
+      "type": "object"
+    },
+    "RoutineDryRunParams": {
+      "additionalProperties": false,
+      "properties": {
+        "routineId": {
+          "maxLength": 48,
+          "minLength": 1,
+          "title": "Routineid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "routineId"
+      ],
+      "title": "RoutineDryRunParams",
+      "type": "object"
+    },
+    "RoutineSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "devices": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Devices",
+          "type": "array"
+        },
+        "maxHazard": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maxhazard"
+        },
+        "triggers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Triggers",
+          "type": "array"
+        },
+        "disabledReason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Disabledreason"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "enabled",
+        "sha256",
+        "devices",
+        "triggers"
+      ],
+      "title": "RoutineSummary",
+      "type": "object"
+    },
+    "RoutinesListResult": {
+      "additionalProperties": false,
+      "properties": {
+        "routines": {
+          "items": {
+            "$ref": "#/$defs/RoutineSummary"
+          },
+          "title": "Routines",
+          "type": "array"
+        }
+      },
+      "required": [
+        "routines"
+      ],
+      "title": "RoutinesListResult",
+      "type": "object"
+    },
+    "StopDevice": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "status": {
+          "description": "safe, partial, failed, no_safe_state or pending.",
+          "title": "Status",
+          "type": "string"
+        },
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        }
+      },
+      "required": [
+        "device",
+        "status",
+        "detail"
+      ],
+      "title": "StopDevice",
+      "type": "object"
+    },
+    "StopParams": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        }
+      },
+      "title": "StopParams",
+      "type": "object"
+    },
+    "StopResult": {
+      "additionalProperties": false,
+      "properties": {
+        "devices": {
+          "items": {
+            "$ref": "#/$defs/StopDevice"
+          },
+          "title": "Devices",
+          "type": "array"
+        }
+      },
+      "required": [
+        "devices"
+      ],
+      "title": "StopResult",
+      "type": "object"
+    },
+    "StoppedDevice": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "device",
+        "status"
+      ],
+      "title": "StoppedDevice",
+      "type": "object"
+    },
+    "StoppedParams": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "by": {
+          "title": "By",
+          "type": "string"
+        },
+        "devices": {
+          "items": {
+            "$ref": "#/$defs/StoppedDevice"
+          },
+          "title": "Devices",
+          "type": "array"
+        }
+      },
+      "required": [
+        "reason",
+        "by",
+        "devices"
+      ],
+      "title": "StoppedParams",
+      "type": "object"
+    },
+    "Success": {
+      "additionalProperties": false,
+      "properties": {
+        "jsonrpc": {
+          "const": "2.0",
+          "default": "2.0",
+          "title": "Jsonrpc",
+          "type": "string"
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Id"
+        },
+        "result": {
+          "additionalProperties": true,
+          "title": "Result",
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "result"
+      ],
+      "title": "Success",
+      "type": "object"
+    },
+    "UnlockParams": {
+      "additionalProperties": false,
+      "properties": {
+        "phrase": {
+          "description": "Type unlock.",
+          "maxLength": 40,
+          "title": "Phrase",
+          "type": "string"
+        }
+      },
+      "required": [
+        "phrase"
+      ],
+      "title": "UnlockParams",
+      "type": "object"
+    },
+    "UnlockResult": {
+      "additionalProperties": false,
+      "properties": {
+        "ok": {
+          "title": "Ok",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ok"
+      ],
+      "title": "UnlockResult",
+      "type": "object"
+    },
+    "Wait": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "wait",
+          "default": "wait",
+          "title": "Kind",
+          "type": "string"
+        },
+        "duration": {
+          "description": "A quantity of time such as \"2 s\", at most 1 h.",
+          "maxLength": 40,
+          "title": "Duration",
+          "type": "string"
+        }
+      },
+      "required": [
+        "duration"
+      ],
+      "title": "Wait",
+      "type": "object"
+    },
+    "WatchdogInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "heartbeatS": {
+          "title": "Heartbeats",
+          "type": "number"
+        },
+        "onLoss": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Onloss"
+        },
+        "maxDuration": {
+          "items": {
+            "$ref": "#/$defs/MaxDurationInfo"
+          },
+          "title": "Maxduration",
+          "type": "array"
+        }
+      },
+      "required": [
+        "heartbeatS",
+        "maxDuration"
+      ],
+      "title": "WatchdogInfo",
+      "type": "object"
+    },
+    "Write": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "write",
+          "default": "write",
+          "title": "Kind",
+          "type": "string"
+        },
+        "device": {
+          "description": "A device id, for example desk-fan.",
+          "maxLength": 48,
+          "minLength": 1,
+          "title": "Device",
+          "type": "string"
+        },
+        "channel": {
+          "description": "A channel, for example fan_speed.",
+          "maxLength": 48,
+          "minLength": 1,
+          "title": "Channel",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "device",
+        "channel",
+        "value"
+      ],
+      "title": "Write",
+      "type": "object"
+    },
+    "WriteChannelInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max"
+        },
+        "step": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step"
+        },
+        "maxChangePerS": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maxchangepers"
+        },
+        "values": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Values"
+        },
+        "maxLength": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maxlength"
+        },
+        "pattern": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pattern"
+        },
+        "confirm": {
+          "description": "none, confirm or confirm-each-time.",
+          "title": "Confirm",
+          "type": "string"
+        },
+        "suggested": {
+          "description": "True while the limits are a suggestion no person has confirmed.",
+          "title": "Suggested",
+          "type": "boolean"
+        },
+        "confirmed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confirmed"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Who confirmed this channel's limits."
+        }
+      },
+      "required": [
+        "type",
+        "confirm",
+        "suggested"
+      ],
+      "title": "WriteChannelInfo",
+      "type": "object"
+    },
+    "WriteDone": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "done",
+          "default": "done",
+          "title": "Status",
+          "type": "string"
+        },
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "channel": {
+          "title": "Channel",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        }
+      },
+      "required": [
+        "device",
+        "channel",
+        "value"
+      ],
+      "title": "WriteDone",
+      "type": "object"
+    },
+    "WriteParams": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "description": "A device id, for example desk-fan.",
+          "maxLength": 48,
+          "minLength": 1,
+          "title": "Device",
+          "type": "string"
+        },
+        "channel": {
+          "description": "A channel, for example fan_speed.",
+          "maxLength": 48,
+          "minLength": 1,
+          "title": "Channel",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "description": "A quantity string like \"60 %\", a bool, or an enum value.",
+          "title": "Value"
+        }
+      },
+      "required": [
+        "device",
+        "channel",
+        "value"
+      ],
+      "title": "WriteParams",
+      "type": "object"
+    }
+  }
+}

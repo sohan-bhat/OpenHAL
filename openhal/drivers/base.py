@@ -22,6 +22,7 @@ Verifier = Callable[[object, str, str, object], None]
 """Consumes a grant for (device_id, target, value) or raises GrantError."""
 
 SafeStateSupport = Literal["file", "native", "none"]
+Conformance = Literal["core", "control", "full"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,13 +55,18 @@ class Health:
 
 @dataclass(frozen=True, slots=True)
 class DriverInfo:
-    """What a driver covers, shown in `openhal driver list` and the catalog."""
+    """What a driver covers, shown in `openhal driver list` and the catalog.
+
+    `conformance` is the protocol level the driver meets (ADR 0015). A read-only driver, such as a
+    camera, is "core". Drivers that write through the safety kernel are "control".
+    """
 
     name: str
     protocols: tuple[str, ...]
     hazard_default: Literal["low", "medium", "high"]
     summary: str
     safe_state_support: SafeStateSupport = "file"
+    conformance: Conformance = "control"
 
 
 class DriverError(RuntimeError):
