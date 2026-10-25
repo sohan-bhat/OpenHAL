@@ -103,6 +103,11 @@ class Driver(abc.ABC):
             raise GrantError("This driver is already attached to a kernel.")
         self._verify = verifier
 
+    @property
+    def simulated(self) -> bool:
+        """True when this driver talks to a simulator instead of hardware, so clients can label demo data."""
+        return False
+
     @classmethod
     def validate_params(cls, params: dict[str, Any]) -> dict[str, Any]:
         """Check the device file's connect parameters. Override with a params_model or custom checks."""

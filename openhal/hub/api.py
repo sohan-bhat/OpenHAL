@@ -34,6 +34,7 @@ from openhal.kernel.commands import Action, Write
 from openhal.kernel.principals import Principal
 from openhal.protocol import websocket as rpc_transport
 from openhal.protocol.dispatch import Dispatcher
+from openhal.protocol.version import LATEST
 from openhal.routines.engine import RoutineError
 from openhal.spec.loader import DeviceFileError
 from openhal.spec.models import DeviceFile
@@ -211,6 +212,9 @@ def create_app(hub: Hub) -> FastAPI:
             "product": PRODUCT_NAME,
             "version": __version__,
             "spec": SPEC_VERSION,
+            "protocol_version": LATEST,
+            "conformance": rpc.level,
+            "allow_lan": hub.config.api.allow_lan,
             "stopped": kernel.stopped,
             "stop_reason": kernel.stop_reason,
             "devices": len(kernel.devices),

@@ -63,6 +63,10 @@ class MockDriver(Driver):
             )
         ]
 
+    @property
+    def simulated(self) -> bool:
+        return True
+
     async def identify(self) -> dict[str, str]:
         return {"name": self.settings.name, "model": "mock"}
 

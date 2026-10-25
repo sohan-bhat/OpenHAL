@@ -82,6 +82,8 @@ def device_summary(hub: Hub, device_id: str) -> dict[str, Any]:
         "last_error": device_text(f"{device_id} driver error", info.last_error) if info else None,
         "verification": file.provenance.verification.status,
         "source": file.provenance.source,
+        "conformance": runtime.driver.info.conformance,
+        "simulated": runtime.driver.simulated,
     }
 
 
@@ -128,6 +130,10 @@ def device_view(hub: Hub, device_id: str) -> dict[str, Any]:
                     "description": spec.description,
                     "args": {arg: arg_spec.model_dump(exclude_none=True) for arg, arg_spec in spec.args.items()},
                     "require": [condition for condition, _message in spec.conditions],
+                    "requirements": [
+                        {"condition": condition, "message": message} for condition, message in spec.conditions
+                    ],
+                    "max_runs": {"count": spec.max_runs.count, "per_s": spec.max_runs.per} if spec.max_runs else None,
                     "effects": spec.effects,
                     "confirm": "confirm-each-time" if file.effective_hazard == "high" else spec.confirm,
                 }

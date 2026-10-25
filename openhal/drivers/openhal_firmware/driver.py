@@ -210,6 +210,10 @@ class OpenHalFirmwareDriver(Driver):
         self._description: dict[str, Any] | None = None
         self.connected = False
 
+    @property
+    def simulated(self) -> bool:
+        return self.settings.port.startswith("sim:")
+
     def _make_transport(self) -> Any:
         port = self.settings.port
         if port.startswith("sim:"):

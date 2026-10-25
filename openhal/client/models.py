@@ -37,7 +37,12 @@ class HubStatus(Model):
     product: str
     version: str
     spec: str
-    stopped: bool = Field(description="True after a stop until a human unlocks. Every write is blocked meanwhile.")
+    protocol_version: str | None = Field(default=None, description="The hub protocol version, for example 2026-10-24.")
+    conformance: str | None = Field(default=None, description="The hub's conformance level, core, control or full.")
+    allow_lan: bool | None = Field(
+        default=None, description="True when other machines may connect with a paired token."
+    )
+    stopped: bool = Field(description="True after a stop until a human unlocks. Every command is refused meanwhile.")
     stop_reason: str | None = None
     devices: int
     connected: int
@@ -63,6 +68,8 @@ class DeviceSummary(Model):
     last_error: str | None = None
     verification: str | None = None
     source: str | None = None
+    conformance: str | None = Field(default=None, description="The driver's conformance level.")
+    simulated: bool = Field(default=False, description="True when the driver talks to a simulator, not hardware.")
 
 
 class ReadChannel(Model):
@@ -96,6 +103,8 @@ class ActionInfo(Model):
     description: str | None = None
     args: dict[str, dict[str, Any]] = {}
     require: list[str] = []
+    requirements: list[dict[str, Any]] = Field(default=[], description="Each condition with the file's reason.")
+    max_runs: dict[str, Any] | None = Field(default=None, description="At most count runs per per_s seconds.")
     effects: list[str] = []
     confirm: str | None = None
 
