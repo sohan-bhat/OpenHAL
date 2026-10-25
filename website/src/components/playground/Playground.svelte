@@ -1,27 +1,27 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import LimitControl from "./LimitControl.svelte";
+  import TraceList from "./TraceList.svelte";
   import {
     Kernel,
     agent,
-    convert,
     deviceId,
     deviceRefs,
     effectiveHazard,
-    effectiveLimits,
     human,
     loadDeviceFile,
-    parseQuantity,
     unconfirmed,
     type Command,
-    type Decision,
     type DeviceFile,
     type Principal,
   } from "../../lib/kernel";
   import { formatG } from "../../lib/kernel/pyformat";
   import { parseDeviceYaml } from "../../lib/kernel/yaml";
   import { CliError, actionArgs, splitPairs, writeValue } from "../../lib/playground/cli";
+  import { displayUnit, requestFor, responseFor } from "../../lib/playground/rpc";
+  import type { Exchange } from "../../lib/playground/types";
   import { deviceProblems, type Checked } from "../../lib/playground/validate";
+  import { registryFor } from "../../lib/protocol";
+  import type { TraceEntry } from "../../lib/trace";
 
   interface Example {
     name: string;
@@ -36,12 +36,13 @@
 
   let { examples, initial }: Props = $props();
 
-  const PRINCIPALS: Array<{ key: string; label: string; principal: Principal }> = [
-    { key: "agent-medium", label: "Agent, control_medium token", principal: agent("claude", "control_medium") },
-    { key: "agent-low", label: "Agent, control_low token", principal: agent("claude", "control_low") },
-    { key: "agent-read", label: "Agent, read token", principal: agent("claude", "read") },
-    { key: "human", label: "Person, human token", principal: human("you") },
+  const CLIENTS: Array<{ key: string; label: string; client: string; principal: Principal }> = [
+    { key: "agent-medium", label: "Agent, control_medium token", client: "claude", principal: agent("claude", "control_medium") },
+    { key: "agent-low", label: "Agent, control_low token", client: "claude", principal: agent("claude", "control_low") },
+    { key: "agent-read", label: "Agent, read token", client: "claude", principal: agent("claude", "read") },
+    { key: "human", label: "Person, human token", client: "you", principal: human("you") },
   ];
+  const TTL_S = 300;
 
   const start = examples.find((item) => item.name === initial) ?? examples[0];
   let exampleName = $state(start.name);
@@ -50,25 +51,24 @@
   let kernel = $state.raw<Kernel | null>(null);
   let companions = $state.raw<Array<{ id: string; path: string }>>([]);
   let version = $state(0);
-  let principalKey = $state("agent-medium");
+  let clientKey = $state("agent-medium");
   let targetDevice = $state("");
   let target = $state("");
   let requestText = $state("");
-  let log = $state<Array<{ key: number; who: "agent" | "person"; line: string; status: string; code: string | null; message: string }>>([]);
-  let attempt = $state.raw<{ device: string; channel: string; value: number; code: string; key: number } | null>(null);
+  let exchanges = $state<Exchange[]>([]);
   let unlockText = $state("");
   let unlockError = $state("");
   let readingDrafts = $state<Record<string, string>>({});
   let counter = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  let attemptTimer: ReturnType<typeof setTimeout> | undefined;
   let clock: ReturnType<typeof setInterval> | undefined;
+  let builtText: string | null = null;
+  let library: Map<string, { file: DeviceFile; path: string }> | null = null;
 
   const file = $derived(checked.file);
   const id = $derived(file ? deviceId(file) : "");
-  const principal = $derived(PRINCIPALS.find((item) => item.key === principalKey)!.principal);
+  const client = $derived(CLIENTS.find((item) => item.key === clientKey)!);
   const missing = $derived(file ? unconfirmed(file) : []);
-  const reduced = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function exampleFiles(): Map<string, { file: DeviceFile; path: string }> {
     const found = new Map<string, { file: DeviceFile; path: string }>();
@@ -78,16 +78,19 @@
         const key = deviceId(loaded);
         if (!found.has(key) || item.text.includes("confirmed:")) found.set(key, { file: loaded, path: item.path });
       } catch {
+        continue;
       }
     }
     return found;
   }
-  let library: Map<string, { file: DeviceFile; path: string }> | null = null;
 
   function simulated(device: DeviceFile): Record<string, unknown> {
     const values: Record<string, unknown> = {};
     for (const [name, spec] of Object.entries(device.read)) {
       if (spec.type === "number" && spec.range) values[name] = Math.round(((spec.range[0] + spec.range[1]) / 2) * 100) / 100;
+    }
+    for (const [name, spec] of Object.entries(device.write)) {
+      if (deviceId(device) === "desk-fan" && name === "fan_speed" && spec.type === "number") values[name] = 20;
     }
     return values;
   }
@@ -98,7 +101,7 @@
       companions = [];
       return;
     }
-    const fresh = new Kernel();
+    const fresh = new Kernel(undefined, { confirmTtlS: TTL_S });
     const mine = deviceId(next);
     const extra: Array<{ id: string; path: string }> = [];
     for (const ref of deviceRefs(next)) {
@@ -118,11 +121,8 @@
     const actions = Object.keys(next.actions);
     if (!writes.includes(target) && !actions.includes(target)) target = writes[0] ?? actions[0] ?? "";
     readingDrafts = {};
-    attempt = null;
     version += 1;
   }
-
-  let builtText: string | null = null;
 
   function rebuild(current: string): void {
     if (current === builtText) return;
@@ -161,54 +161,34 @@
   onDestroy(() => {
     clearInterval(clock);
     clearTimeout(timer);
-    clearTimeout(attemptTimer);
   });
 
   function chooseExample(name: string): void {
     const item = examples.find((example) => example.name === name);
     if (!item) return;
     text = item.text;
-    log = [];
+    exchanges = [];
     const url = new URL(window.location.href);
     url.searchParams.set("example", name);
     history.replaceState(null, "", url);
   }
 
-  function lampFor(status: string): string {
-    if (status === "done" || status === "allowed") return "ok";
-    if (status === "pending" || status === "needs_confirmation") return "warning";
-    return "blocked";
-  }
-
-  function remember(line: string, decision: Pick<Decision, "status" | "code" | "message">, who: "agent" | "person" = "person"): void {
+  function log(who: "agent" | "person", name: string, entries: TraceEntry[]): void {
     counter += 1;
-    log = [{ key: counter, who, line, status: decision.status, code: decision.code, message: decision.message }, ...log].slice(0, 30);
+    exchanges = [{ key: counter, who, client: name, entries }, ...exchanges].slice(0, 30);
   }
 
-  function showAttempt(device: string, channel: string, raw: unknown, decision: Decision): void {
-    clearTimeout(attemptTimer);
-    attempt = null;
-    if (!kernel || !["above_max", "below_min", "rate_limited"].includes(decision.code ?? "")) return;
-    const spec = kernel.devices.get(device)?.file.write[channel];
-    if (!spec?.unit) return;
-    try {
-      counter += 1;
-      attempt = { device, channel, value: convert(parseQuantity(raw), spec.unit), code: decision.code!, key: counter };
-    } catch {
-      return;
-    }
-    if (!reduced()) attemptTimer = setTimeout(() => (attempt = null), 1000);
+  function fileOf(device: string): DeviceFile | undefined {
+    return kernel?.devices.get(device)?.file;
   }
 
   function send(dry = false): void {
     if (!kernel) return;
     const runtime = kernel.devices.get(targetDevice);
     if (!runtime) return;
+    const who = client.principal.kind === "human" ? "person" : "agent";
     const isWrite = target in runtime.file.write;
     const words = requestText.trim();
-    const line = isWrite
-      ? `openhal ${dry ? "dry-run" : "write"} ${targetDevice}.${target} ${words}`
-      : `openhal ${dry ? "dry-run" : "action"} ${targetDevice}.${target}${words ? ` ${words}` : ""}`;
     let command: Command;
     try {
       command = isWrite
@@ -216,22 +196,29 @@
         : { kind: "action", device: targetDevice, action: target, args: actionArgs(runtime.file, target, words ? splitPairs(words) : []) };
     } catch (error) {
       if (!(error instanceof CliError)) throw error;
-      remember(line, { status: "error", code: null, message: error.message }, principal.kind === "human" ? "person" : "agent");
+      const entry = registryFor("bad_request");
+      log(who, client.client, [
+        { kind: "request", method: isWrite ? "hal/write" : "hal/action", params: { device: targetDevice, [isWrite ? "channel" : "action"]: target, value: words } },
+        { kind: "error", code: entry.code, name: entry.name, reason: error.message },
+      ]);
       return;
     }
-    const decision = dry ? kernel.dryRun([command], principal)[0] : kernel.execute(command, principal);
-    remember(line, decision, principal.kind === "human" ? "person" : "agent");
-    if (command.kind === "write" && decision.status === "blocked") showAttempt(targetDevice, target, command.value, decision);
-    else attempt = null;
+    if (dry) {
+      const [decision] = kernel.dryRun([command], client.principal);
+      const response = responseFor(decision, command, fileOf(command.device), TTL_S);
+      const summary =
+        response.kind === "error"
+          ? { status: "blocked", name: response.name, message: response.reason }
+          : { status: decision.status, value: decision.value, unit: displayUnit(decision.unit) };
+      log(who, client.client, [
+        { kind: "request", method: "hal/dryRun", params: { commands: [(requestFor(command) as { params: unknown }).params] } },
+        { kind: "result", result: { decisions: [summary] } },
+      ]);
+    } else {
+      const decision = kernel.execute(command, client.principal);
+      log(who, client.client, [requestFor(command), responseFor(decision, command, fileOf(command.device), TTL_S)]);
+    }
     version += 1;
-  }
-
-  function pick(device: string, channel: string, value: string | boolean): void {
-    if (!kernel) return;
-    targetDevice = device;
-    target = channel;
-    requestText = String(value);
-    send();
   }
 
   function setReading(device: string, channel: string): void {
@@ -256,7 +243,10 @@
   function stopAll(): void {
     if (!kernel) return;
     const report = kernel.stopAll(human("you"), "stop pressed in the playground");
-    remember("openhal stop", { status: "stopped", code: null, message: report.devices.map((item) => `${item.device} ${item.status}`).join(", ") });
+    log("person", "you", [
+      { kind: "request", method: "hal/stop", params: { reason: "stop pressed in the playground" } },
+      { kind: "result", result: { devices: report.devices.map((item) => ({ device: item.device, status: item.status })) } },
+    ]);
     unlockText = "";
     unlockError = "";
     version += 1;
@@ -271,18 +261,28 @@
       unlockError = (error as Error).message;
       return;
     }
-    remember("openhal unlock", { status: "done", code: null, message: "Writes are allowed again." });
+    log("person", "you", [
+      { kind: "request", method: "hal/unlock", params: { phrase: unlockText.trim() } },
+      { kind: "result", result: { ok: true } },
+    ]);
     version += 1;
   }
 
   function decide(requestId: string, approve: boolean): void {
     if (!kernel) return;
     const request = kernel.requests.get(requestId)!;
-    const line = `openhal confirm ${approve ? "approve" : "reject"} ${requestId}`;
-    if (approve) remember(line, kernel.confirm(requestId, human("you")));
-    else {
+    if (approve) {
+      const decision = kernel.confirm(requestId, human("you"));
+      log("person", "you", [
+        { kind: "request", method: "hal/confirmations/approve", params: { requestId } },
+        responseFor(decision, request.command, fileOf(request.command.device), TTL_S),
+      ]);
+    } else {
       kernel.reject(requestId, human("you"));
-      remember(line, { status: "rejected", code: "rejected", message: `Rejected ${request.command.kind === "write" ? `write:${request.command.channel}` : `action:${request.command.action}`}.` });
+      log("person", "you", [
+        { kind: "request", method: "hal/confirmations/reject", params: { requestId } },
+        { kind: "result", result: { requestId, status: "rejected" } },
+      ]);
     }
     version += 1;
   }
@@ -292,28 +292,16 @@
     return kernel?.latestValue(device, channel) ?? null;
   }
 
-  function rateWindow(device: string, channel: string): { low: number; high: number } | null {
-    void version;
-    const runtime = kernel?.devices.get(device);
-    const spec = runtime?.file.write[channel];
-    if (!runtime || !spec || spec.type !== "number" || spec.max_change_per_s === null) return null;
-    const limits = effectiveLimits(spec);
-    const sample = runtime.accepted.get(channel) ?? runtime.reads.get(channel);
-    if (!sample || typeof sample.value !== "number") return null;
-    const allowed = (limits.rate ?? 0) * Math.min(3600, performance.now() / 1000 - sample.at);
-    return { low: Math.max(limits.min, sample.value - allowed), high: Math.min(limits.max, sample.value + allowed) };
-  }
-
-  function show(value: unknown, unit: string | null): string {
+  function show(value: unknown): string {
     if (value === null || value === undefined) return "unknown";
-    if (typeof value === "number") return `${formatG(value)}${unit ? ` ${unit === "percent" ? "%" : unit}` : ""}`;
+    if (typeof value === "number") return formatG(value);
     return String(value);
   }
 
-  function tierWords(tier: string, high: boolean): string {
-    if (high || tier === "confirm-each-time") return "Confirm each time";
-    if (tier === "confirm") return "Confirm once";
-    return "No confirmation";
+  function tierWord(tier: string, high: boolean): string {
+    if (high || tier === "confirm-each-time") return "each time";
+    if (tier === "confirm") return "once";
+    return "none";
   }
 
   const pending = $derived.by(() => {
@@ -339,7 +327,7 @@
     if (!runtime) return "";
     const spec = runtime.file.write[target];
     if (spec) {
-      if (spec.type === "number") return `A number with a unit, for example ${formatG(spec.max ?? 0)} ${spec.unit === "percent" ? "%" : spec.unit}`;
+      if (spec.type === "number") return `A number with a unit, for example ${formatG(spec.max ?? 0)} ${displayUnit(spec.unit)}`;
       if (spec.type === "bool") return "true or false";
       if (spec.type === "enum") return `One of ${spec.values.join(", ")}`;
       return `Text, at most ${spec.max_length} characters`;
@@ -354,157 +342,127 @@
 </script>
 
 <div class="playground">
-  <section class="module editor" aria-labelledby="pg-editor-legend">
-    <h2 class="module-legend legend" id="pg-editor-legend"><span>Device file</span></h2>
-    <div class="toolbar">
-      <label class="legend" for="pg-example">Start from</label>
-      <select id="pg-example" bind:value={exampleName} onchange={() => chooseExample(exampleName)}>
-        {#each examples as item (item.name)}
-          <option value={item.name}>{item.path}</option>
-        {/each}
-      </select>
+  <section class="panel editor" aria-labelledby="pg-editor-title">
+    <div class="panel-head">
+      <h2 id="pg-editor-title">Device file</h2>
+      <label class="example">
+        <span class="legend">Start from</span>
+        <select bind:value={exampleName} onchange={() => chooseExample(exampleName)}>
+          {#each examples as item (item.name)}
+            <option value={item.name}>{item.path}</option>
+          {/each}
+        </select>
+      </label>
     </div>
     <label class="visually-hidden" for="pg-text">Device file YAML</label>
-    <textarea id="pg-text" bind:value={text} spellcheck="false" autocomplete="off" autocapitalize="off" rows="26" aria-describedby="pg-problems"></textarea>
+    <textarea id="pg-text" bind:value={text} spellcheck="false" autocomplete="off" autocapitalize="off" rows="24" aria-describedby="pg-problems"></textarea>
     <div id="pg-problems" class="problems" aria-live="polite">
       {#if checked.problems.length}
-        <p class="lamp blocked">Invalid</p>
+        <p class="status blocked">invalid</p>
         <ul>
           {#each checked.problems as problem, index (index)}
             <li>
               <code>{problem.where}</code>{#if problem.line}<span class="muted"> line {problem.line}</span>{/if}
               <span>{problem.message}</span>
-              <span class="source legend">{problem.source === "schema" ? "JSON Schema" : problem.source === "yaml" ? "YAML" : "Spec"}</span>
+              <span class="legend">{problem.source === "schema" ? "JSON Schema" : problem.source === "yaml" ? "YAML" : "Specification"}</span>
             </li>
           {/each}
         </ul>
       {:else if missing.length}
-        <p class="lamp warning">Valid, read-only</p>
-        <p class="muted">Matches spec 0.1 and its schema. It loads read-only until a person confirms limits for {missing.join(", ")}.</p>
+        <p class="status unverified">valid, limits unconfirmed</p>
+        <p class="muted">Matches the device file schema. Writes are refused with UNVERIFIED_LIMITS until a person confirms {missing.join(", ")}.</p>
       {:else}
-        <p class="lamp ok">Valid</p>
-        <p class="muted">Matches spec 0.1 and its schema. Every limit is confirmed, so the device is writable.</p>
+        <p class="status ok">valid</p>
+        <p class="muted">Matches the device file schema, and every limit is confirmed.</p>
       {/if}
     </div>
   </section>
 
   <div class="side">
-    <section class="module preview" aria-labelledby="pg-controls-legend">
-      <h2 class="module-legend legend" id="pg-controls-legend"><span>Dashboard controls</span><span class="end">Preview</span></h2>
+    <section class="panel" aria-labelledby="pg-device-title">
+      <div class="panel-head">
+        <h2 id="pg-device-title">Device</h2>
+        <span class="legend">Simulated</span>
+      </div>
       {#if file && kernel}
-        <dl class="ident">
+        <dl class="facts">
           <div><dt class="legend">Id</dt><dd class="mono">{id}</dd></div>
           <div><dt class="legend">Driver</dt><dd class="mono">{file.connect.driver}</dd></div>
           <div><dt class="legend">Hazard</dt><dd class="mono">{effectiveHazard(file)}</dd></div>
-          <div>
-            <dt class="legend">Limits</dt>
-            <dd>{#if missing.length}<span class="lamp unverified">Unconfirmed</span>{:else}<span class="lamp ok">Confirmed</span>{/if}</dd>
-          </div>
+          <div><dt class="legend">Limits</dt><dd>{#if missing.length}<span class="status unverified">unconfirmed</span>{:else}<span class="status ok">confirmed</span>{/if}</dd></div>
         </dl>
-
-        {#if Object.keys(file.read).length}
-          <div class="reads">
-            {#each Object.entries(file.read) as [name, spec] (name)}
-              <div class="read">
-                <p class="legend">Read · {name}</p>
-                {#if spec.type === "image"}
-                  <p class="muted small">Image frames, read on request.</p>
-                {:else}
-                  <p class="value mono">{show(valueOf(id, name), spec.unit)}</p>
-                  <form class="sim" onsubmit={(event) => { event.preventDefault(); setReading(id, name); }}>
-                    <label class="visually-hidden" for={`pg-read-${name}`}>Simulated reading for {name}</label>
-                    <input id={`pg-read-${name}`} class="mono" placeholder="simulate" bind:value={readingDrafts[`${id}.${name}`]} />
-                    <button type="submit" class="small-button">Set</button>
-                  </form>
-                {/if}
-              </div>
-            {/each}
+        {#if Object.keys(file.write).length}
+          <div class="table-wrap">
+            <table>
+              <caption class="legend">Write channels</caption>
+              <thead>
+                <tr><th scope="col">Channel</th><th scope="col">Value</th><th scope="col">Min</th><th scope="col">Max</th><th scope="col">Rate per s</th><th scope="col">Confirm</th></tr>
+              </thead>
+              <tbody>
+                {#each Object.entries(file.write) as [name, spec] (name)}
+                  <tr>
+                    <td class="mono">{name}</td>
+                    <td class="mono">{show(valueOf(id, name))}{#if spec.unit}&nbsp;{displayUnit(spec.unit)}{/if}</td>
+                    <td class="mono">{spec.min === null ? (spec.type === "enum" ? spec.values.join(", ") : spec.type) : formatG(spec.min)}</td>
+                    <td class="mono">{spec.max === null ? "" : formatG(spec.max)}</td>
+                    <td class="mono">{spec.max_change_per_s === null ? "" : formatG(spec.max_change_per_s)}</td>
+                    <td>{tierWord(spec.confirm, effectiveHazard(file) === "high")}</td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
           </div>
         {/if}
-
-        {#each Object.entries(file.write) as [name, spec] (name)}
-          <div class="channel">
-            <div class="channel-head">
-              <p class="legend">Write · {name}</p>
-              <p class="mono now">{show(valueOf(id, name), spec.unit)}</p>
-              <span class={`lamp ${spec.confirm !== "none" || effectiveHazard(file) === "high" ? "warning" : "ok"}`}>{tierWords(spec.confirm, effectiveHazard(file) === "high")}</span>
-            </div>
-            {#if spec.type === "number" && spec.min !== null && spec.max !== null}
-              <LimitControl
-                id={`pg-${name}`}
-                {name}
-                unit={spec.unit ?? ""}
-                min={spec.min}
-                max={spec.max}
-                step={spec.step}
-                value={typeof valueOf(id, name) === "number" ? (valueOf(id, name) as number) : null}
-                rate={rateWindow(id, name)}
-                attempt={attempt && attempt.device === id && attempt.channel === name ? attempt : null}
-                onpick={(picked) => pick(id, name, `${picked} ${spec.unit}`)}
-              />
-              {#if spec.max_change_per_s !== null}
-                <p class="muted small">At most {formatG(spec.max_change_per_s)} {spec.unit === "percent" ? "%" : spec.unit} per second. The bracket shows how far it may move right now.</p>
-              {/if}
-            {:else if spec.type === "bool"}
-              <button
-                type="button"
-                class="switch"
-                role="switch"
-                aria-checked={valueOf(id, name) === true}
-                onclick={() => pick(id, name, valueOf(id, name) === true ? "false" : "true")}
-              >
-                <span class="visually-hidden">{name}</span>
-                <span class="track"><span class="knob"></span></span>
-                <span class="mono">{valueOf(id, name) === true ? "true" : "false"}</span>
-              </button>
-            {:else if spec.type === "enum"}
-              <label class="visually-hidden" for={`pg-${name}`}>{name}</label>
-              <select id={`pg-${name}`} value={String(valueOf(id, name) ?? "")} onchange={(event) => pick(id, name, (event.currentTarget as HTMLSelectElement).value)}>
-                {#each spec.values as option (option)}
-                  <option value={option}>{option}</option>
+        {#if Object.keys(file.read).length}
+          <div class="table-wrap">
+            <table>
+              <caption class="legend">Read channels</caption>
+              <thead>
+                <tr><th scope="col">Channel</th><th scope="col">Value</th><th scope="col">Simulate a reading</th></tr>
+              </thead>
+              <tbody>
+                {#each Object.entries(file.read) as [name, spec] (name)}
+                  <tr>
+                    <td class="mono">{name}</td>
+                    <td class="mono">{spec.type === "image" ? "frames" : show(valueOf(id, name))}{#if spec.unit}&nbsp;{displayUnit(spec.unit)}{/if}</td>
+                    <td>
+                      {#if spec.type !== "image"}
+                        <form class="sim" onsubmit={(event) => { event.preventDefault(); setReading(id, name); }}>
+                          <label class="visually-hidden" for={`pg-read-${name}`}>Simulated reading for {name}</label>
+                          <input id={`pg-read-${name}`} class="mono" bind:value={readingDrafts[`${id}.${name}`]} />
+                          <button type="submit" class="button quiet small">Set</button>
+                        </form>
+                      {/if}
+                    </td>
+                  </tr>
                 {/each}
-              </select>
-            {:else}
-              <p class="muted small">Text, at most {spec.max_length} characters{spec.pattern ? `, matching ${spec.pattern}` : ""}.</p>
-            {/if}
-          </div>
-        {/each}
-
-        {#if Object.keys(file.actions).length}
-          <div class="actions">
-            <p class="legend">Actions</p>
-            <ul>
-              {#each Object.entries(file.actions) as [name, action] (name)}
-                <li>
-                  <code>{name}</code>
-                  {#if Object.keys(action.args).length}<span class="muted small">{Object.keys(action.args).join(", ")}</span>{/if}
-                  {#if action.require.length}<span class="muted small">needs {action.require.join(" and ")}</span>{/if}
-                  <span class={`lamp ${action.confirm !== "none" || effectiveHazard(file) === "high" ? "warning" : "ok"}`}>{tierWords(action.confirm, effectiveHazard(file) === "high")}</span>
-                </li>
-              {/each}
-            </ul>
+              </tbody>
+            </table>
           </div>
         {/if}
         {#if companions.length}
-          <p class="muted small">
+          <p class="muted note">
             Also loaded, because this file's interlocks name them.
-            {#each companions as other, index (other.id)}{index ? ", " : ""}<code>{other.id}</code> from <code>{other.path}</code>{/each}.
+            {#each companions as other, index (other.id)}{index ? ", " : ""}<code>{other.id}</code>{/each}.
           </p>
         {/if}
       {:else}
-        <p class="muted">Fix the file and its controls appear here.</p>
+        <p class="muted">Fix the device file to load its simulated device.</p>
       {/if}
     </section>
 
-    <section class="module breaker" aria-labelledby="pg-break-legend">
-      <h2 class="module-legend legend" id="pg-break-legend"><span>Try to break the limits</span><span class="end">In-browser demo</span></h2>
+    <section class="panel" aria-labelledby="pg-request-title">
+      <div class="panel-head">
+        <h2 id="pg-request-title">Send a request</h2>
+        <span class="legend">In-browser demo</span>
+      </div>
       {#if kernel}
         <form class="request" onsubmit={(event) => { event.preventDefault(); send(); }}>
           <div class="fields">
             <label class="field">
               <span class="legend">As</span>
-              <select bind:value={principalKey}>
-                {#each PRINCIPALS as item (item.key)}
+              <select bind:value={clientKey}>
+                {#each CLIENTS as item (item.key)}
                   <option value={item.key}>{item.label}</option>
                 {/each}
               </select>
@@ -526,69 +484,58 @@
               </select>
             </label>
           </div>
-          <label class="field wide">
+          <label class="field">
             <span class="legend">Value</span>
             <input class="mono" bind:value={requestText} autocomplete="off" spellcheck="false" aria-describedby="pg-hint" />
           </label>
-          <p id="pg-hint" class="muted small">{hint}</p>
+          <p id="pg-hint" class="muted">{hint}</p>
           <div class="buttons">
-            <button type="submit" class="button" disabled={!target}>Send</button>
-            <button type="button" class="button secondary" disabled={!target} onclick={() => send(true)}>Dry run</button>
+            <button type="submit" class="button" disabled={!target}>Send hal/write</button>
+            <button type="button" class="button quiet" disabled={!target} onclick={() => send(true)}>Dry run</button>
           </div>
         </form>
 
         {#if pending.length}
           <div class="pending">
-            <p class="legend">Waiting for a person</p>
+            <p class="status confirm">confirmation required</p>
             <ul>
               {#each pending as request (request.requestId)}
                 <li>
-                  <span class="mono small">{request.requestId}</span>
-                  <span>{request.command.kind === "write" ? `${request.command.channel} = ${String(request.command.value)}` : `${request.command.action}`}</span>
-                  <button type="button" class="person-button" onclick={() => decide(request.requestId, true)}>Approve</button>
-                  <button type="button" class="person-button" onclick={() => decide(request.requestId, false)}>Reject</button>
+                  <span class="mono">{request.requestId}</span>
+                  <span class="mono">{request.command.kind === "write" ? `${request.command.channel} ${String(request.command.value)}` : request.command.action}</span>
+                  <span class="decide">
+                    <button type="button" class="button person" onclick={() => decide(request.requestId, true)}>Approve</button>
+                    <button type="button" class="button quiet" onclick={() => decide(request.requestId, false)}>Reject</button>
+                  </span>
                 </li>
               {/each}
             </ul>
           </div>
         {/if}
-
-        <ol class="log" aria-label="Decisions, newest first" aria-live="polite">
-          {#each log as entry (entry.key)}
-            <li class={entry.who}>
-              <p class="who legend">{entry.who === "person" ? "Person" : "Agent"}</p>
-              <p class="mono line"><span aria-hidden="true">$ </span>{entry.line}</p>
-              <p class="decision">
-                <span class={`lamp ${lampFor(entry.status)}`}>{entry.status}</span>
-                {#if entry.code && entry.status !== "done"}<code>{entry.code}</code>{/if}
-                <span>{entry.message}</span>
-              </p>
-            </li>
-          {/each}
-        </ol>
-      {:else}
-        <p class="muted">A valid device file gets a simulated device here.</p>
       {/if}
 
-      <div class="stopbar" class:is-stopped={stopped}>
-        <div class="stripes" aria-hidden="true"></div>
+      <div class="stop-area" class:is-stopped={stopped}>
         {#if stopped}
-          <form class="stop-row" onsubmit={unlock}>
-            <p class="plate"><span class="legend">Stopped</span> Every device is in its safe state.</p>
-            <div class="plate unlock">
-              <label class="visually-hidden" for="pg-unlock">Type unlock to lift the stop</label>
-              <input id="pg-unlock" class="mono" placeholder="type unlock" bind:value={unlockText} autocomplete="off" />
-              <button type="submit">Unlock</button>
-            </div>
-            {#if unlockError}<p class="plate error" aria-live="polite">{unlockError}</p>{/if}
+          <form class="stopped-row" onsubmit={unlock}>
+            <p class="status blocked">stopped</p>
+            <label class="visually-hidden" for="pg-unlock">Type unlock to lift the stop</label>
+            <input id="pg-unlock" class="mono" placeholder="type unlock" bind:value={unlockText} autocomplete="off" />
+            <button type="submit" class="button person">Unlock</button>
+            {#if unlockError}<p class="unlock-error" aria-live="polite">{unlockError}</p>{/if}
           </form>
         {:else}
-          <div class="stop-row">
-            <p class="note">Stop puts every simulated device in its safe state.</p>
-            <button type="button" class="stop" onclick={stopAll} disabled={!kernel}>Stop all</button>
-          </div>
+          <button type="button" class="stop" onclick={stopAll} disabled={!kernel}>Stop</button>
+          <p class="muted">Any client may stop. Only a person may lift the stop.</p>
         {/if}
       </div>
+    </section>
+
+    <section class="panel" aria-labelledby="pg-log-title">
+      <div class="panel-head">
+        <h2 id="pg-log-title">Message log</h2>
+        <span class="legend">JSON-RPC, newest first</span>
+      </div>
+      <TraceList {exchanges} />
     </section>
   </div>
 </div>
@@ -596,48 +543,40 @@
 <style>
   .playground {
     display: grid;
-    gap: var(--s-6);
+    gap: var(--s-5);
     align-items: start;
   }
 
-  h2.module-legend {
-    margin: 0;
-    font-size: var(--t-0);
+  .panel {
+    border: var(--rule);
+    border-radius: var(--radius);
+    padding: var(--s-4);
+    min-width: 0;
   }
 
-  .toolbar {
+  .panel-head {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: var(--s-2) var(--s-3);
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-2) var(--s-4);
     margin-bottom: var(--s-3);
   }
 
-  .toolbar .legend {
-    color: var(--ink-2);
+  h2 {
+    font-size: var(--t-h3);
   }
 
-  select,
-  input,
-  textarea {
-    font: inherit;
-    color: var(--ink);
-    background: var(--panel);
-    border: 1px solid var(--ink-2);
-    border-radius: var(--radius);
+  .example {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    min-width: 0;
   }
 
-  select,
-  input {
-    min-height: 40px;
-    padding: 0 var(--s-2);
-    font-size: var(--t-2);
+  .example select {
     max-width: 100%;
-  }
-
-  input::placeholder,
-  textarea::placeholder {
-    color: var(--ink-2);
+    min-width: 0;
   }
 
   textarea {
@@ -645,9 +584,10 @@
     width: 100%;
     min-height: 420px;
     padding: var(--s-3);
+    background: var(--surface);
     font-family: var(--font-mono);
-    font-size: var(--t-0);
-    line-height: 20px;
+    font-size: 14px;
+    line-height: 1.6;
     resize: vertical;
     tab-size: 2;
     white-space: pre;
@@ -656,8 +596,6 @@
 
   .problems {
     margin-top: var(--s-3);
-    font-size: var(--t-2);
-    line-height: var(--lh-2);
     display: grid;
     gap: var(--s-2);
   }
@@ -675,187 +613,52 @@
     flex-wrap: wrap;
     gap: var(--s-1) var(--s-2);
     padding-left: var(--s-3);
-    border-left: 2px solid var(--ink);
-  }
-
-  .problems code {
-    font-size: var(--t-0);
-  }
-
-  .problems .source {
-    color: var(--ink-2);
+    border-left: 2px solid var(--blocked);
   }
 
   .side {
     display: grid;
-    gap: var(--s-6);
+    gap: var(--s-5);
     min-width: 0;
   }
 
-  .ident {
+  .facts {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s-2) var(--s-4);
     margin: 0 0 var(--s-4);
-    border: 1px solid var(--ink);
-    border-radius: var(--radius);
   }
 
-  .ident > div {
-    padding: var(--s-1) var(--s-3);
-    border-bottom: 1px solid var(--rule);
-  }
-
-  .ident > div:nth-child(odd) {
-    border-right: 1px solid var(--rule);
-  }
-
-  .ident > div:nth-last-child(-n + 2) {
-    border-bottom: 0;
-  }
-
-  .ident dt {
-    color: var(--ink-2);
-  }
-
-  .ident dd {
+  .facts dd {
     margin: 0;
-    font-size: var(--t-0);
-    line-height: var(--lh-1);
-    overflow-wrap: anywhere;
   }
 
-  .reads {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: var(--s-4);
-    padding-bottom: var(--s-4);
-    border-bottom: 1px solid var(--rule);
+  caption {
+    text-align: left;
+    padding-bottom: var(--s-1);
   }
 
-  .read .legend,
-  .channel .legend,
-  .actions .legend,
-  .pending .legend,
-  .field .legend {
-    color: var(--ink-2);
-  }
-
-  .value {
-    font-size: var(--t-3);
-    line-height: var(--lh-3);
+  .table-wrap + .table-wrap {
+    margin-top: var(--s-4);
   }
 
   .sim {
     display: flex;
     gap: var(--s-1);
-    margin-top: var(--s-1);
   }
 
   .sim input {
     width: 7em;
     min-height: 32px;
-    font-size: var(--t-0);
   }
 
-  .small-button {
+  .button.small {
     min-height: 32px;
     padding: 0 var(--s-3);
-    border: 1px solid var(--ink-2);
-    border-radius: var(--radius);
-    background: transparent;
-    color: var(--ink);
-    font-family: var(--font-label);
-    font-size: var(--t-0);
-    font-weight: 700;
-    letter-spacing: var(--legend-tracking);
-    text-transform: uppercase;
-    cursor: pointer;
   }
 
-  .small-button:hover {
-    border-color: var(--signal);
-    color: var(--signal);
-  }
-
-  .channel {
-    padding: var(--s-4) 0;
-    border-bottom: 1px solid var(--rule);
-  }
-
-  .channel-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--s-2) var(--s-4);
-    margin-bottom: var(--s-2);
-  }
-
-  .now {
-    font-size: var(--t-3);
-    line-height: var(--lh-3);
-    margin-right: auto;
-  }
-
-  .small {
-    font-size: var(--t-2);
-    line-height: var(--lh-2);
-  }
-
-  .switch {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s-3);
-    min-height: 44px;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--ink);
-    cursor: pointer;
-  }
-
-  .switch .track {
-    position: relative;
-    width: 48px;
-    height: 24px;
-    border: 2px solid var(--ink);
-    border-radius: var(--radius);
-  }
-
-  .switch .knob {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 16px;
-    height: 16px;
-    background: var(--ink-3);
-  }
-
-  .switch[aria-checked="true"] .knob {
-    left: auto;
-    right: 2px;
-    background: var(--ink);
-  }
-
-  .actions {
-    padding-top: var(--s-4);
-  }
-
-  .actions ul,
-  .pending ul,
-  .log {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .actions li,
-  .pending li {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--s-1) var(--s-3);
-    padding: var(--s-2) 0;
-    border-top: 1px solid var(--rule);
+  .note {
+    margin-top: var(--s-3);
   }
 
   .request {
@@ -885,182 +688,84 @@
     gap: var(--s-2);
   }
 
-  .button:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-
   .pending {
     margin-top: var(--s-4);
-  }
-
-  .log {
-    margin-top: var(--s-4);
-    max-height: 340px;
-    overflow-y: auto;
-  }
-
-  .log li {
-    padding: var(--s-2) var(--s-3);
-    border-top: 1px solid var(--rule);
-  }
-
-  .log li.agent {
-    border-left: 3px dashed var(--ink-2);
-  }
-
-  .log li.person {
-    border-left: 6px solid var(--bezel);
-    background: color-mix(in srgb, var(--bezel) 8%, var(--panel));
-  }
-
-  .who {
-    color: var(--ink-2);
-  }
-
-  .person-button {
-    min-height: 40px;
-    padding: 0 var(--s-4);
-    border: 2px solid var(--bezel);
+    padding: var(--s-3);
+    background: var(--confirm-bg);
     border-radius: var(--radius);
-    background: var(--bezel);
-    color: var(--on-bezel);
-    font-family: var(--font-label);
-    font-weight: 800;
-    letter-spacing: var(--legend-tracking);
-    text-transform: uppercase;
-    cursor: pointer;
   }
 
-  .person-button:focus-visible {
-    outline: 3px solid var(--signal);
-    outline-offset: 2px;
+  .pending ul {
+    list-style: none;
+    margin: var(--s-2) 0 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s-2);
   }
 
-  .line {
-    font-size: var(--t-0);
-    line-height: var(--lh-0);
-    color: var(--ink-2);
-    overflow-wrap: anywhere;
-  }
-
-  .decision {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--s-1) var(--s-2);
-    font-size: var(--t-2);
-    line-height: var(--lh-2);
-  }
-
-  .decision code {
-    font-size: var(--t-0);
-  }
-
-  .stopbar {
-    position: relative;
-    margin: var(--s-5) calc(-1 * var(--s-4)) calc(-1 * var(--s-4));
-    background: var(--bezel);
-    color: var(--on-bezel);
-    overflow: hidden;
-  }
-
-  .stripes {
-    position: absolute;
-    inset: 0;
-    background: var(--stripe);
-    transform: translateX(-101%);
-    transition: transform var(--motion-stop-wipe) var(--ease);
-  }
-
-  .is-stopped .stripes {
-    transform: none;
-  }
-
-  .stop-row {
-    position: relative;
+  .pending li {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--s-3);
-    padding: var(--s-3) var(--s-4);
+    gap: var(--s-2) var(--s-3);
   }
 
-  .note {
-    color: var(--on-bezel);
-    max-width: 34ch;
+  .decide {
+    display: flex;
+    gap: var(--s-2);
+    margin-left: auto;
+  }
+
+  .button.person {
+    background: var(--text);
+    border-color: var(--text);
+    color: var(--bg);
+  }
+
+  .stop-area {
+    margin-top: var(--s-5);
+    padding-top: var(--s-4);
+    border-top: var(--rule);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-3) var(--s-4);
   }
 
   .stop {
     min-height: 56px;
-    min-width: 180px;
+    min-width: 160px;
     padding: 0 var(--s-6);
-    border: 2px solid var(--on-bezel);
+    border: 2px solid var(--blocked);
     border-radius: var(--radius);
     background: var(--blocked);
-    color: var(--panel);
-    font-family: var(--font-label);
-    font-size: var(--t-3);
+    color: var(--bg);
+    font: inherit;
+    font-size: var(--t-h3);
     font-weight: 800;
-    letter-spacing: var(--legend-tracking);
-    text-transform: uppercase;
+    letter-spacing: 0.02em;
     cursor: pointer;
   }
 
-  .plate {
-    padding: var(--s-2) var(--s-3);
-    background: var(--bezel);
-    color: var(--on-bezel);
-    border-radius: var(--radius);
-    font-size: var(--t-2);
+  .stop:focus-visible {
+    outline: 3px solid var(--text);
+    outline-offset: 3px;
   }
 
-  .plate .legend {
-    font-size: var(--t-2);
-    font-weight: 800;
-    margin-right: var(--s-2);
-  }
-
-  .unlock {
+  .stopped-row {
     display: flex;
-    gap: var(--s-2);
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2) var(--s-3);
   }
 
-  .unlock input {
-    width: 9em;
-    background: var(--bezel);
-    color: var(--on-bezel);
-    border-color: var(--on-bezel);
+  .stopped-row input {
+    width: 10em;
   }
 
-  .unlock input::placeholder {
-    color: color-mix(in srgb, var(--on-bezel) 72%, var(--bezel));
-  }
-
-  .unlock button {
-    min-height: 40px;
-    padding: 0 var(--s-3);
-    border: 0;
-    border-radius: var(--radius);
-    background: var(--on-bezel);
-    color: var(--bezel);
-    font-family: var(--font-label);
-    font-weight: 800;
-    letter-spacing: var(--legend-tracking);
-    text-transform: uppercase;
-    cursor: pointer;
-  }
-
-  .error {
+  .unlock-error {
     width: 100%;
-  }
-
-  .stop:focus-visible,
-  .unlock button:focus-visible,
-  .unlock input:focus-visible {
-    outline: 3px solid var(--on-bezel);
-    outline-offset: 2px;
+    color: var(--text);
   }
 
   @media (min-width: 600px) {
@@ -1068,32 +773,23 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    .ident {
+    .facts {
       grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .ident > div {
-      border-bottom: 0;
-      border-right: 1px solid var(--rule);
-    }
-
-    .ident > div:last-child {
-      border-right: 0;
     }
   }
 
-  @media (min-width: 1024px) {
+  @media (min-width: 1100px) {
     .playground {
       grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     }
 
     .editor {
       position: sticky;
-      top: var(--s-5);
+      top: 76px;
     }
 
     textarea {
-      min-height: calc(100dvh - 300px);
+      min-height: calc(100dvh - 330px);
     }
   }
 </style>
