@@ -131,13 +131,18 @@ def register(app: typer.Typer) -> None:
     def dry_run(
         target: str = typer.Argument(None, help="device.channel or device.action."),
         rest: list[str] = typer.Argument(None, help="The value, or key=value action arguments."),  # noqa: B008
-        plan: Path = typer.Option(None, "--file", "-f", help="A YAML or JSON list of commands to check in order."),  # noqa: B008
+        plan: Path = typer.Option(  # noqa: B008
+            None, "--file", "-f", exists=True, dir_okay=False, help="A YAML or JSON list of commands to check in order."
+        ),
         as_json: bool = typer.Option(False, "--json", help="Print the decisions as JSON."),
     ) -> None:
         """Check commands against the current state without running them. Nothing reaches a device."""
         with hub() as client:
             if plan is not None:
-                loaded = yaml.safe_load(plan.read_text(encoding="utf-8"))
+                try:
+                    loaded = yaml.safe_load(plan.read_text(encoding="utf-8"))
+                except yaml.YAMLError as exc:
+                    raise ValueError(f"{plan} is not valid YAML or JSON. {exc}") from exc
                 if not isinstance(loaded, list) or not all(isinstance(item, dict) for item in loaded):
                     raise ValueError(f"{plan} must hold a list of commands.")
                 commands = [_shaped(client, item) for item in loaded]
