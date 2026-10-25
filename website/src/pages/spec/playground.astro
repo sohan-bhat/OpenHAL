@@ -28,6 +28,9 @@ const suggestion = first
         first.method === "hal/action"
           ? Object.entries(params.args ?? {}).map(([name, value]) => `${name}=${quantityText(value)}`).join(" ")
           : params.unit ? `${params.value} ${params.unit}` : String(params.value),
+      readings: Object.fromEntries(
+        scenario.record.exchanges.flatMap((exchange) => (exchange.soil_moisture ? [["soil_moisture", exchange.soil_moisture.before.value]] : [])),
+      ),
     }
   : null;
 const initial = examples.find((item) => scenario.file && item.path.endsWith(`/${scenario.file}`))?.name ?? examples.find((item) => item.name === scenario.device)?.name ?? "desk-fan-confirmed";

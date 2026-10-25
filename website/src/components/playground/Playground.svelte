@@ -34,6 +34,7 @@
     device: string;
     target: string;
     text: string;
+    readings?: Record<string, unknown>;
   }
 
   interface Props {
@@ -101,6 +102,7 @@
     for (const [name, spec] of Object.entries(device.write)) {
       if (deviceId(device) === "desk-fan" && name === "fan_speed" && spec.type === "number") values[name] = 20;
     }
+    if (suggestion?.readings && suggestion.device === deviceId(device)) Object.assign(values, suggestion.readings);
     return values;
   }
 

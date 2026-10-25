@@ -5,7 +5,7 @@ import { SCENARIO_PATH, scenarioFrom } from "../../src/lib/scenario-data.mjs";
 
 const scenarioFile = process.env.OPENHAL_SCENARIO ?? fileURLToPath(new URL(`../../../${SCENARIO_PATH}`, import.meta.url));
 const recorded = scenarioFrom(readFileSync(scenarioFile, "utf8"));
-const firstError = recorded.messages.find((message: any) => message.error)?.error as { code: number; message: string; data: { name: string } };
+const firstError = recorded.record.exchanges.find((exchange: any) => exchange.error)?.error as { code: number; message: string; data: { name: string } };
 
 function noErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -35,12 +35,13 @@ test.describe("overview", () => {
     await expect(page.locator(".flow svg.d2-svg > g.flow-active").first()).toBeAttached();
   });
 
-  test("the quickstart is the README's three commands", async ({ page }) => {
+  test("the quickstart is three commands and says what they show", async ({ page }) => {
     await page.goto("/");
     const block = page.locator("figure[data-tested]").first();
-    await expect(block).toContainText("git clone https://github.com/sohan-bhat/OpenHAL && cd OpenHAL");
-    await expect(block).toContainText("uv run openhal init");
-    await expect(block).toContainText("uv run openhald");
+    await expect(block).toContainText("git clone https://github.com/sohan-bhat/OpenHAL");
+    await expect(block).toContainText("cd OpenHAL");
+    await expect(block).toContainText("uv run openhal demo");
+    await expect(page.getByText("You'll see the hub refuse")).toBeVisible();
   });
 
   test("says plainly that OpenHAL is not affiliated with MHS", async ({ page }) => {
@@ -84,6 +85,19 @@ test.describe("playground", () => {
     await editor.fill("device: Fan\nconnect: { mock: fan }\nwrite:\n  speed: { unit: percent, min: 0 }\n");
     await expect(page.locator("#pg-problems")).toContainText("Number values need both min and max.");
     expect(errors).toEqual([]);
+  });
+
+  test("opens on the recorded scenario and answers it as the hub did", async ({ page }) => {
+    await page.goto("/spec/playground/");
+    const send = page.getByRole("button", { name: /^Send hal\// });
+    await send.click();
+    const latest = page.locator(".exchanges > li").first();
+    await expect(latest).toContainText(`error ${firstError.code} ${firstError.data.name}`);
+    await page.getByLabel("Simulated reading for tank").fill("ok");
+    await page.getByLabel("Simulated reading for tank").press("Enter");
+    await page.getByLabel("Value").fill("duration=20 s");
+    await send.click();
+    await expect(page.locator(".exchanges > li").first()).toContainText('"status": "done"');
   });
 
   test("answers an over-limit write as the hub does", async ({ page }) => {
@@ -166,7 +180,7 @@ test.describe("site", () => {
     await page.goto("/docs/quickstart/");
     await page.locator("figure[data-tested]").first().getByRole("button", { name: "Copy code" }).click();
     const copied = await page.evaluate(() => navigator.clipboard.readText());
-    expect(copied).toBe("git clone https://github.com/sohan-bhat/OpenHAL && cd OpenHAL\nuv run openhal init");
+    expect(copied).toBe("git clone https://github.com/sohan-bhat/OpenHAL\ncd OpenHAL\nuv run openhal demo");
   });
 
   test("every page in the sitemap has its Open Graph image", async ({ request, browserName }) => {

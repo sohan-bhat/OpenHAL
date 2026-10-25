@@ -34,7 +34,7 @@ function lineHtml(entry) {
   if (entry.kind === "error") {
     const reason = reasonLines(entry.reason)
       .map((part) => `<span class="reason">${escapeHtml(part)}</span>`)
-      .join("");
+      .join(" ");
     return `<span class="head error-head"><span class="outcome-error">error ${entry.code} ${escapeHtml(entry.name)}</span></span>${reason}`;
   }
   const head = entry.kind === "result" ? `<span class="outcome-result">result</span>` : `<span class="method">${escapeHtml(entry.method)}</span>`;

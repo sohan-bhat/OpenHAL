@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Exchange } from "../../lib/playground/types";
-  import { arrowSvg, directionWord, payloadHtml } from "../../lib/trace";
+  import { arrowSvg, directionWord, payloadHtml, reasonLines } from "../../lib/trace";
 
   interface Props {
     exchanges: Exchange[];
@@ -25,7 +25,7 @@
                 <div class="line">
                   {#if entry.kind === "error"}
                     <span class="head error-head"><span class="outcome-error">error {entry.code} {entry.name}</span></span>
-                    <span class="reason">{entry.reason}</span>
+                    {#each reasonLines(entry.reason) as part, partIndex (partIndex)}{#if partIndex > 0}{" "}{/if}<span class="reason">{part}</span>{/each}
                   {:else}
                     <span class="head">
                       {#if entry.kind === "result"}

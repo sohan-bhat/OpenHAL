@@ -37,7 +37,7 @@ const sections = specItems
       <h2 id="start-title">Quickstart</h2>
       <div class="prose quickstart">
         <Quickstart />
-        <p>{outcome()}</p>
+        <p>{outcome().replace(/(\d) (?=[%a-zA-Z])/g, "$1\u00a0")}</p>
       </div>
     </section>
 
