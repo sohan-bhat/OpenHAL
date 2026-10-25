@@ -25,6 +25,7 @@ OpenHAL is presented and specified as an open protocol, the way MCP is. Until no
 2. The hub answers `{ protocolVersion, hubInfo: { name, version }, conformance: "core" | "control" | "full", principal: { kind, name, scope }, capabilities: { notifications: [...] } }`.
 3. The client sends the notification `hal/initialized`. The hub sends no other notification before it.
 4. Any other method before `hal/initialize` gets error `NOT_INITIALIZED`.
+5. Shutdown. The client sends the notification `hal/shutdown` and closes the transport. The hub releases nothing on its behalf, because devices belong to the hub.
 
 ### Methods
 
@@ -34,14 +35,19 @@ OpenHAL is presented and specified as an open protocol, the way MCP is. Until no
 | `hal/devices/list` | `{}` | `{ devices: [DeviceSummary] }` | Core |
 | `hal/devices/describe` | `{ device }` | `{ device: DeviceDescription }` (channels, units, limits, actions, safe state, hazard, conformance, verification, limits provenance) | Core |
 | `hal/read` | `{ device, channel }` | `{ device, channel, value, unit, at, suspect }` | Core |
+| `hal/readMany` | `{ items: [{ device, channel }] }` | `{ readings: [Reading or error] }` | Core |
 | `hal/write` | `{ device, channel, value }` with `value` a quantity string like `"60 %"` or a bool or enum | `{ status: "done", device, channel, value, unit }` or `{ status: "pending", requestId, expiresInS }` | Control |
 | `hal/dryRun` | `{ commands: [Write or Action] }` | `{ decisions: [Decision] }` | Control |
+| `hal/planCheck` | `{ steps: [Write, Action or wait] }` | `{ ok, decisions: [Decision], problems: [str] }` | Control |
 | `hal/stop` | `{ reason? }` | `{ devices: [{ device, status, detail }] }` | Control |
 | `hal/action` | `{ device, action, args }` | `{ status, result }` or pending | Full |
 | `hal/confirmations/list` | `{ status? }` | `{ requests: [ConfirmationRequest] }` | Full |
 | `hal/confirmations/approve` | `{ requestId }` (human principal only) | `Decision` | Full |
 | `hal/confirmations/reject` | `{ requestId, reason? }` (human only) | `ConfirmationRequest` | Full |
 | `hal/unlock` | `{ phrase: "unlock" }` (human only) | `{ ok }` | Control |
+| `hal/routines/list` | `{}` | `{ routines: [RoutineSummary] }` | Full |
+| `hal/routines/dryRun` | `{ routineId }` | `{ ok, decisions: [Decision], problems: [str] }` | Full |
+| `hal/audit/query` | `{ device?, status?, event?, since?, limit? }` | `{ entries: [AuditEntry] }` | Full |
 
 Notifications from the hub, after `hal/initialized`:
 
@@ -51,6 +57,8 @@ Notifications from the hub, after `hal/initialized`:
 | `hal/blocked` | `{ device, target, error: { code, name, message, data } }` |
 | `hal/stopped` | `{ reason, by, devices: [{ device, status }] }` |
 | `hal/deviceAdded` | `{ device: DeviceSummary }` |
+| `hal/deviceRemoved` | `{ device }` |
+| `hal/confirmationRequested` | `{ request: ConfirmationRequest }` |
 
 Clients subscribe to all notifications by default. A later version may add filters.
 
@@ -67,7 +75,7 @@ A blocked or failed command is a JSON-RPC error. `error.code` is the number, `er
 | -32603 | INTERNAL_ERROR | `internal_error` | A bug in the hub |
 | -32001 | NOT_INITIALIZED | | `hal/initialize` hasn't run |
 | -32002 | UNAUTHORIZED | | Missing or unknown token |
-| -32003 | NOT_PERMITTED | `not_permitted` | The principal's scope doesn't cover this device or method |
+| -32003 | SCOPE_DENIED | `not_permitted` | The principal's token scope doesn't cover this device or method |
 | -32004 | UNKNOWN_TARGET | `unknown_target` | No such device, channel or action |
 | -32005 | DEVICE_UNAVAILABLE | `device_unavailable` | Disconnected or not ready |
 | -32010 | LIMIT_EXCEEDED | `above_max`, `below_min` | Outside the device file's confirmed limits |
@@ -76,13 +84,14 @@ A blocked or failed command is a JSON-RPC error. `error.code` is the number, `er
 | -32013 | CONFIRMATION_REQUIRED | `needs_confirmation` | Queued for a person, `data.requestId` names the request |
 | -32014 | STOPPED | `stopped` | The hub is stopped until a person unlocks |
 | -32015 | UNVERIFIED_LIMITS | `read_only_file` | The device file's limits aren't confirmed by a person, so it is read-only |
-| -32016 | INVALID_VALUE | `bad_value`, `bad_unit`, `bad_step` | Wrong type, unit, step or pattern |
-| -32017 | WATCHDOG_BLOCKED | `duration_exceeded` | A watchdog budget is used up |
+| -32016 | INVALID_VALUE | `bad_value`, `bad_step` | Wrong type, step, enum value or pattern |
+| -32017 | WATCHDOG_TRIPPED | `duration_exceeded` | A watchdog budget is used up |
 | -32018 | BUSY | `busy` | Another command holds the device |
 | -32019 | QUEUE_FULL | `queue_full` | The confirmation queue is full |
 | -32020 | DRIVER_ERROR | `driver_error` | The device or its protocol failed, and the channel is unknown until a readback |
 | -32021 | MISCONFIGURED | `misconfigured`, `cannot_loosen` | The hub's device files are inconsistent, or a change would loosen a confirmed limit |
 | -32022 | REQUEST_CLOSED | `expired`, `rejected` | The confirmation request expired or was rejected |
+| -32023 | UNIT_INVALID | `bad_unit` | A missing, unknown or incompatible unit, or a value that isn't finite |
 
 Every kernel code maps to exactly one name. A test enforces this.
 
@@ -109,8 +118,11 @@ Hubs declare their level in `hal/initialize`. Drivers declare theirs in `DriverI
 | `dry_run`, `plan_check` | `hal/dryRun` |
 | `stop_all` | `hal/stop` |
 | `get_confirmation_status` | `hal/confirmations/list` |
+| `list_routines` | `hal/routines/list` |
+| `run_routine_dry` | `hal/routines/dryRun` |
+| `get_audit_log` | `hal/audit/query` |
 
-Routine, audit, discovery and driver writer tools stay MCP and REST only in this version.
+Routine drafting, discovery and driver writer tools stay MCP and REST only in this version.
 
 MCP tool results carry the same error names, codes and messages.
 
