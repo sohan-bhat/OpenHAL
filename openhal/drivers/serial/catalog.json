@@ -12,7 +12,7 @@
   "hazard_default": "medium",
   "tests": "simulated pyserial port and a real pty opened with pyserial",
   "estimate": {
-    "devices": "unbounded, tens of thousands of models in practice",
+    "devices": "tens of thousands of models in practice",
     "reasoning": "The driver has no built-in command set. Any device whose serial protocol is one text command and one text reply per line can be described in a device file. That covers most hobby microcontroller sketches and a large share of RS-232 lab and industrial equipment. The real limit is how many devices have documented commands, not the driver.",
     "sources": [
       "https://pyserial.readthedocs.io/en/latest/",

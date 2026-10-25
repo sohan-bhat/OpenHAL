@@ -176,7 +176,7 @@
       "hazard_default": "medium",
       "tests": "httpx.MockTransport with a simulated smart plug",
       "estimate": {
-        "devices": "unbounded, at least tens of thousands of models",
+        "devices": "at least tens of thousands of models",
         "reasoning": "Any device with a documented local HTTP API can be described in a device file without new code. Shelly alone documents a local HTTP API for its whole Gen1 and Gen2 range, Tasmota exposes an HTTP command endpoint on every flashed device, and most microcontroller web server sketches speak JSON over HTTP. The count is limited only by devices that need a protocol other than HTTP or a login flow the driver does not support.",
         "sources": [
           "https://www.rfc-editor.org/rfc/rfc9110",
@@ -315,7 +315,7 @@
       "hazard_default": "medium",
       "tests": "real paho-mqtt client against an in-process MQTT 3.1.1 broker with a simulated fan",
       "estimate": {
-        "devices": "unbounded, at least thousands of models",
+        "devices": "at least thousands of models",
         "reasoning": "Any device that publishes state and accepts commands on topics can be described in a device file. Tasmota alone lists over two thousand supported device templates, and Zigbee2MQTT lists several thousand Zigbee devices that it exposes over MQTT with JSON payloads. The driver covers raw and JSON payloads, so devices with binary or protobuf payloads are not covered.",
         "sources": [
           "https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html",
@@ -478,7 +478,7 @@
       "hazard_default": "medium",
       "tests": "simulated pyserial port and a real pty opened with pyserial",
       "estimate": {
-        "devices": "unbounded, tens of thousands of models in practice",
+        "devices": "tens of thousands of models in practice",
         "reasoning": "The driver has no built-in command set. Any device whose serial protocol is one text command and one text reply per line can be described in a device file. That covers most hobby microcontroller sketches and a large share of RS-232 lab and industrial equipment. The real limit is how many devices have documented commands, not the driver.",
         "sources": [
           "https://pyserial.readthedocs.io/en/latest/",
