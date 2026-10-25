@@ -1,0 +1,19 @@
+{
+  "name": "can",
+  "tier": 3,
+  "status": "implemented",
+  "protocols": ["CAN 2.0A and 2.0B", "CAN FD", "SocketCAN and USB adapters through python-can"],
+  "families": ["motor controllers (VESC, ODrive, CubeMars)", "battery management systems", "CAN sensor and IO nodes", "vehicle and machine buses with documented frames", "DIY CAN nodes"],
+  "hazard_default": "medium",
+  "tests": "python-can virtual bus with a simulated motor drive",
+  "estimate": {
+    "devices": "hundreds of documented node types",
+    "reasoning": "Any node whose broadcast frames and command frames are documented, or listed in a DBC file, can be described with byte and bit fields. That covers hobby and research motor drives such as VESC and ODrive, many battery management systems, and machines that publish periodic CANopen PDOs or J1939 PGNs. Values that need a request and reply protocol (CANopen SDO, J1939 transport, ISO-TP) are not covered, which leaves out much of the automotive diagnostic world.",
+    "sources": [
+      "https://python-can.readthedocs.io/en/stable/interfaces.html",
+      "https://docs.kernel.org/networking/can.html",
+      "https://github.com/vedderb/bldc/blob/master/documentation/comm_can.md",
+      "https://docs.odriverobotics.com/v/latest/manual/can-protocol.html"
+    ]
+  }
+}
