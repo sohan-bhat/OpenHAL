@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { formatNumber, formatQuantity, quantityString } from "../lib/units";
+  import { formatQuantity, quantityString } from "../lib/units";
 
   let {
     id,
@@ -30,7 +30,6 @@
   const scaleMax = $derived(max + span * 0.2);
   const pct = (point: number) => ((point - scaleMin) / (scaleMax - scaleMin)) * 100;
   const middle = $derived(span >= 10 ? Math.round(min + span / 2) : min + span / 2);
-  const lowerLimit = $derived(min > scaleMin);
   const clamp = (point: number) => Math.min(Math.max(point, scaleMin), scaleMax);
 </script>
 
@@ -55,16 +54,12 @@
       {disabled}
       oninput={(event) => oninput((event.currentTarget as HTMLInputElement).value)}
     />
-    {#if lowerLimit}<div class="limit" style="left: {pct(min)}%"></div>{/if}
+    <div class="limit" style="left: {pct(min)}%"></div>
     <div class="limit" style="left: {pct(max)}%"></div>
   </div>
   <div class="ticks">
-    {#if lowerLimit}
-      <span class="limit-label min" style="left: {pct(min)}%">min {formatQuantity(min, unit, step)}</span>
-    {:else}
-      <span class="tick start" style="left: {pct(min)}%" aria-hidden="true">{formatNumber(min, step)}</span>
-    {/if}
-    <span class="tick" style="left: {pct(middle)}%" aria-hidden="true">{formatNumber(middle, step)}</span>
+    <span class="limit-label min" style="left: {pct(min)}%">min {formatQuantity(min, unit, step)}</span>
+    <span class="tick" style="left: {pct(middle)}%" aria-hidden="true">{formatQuantity(middle, unit, step)}</span>
     <span class="limit-label max" style="left: {pct(max)}%">max {formatQuantity(max, unit, step)}</span>
   </div>
 </div>
@@ -193,10 +188,6 @@
 
   .tick {
     transform: translateX(-50%);
-  }
-
-  .tick.start {
-    transform: none;
   }
 
   .limit-label {
