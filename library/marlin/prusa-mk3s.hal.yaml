@@ -1,0 +1,44 @@
+openhal: "0.1"
+device: { name: Original Prusa i3 MK3S+, model: i3 MK3S+, manufacturer: Prusa Research }
+id: prusa-mk3s
+match:
+  usb: ["2c99:0002"]
+  usb_class: cdc
+connect: { marlin: auto, baud: 115200, timeout: 5 s, settle: 2 s, autoreport: 2 s }
+read:
+  extruder_temp: { unit: degC, every: 2 s, range: [0, 300] }
+  bed_temp: { unit: degC, every: 2 s, range: [0, 130] }
+  position_z: { unit: mm }
+  sd_printing: { type: bool, every: 5 s }
+  sd_progress: { unit: percent, every: 5 s }
+write:
+  extruder_target: { unit: degC, min: 0, max: 215, step: 1, max_change_per_s: 10, confirm: confirm, suggested: true }
+  bed_target: { unit: degC, min: 0, max: 60, step: 1, max_change_per_s: 5, confirm: confirm, suggested: true }
+  fan_speed: { unit: percent, min: 0, max: 100, step: 1, suggested: true }
+actions:
+  home:
+    description: Home the axes with G28.
+    args:
+      axes: { type: enum, values: [x, y, z, xy, all] }
+    require: ["sd_printing == false"]
+    confirm: confirm
+    suggested: true
+  pause: { description: "Pause a print from the SD card (M25).", suggested: true }
+  resume: { description: "Resume a paused SD card print (M24).", confirm: confirm, suggested: true }
+  cancel: { description: "Abort the SD card print (M524).", confirm: confirm, suggested: true }
+safe_state:
+  - { extruder_target: 0, bed_target: 0, fan_speed: 0 }
+interlocks:
+  - if: "extruder_target > 0 degC"
+    require: "extruder_temp < 280 degC"
+    message: "The hotend reads above 280 degC. Check the thermistor before heating."
+watchdog:
+  heartbeat: 5 s
+  on_loss: safe_state
+hazard: high
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The MK3S+ runs Prusa firmware, which grew out of Marlin and answers the same G-code over USB. The limits
+  suit PLA, with the hotend at most 215 degC and the bed at most 60 degC. Raise them for other filaments
+  only after a supervised print.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }
