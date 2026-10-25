@@ -1,0 +1,34 @@
+device: { name: Workshop P1S, manufacturer: Bambu Lab, model: P1S }
+id: workshop-p1s
+connect:
+  bambu: 192.168.1.50
+  serial: 01P00A000000000
+  token_env: BAMBU_ACCESS_CODE
+  cert_sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+  timeout: 5 s
+read:
+  state: { type: enum, values: [idle, prepare, slicing, running, pause, finish, failed] }
+  nozzle_temp: { unit: degC, range: [0, 300] }
+  nozzle_target: { unit: degC }
+  bed_temp: { unit: degC, range: [0, 110] }
+  bed_target: { unit: degC }
+  progress: { unit: percent }
+  remaining: { unit: min }
+  job: { type: string }
+  print_error: { unit: dimensionless }
+write:
+  speed_level: { type: enum, values: [silent, standard, sport] }
+  chamber_light: { type: bool }
+actions:
+  pause: { require: ["state == running"] }
+  resume: { require: ["state == pause"] }
+  stop: { confirm: confirm }
+watchdog: { heartbeat: 10 s, on_loss: hold }
+hazard: medium
+notes: >-
+  Needs LAN-only mode with Developer Mode on (printer screen, Settings, Network). The serial and the
+  access code are on the same screen. Replace cert_sha256 with the printer certificate's fingerprint
+  from docs/hardware-tests/bambu.md step 2. The ludicrous speed level is left out on purpose.
+  The hub stops a print by sending stop, which ends the job and lets the printer cool down.
+safe_state_note: The driver stops the print natively, which ends the job, turns the heaters off and parks the head.
+provenance: { source: hand-written, by: openhal bambu driver example, at: 2026-10-24, from: "https://github.com/Doridian/OpenBambuAPI/blob/main/mqtt.md" }
