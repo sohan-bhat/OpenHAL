@@ -1,8 +1,8 @@
 # Hardware test plan, can driver
 
-This plan checks the can driver against a real CAN bus. It was written for a Linux computer (a Raspberry Pi works) with a USB CAN adapter and a VESC motor controller, using the example file. Any node described in a device file works the same way.
+This plan checks the can driver against a real CAN bus. It was made for a Linux computer (a Raspberry Pi works) with a USB CAN adapter and a VESC motor controller, using the example file. Any node described in a device file works the same way.
 
-Run every step from the repository checkout. Take the load off the motor, or remove the motor, before the write steps.
+Run every step from the repository checkout. Take the load off the motor, or remove the motor, before the steps that change anything.
 
 ## What you need
 
@@ -15,10 +15,10 @@ Run every step from the repository checkout. Take the load off the motor, or rem
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does. It waits one second before a write, because the kernel measures a first write's rate of change from the moment the device connected.
+Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
 
 ```python
-"""Usage: uv run python hwtest.py FILE identify|describe|read|write CHANNEL VALUE|action NAME [ARG=VALUE ...]|stop"""
+"""Usage: uv run python hwtest.py FILE identify|describe|read|set CHANNEL VALUE|action NAME [ARG=VALUE ...]|stop"""
 
 import asyncio
 import json
@@ -53,7 +53,7 @@ async def main(path: str, command: str, *rest: str) -> None:
                 reading = await kernel.read(file.device_id, channel, me)
                 value = f"<{len(reading.value)} bytes>" if isinstance(reading.value, bytes) else reading.value
                 print(f"{channel} = {value} {reading.unit or ''}{' (suspect)' if reading.suspect else ''}")
-        elif command == "write":
+        elif command == "set":
             channel, value = rest
             await asyncio.sleep(1.0)
             decision = await kernel.execute(Write(device=file.device_id, channel=channel, value=parse(value)), me)
@@ -133,7 +133,7 @@ Run `sudo ip link set can0 down`, then run step 5 again.
 
 Expected. The connect fails with `DriverError` and a hint to bring the interface up, or the reads fail with `DriverError` saying the bus failed. Bring the interface up again with step 1 and run step 5. It reads normally.
 
-## Write steps
+## Steps that change the device
 
 Keep `candump -tz can0` from step 2 running in another terminal while you do these, so you can see every frame the driver sends.
 
@@ -155,12 +155,12 @@ uv run python hwtest.py my-vesc.hal.yaml action coast
 
 Expected. `done`, and candump shows `00000101   [4]  00 00 00 00`. A stopped motor stays stopped.
 
-### 10. A small write
+### 10. A small change
 
 With the motor unloaded and clamped, run
 
 ```sh
-uv run python hwtest.py my-vesc.hal.yaml write erpm_target "300 rpm"
+uv run python hwtest.py my-vesc.hal.yaml set erpm_target "300 rpm"
 uv run python hwtest.py my-vesc.hal.yaml read
 uv run python hwtest.py my-vesc.hal.yaml action coast
 ```
@@ -206,7 +206,7 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 7 bus loss | pass / fail | |
 | 8 confirm limits | done | |
 | 9 the smallest safe frame | pass / fail | |
-| 10 a small write | pass / fail | |
+| 10 a small change | pass / fail | |
 | 11 stop | pass / fail | |
 
 Anything unexpected:

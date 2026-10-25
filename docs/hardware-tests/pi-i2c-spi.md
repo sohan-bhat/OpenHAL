@@ -15,10 +15,10 @@ Run every step on the Pi from the repository checkout. Wire with the Pi powered 
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does. It waits one second before a write, because the kernel measures a first write's rate of change from the moment the device connected.
+Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
 
 ```python
-"""Usage: uv run python hwtest.py FILE identify|describe|read|write CHANNEL VALUE|action NAME [ARG=VALUE ...]|stop"""
+"""Usage: uv run python hwtest.py FILE identify|describe|read|set CHANNEL VALUE|action NAME [ARG=VALUE ...]|stop"""
 
 import asyncio
 import json
@@ -53,7 +53,7 @@ async def main(path: str, command: str, *rest: str) -> None:
                 reading = await kernel.read(file.device_id, channel, me)
                 value = f"<{len(reading.value)} bytes>" if isinstance(reading.value, bytes) else reading.value
                 print(f"{channel} = {value} {reading.unit or ''}{' (suspect)' if reading.suspect else ''}")
-        elif command == "write":
+        elif command == "set":
             channel, value = rest
             await asyncio.sleep(1.0)
             decision = await kernel.execute(Write(device=file.device_id, channel=channel, value=parse(value)), me)
@@ -126,7 +126,7 @@ Power the Pi off, disconnect the TMP102's SDA wire, power on and run step 4 agai
 
 Expected. `DriverError` saying nothing acknowledged at `i2c-1 address 0x48`, with the i2cdetect hint. Power off, reconnect the wire, power on and run step 4. It reads normally.
 
-## Write steps
+## Steps that change the device
 
 ### 7. Confirm the limits
 
@@ -138,26 +138,26 @@ confirmed: { by: <your name>, at: <today's date> }
 
 `uv run openhal file validate my-tmp102.hal.yaml` should now say `writable`.
 
-### 8. The smallest safe write
+### 8. The smallest safe change
 
 ```sh
-uv run python hwtest.py my-tmp102.hal.yaml write alert_high "79.5 degC"
+uv run python hwtest.py my-tmp102.hal.yaml set alert_high "79.5 degC"
 i2cget -y 1 0x48 0x03 w
-uv run python hwtest.py my-tmp102.hal.yaml write alert_high "80 degC"
+uv run python hwtest.py my-tmp102.hal.yaml set alert_high "80 degC"
 ```
 
-Expected. `done` for each write. i2cget prints `0x804f` between them, which is the register value `0x4F80`, 79.5 degC. The alert pin doesn't change at room temperature.
+Expected. `done` for each command. i2cget prints `0x804f` between them, which is the register value `0x4F80`, 79.5 degC. The alert pin doesn't change at room temperature.
 
 ### 9. A preserved bit
 
 ```sh
-uv run python hwtest.py my-tmp102.hal.yaml write shutdown true
+uv run python hwtest.py my-tmp102.hal.yaml set shutdown true
 i2cget -y 1 0x48 0x01 w
-uv run python hwtest.py my-tmp102.hal.yaml write shutdown false
+uv run python hwtest.py my-tmp102.hal.yaml set shutdown false
 i2cget -y 1 0x48 0x01 w
 ```
 
-Expected. `done` for each write. The first i2cget prints `0xa061` and the second `0xa060`. Only bit 8 changed, so the conversion rate bits kept their value.
+Expected. `done` for each command. The first i2cget prints `0xa061` and the second `0xa060`. Only bit 8 changed, so the conversion rate bits kept their value.
 
 ### 10. Stop
 
@@ -165,7 +165,7 @@ Expected. `done` for each write. The first i2cget prints `0xa061` and the second
 uv run python hwtest.py my-tmp102.hal.yaml stop
 ```
 
-Expected. `enclosure-tmp102 no_safe_state`, because the example has no safe state, and nothing is written. i2cget on register 0x01 still prints `0xa060`.
+Expected. `enclosure-tmp102 no_safe_state`, because the example has no safe state, and nothing changes. i2cget on register 0x01 still prints `0xa060`.
 
 ## If something fails
 
@@ -192,7 +192,7 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 5 SPI reads | pass / fail / skipped | |
 | 6 a missing chip | pass / fail | |
 | 7 confirm limits | done | |
-| 8 the smallest safe write | pass / fail | |
+| 8 the smallest safe change | pass / fail | |
 | 9 a preserved bit | pass / fail | |
 | 10 stop | pass / fail | |
 

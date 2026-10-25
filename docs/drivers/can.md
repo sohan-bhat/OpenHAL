@@ -1,12 +1,12 @@
 # can driver
 
-The can driver reads signals out of CAN bus frames and sends frames as writes and actions. It uses python-can, so it works with SocketCAN on Linux and with the USB adapters python-can supports (PCAN, Kvaser, slcan, gs_usb and others). Each channel's map says which frame id carries the value and where it sits in the data bytes, so motor drives, battery systems, sensors and homemade nodes work without device-specific code.
+The can driver reads signals out of CAN bus frames and sends frames as commands and actions. It uses python-can, so it works with SocketCAN on Linux and with the USB adapters python-can supports (PCAN, Kvaser, slcan, gs_usb and others). Each channel's map says which frame id carries the value and where it sits in the data bytes, so motor drives, battery systems, sensors and homemade nodes work without device-specific code.
 
 ## What it supports
 
 - Classic CAN with 11-bit and 29-bit identifiers, and CAN FD with up to 64 data bytes.
 - Read channels of type number, bool and enum, decoded from any byte range or bit range, big or little endian, signed or unsigned, with scale, offset and a device unit.
-- Write channels that place a value in a frame and send it. Several write channels can share one frame.
+- Channels under `write` that place a value in a frame and send it. Several of them can share one frame.
 - Actions that send a fixed frame, with action arguments placed in it.
 - `describe()` listens for a moment and proposes one read channel per frame id it sees.
 - `discover()` lists SocketCAN interfaces that are up. It sends nothing.
@@ -58,19 +58,19 @@ actions:
 | `unit` | the channel unit | The unit the device value is in. It is converted to the channel unit |
 | `on`, `off` | `1`, `0` | Raw values for bool channels |
 | `lookup` | none | Raw numbers to enum values, such as `{ 0: coast, 1: eco }` |
-| `data` | zeros | Write and action frames. The bytes the rest of the frame carries |
-| `dlc` | the longest field | Write and action frames. The frame length in bytes |
-| `state` | none | Write channels. A read map for the status frame that shows the result |
+| `data` | zeros | Command and action frames. The bytes the rest of the frame carries |
+| `dlc` | the longest field | Command and action frames. The frame length in bytes |
+| `state` | none | Channels under `write`. A read map for the status frame that shows the result |
 | `args` | none | Actions. A field map for each action argument |
 
-A write starts from the last payload the driver sent with that id, so a write to `enable` keeps the setpoint that `setpoint` put in the same frame. After reconnecting the frame starts from `data` again.
+A change starts from the last payload the driver sent with that id, so changing `enable` keeps the setpoint that `setpoint` put in the same frame. After reconnecting the frame starts from `data` again.
 
-## How reads and writes behave
+## How reads and commands behave
 
 - CAN only broadcasts. A background thread keeps the newest frame per id, and a read decodes it with the time it arrived. An id that hasn't been seen since connecting reads as no value, which the kernel treats as unknown. Reads never put anything on the bus.
-- Values are rounded to the field's raw step, and the reading a write returns shows the value actually sent. A value the field can't hold fails the write and nothing is sent. Nothing is clamped.
+- Values are rounded to the field's raw step, and the reading a command returns shows the value actually sent. A value the field can't hold fails the command and nothing is sent. Nothing is clamped.
 - A successful send means the controller put the frame on the bus. It doesn't prove the node acted. Use a `state` map or a read channel to see that.
-- Frames are never queued or retried. A failed send fails the write.
+- Frames are never queued or retried. A failed send fails the command.
 
 ## Example
 
@@ -86,7 +86,7 @@ A write starts from the last payload the driver sent with that id, so a write to
 ## Limitations
 
 - Raw signals only. CANopen SDO and NMT, J1939 multi-frame transport and ISO-TP are not handled, so values that need a request and reply protocol can't be read. Their periodic PDOs and PGNs can.
-- No DBC file import. Write the maps from the node's documentation or DBC file by hand.
+- No DBC file import. Make the maps from the node's documentation or DBC file by hand.
 - No remote frames.
 - Fields are at most 8 bytes long.
 

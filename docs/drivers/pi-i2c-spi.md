@@ -1,15 +1,15 @@
 # pi-i2c-spi driver
 
-The pi-i2c-spi driver reads and writes I2C and SPI chips on a Raspberry Pi, or any Linux board with i2c-dev and spidev. It uses smbus2 for I2C and spidev for SPI. The device file is the register map. Each channel names a register, or the bytes to clock out over SPI, and where the value sits in the bytes that come back, so temperature sensors, ADCs, DACs and port expanders work without chip-specific code.
+The pi-i2c-spi driver reads and sets I2C and SPI chips on a Raspberry Pi, or any Linux board with i2c-dev and spidev. It uses smbus2 for I2C and spidev for SPI. The device file is the register map. Each channel names a register, or the bytes to clock out over SPI, and where the value sits in the bytes that come back, so temperature sensors, ADCs, DACs and port expanders work without chip-specific code.
 
 ## What it supports
 
 - I2C chips with 8-bit or 16-bit register addresses, and chips read without a register.
-- SPI chips that answer a command in the same transfer, such as most ADCs, and write-only chips such as DACs.
+- SPI chips that answer a command in the same transfer, such as most ADCs, and chips that only take values, such as DACs.
 - Read channels of type number, bool and enum, decoded from any byte range or bit range, big or little endian, signed or unsigned, with scale, offset and a device unit.
-- Write channels that write one register, or clock out one SPI word, with the value placed in it.
+- Channels under `write` that set one register, or clock out one SPI word, with the value placed in it.
 - `preserve: true` for I2C configuration registers, which reads the register and changes only the field's bits.
-- Actions that write fixed bytes to a register, with action arguments placed in them.
+- Actions that send fixed bytes to a register, with action arguments placed in them.
 - `discover()` lists `/dev/i2c-*` and `/dev/spidev*` without touching any bus.
 
 ## Setup
@@ -46,11 +46,11 @@ actions:
 
 | Key | Default | Meaning |
 |---|---|---|
-| `register` | none | I2C. The register to read from or write to. Writes and actions on I2C need one |
+| `register` | none | I2C. The register to read or set. Commands and actions on I2C need one |
 | `read_length` | the field's end | I2C. How many bytes to read from the register |
 | `command` | required for SPI reads | SPI. The bytes to clock out. They are padded with zeros to the field's end |
-| `data` | zeros | Writes and actions. The bytes the rest of the payload carries. For SPI this is the whole word |
-| `preserve` | `false` | I2C writes. Read the register and change only this field's bits |
+| `data` | zeros | Commands and actions. The bytes the rest of the payload carries. For SPI this is the whole word |
+| `preserve` | `false` | I2C commands. Read the register and change only this field's bits |
 | `byte`, `length` | `0`, `1` | Where the value starts in the payload and how many bytes it spans, 1 to 8 |
 | `endian` | `big` | Byte order, `big` or `little` |
 | `signed` | `false` | Two's complement |
@@ -59,14 +59,14 @@ actions:
 | `unit` | the channel unit | The unit the device value is in. It is converted to the channel unit |
 | `on`, `off` | `1`, `0` | Raw values for bool channels |
 | `lookup` | none | Raw numbers to enum values |
-| `state` | none | Writes. A read map that shows the result, often the same register |
+| `state` | none | Channels under `write`. A read map that shows the result, often the same register |
 | `args` | none | Actions. A field map for each action argument |
 
-## How reads and writes behave
+## How reads and commands behave
 
-- The driver only writes the registers and byte sequences that the device file's write channels and actions list. Connecting writes nothing. Configuration a chip needs before it measures, such as starting conversions, goes in an action so it passes through the safety kernel.
-- Values are rounded to the field's raw step, and the reading a write returns shows the value actually sent. A value the field can't hold fails the write and nothing is written. Nothing is clamped.
-- A write channel without `state` reads as the last value sent, or no value before the first write.
+- The driver only changes the registers and byte sequences that the device file's `write` channels and actions list. Connecting changes nothing. Configuration a chip needs before it measures, such as starting conversions, goes in an action so it passes through the safety kernel.
+- Values are rounded to the field's raw step, and the reading a command returns shows the value actually sent. A value the field can't hold fails the command and nothing is sent. Nothing is clamped.
+- A `write` channel without `state` reads as the last value sent, or no value before the first command.
 - `health()` reads the first read channel. Make it a register that is safe to read often, not one that clears on read.
 - Transactions on one device run one at a time. Other devices on the same bus are separate device files, and the kernel's i2c-dev locking keeps their transactions apart.
 
@@ -91,7 +91,7 @@ actions:
 
 ## Hazard default and safe state
 
-The default hazard is low, because most chips on these buses are sensors and converters. A DAC or driver chip can still switch a real load, so set the file's hazard to match what it controls. I2C and SPI have no emergency behavior, so `safe_state_support` is `file` and the hub writes the device file's safe state like any other value. A chip keeps its last output if the Pi stops, so wire pull resistors that make power loss safe.
+The default hazard is low, because most chips on these buses are sensors and converters. A DAC or driver chip can still switch a real load, so set the file's hazard to match what it controls. I2C and SPI have no emergency behavior, so `safe_state_support` is `file` and the hub sends the device file's safe state like any other value. A chip keeps its last output if the Pi stops, so wire pull resistors that make power loss safe.
 
 ## Sources
 
