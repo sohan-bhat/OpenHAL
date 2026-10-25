@@ -15,7 +15,7 @@ uv sync --all-extras
 uv run openhal demo
 ```
 
-The demo runs a hub against the simulated plant waterer. If it prints the three exchanges, the setup works.
+The demo runs a hub against the simulated plant waterer. If it prints the three exchanges, the setup works. To install OpenHAL as a tool instead of working on it, follow [docs/guide/install.md](docs/guide/install.md).
 
 On Linux the MIDI and HID extras build against system headers. On Debian and Ubuntu, install them before `uv sync`.
 
@@ -75,7 +75,7 @@ Write a driver only when no existing driver speaks the device's protocol. `uv ru
 
 ## Contribute a device file
 
-A device file describes one device model for an existing driver. Library files live in `library/<driver package>/<maker>-<model>.hal.yaml`, one file per model. [Add a device](docs/guide/tutorials/add-a-device.md) walks through writing one.
+A device file describes one device model for an existing driver. Library files live in `library/<driver package>/<maker>-<model>.hal.yaml`, one file per model, and `uv run openhal library list` shows them. [docs/guide/library.md](docs/guide/library.md) explains matching and suggested limits. [Add a device](docs/guide/tutorials/add-a-device.md) walks through writing one.
 
 - **It validates.** `uv run openhal file validate` reports it valid.
 - **Every limit is suggested.** Every control channel and every action carries `suggested: true`. Limits sit at the lowest sensible maximum, and anything with heat, motion or mains power has a confirmation tier.

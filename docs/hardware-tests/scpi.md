@@ -88,7 +88,7 @@ Read every limit in the file. Then confirm them yourself with `uv run openhal fi
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
-uv run openhal init --no-sample
+uv run openhal init --yes --no-sample --no-discover --no-service
 cp ./psu.hal.yaml "$OPENHAL_HOME/devices/"
 uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
 uv run openhal devices
@@ -99,11 +99,11 @@ Expected. `bench-psu` is connected and writable.
 
 ## Step 6. The smallest safe write, 1 V at 10 mA
 
-The example's action and output switch are `confirm-each-time`. A command sent with your own human token counts as your confirmation, so this step sends both as an agent would and approves each one. That also tests the confirmation queue on the real instrument. Create an agent token in `agent.token` and send the setting.
+The example's action and output switch are `confirm-each-time`. A command sent with your own human token counts as your confirmation, so this step sends both as an agent would and approves each one. That also tests the confirmation queue on the real instrument. `openhal init` made an agent token with the read scope only, so create one with `control_medium` in the test home, then send the setting with it.
 
 ```
-uv run openhal token create --name hwtest-agent --scope control_medium --json | uv run python -c "import json, sys; print(json.load(sys.stdin)['token'])" > agent.token
-uv run openhal --token-file agent.token action bench-psu.set_ch1 volts="1 V" amps="0.01 A"
+uv run openhal token create --name hwtest-agent --scope control_medium --json | uv run python -c "import json, sys; print(json.load(sys.stdin)['token'])" > "$OPENHAL_HOME/hwtest-agent.token"
+uv run openhal --token-file "$OPENHAL_HOME/hwtest-agent.token" action bench-psu.set_ch1 volts="1 V" amps="0.01 A"
 ```
 
 Expected. `pending needs_confirmation  Waiting for a human to approve action:set_ch1 on bench-psu.` and a line with the request id. The front panel doesn't change yet. Approve it with that id, then do the same for the output switch.
@@ -111,7 +111,7 @@ Expected. `pending needs_confirmation  Waiting for a human to approve action:set
 ```
 uv run openhal confirm list
 uv run openhal confirm approve <request id>
-uv run openhal --token-file agent.token write bench-psu.ch1_output true
+uv run openhal --token-file "$OPENHAL_HOME/hwtest-agent.token" write bench-psu.ch1_output true
 uv run openhal confirm approve <request id>
 uv run openhal read bench-psu.ch1_voltage bench-psu.ch1_current
 ```
@@ -147,7 +147,7 @@ Expected. The output turns off on the front panel and reads `false`.
 uv run openhal action bench-psu.set_ch1 volts="20 V" amps="0.01 A"
 ```
 
-Expected. `blocked above_max  Blocked. The volts limit is 12 V (max). Asked for 20 V.` Nothing changes on the front panel. Stop the hub with `kill %1` and delete `agent.token` when done.
+Expected. `blocked above_max  Blocked. The volts limit is 12 V (max). Asked for 20 V.` Nothing changes on the front panel. Stop the hub with `kill %1` when done.
 
 ## If something fails
 

@@ -7,7 +7,7 @@ Drafts only. Nothing on this page has been posted, and only the owner posts. Eve
 1. CI passes on `main`, so the README badge is green (DESIGN.md bans a failing badge).
 2. The README quickstart works on a fresh machine, from `git clone` to `uv run openhal demo`.
 3. The plant waterer plan (examples/plant-waterer/TEST-PLAN.md) has run on a real board. Until a plan passes, every post says that no driver is verified on hardware.
-4. NEEDS_HUMAN.md items 1 to 3 are decided. Until the bambu review is done, no post mentions the bambu driver.
+4. NEEDS_HUMAN.md items 1 and 2, the PyPI name and the domain, are decided.
 5. `uv run openhal driver list` still shows 34 drivers. Fix the counts below if it doesn't.
 6. Each community's rules on self-promotion, flair and posting days are read and followed. One community at a time, a few days apart.
 7. Someone is there for the first hours to answer. Hardware reports go to issues. Safety reports go through SECURITY.md.
@@ -103,7 +103,7 @@ Prepared replies.
 
 **Body.**
 
-> I've been building OpenHAL, an open protocol and local hub between AI agents and hardware. It has drivers for Marlin over USB, for OctoPrint, and for Klipper through Moonraker.
+> I've been building OpenHAL, an open protocol and local hub between AI agents and hardware. It has drivers for Marlin over USB, for OctoPrint, for Klipper through Moonraker, and for Bambu Lab printers on the LAN in Developer Mode, which never contacts Bambu Cloud.
 >
 > Each printer gets a device file with its limits. The Ender-3 V2 example caps the hotend at 240 °C and the bed at 90 °C, limits how fast targets can rise, needs your confirmation for any hotend target and for homing, and refuses to home while an SD print runs. A stop sets every heater target and the part fan to 0. The file stays read-only until you confirm it yourself.
 >

@@ -93,7 +93,7 @@ Read every limit in the file. Then confirm them yourself with `uv run openhal fi
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
-uv run openhal init --no-sample
+uv run openhal init --yes --no-sample --no-discover --no-service
 cp ./printer.hal.yaml "$OPENHAL_HOME/devices/"
 uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
 uv run openhal devices

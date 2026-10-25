@@ -1,6 +1,6 @@
 # Hardware test plan, bambu driver
 
-This plan checks the bambu driver against a real Bambu Lab printer on the local network. It was made for a P1S with the example file. X1, P1 and A1 printers work the same way. Read the local access status in docs/drivers/bambu.md first. The driver waits on the owner's legal review (NEEDS_HUMAN.md, item 3), so run this plan only once that review says the driver ships.
+This plan checks the bambu driver against a real Bambu Lab printer on the local network. It was made for a P1S with the example file. X1, P1 and A1 printers work the same way. Read the local access status in docs/drivers/bambu.md first. The owner reviewed the Bambu Lab terms and approved the driver on 2026-10-25 (DECISIONS.md). It stays on the LAN and never contacts Bambu Cloud.
 
 Run every step from the repository checkout, on a computer on the same network as the printer. [README.md](README.md) has the setup and rules every plan shares. Stay next to the printer during the steps that change anything.
 

@@ -12,7 +12,7 @@ Today 34 drivers pass the conformance suite on simulators, and none is verified 
 
 ## 2. Next drivers
 
-Every driver in `drivers/planned.json` and the coverage plan ([COVERAGE.md](drivers/COVERAGE.md)) is built. What remains for them is hardware verification, and for `bambu` the owner's legal review (NEEDS_HUMAN.md, item 3).
+Every driver in `drivers/planned.json` and the coverage plan ([COVERAGE.md](drivers/COVERAGE.md)) is built. What remains for them is hardware verification.
 
 These are proposed next. Each speaks a protocol no current driver covers, and each serves makers, teaching labs or small labs.
 
@@ -65,7 +65,7 @@ The starter library ships in the repository under `library/` and inside the whee
 
 ## 6. Vendor app protocol learning
 
-Some devices have an interface but no description, and only the vendor's app knows the commands. The idea from the research is to record the app's traffic to a device the person owns and draft a device file from it. This needs a legal review before any code is written. The Bambu Lab case in NEEDS_HUMAN.md shows why.
+Some devices have an interface but no description, and only the vendor's app knows the commands. The idea from the research is to record the app's traffic to a device the person owns and draft a device file from it. This needs a legal review before any code is written. The Bambu Lab terms note in docs/drivers/bambu.md shows why.
 
 - Passive capture only, on the person's own device and network.
 - Never break encryption, get around authentication or impersonate vendor software or a vendor cloud.
