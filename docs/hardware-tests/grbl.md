@@ -97,13 +97,14 @@ Run the loop from step 4, unplug the USB cable for five seconds, then plug it ba
 
 ## Step 6. Start the hub
 
-Read every limit in the file. Then confirm them yourself with `uv run openhal file confirm ./router.hal.yaml`. It lists each limit and asks you to type `confirm`. Then load the file into a fresh hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
 uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal file confirm ./router.hal.yaml
 cp ./router.hal.yaml "$OPENHAL_HOME/devices/"
-uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+bash docs/hardware-tests/hub.sh start
 uv run openhal devices
 uv run openhal read router.state
 ```
@@ -174,7 +175,7 @@ uv run openhal read router.state router.alarm router.position_x
 uv run openhal unlock
 ```
 
-Expected. The stop reports `router  safe` and the axis decelerates and stops well before 20 mm. The driver holds the feed, waits up to 2 s for the axis to stop, then soft resets GRBL. A hold during a jog cancels the jog, so the state is usually `idle` with alarm `0`. If the reset came while the axis still moved, the state is `alarm` with alarm `3`. Then run `uv run openhal action router.clear_alarm` and read the state until it is `idle`. Write down which one you saw. Stop the hub with `kill %1` when done.
+Expected. The stop reports `router  safe` and the axis decelerates and stops well before 20 mm. The driver holds the feed, waits up to 2 s for the axis to stop, then soft resets GRBL. A hold during a jog cancels the jog, so the state is usually `idle` with alarm `0`. If the reset came while the axis still moved, the state is `alarm` with alarm `3`. Then run `uv run openhal action router.clear_alarm` and read the state until it is `idle`. Write down which one you saw. Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 

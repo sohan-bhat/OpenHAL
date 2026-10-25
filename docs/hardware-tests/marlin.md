@@ -87,13 +87,14 @@ Unplug the USB cable for five seconds, then plug it back in. Expected. Runs duri
 
 ## Step 5. Start the hub
 
-Read every limit in the file. Then confirm them yourself with `uv run openhal file confirm ./printer.hal.yaml`. It lists each limit and asks you to type `confirm`. Then load the file into a fresh hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
 uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal file confirm ./printer.hal.yaml
 cp ./printer.hal.yaml "$OPENHAL_HOME/devices/"
-uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+bash docs/hardware-tests/hub.sh start
 uv run openhal devices
 uv run openhal read ender.extruder_temp
 ```
@@ -138,7 +139,7 @@ uv run openhal action ender.home axes=all
 uv run openhal read ender.position_z
 ```
 
-Expected. The printer homes. The action answers `done`, or `started` if homing takes longer than 8 s. After homing the Z position is 0 or your Z offset. Stop the hub with `kill %1` when done.
+Expected. The printer homes. The action answers `done`, or `started` if homing takes longer than 8 s. After homing the Z position is 0 or your Z offset. Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 

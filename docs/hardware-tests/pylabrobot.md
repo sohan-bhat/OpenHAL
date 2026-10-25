@@ -68,13 +68,14 @@ Add `- { name: extra, resource: no_such_rack, rails: 20 }` to the layout and run
 
 ## Step 4. Start the hub
 
-Read every limit in the file. Then confirm them yourself with `uv run openhal file confirm ./lh.hal.yaml`. It lists each limit and asks you to type `confirm`. Then load the file into a fresh hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
 uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal file confirm ./lh.hal.yaml
 cp ./lh.hal.yaml "$OPENHAL_HOME/devices/"
-uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+bash docs/hardware-tests/hub.sh start
 uv run openhal devices
 uv run openhal read starlet.initialized
 ```
@@ -130,7 +131,7 @@ uv run openhal unlock
 uv run openhal action starlet.initialize
 ```
 
-Expected. The stop reports `starlet  safe`. The instrument finishes the move it is in and then stops. `tips_mounted` may be marked suspect, because the model may not match the deck. Initializing again clears that. Stop the hub with `kill %1` when done.
+Expected. The stop reports `starlet  safe`. The instrument finishes the move it is in and then stops. `tips_mounted` may be marked suspect, because the model may not match the deck. Initializing again clears that. Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 

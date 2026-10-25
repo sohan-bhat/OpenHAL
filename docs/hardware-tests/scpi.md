@@ -84,13 +84,14 @@ Unplug the USB or LAN cable for five seconds, then plug it back in. Expected. Ru
 
 ## Step 5. Start the hub
 
-Read every limit in the file. Then confirm them yourself with `uv run openhal file confirm ./psu.hal.yaml`. It lists each limit and asks you to type `confirm`. Then load the file into a fresh hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
 uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal file confirm ./psu.hal.yaml
 cp ./psu.hal.yaml "$OPENHAL_HOME/devices/"
-uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+bash docs/hardware-tests/hub.sh start
 uv run openhal devices
 uv run openhal read bench-psu.ch1_voltage
 ```
@@ -123,9 +124,9 @@ Expected. Each approval shows the request, asks you to type `approve`, checks th
 A changed limit makes the file read-only until you confirm it again. Stop the hub, set `amps` to `max: 5` in `$OPENHAL_HOME/devices/psu.hal.yaml`, confirm the file and start the hub. Then ask for 5 A at 1 V on a 3 A channel. With nothing or only the resistor connected, even an accepted setting is harmless at 1 V.
 
 ```
-kill %1
+bash docs/hardware-tests/hub.sh stop
 uv run openhal file confirm "$OPENHAL_HOME/devices/psu.hal.yaml"
-uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+bash docs/hardware-tests/hub.sh start
 uv run openhal action bench-psu.set_ch1 volts="1 V" amps="5 A"
 ```
 
@@ -147,7 +148,7 @@ Expected. The output turns off on the front panel and reads `false`.
 uv run openhal action bench-psu.set_ch1 volts="20 V" amps="0.01 A"
 ```
 
-Expected. `blocked above_max  Blocked. The volts limit is 12 V (max). Asked for 20 V.` Nothing changes on the front panel. Stop the hub with `kill %1` when done.
+Expected. `blocked above_max  Blocked. The volts limit is 12 V (max). Asked for 20 V.` Nothing changes on the front panel. Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 

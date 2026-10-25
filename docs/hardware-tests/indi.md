@@ -92,13 +92,14 @@ Stop `indiserver` for ten seconds, then start it again with the same drivers. Ex
 
 ## Step 5. Start the hub
 
-Read every limit in the file. Then confirm them yourself with `uv run openhal file confirm ./mount.hal.yaml`. It lists each limit and asks you to type `confirm`. Then load the file into a fresh hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
 uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal file confirm ./mount.hal.yaml
 cp ./mount.hal.yaml "$OPENHAL_HOME/devices/"
-uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+bash docs/hardware-tests/hub.sh start
 uv run openhal devices
 uv run openhal read eq6.declination
 ```
@@ -183,10 +184,10 @@ hazard: low
 Stop the hub, confirm the file, add it and start the hub again. Then move the focuser 100 steps.
 
 ```
-kill %1
+bash docs/hardware-tests/hub.sh stop
 uv run openhal file confirm ./focuser.hal.yaml
 cp ./focuser.hal.yaml "$OPENHAL_HOME/devices/"
-uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+bash docs/hardware-tests/hub.sh start
 uv run openhal devices
 uv run openhal read focuser.position
 uv run openhal write focuser.position "<current + 100> dimensionless"
@@ -195,7 +196,7 @@ uv run openhal action focuser.abort
 
 Expected. `devices` lists `focuser` as connected and writable. The focuser moves 100 steps, and `abort` answers `done  Done. abort ran.`
 
-Stop the hub with `kill %1` when done.
+Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 

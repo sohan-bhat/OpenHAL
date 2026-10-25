@@ -81,13 +81,14 @@ Expected. `read torque True` while connected. Runs during the outage fail with a
 
 ## Step 5. Start the hub
 
-Read every limit in the file. Then confirm them yourself with `uv run openhal file confirm ./arm.hal.yaml`. It lists each limit and asks you to type `confirm`. Then load the file into a fresh hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
 uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal file confirm ./arm.hal.yaml
 cp ./arm.hal.yaml "$OPENHAL_HOME/devices/"
-uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+bash docs/hardware-tests/hub.sh start
 uv run openhal devices
 uv run openhal read so101.shoulder_pan
 ```
@@ -118,9 +119,9 @@ Expected. Only the shoulder pan turns, by about 5 degrees. The other joints hold
 Then check LeRobot's own clipping. A change to `connect` changes the limits, so the file needs your confirmation again. Stop the hub, set `max_relative_target: 2` in `$OPENHAL_HOME/devices/arm.hal.yaml`, then confirm and restart.
 
 ```
-kill %1
+bash docs/hardware-tests/hub.sh stop
 uv run openhal file confirm "$OPENHAL_HOME/devices/arm.hal.yaml"
-uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+bash docs/hardware-tests/hub.sh start
 uv run openhal read so101.shoulder_pan
 uv run openhal write so101.shoulder_pan_goal "<current + 5> deg"
 uv run openhal read so101.shoulder_pan_goal
@@ -147,7 +148,7 @@ Expected. After the stop the arm goes limp and `torque` reads `false`. When torq
 
 ## Step 9. Close turns torque off (assumption 7)
 
-Stop the hub with `kill %1`. Expected. The arm goes limp as the hub closes the device.
+Stop the hub with `bash docs/hardware-tests/hub.sh stop`. Expected. The arm goes limp as the hub closes the device.
 
 ## If something fails
 

@@ -93,13 +93,14 @@ Unplug this machine's network cable for ten seconds, then plug it back in. Expec
 
 ## Step 6. Start the hub
 
-Read every limit in the file. Then confirm them yourself with `uv run openhal file confirm ./plc.hal.yaml`. It lists each limit and asks you to type `confirm`. Then load the file into a fresh hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
 uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal file confirm ./plc.hal.yaml
 cp ./plc.hal.yaml "$OPENHAL_HOME/devices/"
-uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+bash docs/hardware-tests/hub.sh start
 uv run openhal devices
 uv run openhal read dosing.tank_level
 ```
@@ -134,7 +135,7 @@ uv run openhal action dosing.stop
 
 Expected. Done. The PLC tool shows the method ran.
 
-Stop the hub with `kill %1` when done.
+Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 

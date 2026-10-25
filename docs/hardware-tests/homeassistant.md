@@ -94,13 +94,14 @@ Unplug the bulb, or switch it off at the wall, and wait until Home Assistant sho
 
 ## Step 7. Start the hub
 
-Read every limit in the file. Then confirm them yourself with `uv run openhal file confirm ./lamp.hal.yaml`. It lists each limit and asks you to type `confirm`. Then load the file into a fresh hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
 uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal file confirm ./lamp.hal.yaml
 cp ./lamp.hal.yaml "$OPENHAL_HOME/devices/"
-uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+bash docs/hardware-tests/hub.sh start
 uv run openhal devices
 ```
 
@@ -125,7 +126,7 @@ Expected. The lamp turns on, dims to about 20 %, and turns off at `openhal stop`
 uv run openhal write test-lamp.lamp_brightness "90 %"
 ```
 
-Expected. Blocked with code `above_max` (the file allows 60 %), although Home Assistant itself would accept 90 %. The lamp doesn't change. Stop the hub with `kill %1` when done.
+Expected. Blocked with code `above_max` (the file allows 60 %), although Home Assistant itself would accept 90 %. The lamp doesn't change. Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 

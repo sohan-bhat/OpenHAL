@@ -141,13 +141,14 @@ Unplug the node for ten seconds, then plug it back in. Expected. Runs fail while
 
 ## Step 6. Start the hub
 
-Read every limit in the file. Then confirm them yourself with `uv run openhal file confirm ./node.hal.yaml`. It lists each limit and asks you to type `confirm`. Then load the file into a fresh hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
 uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal file confirm ./node.hal.yaml
 cp ./node.hal.yaml "$OPENHAL_HOME/devices/"
-uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+bash docs/hardware-tests/hub.sh start
 uv run openhal devices
 ```
 
@@ -172,7 +173,7 @@ uv run openhal action test-node.restart
 uv run openhal devices
 ```
 
-Expected. The node restarts. The hub shows it disconnected for a few seconds, then connected again. Stop the hub with `kill %1` when done.
+Expected. The node restarts. The hub shows it disconnected for a few seconds, then connected again. Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 
