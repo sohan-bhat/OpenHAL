@@ -39,4 +39,4 @@ Anthropic's Model Hardware Standard is a limited research preview for invited la
 
 OpenHAL is not a safety system. It can't make firmware obey, and it doesn't replace e-stops, enclosures or interlocks wired in hardware. It checks each request against what a person allowed, and it stops every device on request.
 
-The [quickstart](/docs/quickstart/) runs a hub with a simulated fan and needs no hardware.
+The [quickstart](/docs/quickstart/) runs the plant waterer demo and needs no hardware.
