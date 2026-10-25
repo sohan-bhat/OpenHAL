@@ -1,0 +1,303 @@
+---
+// Supported devices. Built from drivers/catalog.json, with the coverage prose from docs/drivers/COVERAGE.md.
+import Base from "../layouts/Base.astro";
+import PartLabel from "../components/PartLabel.astro";
+import { STATUS_ORDER, TIER_NAMES, countBy, drivers } from "../lib/catalog";
+import coverage from "../../../docs/drivers/COVERAGE.md?raw";
+
+const all = drivers();
+const statuses = STATUS_ORDER.filter((status) => all.some((driver) => driver.status === status));
+const tiers = [...new Set(all.map((driver) => driver.tier))].sort();
+const hazards = ["low", "medium", "high"].filter((hazard) => all.some((driver) => driver.hazard_default === hazard)).concat(
+  [...new Set(all.map((driver) => driver.hazard_default))].filter((hazard) => !["low", "medium", "high"].includes(hazard)),
+);
+const counts = countBy(all, (driver) => driver.status);
+// The plan's own words about status values and estimates, before its first table.
+const coverageNotes = coverage
+  .split(/\n## /)[0]
+  .split(/\n\s*\n/)
+  .map((block) => block.trim())
+  .filter((block) => block && !block.startsWith("#") && !block.includes("drivers/catalog.json"))
+  .map((block) => block.replace(/`/g, ""));
+---
+
+<Base title="Supported devices" description="Every OpenHAL driver and bridge, with its status, protocols, hazard class and the reasoning behind its coverage estimate.">
+  <div class="wrap page">
+    <header class="head">
+      <h1 class="page-title">Supported devices</h1>
+      <p class="lede">
+        A driver speaks one protocol, and a device file describes one device on top of it. This list comes from
+        <code>drivers/catalog.json</code> and grows as drivers land. Implemented means it passes the conformance suite against a simulator.
+        Verified means a person tested it on real hardware.
+      </p>
+      <div class="notes">
+        {coverageNotes.map((note) => <p class="muted">{note}</p>)}
+        <p class="source legend">From <code>docs/drivers/COVERAGE.md</code></p>
+      </div>
+      <p class="counts">
+        {
+          statuses.map((status) => (
+            <span>
+              <span class="mono n">{counts.get(status)}</span> <span class="legend">{status}</span>
+            </span>
+          ))
+        }
+      </p>
+    </header>
+
+    <form class="filters" role="search" aria-label="Filter drivers" data-filters>
+      <label class="field grow">
+        <span class="legend">Search</span>
+        <input type="search" name="q" placeholder="Name, protocol or device family" autocomplete="off" />
+      </label>
+      <label class="field">
+        <span class="legend">Tier</span>
+        <select name="tier">
+          <option value="">Any</option>
+          {tiers.map((tier) => <option value={String(tier)}>{TIER_NAMES[tier] ?? `Tier ${tier}`}</option>)}
+        </select>
+      </label>
+      <label class="field">
+        <span class="legend">Status</span>
+        <select name="status">
+          <option value="">Any</option>
+          {statuses.map((status) => <option value={status}>{status}</option>)}
+        </select>
+      </label>
+      <label class="field">
+        <span class="legend">Hazard</span>
+        <select name="hazard">
+          <option value="">Any</option>
+          {hazards.map((hazard) => <option value={hazard}>{hazard}</option>)}
+        </select>
+      </label>
+    </form>
+    <p class="shown muted" aria-live="polite" data-shown>{all.length} drivers shown.</p>
+
+    <ul class="drivers">
+      {
+        all.map((driver) => (
+          <li
+            data-driver
+            data-tier={String(driver.tier)}
+            data-status={driver.status}
+            data-hazard={driver.hazard_default}
+            data-text={[driver.name, ...driver.protocols, ...driver.families].join(" ").toLowerCase()}
+          >
+            <PartLabel
+              name={driver.name}
+              status={driver.status}
+              rows={[
+                ["Tier", TIER_NAMES[driver.tier] ?? `Tier ${driver.tier}`],
+                ["Protocol", driver.protocols.join(", ") || "not set"],
+                ["Covers", driver.families.join(", ") || "not set"],
+                ["Hazard", driver.hazard_default],
+                ...(driver.tests ? ([["Tested with", driver.tests]] as Array<[string, string]>) : []),
+              ]}
+            >
+              {driver.estimate && (
+                <details class="estimate">
+                  <summary>
+                    <span class="legend">Estimate</span> {driver.estimate.devices}
+                  </summary>
+                  <p>{driver.estimate.reasoning}</p>
+                  {driver.estimate.sources.length > 0 && (
+                    <ul>
+                      {driver.estimate.sources.map((source) => (
+                        <li>
+                          <a href={source} rel="noopener">
+                            {source}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </details>
+              )}
+            </PartLabel>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="empty muted" data-empty hidden>No driver matches. Clear a filter to see more.</p>
+    <p class="more">
+      The <a href="/docs/drivers/coverage/">coverage plan</a> has the reasoning for every estimate. Most devices need only a device file on
+      an existing driver. <a href="/docs/contributing-a-device-file/">Contribute one</a>.
+    </p>
+  </div>
+</Base>
+
+<script>
+  // Filter the list in place. Without JavaScript every driver is shown.
+  const form = document.querySelector<HTMLFormElement>("[data-filters]");
+  const items = [...document.querySelectorAll<HTMLElement>("[data-driver]")];
+  const shown = document.querySelector<HTMLElement>("[data-shown]");
+  const empty = document.querySelector<HTMLElement>("[data-empty]");
+  function apply() {
+    if (!form) return;
+    const data = new FormData(form);
+    const words = String(data.get("q") ?? "").toLowerCase().split(/\s+/).filter(Boolean);
+    let count = 0;
+    for (const item of items) {
+      const match =
+        words.every((word) => (item.dataset.text ?? "").includes(word)) &&
+        (!data.get("tier") || item.dataset.tier === data.get("tier")) &&
+        (!data.get("status") || item.dataset.status === data.get("status")) &&
+        (!data.get("hazard") || item.dataset.hazard === data.get("hazard"));
+      item.hidden = !match;
+      if (match) count += 1;
+    }
+    if (shown) shown.textContent = `${count} of ${items.length} drivers shown.`;
+    if (empty) empty.hidden = count > 0;
+  }
+  form?.addEventListener("input", apply);
+  form?.addEventListener("submit", (event) => event.preventDefault());
+</script>
+
+<style>
+  .page {
+    padding-top: var(--s-7);
+  }
+
+  .head {
+    padding-bottom: var(--s-5);
+    margin-bottom: var(--s-6);
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .lede {
+    margin-top: var(--s-3);
+    max-width: 72ch;
+  }
+
+  .lede code {
+    font-size: 0.86em;
+  }
+
+  .notes {
+    margin-top: var(--s-4);
+    display: grid;
+    gap: var(--s-2);
+    max-width: 72ch;
+    font-size: var(--t-1);
+    line-height: var(--lh-1);
+  }
+
+  .notes .source {
+    color: var(--ink-2);
+  }
+
+  .notes code {
+    font-size: var(--t-0);
+  }
+
+  .counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-5);
+    margin-top: var(--s-5);
+  }
+
+  .n {
+    font-size: var(--t-4);
+    line-height: var(--lh-4);
+  }
+
+  .counts .legend {
+    color: var(--ink-2);
+  }
+
+  .filters {
+    display: grid;
+    gap: var(--s-3);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--s-1);
+  }
+
+  .field .legend {
+    color: var(--ink-2);
+  }
+
+  input,
+  select {
+    min-height: 44px;
+    padding: 0 var(--s-3);
+    font: inherit;
+    font-size: var(--t-1);
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--ink-2);
+    border-radius: var(--radius);
+    width: 100%;
+  }
+
+  input::placeholder {
+    color: var(--ink-2);
+  }
+
+  .shown {
+    margin: var(--s-3) 0 var(--s-5);
+    font-size: var(--t-1);
+  }
+
+  .drivers {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s-4);
+  }
+
+  .estimate {
+    padding: var(--s-2) var(--s-3);
+    border-top: 1px solid var(--rule);
+    font-size: var(--t-1);
+    line-height: var(--lh-1);
+  }
+
+  .estimate summary {
+    cursor: pointer;
+  }
+
+  .estimate summary .legend {
+    color: var(--ink-2);
+    margin-right: var(--s-2);
+  }
+
+  .estimate p,
+  .estimate ul {
+    margin-top: var(--s-2);
+  }
+
+  .estimate ul {
+    padding-left: var(--s-4);
+  }
+
+  .estimate a {
+    overflow-wrap: anywhere;
+  }
+
+  .more {
+    margin-top: var(--s-6);
+    max-width: 72ch;
+  }
+
+  @media (min-width: 768px) {
+    .filters {
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+    }
+
+    .drivers {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1440px) {
+    .drivers {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>
