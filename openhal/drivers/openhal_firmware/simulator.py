@@ -67,6 +67,8 @@ class FirmwareSimulator:
     corrupt_next: bool = False
     silent: bool = False
     received: list[str] = field(default_factory=list)
+    open_links: int = 0
+    """How many simulated ports to this board are open. Discovery leaves a busy board alone."""
 
     def __post_init__(self) -> None:
         if not self.channels:
@@ -235,6 +237,8 @@ class SimTransport:
     async def connect(self) -> None:
         while not self.simulator.to_host.empty():
             self.simulator.to_host.get_nowait()
+        if not self.open:
+            self.simulator.open_links += 1
         self.open = True
 
     async def write_line(self, line: str) -> None:
@@ -248,6 +252,8 @@ class SimTransport:
         return await self.simulator.to_host.get()
 
     async def close(self) -> None:
+        if self.open:
+            self.simulator.open_links -= 1
         self.open = False
 
 
