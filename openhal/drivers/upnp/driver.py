@@ -121,6 +121,29 @@ def find_service(device: UpnpDevice, name: str) -> UpnpService | None:
     return None
 
 
+def _coerce(value: Any, action: UpnpAction, name: str) -> Any:
+    """A value in the Python type async-upnp-client expects for one in-argument's state variable."""
+    argument = action.argument(name, "in")
+    if argument is None or isinstance(value, bool):
+        return value
+    data_type = argument.related_state_variable.data_type
+    if data_type == "string":
+        if isinstance(value, float) and value.is_integer():
+            return str(int(value))
+        return str(value)
+    if data_type in INTEGER_TYPES and isinstance(value, int | float | str):
+        try:
+            return round(float(value))
+        except ValueError:
+            return value
+    if data_type in FLOAT_TYPES and isinstance(value, int | str):
+        try:
+            return float(value)
+        except ValueError:
+            return value
+    return value
+
+
 class UpnpDriver(Driver):
     """A UPnP device by its description URL. SOAP actions as channels and actions."""
 
@@ -326,6 +349,7 @@ class UpnpDriver(Driver):
         service = find_service(device, call.service)
         assert service is not None
         action = service.action(call.action)
+        args = {name: _coerce(value, action, name) for name, value in args.items()}
         try:
             result = await asyncio.wait_for(
                 action.async_call(request_timeout=self.settings.timeout, **args), self.settings.timeout + 1

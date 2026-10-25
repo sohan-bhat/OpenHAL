@@ -189,7 +189,8 @@ class FakeRenderer(UpnpRequester):
         if self.garbage:
             return HttpResponse(200, {}, "<<not xml")
         envelope = SafeET.fromstring(http_request.body or "")
-        body = next(iter(envelope.find("{http://schemas.xmlsoap.org/soap/envelope/}Body") or []), None)
+        found = envelope.find("{http://schemas.xmlsoap.org/soap/envelope/}Body")
+        body = next(iter(found), None) if found is not None else None
         if body is None:
             return self._fault(401, "Invalid Action")
         name = body.tag.rsplit("}", 1)[-1]
