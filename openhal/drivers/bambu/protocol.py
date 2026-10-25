@@ -64,11 +64,13 @@ class BambuParams(BaseModel):
     reply_wait: Duration = 2.0
     safe_stop: Literal["stop", "pause"] = "stop"
 
-    @field_validator("cert_sha256")
+    @field_validator("cert_sha256", mode="before")
     @classmethod
-    def _fingerprint(cls, value: str | None) -> str | None:
+    def _fingerprint(cls, value: Any) -> str | None:
         if value is None:
             return None
+        if not isinstance(value, str):
+            raise ValueError("cert_sha256 must be quoted in the device file, so YAML keeps it as text.")
         cleaned = value.replace(":", "").strip().lower()
         if len(cleaned) != 64 or any(char not in "0123456789abcdef" for char in cleaned):
             raise ValueError("cert_sha256 must be a SHA-256 fingerprint, 64 hex digits with or without colons.")
