@@ -1,25 +1,16 @@
 ---
 // Supported devices on the landing page, straight from drivers/catalog.json.
 import PartLabel from "./PartLabel.astro";
-import { countBy, drivers } from "../lib/catalog";
+import { drivers } from "../lib/catalog";
+import { catalogSentence } from "../lib/catalog-summary";
 
 const all = drivers();
 const running = all.filter((driver) => driver.status === "implemented" || driver.status === "verified");
 const later = all.filter((driver) => !running.includes(driver));
-const statuses = countBy(all, (driver) => driver.status);
 ---
 
 <div class="summary">
-  <p class="counts">
-    {
-      [...statuses.entries()].map(([status, count]) => (
-        <span class="count">
-          <span class="mono">{count}</span> <span class="legend">{status}</span>
-        </span>
-      ))
-    }
-    <span class="muted">drivers and bridges in the catalog today.</span>
-  </p>
+  <p class="muted">{catalogSentence(all)}</p>
   <div class="parts">
     {
       running.map((driver) => (
@@ -30,7 +21,6 @@ const statuses = countBy(all, (driver) => driver.status);
             ["Protocol", driver.protocols.join(", ")],
             ["Covers", driver.families.join(", ")],
             ["Hazard", driver.hazard_default],
-            ["Tested with", driver.tests || "not yet"],
           ]}
         />
       ))
@@ -39,7 +29,7 @@ const statuses = countBy(all, (driver) => driver.status);
   {
     later.length > 0 && (
       <p class="later">
-        <span class="legend">Next</span>
+        <span class="legend">Planned</span>
         <span class="names">
           {later.map((driver) => (
             <code>{driver.name}</code>
@@ -48,29 +38,13 @@ const statuses = countBy(all, (driver) => driver.status);
       </p>
     )
   }
-  <p><a href="/devices/">Search every driver by tier, status and hazard</a></p>
+  <p><a href="/devices/">Every driver, by tier, status and hazard</a></p>
 </div>
 
 <style>
   .summary {
     display: grid;
     gap: var(--s-5);
-  }
-
-  .counts {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--s-2) var(--s-5);
-  }
-
-  .count .mono {
-    font-size: var(--t-4);
-    line-height: var(--lh-4);
-  }
-
-  .count .legend {
-    color: var(--ink-2);
   }
 
   .parts {
@@ -96,7 +70,7 @@ const statuses = countBy(all, (driver) => driver.status);
   .names code {
     font-size: var(--t-0);
     padding: 2px var(--s-2);
-    border: 1px dashed var(--ink-3);
+    border: 1px dashed var(--ink-2);
     border-radius: var(--radius);
   }
 

@@ -2,7 +2,8 @@
 // Supported devices. Built from drivers/catalog.json, with the coverage prose from docs/drivers/COVERAGE.md.
 import Base from "../layouts/Base.astro";
 import PartLabel from "../components/PartLabel.astro";
-import { STATUS_ORDER, TIER_NAMES, countBy, drivers } from "../lib/catalog";
+import { STATUS_ORDER, TIER_NAMES, drivers } from "../lib/catalog";
+import { catalogSentence } from "../lib/catalog-summary";
 import coverage from "../../../docs/drivers/COVERAGE.md?raw";
 
 const all = drivers();
@@ -11,7 +12,6 @@ const tiers = [...new Set(all.map((driver) => driver.tier))].sort();
 const hazards = ["low", "medium", "high"].filter((hazard) => all.some((driver) => driver.hazard_default === hazard)).concat(
   [...new Set(all.map((driver) => driver.hazard_default))].filter((hazard) => !["low", "medium", "high"].includes(hazard)),
 );
-const counts = countBy(all, (driver) => driver.status);
 // The plan's own words about status values and estimates, before its first table.
 const coverageNotes = coverage
   .split(/\n## /)[0]
@@ -26,23 +26,13 @@ const coverageNotes = coverage
     <header class="head">
       <h1 class="page-title">Supported devices</h1>
       <p class="lede">
-        A driver speaks one protocol, and a device file describes one device on top of it. This list comes from
-        <code>drivers/catalog.json</code> and grows as drivers land. Implemented means it passes the conformance suite against a simulator.
-        Verified means a person tested it on real hardware.
+        Implemented means a driver passes the conformance suite on a simulator. Verified means a person tested it on real hardware.
       </p>
+      <p class="muted summary-line">{catalogSentence(all)}</p>
       <div class="notes">
         {coverageNotes.map((note) => <p class="muted">{note}</p>)}
         <p class="source legend">From <code>docs/drivers/COVERAGE.md</code></p>
       </div>
-      <p class="counts">
-        {
-          statuses.map((status) => (
-            <span>
-              <span class="mono n">{counts.get(status)}</span> <span class="legend">{status}</span>
-            </span>
-          ))
-        }
-      </p>
     </header>
 
     <form class="filters" role="search" aria-label="Filter drivers" data-filters>
@@ -179,8 +169,8 @@ const coverageNotes = coverage
     display: grid;
     gap: var(--s-2);
     max-width: 72ch;
-    font-size: var(--t-1);
-    line-height: var(--lh-1);
+    font-size: var(--t-2);
+    line-height: var(--lh-2);
   }
 
   .notes .source {
@@ -191,20 +181,8 @@ const coverageNotes = coverage
     font-size: var(--t-0);
   }
 
-  .counts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-5);
-    margin-top: var(--s-5);
-  }
-
-  .n {
-    font-size: var(--t-4);
-    line-height: var(--lh-4);
-  }
-
-  .counts .legend {
-    color: var(--ink-2);
+  .summary-line {
+    margin-top: var(--s-3);
   }
 
   .filters {
@@ -226,7 +204,7 @@ const coverageNotes = coverage
     min-height: 44px;
     padding: 0 var(--s-3);
     font: inherit;
-    font-size: var(--t-1);
+    font-size: var(--t-2);
     color: var(--ink);
     background: var(--panel);
     border: 1px solid var(--ink-2);
@@ -240,7 +218,7 @@ const coverageNotes = coverage
 
   .shown {
     margin: var(--s-3) 0 var(--s-5);
-    font-size: var(--t-1);
+    font-size: var(--t-2);
   }
 
   .drivers {
@@ -254,8 +232,8 @@ const coverageNotes = coverage
   .estimate {
     padding: var(--s-2) var(--s-3);
     border-top: 1px solid var(--rule);
-    font-size: var(--t-1);
-    line-height: var(--lh-1);
+    font-size: var(--t-2);
+    line-height: var(--lh-2);
   }
 
   .estimate summary {
