@@ -1,6 +1,7 @@
 .prose {
   max-width: var(--measure);
   min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .prose > * + * {
@@ -51,7 +52,7 @@
   background: var(--surface);
   border: var(--rule);
   border-radius: 4px;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .prose blockquote {

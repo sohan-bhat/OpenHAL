@@ -35,6 +35,17 @@
   font-size: 14px;
   line-height: 1.6;
   tab-size: 2;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+pre .line {
+  display: inline-block;
+  width: 100%;
+  vertical-align: top;
+  --hang: min(calc((var(--indent, 0) + 2) * 1ch), 50%);
+  padding-left: var(--hang);
+  text-indent: calc(-1 * var(--hang));
 }
 
 @media (min-width: 1024px) {

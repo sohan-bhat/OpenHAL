@@ -125,8 +125,37 @@ export function escapeHtml(text) {
   return text.replace(/[&<>"]/g, (char) => ESCAPES[char]);
 }
 
+function tokensHtml(tokens) {
+  return tokens.map(([cls, value]) => (cls ? `<span class="syn-${cls}">${escapeHtml(value)}</span>` : escapeHtml(value))).join("");
+}
+
 export function highlightHtml(text, lang) {
-  return tokenize(text, lang)
-    .map(([cls, value]) => (cls ? `<span class="syn-${cls}">${escapeHtml(value)}</span>` : escapeHtml(value)))
+  return tokensHtml(tokenize(text, lang));
+}
+
+export function splitLines(tokens) {
+  const lines = [[]];
+  for (const [cls, value] of tokens) {
+    value.split("\n").forEach((part, index) => {
+      if (index > 0) lines.push([]);
+      if (part) lines[lines.length - 1].push([cls, part]);
+    });
+  }
+  return lines;
+}
+
+export function indentOf(tokens) {
+  const lead = /^[ \t]*/.exec(tokens.map(([, value]) => value).join(""))[0];
+  return [...lead].reduce((width, char) => width + (char === "\t" ? 2 : 1), 0);
+}
+
+export function highlightLinesHtml(text, lang) {
+  const lines = splitLines(tokenize(text, lang));
+  return lines
+    .map((tokens, index) => {
+      const indent = indentOf(tokens);
+      const style = indent ? ` style="--indent: ${indent}"` : "";
+      return `<span class="line"${style}>${tokensHtml(tokens)}${index < lines.length - 1 ? "\n" : ""}</span>`;
+    })
     .join("");
 }

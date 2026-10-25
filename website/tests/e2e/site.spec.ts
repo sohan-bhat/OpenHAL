@@ -248,6 +248,35 @@ test.describe("site", () => {
     await expect(page.locator(".trace")).toContainText("error -32004 UNKNOWN_TARGET");
   });
 
+  test("nothing scrolls sideways at 1280 px", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    for (const path of ["/sdks/", "/sdks/python/", "/sdks/python/reference/", "/spec/playground/", "/spec/2026-10-24/basic/messages/", "/library/scpi-rigol-dp832/"]) {
+      await page.goto(path);
+      const wide = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>("pre, textarea, .table-wrap, .trace")]
+          .filter((element) => element.getClientRects().length && element.scrollWidth > element.clientWidth + 1)
+          .map((element) => `${element.tagName} ${element.scrollWidth}>${element.clientWidth}`),
+      );
+      expect(wide, path).toEqual([]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth), path).toBeLessThanOrEqual(1280);
+    }
+  });
+
+  test("the playground's As picker shows its whole label", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/spec/playground/");
+    const fits = await page.locator(".request select").first().evaluate((select: HTMLSelectElement) => {
+      const probe = document.createElement("span");
+      probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font:${getComputedStyle(select).font}`;
+      probe.textContent = select.selectedOptions[0].textContent;
+      document.body.append(probe);
+      const width = probe.getBoundingClientRect().width;
+      probe.remove();
+      return width + 40 <= select.clientWidth;
+    });
+    expect(fits).toBe(true);
+  });
+
   test("keyboard users can skip to the content and see focus", async ({ page, browserName }) => {
     test.skip(browserName === "webkit", "WebKit only tabs to links with the macOS full keyboard setting");
     await page.goto("/docs/");

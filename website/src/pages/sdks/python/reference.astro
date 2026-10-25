@@ -1,7 +1,7 @@
 ---
 import api from "../../../content/generated/python-api.json";
 import DocShell from "../../../layouts/DocShell.astro";
-import { highlightHtml } from "../../../lib/highlight.mjs";
+import { highlightHtml, highlightLinesHtml } from "../../../lib/highlight.mjs";
 import { sdkSidebar } from "../../../lib/sdk-nav";
 
 interface Member {
@@ -53,7 +53,7 @@ const paragraphs = (text: string) => text.split(/\n\s*\n/).filter((part) => !/^\
               </a>
               <span class="legend kind">{item.kind}</span>
             </h3>
-            {item.signature && <pre class="sig" tabindex="0" set:html={highlightHtml(item.signature, "python")} />}
+            {item.signature && <pre class="sig" tabindex="0" set:html={highlightLinesHtml(item.signature, "python")} />}
             {item.bases && <p class="muted">Subclass of <code>{item.bases.join(", ")}</code>.</p>}
             {paragraphs(item.doc).map((part) => <p>{part}</p>)}
             {item.fields && item.fields.length > 0 && (
@@ -112,6 +112,8 @@ const paragraphs = (text: string) => text.split(/\n\s*\n/).filter((part) => !/^\
     border-radius: var(--radius);
     overflow-x: auto;
     font-size: 14px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   .methods {

@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import GithubSlugger from "github-slugger";
 import { SKIP, visit } from "unist-util-visit";
-import { languageOf, tokenize } from "../highlight.mjs";
+import { indentOf, languageOf, splitLines, tokenize } from "../highlight.mjs";
 import { REPO_ROOT, glossaryHref, termAnchor } from "../spec-meta.mjs";
 import { fromHtml } from "hast-util-from-html";
 import { scenarioTraceHtml } from "../scenario-data.mjs";
@@ -81,10 +81,17 @@ function arrowElement(direction) {
   );
 }
 
-function spansOf(text, language) {
-  return tokenize(text, language).map(([cls, value]) =>
-    cls ? el("span", { className: [`syn-${cls}`] }, [{ type: "text", value }]) : { type: "text", value },
-  );
+function tokenNode([cls, value]) {
+  return cls ? el("span", { className: [`syn-${cls}`] }, [{ type: "text", value }]) : { type: "text", value };
+}
+
+function lineNode(children, indent, last) {
+  return el("span", { className: ["line"], ...(indent ? { style: `--indent: ${indent}` } : {}) }, last ? children : [...children, { type: "text", value: "\n" }]);
+}
+
+function codeLines(text, language) {
+  const lines = splitLines(tokenize(text, language));
+  return lines.map((tokens, index) => lineNode(tokens.map(tokenNode), indentOf(tokens), index === lines.length - 1));
 }
 
 function isTrace(text, language) {
@@ -92,21 +99,20 @@ function isTrace(text, language) {
   return language === "json" && first !== undefined && first[0] in ARROWS;
 }
 
-function traceSpans(text) {
-  const out = [];
-  text.split("\n").forEach((line, index, lines) => {
+function traceLines(text) {
+  const lines = text.split("\n");
+  return lines.map((line, index) => {
     const direction = ARROWS[line[0]];
-    if (direction) out.push(arrowElement(direction), ...spansOf(line.slice(1).replace(/^ /, ""), "json"));
-    else out.push(...spansOf(line, "json"));
-    if (index < lines.length - 1) out.push({ type: "text", value: "\n" });
+    const tokens = tokenize(direction ? line.slice(1).replace(/^ /, "") : line, "json");
+    const children = [...(direction ? [arrowElement(direction)] : []), ...tokens.map(tokenNode)];
+    return lineNode(children, direction ? 2 : indentOf(tokens), index === lines.length - 1);
   });
-  return out;
 }
 
 export function codeFigure(text, lang, tested) {
   const language = languageOf(lang);
   const trace = isTrace(text, language);
-  const spans = trace ? traceSpans(text) : spansOf(text, language);
+  const spans = trace ? traceLines(text) : codeLines(text, language);
   return el("figure", { className: ["code-block", ...(trace ? ["trace-code"] : [])], dataLanguage: language, ...(tested ? { dataTested: "true" } : {}) }, [
     el("pre", { tabIndex: 0 }, [el("code", { className: [`language-${language}`] }, spans)]),
   ]);

@@ -587,20 +587,20 @@
     font-size: var(--t-h3);
   }
 
+  .editor .panel-head {
+    display: grid;
+    justify-content: stretch;
+  }
+
   .example {
-    display: flex;
-    align-items: center;
-    gap: var(--s-2);
+    display: grid;
+    gap: var(--s-1);
     min-width: 0;
   }
 
   .example select {
-    max-width: 100%;
+    width: 100%;
     min-width: 0;
-  }
-
-  .example .legend {
-    white-space: nowrap;
   }
 
   textarea {
@@ -614,8 +614,10 @@
     line-height: 1.6;
     resize: vertical;
     tab-size: 2;
-    white-space: pre;
-    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .problems {
@@ -794,11 +796,13 @@
 
   @media (min-width: 600px) {
     .fields {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
     }
 
     .facts {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(4, auto);
+      justify-content: start;
+      column-gap: var(--s-6);
     }
   }
 
