@@ -80,7 +80,7 @@ class Rosbridge:
                 "Check that rosbridge_server is running, for example "
                 "ros2 launch rosbridge_server rosbridge_websocket_launch.xml."
             ) from exc
-        except Exception as exc:  # websockets raises InvalidStatus, InvalidHandshake and others
+        except Exception as exc:
             raise DriverError(f"rosbridge at {self.url} refused the WebSocket ({exc}).") from exc
         self.lost = None
         self._task = asyncio.create_task(self._read_forever(self._ws))
