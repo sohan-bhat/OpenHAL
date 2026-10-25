@@ -56,7 +56,7 @@ hub: "OpenHAL hub" {
 }
 kernel: "Safety kernel" {class: node}
 driver: "Driver" {class: node}
-device: "Device" {class: node}
+device: "Arduino\nplant waterer" {class: node}
 
 gap1: "" {class: spacer}
 gap2: "" {class: spacer}
@@ -65,12 +65,12 @@ blocked: "Blocked" {
   width: 120
   height: 76
   style: {stroke: ${blocked}; font-color: ${blocked}; fill: ${blocked-fill}}
-  code: "LIMIT_EXCEEDED:\n150 % > max 100 %" {class: detail; style: {font: mono; font-size: 12; font-color: ${blocked}}}
+  code: "INTERLOCK_BLOCKED:\ntank empty" {class: detail; style: {font: mono; font-size: 12; font-color: ${blocked}}}
 }
 gap3: "" {class: spacer}
 gap4: "" {class: spacer}
 
-client -> hub: "hal/write" {class: wire}
+client -> hub: "hal/action" {class: wire}
 hub.files -> kernel: "check" {class: wire}
 kernel -> driver: "grant" {class: wire}
 driver -> device: "command" {class: wire}

@@ -46,11 +46,12 @@ THEMES = {
 
 FLOW_TITLE = "OpenHAL flow"
 FLOW_DESC = (
-    "OpenHAL flow: an AI client sends hal/write to the hub; the safety kernel checks it against the device "
-    "file's limits; allowed commands go through the driver to the device, and over-limit commands are blocked "
-    "with LIMIT_EXCEEDED."
+    "OpenHAL flow. An AI client sends hal/action to the hub. The safety kernel checks it against the device "
+    "file's limits. An allowed command gets a grant and goes through the driver to the Arduino plant waterer, "
+    "and the reading comes back to the client. A command that fails a check is blocked with INTERLOCK_BLOCKED "
+    "because the tank is empty."
 )
-FLOW_ORDER = ["hal/write", "check", "grant", "command", "reading"]
+FLOW_ORDER = ["hal/action", "check", "grant", "command", "reading"]
 TOP_ROOM = 40
 DASH, GAP, PERIODS = 6, 10, 4
 
