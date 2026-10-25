@@ -297,7 +297,10 @@ async def aconnect(
     transport: httpx.AsyncBaseTransport | None = None,
     check: bool = True,
 ) -> AsyncClient:
-    """Connect to the hub. With `check`, asks the hub who we are so a bad address or token fails now."""
+    """Open an async client to the hub.
+
+    With `check` it calls `/v1/whoami` first, so a wrong address or token fails here.
+    """
     client = AsyncClient(url, token, home=home, timeout=timeout, transport=transport)
     if check:
         try:

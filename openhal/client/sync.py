@@ -265,7 +265,10 @@ def connect(
     transport: httpx.BaseTransport | None = None,
     check: bool = True,
 ) -> Client:
-    """Connect to the hub. With `check`, asks the hub who we are so a bad address or token fails now."""
+    """Open a blocking client to the hub.
+
+    With `check` it calls `/v1/whoami` first, so a wrong address or token fails here.
+    """
     client = Client(url, token, home=home, timeout=timeout, transport=transport)
     if check:
         try:

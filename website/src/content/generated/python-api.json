@@ -9,13 +9,13 @@
           "name": "connect",
           "kind": "function",
           "signature": "connect(url: str | None = None, token: str | None = None, *, home: Path | str | None = None, timeout: float = 15.0, transport: httpx.BaseTransport | None = None, check: bool = True) -> Client",
-          "doc": "Connect to the hub. With `check`, asks the hub who we are so a bad address or token fails now."
+          "doc": "Open a blocking client to the hub.\n\nWith `check` it calls `/v1/whoami` first, so a wrong address or token fails here."
         },
         {
           "name": "aconnect",
           "kind": "function",
           "signature": "async aconnect(url: str | None = None, token: str | None = None, *, home: Path | str | None = None, timeout: float = 15.0, transport: httpx.AsyncBaseTransport | None = None, check: bool = True) -> AsyncClient",
-          "doc": "Connect to the hub. With `check`, asks the hub who we are so a bad address or token fails now."
+          "doc": "Open an async client to the hub.\n\nWith `check` it calls `/v1/whoami` first, so a wrong address or token fails here."
         },
         {
           "name": "Client",
