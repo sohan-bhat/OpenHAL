@@ -1,0 +1,49 @@
+device: { name: Thermoshaker, model: SiLA 2 thermoshaker }
+id: thermoshaker
+connect:
+  sila2: thermoshaker.lab.local
+  port: 50052
+  ca_file: ~/.openhal/certs/thermoshaker-ca.pem
+  timeout: 5 s
+  action_wait: 8 s
+read:
+  temperature:
+    unit: degC
+    stream: true
+    range: [0, 100]
+    map: { feature: TemperatureController, property: CurrentTemperature }
+  speed:
+    unit: rpm
+    stream: true
+    map: { feature: ShakeController, property: ShakingSpeed }
+  lid_closed:
+    type: bool
+    every: 2 s
+    map: { feature: TemperatureController, property: DeviceState, field: LidClosed }
+write:
+  target:
+    unit: degC
+    min: 4
+    max: 60
+    max_change_per_s: 2
+    confirm: confirm
+    map: { feature: TemperatureController, command: SetTargetTemperature, parameter: TargetTemperature, readback: TargetTemperature }
+actions:
+  shake:
+    description: Shake the plate at a speed for a time (ShakeController.Shake).
+    args:
+      rpm: { unit: rpm, min: 100, max: 1200, step: 1 }
+      seconds: { unit: s, min: 1, max: 3600 }
+    require: ["lid_closed == true"]
+    confirm: confirm
+    map: { feature: ShakeController, command: Shake, parameters: { rpm: Speed, seconds: Duration } }
+  stop_shaking:
+    description: Stop shaking at once (ShakeController.StopShaking).
+    map: { feature: ShakeController, command: StopShaking }
+safe_state:
+  - { action: stop_shaking }
+  - { target: 22 }
+safe_state_note: "A stop ends shaking and sets the block back to 22 degC. The block stays warm until it cools."
+hazard: medium
+notes: "A thermoshaker with a SiLA 2 server. Change the feature and command names to match your device's feature definitions."
+provenance: { source: hand-written, by: openhal sila2 driver example, at: 2026-10-24 }

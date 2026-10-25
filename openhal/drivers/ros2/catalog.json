@@ -1,0 +1,25 @@
+{
+  "name": "ros2",
+  "tier": 2,
+  "status": "implemented",
+  "protocols": [
+    "rosbridge v2 over WebSocket"
+  ],
+  "families": [
+    "ROS 2 mobile robots",
+    "ROS 2 arms",
+    "any ROS 2 graph with rosbridge"
+  ],
+  "hazard_default": "high",
+  "tests": "rosbridge v2 WebSocket server simulator with a simulated differential drive robot",
+  "estimate": {
+    "devices": "hundreds of robot models, any ROS 2 system that runs rosbridge",
+    "reasoning": "rosbridge_suite is packaged for every ROS 2 distribution, and most ROS 2 robots expose their state and commands as topics, services and actions it can bridge. The driver reaches a robot through its ROS interface rather than its hardware, so the count follows the ROS 2 robot list. The count is a model estimate.",
+    "sources": [
+      "https://github.com/RobotWebTools/rosbridge_suite/blob/ros2/ROSBRIDGE_PROTOCOL.md",
+      "https://index.ros.org/p/rosbridge_server/",
+      "https://robots.ros.org/",
+      "https://www.ros.org/reps/rep-0103.html"
+    ]
+  }
+}

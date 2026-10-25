@@ -1,0 +1,25 @@
+{
+  "name": "grbl",
+  "tier": 2,
+  "status": "implemented",
+  "protocols": [
+    "GRBL 1.1 over USB serial"
+  ],
+  "families": [
+    "desktop CNC routers",
+    "diode and CO2 laser engravers",
+    "pen plotters"
+  ],
+  "hazard_default": "high",
+  "tests": "GRBL 1.1 line protocol simulator over a simulated serial port and a real pty",
+  "estimate": {
+    "devices": "hundreds of machine models, most hobby CNC routers and diode lasers",
+    "reasoning": "GRBL is the default firmware on Arduino based CNC shields and on most budget CNC routers and diode laser engravers. Many 32-bit controllers run grblHAL, which keeps the same 1.1 line protocol, so the driver covers them as well. The count is a model estimate, not a unit count.",
+    "sources": [
+      "https://github.com/gnea/grbl/wiki",
+      "https://github.com/gnea/grbl/blob/master/doc/markdown/interface.md",
+      "https://github.com/gnea/grbl/blob/master/doc/markdown/laser_mode.md",
+      "https://github.com/grblHAL/core"
+    ]
+  }
+}

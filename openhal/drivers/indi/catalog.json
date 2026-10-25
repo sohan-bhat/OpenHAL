@@ -1,0 +1,25 @@
+{
+  "name": "indi",
+  "tier": 2,
+  "status": "implemented",
+  "protocols": [
+    "INDI XML protocol 1.7 over TCP"
+  ],
+  "families": [
+    "telescope mounts",
+    "focusers",
+    "astronomy cameras"
+  ],
+  "hazard_default": "medium",
+  "tests": "INDI server simulator on a local TCP port, speaking the XML protocol",
+  "estimate": {
+    "devices": "hundreds of models across the INDI driver list",
+    "reasoning": "INDI is the device layer of KStars and Ekos, and indiserver ships drivers for most amateur astronomy mounts, focusers, cameras, filter wheels and domes on Linux and the Raspberry Pi. The INDI device list names several hundred supported models. The count is a model estimate.",
+    "sources": [
+      "https://www.indilib.org/develop/developer-manual/101-standard-properties.html",
+      "https://www.indilib.org/develop/developer-manual/104-scripting.html",
+      "https://github.com/indilib/indi/blob/master/doc/INDI.pdf",
+      "https://www.indilib.org/devices.html"
+    ]
+  }
+}

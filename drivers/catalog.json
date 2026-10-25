@@ -517,65 +517,106 @@
     {
       "name": "alpaca",
       "tier": 2,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "ASCOM Alpaca REST"
+        "ASCOM Alpaca REST",
+        "Alpaca UDP discovery"
       ],
       "families": [
-        "ASCOM Alpaca devices"
+        "telescope mounts",
+        "focusers, cameras and power boxes",
+        "observatory domes"
       ],
       "hazard_default": "medium",
-      "tests": "",
-      "estimate": null,
-      "conformance": "control"
+      "tests": "Alpaca server simulator on an httpx mock transport, discovery over local UDP",
+      "estimate": {
+        "devices": "hundreds of models, every ASCOM device reachable through ASCOM Remote",
+        "reasoning": "Alpaca is the network form of ASCOM, the standard driver interface for astronomy gear on Windows. ASCOM Remote exposes every installed ASCOM driver over Alpaca, and a growing number of mounts, focusers and observatory controllers speak Alpaca natively on Linux and embedded boards. The count is a model estimate.",
+        "sources": [
+          "https://ascom-standards.org/api/",
+          "https://ascom-standards.org/Developer/Alpaca.htm",
+          "https://github.com/ASCOMInitiative/ASCOMRemote",
+          "https://ascom-standards.org/Help/Developer/html/T_ASCOM_DeviceInterface_ITelescopeV3.htm"
+        ]
+      },
+      "conformance": "full"
     },
     {
       "name": "grbl",
       "tier": 2,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "GRBL over serial"
+        "GRBL 1.1 over USB serial"
       ],
       "families": [
-        "CNC routers",
-        "laser cutters"
+        "desktop CNC routers",
+        "diode and CO2 laser engravers",
+        "pen plotters"
       ],
       "hazard_default": "high",
-      "tests": "",
-      "estimate": null,
-      "conformance": "control"
+      "tests": "GRBL 1.1 line protocol simulator over a simulated serial port and a real pty",
+      "estimate": {
+        "devices": "hundreds of machine models, most hobby CNC routers and diode lasers",
+        "reasoning": "GRBL is the default firmware on Arduino based CNC shields and on most budget CNC routers and diode laser engravers. Many 32-bit controllers run grblHAL, which keeps the same 1.1 line protocol, so the driver covers them as well. The count is a model estimate, not a unit count.",
+        "sources": [
+          "https://github.com/gnea/grbl/wiki",
+          "https://github.com/gnea/grbl/blob/master/doc/markdown/interface.md",
+          "https://github.com/gnea/grbl/blob/master/doc/markdown/laser_mode.md",
+          "https://github.com/grblHAL/core"
+        ]
+      },
+      "conformance": "full"
     },
     {
       "name": "indi",
       "tier": 2,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "INDI XML protocol"
+        "INDI XML protocol 1.7 over TCP"
       ],
       "families": [
         "telescope mounts",
-        "astronomy cameras",
-        "focusers"
+        "focusers",
+        "astronomy cameras"
       ],
       "hazard_default": "medium",
-      "tests": "",
-      "estimate": null,
-      "conformance": "control"
+      "tests": "INDI server simulator on a local TCP port, speaking the XML protocol",
+      "estimate": {
+        "devices": "hundreds of models across the INDI driver list",
+        "reasoning": "INDI is the device layer of KStars and Ekos, and indiserver ships drivers for most amateur astronomy mounts, focusers, cameras, filter wheels and domes on Linux and the Raspberry Pi. The INDI device list names several hundred supported models. The count is a model estimate.",
+        "sources": [
+          "https://www.indilib.org/develop/developer-manual/101-standard-properties.html",
+          "https://www.indilib.org/develop/developer-manual/104-scripting.html",
+          "https://github.com/indilib/indi/blob/master/doc/INDI.pdf",
+          "https://www.indilib.org/devices.html"
+        ]
+      },
+      "conformance": "full"
     },
     {
       "name": "lerobot",
       "tier": 2,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "Hugging Face LeRobot"
+        "Hugging Face LeRobot Robot API"
       ],
       "families": [
-        "LeRobot arms"
+        "SO-100 and SO-101 arms",
+        "Koch and OMX arms",
+        "other LeRobot arms with joint goals"
       ],
       "hazard_default": "high",
-      "tests": "",
-      "estimate": null,
-      "conformance": "control"
+      "tests": "a faithful fake of LeRobot's SOFollower, with each assumption checked in the hardware test plan",
+      "estimate": {
+        "devices": "a dozen robot types, thousands of hobby and lab arms built from them",
+        "reasoning": "LeRobot registers about a dozen robot types, and the SO-100 and SO-101 kits are among the most built open source arms. The driver reads joint positions and sends joint goals through LeRobot's Robot interface, so it covers robots whose actions are joint positions. Mobile bases and hands with other action types need a map. The count is a model estimate.",
+        "sources": [
+          "https://github.com/huggingface/lerobot",
+          "https://huggingface.co/docs/lerobot/so101",
+          "https://huggingface.co/docs/lerobot/integrate_hardware"
+        ]
+      },
+      "conformance": "full"
     },
     {
       "name": "onvif",
@@ -607,64 +648,105 @@
     {
       "name": "opcua",
       "tier": 2,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "OPC UA"
+        "OPC UA binary over TCP (opc.tcp)"
       ],
       "families": [
-        "industrial controllers",
-        "LADS lab devices"
+        "PLCs with an OPC UA server",
+        "LADS lab instruments",
+        "process equipment and gateways"
       ],
       "hazard_default": "medium",
-      "tests": "",
-      "estimate": null,
-      "conformance": "control"
+      "tests": "asyncua's own OPC UA server running a simulated pump skid",
+      "estimate": {
+        "devices": "thousands of controller and instrument models",
+        "reasoning": "OPC UA is the standard interface of industrial automation. Most current PLC families include an OPC UA server, and the LADS companion specification brings it to laboratory instruments. The driver reads and changes variables and calls methods, which covers any server that exposes its data that way. The count is a model estimate.",
+        "sources": [
+          "https://reference.opcfoundation.org/",
+          "https://reference.opcfoundation.org/LADS/v100/docs/",
+          "https://github.com/FreeOpcUa/opcua-asyncio",
+          "https://unece.org/trade/uncefact/cl-recommendations"
+        ]
+      },
+      "conformance": "full"
     },
     {
       "name": "pylabrobot",
       "tier": 2,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "PyLabRobot"
+        "PyLabRobot LiquidHandler API"
       ],
       "families": [
-        "liquid handlers",
-        "lab robots"
+        "Hamilton STAR and STARlet",
+        "Tecan Freedom EVO",
+        "Opentrons OT-2"
       ],
       "hazard_default": "high",
-      "tests": "",
-      "estimate": null,
-      "conformance": "control"
+      "tests": "PyLabRobot's LiquidHandler on its chatterbox backend, recorded",
+      "estimate": {
+        "devices": "a handful of liquid handler families, each installed in many labs",
+        "reasoning": "PyLabRobot drives the Hamilton STAR line, the Tecan EVO and the Opentrons OT-2 through one API. The driver exposes the liquid handling part of that API, so it covers the families PyLabRobot supports for liquid handling. Plate readers, heaters and shakers in PyLabRobot are not covered yet. The count is a model estimate.",
+        "sources": [
+          "https://docs.pylabrobot.org/",
+          "https://github.com/PyLabRobot/pylabrobot",
+          "https://docs.pylabrobot.org/user_guide/machines.html"
+        ]
+      },
+      "conformance": "full"
     },
     {
       "name": "ros2",
       "tier": 2,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "ROS 2 through rosbridge"
+        "rosbridge v2 over WebSocket"
       ],
       "families": [
-        "ROS 2 robots"
+        "ROS 2 mobile robots",
+        "ROS 2 arms",
+        "any ROS 2 graph with rosbridge"
       ],
       "hazard_default": "high",
-      "tests": "",
-      "estimate": null,
-      "conformance": "control"
+      "tests": "rosbridge v2 WebSocket server simulator with a simulated differential drive robot",
+      "estimate": {
+        "devices": "hundreds of robot models, any ROS 2 system that runs rosbridge",
+        "reasoning": "rosbridge_suite is packaged for every ROS 2 distribution, and most ROS 2 robots expose their state and commands as topics, services and actions it can bridge. The driver reaches a robot through its ROS interface rather than its hardware, so the count follows the ROS 2 robot list. The count is a model estimate.",
+        "sources": [
+          "https://github.com/RobotWebTools/rosbridge_suite/blob/ros2/ROSBRIDGE_PROTOCOL.md",
+          "https://index.ros.org/p/rosbridge_server/",
+          "https://robots.ros.org/",
+          "https://www.ros.org/reps/rep-0103.html"
+        ]
+      },
+      "conformance": "full"
     },
     {
       "name": "sila2",
       "tier": 2,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "SiLA 2"
+        "SiLA 2 over gRPC"
       ],
       "families": [
-        "SiLA 2 lab devices"
+        "SiLA 2 lab devices",
+        "SiLA 2 gateways",
+        "custom SiLA 2 servers"
       ],
       "hazard_default": "medium",
-      "tests": "",
-      "estimate": null,
-      "conformance": "control"
+      "tests": "a thermoshaker served by the sila2 package's own server from feature definitions",
+      "estimate": {
+        "devices": "dozens of commercial device families and any custom SiLA 2 server",
+        "reasoning": "SiLA 2 is the lab automation standard from the SiLA consortium. Several vendors ship SiLA 2 servers for their instruments, and integrators wrap older instruments with SiLA 2 gateways. The driver reads any feature's properties and runs its commands without generated code, so coverage follows the feature definitions a server offers. The count is a model estimate.",
+        "sources": [
+          "https://sila-standard.com/standards/",
+          "https://gitlab.com/SiLA2/sila_base",
+          "https://gitlab.com/SiLA2/sila_python",
+          "https://sila2.gitlab.io/sila_python/"
+        ]
+      },
+      "conformance": "full"
     },
     {
       "name": "bambu",

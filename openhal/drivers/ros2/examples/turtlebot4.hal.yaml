@@ -1,0 +1,50 @@
+device: { name: TurtleBot 4, model: TurtleBot 4 Standard, manufacturer: Clearpath Robotics }
+id: turtlebot
+connect:
+  ros2: turtlebot4.local
+  port: 9090
+  timeout: 5 s
+  action_wait: 8 s
+read:
+  battery:
+    unit: percent
+    every: 5 s
+    range: [0, 100]
+    map: { topic: /battery_state, type: sensor_msgs/msg/BatteryState, field: percentage, unit: dimensionless }
+  odom_x:
+    unit: m
+    map: { topic: /odom, type: nav_msgs/msg/Odometry, field: pose.pose.position.x, unit: m }
+  odom_y:
+    unit: m
+    map: { topic: /odom, type: nav_msgs/msg/Odometry, field: pose.pose.position.y, unit: m }
+write:
+  cmd_vel_linear:
+    unit: m/s
+    min: -0.1
+    max: 0.1
+    max_change_per_s: 0.2
+    confirm: confirm-each-time
+    map:
+      topic: /cmd_vel
+      type: geometry_msgs/msg/Twist
+      field: linear.x
+      unit: m/s
+      base: { linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0 } }
+actions:
+  dock:
+    description: Drive back onto the dock (irobot_create_msgs/action/Dock).
+    confirm: confirm-each-time
+    map: { action: /dock, type: irobot_create_msgs/action/Dock }
+  undock:
+    description: Back off the dock (irobot_create_msgs/action/Undock).
+    confirm: confirm-each-time
+    map: { action: /undock, type: irobot_create_msgs/action/Undock }
+safe_state:
+  - { cmd_vel_linear: 0 }
+safe_state_note: "A stop publishes a zero velocity and cancels dock and undock goals. The Create 3 base also stops on its own when cmd_vel goes quiet."
+watchdog:
+  heartbeat: 2 s
+  on_loss: safe_state
+hazard: high
+notes: "TurtleBot 4 with rosbridge_server on the Raspberry Pi. Velocities start at 0.1 m/s. Raise them only after testing in a clear space."
+provenance: { source: hand-written, by: openhal ros2 driver example, at: 2026-10-24 }

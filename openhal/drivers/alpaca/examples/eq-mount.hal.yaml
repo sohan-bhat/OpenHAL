@@ -1,0 +1,39 @@
+device: { name: Equatorial mount, model: Alpaca telescope 0 }
+id: mount
+connect:
+  alpaca: observatory.local
+  port: 11111
+  device_type: telescope
+  device_number: 0
+  timeout: 5 s
+  action_wait: 8 s
+read:
+  right_ascension: { unit: deg, every: 2 s }
+  declination: { unit: deg, every: 2 s, range: [-90, 90] }
+  altitude: { unit: deg, every: 2 s }
+  azimuth: { unit: deg, every: 2 s }
+  slewing: { type: bool, every: 1 s }
+  at_park: { type: bool, every: 5 s }
+write:
+  tracking: { type: bool }
+actions:
+  abort_slew: { description: "Stop any slew at once (AbortSlew)." }
+  park:
+    description: Slew to the park position and stop tracking.
+    confirm: confirm
+  unpark:
+    description: Leave the park position so the mount can move.
+    confirm: confirm
+  slew_to_coordinates:
+    description: Slew to a right ascension and declination while tracking.
+    args:
+      right_ascension: { unit: deg, min: 0, max: 359.99 }
+      declination: { unit: deg, min: -20, max: 89 }
+    require: ["at_park == false", "tracking == true", "slewing == false"]
+    confirm: confirm-each-time
+safe_state:
+  - { tracking: false }
+safe_state_note: "A stop sends AbortSlew and turns tracking off. It does not park. Set park_on_stop to park as well."
+hazard: medium
+notes: "Raise the minimum declination until the tube clears the pier and the horizon at your site before confirming."
+provenance: { source: hand-written, by: openhal alpaca driver example, at: 2026-10-24 }

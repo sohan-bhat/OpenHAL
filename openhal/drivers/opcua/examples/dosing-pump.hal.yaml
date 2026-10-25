@@ -1,0 +1,41 @@
+device: { name: Dosing pump skid, model: OPC UA pump skid }
+id: dosing
+connect:
+  opcua: "opc.tcp://plc.local:4840"
+  timeout: 4 s
+read:
+  temperature: { unit: degC, every: 2 s, range: [0, 80], map: { node: "nsu=urn:example:skid;s=Pump.Temperature" } }
+  running: { type: bool, every: 1 s, map: { node: "nsu=urn:example:skid;s=Pump.Running" } }
+  tank_level: { unit: percent, every: 5 s, range: [0, 100], map: { node: "nsu=urn:example:skid;s=Tank.Level" } }
+write:
+  speed:
+    unit: rpm
+    min: 0
+    max: 1200
+    max_change_per_s: 200
+    confirm: confirm
+    map: { node: "nsu=urn:example:skid;s=Pump.Speed" }
+actions:
+  start:
+    description: Start the pump at a rate (Pump.Start).
+    args:
+      rate: { unit: rpm, min: 100, max: 1200 }
+    require: ["tank_level > 10 percent"]
+    confirm: confirm
+    map: { object: "nsu=urn:example:skid;s=Pump", method: "nsu=urn:example:skid;s=Pump.Start", inputs: [rate] }
+  stop:
+    description: Stop the pump (Pump.Stop).
+    map: { object: "nsu=urn:example:skid;s=Pump", method: "nsu=urn:example:skid;s=Pump.Stop" }
+safe_state:
+  - { action: stop }
+  - { speed: 0 }
+interlocks:
+  - if: "speed > 0 rpm"
+    require: "tank_level > 5 percent"
+    message: "The tank is nearly empty. Refill it before running the pump."
+watchdog:
+  heartbeat: 5 s
+  on_loss: safe_state
+hazard: medium
+notes: "Node ids use the skid's namespace URI, so they keep working if the server renumbers namespaces. Change urn:example:skid to your server's URI."
+provenance: { source: hand-written, by: openhal opcua driver example, at: 2026-10-24 }

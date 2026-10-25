@@ -1,0 +1,53 @@
+device: { name: 3018 CNC router, model: Genmitsu 3018-PROVer, manufacturer: SainSmart }
+id: router
+match:
+  usb: ["1a86:7523"]
+connect:
+  grbl: auto
+  baud: 115200
+  timeout: 5 s
+  settle: 2 s
+  action_wait: 8 s
+read:
+  state: { type: enum, values: [idle, run, hold, jog, alarm, door, check, home, sleep], every: 500 ms }
+  alarm: { unit: dimensionless }
+  position_x: { unit: mm, every: 1 s }
+  position_y: { unit: mm, every: 1 s }
+  position_z: { unit: mm, every: 1 s }
+  feed_rate: { unit: mm/min }
+  max_spindle: { unit: rpm, map: { setting: 30 } }
+write:
+  spindle_speed: { unit: rpm, min: 0, max: 10000, confirm: confirm-each-time }
+actions:
+  home:
+    description: Run the homing cycle ($H). Needs limit switches and $22=1.
+    require: ["state == idle or state == alarm"]
+    confirm: confirm-each-time
+  jog:
+    description: Jog relative to the current position ($J=G91).
+    args:
+      x: { unit: mm, min: -20, max: 20 }
+      y: { unit: mm, min: -20, max: 20 }
+      z: { unit: mm, min: -5, max: 5 }
+      feed: { unit: mm/min, min: 10, max: 1000 }
+    require: ["state == idle"]
+    confirm: confirm-each-time
+  cancel_jog: { description: "Stop a jog at once (realtime 0x85)." }
+  hold: { description: "Feed hold. The machine decelerates and stops (realtime !)." }
+  resume:
+    description: Resume after a feed hold (realtime ~).
+    require: ["state == hold"]
+    confirm: confirm-each-time
+  clear_alarm:
+    description: Clear the alarm lock ($X). Home afterwards if the position may be lost.
+    require: ["state == alarm"]
+    confirm: confirm-each-time
+safe_state:
+  - { spindle_speed: 0 }
+safe_state_note: "The driver holds the feed and soft resets GRBL first, which stops motion and the spindle. Keep a physical emergency stop within reach."
+watchdog:
+  heartbeat: 2 s
+  on_loss: safe_state
+hazard: high
+notes: "A 300 by 180 by 45 mm desktop router with a 10000 rpm spindle on a GRBL 1.1 board. Check $30 matches the spindle maximum before confirming."
+provenance: { source: hand-written, by: openhal grbl driver example, at: 2026-10-24 }
