@@ -2,7 +2,6 @@
 import { getCollection } from "astro:content";
 import { PRODUCT_NAME } from "../config/brand";
 import { NAV } from "../config/site";
-import { markSvg } from "../lib/brand-mark";
 
 const published = (await getCollection("blog")).some((post) => !post.data.draft);
 const links = NAV.filter((link) => link.label !== "Blog" || published);
@@ -14,8 +13,10 @@ const current = (match: string[]) =>
 <header class="site-header">
   <div class="wrap bar">
     <a class="brand" href="/" aria-label={`${PRODUCT_NAME} overview`}>
-      <Fragment set:html={markSvg({ size: 22, className: "mark" })} />
-      <span class="wordmark">{PRODUCT_NAME}</span>
+      <picture class="wordmark">
+        <source media="(prefers-color-scheme: dark)" srcset="/brand/wordmark-dark.svg" />
+        <img src="/brand/wordmark-light.svg" alt={PRODUCT_NAME} width="107" height="24" />
+      </picture>
     </a>
     <nav class="desktop-nav" aria-label="Main">
       <ul>
@@ -74,14 +75,9 @@ const current = (match: string[]) =>
     flex: none;
   }
 
-  .brand :global(.mark) {
-    color: var(--accent);
-  }
-
-  .wordmark {
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
+  .wordmark,
+  .wordmark img {
+    display: block;
   }
 
   ul {

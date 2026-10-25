@@ -1,6 +1,6 @@
 import { type Command, type Decision, type DeviceFile, deviceId } from "../kernel";
 import { normalizeUnit } from "../kernel/units";
-import { type JsonRpcError, decisionError, quantity } from "../protocol";
+import { type JsonRpcError, decisionError, quantity, wireUnit } from "../protocol";
 import type { TraceEntry } from "../trace";
 
 export function fileNameOf(file: DeviceFile): string {
@@ -55,7 +55,7 @@ export function decisionWire(decision: Decision, command: Command, file: DeviceF
   const unit = decision.unit ?? (channel !== null && file && channel in file.write ? file.write[channel].unit : null);
   let value = decision.value ?? null;
   if (action !== null && value !== null) value = actionArgs(file, action, value);
-  const wire: Record<string, unknown> = { status: decision.status, device: decision.device, target: decision.target, value, unit };
+  const wire: Record<string, unknown> = { status: decision.status, device: decision.device, target: decision.target, value, unit: wireUnit(unit) };
   if (decision.status === "blocked" || decision.status === "failed") wire.error = errorFor(decision, command, file, principal);
   if (decision.request_id) wire.requestId = decision.request_id;
   return wire;
@@ -73,5 +73,5 @@ export function responseFor(decision: Decision, command: Command, file: DeviceFi
   if (command.kind === "action") {
     return { kind: "result", result: { status: "done", result: { device: decision.device, action: command.action, args: actionArgs(file, command.action, decision.value) } } };
   }
-  return { kind: "result", result: { status: "done", device: decision.device, channel: command.channel, value: decision.value ?? null, unit: decision.unit } };
+  return { kind: "result", result: { status: "done", device: decision.device, channel: command.channel, value: decision.value ?? null, unit: wireUnit(decision.unit) } };
 }

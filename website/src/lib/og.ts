@@ -1,5 +1,4 @@
-import { PRODUCT_NAME } from "../config/brand";
-import { MARK_ACCENT, markSvg } from "./brand-mark";
+import { wordmarkLightSvg } from "./brand-mark";
 import { fontFaces, renderPng } from "./render-png";
 import { scenarioTrace } from "./scenario";
 import { arrowSvg, payloadHtml } from "./trace";
@@ -22,8 +21,7 @@ export async function ogImage(title: string, kind: string): Promise<Uint8Array> 
 ${fontFaces()}
 *{box-sizing:border-box;margin:0}
 body{width:1200px;height:630px;background:#fcfcfd;color:#15181c;font-family:"Atkinson Hyperlegible Next";display:flex;flex-direction:column;padding:56px 64px}
-.top{display:flex;align-items:center;gap:14px;color:${MARK_ACCENT.light}}
-.word{font-size:34px;font-weight:700;color:#15181c;letter-spacing:-0.01em}
+.top{display:flex;align-items:center;gap:14px}
 .kind{margin-left:auto;font-size:24px;font-weight:700;color:#4f5661;font-variant-caps:all-small-caps;letter-spacing:.04em}
 h1{margin-top:44px;font-size:${size}px;line-height:1.12;font-weight:700;letter-spacing:-0.01em;max-width:1060px}
 .trace{margin-top:auto;background:#f4f5f7;border:1px solid #dadde2;border-radius:10px;padding:26px 30px;font-family:"Atkinson Hyperlegible Mono";font-size:22px;line-height:1.6;display:grid;grid-template-columns:30px 1fr;column-gap:14px;row-gap:6px;align-items:baseline}
@@ -33,7 +31,7 @@ h1{margin-top:44px;font-size:${size}px;line-height:1.12;font-weight:700;letter-s
 .syn-key,.syn-punct{color:#4f5661}.syn-str{color:#15181c}.syn-num{color:#1d5fb4}
 .reason{grid-column:2;color:#15181c;font-size:20px}
 </style></head><body>
-<div class="top">${markSvg({ size: 40, color: MARK_ACCENT.light })}<span class="word">${PRODUCT_NAME}</span><span class="kind">${escape(kind)}</span></div>
+<div class="top">${wordmarkLightSvg(44)}<span class="kind">${escape(kind)}</span></div>
 <h1>${escape(title)}</h1>
 <div class="trace">
 ${arrowSvg("out")}<div><span class="method">${method}</span>${params}</div>

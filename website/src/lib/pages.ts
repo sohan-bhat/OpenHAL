@@ -26,7 +26,7 @@ export function ogSlug(pathname: string): string {
 
 export async function allPages(): Promise<PageInfo[]> {
   const pages: PageInfo[] = [
-    { path: "/", title: "An open protocol for hardware", kind: "Overview" },
+    { path: "/", title: HOME_TITLE, kind: "Overview" },
     { path: "/docs/", title: "Documentation", kind: "Docs" },
     { path: "/spec/", title: "Specification", kind: "Specification" },
     { path: "/spec/playground/", title: "Playground", kind: "Specification" },

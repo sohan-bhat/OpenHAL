@@ -53,7 +53,7 @@ Only a person may confirm limits. Read each limit before you type `confirm`.
 
 ```sh tested
 $ uv run openhal file confirm led-strip.hal.yaml --by owner
-write   brightness  0 % to 80 %, at most 40 %/s
+control brightness  0 % to 80 %, at most 40 %/s
 ```
 
 The file now records who confirmed it, the date and a hash of the limits.

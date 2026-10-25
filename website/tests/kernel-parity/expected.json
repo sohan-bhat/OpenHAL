@@ -12,7 +12,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": 20.0,
-          "unit": "percent"
+          "unit": "%"
         }
       }
     },
@@ -28,7 +28,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32010,
             "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
@@ -40,11 +40,11 @@
               "channel": "fan_speed",
               "limit": {
                 "value": 100,
-                "unit": "percent"
+                "unit": "%"
               },
               "requested": {
                 "value": 150,
-                "unit": "percent"
+                "unit": "%"
               },
               "file": "desk-fan.hal.yaml",
               "confirmedBy": "sohan",
@@ -66,7 +66,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32010,
             "message": "fan_speed -5 % is below the limit of 0 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
@@ -78,11 +78,11 @@
               "channel": "fan_speed",
               "limit": {
                 "value": 0,
-                "unit": "percent"
+                "unit": "%"
               },
               "requested": {
                 "value": -5,
-                "unit": "percent"
+                "unit": "%"
               },
               "file": "desk-fan.hal.yaml",
               "confirmedBy": "sohan",
@@ -104,7 +104,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32016,
             "message": "fan_speed 20.5 % is not a step of 1 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
@@ -116,11 +116,11 @@
               "channel": "fan_speed",
               "limit": {
                 "value": 1,
-                "unit": "percent"
+                "unit": "%"
               },
               "requested": {
                 "value": 20.5,
-                "unit": "percent"
+                "unit": "%"
               },
               "file": "desk-fan.hal.yaml",
               "confirmedBy": "sohan",
@@ -154,7 +154,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32023,
             "message": "fan_speed needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
@@ -184,7 +184,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32023,
             "message": "fan_speed needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
@@ -214,7 +214,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32023,
             "message": "fan_speed needs its number and unit apart, as {\"value\": 1, \"unit\": \"%\"}, not \"fast\"",
@@ -249,7 +249,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32023,
             "message": "fan_speed true needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
@@ -280,10 +280,10 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32011,
-            "message": "fan_speed 60 % changes faster than 20 percent/s allows right now (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "fan_speed 60 % changes faster than 20 %/s allows right now (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
             "data": {
               "name": "RATE_LIMITED",
               "kernelCode": "rate_limited",
@@ -292,11 +292,11 @@
               "channel": "fan_speed",
               "limit": {
                 "value": 20,
-                "unit": "percent/s"
+                "unit": "%/s"
               },
               "requested": {
                 "value": 60,
-                "unit": "percent"
+                "unit": "%"
               },
               "file": "desk-fan.hal.yaml",
               "confirmedBy": "sohan",
@@ -318,7 +318,7 @@
             "device": "desk-fan",
             "target": "write:fan_speed",
             "value": 20.0,
-            "unit": "percent"
+            "unit": "%"
           }
         }
       ],
@@ -331,10 +331,10 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32011,
-            "message": "fan_speed 40 % changes faster than 20 percent/s allows right now (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "fan_speed 40 % changes faster than 20 %/s allows right now (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
             "data": {
               "name": "RATE_LIMITED",
               "kernelCode": "rate_limited",
@@ -343,11 +343,11 @@
               "channel": "fan_speed",
               "limit": {
                 "value": 20,
-                "unit": "percent/s"
+                "unit": "%/s"
               },
               "requested": {
                 "value": 40,
-                "unit": "percent"
+                "unit": "%"
               },
               "file": "desk-fan.hal.yaml",
               "confirmedBy": "sohan",
@@ -369,7 +369,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32011,
             "message": "fan_speed 10 % changes faster than allowed right now (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
@@ -381,7 +381,7 @@
               "channel": "fan_speed",
               "requested": {
                 "value": 10,
-                "unit": "percent"
+                "unit": "%"
               },
               "file": "desk-fan.hal.yaml",
               "confirmedBy": "sohan",
@@ -403,7 +403,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": 50.0,
-          "unit": "percent"
+          "unit": "%"
         }
       }
     },
@@ -419,7 +419,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": 30.0,
-          "unit": "percent"
+          "unit": "%"
         }
       }
     },
@@ -435,7 +435,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": 35.0,
-          "unit": "percent"
+          "unit": "%"
         }
       }
     },
@@ -517,7 +517,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32014,
             "message": "The hub is stopped until a person unlocks it",
@@ -529,7 +529,7 @@
               "channel": "fan_speed",
               "requested": {
                 "value": 20,
-                "unit": "percent"
+                "unit": "%"
               }
             }
           }
@@ -558,7 +558,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": 40.0,
-          "unit": "percent"
+          "unit": "%"
         }
       }
     },
@@ -574,7 +574,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32003,
             "message": "This token's scope doesn't cover desk-fan",
@@ -586,7 +586,7 @@
               "channel": "fan_speed",
               "requested": {
                 "value": 20,
-                "unit": "percent"
+                "unit": "%"
               }
             }
           }
@@ -605,7 +605,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": 100.0,
-          "unit": "percent"
+          "unit": "%"
         }
       }
     },
@@ -639,7 +639,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32010,
             "message": "fan_speed 60 % exceeds the session limit of 50 % (tightened by claude)",
@@ -651,11 +651,11 @@
               "channel": "fan_speed",
               "limit": {
                 "value": 50,
-                "unit": "percent"
+                "unit": "%"
               },
               "requested": {
                 "value": 60,
-                "unit": "percent"
+                "unit": "%"
               },
               "tightenedBy": "claude"
             }
@@ -682,10 +682,10 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32011,
-            "message": "fan_speed 20 % changes faster than the session limit of 5 percent/s allows right now (tightened by claude)",
+            "message": "fan_speed 20 % changes faster than the session limit of 5 %/s allows right now (tightened by claude)",
             "data": {
               "name": "RATE_LIMITED",
               "kernelCode": "rate_limited",
@@ -694,11 +694,11 @@
               "channel": "fan_speed",
               "limit": {
                 "value": 5,
-                "unit": "percent/s"
+                "unit": "%/s"
               },
               "requested": {
                 "value": 20,
-                "unit": "percent"
+                "unit": "%"
               },
               "tightenedBy": "claude"
             }
@@ -718,7 +718,7 @@
           "device": "desk-fan-controller",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32015,
             "message": "desk-fan-controller is read-only until a person confirms its limits",
@@ -730,7 +730,7 @@
               "channel": "fan_speed",
               "requested": {
                 "value": 20,
-                "unit": "percent"
+                "unit": "%"
               }
             }
           }
@@ -749,7 +749,7 @@
           "device": "desk-fan-controller",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32015,
             "message": "desk-fan-controller is read-only until a person confirms its limits",
@@ -761,7 +761,7 @@
               "channel": "fan_speed",
               "requested": {
                 "value": 20,
-                "unit": "percent"
+                "unit": "%"
               }
             }
           }
@@ -780,7 +780,7 @@
           "device": "hash-fan",
           "target": "write:speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32015,
             "message": "hash-fan is read-only until a person confirms its limits",
@@ -792,7 +792,7 @@
               "channel": "speed",
               "requested": {
                 "value": 20,
-                "unit": "percent"
+                "unit": "%"
               }
             }
           }
@@ -811,7 +811,7 @@
           "device": "hash-fan",
           "target": "write:speed",
           "value": 20.0,
-          "unit": "percent"
+          "unit": "%"
         }
       }
     },
@@ -893,7 +893,7 @@
             "device": "desk-fan",
             "target": "write:fan_speed",
             "value": 20.0,
-            "unit": "percent"
+            "unit": "%"
           }
         },
         {
@@ -905,7 +905,7 @@
             "device": "desk-fan",
             "target": "write:fan_speed",
             "value": 40.0,
-            "unit": "percent"
+            "unit": "%"
           }
         }
       ],
@@ -934,7 +934,7 @@
             "device": "desk-fan",
             "target": "write:fan_speed",
             "value": 20.0,
-            "unit": "percent"
+            "unit": "%"
           }
         },
         {
@@ -946,7 +946,7 @@
             "device": "desk-fan",
             "target": "write:fan_speed",
             "value": 40.0,
-            "unit": "percent"
+            "unit": "%"
           }
         },
         {
@@ -971,7 +971,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32012,
             "message": "The heater needs the desk fan at 30 % or more.",
@@ -983,7 +983,7 @@
               "channel": "fan_speed",
               "requested": {
                 "value": 20,
-                "unit": "percent"
+                "unit": "%"
               },
               "interlock": "The heater needs the desk fan at 30 % or more.",
               "file": "desk-fan.hal.yaml",
@@ -1006,7 +1006,7 @@
           "device": "desk-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32012,
             "message": "The heater needs the desk fan at 30 % or more.",
@@ -1018,7 +1018,7 @@
               "channel": "fan_speed",
               "requested": {
                 "value": 10,
-                "unit": "percent"
+                "unit": "%"
               },
               "interlock": "The heater needs the desk fan at 30 % or more.",
               "file": "desk-fan.hal.yaml",
@@ -1072,7 +1072,7 @@
             "device": "desk-fan",
             "target": "write:fan_speed",
             "value": 40.0,
-            "unit": "percent"
+            "unit": "%"
           }
         }
       ],
@@ -1101,7 +1101,7 @@
             "device": "desk-fan",
             "target": "write:fan_speed",
             "value": 40.0,
-            "unit": "percent"
+            "unit": "%"
           }
         },
         {
@@ -1818,7 +1818,7 @@
           "device": "laser",
           "target": "write:laser_power",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32012,
             "message": "The enclosure door must be closed before the laser fires.",
@@ -1830,7 +1830,7 @@
               "channel": "laser_power",
               "requested": {
                 "value": 10,
-                "unit": "percent"
+                "unit": "%"
               },
               "interlock": "The enclosure door must be closed before the laser fires.",
               "file": "laser.hal.yaml",
@@ -1853,7 +1853,7 @@
           "device": "laser",
           "target": "write:laser_power",
           "value": 10.0,
-          "unit": "percent"
+          "unit": "%"
         }
       }
     },
@@ -1869,7 +1869,7 @@
           "device": "laser",
           "target": "write:laser_power",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32003,
             "message": "This token's scope doesn't cover laser",
@@ -1881,7 +1881,7 @@
               "channel": "laser_power",
               "requested": {
                 "value": 10,
-                "unit": "percent"
+                "unit": "%"
               }
             }
           }
@@ -1900,7 +1900,7 @@
           "device": "laser",
           "target": "write:laser_power",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32010,
             "message": "laser_power 45 % exceeds the limit of 30 % (laser.hal.yaml, confirmed by sohan 2026-10-24)",
@@ -1912,11 +1912,11 @@
               "channel": "laser_power",
               "limit": {
                 "value": 30,
-                "unit": "percent"
+                "unit": "%"
               },
               "requested": {
                 "value": 45,
-                "unit": "percent"
+                "unit": "%"
               },
               "file": "laser.hal.yaml",
               "confirmedBy": "sohan",
@@ -2529,7 +2529,7 @@
           "device": "desk-lamp",
           "target": "write:brightness",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32016,
             "message": "brightness 50.5 % is not a step of 1 % (desk-lamp.hal.yaml, confirmed by sohan 2026-10-24)",
@@ -2541,11 +2541,11 @@
               "channel": "brightness",
               "limit": {
                 "value": 1,
-                "unit": "percent"
+                "unit": "%"
               },
               "requested": {
                 "value": 50.5,
-                "unit": "percent"
+                "unit": "%"
               },
               "file": "desk-lamp.hal.yaml",
               "confirmedBy": "sohan",
@@ -2567,7 +2567,7 @@
           "device": "desk-lamp",
           "target": "write:brightness",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32010,
             "message": "brightness 0 % is below the limit of 1 % (desk-lamp.hal.yaml, confirmed by sohan 2026-10-24)",
@@ -2579,11 +2579,11 @@
               "channel": "brightness",
               "limit": {
                 "value": 1,
-                "unit": "percent"
+                "unit": "%"
               },
               "requested": {
                 "value": 0,
-                "unit": "percent"
+                "unit": "%"
               },
               "file": "desk-lamp.hal.yaml",
               "confirmedBy": "sohan",
@@ -2732,7 +2732,7 @@
           "device": "hot-fan",
           "target": "write:fan_speed",
           "value": null,
-          "unit": "percent",
+          "unit": "%",
           "error": {
             "code": -32012,
             "message": "fan_speed 60 % is held back by an interlock or requirement that doesn't hold (hot-fan.hal.yaml, confirmed by sohan 2026-10-24)",
@@ -2744,7 +2744,7 @@
               "channel": "fan_speed",
               "requested": {
                 "value": 60,
-                "unit": "percent"
+                "unit": "%"
               },
               "file": "hot-fan.hal.yaml",
               "confirmedBy": "sohan",
@@ -2766,7 +2766,7 @@
           "device": "hot-fan",
           "target": "write:fan_speed",
           "value": 60.0,
-          "unit": "percent"
+          "unit": "%"
         }
       }
     },

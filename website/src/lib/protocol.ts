@@ -332,8 +332,13 @@ export function factsFor(file: DeviceFile, target: string | null, fileName: stri
   };
 }
 
+export function wireUnit(unit: string | null): string | null {
+  if (unit === null) return null;
+  return unit.replace(/\bpercent\b/g, "%").replaceAll(" / ", "/");
+}
+
 export function quantity(magnitude: number, unit: string): Quantity {
-  return { value: magnitude, unit };
+  return { value: magnitude, unit: wireUnit(unit) as string };
 }
 
 export function window(seconds: number): Quantity {
