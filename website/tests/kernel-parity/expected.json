@@ -138,7 +138,26 @@
         "code": "bad_unit",
         "message": "fan_speed needs a unit. Send 40 % rather than 40.",
         "wire": {
-          "hubError": "ValidationError"
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "%",
+          "error": {
+            "code": -32023,
+            "message": "fan_speed 40 needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "UNIT_INVALID",
+              "kernelCode": "bad_unit",
+              "kernelMessage": "fan_speed needs a unit. Send 40 % rather than 40.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "requested": 40,
+              "file": "desk-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
         }
       }
     },

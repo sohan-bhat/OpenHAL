@@ -682,9 +682,24 @@
               "doc": ""
             },
             {
+              "name": "protocol_version",
+              "type": "str | None",
+              "doc": "The hub protocol version, for example 2026-10-24."
+            },
+            {
+              "name": "conformance",
+              "type": "str | None",
+              "doc": "The hub's conformance level, core, control or full."
+            },
+            {
+              "name": "allow_lan",
+              "type": "bool | None",
+              "doc": "True when other machines may connect with a paired token."
+            },
+            {
               "name": "stopped",
               "type": "bool",
-              "doc": "True after a stop until a human unlocks. Every write is blocked meanwhile."
+              "doc": "True after a stop until a human unlocks. Every command is refused meanwhile."
             },
             {
               "name": "stop_reason",
@@ -787,6 +802,16 @@
               "name": "source",
               "type": "str | None",
               "doc": ""
+            },
+            {
+              "name": "conformance",
+              "type": "str | None",
+              "doc": "The driver's conformance level."
+            },
+            {
+              "name": "simulated",
+              "type": "bool",
+              "doc": "True when the driver talks to a simulator, not hardware."
             }
           ]
         },
@@ -854,6 +879,16 @@
               "name": "source",
               "type": "str | None",
               "doc": ""
+            },
+            {
+              "name": "conformance",
+              "type": "str | None",
+              "doc": "The driver's conformance level."
+            },
+            {
+              "name": "simulated",
+              "type": "bool",
+              "doc": "True when the driver talks to a simulator, not hardware."
             },
             {
               "name": "unconfirmed",
