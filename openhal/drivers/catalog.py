@@ -17,6 +17,26 @@ PLANNED = ROOT / "drivers" / "planned.json"
 FIELDS = ("name", "tier", "status", "protocols", "families", "hazard_default", "tests", "estimate")
 
 
+DEFAULT_CONFORMANCE = "control"
+
+
+def conformance_for(entry: dict[str, Any]) -> str:
+    """The protocol level a driver declares (ADR 0015).
+
+    A package catalog entry may state it. Otherwise it comes from the driver's DriverInfo, and a
+    driver that can't be imported, or a planned one, gets the default level.
+    """
+    declared = entry.get("conformance")
+    if isinstance(declared, str):
+        return declared
+    from openhal.drivers import registry
+
+    try:
+        return registry.load(entry["name"]).info.conformance
+    except registry.UnknownDriver:
+        return DEFAULT_CONFORMANCE
+
+
 def entries() -> list[dict[str, Any]]:
     found: dict[str, dict[str, Any]] = {}
     for path in sorted(PACKAGE.glob("*/catalog.json")):
@@ -24,9 +44,9 @@ def entries() -> list[dict[str, Any]]:
         missing = [field for field in FIELDS if field not in entry]
         if missing:
             raise ValueError(f"{path} is missing {', '.join(missing)}.")
-        found[entry["name"]] = entry
+        found[entry["name"]] = {**entry, "conformance": conformance_for(entry)}
     for entry in json.loads(PLANNED.read_text()):
-        found.setdefault(entry["name"], entry)
+        found.setdefault(entry["name"], {**entry, "conformance": entry.get("conformance", DEFAULT_CONFORMANCE)})
     return sorted(found.values(), key=lambda entry: (entry["tier"], entry["name"]))
 
 

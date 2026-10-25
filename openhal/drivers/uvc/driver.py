@@ -123,6 +123,7 @@ class UvcDriver(Driver):
         protocols=("USB Video Class through V4L2, AVFoundation or Media Foundation",),
         hazard_default="low",
         summary="USB webcams, read-only frame capture as JPEG.",
+        conformance="core",
         safe_state_support="none",
     )
     params_model: ClassVar[type[Any] | None] = UvcParams
