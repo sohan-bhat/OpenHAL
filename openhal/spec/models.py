@@ -61,6 +61,13 @@ KNOWN_DRIVERS: Final = frozenset(
         "onvif",
         "pylabrobot",
         "lerobot",
+        "bambu",
+        "can",
+        "knx",
+        "matter",
+        "pi-i2c-spi",
+        "upnp",
+        "zigbee-zwave",
         "mock",
     }
 )
@@ -242,6 +249,13 @@ _PRIMARY_PARAM: Final = {
     "onvif": "host",
     "pylabrobot": "backend",
     "lerobot": "robot",
+    "bambu": "host",
+    "can": "channel",
+    "knx": "gateway",
+    "matter": "url",
+    "pi-i2c-spi": "bus",
+    "upnp": "location",
+    "zigbee-zwave": "url",
     "mock": "name",
 }
 PRIMARY_PARAM: Final = _PRIMARY_PARAM
