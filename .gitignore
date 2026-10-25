@@ -16,3 +16,5 @@ website/dist/
 website/.astro/
 .claude/
 .cache/
+
+/docs/design-rounds/
