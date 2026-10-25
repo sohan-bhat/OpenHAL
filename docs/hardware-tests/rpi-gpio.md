@@ -2,14 +2,14 @@
 
 This plan checks the rpi-gpio driver on a real Raspberry Pi with an LED and a push button on a breadboard. Nothing in it switches a mains load. An LED that lights is the smallest write that proves the path works.
 
-Run every step on the Pi, from the repository checkout.
+Run every step on the Pi, from the repository checkout. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
-- A Raspberry Pi with Raspberry Pi OS Bookworm or later, and your user in the `gpio` group.
+- A Raspberry Pi with Raspberry Pi OS Trixie or later, and your user in the `gpio` group. Bookworm's Python 3.11 is older than the 3.12 OpenHAL needs.
 - An LED with a 330 ohm resistor from GPIO 17 (header pin 11) to ground, and a push button from GPIO 27 (header pin 13) to ground.
 - `pinctrl` (part of Raspberry Pi OS) to check pin levels independently.
-- The repository with the rpi-gpio extra, `uv sync --extra rpi-gpio`, and lgpio visible to it (`uv run python -c "import lgpio"`).
+- The repository set up as [README.md](README.md#on-a-raspberry-pi) says, with the rpi-gpio extra. The last command there prints the lgpio module's path.
 - This device file, saved as `my-gpio.hal.yaml`.
 
 ```yaml
@@ -140,13 +140,13 @@ Expected. The count matches the number of presses, with no extra counts from con
 
 ### 6. Confirm the limits
 
-Read the file, decide the limits and the safe state are right, and add this line yourself.
+Read the file and decide the limits and the safe state are right. Then confirm them yourself.
 
-```yaml
-confirmed: { by: <your name>, at: <today's date> }
+```sh
+uv run openhal file confirm my-gpio.hal.yaml
 ```
 
-`uv run openhal file validate my-gpio.hal.yaml` should now say `writable`.
+It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-gpio.hal.yaml` then says `writable`.
 
 ### 7. The smallest safe write
 
@@ -194,19 +194,21 @@ Expected. `done`, the LED lights for two seconds, then `[('breadboard', 'safe')]
 
 ## If something fails
 
-Send the full output of the failing step, `pinctrl get 17,27` before and after, the Pi model, `cat /etc/os-release`, the gpiozero and lgpio versions (`uv run python -c "import gpiozero, lgpio; print(gpiozero.__version__, lgpio.LGPIO_PY_VERSION)"`), and a photo of the wiring.
+Send what [README.md](README.md#if-a-step-fails) lists, plus `pinctrl get 17,27` before and after, the Pi model, `cat /etc/os-release`, the gpiozero version (`uv run python -c "from importlib.metadata import version; print(version('gpiozero'))"`), the lgpio package version (`apt policy python3-lgpio`), and a photo of the wiring.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, rpi-gpio driver
 
+- Plan: docs/hardware-tests/rpi-gpio.md
 - Device: <manufacturer, model>
 - gpiozero and lgpio versions: <version>
 - Host: <Raspberry Pi model, Raspberry Pi OS version>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device file: my-gpio.hal.yaml, sha256 <from its confirmed line>
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -221,4 +223,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 8 stop | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```

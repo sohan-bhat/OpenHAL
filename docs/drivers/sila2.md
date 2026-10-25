@@ -6,7 +6,7 @@ The `sila2` driver talks to lab automation devices through SiLA 2, using the off
 |---|---|
 | Driver name | `sila2` |
 | Library | sila2 0.14.0 (MIT), with grpcio 1.84 (Apache-2.0) and lxml 6 (BSD-3-Clause) |
-| Extra | `uv pip install 'openhal-hub[sila2]'` |
+| Extra | `uv tool install --compile-bytecode "openhal-hub[sila2] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | medium |
 | Conformance | full |
 | Safe state | from the device file. SiLA has no general emergency behavior |
@@ -31,7 +31,7 @@ Every channel and action names its SiLA feature in a `map`. The client loads eac
 - connect() opens the gRPC channel and checks every feature, property, command and parameter the file names, with their types. Anything that doesn't fit stops the connect with a reason.
 - Units come from each data type's Unit constraint label. A channel whose unit can't be converted from it is refused on connect.
 - Unobservable properties are read on demand. Observable properties are subscribed on connect and the newest value is kept, so a read costs no round trip and is unknown until the first value arrives.
-- SiLA properties are read only, so a channel changes through a command with one parameter. Without `readback` it reads back as the last value the driver sent.
+- SiLA properties are read-only, so a channel changes through a command with one parameter. Without `readback` it reads back as the last value the driver sent.
 - An observable command waits up to `action_wait` and answers `done` with its responses, or answers `started` and keeps running on the server.
 - Defined execution errors fail the command with their identifier and message, for example `TooHot`. Constraint violations come back as validation errors.
 - The sila2 client is blocking, so every call runs in a worker thread with a deadline. Connecting gets 8 s, since the client compiles each feature definition.
@@ -47,7 +47,7 @@ SiLA has no general stop command, and the core features have none either, so the
 
 ## Setup
 
-1. Install the extra with `uv pip install 'openhal-hub[sila2]'`.
+1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[sila2] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. Get the server's CA certificate (SiLA servers encrypt by default, many with a self-signed CA in their mDNS record) and save it as a PEM file.
 3. Start from `openhal/drivers/sila2/examples/thermoshaker.hal.yaml`, or call `describe` for a proposal, and keep only what you need.
 4. Run `openhal file validate`, then confirm the limits by hand.
@@ -59,7 +59,7 @@ SiLA has no general stop command, and the core features have none either, so the
 | `host` | required | SiLA server host name or address |
 | `port` | 50052 | SiLA server port |
 | `insecure` | false | Connect without encryption, for development servers only |
-| `ca_file` | none | PEM file with the server's CA certificate |
+| `ca_env` | none | The name of an environment variable that holds the path of the server's CA certificate, a PEM file. The device file never names the path itself |
 | `timeout` | `5 s` | Per call |
 | `action_wait` | `8 s` | How long an observable command waits before answering `started`. At most 9 s |
 
@@ -68,7 +68,7 @@ SiLA has no general stop command, and the core features have none either, so the
 ```yaml
 device: Thermoshaker
 id: thermoshaker
-connect: { sila2: thermoshaker.lab.local, port: 50052, ca_file: ~/.openhal/certs/thermoshaker-ca.pem }
+connect: { sila2: thermoshaker.lab.local, port: 50052, ca_env: THERMOSHAKER_CA }
 read:
   temperature: { unit: degC, stream: true, map: { feature: TemperatureController, property: CurrentTemperature } }
 write:

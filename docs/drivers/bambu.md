@@ -29,7 +29,7 @@ What this driver does with that.
 ## Setup
 
 ```sh
-uv pip install 'openhal-hub[bambu]'
+uv tool install --compile-bytecode "openhal-hub[bambu] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 1. On the printer's screen, open the network settings, turn on LAN-only mode, then turn on Developer Mode. Note the access code and the serial number shown there.
@@ -45,7 +45,7 @@ uv pip install 'openhal-hub[bambu]'
 | `port` | `8883` | MQTT over TLS |
 | `token_env` | `BAMBU_ACCESS_CODE` | The environment variable that holds the LAN access code |
 | `cert_sha256` | none | The SHA-256 fingerprint of the printer's certificate, quoted, with or without colons |
-| `ca_file` | none | Instead of `cert_sha256`, Bambu Lab's authority certificate. The driver then checks the certificate names the serial |
+| `ca_env` | none | Instead of `cert_sha256`, an environment variable that holds the path of Bambu Lab's authority certificate. The driver then checks the certificate names the serial |
 | `timeout` | `5 s` | Login, status and acknowledgement deadline |
 | `reply_wait` | `2 s` | How long to wait for the printer's reply to a command |
 | `safe_stop` | `stop` | What a hub stop sends, `stop` or `pause` |

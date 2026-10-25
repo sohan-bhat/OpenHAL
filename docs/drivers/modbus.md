@@ -13,7 +13,7 @@ The modbus driver reads and writes Modbus RTU devices on a serial line (usually 
 ## Setup
 
 ```sh
-uv pip install 'openhal-hub[modbus]'
+uv tool install --compile-bytecode "openhal-hub[modbus] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 For RTU you need a USB to RS-485 adapter and the bus wired A to A and B to B, with termination at both ends of longer runs. On Linux, add your user to the `dialout` group to open the port.

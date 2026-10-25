@@ -135,6 +135,7 @@ def description_to_sections(data: dict[str, Any]) -> dict[str, Any]:
         channel: dict[str, Any] = {"type": "enum", "values": list(item["s"])} if item.get("s") else {"unit": item["u"]}
         if item.get("e"):
             channel["stream"] = True
+            channel["every"] = f"{max(item['e'], 50) / 1000:g} s"
         if isinstance(item.get("lo"), int | float) and isinstance(item.get("hi"), int | float):
             channel["range"] = [item["lo"], item["hi"]]
         read[item["n"]] = channel

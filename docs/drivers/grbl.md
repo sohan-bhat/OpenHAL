@@ -6,7 +6,7 @@ The `grbl` driver talks to CNC routers, laser engravers and plotters running GRB
 |---|---|
 | Driver name | `grbl` |
 | Library | pyserial 3.5 (BSD-3-Clause), through the shared serial link |
-| Extra | `uv pip install 'openhal-hub[grbl]'` |
+| Extra | `uv tool install --compile-bytecode "openhal-hub[grbl] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | high |
 | Conformance | full |
 | Safe state | native. Feed hold, then soft reset |
@@ -37,7 +37,7 @@ Other names need a `map`.
 | Map | Meaning |
 |---|---|
 | `{ status: x, frame: work }` | One field of the status report. `state`, `alarm`, `x`, `y`, `z`, `a`, `feed`, `spindle` or `pins` |
-| `{ setting: 130 }` | Any numeric `$` setting, read only. The unit comes from the setting, for example mm for `$130` |
+| `{ setting: 130 }` | Any numeric `$` setting, read-only. The unit comes from the setting, for example mm for `$130` |
 | `{ spindle: ccw }` | Spindle with `M4` instead of `M3` |
 | `{ laser: constant }` | Laser with `M3` instead of `M4` |
 | `{ coolant: mist }` | Coolant output `flood` or `mist` |
@@ -65,7 +65,7 @@ A software stop is not an emergency stop. Keep a physical e-stop that cuts motor
 
 ## Setup
 
-1. Install the extra with `uv pip install 'openhal-hub[grbl]'`.
+1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[grbl] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. Close any sender that holds the port (UGS, Candle, LightBurn, bCNC). The driver opens the port exclusively.
 3. Start from `openhal/drivers/grbl/examples/3018-router.hal.yaml`. Set `match.usb` or the port path, and set limits that fit your machine and work.
 4. Run `openhal file validate`, then confirm the limits by hand.

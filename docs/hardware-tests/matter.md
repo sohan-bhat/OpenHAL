@@ -2,7 +2,7 @@
 
 This plan checks the matter driver against a real Matter Server and a real Matter device. It was made for an Eve Energy plug with the example file, on the Home Assistant Matter Server add-on. matterjs-server and a standalone python-matter-server work the same way.
 
-Run every step from the repository checkout. Plug nothing into the plug.
+Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Plug nothing into the plug.
 
 ## What you need
 
@@ -127,13 +127,13 @@ Expected. `DriverError` saying the Matter Server could not be opened. Start it a
 
 ### 7. Confirm the limits
 
-Read the file, decide the limits and the safe state are right, and add this line yourself.
+Read the file and decide the limits and the safe state are right. Then confirm them yourself.
 
-```yaml
-confirmed: { by: <your name>, at: <today's date> }
+```sh
+uv run openhal file confirm my-plug.hal.yaml
 ```
 
-`uv run openhal file validate my-plug.hal.yaml` should now say `writable`.
+It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-plug.hal.yaml` then says `writable`.
 
 ### 8. The smallest safe action
 
@@ -165,19 +165,21 @@ Expected. `enclosure-plug safe`, and the plug turns off.
 
 ## If something fails
 
-Send the full output of the failing step, the server's name and version and its log lines for the node, the device's vendor, product and software version from step 4, and your device file.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the server's name and version and its log lines for the node, the device's vendor, product and software version from step 4, and your device file.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, matter driver
 
+- Plan: docs/hardware-tests/matter.md
 - Device: <vendor, product, software version, node id>
 - Server: <python-matter-server, matterjs-server or the Home Assistant add-on, and version>
 - Host: <computer, operating system>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device file: <path>, sha256 <from its confirmed line>
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -194,4 +196,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 10 stop | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```

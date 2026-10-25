@@ -53,7 +53,7 @@ A Conformance Level names what a Hub or a Driver supports. Each level includes t
 | Level | Hub implements | Driver supports |
 |---|---|---|
 | `core` | `hal/initialize`, `hal/devices/list`, `hal/devices/describe`, `hal/read`, `hal/readMany` and `hal/value` | Identify, connect, describe, read and close. A read-only camera Driver is Core |
-| `control` | Core plus `hal/write`, `hal/dryRun`, `hal/planCheck`, `hal/stop`, `hal/unlock`, `hal/blocked` and `hal/stopped`, all through a Safety Kernel that meets [Safety](safety.md) | Core plus writes through Grants and a safe state |
+| `control` | Core plus `hal/write`, `hal/dryRun`, `hal/planCheck`, `hal/stop`, `hal/unlock`, `hal/blocked` and `hal/stopped`, all through a Safety Kernel that meets [Safety](safety.md) | Core plus channel changes through Grants and a safe state |
 | `full` | Control plus `hal/action`, the confirmation methods, routine methods, `hal/audit/query` and `hal/confirmationRequested` | Control plus actions through Grants |
 
 1. A Hub MUST declare its level in the `hal/initialize` result. The reference Hub is `full`.
@@ -62,26 +62,26 @@ A Conformance Level names what a Hub or a Driver supports. Each level includes t
 
 ## Conformance suite
 
-The suite in `openhal/conformance/suite.py` runs a Driver against its simulator inside a real Safety Kernel. It spies on `_write` and `_action`, so it can prove that blocked commands and calls without a Grant never reach the protocol layer. A Driver supplies a `ConformanceCase` with a Device File, a factory, and optional hooks to break the connection and to slow the Device down.
+The suite in `openhal/conformance/suite.py` runs a Driver against its simulator inside a real Safety Kernel. It spies on `_write` and `_action`, so it can prove that blocked commands and calls without a Grant never reach the protocol code. A Driver supplies a `ConformanceCase` with a Device File, a factory, and optional hooks to break the connection and to slow the Device down.
 
 The suite tests the declared level and nothing above it. A check that doesn't apply to a Driver is skipped, not failed.
 
 | Check | Level | Passes when |
 |---|---|---|
-| identify | Core | `identify()` returns a mapping of strings |
-| connect | Core | The Safety Kernel connects the Device |
-| describe | Core | `describe()` returns none or only known sections |
-| read every channel | Core | Every readable channel returns a Reading for that channel in the file's unit |
-| disconnect and reconnect | Core | `health()` reports the broken connection, and every channel reads again after reconnecting |
-| timeout handling | Core | A slow read times out or raises `DriverError` |
-| close | Core | `close()` returns |
-| write inside limits | Control | An allowed write reaches the Driver exactly once |
-| write outside limits is blocked before the Driver | Control | A write above `max` is blocked and never reaches the Driver |
-| no write without a kernel Grant | Control | `write` without a Grant raises and nothing reaches the protocol layer |
-| action inside limits | Full | An action with every argument inside its limits is `done` and reaches the Driver exactly once. When no action can run in the simulator's state, the check is skipped and names the reason |
-| action outside limits is blocked before the Driver | Full | An action with a numeric argument above its `max` is blocked and never reaches the Driver |
-| no action without a kernel Grant | Full | `action` without a Grant raises and nothing reaches the protocol layer |
-| concurrent access | Control | Four racing writes each end `done`, `blocked` or `failed` |
-| safe state | Control | A stop leaves the Device in any state but `failed` |
+| `identify` | Core | `identify()` returns a mapping of strings |
+| `connect` | Core | The Safety Kernel connects the Device |
+| `describe` | Core | `describe()` returns none or only known sections |
+| `read every channel` | Core | Every readable channel returns a Reading for that channel in the file's unit |
+| `disconnect and reconnect` | Core | `health()` reports the broken connection, and every channel reads again after reconnecting |
+| `timeout handling` | Core | A slow read times out or raises `DriverError` |
+| `close` | Core | `close()` returns |
+| `write inside limits` | Control | An allowed channel change reaches the Driver exactly once |
+| `write outside limits is blocked before the driver` | Control | A value above `max` is blocked and never reaches the Driver |
+| `no write without a kernel grant` | Control | `write` without a Grant raises and nothing reaches the protocol code |
+| `action inside limits` | Full | An action with every argument inside its limits is `done` and reaches the Driver exactly once. When no action can run in the simulator's state, the check is skipped and names the reason |
+| `action outside limits is blocked before the driver` | Full | An action with a numeric argument above its `max` is blocked and never reaches the Driver |
+| `no action without a kernel grant` | Full | `action` without a Grant raises and nothing reaches the protocol code |
+| `concurrent access` | Control | Four racing commands each end `done`, `blocked` or `failed` |
+| `safe state` | Control | A stop leaves the Device in any state but `failed` |
 
 A `full` Driver passes every Control check and the three Full checks.

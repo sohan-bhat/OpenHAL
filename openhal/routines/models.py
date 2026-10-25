@@ -1,18 +1,15 @@
 """Declarative YAML routines (ADR 0007).
 
-A routine is data. Triggers say when it runs, steps say what it does, and every write or action a
-step produces goes through the safety kernel like any other command.
+A routine is data. Triggers say when it runs, steps say what it does, and every command a step
+produces goes through the safety kernel like any other command.
 
-    id: keep-cool
+    id: morning-water
     triggers:
-      - every: 30 s
-      - when: "desk-fan.temperature > 28 degC"
+      - every: 1 h
     steps:
-      - if: "desk-fan.temperature > 28 degC"
+      - if: "plant-waterer.soil_moisture < 35 %"
         then:
-          - write: { device: desk-fan, channel: fan_speed, value: 60 % }
-        else:
-          - write: { device: desk-fan, channel: fan_speed, value: 20 % }
+          - action: { device: plant-waterer, action: water, args: { duration: 20 s } }
 """
 
 from __future__ import annotations

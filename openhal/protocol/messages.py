@@ -27,9 +27,9 @@ RequestStatus = Literal["pending", "approved", "rejected", "expired", "cancelled
 Value = str | bool | int | float
 """A channel value. A number travels with its unit in a separate `unit` field (ADR 0016)."""
 
-DeviceId = Annotated[str, Field(min_length=1, max_length=48, description="A device id, for example desk-fan.")]
-ChannelName = Annotated[str, Field(min_length=1, max_length=48, description="A channel, for example fan_speed.")]
-ActionName = Annotated[str, Field(min_length=1, max_length=48, description="An action, for example spin_test.")]
+DeviceId = Annotated[str, Field(min_length=1, max_length=48, description="A device id, for example plant-waterer.")]
+ChannelName = Annotated[str, Field(min_length=1, max_length=48, description="A channel, for example soil_moisture.")]
+ActionName = Annotated[str, Field(min_length=1, max_length=48, description="An action, for example water.")]
 RequestId = Annotated[str, Field(min_length=1, max_length=64, description="A confirmation request id.")]
 Timestamp = Annotated[str, Field(description="An RFC 3339 time in UTC, for example 2026-10-24T14:02:00Z.")]
 
@@ -121,7 +121,7 @@ class ErrorData(Message):
     per: Quantity | None = Field(default=None, description="The window of an action's max_runs.")
     interlock: str | None = Field(default=None, description="The reason the device file gives for an interlock.")
     expected: Quantity | None = Field(default=None, description="The shape a number sent as one string should take.")
-    file: str | None = Field(default=None, description="The Device File, for example desk-fan.hal.yaml.")
+    file: str | None = Field(default=None, description="The Device File, for example plant-waterer.hal.yaml.")
     confirmed_by: str | None = Field(default=None, description="Who confirmed the limit.")
     confirmed_at: str | None = Field(default=None, description="When the limit was confirmed, as 2026-10-24.")
     request_id: str | None = None
@@ -291,7 +291,7 @@ class DeviceDescription(DeviceSummary):
     watchdog: WatchdogInfo
     confirmed: Confirmed | None = Field(description="The file-level confirmation of the limits.")
     unconfirmed: list[str] = Field(description="Limits no person has confirmed yet.")
-    file: str | None = Field(description="The Device File, for example desk-fan.hal.yaml.")
+    file: str | None = Field(description="The Device File, for example plant-waterer.hal.yaml.")
     notes: str | None = Field(default=None, description="Device File notes, inside a device-data block.")
 
 

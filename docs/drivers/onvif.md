@@ -14,7 +14,7 @@ The onvif driver reads an ONVIF camera's identity and stream addresses and moves
 ## Setup
 
 ```sh
-uv pip install 'openhal-hub[onvif]'
+uv tool install --compile-bytecode "openhal-hub[onvif] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 Turn ONVIF on in the camera's web interface and create an ONVIF user. Put its password in an environment variable, `export CAMERA_PASSWORD=...`. Keep the camera's clock on NTP. The driver corrects for clock drift, but some cameras log every request with a wrong time.

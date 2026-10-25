@@ -90,7 +90,7 @@ async def test_streams_structures_and_unit_conversion(sim: ThermoShakerSim) -> N
     await eventually(lambda: _value(bench, "temperature", pytest.approx(86.0)))
     assert (await bench.read("lid_closed")).value is True
     assert (await bench.read("mode")).value == "idle"
-    assert (await bench.read("speed")).value == 0.0
+    await eventually(lambda: _value(bench, "speed", 0.0))
     await bench.close()
 
 
@@ -293,7 +293,12 @@ def test_bad_maps_are_rejected(snippet: str, message: str) -> None:
 
 @pytest.mark.parametrize(
     ("params", "message"),
-    [("timeout: 0 s", "timeout"), ("action_wait: 20 s", "action_wait"), ("insecure: true, ca_file: ca.pem", "ca_file")],
+    [
+        ("timeout: 0 s", "timeout"),
+        ("action_wait: 20 s", "action_wait"),
+        ("insecure: true, ca_env: SILA_CA", "ca_env"),
+        ("ca_file: ca.pem", "ca_file"),
+    ],
 )
 def test_bad_params_are_rejected(params: str, message: str) -> None:
     with pytest.raises(ValueError, match=message):
@@ -346,3 +351,18 @@ def test_sila2_loads_when_protobuf_was_imported_first() -> None:
     )
     assert result.returncode == 0, result.stderr[-2000:]
     assert "server Simulated thermoshaker" in result.stdout
+
+
+def test_the_ca_certificate_path_comes_from_the_environment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from openhal.drivers.sila2.driver import _certificate
+
+    monkeypatch.delenv("SILA_TEST_CA", raising=False)
+    with pytest.raises(DriverError, match="Set the SILA_TEST_CA environment variable"):
+        _certificate("SILA_TEST_CA")
+    pem = tmp_path / "ca.pem"
+    pem.write_bytes(b"-----BEGIN CERTIFICATE-----\n")
+    monkeypatch.setenv("SILA_TEST_CA", str(pem))
+    assert _certificate("SILA_TEST_CA") == b"-----BEGIN CERTIFICATE-----\n"
+    monkeypatch.setenv("SILA_TEST_CA", str(tmp_path / "missing.pem"))
+    with pytest.raises(DriverError, match="Could not read the CA certificate"):
+        _certificate("SILA_TEST_CA")

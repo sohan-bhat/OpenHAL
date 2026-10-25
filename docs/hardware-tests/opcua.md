@@ -1,13 +1,13 @@
 # Hardware test plan for the opcua driver
 
-This plan checks the OPC UA driver against a real OPC UA server, such as a PLC. It starts with read-only checks and ends with the smallest safe change. Use a variable that drives nothing physical for the first change, or a machine that is safe to run with its own e-stop in reach. Stop at the first step that fails and send back the report below.
+This plan checks the OPC UA driver against a real OPC UA server, such as a PLC. It starts with read-only checks and ends with the smallest safe change. Use a variable that drives nothing physical for the first change, or a machine that is safe to run with its own e-stop in reach. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
 - An OPC UA server reachable from this machine, its endpoint URL and, if it needs one, a user and password.
 - The node ids of two readable variables, one with engineering units, and of one writable variable that is safe to change, from the PLC tool or UaExpert.
 - Optional. A method that is safe to call.
-- OpenHAL installed with `uv pip install 'openhal-hub[opcua]'`.
+- A checkout of this repository with the opcua extra, `uv sync --extra opcua`.
 
 ## The read-only probe
 
@@ -43,7 +43,7 @@ Connecting opens a session and reads node classes, data types, access levels and
 ## Step 1. Discovery (read-only)
 
 ```
-python -c "import asyncio; from openhal.drivers.opcua.driver import OpcuaDriver; OpcuaDriver.discovery_urls = ['opc.tcp://<plc>:4840']; print(asyncio.run(OpcuaDriver.discover()))"
+uv run python -c "import asyncio; from openhal.drivers.opcua.driver import OpcuaDriver; OpcuaDriver.discovery_urls = ['opc.tcp://<plc>:4840']; print(asyncio.run(OpcuaDriver.discover()))"
 ```
 
 Expected. At least one entry whose address is the server's endpoint and whose label is its application name.
@@ -52,7 +52,7 @@ Expected. At least one entry whose address is the server's endpoint and whose la
 
 ```
 cp openhal/drivers/opcua/examples/dosing-pump.hal.yaml ./plc.hal.yaml
-openhal file validate ./plc.hal.yaml
+uv run openhal file validate ./plc.hal.yaml
 ```
 
 Set the endpoint and replace the node ids with yours. If the server needs a login, add `user` and `token_env`, and export the password in that variable. Expected. `valid ./plc.hal.yaml (dosing, medium hazard, read-only)`.
@@ -60,7 +60,7 @@ Set the endpoint and replace the node ids with yours. If the server needs a logi
 ## Step 3. Identify and read (read-only)
 
 ```
-python probe.py ./plc.hal.yaml
+uv run python probe.py ./plc.hal.yaml
 ```
 
 Expected.
@@ -86,22 +86,23 @@ Expected. The connect fails with `... is in degC, which doesn't convert to the f
 ## Step 5. Network loss during reads (read-only)
 
 ```
-while true; do python probe.py ./plc.hal.yaml | grep tank_level; sleep 2; done
+while true; do uv run python probe.py ./plc.hal.yaml | grep tank_level; sleep 2; done
 ```
 
 Unplug this machine's network cable for ten seconds, then plug it back in. Expected. Runs during the outage fail with a connection or timeout error. Later runs succeed. Stop with Ctrl-C.
 
 ## Step 6. Start the hub
 
-Confirm the limits by adding `confirmed: { by: <your name>, at: <today> }`, then load the file into a fresh hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
-openhal init
+uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal file confirm ./plc.hal.yaml
 cp ./plc.hal.yaml "$OPENHAL_HOME/devices/"
-openhald &
-openhal devices
-openhal read dosing.tank_level
+bash docs/hardware-tests/hub.sh start
+uv run openhal devices
+uv run openhal read dosing.tank_level
 ```
 
 Expected. `dosing` is connected and its limits are confirmed.
@@ -109,7 +110,7 @@ Expected. `dosing` is connected and its limits are confirmed.
 ## Step 7. A blocked change never reaches the server
 
 ```
-openhal write dosing.speed "5000 rpm"
+uv run openhal write dosing.speed "5000 rpm"
 ```
 
 Expected. Blocked with code `above_max`. The PLC tool shows no change.
@@ -117,11 +118,11 @@ Expected. Blocked with code `above_max`. The PLC tool shows no change.
 ## Step 8. The smallest safe change, then stop
 
 ```
-openhal write dosing.speed "100 rpm"
-openhal read dosing.speed
-openhal stop
-openhal read dosing.speed
-openhal unlock
+uv run openhal write dosing.speed "100 rpm"
+uv run openhal read dosing.speed
+uv run openhal stop
+uv run openhal read dosing.speed
+uv run openhal unlock
 ```
 
 Expected. The PLC tool shows 100, and the read says `100 rpm`. After the stop the file's safe state runs, the Stop method if you kept it, then 0, and the read says `0 rpm`. `openhal unlock` asks you to type `unlock`.
@@ -129,18 +130,24 @@ Expected. The PLC tool shows 100, and the read says `100 rpm`. After the stop th
 ## Step 9. A method call (optional)
 
 ```
-openhal action dosing.stop
+uv run openhal action dosing.stop
 ```
 
 Expected. Done. The PLC tool shows the method ran.
 
-Stop the hub with `kill %1` when done.
+Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
+
+## If something fails
+
+Send what [README.md](README.md#if-a-step-fails) lists, plus the endpoint and security mode, what UaExpert or the PLC tool shows for the node (data type, access level, engineering units), and the server's product and version. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
 
 ## Report template
 
 ```
-Driver: opcua
-OpenHAL version:
+Plan: docs/hardware-tests/opcua.md
+Tested by and date:
+OpenHAL: (uv run openhal --version, and git rev-parse --short HEAD)
+Device file: (path, and the sha256 in its confirmed line)
 Server: (PLC or product, firmware, OPC UA stack)
 Security and login used:
 Step 1 discovery:                pass / fail
@@ -152,8 +159,9 @@ Step 6 hub lists the device:     pass / fail
 Step 7 blocked change:           pass / fail
 Step 8 smallest change and stop: pass / fail
 Step 9 method call:              pass / fail / skipped
+Audit chain: (the line uv run openhal log --verify prints)
 Anything unexpected (paste exact output):
-Result: verified-on-hardware / failed at step N
+Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-A passing report lets the device file set `provenance.verification.status: verified-on-hardware` with `report:` pointing at the saved report.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.

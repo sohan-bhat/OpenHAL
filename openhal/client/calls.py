@@ -64,7 +64,7 @@ def split_target(target: str) -> tuple[str, str]:
     """Split `device.channel` or `device.action`. Device ids can't contain dots, names can't either."""
     device, dot, name = target.partition(".")
     if not dot or not device or not name:
-        raise ValueError(f"Expected device.channel, for example desk-fan.fan_speed. Got {target!r}.")
+        raise ValueError(f"Expected device.channel, for example plant-waterer.soil_moisture. Got {target!r}.")
     return device, name
 
 

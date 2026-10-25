@@ -6,7 +6,7 @@ The `opcua` driver talks to OPC UA servers, the interface of most current PLCs, 
 |---|---|
 | Driver name | `opcua` |
 | Library | asyncua 2.1.0 (LGPL-3.0 or later, used unmodified as a library) |
-| Extra | `uv pip install 'openhal-hub[opcua]'` |
+| Extra | `uv tool install --compile-bytecode "openhal-hub[opcua] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | medium |
 | Conformance | full |
 | Safe state | from the device file. OPC UA has no general emergency behavior |
@@ -43,7 +43,7 @@ OPC UA has no general stop, so the driver has no native safe state. Give the dev
 
 ## Setup
 
-1. Install the extra with `uv pip install 'openhal-hub[opcua]'`.
+1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[opcua] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. Find the endpoint URL and the node ids with the PLC's tool or a generic client such as UaExpert.
 3. Start from `openhal/drivers/opcua/examples/dosing-pump.hal.yaml`, or call `describe` for a proposal.
 4. Run `openhal file validate`, then confirm the limits by hand.

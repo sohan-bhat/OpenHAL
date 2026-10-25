@@ -6,7 +6,7 @@ The `alpaca` driver talks to astronomy devices through ASCOM Alpaca, the REST fo
 |---|---|
 | Driver name | `alpaca` |
 | Library | httpx 0.28.1 (BSD-3-Clause), already a hub dependency |
-| Extra | `uv pip install 'openhal-hub[alpaca]'` |
+| Extra | `uv tool install --compile-bytecode "openhal-hub[alpaca] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | medium |
 | Conformance | full |
 | Safe state | native. AbortSlew, Halt or AbortExposure by device type |
@@ -59,7 +59,7 @@ Telescopes and domes get AbortSlew, focusers Halt and cameras AbortExposure, on 
 
 ## Setup
 
-1. Install the extra with `uv pip install 'openhal-hub[alpaca]'`.
+1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[alpaca] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. Start the Alpaca server. That is ASCOM Remote for ASCOM drivers on Windows, or the device's own server.
 3. Start from `openhal/drivers/alpaca/examples/eq-mount.hal.yaml`, set the host, port and device number, and set limits for your site.
 4. Run `openhal file validate`, then confirm the limits by hand.

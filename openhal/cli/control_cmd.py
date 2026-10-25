@@ -74,7 +74,7 @@ def register(app: typer.Typer) -> None:
     @app.command()
     @handled
     def read(
-        targets: list[str] = typer.Argument(..., help="One or more device.channel, for example desk-fan.temperature."),  # noqa: B008
+        targets: list[str] = typer.Argument(..., help="One or more device.channel, such as plant-waterer.tank."),  # noqa: B008
         as_json: bool = typer.Option(False, "--json", help="Print JSON."),
     ) -> None:
         """Read channels now."""
@@ -96,7 +96,7 @@ def register(app: typer.Typer) -> None:
     @app.command()
     @handled
     def write(
-        target: str = typer.Argument(..., help="device.channel, for example desk-fan.fan_speed."),
+        target: str = typer.Argument(..., help="device.channel, for example led-strip.brightness."),
         value: list[str] = typer.Argument(..., help="The value with a unit, for example 60 % or 25 degC."),  # noqa: B008
         as_json: bool = typer.Option(False, "--json", help="Print the decision as JSON."),
     ) -> None:
@@ -131,20 +131,27 @@ def register(app: typer.Typer) -> None:
     def dry_run(
         target: str = typer.Argument(None, help="device.channel or device.action."),
         rest: list[str] = typer.Argument(None, help="The value, or key=value action arguments."),  # noqa: B008
-        plan: Path = typer.Option(None, "--file", "-f", help="A YAML or JSON list of commands to check in order."),  # noqa: B008
+        plan: Path = typer.Option(  # noqa: B008
+            None, "--file", "-f", exists=True, dir_okay=False, help="A YAML or JSON list of commands to check in order."
+        ),
         as_json: bool = typer.Option(False, "--json", help="Print the decisions as JSON."),
     ) -> None:
         """Check commands against the current state without running them. Nothing reaches a device."""
         with hub() as client:
             if plan is not None:
-                loaded = yaml.safe_load(plan.read_text(encoding="utf-8"))
+                try:
+                    loaded = yaml.safe_load(plan.read_text(encoding="utf-8"))
+                except yaml.YAMLError as exc:
+                    raise ValueError(f"{plan} is not valid YAML or JSON. {exc}") from exc
                 if not isinstance(loaded, list) or not all(isinstance(item, dict) for item in loaded):
                     raise ValueError(f"{plan} must hold a list of commands.")
                 commands = [_shaped(client, item) for item in loaded]
             elif target:
                 commands = [_command(client, target, rest or [])]
             else:
-                raise ValueError("Give a target such as desk-fan.fan_speed 60 %, or --file with a list of commands.")
+                raise ValueError(
+                    "Give a target such as plant-waterer.water duration=20s, or --file with a list of commands."
+                )
             decisions = client.dry_run(commands)
         if as_json:
             print_json(decisions)

@@ -6,7 +6,7 @@ The `firmata` driver talks to Arduino-compatible boards running StandardFirmata.
 |---|---|
 | Driver name | `firmata` |
 | Library | own Firmata client (`openhal/drivers/firmata/protocol.py`) on pyserial 3.5 (BSD-3-Clause) |
-| Extra | `uv pip install 'openhal-hub[firmata]'` |
+| Extra | `uv tool install --compile-bytecode "openhal-hub[firmata] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | low |
 | Safe state | from the device file only |
 | Self-describe | yes, from the board's capability report |
@@ -45,7 +45,7 @@ Output pins are not touched until the first granted write. Setting a pin to outp
 ## Setup
 
 1. Upload StandardFirmata from the Arduino IDE (File, Examples, Firmata, StandardFirmata).
-2. Install the extra with `uv pip install 'openhal-hub[firmata]'`.
+2. Install the extra with `uv tool install --compile-bytecode "openhal-hub[firmata] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 3. Start from `openhal/drivers/firmata/examples/uno-desk-kit.hal.yaml` and keep only the pins that are wired.
 4. Validate it with `openhal file validate`, then confirm the limits by hand.
 

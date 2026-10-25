@@ -6,7 +6,7 @@ The `serial` driver talks to any device with a line-based text protocol over a s
 |---|---|
 | Driver name | `serial` |
 | Library | pyserial 3.5 (BSD-3-Clause) |
-| Extra | `uv pip install 'openhal-hub[serial]'` |
+| Extra | `uv tool install --compile-bytecode "openhal-hub[serial] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Transports | USB CDC and UART device paths, `socket://host:port`, `rfc2217://host:port` |
 | Hazard default | medium |
 | Safe state | from the device file only (the protocol has no emergency behavior) |
@@ -23,7 +23,7 @@ The `serial` driver talks to any device with a line-based text protocol over a s
 
 ## Setup
 
-1. Install the extra with `uv pip install 'openhal-hub[serial]'`.
+1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[serial] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. Find the port with `openhal discover` or `python -m serial.tools.list_ports -v`.
 3. Write a device file. Each read channel needs a `map` with `query` or `listen`. Each write channel and action needs a `map` with `command`.
 4. Validate it with `openhal file validate my-device.hal.yaml`.

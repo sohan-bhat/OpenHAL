@@ -1,12 +1,12 @@
 # Hardware test plan for the moonraker driver
 
-This plan checks the Moonraker driver on a real Klipper printer. It starts with read-only checks and ends with the smallest safe writes. Stay next to the printer for every write step. Stop at the first step that fails and send back the report below.
+This plan checks the Moonraker driver on a real Klipper printer. It starts with read-only checks and ends with the smallest safe writes. Stay next to the printer for every write step. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
 - A Klipper printer with Moonraker, reachable from the computer that runs OpenHAL. Mainsail or Fluidd open in a browser helps to watch it.
 - The printer idle, with no print running.
-- OpenHAL installed with `uv pip install 'openhal-hub[moonraker]'`.
+- A checkout of this repository with the moonraker extra, `uv sync --extra moonraker`.
 - If Moonraker requires an API key, the key in an environment variable, for example `export MOONRAKER_API_KEY=...`.
 
 ## The read-only probe
@@ -50,15 +50,15 @@ Add `-H "X-Api-Key: $MOONRAKER_API_KEY"` when a key is needed. Expected. JSON wi
 
 ```
 cp openhal/drivers/moonraker/examples/voron-2-4.hal.yaml ./printer.hal.yaml
-openhal file validate ./printer.hal.yaml
+uv run openhal file validate ./printer.hal.yaml
 ```
 
-Set `connect.moonraker` to your host, `match.moonraker.hostname` to the host name from step 1, and remove `token_env` if you have no key. Remove `chamber_temp` and `exhaust_fan` if the printer has no such objects. Expected. `valid ./printer.hal.yaml (voron, medium hazard, read-only)`.
+Set `connect.moonraker` to your host, `match.moonraker.hostname` to the host name from step 1, and remove `token_env` if you have no key. Remove `chamber_temp` and `exhaust_fan` if the printer has no such objects. Add `homed_axes: { type: string, every: 2 s }` under `read`, because step 10 reads it. Expected. `valid ./printer.hal.yaml (voron, medium hazard, read-only)`.
 
 ## Step 3. Identify, describe and read (read-only)
 
 ```
-python probe.py ./printer.hal.yaml
+uv run python probe.py ./printer.hal.yaml
 ```
 
 Expected.
@@ -81,22 +81,23 @@ Temperatures match Mainsail or Fluidd. Run it once with `transport: http` and on
 ## Step 4. Network loss (read-only)
 
 ```
-while true; do python probe.py ./printer.hal.yaml; sleep 2; done
+while true; do uv run python probe.py ./printer.hal.yaml; sleep 2; done
 ```
 
 Unplug the printer host's network cable or turn off its Wi-Fi for ten seconds, then restore it. Expected. Runs fail with `Could not reach Moonraker` or `Could not open the Moonraker WebSocket` and work again afterwards. Stop with Ctrl-C.
 
 ## Step 5. Start the hub
 
-Confirm the limits by adding `confirmed: { by: <your name>, at: <today> }`, then load the file into a fresh hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
-openhal init
+uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal file confirm ./printer.hal.yaml
 cp ./printer.hal.yaml "$OPENHAL_HOME/devices/"
-openhald &
-openhal devices
-openhal read voron.extruder_temp
+bash docs/hardware-tests/hub.sh start
+uv run openhal devices
+uv run openhal read voron.extruder_temp
 ```
 
 Expected. `voron` is connected and writable.
@@ -104,9 +105,9 @@ Expected. `voron` is connected and writable.
 ## Step 6. The smallest safe write, the part fan
 
 ```
-openhal write voron.fan_speed "20 %"
-openhal read voron.fan_speed
-openhal write voron.fan_speed "0 %"
+uv run openhal write voron.fan_speed "20 %"
+uv run openhal read voron.fan_speed
+uv run openhal write voron.fan_speed "0 %"
 ```
 
 Expected. The part fan spins slowly, Mainsail shows about 20 %, then it stops.
@@ -114,11 +115,11 @@ Expected. The part fan spins slowly, Mainsail shows about 20 %, then it stops.
 ## Step 7. A low bed target and the safe state
 
 ```
-openhal write voron.bed_target "35 degC"
-openhal read voron.bed_target
-openhal stop
-openhal read voron.bed_target
-openhal unlock
+uv run openhal write voron.bed_target "35 degC"
+uv run openhal read voron.bed_target
+uv run openhal stop
+uv run openhal read voron.bed_target
+uv run openhal unlock
 ```
 
 Expected. Mainsail shows a bed target of 35. After `openhal stop` the target is 0 and Klipper stays `ready`. The console shows `TURN_OFF_HEATERS`.
@@ -128,7 +129,7 @@ Expected. Mainsail shows a bed target of 35. After `openhal stop` the target is 
 Do this step only when the bed's `max_temp` in printer.cfg is below the file's limit (110 in the example). Look it up first, for example 100. Then ask for a value between the two, such as 105.
 
 ```
-openhal write voron.bed_target "105 degC"
+uv run openhal write voron.bed_target "105 degC"
 ```
 
 Expected. Klipper refuses it and the command fails with Klipper's message, which contains `out of range`. The target stays 0. If Mainsail shows a new target at all, set it back to 0 at once and report the step as failed.
@@ -136,7 +137,7 @@ Expected. Klipper refuses it and the command fails with Klipper's message, which
 ## Step 9. A blocked write never reaches the printer
 
 ```
-openhal write voron.bed_target "150 degC"
+uv run openhal write voron.bed_target "150 degC"
 ```
 
 Expected. Blocked with code `above_max`. Nothing appears in the Klipper console.
@@ -144,17 +145,23 @@ Expected. Blocked with code `above_max`. Nothing appears in the Klipper console.
 ## Step 10. Homing (optional, needs a clear bed)
 
 ```
-openhal action voron.home axes=all
-openhal read voron.homed_axes
+uv run openhal action voron.home axes=all
+uv run openhal read voron.homed_axes
 ```
 
-Expected. The printer homes. The action answers `done`, or `started` if homing takes longer than 8 s. `homed_axes` reads `xyz` afterwards. Stop the hub with `kill %1` when done.
+Expected. The printer homes. The action answers `done`, or `started` if homing takes longer than 8 s. `homed_axes` reads `xyz` afterwards, inside a `device-data` block because it is text from the printer. Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
+
+## If something fails
+
+Send what [README.md](README.md#if-a-step-fails) lists, plus the reply of the `curl` command from step 1, the Klipper and Moonraker versions from Mainsail or Fluidd, the Klipper console lines from the same minutes, and the transport you used. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
 
 ## Report template
 
 ```
-Driver: moonraker
-OpenHAL version:
+Plan: docs/hardware-tests/moonraker.md
+Tested by and date:
+OpenHAL: (uv run openhal --version, and git rev-parse --short HEAD)
+Device file: (path, and the sha256 in its confirmed line)
 Printer, Klipper and Moonraker versions:
 Transport tested: http / websocket / both
 API key in use: yes / no
@@ -168,8 +175,9 @@ Step 7 bed target and stop:      pass / fail
 Step 8 Klipper limit reported:   pass / fail / skipped   message:
 Step 9 blocked write:            pass / fail
 Step 10 homing:                  pass / fail / skipped   (done or started)
+Audit chain: (the line uv run openhal log --verify prints)
 Anything unexpected (paste exact output):
-Result: verified-on-hardware / failed at step N
+Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-A passing report lets the device file set `provenance.verification.status: verified-on-hardware` with `report:` pointing at the saved report.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.

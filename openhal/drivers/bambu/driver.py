@@ -22,8 +22,8 @@ and takes JSON commands on `device/<serial>/request`.
 
 TLS. The printer's certificate is signed by Bambu Lab's own authority and names the serial number,
 not the address, so ordinary verification fails. The driver needs `cert_sha256`, the certificate's
-fingerprint, which it checks before the access code is sent, or `ca_file` with Bambu Lab's
-authority certificate, in which case it checks the certificate names the serial number.
+fingerprint, which it checks before the access code is sent, or `ca_env`, an environment variable
+holding the path of Bambu Lab's authority certificate, in which case it checks the certificate names the serial number.
 
 Safe state. Native. The driver sends `stop` (or `pause` with `safe_stop: pause`). The printer's
 firmware ends the print, turns the heaters off and parks the head.
@@ -207,11 +207,19 @@ class BambuDriver(Driver):
     def _context(self) -> ssl.SSLContext:
         context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
         context.check_hostname = False
-        if self.settings.ca_file is not None:
+        if self.settings.ca_env is not None:
+            path = self._environ(self.settings.ca_env)
+            if not path:
+                raise DriverError(
+                    f"Set the {self.settings.ca_env} environment variable to the path of Bambu Lab's authority "
+                    "certificate."
+                )
             try:
-                context.load_verify_locations(cafile=self.settings.ca_file)
+                context.load_verify_locations(cafile=os.path.expanduser(path))
             except (OSError, ssl.SSLError) as exc:
-                raise DriverError(f"Could not load ca_file {self.settings.ca_file} ({exc}).") from None
+                raise DriverError(
+                    f"Could not load the CA certificate named by {self.settings.ca_env} ({exc})."
+                ) from None
         else:
             context.verify_mode = ssl.CERT_NONE
         return context

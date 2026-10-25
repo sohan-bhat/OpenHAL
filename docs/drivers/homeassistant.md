@@ -6,7 +6,7 @@ The `homeassistant` driver is a bridge. It exposes a few Home Assistant entities
 |---|---|
 | Driver name | `homeassistant` |
 | Libraries | httpx 0.28.1 (BSD-3-Clause), websockets 17.3 (BSD-3-Clause) |
-| Extra | `uv pip install 'openhal-hub[homeassistant]'` |
+| Extra | `uv tool install --compile-bytecode "openhal-hub[homeassistant] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | low (set the file's `hazard` to what the entities really drive) |
 | Safe state | from the device file only |
 | Self-describe | yes, the selected entities with their units and Home Assistant's own limits as suggestions |
@@ -50,7 +50,7 @@ Both send the long-lived access token from the environment variable named in `to
 
 ## Setup
 
-1. Install the extra with `uv pip install 'openhal-hub[homeassistant]'`.
+1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[homeassistant] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. In Home Assistant, open your profile, Security, and create a long-lived access token. A non-admin user that can see only the needed entities is the safest choice.
 3. Export it, for example `export HA_TOKEN=...`, where the hub runs.
 4. Start from `openhal/drivers/homeassistant/examples/office-climate.hal.yaml`, or from `describe()`.

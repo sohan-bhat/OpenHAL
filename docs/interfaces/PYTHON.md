@@ -1,10 +1,12 @@
 # Python library
 
-`openhal.client` is a sync and an async client of the hub's local API v1. Scripts, the CLI and the MCP server all use it. It makes no safety decisions. The hub's kernel decides every write and action, and a blocked command comes back as a `Decision`, not as an exception.
+`openhal.client` is a sync and an async client of the hub's local API v1. Scripts, the CLI and the MCP server all use it. It makes no safety decisions. The hub's kernel decides every command, and a blocked command comes back as a `Decision`, not as an exception.
 
 ```sh
-uv pip install 'openhal-hub[hub]'
+uv pip install "openhal-hub @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
+
+That puts the client in the current environment, so your own scripts can import it.
 
 ## Connect
 
@@ -13,7 +15,7 @@ from openhal.client import connect
 
 with connect() as hub:
     print(hub.status().devices, "devices")
-    reading = hub.read("desk-fan", "temperature")
+    reading = hub.read("plant-waterer", "soil_moisture")
     print(reading.value, reading.unit)
 ```
 
@@ -28,7 +30,7 @@ from openhal.client import aconnect
 async def main() -> None:
     hub = await aconnect()
     async with hub:
-        decision = await hub.write("desk-fan", "fan_speed", 40, "%")
+        decision = await hub.action("plant-waterer", "water", duration={"value": 20, "unit": "s"})
         print(decision.status, decision.message)
 
 asyncio.run(main())
@@ -74,12 +76,14 @@ All derive from `openhal.client.OpenHALError`, which has `message`, `status_code
 `decision.ok` is true for done and allowed. `decision.pending` is true when it waits for a person.
 
 ```python
-decision = hub.write("desk-fan", "fan_speed", 150, "%")
+decision = hub.action("plant-waterer", "water", duration={"value": 120, "unit": "s"})
 if decision.status == "blocked":
-    print(decision.code, decision.limit)   # above_max {'max': 100.0, 'unit': 'percent'}
+    print(decision.code, decision.limit)
 elif decision.pending:
     print("approve with openhal confirm approve", decision.request_id)
 ```
+
+The 120 s watering prints `above_max {'max': 30.0, 'unit': 's', 'argument': 'duration'}`.
 
 ## Methods
 
@@ -111,10 +115,10 @@ Every method exists on `Client` and, as a coroutine, on `AsyncClient`.
 
 `Write` and `Action` are the kernel's command models, exported from `openhal.client`. A plain dict with `device` and `channel` and `value`, or `device` and `action` and `args`, works too.
 
-`ramp_to` moves a channel to a target in steps that each pass its `max_change_per_s`, waiting `interval_s` before each step, with `margin` of the allowed change per step. The kernel still checks every step, and the ramp stops at the first step it does not accept. It returns every decision.
+`ramp_to` moves a channel to a target in steps that each pass its `max_change_per_s`, waiting `interval_s` before each step, with `margin` of the allowed change per step. The kernel still checks every step, and the ramp stops at the first step it does not accept. It returns every decision. The LED strip from [Add a device](../guide/tutorials/add-a-device.md) allows 40 %/s on `brightness`.
 
 ```python
-for decision in hub.ramp_to("desk-fan", "fan_speed", 80, "%"):
+for decision in hub.ramp_to("led-strip", "brightness", 80, "%"):
     print(decision.status, decision.message)
 ```
 
@@ -171,17 +175,15 @@ The library never prompts. A script with the human token can approve, which is w
 | `finish(id, save_as=None)` | `POST /v1/writer/sessions/{id}/finish` (human) |
 | `test_plan(id)` | `GET /v1/writer/sessions/{id}/test_plan` |
 
-The hub does not serve these yet (ADR 0014). Until it does they raise `NotSupported`.
-
 ### Tokens and pairing
 
 | Method | Route |
 |---|---|
 | `new_pairing_code()` | `POST /v1/pair/code` (human) |
 | `pair(code)` | `POST /v1/pair` |
-| `tokens()` | `GET /v1/tokens` (human, proposed) |
-| `create_token(name, kind="agent", scope="read")` | `POST /v1/tokens` (human, proposed) |
-| `revoke_token(token_id)` | `DELETE /v1/tokens/{id}` (human, proposed) |
+| `tokens()` | `GET /v1/tokens` (human) |
+| `create_token(name, kind="agent", scope="read")` | `POST /v1/tokens` (human) |
+| `revoke_token(token_id)` | `DELETE /v1/tokens/{id}` (human) |
 
 ### Live events
 

@@ -8,7 +8,9 @@ Protocol (developers.home-assistant.io, REST API and WebSocket API pages).
 - WebSocket (`transport: websocket`). After `auth_required` the client sends `auth`, then
   `subscribe_entities` for the selected entities only. Events carry compressed states (`a` for
   full states, `c` with `+` and `-` for changes), which the driver keeps in a cache so reads need
-  no round trip. Services go through `call_service`.
+  no round trip. Home Assistant answers the subscription first and sends the full states in the
+  next event, so `connect()` waits for that event before it returns. Services go through
+  `call_service`.
 - The token comes from the environment variable named in `token_env`, never from the file.
 
 Bridge rules (docs/drivers/WRITING-A-DRIVER.md rule 9). Only the entities named in the device
@@ -183,6 +185,7 @@ class HomeAssistantDriver(Driver):
         self._pending: dict[int, asyncio.Future[Any]] = {}
         self._ids = itertools.count(1)
         self._lost: str | None = None
+        self._first_states = asyncio.Event()
         self._check_maps()
 
     def _check_maps(self) -> None:
@@ -315,8 +318,16 @@ class HomeAssistantDriver(Driver):
             )
         self.ha_version = str(answer.get("ha_version") or hello.get("ha_version") or "")
         self._ws = ws
+        self._first_states = asyncio.Event()
         self._ws_task = asyncio.create_task(self._ws_reader(ws))
         await self._ws_call({"type": "subscribe_entities", "entity_ids": self.allowed})
+        try:
+            await asyncio.wait_for(self._first_states.wait(), self.settings.timeout)
+        except TimeoutError:
+            await self.close()
+            raise DriverError(
+                f"Home Assistant accepted the subscription but sent no states within {self.settings.timeout:g} s."
+            ) from None
 
     async def _ws_reader(self, ws: Any) -> None:
         try:
@@ -360,6 +371,8 @@ class HomeAssistantDriver(Driver):
         for entity_id, state in (event.get("a") or {}).items():
             if entity_id in self.allowed:
                 self.cache[entity_id] = {"state": state.get("s"), "attributes": dict(state.get("a") or {})}
+        if "a" in event:
+            self._first_states.set()
         for entity_id, change in (event.get("c") or {}).items():
             if entity_id not in self.allowed or entity_id not in self.cache:
                 continue

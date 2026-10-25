@@ -2,7 +2,7 @@
 
 This plan checks the ble driver against real Bluetooth Low Energy peripherals. The read-only part uses a sensor with the standard Environmental Sensing service. The write part uses a board with an LED on a writable characteristic, because a light that changes is the smallest write that proves the path works.
 
-Run every step from the repository checkout. Close any phone app connected to the peripheral first, since most peripherals accept only one central.
+Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Close any phone app connected to the peripheral first, since most peripherals accept only one central.
 
 ## What you need
 
@@ -124,13 +124,13 @@ Run `uv run python hwtest.py my-led.hal.yaml read` first. It should print `led =
 
 ### 6. Confirm the limits
 
-Read the file, decide the limits and the safe state are right, and add this line yourself.
+Read the file and decide the limits and the safe state are right. Then confirm them yourself.
 
-```yaml
-confirmed: { by: <your name>, at: <today's date> }
+```sh
+uv run openhal file confirm my-led.hal.yaml
 ```
 
-`uv run openhal file validate my-led.hal.yaml` should now say `writable`.
+It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-led.hal.yaml` then says `writable`.
 
 ### 7. The smallest safe write
 
@@ -154,19 +154,21 @@ Expected. `led-board safe`, and the LED turns off.
 
 ## If something fails
 
-Send the full output of the failing step, the operating system and Bluetooth adapter, the `discover` output from step 1, a screenshot or export of the peripheral's GATT table from nRF Connect, and your device file. On Linux, add the output of `bluetoothctl --version` and `journalctl -u bluetooth --since "10 min ago"`.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the operating system and Bluetooth adapter, the `discover` output from step 1, a screenshot or export of the peripheral's GATT table from nRF Connect, and your device file. On Linux, add the output of `bluetoothctl --version` and `journalctl -u bluetooth --since "10 min ago"`.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, ble driver
 
+- Plan: docs/hardware-tests/ble.md
 - Device: <manufacturer, model>
 - Peripheral firmware: <version>
 - Host: <computer, operating system, Bluetooth adapter>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device files: my-sensor.hal.yaml (read-only), and my-led.hal.yaml, sha256 <from its confirmed line>
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -181,4 +183,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 8 stop | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```

@@ -20,7 +20,7 @@ Checked on 2026-10-24. python-matter-server was archived in June 2026, and 8.1.2
 ## Setup
 
 ```sh
-uv pip install 'openhal-hub[matter]'
+uv tool install --compile-bytecode "openhal-hub[matter] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 Commission the device into the Matter Server first, with its frontend or Home Assistant. Note the node id it gets. The server listens on `ws://<host>:5580/ws`.

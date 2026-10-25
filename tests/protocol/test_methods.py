@@ -294,6 +294,7 @@ async def test_stop_and_unlock(transport: Connect, tokens: dict[str, str]) -> No
             "SCOPE_DENIED",
             "not_permitted",
         )
+        assert (denied["message"], denied["data"]["method"]) == ("Only a human can call hal/unlock", "hal/unlock")
     async with transport(tokens["human"]) as rpc:
         await rpc.initialize()
         wrong = await rpc.error("hal/unlock", {"phrase": "please"})

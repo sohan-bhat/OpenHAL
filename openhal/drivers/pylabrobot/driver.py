@@ -27,6 +27,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import importlib
+import os
 from typing import Any, ClassVar, Final, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
@@ -63,7 +64,7 @@ class PyLabRobotParams(BaseModel):
 
     backend: Literal["chatterbox", "star", "evo", "opentrons"]
     deck: Literal["starlet", "star", "ot2", "evo150"] | None = None
-    deck_file: str | None = Field(default=None, max_length=500)
+    deck_env: str | None = Field(default=None, pattern=r"^[A-Z_][A-Z0-9_]{0,63}$")
     layout: list[Placement] = Field(default=[], max_length=64)
     num_channels: int = Field(default=8, ge=1, le=16)
     host: str | None = Field(default=None, max_length=253)
@@ -83,8 +84,8 @@ class PyLabRobotParams(BaseModel):
     def _shape(self) -> PyLabRobotParams:
         if not 0.1 <= self.action_wait <= 9:
             raise ValueError("action_wait must be between 100 ms and 9 s.")
-        if self.deck_file and self.layout:
-            raise ValueError("give deck_file or layout, not both.")
+        if self.deck_env and self.layout:
+            raise ValueError("give deck_env or layout, not both.")
         if self.backend == "opentrons" and not self.host:
             raise ValueError("the opentrons backend needs host, the robot's address.")
         for address, quantity in self.volumes.items():
@@ -237,7 +238,14 @@ class PyLabRobotDriver(Driver):
             resources.set_volume_tracking(True)
             resources.set_tip_tracking(True)
         kind = self.settings.deck or DEFAULT_DECK[self.settings.backend]
-        self.deck = await asyncio.to_thread(decks.build, kind, self.settings.layout, self.settings.deck_file)
+        deck_file = None
+        if self.settings.deck_env is not None:
+            deck_file = os.environ.get(self.settings.deck_env)
+            if not deck_file:
+                raise DriverError(
+                    f"Set the {self.settings.deck_env} environment variable to the path of a PyLabRobot deck JSON file."
+                )
+        self.deck = await asyncio.to_thread(decks.build, kind, self.settings.layout, deck_file)
         for name, read_map in self.reads.items():
             if read_map.container is not None:
                 decks.items(self.deck, read_map.container, "wells")

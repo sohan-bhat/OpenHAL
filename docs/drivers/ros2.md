@@ -6,7 +6,7 @@ The `ros2` driver reaches ROS 2 robots through rosbridge. Topic fields become re
 |---|---|
 | Driver name | `ros2` |
 | Library | websockets 17 (BSD-3-Clause), already a hub dependency. The rosbridge v2 client is the driver's own |
-| Extra | `uv pip install 'openhal-hub[ros2]'` |
+| Extra | `uv tool install --compile-bytecode "openhal-hub[ros2] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | high |
 | Conformance | full |
 | Safe state | native. Cancels every action goal this driver started |

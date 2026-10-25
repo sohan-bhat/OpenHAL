@@ -16,7 +16,7 @@ from __future__ import annotations
 import importlib
 import pkgutil
 from functools import cache
-from typing import Final
+from typing import Any, Final
 
 from openhal.drivers.base import Driver
 
@@ -76,9 +76,27 @@ def load(name: str) -> type[Driver]:
     except ImportError as exc:
         raise UnknownDriver(
             f"The {name} driver needs an optional dependency that isn't installed ({exc.name}). "
-            f"Install it with: uv pip install 'openhal-hub[{name}]'"
+            f"Install it with uv sync --extra {name} in a checkout, or reinstall the hub with "
+            f'uv tool install --compile-bytecode "openhal-hub[{name}] @ git+https://github.com/sohan-bhat/OpenHAL", '
+            "listing every extra you use."
         ) from exc
     driver = getattr(module, class_name)
     if not (isinstance(driver, type) and issubclass(driver, Driver)):
         raise UnknownDriver(f"{path} is not a Driver subclass.")
     return driver
+
+
+def connect_params(driver: str, address: str) -> dict[str, Any]:
+    """Driver parameters for a discovered address. A `host:port` address fills both for drivers with a port."""
+    from openhal.spec.models import PRIMARY_PARAM
+
+    primary = PRIMARY_PARAM.get(driver, "target")
+    try:
+        model = load(driver).params_model
+    except UnknownDriver:
+        model = None
+    fields = getattr(model, "model_fields", {})
+    host, sep, port = address.rpartition(":")
+    if primary == "host" and "port" in fields and sep and port.isdigit() and host:
+        return {primary: host.strip("[]"), "port": int(port)}
+    return {primary: address}

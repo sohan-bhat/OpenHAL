@@ -6,13 +6,46 @@ import argparse
 import asyncio
 import logging
 import signal
+import socket
 
 import uvicorn
 
 from openhal._brand import DAEMON_NAME
 from openhal.hub.api import create_app
-from openhal.hub.config import load_config
+from openhal.hub.config import HubConfig, load_config
 from openhal.hub.hub import Hub
+from openhal.hub.locks import DeviceLock, DeviceLocked
+
+HUB_LOCK = "_openhald"
+"""The lock a running daemon holds in the locks folder. Device ids can't start with an underscore."""
+
+
+def claim(config: HubConfig) -> DeviceLock:
+    """Make sure no other daemon runs on this config folder and the port is free, before anything is logged.
+
+    A second daemon used to open the audit log and write hub_start and hub_stop before it found
+    the port taken.
+    """
+    config.ensure_dirs()
+    lock = DeviceLock(config.locks_dir, HUB_LOCK)
+    try:
+        lock.acquire()
+    except DeviceLocked:
+        raise SystemExit(
+            f"Another {DAEMON_NAME} already runs with the config folder {config.home}. Stop it first, or use it."
+        ) from None
+    family = socket.AF_INET6 if ":" in config.api.host else socket.AF_INET
+    with socket.socket(family, socket.SOCK_STREAM) as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            probe.bind((config.api.host, config.api.port))
+        except OSError as exc:
+            lock.release()
+            raise SystemExit(
+                f"Port {config.api.port} on {config.api.host} is in use ({exc.strerror}). "
+                "Stop what holds it, or set api.port in config.yaml."
+            ) from None
+    return lock
 
 
 async def serve(host: str | None = None, port: int | None = None) -> None:
@@ -23,6 +56,14 @@ async def serve(host: str | None = None, port: int | None = None) -> None:
         config.api.port = port
     if config.api.host not in ("127.0.0.1", "::1", "localhost") and not config.api.allow_lan:
         raise SystemExit("Refusing to listen on a non-loopback address. Set api.allow_lan: true in config.yaml first.")
+    lock = claim(config)
+    try:
+        await _run(config)
+    finally:
+        lock.release()
+
+
+async def _run(config: HubConfig) -> None:
     hub = Hub(config)
     await hub.start()
     app = create_app(hub)

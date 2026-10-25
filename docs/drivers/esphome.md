@@ -6,7 +6,7 @@ The `esphome` driver talks to ESPHome devices over the native API, the same prot
 |---|---|
 | Driver name | `esphome` |
 | Library | aioesphomeapi 46.22.0 (MIT), with protobuf, zeroconf, cryptography and noiseprotocol |
-| Extra | `uv pip install 'openhal-hub[esphome]'` |
+| Extra | `uv tool install --compile-bytecode "openhal-hub[esphome] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | low |
 | Safe state | from the device file only |
 | Self-describe | yes, from the device's entity list |
@@ -36,7 +36,7 @@ Writes are verified. Native API commands have no acknowledgement, so after each 
 
 ## Setup
 
-1. Install the extra with `uv pip install 'openhal-hub[esphome]'`.
+1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[esphome] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. Give the node an `api:` block in its YAML. With `encryption: key: ...`, put the same base64 key in an environment variable such as `PLANT_PSK` and set `noise_psk_env`.
 3. Prefer failsafes on the node itself, for example an `on_turn_on` automation that turns a pump off after a delay, or `api: reboot_timeout`. The hub can't see them, so mention them in `safe_state_note`.
 4. Start from `openhal/drivers/esphome/examples/plant-waterer.hal.yaml` or from `describe()`.

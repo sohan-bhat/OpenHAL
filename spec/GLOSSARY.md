@@ -9,7 +9,7 @@ The normative definitions are in [spec/2026-10-24/index.md](2026-10-24/index.md#
 | Device | One piece of hardware, or one set of entities in a bridged system, described by one Device File |
 | Device File | A YAML document ending in `.hal.yaml` that describes one Device, its channels, actions, limits, safe state and provenance |
 | Driver | Code that speaks one protocol to Devices and changes hardware only when it consumes a Grant |
-| Safety Kernel | The deterministic part of a Hub that evaluates every write and action and issues Grants for the ones it allows |
+| Safety Kernel | The deterministic part of a Hub that evaluates every command and issues Grants for the ones it allows |
 | Grant | A single-use permission for exactly one operation, bound to one Device, one target and one value, with an expiry |
 | Principal | The identity behind a request, of kind `human`, `agent`, `routine` or `system`, with a scope |
 | Conformance Level | `core`, `control` or `full`, naming what a Hub implements or a Driver supports |

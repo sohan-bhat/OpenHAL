@@ -206,7 +206,7 @@ class RoutineContext:
         return reading.value
 
     async def write(self, device: str, channel: str, value: Any, unit: str | None = None) -> Decision:
-        """Set a channel. A number takes its unit apart, as `write("desk-fan", "fan_speed", 60, "%")`."""
+        """Set a channel. A number takes its unit apart, as `write("led-strip", "brightness", 60, "%")`."""
         return await self._engine.command(
             Write(device=device, channel=channel, value=value, unit=unit),
             self._principal,

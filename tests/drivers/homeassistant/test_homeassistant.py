@@ -274,6 +274,16 @@ async def test_websocket_reads_from_the_subscription(ws_sim: HomeAssistantSim) -
     await bench.close()
 
 
+async def test_websocket_connect_waits_for_the_first_states(ws_sim: HomeAssistantSim) -> None:
+    for _ in range(5):
+        bench = await ws_bench(ws_sim).connect()
+        assert (await bench.driver.read("room_temp")).value == pytest.approx(22.0)
+        await bench.close()
+    ws_sim.send_states = False
+    with pytest.raises(DriverError, match=r"sent no states within 0\.3 s"):
+        await ws_bench(ws_sim).driver.connect()
+
+
 async def _brightness_is(bench: Bench, value: float) -> bool:
     reading = await bench.read("lamp_brightness")
     return reading.value == pytest.approx(value, abs=0.3)

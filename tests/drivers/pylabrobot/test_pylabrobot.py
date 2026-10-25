@@ -179,7 +179,7 @@ async def test_setup_on_connect() -> None:
     await bench.close()
 
 
-async def test_opentrons_deck_with_slots_and_a_saved_deck_file(tmp_path: Path) -> None:
+async def test_opentrons_deck_with_slots_and_a_saved_deck_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     text = """
 device: OT-2
 id: ot2
@@ -199,10 +199,14 @@ read:
     driver.deck.save(str(saved))
     await bench.close()
     loaded = (
-        f"device: OT-2\nid: ot2\nconnect: {{ pylabrobot: chatterbox, deck_file: '{saved}' }}\n"
+        "device: OT-2\nid: ot2\nconnect: { pylabrobot: chatterbox, deck_env: OT2_TEST_DECK }\n"
         "read:\n  tips_mounted: { unit: dimensionless }\n"
     )
     other, _, other_bench = make(loaded)
+    monkeypatch.delenv("OT2_TEST_DECK", raising=False)
+    with pytest.raises(DriverError, match="Set the OT2_TEST_DECK environment variable"):
+        await other.connect()
+    monkeypatch.setenv("OT2_TEST_DECK", str(saved))
     await other_bench.connect()
     assert other.deck.get_resource("tips").name == "tips"
     await other_bench.close()
@@ -292,7 +296,7 @@ def test_bad_maps_are_rejected(snippet: str, message: str) -> None:
     [
         ("pylabrobot: opentrons", "needs host"),
         ("pylabrobot: chatterbox, action_wait: 30 s", "action_wait"),
-        ("pylabrobot: chatterbox, deck_file: d.json, layout: [{ name: a, resource: b, rails: 1 }]", "not both"),
+        ("pylabrobot: chatterbox, deck_env: DECK, layout: [{ name: a, resource: b, rails: 1 }]", "not both"),
         ("pylabrobot: chatterbox, layout: [{ name: a, resource: b, rails: 1, slot: 2 }]", "exactly one of rails"),
         (
             "pylabrobot: chatterbox, layout: [{ name: a, resource: b, rails: 1 }, { name: a, resource: c, rails: 9 }]",

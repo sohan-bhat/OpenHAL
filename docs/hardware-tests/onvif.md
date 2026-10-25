@@ -2,7 +2,7 @@
 
 This plan checks the onvif driver against a real ONVIF PTZ camera. It was made for a Hikvision PTZ camera with the example file. Any ONVIF Profile S camera works the same way, and the PTZ steps need a PTZ camera.
 
-Run every step from the repository checkout, on a computer on the same network as the camera. Keep people and objects out of the camera's swing.
+Run every step from the repository checkout, on a computer on the same network as the camera. [README.md](README.md) has the setup and rules every plan shares. Keep people and objects out of the camera's swing.
 
 ## What you need
 
@@ -128,13 +128,13 @@ Expected. The first fails with `DriverError` saying the camera refused the crede
 
 ### 7. Confirm the limits
 
-Read the file, decide the limits are right for where the camera hangs, and add this line yourself.
+Read the file and decide the limits are right for where the camera hangs. Then confirm them yourself.
 
-```yaml
-confirmed: { by: <your name>, at: <today's date> }
+```sh
+uv run openhal file confirm my-camera.hal.yaml
 ```
 
-`uv run openhal file validate my-camera.hal.yaml` should now say `writable`.
+It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-camera.hal.yaml` then says `writable`.
 
 ### 8. The smallest safe action
 
@@ -176,18 +176,20 @@ Expected. `workshop-ptz safe`, and the camera stops before the two seconds are u
 
 ## If something fails
 
-Send the full output of the failing step, the camera's model and firmware, its ONVIF version from the web interface, and your device file without the password.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the camera's model and firmware, its ONVIF version from the web interface, and your device file without the password.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, onvif driver
 
+- Plan: docs/hardware-tests/onvif.md
 - Device: <manufacturer, model, firmware>
 - Host: <computer, operating system>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device file: <path>, sha256 <from its confirmed line>
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -205,4 +207,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 11 stop | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```

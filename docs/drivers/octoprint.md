@@ -6,7 +6,7 @@ The `octoprint` driver talks to printers that OctoPrint controls, through OctoPr
 |---|---|
 | Driver name | `octoprint` |
 | Library | httpx 0.28.1 (BSD-3-Clause) |
-| Extra | `uv pip install 'openhal-hub[octoprint]'` |
+| Extra | `uv tool install --compile-bytecode "openhal-hub[octoprint] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | medium |
 | Safe state | native. Every heater in the file, plus tool0 and the bed, gets target 0 |
 | Self-describe | yes, from the current printer profile |
@@ -38,7 +38,7 @@ Temperatures are degC on the wire and converted to the channel unit both ways.
 
 ## Setup
 
-1. Install the extra with `uv pip install 'openhal-hub[octoprint]'`.
+1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[octoprint] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. In OctoPrint, open Settings, Application Keys, and create a key for OpenHAL. A user with the Control permission is enough.
 3. Export it, for example `export OCTOPRINT_API_KEY=...`, in the environment the hub runs in.
 4. Start from `openhal/drivers/octoprint/examples/prusa-mk3s-octopi.hal.yaml`.

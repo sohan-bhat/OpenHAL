@@ -14,7 +14,7 @@ The can driver reads signals out of CAN bus frames and sends frames as commands 
 ## Setup
 
 ```sh
-uv pip install 'openhal-hub[can]'
+uv tool install --compile-bytecode "openhal-hub[can] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 On Linux, bring the interface up first, for example `sudo ip link set can0 up type can bitrate 500000`. Every node on the bus must use the same bitrate, and the bus needs 120 ohm termination at both ends.

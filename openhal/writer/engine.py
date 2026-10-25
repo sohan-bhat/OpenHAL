@@ -76,7 +76,7 @@ def _dump(data: dict[str, Any]) -> str:
     return yaml.safe_dump(data, sort_keys=False, allow_unicode=True, width=100)
 
 
-def _force_suggested(data: dict[str, Any]) -> dict[str, Any]:
+def force_suggested(data: dict[str, Any]) -> dict[str, Any]:
     """Nothing a draft says can confirm a limit. Mark every limit suggested and drop confirmations."""
     cleaned = copy.deepcopy(data)
     for key in ("confirmed", "approvals"):
@@ -206,7 +206,7 @@ class WriterEngine:
             return None
         connect: dict[str, Any] = dict(params)
         if address and PRIMARY_PARAM.get(driver, "target") not in connect:
-            connect[PRIMARY_PARAM.get(driver, "target")] = address
+            connect = {**registry.connect_params(driver, address), **connect}
         try:
             probe_file = from_data(
                 {"device": "Device being described", "connect": {"driver": driver, "params": connect}}
@@ -290,7 +290,7 @@ class WriterEngine:
         return merged
 
     def _set_draft(self, session: Session, data: dict[str, Any]) -> None:
-        cleaned = _force_suggested(data)
+        cleaned = force_suggested(data)
         session.confirmed = None
         session.answers = {}
         try:
@@ -346,7 +346,7 @@ class WriterEngine:
         session.problems = [problem for problem in session.problems if not problem.startswith("Interview. ")]
         if known <= set(session.answers):
             try:
-                session.confirmed = interview.apply(session.draft, session.answers, by=who.label)
+                session.confirmed = interview.apply(session.draft, session.answers, by=who.name)
             except interview.AnswerError as exc:
                 session.problems.append(f"Interview. {exc}")
                 session.confirmed = None
@@ -413,7 +413,7 @@ class WriterEngine:
         )
         if file.device_id not in self.hub.kernel.devices:
             try:
-                await self.hub.add_and_start(file)
+                await self.hub.add_and_start(file, path=path)
             except Exception as exc:  # noqa: BLE001 (saved anyway, the person restarts the hub)
                 session.problems.append(f"Saved, but the hub couldn't load it now. {exc}")
         return {"path": str(path), "device_id": file.device_id, "writable": file.writable, "bundle": str(bundle)}

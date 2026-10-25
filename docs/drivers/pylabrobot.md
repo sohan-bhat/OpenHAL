@@ -6,7 +6,7 @@ The `pylabrobot` driver runs liquid handlers through PyLabRobot. Picking up tips
 |---|---|
 | Driver name | `pylabrobot` |
 | Library | PyLabRobot 0.2.2 (MIT) |
-| Extra | `uv pip install 'openhal-hub[pylabrobot]'` |
+| Extra | `uv tool install --compile-bytecode "openhal-hub[pylabrobot] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | high |
 | Conformance | full |
 | Safe state | native. Running operations are cancelled after their current firmware command |
@@ -60,7 +60,7 @@ A stop cancels running operations. The instrument finishes the firmware command 
 
 ## Setup
 
-1. Install the extra with `uv pip install 'openhal-hub[pylabrobot]'`, plus PyLabRobot's USB or HTTP extras for your instrument.
+1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[pylabrobot] @ git+https://github.com/sohan-bhat/OpenHAL"`, plus PyLabRobot's USB or HTTP extras for your instrument.
 2. Lay out the deck in the file to match the physical deck, or save one from PyLabRobot.
 3. Start from `openhal/drivers/pylabrobot/examples/starlet.hal.yaml`, or call `describe` for a proposal.
 4. Run `openhal file validate`, then confirm the limits by hand.
@@ -71,7 +71,7 @@ A stop cancels running operations. The instrument finishes the firmware command 
 |---|---|---|
 | `backend` | required | `star` (Hamilton STAR and STARlet), `evo` (Tecan EVO), `opentrons` (OT-2) or `chatterbox` (simulation) |
 | `deck` | by backend | `starlet`, `star`, `ot2` or `evo150` |
-| `deck_file` | none | A PyLabRobot deck JSON file, instead of `layout` |
+| `deck_env` | none | An environment variable that holds the path of a PyLabRobot deck JSON file, instead of `layout`. A device file never names the path itself |
 | `layout` | empty | Resources and where they go |
 | `num_channels` | 8 | Channels of the chatterbox simulation |
 | `host`, `port` | none, 31950 | The OT-2's address |

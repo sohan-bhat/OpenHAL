@@ -84,6 +84,7 @@ A file is writable only when a human confirmed its limits (spec section 12). Int
 ## Stop and unlock
 
 - `stop_all` is available from the CLI (`openhal stop`), MCP, the dashboard, the Python library and an optional Raspberry Pi GPIO input.
+- The GPIO input is set in config.yaml as `stop_button: { pin: 27 }`, a BCM number, with the Pi's pull-up on unless `pull_up: false`. A press stops everything. If the hub can't watch the pin, it refuses to start, so no one relies on a stop that isn't there. The button only asks the hub to stop. Keep the hardware e-stop that cuts power.
 - Any principal may stop, including agents. Only a human may unlock.
 - Order. Set the lock, cancel pending confirmations, clear approval windows, disable routines, cancel any command still in flight, apply every device's safe state, report the result per device.
 - Every safe-state step runs even if an earlier one fails. The result per device is `safe`, `partial` (some steps failed), `failed`, `no_safe_state`, or `pending` when a command was still running and couldn't be cancelled in time. A command that was in flight during a stop reapplies the safe state when it returns, so it can't win.

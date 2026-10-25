@@ -7,7 +7,7 @@ The hub stores the device registry, routines, client tokens, the confirmation qu
 ## Decision
 
 - One SQLite database in the config directory (`~/.openhal/hub.db` by default), WAL mode, accessed from the hub only.
-- The audit log is a table that the hub only inserts into. Each entry stores a canonical JSON body, the hash of the previous entry and its own SHA-256 over `previous_hash + body`. `openhal log verify` recomputes the chain and reports the first broken entry.
+- The audit log is a table that the hub only inserts into. Each entry stores a canonical JSON body, the hash of the previous entry and its own SHA-256 over `previous_hash + body`. `openhal log --verify` recomputes the chain and reports the first broken entry.
 - SQLite triggers reject UPDATE and DELETE on the audit table. This stops accidents, and the hash chain detects deliberate edits made outside the hub.
 - Client tokens are stored as SHA-256 hashes, never in plain text.
 

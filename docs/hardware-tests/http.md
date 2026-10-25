@@ -2,7 +2,7 @@
 
 This plan checks the http driver against a real device with a local HTTP API. It starts with read-only checks and ends with the smallest safe write. It was written for a Shelly Plus Plug S with nothing plugged into it, and works the same way for any device you describe in a device file.
 
-Never plug a load into the device while you run the write steps. Run every step from the repository checkout.
+Never plug a load into the device while you run the write steps. Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -120,13 +120,13 @@ Only do these with nothing plugged into the device.
 
 ### 7. Confirm the limits
 
-Read the file, decide the limits and the safe state are right, and add this line yourself.
+Read the file and decide the limits and the safe state are right. Then confirm them yourself.
 
-```yaml
-confirmed: { by: <your name>, at: <today's date> }
+```sh
+uv run openhal file confirm my-plug.hal.yaml
 ```
 
-`uv run openhal file validate my-plug.hal.yaml` should now say `writable`.
+It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-plug.hal.yaml` then says `writable`.
 
 ### 8. The smallest safe write
 
@@ -150,18 +150,20 @@ Expected. `bench-plug safe`, and the relay switches off.
 
 ## If something fails
 
-Send the full output of the failing step, the device model and firmware version from step 3, your device file with addresses changed if you prefer, and the output of the matching `curl` request for the failing channel.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the device model and firmware version from step 3, your device file with addresses changed if you prefer, and the output of the matching `curl` request for the failing channel.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, http driver
 
+- Plan: docs/hardware-tests/http.md
 - Device: <manufacturer, model>
 - Firmware: <from step 3>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device file: <path>, sha256 <from its confirmed line>
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -177,4 +179,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 9 stop | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```

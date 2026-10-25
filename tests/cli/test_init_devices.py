@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from openhal.demo.scenario import example_file
+from openhal.drivers import registry
 from openhal.drivers.openhal_firmware.simulator import SIMULATORS
 from openhal.hub import discovery
 from openhal.service import devices
@@ -22,10 +23,10 @@ def fresh_simulators() -> Iterator[None]:
 
 
 def test_host_and_port_split_for_network_drivers() -> None:
-    assert devices.connect_params("esphome", "192.168.1.20:6053") == {"host": "192.168.1.20", "port": 6053}
-    assert devices.connect_params("esphome", "kitchen.local") == {"host": "kitchen.local"}
-    assert devices.connect_params("openhal-firmware", "sim:desk-fan") == {"port": "sim:desk-fan"}
-    assert devices.connect_params("serial", "/dev/ttyUSB0") == {"port": "/dev/ttyUSB0"}
+    assert registry.connect_params("esphome", "192.168.1.20:6053") == {"host": "192.168.1.20", "port": 6053}
+    assert registry.connect_params("esphome", "kitchen.local") == {"host": "kitchen.local"}
+    assert registry.connect_params("openhal-firmware", "sim:desk-fan") == {"port": "sim:desk-fan"}
+    assert registry.connect_params("serial", "/dev/ttyUSB0") == {"port": "/dev/ttyUSB0"}
 
 
 def test_existing_files_are_found_by_id_and_address(tmp_path: Path) -> None:

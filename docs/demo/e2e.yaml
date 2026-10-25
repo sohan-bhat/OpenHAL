@@ -6,7 +6,7 @@ file: plant-waterer.hal.yaml
 person: human:sohan
 agent: agent:claude
 confirmed:
-  by: human:sohan
+  by: sohan
   at: '2026-10-25'
 limits:
   water_duration:
@@ -56,6 +56,7 @@ steps:
       soil_moisture:
         unit: percent
         stream: true
+        every: 1 s
         range:
         - 0
         - 100
@@ -65,6 +66,7 @@ steps:
         - empty
         - ok
         stream: true
+        every: 1 s
     write: {}
     actions:
       water:
@@ -101,14 +103,34 @@ steps:
     prompt: What is the highest safe duration for water?
     suggested: 30.0
     answer: 30 s
+  - question: water.require
+    prompt: What must hold before water runs? One per line as <condition>, or <condition> because <reason>. Answer none for none.
+    suggested: none
+    answer: tank == ok because pump can't run while tank is empty
+  - question: water.max_runs
+    prompt: How often may water run? Answer like 3 per 1 h, or none for no limit.
+    suggested: none
+    answer: 3 per 1 h
   - question: water.confirm
     prompt: Should water need a person's approval? none, confirm or confirm-each-time.
     suggested: confirm
+    answer: none
+  - question: stop.require
+    prompt: What must hold before stop runs? One per line as <condition>, or <condition> because <reason>. Answer none for none.
+    suggested: none
+    answer: none
+  - question: stop.max_runs
+    prompt: How often may stop run? Answer like 3 per 1 h, or none for no limit.
+    suggested: none
     answer: none
   - question: stop.confirm
     prompt: Should stop need a person's approval? none, confirm or confirm-each-time.
     suggested: confirm
     answer: none
+  - question: device.safe_action
+    prompt: Which action makes the device safe when OpenHAL stops everything? Name one, or none.
+    suggested: stop
+    answer: stop
   - question: device.interlocks
     prompt: 'Any interlocks? One per line as: if <condition> require <condition>. Answer none for none.'
     suggested: none
@@ -124,7 +146,7 @@ steps:
   device: plant-waterer
   writable: true
   confirmed:
-    by: human:sohan
+    by: sohan
     at: '2026-10-25'
   water:
     args:
@@ -133,6 +155,12 @@ steps:
         min: 1.0
         max: 30.0
     confirm: none
+    require:
+    - condition: tank == ok
+      message: pump can't run while tank is empty
+    max_runs:
+      count: 3
+      per: 1 h
 - id: restart
   note: The hub restarts and loads plant-waterer.hal.yaml from its devices folder.
   devices:
@@ -236,7 +264,7 @@ steps:
     error:
       code: -32010
       name: LIMIT_EXCEEDED
-      message: water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by human:sohan 2026-10-25)
+      message: water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-25)
       data:
         name: LIMIT_EXCEEDED
         kernelCode: above_max
@@ -251,6 +279,6 @@ steps:
           value: 30
           unit: s
         file: plant-waterer.hal.yaml
-        confirmedBy: human:sohan
+        confirmedBy: sohan
         confirmedAt: '2026-10-25'
   board_received: []

@@ -53,7 +53,7 @@ class BridgeParams(BaseModel):
     base_topic: str = Field(default="zigbee2mqtt", pattern=r"^[^#+\s]+$")
     username: str | None = None
     token_env: str | None = Field(default=None, pattern=r"^[A-Z_][A-Z0-9_]{0,63}$")
-    ca_file: str | None = None
+    ca_env: str | None = Field(default=None, pattern=r"^[A-Z_][A-Z0-9_]{0,63}$")
     timeout: Duration = 5.0
 
     @property
@@ -123,6 +123,16 @@ class ZigbeeZWaveDriver(Driver):
                 )
             self.maps[name] = channel_map
 
+    def _ca_path(self) -> str | None:
+        """The CA bundle path from the environment variable the file names, or None for the system store."""
+        variable = self.settings.ca_env
+        if variable is None:
+            return None
+        path = self._environ(variable)
+        if not path:
+            raise DriverError(f"Set the {variable} environment variable to the path of the broker's CA bundle.")
+        return os.path.expanduser(path)
+
     def _client_id(self) -> str:
         digest = hashlib.sha256(self.device.device_id.encode()).hexdigest()[:6]
         return f"oh-{self.device.device_id[:13]}-{digest}"
@@ -144,7 +154,7 @@ class ZigbeeZWaveDriver(Driver):
             base_topic=settings.base_topic,
             username=settings.username,
             password=password,
-            ca_file=settings.ca_file,
+            ca_file=self._ca_path(),
             timeout=settings.timeout,
             client_id=self._client_id(),
             client_factory=self._client_factory,

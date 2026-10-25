@@ -24,3 +24,8 @@ Small decisions, one line each. Architectural decisions live in docs/adr/.
 - 2026-10-25: python-can (LGPL-3.0-only) is used unmodified as an optional dependency of the can driver, like zeroconf. No code is copied.
 - 2026-10-25: The bambu driver ships. The owner reviewed the Bambu Lab terms note in docs/drivers/bambu.md and approved it. It stays LAN only and never contacts Bambu Cloud or presents itself as Bambu software.
 - 2026-10-25: The scpi driver peeks at a raw LAN socket before each exchange and after a timeout, so a socket the instrument closed is a lost connection on every OS. The owner approved fixing it this way instead of hiding the CI badge.
+- 2026-10-25: The subagent cap is 3 at once (owner, latest). It replaces the earlier caps of 3, 10 and 5 recorded above and in memory.
+- 2026-10-25: The owner approved pushing to GitHub. The earlier line that commits stay local is replaced. Pushes wait on the owner while the local permission settings block them.
+- 2026-10-25: A configured GPIO stop button the hub can't watch stops the hub from starting, so no one relies on a stop that isn't there.
+- 2026-10-25: A device file never names a file the hub opens. Certificates and the pylabrobot deck come from environment variables (`ca_env`, `deck_env`), the way `token_env` holds a secret.
+- 2026-10-25: Until a package is published, install commands use the git repository, `uv tool install --compile-bytecode "openhal-hub[extras] @ git+https://github.com/sohan-bhat/OpenHAL"`.

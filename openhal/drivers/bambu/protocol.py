@@ -59,7 +59,7 @@ class BambuParams(BaseModel):
     port: int = Field(default=8883, ge=1, le=65535)
     token_env: str = Field(default="BAMBU_ACCESS_CODE", pattern=r"^[A-Z_][A-Z0-9_]{0,63}$")
     cert_sha256: str | None = None
-    ca_file: str | None = None
+    ca_env: str | None = Field(default=None, pattern=r"^[A-Z_][A-Z0-9_]{0,63}$")
     timeout: Duration = 5.0
     reply_wait: Duration = 2.0
     safe_stop: Literal["stop", "pause"] = "stop"
@@ -78,9 +78,9 @@ class BambuParams(BaseModel):
 
     @model_validator(mode="after")
     def _trust(self) -> BambuParams:
-        if self.cert_sha256 is None and self.ca_file is None:
+        if self.cert_sha256 is None and self.ca_env is None:
             raise ValueError(
-                "Give cert_sha256 (the printer certificate's fingerprint) or ca_file. Get the fingerprint with "
+                "Give cert_sha256 (the printer certificate's fingerprint) or ca_env. Get the fingerprint with "
                 "openssl s_client -connect <printer>:8883 </dev/null | openssl x509 -noout -fingerprint -sha256."
             )
         return self

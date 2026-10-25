@@ -25,7 +25,7 @@ added
 
 ## Suggested limits
 
-Every library file is unverified. Its writes and actions are marked `suggested: true`, and its notes start with "Suggested limits." The limits start low on purpose, such as 5 V and 0.5 A on a bench supply or PLA temperatures on a printer. Anything with heat, motion or mains power needs a person to confirm each change.
+Every library file is unverified. Its control channels and actions are marked `suggested: true`, and its notes start with "Suggested limits." The limits start low on purpose, such as 5 V and 0.5 A on a bench supply or PLA temperatures on a printer. Anything with heat, motion or mains power needs a person to confirm each change.
 
 ## Confirmation
 
@@ -40,4 +40,4 @@ Changing any limit later makes the file read-only again until you confirm it aga
 
 ## Adding a product
 
-Add one file per product model as `library/<driver package>/<maker>-<model>.hal.yaml`, with an `id` that matches the file name. Use real identifiers and cite where each one comes from in docs/research/SOURCES.md. Give the file library provenance with the status unverified, mark every write and action suggested, and never add `confirmed`. Then run `uv run python -m openhal.cli.library_cmd` to update the list. The tests in tests/library check all of this.
+Add one file per product model as `library/<driver package>/<maker>-<model>.hal.yaml`, with an `id` that matches the file name. Use real identifiers and cite where each one comes from in docs/research/SOURCES.md. Give the file library provenance with the status unverified, mark every control channel and action suggested, and never add `confirmed`. Then run `uv run python -m openhal.cli.library_cmd` to update the list. The tests in tests/library check all of this.
