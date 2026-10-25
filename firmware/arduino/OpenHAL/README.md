@@ -44,9 +44,14 @@ The short forms `hal.read("temperature", "degC", readTemperature)` and `hal.writ
 | `.onOff()` | A switch with values 0 and 1 |
 | `heartbeat(ms)` | Fall to the safe state when the hub goes quiet for `ms` milliseconds |
 | `applySafeState(reason)` | Apply the safe state from the sketch, for example from a local stop button |
-| `misconfigured()` | True if a name was invalid, a limit was backwards or there were too many channels. The board then refuses all writes |
+| `.states(labels, count)` | A reading with named states, such as a float switch. `fn` returns the index of the state |
+| `.internal()` | An output only the sketch sets. The hub can't see or set it, but a stop and a lost heartbeat still return it to safe |
+| `action(name, fn)` | Something the hub can ask the board to do. `fn` receives the arguments in the order they were declared and returns `nullptr` to run, or a short reason such as `"tank_empty"` to refuse |
+| `.arg(name, unit, min, max)` | One argument of an action, up to 3. The board refuses values outside the range |
+| `drive(output, value, ms)` | Set an output from the sketch, and return it to safe after `ms` milliseconds when `ms` isn't 0 |
+| `misconfigured()` | True if a name was invalid, a limit was backwards or there were too many channels. The board then refuses all commands |
 
-Names are lowercase letters, digits and underscores, up to 24 characters. Units use the names in the OpenHAL spec (`degC`, `percent`, `deg`, `V`, `A`, `rpm` and so on). Up to 8 readings and 8 outputs by default. Define `OPENHAL_MAX_READS` or `OPENHAL_MAX_OUTPUTS` before the include to change that.
+Names are lowercase letters, digits and underscores, up to 24 characters. Units use the names in the OpenHAL spec (`degC`, `percent`, `deg`, `V`, `A`, `rpm` and so on). Up to 8 readings, 8 outputs and 4 actions by default. Define `OPENHAL_MAX_READS`, `OPENHAL_MAX_OUTPUTS` or `OPENHAL_MAX_ACTIONS` before the include to change that.
 
 ## Examples
 
@@ -55,6 +60,7 @@ Names are lowercase letters, digits and underscores, up to 24 characters. Units 
 | DeskFan | A thermistor temperature and a PWM fan |
 | LedStrip | An ambient light level and LED brightness |
 | ServoArm | A servo angle kept away from its end stops |
+| PlantWaterer | Soil moisture, a tank float switch and a `water` action that refuses to pump from an empty tank. The canonical OpenHAL example (examples/plant-waterer/) |
 | SoilPump | Soil moisture and a pump that stops itself after 20 s, with a local stop button |
 
 ## Connecting to the hub

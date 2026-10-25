@@ -116,6 +116,15 @@ OpenHalReading& OpenHalReading::range(float lo, float hi) {
   return *this;
 }
 
+OpenHalReading& OpenHalReading::states(const char* const* labels, uint8_t count) {
+  bad_ = labels == nullptr || count == 0 || count > OPENHAL_MAX_STATES;
+  for (uint8_t i = 0; !bad_ && i < count; ++i) bad_ = !openhalValidName(labels[i]);
+  labels_ = labels;
+  labelCount_ = bad_ ? 0 : count;
+  unit_ = "enum";
+  return *this;
+}
+
 OpenHalOutput& OpenHalOutput::limits(float min, float max) {
   min_ = min;
   max_ = max;
@@ -146,6 +155,26 @@ OpenHalOutput& OpenHalOutput::onOff() {
   return *this;
 }
 
+OpenHalOutput& OpenHalOutput::internal() {
+  internal_ = true;
+  return *this;
+}
+
+OpenHalAction& OpenHalAction::arg(const char* name, const char* unit, float min, float max) {
+  bool duplicate = false;
+  for (uint8_t i = 0; i < argCount_; ++i) duplicate |= strcmp(argNames_[i], name) == 0;
+  if (argCount_ >= OPENHAL_MAX_ARGS || !openhalValidName(name) || unit == nullptr || min > max || duplicate) {
+    bad_ = true;
+    return *this;
+  }
+  argNames_[argCount_] = name;
+  argUnits_[argCount_] = unit;
+  argMin_[argCount_] = min;
+  argMax_[argCount_] = max;
+  ++argCount_;
+  return *this;
+}
+
 OpenHAL::OpenHAL(const char* product, const char* version) : product_(product), version_(version) {}
 
 OpenHalReading& OpenHAL::reading(const char* name, const char* unit, OpenHalReadFn read) {
@@ -173,13 +202,31 @@ OpenHalOutput& OpenHAL::output(const char* name, const char* unit, OpenHalWriteF
   return slot;
 }
 
+OpenHalAction& OpenHAL::action(const char* name, OpenHalActionFn run) {
+  if (actionCount_ >= OPENHAL_MAX_ACTIONS || !openhalValidName(name) || run == nullptr || findAction(name)) {
+    misconfigured_ = true;
+    return spareAction_;
+  }
+  OpenHalAction& slot = actions_[actionCount_++];
+  slot.name_ = name;
+  slot.run_ = run;
+  return slot;
+}
+
 void OpenHAL::heartbeat(unsigned long ms) { heartbeat_ = ms; }
+
+void OpenHAL::drive(OpenHalOutput& output, float value, unsigned long forMs) {
+  setOutput(output, value);
+  output.runFor_ = forMs;
+}
 
 void OpenHAL::begin(Stream& port) {
   for (uint8_t i = 0; i < outputCount_; ++i) {
     OpenHalOutput& output = outputs_[i];
     if (output.min_ > output.max_ || output.safe_ < output.min_ || output.safe_ > output.max_) misconfigured_ = true;
   }
+  for (uint8_t i = 0; i < readCount_; ++i) misconfigured_ |= reads_[i].bad_;
+  for (uint8_t i = 0; i < actionCount_; ++i) misconfigured_ |= actions_[i].bad_;
   for (uint8_t i = 0; i < outputCount_; ++i) {
     outputs_[i].value_ = outputs_[i].safe_;
     outputs_[i].write_(outputs_[i].safe_);
@@ -222,6 +269,7 @@ void OpenHAL::poll() {
   }
   for (uint8_t i = 0; i < outputCount_; ++i) {
     OpenHalOutput& output = outputs_[i];
+    if (output.runFor_ && now - output.setAt_ >= output.runFor_) setOutput(output, output.safe_);
     if (output.timeout_ && output.value_ != output.safe_ && now - output.setAt_ > output.timeout_) {
       setOutput(output, output.safe_);
       startLine(0, "SAFE");
@@ -237,11 +285,12 @@ void OpenHAL::poll() {
       reading.last_ = now;
       float value = reading.read_();
       if (!finite(value)) continue;
+      if (reading.labelCount_ && (value < 0 || value >= reading.labelCount_)) continue;
       startLine(0, "EVT");
       putChar(' ');
       put(reading.name_);
       putChar(' ');
-      putNumber(value);
+      putReading(reading, value);
       endLine();
     }
   }
@@ -274,16 +323,17 @@ void OpenHAL::handleLine(char* line) {
   }
   *star = '\0';
 
-  char* parts[4] = {nullptr, nullptr, nullptr, nullptr};
+  char* parts[3 + 2 * OPENHAL_MAX_ARGS] = {nullptr};
   uint8_t count = 0;
-  for (char* token = line; token && count < 4;) {
+  char* token = line;
+  while (token && count < 3 + 2 * OPENHAL_MAX_ARGS) {
     parts[count++] = token;
     char* space = strchr(token, ' ');
     if (space) *space = '\0';
     token = space ? space + 1 : nullptr;
   }
   unsigned int seq = 0;
-  if (count < 2 || !parseSeq(parts[0], &seq)) {
+  if (count < 2 || token != nullptr || !parseSeq(parts[0], &seq)) {
     startLine(0, "ERR");
     put(" format bad_line");
     endLine();
@@ -309,31 +359,11 @@ void OpenHAL::handleLine(char* line) {
     startLine(seq, "OK");
     endLine();
   } else if (strcmp(verb, "READ") == 0 && count == 3) {
-    OpenHalReading* reading = findReading(parts[2]);
-    OpenHalOutput* output = reading ? nullptr : findOutput(parts[2]);
-    if (reading == nullptr && output == nullptr) {
-      startLine(seq, "ERR");
-      put(" unknown ");
-      put(parts[2]);
-      endLine();
-      return;
-    }
-    float value = reading ? reading->read_() : output->value_;
-    if (!finite(value)) {
-      startLine(seq, "ERR");
-      put(" fault ");
-      put(parts[2]);
-      endLine();
-      return;
-    }
-    startLine(seq, "VAL");
-    putChar(' ');
-    put(parts[2]);
-    putChar(' ');
-    putNumber(value);
-    endLine();
+    handleRead(seq, parts[2]);
   } else if (strcmp(verb, "WRITE") == 0 && count == 4) {
     handleWrite(seq, parts[2], parts[3]);
+  } else if (strcmp(verb, "ACT") == 0 && count >= 3) {
+    handleAction(seq, parts + 2, count - 2);
   } else {
     startLine(seq, "ERR");
     put(" unknown ");
@@ -342,10 +372,111 @@ void OpenHAL::handleLine(char* line) {
   }
 }
 
+void OpenHAL::handleRead(unsigned int seq, char* name) {
+  OpenHalReading* reading = findReading(name);
+  OpenHalOutput* output = reading ? nullptr : findOutput(name);
+  if (reading == nullptr && (output == nullptr || output->internal_)) {
+    startLine(seq, "ERR");
+    put(" unknown ");
+    put(name);
+    endLine();
+    return;
+  }
+  float value = reading ? reading->read_() : output->value_;
+  bool outside = reading && reading->labelCount_ && (value < 0 || value >= reading->labelCount_);
+  if (!finite(value) || outside) {
+    startLine(seq, "ERR");
+    put(" fault ");
+    put(name);
+    endLine();
+    return;
+  }
+  startLine(seq, "VAL");
+  putChar(' ');
+  put(name);
+  putChar(' ');
+  if (reading) {
+    putReading(*reading, value);
+  } else {
+    putNumber(value);
+  }
+  endLine();
+}
+
+void OpenHAL::putReading(const OpenHalReading& reading, float value) {
+  if (reading.labelCount_) {
+    put(reading.labels_[static_cast<uint8_t>(value)]);
+  } else {
+    putNumber(value);
+  }
+}
+
+void OpenHAL::handleAction(unsigned int seq, char** parts, uint8_t count) {
+  OpenHalAction* action = findAction(parts[0]);
+  if (action == nullptr) {
+    startLine(seq, "ERR");
+    put(" unknown ");
+    put(parts[0]);
+    endLine();
+    return;
+  }
+  if (misconfigured_) {
+    startLine(seq, "ERR");
+    put(" busy misconfigured");
+    endLine();
+    return;
+  }
+  float values[OPENHAL_MAX_ARGS] = {0, 0, 0};
+  bool seen[OPENHAL_MAX_ARGS] = {false, false, false};
+  if (count != 1 + 2 * action->argCount_) {
+    startLine(seq, "ERR");
+    put(" format ");
+    put(action->name_);
+    endLine();
+    return;
+  }
+  for (uint8_t i = 1; i + 1 < count; i += 2) {
+    uint8_t index = 0;
+    while (index < action->argCount_ && strcmp(action->argNames_[index], parts[i]) != 0) ++index;
+    float value = 0;
+    if (index == action->argCount_ || seen[index] || !openhalParseNumber(parts[i + 1], &value)) {
+      startLine(seq, "ERR");
+      put(" format ");
+      put(index == action->argCount_ ? action->name_ : action->argNames_[index]);
+      endLine();
+      return;
+    }
+    if (value < action->argMin_[index] || value > action->argMax_[index]) {
+      bool high = value > action->argMax_[index];
+      startLine(seq, "ERR");
+      put(" limit ");
+      put(action->argNames_[index]);
+      put(high ? " max " : " min ");
+      putNumber(high ? action->argMax_[index] : action->argMin_[index]);
+      endLine();
+      return;
+    }
+    seen[index] = true;
+    values[index] = value;
+  }
+  const char* refused = action->run_(values);
+  if (refused != nullptr) {
+    startLine(seq, "ERR");
+    put(" interlock ");
+    putText(refused);
+    endLine();
+    return;
+  }
+  startLine(seq, "OK");
+  putChar(' ');
+  put(action->name_);
+  endLine();
+}
+
 void OpenHAL::handleWrite(unsigned int seq, char* name, char* text) {
   OpenHalOutput* output = findOutput(name);
   float value = 0;
-  if (output == nullptr) {
+  if (output == nullptr || output->internal_) {
     startLine(seq, "ERR");
     put(" unknown ");
     put(name);
@@ -387,6 +518,7 @@ void OpenHAL::handleWrite(unsigned int seq, char* name, char* text) {
 void OpenHAL::setOutput(OpenHalOutput& output, float value) {
   output.value_ = value;
   output.setAt_ = millis();
+  output.runFor_ = 0;
   output.write_(value);
 }
 
@@ -414,12 +546,25 @@ void OpenHAL::sendDescription(unsigned int seq) {
       put(",\"hi\":");
       putNumber(reading.hi_);
     }
+    if (reading.labelCount_) {
+      put(",\"s\":[");
+      for (uint8_t j = 0; j < reading.labelCount_; ++j) {
+        if (j) putChar(',');
+        putChar('"');
+        put(reading.labels_[j]);
+        putChar('"');
+      }
+      putChar(']');
+    }
     putChar('}');
   }
   put("],\"w\":[");
+  bool first = true;
   for (uint8_t i = 0; i < outputCount_; ++i) {
     const OpenHalOutput& output = outputs_[i];
-    if (i) putChar(',');
+    if (output.internal_) continue;
+    if (!first) putChar(',');
+    first = false;
     put("{\"n\":\"");
     put(output.name_);
     put("\",\"u\":\"");
@@ -440,7 +585,32 @@ void OpenHAL::sendDescription(unsigned int seq) {
     }
     putChar('}');
   }
-  put("]}");
+  putChar(']');
+  if (actionCount_) {
+    put(",\"a\":[");
+    for (uint8_t i = 0; i < actionCount_; ++i) {
+      const OpenHalAction& action = actions_[i];
+      if (i) putChar(',');
+      put("{\"n\":\"");
+      put(action.name_);
+      put("\",\"g\":[");
+      for (uint8_t j = 0; j < action.argCount_; ++j) {
+        if (j) putChar(',');
+        put("{\"n\":\"");
+        put(action.argNames_[j]);
+        put("\",\"u\":\"");
+        putText(action.argUnits_[j]);
+        put("\",\"min\":");
+        putNumber(action.argMin_[j]);
+        put(",\"max\":");
+        putNumber(action.argMax_[j]);
+        putChar('}');
+      }
+      put("]}");
+    }
+    putChar(']');
+  }
+  putChar('}');
   endLine();
 }
 
@@ -499,5 +669,11 @@ OpenHalReading* OpenHAL::findReading(const char* name) {
 OpenHalOutput* OpenHAL::findOutput(const char* name) {
   for (uint8_t i = 0; i < outputCount_; ++i)
     if (strcmp(outputs_[i].name_, name) == 0) return &outputs_[i];
+  return nullptr;
+}
+
+OpenHalAction* OpenHAL::findAction(const char* name) {
+  for (uint8_t i = 0; i < actionCount_; ++i)
+    if (strcmp(actions_[i].name_, name) == 0) return &actions_[i];
   return nullptr;
 }

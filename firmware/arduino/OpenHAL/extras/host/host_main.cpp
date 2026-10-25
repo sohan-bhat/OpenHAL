@@ -29,7 +29,13 @@ void pinMode(int pin, int mode) {
 
 void digitalWrite(int pin, int value) { analogWrite(pin, value); }
 
-int digitalRead(int pin) { return pin == 2 ? HIGH : pins[pin & 127]; }
+int digitalRead(int pin) {
+  char name[32];
+  snprintf(name, sizeof name, "OPENHAL_HOST_D%d", pin);
+  const char* value = getenv(name);
+  if (value) return atoi(value);
+  return pin == 2 ? HIGH : pins[pin & 127];
+}
 
 void analogWrite(int pin, int value) {
   pins[pin & 127] = value;

@@ -16,10 +16,10 @@ from pathlib import Path
 import pytest
 
 from openhal.conformance import ConformanceCase, run
-from openhal.drivers.base import Driver
+from openhal.drivers.base import Driver, DriverError
 from openhal.drivers.openhal_firmware import protocol
 from openhal.drivers.openhal_firmware.driver import OpenHalFirmwareDriver
-from openhal.kernel import Kernel, Write, human
+from openhal.kernel import Action, Kernel, Write, human
 from openhal.spec import DeviceFile, loads
 from openhal.spec.loader import from_data
 
@@ -66,23 +66,27 @@ def binaries(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Path]:
         "LedStrip": build("LedStrip", out),
         "ServoArm": build("ServoArm", out),
         "SoilPump": build("SoilPump", out, "PUMP_MAX_RUN_MS=300"),
+        "PlantWaterer": build("PlantWaterer", out),
     }
 
 
 class ProcessTransport:
     """A line transport to a host-built sketch, as if it were a board on a serial port."""
 
-    def __init__(self, binary: Path) -> None:
+    def __init__(self, binary: Path, env: dict[str, str] | None = None, pins: Path | None = None) -> None:
         self.binary = binary
+        self.env = env or {}
+        self.pins = pins
         self.process: asyncio.subprocess.Process | None = None
 
     async def connect(self) -> None:
+        log = self.pins.open("ab") if self.pins is not None else asyncio.subprocess.DEVNULL
         self.process = await asyncio.create_subprocess_exec(
             str(self.binary),
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
-            env={**os.environ, "OPENHAL_HOST_A0": "480", "OPENHAL_HOST_A2": "450"},
+            stderr=log,
+            env={**os.environ, "OPENHAL_HOST_A0": "480", "OPENHAL_HOST_A2": "450", **self.env},
         )
 
     async def write_line(self, line: str) -> None:
@@ -113,9 +117,11 @@ class ProcessTransport:
         self.process = None
 
 
-def driver_for(file: DeviceFile, binary: Path) -> OpenHalFirmwareDriver:
+def driver_for(
+    file: DeviceFile, binary: Path, env: dict[str, str] | None = None, pins: Path | None = None
+) -> OpenHalFirmwareDriver:
     driver = OpenHalFirmwareDriver(file)
-    driver._make_transport = lambda: ProcessTransport(binary)  # type: ignore[method-assign]
+    driver._make_transport = lambda: ProcessTransport(binary, env, pins)  # type: ignore[method-assign]
     return driver
 
 
@@ -175,7 +181,7 @@ async def test_the_compiled_sketch_passes_conformance(binaries: dict[str, Path])
     assert not [result.name for result in report.results if result.skipped]
 
 
-@pytest.mark.parametrize("example", ["DeskFan", "LedStrip", "ServoArm", "SoilPump"])
+@pytest.mark.parametrize("example", ["DeskFan", "LedStrip", "ServoArm", "SoilPump", "PlantWaterer"])
 async def test_every_example_describes_itself_into_a_valid_read_only_file(
     binaries: dict[str, Path], example: str
 ) -> None:
@@ -185,9 +191,14 @@ async def test_every_example_describes_itself_into_a_valid_read_only_file(
     await driver.close()
     assert described is not None
     draft = from_data({"device": described.pop("device")["name"], "connect": {"openhal-firmware": "auto"}, **described})
-    assert draft.write, f"{example} has no outputs"
+    assert draft.write or draft.actions, f"{example} has no outputs or actions"
     assert not draft.writable, "a self-described file stays read-only until a person confirms it"
-    assert all(channel.suggested for channel in draft.write.values())
+    assert all(entry.suggested for entry in [*draft.write.values(), *draft.actions.values()])
+    if example == "PlantWaterer":
+        assert draft.read["tank"].values == ["empty", "ok"]
+        duration = draft.actions["water"].args["duration"]
+        assert (duration.unit, duration.min, duration.max) == ("s", 1, 30)
+        assert "pump" not in draft.write, "an internal output is never offered to the hub"
 
 
 async def test_servo_limits_come_from_the_sketch(binaries: dict[str, Path]) -> None:
@@ -272,4 +283,64 @@ async def test_pump_switches_itself_off(binaries: dict[str, Path]) -> None:
     await asyncio.sleep(0.6)
     assert (await driver.read("pump")).value is False
     assert "pump_timeout" in driver.safe_reports
+    await driver.close()
+
+
+PLANT_WATERER = Path(__file__).resolve().parents[2] / "examples" / "plant-waterer"
+
+
+def plant_waterer() -> DeviceFile:
+    """The example's own device file, pointed at the host build and confirmed for the test."""
+    text = (PLANT_WATERER / "plant-waterer.hal.yaml").read_text()
+    text = text.replace("connect: { openhal-firmware: auto, boot_s: 2 }", "connect: { openhal-firmware: /dev/null }")
+    return loads(text + "confirmed: { by: tester, at: 2026-10-24 }\n")
+
+
+def test_the_example_sketch_is_the_library_example() -> None:
+    example = (PLANT_WATERER / "plant-waterer.ino").read_text()
+    assert example == (LIBRARY / "examples" / "PlantWaterer" / "PlantWaterer.ino").read_text()
+
+
+async def test_the_plant_waterer_waters_only_within_its_limits(binaries: dict[str, Path], tmp_path: Path) -> None:
+    pins = tmp_path / "pins.log"
+    file = plant_waterer()
+    kernel = Kernel()
+    driver = driver_for(file, binaries["PlantWaterer"], pins=pins)
+    kernel.register(file, driver)
+    await kernel.connect("plant-waterer")
+    who = human("tester")
+    tank = await driver.read("tank")
+    assert tank.value == "ok"
+    kernel.note_reading("plant-waterer", tank)
+    long = Action(device="plant-waterer", action="water", args={"duration": {"value": 120, "unit": "s"}})
+    blocked = await kernel.execute(long, who)
+    assert (blocked.status, blocked.code) == ("blocked", "above_max")
+    assert "pin 7 = 1" not in pins.read_text()
+    short = Action(device="plant-waterer", action="water", args={"duration": {"value": 1, "unit": "s"}})
+    done = await kernel.execute(short, who)
+    assert done.status == "done", done.message
+    assert "pin 7 = 1" in pins.read_text()
+    await asyncio.sleep(1.3)
+    assert pins.read_text().rstrip().endswith("pin 7 = 0"), "the board stops the pump when the time is up"
+    with pytest.raises(DriverError, match="unknown pump"):
+        await driver._require_link().request("WRITE", "pump", "1")
+    await driver.close()
+
+
+async def test_the_board_refuses_to_pump_from_an_empty_tank(binaries: dict[str, Path], tmp_path: Path) -> None:
+    pins = tmp_path / "pins.log"
+    file = plant_waterer()
+    kernel = Kernel()
+    driver = driver_for(file, binaries["PlantWaterer"], env={"OPENHAL_HOST_D4": "1"}, pins=pins)
+    kernel.register(file, driver)
+    await kernel.connect("plant-waterer")
+    tank = await driver.read("tank")
+    assert tank.value == "empty"
+    kernel.note_reading("plant-waterer", tank)
+    action = Action(device="plant-waterer", action="water", args={"duration": {"value": 5, "unit": "s"}})
+    blocked = await kernel.execute(action, human("tester"))
+    assert (blocked.code, blocked.limit) == ("interlock", {"interlock": "pump can't run while tank is empty"})
+    with pytest.raises(DriverError, match="interlock tank_empty"):
+        await driver._require_link().request("ACT", "water", "duration", "5")
+    assert "pin 7 = 1" not in pins.read_text()
     await driver.close()
