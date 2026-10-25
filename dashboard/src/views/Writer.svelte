@@ -155,13 +155,28 @@
     });
   }
 
-  function detectedText(value: unknown): string {
-    if (value && typeof value === "object" && !Array.isArray(value)) {
-      return Object.entries(value as Record<string, unknown>)
-        .map(([key, item]) => `${key} ${typeof item === "object" ? JSON.stringify(item) : String(item)}`)
-        .join(", ");
+  interface Detected {
+    text: string;
+    data: boolean;
+  }
+
+  function detected(value: unknown): Detected {
+    if (typeof value === "string") {
+      const block = dataBlock(value);
+      return { text: block?.text ?? value, data: !!block?.source };
     }
-    return Array.isArray(value) ? value.map((item) => JSON.stringify(item)).join(", ") : String(value);
+    if (Array.isArray(value)) {
+      const parts = value.map(detected);
+      return { text: parts.map((part) => part.text).join(", "), data: parts.some((part) => part.data) };
+    }
+    if (value && typeof value === "object") {
+      const parts = Object.entries(value as Record<string, unknown>).map(([key, item]) => {
+        const inner = detected(item);
+        return { text: `${key} ${inner.text}`, data: inner.data };
+      });
+      return { text: parts.map((part) => part.text).join(", "), data: parts.some((part) => part.data) };
+    }
+    return { text: String(value), data: false };
   }
 </script>
 
@@ -219,7 +234,11 @@
       </div>
       <dl class="facts-grid">
         {#each Object.entries(session.detected) as [key, value] (key)}
-          <div><dt class="label">{key.replace(/_/g, " ")}</dt><dd class="mono">{detectedText(value)}</dd></div>
+          {@const fact = detected(value)}
+          <div>
+            <dt class="label">{key.replace(/_/g, " ")}{fact.data ? ", shown as data" : ""}</dt>
+            <dd class="mono" class:data={fact.data}>{fact.text}</dd>
+          </div>
         {/each}
       </dl>
       {#each session.problems as problem, index (index)}<p class="problem">{problem}</p>{/each}
@@ -441,7 +460,14 @@
 
   .facts-grid div {
     display: grid;
+    align-content: start;
     gap: 2px;
+  }
+
+  .facts-grid dd.data {
+    padding: var(--s-1) var(--s-2);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
   }
 
   dd {
