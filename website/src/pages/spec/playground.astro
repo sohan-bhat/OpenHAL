@@ -33,7 +33,7 @@ const suggestion = first
       ),
     }
   : null;
-const initial = examples.find((item) => scenario.file && item.path.endsWith(`/${scenario.file}`))?.name ?? examples.find((item) => item.name === scenario.device)?.name ?? "desk-fan-confirmed";
+const initial = examples.find((item) => scenario.file && item.path.endsWith(`/${scenario.file}`))?.name ?? examples.find((item) => item.name === scenario.device)?.name ?? "plant-waterer";
 ---
 
 <Base title="Playground" description="Edit an OpenHAL device file, validate it as you type, and see the hub's JSON-RPC answer to each request. Runs in your browser.">

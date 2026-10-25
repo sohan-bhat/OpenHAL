@@ -84,16 +84,6 @@
   color: var(--syn-number);
 }
 
-.syn-method {
-  color: var(--syn-method);
-  font-weight: 700;
-}
-
-.syn-error {
-  color: var(--syn-error);
-  font-weight: 700;
-}
-
 .syn-comment {
   color: var(--syn-comment);
   font-style: italic;
