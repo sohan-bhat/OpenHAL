@@ -92,7 +92,22 @@ def _unknown_target(data: Data) -> str:
         return f"There is no device {device}"
     if data.get("requestId"):
         return f"There is no request {data['requestId']}"
+    if data.get("routine"):
+        return f"There is no routine {data['routine']}"
     return "There is no such device, channel, action or routine"
+
+
+def _invalid_params(data: Data) -> str:
+    problems = data.get("problems") or []
+    if problems:
+        return f"The params don't match the method's schema. {problems[0]}"
+    return "The params don't match the method's schema"
+
+
+def _method_not_found(data: Data) -> str:
+    if data.get("method"):
+        return f"This hub has no method {data['method']} at its conformance level"
+    return "This hub has no such method"
 
 
 def _with_device(text: str) -> Template:
@@ -119,14 +134,14 @@ REGISTRY: Final[tuple[ErrorSpec, ...]] = (
         "METHOD_NOT_FOUND",
         (),
         "Unknown method, or one above the hub's conformance level",
-        _fixed("This hub has no such method"),
+        _method_not_found,
     ),
     ErrorSpec(
         -32602,
         "INVALID_PARAMS",
         ("bad_request",),
         "Params don't match the schema",
-        _fixed("The params don't match the method's schema"),
+        _invalid_params,
     ),
     ErrorSpec(
         -32603,
