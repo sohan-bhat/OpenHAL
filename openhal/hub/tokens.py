@@ -101,6 +101,14 @@ class TokenStore:
             )
         return cursor.rowcount > 0
 
+    def revoke_secret(self, token: str) -> bool:
+        """Revoke a token by its secret, for a tool that holds the token but not its id."""
+        with self._lock:
+            cursor = self._conn.execute(
+                "UPDATE tokens SET revoked_at = ? WHERE hash = ? AND revoked_at IS NULL", (time.time(), _hash(token))
+            )
+        return cursor.rowcount > 0
+
     def new_pairing_code(self) -> str:
         """A six-digit code the CLI prints and the dashboard exchanges for a human session."""
         self._expire_pairing()

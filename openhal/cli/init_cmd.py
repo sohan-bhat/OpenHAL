@@ -68,14 +68,19 @@ def _human_token(db_path: Path, token_path: Path, rotate: bool) -> str:
             token_path.chmod(0o600)
             return "kept"
         token, _ = store.create(getpass.getuser() or "owner", "human")
+        write_secret_file(token_path, token)
+        if existing:
+            store.revoke_secret(existing)
     finally:
         store.close()
-    write_secret_file(token_path, token)
     return "rotated" if existing else "created"
 
 
 def _agent_token(db_path: Path, token_path: Path, scope: Scope) -> str:
-    """An agent token for AI clients, kept while it works and has the scope asked for."""
+    """An agent token for AI clients, kept while it works and has the scope asked for.
+
+    A replaced token is revoked once the new one is saved, so an old copy stops working.
+    """
     from openhal.hub.tokens import TokenStore, read_secret_file, write_secret_file
 
     store = TokenStore(db_path)
@@ -86,9 +91,11 @@ def _agent_token(db_path: Path, token_path: Path, scope: Scope) -> str:
             token_path.chmod(0o600)
             return "kept"
         token, _ = store.create(AGENT_TOKEN_NAME, "agent", scope)
+        write_secret_file(token_path, token)
+        if existing:
+            store.revoke_secret(existing)
     finally:
         store.close()
-    write_secret_file(token_path, token)
     return "rotated" if existing else "created"
 
 

@@ -224,8 +224,28 @@ def test_the_agent_token_is_kept_until_its_scope_changes(machine: Machine) -> No
     code, out = run("init", "--yes", "--no-discover", "--agent-scope", "control_low")
     assert code == 0, out
     assert "rotated, scope control_low" in out
+    store = TokenStore(machine.config / "hub.db")
+    try:
+        assert store.principal(first.strip()) is None
+        assert store.principal(token_file.read_text().strip()) is not None
+    finally:
+        store.close()
     code, out = run("init", "--agent-scope", "everything")
     assert code == 2
+
+
+def test_a_new_human_token_revokes_the_old_one(machine: Machine) -> None:
+    run("init", "--yes", "--no-discover")
+    human_file = machine.config / "human.token"
+    first = human_file.read_text().strip()
+    code, out = run("init", "--yes", "--no-discover", "--new-token")
+    assert code == 0, out
+    store = TokenStore(machine.config / "hub.db")
+    try:
+        assert store.principal(first) is None
+        assert store.principal(human_file.read_text().strip()) is not None
+    finally:
+        store.close()
 
 
 def test_service_flag_installs_through_the_runner(machine: Machine) -> None:
