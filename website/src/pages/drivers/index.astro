@@ -29,22 +29,30 @@ const verified = all.filter((driver) => driver.status === "verified").length;
         <span class="legend">Search</span>
         <input type="search" name="q" placeholder="Name, protocol or device family" autocomplete="off" />
       </label>
-      <label class="field">
-        <span class="legend">Tier</span>
-        <select name="tier">
-          <option value="">Any</option>
-          {tiers.map((tier) => <option value={String(tier)}>{TIER_NAMES[tier] ?? `Tier ${tier}`}</option>)}
-        </select>
-      </label>
-      <label class="field">
-        <span class="legend">Status</span>
-        <select name="status">
-          <option value="">Any</option>
-          {statuses.map((status) => <option value={status}>{statusWord(status)}</option>)}
-        </select>
-      </label>
       {
-        conformances.length > 0 && (
+        tiers.length > 1 && (
+          <label class="field">
+            <span class="legend">Tier</span>
+            <select name="tier">
+              <option value="">Any</option>
+              {tiers.map((tier) => <option value={String(tier)}>{TIER_NAMES[tier] ?? `Tier ${tier}`}</option>)}
+            </select>
+          </label>
+        )
+      }
+      {
+        statuses.length > 1 && (
+          <label class="field">
+            <span class="legend">Status</span>
+            <select name="status">
+              <option value="">Any</option>
+              {statuses.map((status) => <option value={status}>{statusWord(status)}</option>)}
+            </select>
+          </label>
+        )
+      }
+      {
+        conformances.length > 1 && (
           <label class="field">
             <span class="legend">Conformance</span>
             <select name="conformance">
@@ -56,13 +64,17 @@ const verified = all.filter((driver) => driver.status === "verified").length;
           </label>
         )
       }
-      <label class="field">
-        <span class="legend">Hazard</span>
-        <select name="hazard">
-          <option value="">Any</option>
-          {hazards.map((hazard) => <option value={hazard}>{hazard}</option>)}
-        </select>
-      </label>
+      {
+        hazards.length > 1 && (
+          <label class="field">
+            <span class="legend">Hazard</span>
+            <select name="hazard">
+              <option value="">Any</option>
+              {hazards.map((hazard) => <option value={hazard}>{hazard}</option>)}
+            </select>
+          </label>
+        )
+      }
     </form>
     <p class="summary">
       <span class="status unverified">{tested} tested on simulator</span>
