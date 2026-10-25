@@ -38,7 +38,7 @@ The proposal always has `device` and `match.scpi_idn`. Then, by family.
 
 | Family | Matched by | Proposal |
 |---|---|---|
-| Rigol DP800, Siglent SPD | IDN model `DP8..`, `SPD..` | voltage and current reads per channel, output switch, a set action when the ratings are known |
+| Rigol DP800, Siglent SPD | IDN model `DP8..`, `SPD..` | voltage and current reads per channel, output switch, set actions when the ratings are known. Siglent SPD gets separate `CHn:VOLT` and `CHn:CURR` actions and no output read back |
 | Keysight E36300 | `E363..A` | the same with `(@n)` channel lists |
 | Multimeters | Keysight 344xx, Rigol DM, Siglent SDM, Keithley 2000 and DMM | DC voltage, DC current and resistance reads |
 | Electronic loads | Rigol DL3000, Siglent SDL | voltage, current and power reads, input switch |

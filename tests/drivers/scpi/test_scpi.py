@@ -278,7 +278,7 @@ async def test_auto_resource_needs_one_match(tmp_path: Path) -> None:
     ("idn", "kind"),
     [
         ("RIGOL TECHNOLOGIES,DP832,DP8C1,00.01.16", "supply-rigol"),
-        ("Siglent Technologies,SPD3303X-E,SPD3X,1.01", "supply-rigol"),
+        ("Siglent Technologies,SPD3303X-E,SPD3X,1.01", "supply-siglent"),
         ("Keysight Technologies,E36312A,MY1,2.1", "supply-keysight"),
         ("Agilent Technologies,34401A,0,11-5-2", "multimeter"),
         ("KEITHLEY INSTRUMENTS INC.,MODEL 2000,1,A19", "multimeter"),
@@ -306,10 +306,26 @@ def test_keysight_supply_uses_channel_lists() -> None:
     assert "ratings are unknown" in unknown["notes"]
 
 
+def test_siglent_supply_uses_its_own_commands() -> None:
+    proposal = families.propose("Siglent Technologies,SPD3303X,SPD3X,1.01")
+    assert proposal["read"]["ch1_voltage"]["map"]["query"] == "MEAS:VOLT? CH1"
+    assert proposal["write"]["ch2_output"]["map"] == {"set": "OUTP CH2,{on_off}"}
+    assert proposal["actions"]["set_ch1_voltage"]["map"]["command"] == "CH1:VOLT {volts}"
+    assert proposal["actions"]["set_ch1_current"]["map"]["command"] == "CH1:CURR {amps}"
+    assert proposal["actions"]["set_ch2_current"]["args"]["amps"]["max"] == 3.2
+    assert not any("APPL" in str(action) for action in proposal["actions"].values())
+    assert "no output state query" in proposal["notes"]
+
+
 def test_proposals_load_as_device_files() -> None:
     from openhal.spec.loader import from_data
 
-    for idn in ("RIGOL TECHNOLOGIES,DP832,1,1", "Keysight Technologies,E36312A,1,1", "Agilent,34461A,1,1"):
+    for idn in (
+        "RIGOL TECHNOLOGIES,DP832,1,1",
+        "Siglent Technologies,SPD3303X,1,1",
+        "Keysight Technologies,E36312A,1,1",
+        "Agilent,34461A,1,1",
+    ):
         proposal = families.propose(idn)
         data = {**proposal, "connect": {"scpi": "auto"}}
         file = from_data(data)

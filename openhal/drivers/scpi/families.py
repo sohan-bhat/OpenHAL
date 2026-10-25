@@ -46,15 +46,15 @@ def _supply(identity: Identity, style: str) -> dict[str, Any]:
     write: dict[str, Any] = {}
     actions: dict[str, Any] = {}
     for index in range(1, count + 1):
-        where = f"CH{index}" if style == "rigol" else f"(@{index})"
+        where = f"(@{index})" if style == "keysight" else f"CH{index}"
         read[f"ch{index}_voltage"] = {"unit": "V", "every": "1 s", "map": {"query": f"MEAS:VOLT? {where}"}}
         read[f"ch{index}_current"] = {"unit": "A", "every": "1 s", "map": {"query": f"MEAS:CURR? {where}"}}
         if style == "rigol":
             output = {"set": f"OUTP CH{index},{{on_off}}", "get": f"OUTP? CH{index}"}
-            command = f"APPL CH{index},{{volts}},{{amps}}"
+        elif style == "siglent":
+            output = {"set": f"OUTP CH{index},{{on_off}}"}
         else:
             output = {"set": f"OUTP {{on_off}},(@{index})", "get": f"OUTP? (@{index})"}
-            command = f"VOLT {{volts}},(@{index});CURR {{amps}},(@{index})"
         write[f"ch{index}_output"] = {
             "type": "bool",
             "confirm": "confirm-each-time",
@@ -62,25 +62,56 @@ def _supply(identity: Identity, style: str) -> dict[str, Any]:
             "map": output,
         }
         if ratings:
-            volts, amps = ratings[index - 1]
-            actions[f"set_ch{index}"] = {
-                "description": f"Set channel {index} voltage and current limit.",
-                "args": {
-                    "volts": {"unit": "V", "min": 0, "max": volts, "step": 0.001},
-                    "amps": {"unit": "A", "min": 0, "max": amps, "step": 0.001},
-                },
-                "confirm": "confirm-each-time",
-                "suggested": True,
-                "map": {"command": command},
-            }
+            actions.update(_set_actions(index, ratings[index - 1], style))
     sections: dict[str, Any] = {"read": read, "write": write}
     if actions:
         sections["actions"] = actions
     notes = "Proposed for a bench power supply. Lower the voltage and current limits to what your circuit needs."
     if not ratings:
         notes += " The model's ratings are unknown, so no set action is proposed."
+    if style == "siglent":
+        notes += " The supply has no output state query, so the hub shows the last state it set."
     sections["notes"] = notes
     return sections
+
+
+def _set_actions(index: int, rating: tuple[float, float], style: str) -> dict[str, Any]:
+    """Set actions for one supply channel, in the command set of its family.
+
+    Siglent SPD supplies set voltage and current with separate `CHn:VOLT` and `CHn:CURR` commands
+    and have no `APPL`, so they get one action for each.
+    """
+    volts, amps = rating
+    volts_arg = {"unit": "V", "min": 0, "max": volts, "step": 0.001}
+    amps_arg = {"unit": "A", "min": 0, "max": amps, "step": 0.001}
+    tier = {"confirm": "confirm-each-time", "suggested": True}
+    if style == "siglent":
+        return {
+            f"set_ch{index}_voltage": {
+                "description": f"Set the channel {index} voltage.",
+                "args": {"volts": volts_arg},
+                **tier,
+                "map": {"command": f"CH{index}:VOLT {{volts}}"},
+            },
+            f"set_ch{index}_current": {
+                "description": f"Set the channel {index} current limit.",
+                "args": {"amps": amps_arg},
+                **tier,
+                "map": {"command": f"CH{index}:CURR {{amps}}"},
+            },
+        }
+    if style == "rigol":
+        command = f"APPL CH{index},{{volts}},{{amps}}"
+    else:
+        command = f"VOLT {{volts}},(@{index});CURR {{amps}},(@{index})"
+    return {
+        f"set_ch{index}": {
+            "description": f"Set channel {index} voltage and current limit.",
+            "args": {"volts": volts_arg, "amps": amps_arg},
+            **tier,
+            "map": {"command": command},
+        }
+    }
 
 
 def _multimeter() -> dict[str, Any]:
@@ -139,7 +170,7 @@ def _scope() -> dict[str, Any]:
 
 FAMILIES: list[tuple[str, str, str]] = [
     (r"RIGOL", r"^DP8\d\d", "supply-rigol"),
-    (r"SIGLENT", r"^SPD\d", "supply-rigol"),
+    (r"SIGLENT", r"^SPD\d", "supply-siglent"),
     (r"KEYSIGHT|AGILENT", r"^E363\d\dA", "supply-keysight"),
     (r"KEYSIGHT|AGILENT|HEWLETT", r"^344\d\d", "multimeter"),
     (r"RIGOL", r"^DM\d", "multimeter"),
@@ -177,6 +208,8 @@ def propose(reply: str) -> dict[str, Any]:
     }
     if kind == "supply-rigol":
         sections.update(_supply(identity, "rigol"))
+    elif kind == "supply-siglent":
+        sections.update(_supply(identity, "siglent"))
     elif kind == "supply-keysight":
         sections.update(_supply(identity, "keysight"))
     elif kind == "multimeter":
