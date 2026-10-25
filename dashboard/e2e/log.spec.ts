@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { AgentClient, hubState, signIn } from "./hub";
+import { AgentClient, hubState, signIn, tank } from "./hub";
 
 test.beforeEach(async ({ context, page }) => {
   await signIn(context);
@@ -26,6 +26,24 @@ test("a blocked command shows LIMIT_EXCEEDED in the message log", async ({ page 
   await expect(request).toContainText("hal/action");
   await expect(request.getByRole("img", { name: "client to hub" })).toBeVisible();
   await expect(error.getByRole("img", { name: "hub to client" })).toBeVisible();
+});
+
+test("an empty tank shows INTERLOCK_BLOCKED with the device file's reason", async ({ page }) => {
+  await page.goto("/#/devices/plant-waterer");
+  await tank("drain");
+  try {
+    await expect(page.locator("main tr").filter({ hasText: "tank" }).locator("output")).toHaveText("empty");
+    const agent = await AgentClient.connect("tank-agent", hubState().agentToken);
+    const reply = await agent.call("hal/action", { device: "plant-waterer", action: "water", args: { duration: seconds(20) } });
+    agent.close();
+    expect(reply.error?.data?.name).toBe("INTERLOCK_BLOCKED");
+    const error = page.locator('li[data-kind="error"]').filter({ hasText: "INTERLOCK_BLOCKED" }).last();
+    await expect(error).toContainText("error -32012 INTERLOCK_BLOCKED");
+    await expect(error).toContainText("pump can't run while tank is empty");
+  } finally {
+    await tank("refill");
+  }
+  await expect(page.locator("main tr").filter({ hasText: "tank" }).locator("output")).toHaveText("ok");
 });
 
 test("a number sent as one string is refused with UNIT_INVALID", async ({ page }) => {
