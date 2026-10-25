@@ -1,192 +1,185 @@
 ---
 import { getEntry, render } from "astro:content";
+import FlowDiagram from "../components/FlowDiagram.astro";
+import MessageTrace from "../components/MessageTrace.astro";
+import { PRODUCT_NAME } from "../config/brand";
 import Base from "../layouts/Base.astro";
-import DeviceSummary from "../components/DeviceSummary.astro";
-import HeroDemo from "../components/HeroDemo.astro";
-import HowItWorks from "../components/HowItWorks.astro";
-import Mhs from "../components/Mhs.astro";
-import SafetyModel from "../components/SafetyModel.astro";
-import Storyboard from "../components/Storyboard.astro";
-import { PITCH, PRODUCT_NAME } from "../config/brand";
-import { capture } from "../lib/captures";
+import { drivers, statusWord } from "../lib/catalog";
 import { HOME_TITLE } from "../lib/pages";
+import { scenarioTrace } from "../lib/scenario";
+import { latestVersion, specPages } from "../lib/spec";
+import "../styles/prose.css";
 
 const quickstart = await getEntry("snippets", "quickstart");
 const { Content: Quickstart } = await render(quickstart!);
-const dashboard = capture("/captures/hero.png");
+const all = drivers();
+const running = all.filter((driver) => driver.tier > 0 && (driver.status === "implemented" || driver.status === "verified"));
+const planned = all.filter((driver) => driver.status === "planned").length;
+const verified = all.filter((driver) => driver.status === "verified").length;
+const latest = latestVersion();
+const sections = latest ? (await specPages(latest)).filter((page) => page.depth === 1) : [];
 ---
 
-<Base title={`${PRODUCT_NAME}. ${HOME_TITLE}`} description={PITCH} bare>
-  <section class="hero" aria-labelledby="hero-title">
-    <div class="wrap">
-      <div class="hero-head">
-        <h1 id="hero-title">AI agents drive real hardware. People set the limits.</h1>
-        <div class="hero-side">
-          <p class="lede">An open hub that checks every command from any MCP client before it reaches a device.</p>
-          <p class="ctas">
-            <a class="button" href="/docs/quickstart/">Quickstart</a>
-            <a class="text-link" href="/playground/">Playground</a>
-          </p>
-        </div>
-      </div>
-      <div class="hero-demo" data-capture-slot="hero">
-        <HeroDemo />
-        {
-          dashboard && (
-            <figure class="module capture">
-              <figcaption class="module-legend legend">
-                <span>Dashboard, demo data</span>
-              </figcaption>
-              {dashboard.video ? (
-                <video controls muted playsinline preload="none" poster={dashboard.src} width={dashboard.width} height={dashboard.height}>
-                  <source src={dashboard.video} type="video/webm" />
-                </video>
-              ) : (
-                <img src={dashboard.src} width={dashboard.width} height={dashboard.height} alt="The OpenHAL dashboard on mock devices, blocking an unsafe write" />
-              )}
-            </figure>
-          )
-        }
-      </div>
-    </div>
-  </section>
+<Base title={`${PRODUCT_NAME}. ${HOME_TITLE}`} description={HOME_TITLE} bare>
+  <div class="wrap home">
+    <section class="intro" aria-labelledby="home-title">
+      <h1 id="home-title">{HOME_TITLE}</h1>
+      <FlowDiagram />
+      <MessageTrace entries={scenarioTrace()} note="Demo data" />
+    </section>
 
-  <section class="band" aria-labelledby="how-title">
-    <div class="wrap">
-      <h2 id="how-title" class="band-title">How it works</h2>
-      <HowItWorks />
-    </div>
-  </section>
-
-  <section class="band" aria-labelledby="safety-title">
-    <div class="wrap">
-      <h2 id="safety-title" class="band-title">What the kernel guarantees</h2>
-      <SafetyModel />
-    </div>
-  </section>
-
-  <section class="band" aria-labelledby="demo-title">
-    <div class="wrap">
-      <h2 id="demo-title" class="band-title">Thirty seconds, start to block</h2>
-      <Storyboard />
-    </div>
-  </section>
-
-  <section class="band" aria-labelledby="devices-title">
-    <div class="wrap">
-      <h2 id="devices-title" class="band-title">Supported devices</h2>
-      <DeviceSummary />
-    </div>
-  </section>
-
-  <section class="band" aria-labelledby="mhs-title">
-    <div class="wrap">
-      <h2 id="mhs-title" class="band-title">OpenHAL and MHS</h2>
-      <Mhs />
-    </div>
-  </section>
-
-  <section class="band" aria-labelledby="start-title">
-    <div class="wrap start">
-      <h2 id="start-title" class="band-title">Quickstart</h2>
+    <section aria-labelledby="start-title" class="block">
+      <h2 id="start-title">Quickstart</h2>
       <div class="prose quickstart">
         <Quickstart />
-        <p><a href="/docs/quickstart/">Full quickstart</a></p>
       </div>
-    </div>
-  </section>
+    </section>
+
+    <section aria-labelledby="devices-title" class="block">
+      <h2 id="devices-title">Device families</h2>
+      <p class="summary">
+        <span class={`status ${verified ? "ok" : "unverified"}`}>{running.length} drivers {statusWord("implemented")}</span>
+        <span class="muted">{verified ? `${verified} verified on hardware.` : "None is verified on hardware yet."} {planned} planned.</span>
+      </p>
+      <div class="table-wrap">
+        <table class="families">
+          <thead>
+            <tr><th scope="col">Driver</th><th scope="col">Device families</th></tr>
+          </thead>
+          <tbody>
+            {
+              running.map((driver) => (
+                <tr>
+                  <td data-label="Driver"><a class="mono" href={`/drivers/${driver.name}/`}>{driver.name}</a></td>
+                  <td data-label="Device families">{driver.families.join(", ")}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+      <p><a href="/drivers/">All drivers, with tier, status and hazard</a></p>
+    </section>
+
+    <section aria-labelledby="mhs-title" class="block">
+      <h2 id="mhs-title">MHS</h2>
+      <p class="measure">
+        Anthropic's Model Hardware Standard is a limited research preview for invited labs. OpenHAL is an independent open protocol, not
+        affiliated with Anthropic or MHS, and plans to stay compatible as MHS opens up.
+      </p>
+    </section>
+
+    <section aria-labelledby="spec-title" class="block">
+      <h2 id="spec-title">Specification</h2>
+      {
+        sections.length ? (
+          <ol class="spec-links">
+            {sections.map((page) => (
+              <li>
+                <a href={page.href}>
+                  <span class="mono num">{page.number}</span> {page.title}
+                </a>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <ul class="spec-links">
+            <li><a href="/spec/">Specification</a></li>
+            <li><a href="/docs/device-file-format/">Device file format</a></li>
+            <li><a href="/docs/safety/">Safety model</a></li>
+          </ul>
+        )
+      }
+    </section>
+  </div>
 </Base>
 
 <style>
-  .hero {
-    padding: var(--s-7) 0 0;
+  .home {
+    max-width: 1040px;
+    padding-top: var(--s-7);
   }
 
-  .hero-head {
+  .intro {
     display: grid;
-    gap: var(--s-5);
-    margin-bottom: var(--s-7);
+    gap: var(--s-6);
   }
 
   h1 {
-    font-size: var(--t-5);
-    line-height: var(--lh-5);
-    font-weight: 750;
-    letter-spacing: -0.01em;
-    max-width: 16ch;
-  }
-
-  .lede {
-    max-width: 36ch;
-  }
-
-  .ctas {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--s-5);
-    margin-top: var(--s-5);
-  }
-
-  .text-link {
-    font-weight: 700;
-  }
-
-  .hero-demo {
-    display: grid;
-    gap: var(--s-6);
-    min-width: 0;
-  }
-
-  .capture {
-    margin: 0;
-  }
-
-  .capture img,
-  .capture video {
-    width: 100%;
-    height: auto;
-  }
-
-  .band {
-    padding: var(--s-8) 0 0;
-  }
-
-  .band > .wrap {
-    border-top: 1px solid var(--ink);
-    padding-top: var(--s-5);
-  }
-
-  .band-title {
-    font-size: var(--t-4);
-    line-height: var(--lh-4);
-    margin-bottom: var(--s-6);
     max-width: 24ch;
   }
 
-  .quickstart {
-    max-width: 80ch;
+  .block {
+    margin-top: var(--s-8);
+    display: grid;
+    gap: var(--s-4);
+    min-width: 0;
   }
 
-  @media (min-width: 1024px) {
-    .hero {
-      padding-top: var(--s-8);
+  .quickstart {
+    max-width: none;
+    min-width: 0;
+  }
+
+  .quickstart :global(.code-block) {
+    margin-top: 0;
+  }
+
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2) var(--s-4);
+  }
+
+  .families td:first-child {
+    white-space: nowrap;
+    width: 1%;
+  }
+
+  .measure {
+    max-width: var(--measure);
+  }
+
+  .spec-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s-1);
+  }
+
+  .num {
+    display: inline-block;
+    min-width: 2em;
+    color: var(--text-2);
+  }
+
+  @media (max-width: 599px) {
+    .families,
+    .families tbody,
+    .families tr,
+    .families td {
+      display: block;
     }
 
-    .hero-head {
-      grid-template-columns: 7fr 5fr;
-      align-items: end;
-      column-gap: var(--s-7);
+    .families thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
     }
 
-    .band {
-      padding-top: var(--s-9);
+    .families tr {
+      padding: var(--s-2) 0;
+      border-bottom: var(--rule);
     }
 
-    .start {
-      display: grid;
-      grid-template-columns: 4fr 8fr;
-      gap: var(--s-7);
+    .families td {
+      border: 0;
+      padding: 0;
+      width: auto;
     }
   }
 </style>

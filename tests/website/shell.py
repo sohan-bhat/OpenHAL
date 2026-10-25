@@ -100,9 +100,14 @@ class Session:
         match = re.match(r"^(.*?)\s*\|\s*tail -(\d+)\s*>\s*(\S+)$", line)
         if match:
             line, tail, redirect = match.group(1), int(match.group(2)), Path(self.expand(match.group(3)))
+        clone = re.fullmatch(r"git clone (\S+) && cd (\S+)", line)
+        if clone:
+            return self.check_clone(clone.group(1), clone.group(2))
         words = shlex.split(self.expand(line))
         if not words:
             return Result(line, 0, "")
+        if words[:2] == ["uv", "run"] and len(words) > 2 and words[2] in ("openhal", "openhald"):
+            words = words[2:]
         program = words[0]
         if program == "openhald":
             return self.start_hub(words[1:])
@@ -160,6 +165,20 @@ class Session:
             check=False,
         )
         return Result("uv run pytest " + shlex.join(args), done.returncode, done.stdout + done.stderr)
+
+    def check_clone(self, url: str, folder: str) -> Result:
+        """The clone line must name the project's repository and the folder it creates."""
+        site = (ROOT / "website" / "src" / "config" / "site.ts").read_text(encoding="utf-8")
+        repo = re.search(r'REPOSITORY_URL = "([^"]+)"', site)
+        if repo is None or url != repo.group(1):
+            raise SnippetError(f"The clone URL {url} doesn't match REPOSITORY_URL in website/src/config/site.ts.")
+        if folder != url.rstrip("/").rsplit("/", 1)[-1]:
+            raise SnippetError(f"git clone {url} creates {url.rsplit('/', 1)[-1]}, not {folder}.")
+        project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+        for script in ("openhal", "openhald"):
+            if script not in project["scripts"]:
+                raise SnippetError(f"pyproject.toml has no {script} script for uv run.")
+        return Result(f"git clone {url} && cd {folder}", 0, "")
 
     def check_install(self, words: list[str]) -> Result:
         project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
