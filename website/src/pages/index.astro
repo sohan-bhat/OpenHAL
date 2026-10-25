@@ -29,7 +29,10 @@ const sections = specItems
       <FlowDiagram />
       <div class="trace-block">
         <MessageTrace entries={scenarioTrace()} label="Message trace recorded with openhal demo" />
-        <p class="trace-after muted">Recorded from <code>openhal demo</code> on the simulated plant waterer.</p>
+        <p class="trace-after">
+          <span class="muted">Recorded from <code>openhal demo</code> on the simulated plant waterer.</span>
+          <a href="/spec/playground/">Try it in your browser</a>
+        </p>
       </div>
     </section>
 
@@ -121,6 +124,16 @@ const sections = specItems
     display: grid;
     gap: var(--s-3);
     min-width: 0;
+  }
+
+  .trace-after {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-1) var(--s-3);
+  }
+
+  .trace-after a {
+    font-weight: 700;
   }
 
   .trace-after code {

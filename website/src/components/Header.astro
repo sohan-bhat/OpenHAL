@@ -6,8 +6,10 @@ import { NAV } from "../config/site";
 const published = (await getCollection("blog")).some((post) => !post.data.draft);
 const links = NAV.filter((link) => link.label !== "Blog" || published);
 const path = Astro.url.pathname;
-const current = (match: string[]) =>
-  match.some((prefix) => (prefix === "/" ? path === "/" : path.startsWith(prefix)));
+const matchLength = (match: string[]) =>
+  Math.max(0, ...match.filter((prefix) => (prefix === "/" ? path === "/" : path.startsWith(prefix))).map((prefix) => prefix.length));
+const best = Math.max(0, ...links.map((link) => matchLength(link.match)));
+const current = (match: string[]) => best > 0 && matchLength(match) === best;
 ---
 
 <header class="site-header">

@@ -7,7 +7,7 @@ test.describe("site chrome", () => {
     const links = await nav.getByRole("link").evaluateAll((items) =>
       items.map((item) => ({ label: item.textContent!.trim(), href: item.getAttribute("href")! })),
     );
-    expect(links.map((link) => link.label)).toEqual(["Overview", "Specification", "Drivers", "Device Library", "SDKs", "Inspector", "GitHub"]);
+    expect(links.map((link) => link.label)).toEqual(["Overview", "Specification", "Playground", "Drivers", "Device Library", "SDKs", "Inspector", "GitHub"]);
     for (const link of links) {
       if (link.href.startsWith("http")) {
         expect(link.href).toBe("https://github.com/sohan-bhat/OpenHAL");
@@ -16,7 +16,15 @@ test.describe("site chrome", () => {
       await page.goto("/404.html");
       await page.locator(".desktop-nav").getByRole("link", { name: link.label, exact: true }).click();
       await expect(page.locator(".desktop-nav").getByRole("link", { name: link.label, exact: true })).toHaveAttribute("aria-current", "page");
+      await expect(page.locator(".desktop-nav [aria-current]")).toHaveCount(1);
     }
+  });
+
+  test("the overview trace leads to the playground", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: "Try it in your browser" }).click();
+    await expect(page).toHaveURL(/\/spec\/playground\/$/);
+    await expect(page.locator("h1")).toHaveText("Playground");
   });
 
   test("the wordmark goes to the overview", async ({ page }) => {
