@@ -4,7 +4,8 @@ import GithubSlugger from "github-slugger";
 import { SKIP, visit } from "unist-util-visit";
 import { LANGUAGE_NAMES, languageOf, tokenize } from "../highlight.mjs";
 import { REPO_ROOT, glossaryHref, termAnchor } from "../spec-meta.mjs";
-import { scenarioTraceText } from "../scenario-data.mjs";
+import { fromHtml } from "hast-util-from-html";
+import { scenarioTraceHtml } from "../scenario-data.mjs";
 import { linkFor } from "./routes.mjs";
 
 export { REPO_ROOT };
@@ -126,7 +127,7 @@ export function rehypeCodeBlocks() {
       const meta = String(code.data?.meta ?? "");
       const tested = /(^|\s)tested(\s|$)/.test(meta);
       if (language === "scenario") {
-        parent.children[index] = codeFigure(scenarioTraceText(), "json", false);
+        parent.children.splice(index, 1, ...fromHtml(scenarioTraceHtml(), { fragment: true }).children);
         return SKIP;
       }
       const include = /(?:^|\s)include=(\S+)/.exec(meta)?.[1];

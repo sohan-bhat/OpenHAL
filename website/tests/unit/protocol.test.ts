@@ -1,8 +1,9 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { ERROR_REGISTRY } from "../../src/lib/protocol";
-import { SCENARIO_PATH, scenarioFrom, traceOf } from "../../src/lib/scenario";
+import { SCENARIO_PATH, outcome, scenarioFrom, scenarioTrace } from "../../src/lib/scenario";
+import { traceText } from "../../src/lib/trace";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const read = (path: string) => readFileSync(`${root}${path}`, "utf8");
@@ -28,37 +29,34 @@ describe("error registry", () => {
   });
 });
 
-const RECORDED = `
-device: plant-waterer
-file: plant-waterer.hal.yaml
-exchanges:
-  - request: { jsonrpc: "2.0", id: 1, method: hal/action, params: { device: plant-waterer, action: water, args: { duration: { value: 120, unit: s } } } }
-    response:
-      jsonrpc: "2.0"
-      id: 1
-      error: { code: -32010, message: "water duration 120 s exceeds the limit of 30 s", data: { name: LIMIT_EXCEEDED } }
-  - request: { jsonrpc: "2.0", id: 2, method: hal/action, params: { device: plant-waterer, action: water, args: { duration: { value: 20, unit: s } } } }
-    response: { jsonrpc: "2.0", id: 2, result: { status: done } }
-  - notification: { jsonrpc: "2.0", method: hal/value, params: { device: plant-waterer, channel: soil_moisture, value: 46, unit: "%" } }
-`;
+const expected = JSON.parse(read("website/tests/kernel-parity/expected.json"));
 
 describe("the recorded scenario", () => {
-  it("reads every message in order, whatever the layout", () => {
-    const scenario = scenarioFrom(RECORDED);
-    expect(scenario.device).toBe("plant-waterer");
-    expect(scenario.file).toBe("plant-waterer.hal.yaml");
-    expect(traceOf(scenario.messages).map((entry) => entry.kind)).toEqual(["request", "error", "request", "result", "notification"]);
-    expect(traceOf(scenario.messages)[1]).toEqual({ kind: "error", code: -32010, name: "LIMIT_EXCEEDED", reason: "water duration 120 s exceeds the limit of 30 s" });
+  const scenario = scenarioFrom(read(SCENARIO_PATH));
+
+  it("says what happens in the hub's own words", () => {
+    expect(outcome(scenario)).toBe(expected.scenario.outcome);
   });
 
-  it("refuses a file with no requests", () => {
-    expect(() => scenarioFrom("device: x\n")).toThrow(/no JSON-RPC requests/);
+  it("shows the same lines as openhal.demo.trace", () => {
+    const entries = scenarioTrace(scenario);
+    const shownLines = traceText(entries).split("\n").map((line) => line.trim()).filter(Boolean);
+    for (const line of expected.scenario.lines as string[]) {
+      const bare = line.replace(/^[\u2192\u2190]\s*/, "").trim();
+      if (!bare || bare.startsWith("{") || bare.startsWith('"args"') || /^hal\/action/.test(bare) || /^result/.test(bare)) continue;
+      expect(shownLines.some((shownLine) => shownLine.replace(/^(->|<-)\s*/, "").replace(/\s+/g, " ").includes(bare.replace(/\s+/g, " ")))).toBe(true);
+    }
   });
 
-  it("names only registry codes and names", () => {
-    if (!existsSync(`${root}${SCENARIO_PATH}`)) return;
-    for (const entry of traceOf(scenarioFrom(read(SCENARIO_PATH)).messages)) {
+  it("sends the recorded requests and names only registry codes", () => {
+    const entries = scenarioTrace(scenario);
+    expect(entries.filter((entry) => entry.kind === "request")).toHaveLength(scenario.record.exchanges.length);
+    for (const entry of entries) {
       if (entry.kind === "error") expect(ERROR_REGISTRY.find((item) => item.code === entry.code)?.name).toBe(entry.name);
     }
+  });
+
+  it("refuses a file without exchanges", () => {
+    expect(() => scenarioFrom("device: x\n")).toThrow(/no exchanges/);
   });
 });

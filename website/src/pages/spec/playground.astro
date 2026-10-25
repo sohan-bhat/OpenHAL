@@ -13,10 +13,11 @@ const examples = Object.entries(files)
     const name = path.split("/").pop()!.replace(/\.hal\.yaml$/, "");
     return { name, path: path.replace(/^(\.\.\/)+/, ""), text };
   })
+  .sort((a, b) => Number(b.text.includes("confirmed:")) - Number(a.text.includes("confirmed:")))
   .filter((item, index, all) => all.findIndex((other) => other.name === item.name) === index)
   .sort((a, b) => a.name.localeCompare(b.name));
 const scenario = loadScenario();
-const first = scenario.messages.find((message) => typeof message.method === "string" && (message.method === "hal/action" || message.method === "hal/write"));
+const first = scenario.record.exchanges[0]?.request;
 const params = (first?.params ?? {}) as Record<string, any>;
 const quantityText = (value: any) => (value && typeof value === "object" && "value" in value ? `${value.value} ${value.unit}` : String(value));
 const suggestion = first

@@ -80,6 +80,28 @@
   overflow-wrap: anywhere;
 }
 
+.trace li.note {
+  display: block;
+  padding-left: calc(22px + var(--s-2));
+  color: var(--text-2);
+}
+
+.trace .summary {
+  color: var(--text);
+}
+
+.trace-figure {
+  margin: 0;
+  min-width: 0;
+}
+
+.trace-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-2);
+}
+
 .trace .who {
   font-family: var(--font-text);
   font-size: var(--t-legend);

@@ -1,6 +1,7 @@
 ---
 import "../styles/trace.css";
-import { type TraceEntry, arrowSvg, directionWord, payloadHtml } from "../lib/trace";
+import type { TraceEntry } from "../lib/trace";
+import { traceHtml } from "../lib/trace-html.mjs";
 
 interface Props {
   entries: TraceEntry[];
@@ -11,56 +12,4 @@ interface Props {
 const { entries, label = "Message trace", note } = Astro.props;
 ---
 
-<figure class="trace-figure">
-  <figcaption class="trace-caption">
-    <span class="legend">{label}</span>
-    {note && <span class="legend">{note}</span>}
-  </figcaption>
-  <div class="trace" tabindex="0">
-    <ol>
-      {
-        entries.map((entry) => (
-          <li>
-            <Fragment set:html={arrowSvg(entry.kind === "request" ? "out" : "in", entry.kind === "notification")} />
-            <span class="visually-hidden">{directionWord(entry)}</span>
-            <div class="line">
-              {entry.kind === "error" ? (
-                <>
-                  <span class="head error-head">
-                    <span class="outcome-error">
-                      error {entry.code} {entry.name}
-                    </span>
-                  </span>
-                  <span class="reason">{entry.reason}</span>
-                </>
-              ) : (
-                <span class="head">
-                  {entry.kind === "result" ? (
-                    <span class="outcome-result">result</span>
-                  ) : (
-                    <span class="method">{entry.method}</span>
-                  )}
-                  <span class="payload" set:html={payloadHtml(entry.kind === "result" ? entry.result : entry.params)} />
-                </span>
-              )}
-            </div>
-          </li>
-        ))
-      }
-    </ol>
-  </div>
-</figure>
-
-<style>
-  .trace-figure {
-    margin: 0;
-    min-width: 0;
-  }
-
-  .trace-caption {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--s-3);
-    margin-bottom: var(--s-2);
-  }
-</style>
+<Fragment set:html={traceHtml(entries, { label, note })} />

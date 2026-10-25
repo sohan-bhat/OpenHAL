@@ -6,7 +6,7 @@ import { PRODUCT_NAME } from "../config/brand";
 import Base from "../layouts/Base.astro";
 import { drivers, statusWord } from "../lib/catalog";
 import { HOME_TITLE } from "../lib/pages";
-import { scenarioTrace } from "../lib/scenario";
+import { outcome, scenarioTrace } from "../lib/scenario";
 import { latestVersion, specPages } from "../lib/spec";
 import { specSidebar } from "../lib/spec-nav";
 import "../styles/prose.css";
@@ -30,13 +30,14 @@ const sections = specItems
     <section class="intro" aria-labelledby="home-title">
       <h1 id="home-title">{HOME_TITLE}</h1>
       <FlowDiagram />
-      <MessageTrace entries={scenarioTrace()} note="Recorded from the reference hub" />
+      <MessageTrace entries={scenarioTrace()} note="Recorded with openhal demo" />
     </section>
 
     <section aria-labelledby="start-title" class="block">
       <h2 id="start-title">Quickstart</h2>
       <div class="prose quickstart">
         <Quickstart />
+        <p>{outcome()}</p>
       </div>
     </section>
 

@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse } from "yaml";
 import { REPO_ROOT } from "./spec-meta.mjs";
+import { traceHtml } from "./trace-html.mjs";
 
 export const SCENARIO_PATH = "docs/demo/scenario.yaml";
 
@@ -9,39 +10,18 @@ function isObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function isMessage(value) {
-  return typeof value.method === "string" || "result" in value || ("error" in value && isObject(value.error) && "code" in value.error);
-}
-
-function collect(value, out) {
-  if (Array.isArray(value)) {
-    for (const item of value) collect(item, out);
-    return;
-  }
-  if (!isObject(value)) return;
-  if (isMessage(value)) {
-    out.push(value);
-    return;
-  }
-  for (const item of Object.values(value)) collect(item, out);
-}
-
-function firstString(data, keys) {
-  if (!isObject(data)) return null;
-  for (const key of keys) if (typeof data[key] === "string") return data[key];
-  for (const item of Object.values(data)) {
-    const found = firstString(item, keys);
-    if (found) return found;
-  }
-  return null;
+function need(condition, path, what) {
+  if (!condition) throw new Error(`${path} ${what}`);
 }
 
 export function scenarioFrom(text, path = SCENARIO_PATH) {
-  const data = parse(text);
-  const messages = [];
-  collect(data, messages);
-  if (!messages.some((message) => typeof message.method === "string")) throw new Error(`${path} holds no JSON-RPC requests to show.`);
-  return { path, device: firstString(data, ["device", "device_id", "deviceId"]), file: firstString(data, ["file", "device_file", "deviceFile"]), messages };
+  const record = parse(text);
+  need(isObject(record) && Array.isArray(record.exchanges) && record.exchanges.length > 0, path, "has no exchanges.");
+  record.exchanges.forEach((exchange, index) => {
+    need(isObject(exchange?.request) && typeof exchange.request.method === "string", path, `exchanges[${index}] has no request method.`);
+    need(isObject(exchange.error) || isObject(exchange.result), path, `exchanges[${index}] has neither an error nor a result.`);
+  });
+  return { path, record, device: typeof record.device === "string" ? record.device : null, file: typeof record.file === "string" ? record.file : null };
 }
 
 let cached = null;
@@ -56,12 +36,47 @@ export function loadScenario() {
   return cached;
 }
 
-export function jsonLine(value) {
-  if (Array.isArray(value)) return `[${value.map(jsonLine).join(", ")}]`;
-  if (isObject(value)) return `{${Object.entries(value).map(([key, item]) => `${JSON.stringify(key)}: ${jsonLine(item)}`).join(", ")}}`;
-  return JSON.stringify(value) ?? "null";
+export function shown(value) {
+  if (isObject(value) && "value" in value && value.unit) {
+    const magnitude = Number(value.value);
+    const text = Number.isInteger(magnitude) ? String(magnitude) : String(Number(magnitude.toPrecision(6)));
+    return `${text} ${value.unit === "percent" ? "%" : value.unit}`;
+  }
+  if (typeof value === "boolean") return value ? "true" : "false";
+  return String(value);
 }
 
-export function scenarioTraceText(scenario = loadScenario()) {
-  return scenario.messages.map((message) => `${typeof message.method === "string" ? "→" : "←"} ${jsonLine(message)}`).join("\n");
+export function exchangeEntries(exchange) {
+  const out = [];
+  if (typeof exchange.before === "string" && exchange.before) out.push({ kind: "note", text: exchange.before });
+  out.push({ kind: "request", method: exchange.request.method, params: exchange.request.params ?? {} });
+  if (isObject(exchange.error)) {
+    out.push({ kind: "error", code: Number(exchange.error.code), name: String(exchange.error.data?.name ?? ""), reason: String(exchange.error.message ?? "") });
+  } else {
+    out.push({ kind: "result", result: { status: exchange.result?.status ?? null } });
+  }
+  const soil = exchange.soil_moisture;
+  if (isObject(soil) && soil.before && soil.after) {
+    out.push({ kind: "notification", method: "hal/value", params: {}, text: `soil_moisture rises from ${shown(soil.before)} to ${shown(soil.after)}` });
+  }
+  return out;
+}
+
+export function scenarioEntries(scenario = loadScenario()) {
+  return scenario.record.exchanges.flatMap(exchangeEntries);
+}
+
+export function outcome(scenario = loadScenario()) {
+  const [tooLong, , watered] = scenario.record.exchanges;
+  const asked = shown(tooLong.request.params.args.duration);
+  const duration = shown(watered.request.params.args.duration);
+  const soil = watered.soil_moisture;
+  return (
+    `You'll see the hub refuse a ${asked} watering, hold the pump while the tank is empty, ` +
+    `then water for ${duration} as soil moisture rises from ${shown(soil.before)} to ${shown(soil.after)}.`
+  );
+}
+
+export function scenarioTraceHtml(scenario = loadScenario()) {
+  return traceHtml(scenarioEntries(scenario), { note: "Recorded with openhal demo" });
 }
