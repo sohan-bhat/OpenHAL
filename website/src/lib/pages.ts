@@ -1,17 +1,18 @@
 import { getCollection } from "astro:content";
-import { routeFor } from "./markdown/routes.mjs";
-import { libraryEntries } from "./library";
-import { showDrafts } from "./drafts";
+import { drivers } from "./catalog";
 import { docTitle } from "./docs-nav";
-import { specVersions } from "./spec-versions";
-
-export const HOME_TITLE = "AI agents drive real hardware. People set the limits.";
+import { showDrafts } from "./drafts";
+import { libraryEntries } from "./library";
+import { routeFor } from "./markdown/routes.mjs";
+import { specPages } from "./spec";
 
 export interface PageInfo {
   path: string;
   title: string;
   kind: string;
 }
+
+export const HOME_TITLE = "OpenHAL is an open protocol for AI agents to discover, read and control hardware safely.";
 
 export function ogPath(pathname: string): string {
   const slug = pathname.replace(/^\/+|\/+$/g, "");
@@ -24,32 +25,36 @@ export function ogSlug(pathname: string): string {
 
 export async function allPages(): Promise<PageInfo[]> {
   const pages: PageInfo[] = [
-    { path: "/", title: HOME_TITLE, kind: "OpenHAL" },
-    { path: "/playground/", title: "Device file playground", kind: "Playground" },
-    { path: "/devices/", title: "Supported devices", kind: "Devices" },
-    { path: "/library/", title: "Device library", kind: "Library" },
+    { path: "/", title: "An open protocol for hardware", kind: "Overview" },
     { path: "/docs/", title: "Documentation", kind: "Docs" },
+    { path: "/spec/", title: "Specification", kind: "Specification" },
+    { path: "/spec/playground/", title: "Playground", kind: "Specification" },
+    { path: "/drivers/", title: "Drivers", kind: "Drivers" },
+    { path: "/library/", title: "Device Library", kind: "Device Library" },
+    { path: "/sdks/", title: "SDKs", kind: "SDKs" },
+    { path: "/sdks/python/reference/", title: "Python API reference", kind: "SDKs" },
+    { path: "/sdks/typescript/", title: "TypeScript SDK", kind: "SDKs" },
+    { path: "/inspector/", title: "Inspector", kind: "Inspector" },
     { path: "/blog/", title: "Blog", kind: "Blog" },
-    { path: "/404/", title: "Page not found", kind: "OpenHAL" },
+    { path: "/404/", title: "Page not found", kind: "Overview" },
   ];
   for (const entry of await getCollection("docs")) {
     const route = routeFor(entry.id);
-    if (!route) continue;
-    const title = docTitle(entry);
-    pages.push({ path: route, title, kind: route.startsWith("/spec/") ? "Spec" : "Docs" });
+    if (!route || route.startsWith("/drivers/") && !route.endsWith("coverage/")) continue;
+    pages.push({ path: route, title: docTitle(entry), kind: route.startsWith("/sdks/") ? "SDKs" : route.startsWith("/drivers/") ? "Drivers" : "Docs" });
   }
-  const spec = pages.find((page) => page.path === "/spec/");
-  if (spec) {
-    for (const version of specVersions()) {
-      pages.push({ path: `/spec/${version.version}/`, title: spec.title, kind: "Spec" });
-    }
+  for (const page of await specPages()) {
+    pages.push({ path: page.href, title: page.title, kind: `Specification ${page.version}` });
+  }
+  for (const driver of drivers()) {
+    pages.push({ path: `/drivers/${driver.name}/`, title: driver.name, kind: "Drivers" });
   }
   for (const post of await getCollection("blog")) {
     if (post.data.draft && !showDrafts()) continue;
     pages.push({ path: `/blog/${post.id}/`, title: post.data.title, kind: "Blog" });
   }
   for (const entry of libraryEntries()) {
-    pages.push({ path: `/library/${entry.slug}/`, title: entry.title, kind: "Library" });
+    pages.push({ path: `/library/${entry.slug}/`, title: entry.title, kind: "Device Library" });
   }
   const seen = new Set<string>();
   return pages.filter((page) => !seen.has(page.path) && seen.add(page.path));

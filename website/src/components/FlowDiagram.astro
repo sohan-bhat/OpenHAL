@@ -1,0 +1,144 @@
+---
+import { FLOW_NODES, readFlow } from "../lib/flow";
+
+const flow = readFlow();
+---
+
+{
+  flow && (
+    <figure class="flow" data-flow aria-labelledby="flow-caption">
+      <div class="flow-art paused" style={`aspect-ratio: ${flow.width} / ${flow.height}`}>
+        <div class="flow-light" set:html={flow.light} />
+        <div class="flow-dark" set:html={flow.dark} />
+      </div>
+      <figcaption id="flow-caption">
+        <dl class="flow-legend">
+          {FLOW_NODES.map((node) => (
+            <div data-node={node.key} tabindex="0">
+              <dt>{node.label}</dt>
+              <dd>{node.text}</dd>
+            </div>
+          ))}
+        </dl>
+      </figcaption>
+    </figure>
+  )
+}
+
+<script>
+  for (const figure of document.querySelectorAll<HTMLElement>("[data-flow]")) {
+    const art = figure.querySelector<HTMLElement>(".flow-art");
+    if (!art) continue;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) art.classList.toggle("paused", !entry.isIntersecting);
+      },
+      { threshold: 0.2 },
+    );
+    observer.observe(art);
+    const shapes = (key: string) =>
+      [...art.querySelectorAll<SVGElement>("g[class], g[id]")].filter((group) => {
+        const names = [group.getAttribute("class") ?? "", group.id ?? ""].join(" ");
+        const decoded = names
+          .split(/\s+/)
+          .map((name) => {
+            try {
+              return atob(name);
+            } catch {
+              return name;
+            }
+          })
+          .join(" ")
+          .toLowerCase();
+        return decoded.includes(key);
+      });
+    for (const item of figure.querySelectorAll<HTMLElement>("[data-node]")) {
+      const key = item.dataset.node ?? "";
+      const on = () => {
+        figure.classList.add("focused");
+        item.classList.add("active");
+        shapes(key).forEach((shape) => shape.classList.add("flow-active"));
+      };
+      const off = () => {
+        figure.classList.remove("focused");
+        item.classList.remove("active");
+        shapes(key).forEach((shape) => shape.classList.remove("flow-active"));
+      };
+      item.addEventListener("mouseenter", on);
+      item.addEventListener("mouseleave", off);
+      item.addEventListener("focus", on);
+      item.addEventListener("blur", off);
+    }
+  }
+</script>
+
+<style>
+  .flow {
+    margin: 0;
+  }
+
+  .flow-art {
+    width: 100%;
+    max-width: 1040px;
+  }
+
+  .flow-art :global(svg) {
+    width: 100%;
+    height: auto;
+  }
+
+  .flow-art.paused :global(*) {
+    animation-play-state: paused !important;
+  }
+
+  .flow-dark {
+    display: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .flow-light {
+      display: none;
+    }
+
+    .flow-dark {
+      display: block;
+    }
+  }
+
+  .flow.focused .flow-art :global(g:not(.flow-active)) {
+    opacity: 0.45;
+  }
+
+  .flow-legend {
+    display: grid;
+    gap: var(--s-1) var(--s-5);
+    margin: var(--s-4) 0 0;
+  }
+
+  .flow-legend > div {
+    display: grid;
+    grid-template-columns: 9.5em 1fr;
+    gap: var(--s-3);
+    padding: 2px var(--s-2);
+    border-radius: 4px;
+  }
+
+  .flow-legend > div.active {
+    background: var(--surface);
+  }
+
+  .flow-legend dt {
+    font-weight: 700;
+  }
+
+  .flow-legend dd {
+    margin: 0;
+    color: var(--text-2);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flow-art :global(*) {
+      animation: none !important;
+    }
+  }
+</style>
