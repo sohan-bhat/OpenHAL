@@ -20,6 +20,9 @@ Quirks.
   would otherwise be read as the answer to the next query.
 - `health()` sends `*OPC?`, which every IEEE 488.2 instrument answers, so a dropped LAN link
   is noticed by the heartbeat.
+- pyvisa-py reads a closed raw socket as no data and waits out the timeout, and on Linux a send
+  to a closed peer can still succeed. So before each exchange, and after a timeout, the driver
+  peeks at the socket, and a closed one marks the connection lost instead of reopening it.
 - `describe()` reads `*IDN?` and proposes channels for known power supplies, multimeters,
   loads, generators and scopes (families.py). Proposed writes are `suggested: true`.
 - SCPI has no universal emergency command, so the safe state comes from the device file.
@@ -30,6 +33,8 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import re
+import select
+import socket
 from collections.abc import Callable
 from typing import Any, ClassVar, Literal, TypeVar
 
@@ -100,6 +105,34 @@ def _is_timeout(exc: BaseException) -> bool:
         return code == constants.StatusCode.error_timeout
     except ImportError:  # pragma: no cover - pyvisa is required by this driver
         return False
+
+
+def _socket_of(inst: Any) -> socket.socket | None:
+    """The raw socket behind a pyvisa-py TCPIP SOCKET session, or None for every other session."""
+    try:
+        session = inst.visalib.sessions[inst.session]
+    except (AttributeError, KeyError, TypeError):
+        return None
+    interface = getattr(session, "interface", None)
+    return interface if isinstance(interface, socket.socket) else None
+
+
+def _peer_closed(inst: Any) -> bool:
+    """Whether the instrument closed a raw socket connection cleanly. Never blocks or consumes data.
+
+    Any other socket error is left to the next exchange, which reports it with the exchange's name.
+    """
+    sock = _socket_of(inst)
+    if sock is None or sock.fileno() < 0:
+        return False
+    try:
+        readable, _, _ = select.select([sock], [], [], 0)
+        return bool(readable) and sock.recv(1, socket.MSG_PEEK) == b""
+    except OSError:
+        return False
+
+
+CLOSED_BY_INSTRUMENT = "the instrument closed the connection"
 
 
 class ScpiDriver(Driver):
@@ -223,15 +256,21 @@ class ScpiDriver(Driver):
         """Run one blocking VISA exchange in a worker thread, one at a time."""
         async with self._lock:
             if self._broken:
-                raise DriverError(f"{self.device.device_id} lost its connection ({self._broken}). Reconnect it.")
+                raise self._lost()
             if self._inst is None:
                 raise DriverError(f"{self.device.device_id} is not connected. Connect it first.")
+            if _peer_closed(self._inst):
+                self._broken = CLOSED_BY_INSTRUMENT
+                raise self._lost()
             if self._dirty:
                 await asyncio.to_thread(self._reopen)
             try:
                 return await asyncio.to_thread(work, self._inst)
             except Exception as exc:
                 if _is_timeout(exc):
+                    if _peer_closed(self._inst):
+                        self._broken = CLOSED_BY_INSTRUMENT
+                        raise self._lost() from None
                     self._dirty = True
                     raise TimeoutError(
                         f"{self.resource_name} didn't answer {what} within {self.settings.timeout:g} s. "
@@ -241,6 +280,9 @@ class ScpiDriver(Driver):
                     raise
                 self._broken = f"{type(exc).__name__}: {exc}"
                 raise DriverError(f"{self.resource_name} failed during {what} ({exc}). Check the connection.") from exc
+
+    def _lost(self) -> DriverError:
+        return DriverError(f"{self.device.device_id} lost its connection ({self._broken}). Reconnect it.")
 
     def _reopen(self) -> None:
         self._close_session()

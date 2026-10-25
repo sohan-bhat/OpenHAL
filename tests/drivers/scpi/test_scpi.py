@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
+import socket
 from collections.abc import Iterator
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from openhal.drivers.base import DriverError
 from openhal.drivers.scpi import families
-from openhal.drivers.scpi.driver import ScpiDriver, _usb_id
+from openhal.drivers.scpi.driver import ScpiDriver, _peer_closed, _usb_id
 from openhal.drivers.scpi.simulator import BenchSupply, ScpiServer, canonical, pyvisa_sim_file
 from openhal.spec import loads
 from tests.drivers.serial.kit import Bench, assert_done, assert_failed, eventually
@@ -169,6 +172,41 @@ async def test_disconnect_and_reconnect(server: ScpiServer) -> None:
     await bench.connect()
     assert (await bench.read("ch1_voltage")).value == 0.0
     await bench.close()
+
+
+async def test_a_socket_closed_during_a_reply_is_a_lost_connection(server: ScpiServer) -> None:
+    bench = await make(server).connect()
+    server.latency_s = 0.6
+    reading = asyncio.create_task(bench.driver.read("ch1_voltage"))
+    await asyncio.sleep(0.1)
+    server.drop_connections()
+    with pytest.raises(DriverError, match=r"lost its connection \(the instrument closed the connection\)"):
+        await reading
+    server.latency_s = 0.0
+    assert not (await bench.driver.health()).connected
+    with pytest.raises(DriverError, match="lost its connection"):
+        await bench.driver.read("ch1_voltage")
+    await bench.close()
+
+
+def _session(sock: object) -> SimpleNamespace:
+    return SimpleNamespace(session=7, visalib=SimpleNamespace(sessions={7: SimpleNamespace(interface=sock)}))
+
+
+def test_peer_closed_reads_the_socket_without_consuming_it() -> None:
+    ours, theirs = socket.socketpair()
+    try:
+        assert not _peer_closed(_session(ours))
+        theirs.sendall(b"1.000\n")
+        assert not _peer_closed(_session(ours))
+        assert ours.recv(16) == b"1.000\n"
+        theirs.close()
+        assert _peer_closed(_session(ours))
+    finally:
+        ours.close()
+    assert not _peer_closed(_session(ours))
+    assert not _peer_closed(_session(None))
+    assert not _peer_closed(object())
 
 
 async def _down(bench: Bench) -> bool:
