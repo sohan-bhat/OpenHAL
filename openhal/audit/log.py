@@ -71,6 +71,9 @@ class AuditLog:
     For a file-backed log, the latest sequence number and hash are also written to `<db>.head`
     after every append, so cutting entries off the end of the database is detectable by `verify()`
     (review finding F10). Publish that head somewhere else for stronger guarantees.
+
+    Each append reads the previous hash from the database inside an immediate transaction, so a
+    second process writing to the same file extends the one chain instead of forking it.
     """
 
     def __init__(self, path: str | Path = ":memory:") -> None:
@@ -113,13 +116,20 @@ class AuditLog:
         }
         canonical = _canonical(body)
         with self._lock:
-            prev = self._head
-            digest = _digest(prev, canonical)
-            cursor = self._conn.execute(
-                "INSERT INTO audit (at, event, principal, device, target, status, code, body, prev_hash, hash)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (at, event, principal, device, target, status, code, canonical, prev, digest),
-            )
+            self._conn.execute("BEGIN IMMEDIATE")
+            try:
+                row = self._conn.execute("SELECT hash FROM audit ORDER BY seq DESC LIMIT 1").fetchone()
+                prev = row[0] if row else GENESIS
+                digest = _digest(prev, canonical)
+                cursor = self._conn.execute(
+                    "INSERT INTO audit (at, event, principal, device, target, status, code, body, prev_hash, hash)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (at, event, principal, device, target, status, code, canonical, prev, digest),
+                )
+                self._conn.execute("COMMIT")
+            except BaseException:
+                self._conn.execute("ROLLBACK")
+                raise
             self._head = digest
             seq = int(cursor.lastrowid or 0)
             if self._head_path is not None:
