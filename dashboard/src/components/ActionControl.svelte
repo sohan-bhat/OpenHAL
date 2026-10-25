@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Prose from "./Prose.svelte";
   import { api } from "../lib/api";
   import { describeDecision, type DecisionSummary } from "../lib/devices";
   import { href } from "../lib/router.svelte";
@@ -141,7 +142,7 @@
           label={outcome.word}
         />
         {#if outcome.head && outcome.tone !== "granted"}<span class="mono head {outcome.tone}">{outcome.head}</span>{/if}
-        <p class="mono reason">{outcome.reason}</p>
+        <p class="mono reason"><Prose text={outcome.reason} /></p>
         {#if requestId}
           <p class="reason">Request <a class="mono" href={href("confirmations")}>{requestId}</a> waits in the confirmation queue.</p>
         {/if}

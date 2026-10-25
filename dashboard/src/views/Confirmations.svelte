@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Prose from "../components/Prose.svelte";
   import { onDestroy } from "svelte";
   import Json from "../components/Json.svelte";
   import StatusMark from "../components/StatusMark.svelte";
@@ -102,7 +103,7 @@
               <p class="who">
                 <span class="label">requested by</span>
                 <span class="mono client">{request.requested_by}</span>
-                <span class="mono muted">request {request.id}</span>
+                <span class="mono muted">request <span class="nobreak">{request.id}</span></span>
               </p>
               <p id="req-{request.id}" class="trace">
                 <TraceArrow arrow="right" />
@@ -116,7 +117,7 @@
                   label={dry.word}
                 />
                 {#if dry.head && dry.tone !== "granted"}<span class="mono code {dry.tone}">{dry.head}</span>{/if}
-                <span class="mono">{request.dry_run.message}</span>
+                <span class="mono"><Prose text={request.dry_run.message} /></span>
               </div>
               <p class="expires">
                 <span class="label">expires in</span>

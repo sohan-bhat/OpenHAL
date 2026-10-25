@@ -79,7 +79,7 @@ pre,
 pre {
   margin: 0;
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 :focus-visible {
@@ -124,6 +124,10 @@ pre {
 
 .muted {
   color: var(--text-2);
+}
+
+.nobreak {
+  white-space: nowrap;
 }
 
 .button {

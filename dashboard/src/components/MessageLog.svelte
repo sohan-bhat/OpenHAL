@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Prose from "./Prose.svelte";
   import { tick } from "svelte";
   import { SvelteSet } from "svelte/reactivity";
   import { isValueNotification } from "../lib/logstore";
@@ -209,7 +210,7 @@
                 <span class="mono inline-error"><span class="code">{row.errorCode}</span> <span class="name">{row.errorName}</span></span>
               {/if}
             </span>
-            {#if row.reason}<span class="reason mono">{row.reason}</span>{/if}
+            {#if row.reason}<span class="reason mono"><Prose text={row.reason} /></span>{/if}
           </li>
         {/each}
       </ol>
@@ -433,7 +434,6 @@
   .reason {
     grid-column: 5;
     color: var(--text);
-    overflow-wrap: anywhere;
   }
 
   @media (max-width: 1023px) {

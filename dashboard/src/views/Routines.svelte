@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Prose from "../components/Prose.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import { api } from "../lib/api";
   import { formatDateTime } from "../lib/units";
@@ -156,7 +157,7 @@
                     {#if registry && decision.status !== "allowed"}
                       <span class="mono code {mark.tone}">{registry.code} {registry.name}</span>
                     {/if}
-                    <span class="mono">{decision.text}</span>
+                    <span class="mono"><Prose text={decision.text} /></span>
                   </li>
                 {/each}
               </ol>

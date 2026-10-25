@@ -472,7 +472,7 @@
 
   dd {
     margin: 0;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   details summary {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Prose from "./Prose.svelte";
   import { api } from "../lib/api";
   import { describeDecision, type DecisionSummary } from "../lib/devices";
   import { confirmTier } from "../lib/status";
@@ -188,7 +189,7 @@
             class:pending={outcome.tone === "pending"}>{outcome.head}</span
           >
         {/if}
-        <p class="mono reason">{outcome.reason}</p>
+        <p class="mono reason"><Prose text={outcome.reason} /></p>
       </div>
     {/if}
   </div>
