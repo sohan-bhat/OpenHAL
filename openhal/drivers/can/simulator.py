@@ -142,4 +142,4 @@ class MotorController:
             self.speed = target
         else:
             self.speed += change if target > self.speed else -change
-        self.temperature += (24.0 + self.speed / 200.0 - self.temperature) * min(1.0, elapsed)
+        self.temperature += (24.0 + self.speed / 200.0 - self.temperature) * min(1.0, elapsed / 60.0)
