@@ -26,6 +26,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import math
+import os
 import time
 from pathlib import Path
 from typing import Any, ClassVar
@@ -51,7 +52,7 @@ class Sila2Params(BaseModel):
     host: str = Field(min_length=1, max_length=253)
     port: int = Field(default=50052, ge=1, le=65535)
     insecure: bool = False
-    ca_file: str | None = Field(default=None, max_length=500)
+    ca_env: str | None = Field(default=None, pattern=r"^[A-Z_][A-Z0-9_]{0,63}$")
     timeout: float = 5.0
     action_wait: float = 8.0
 
@@ -66,8 +67,8 @@ class Sila2Params(BaseModel):
             raise ValueError("timeout must be between 100 ms and 30 s.")
         if not 0.1 <= self.action_wait <= 9:
             raise ValueError("action_wait must be between 100 ms and 9 s.")
-        if self.insecure and self.ca_file:
-            raise ValueError("ca_file is for encrypted connections, so drop it or insecure.")
+        if self.insecure and self.ca_env:
+            raise ValueError("ca_env is for encrypted connections, so drop it or insecure.")
         return self
 
 
@@ -238,8 +239,8 @@ class Sila2Driver(Driver):
         await self.close()
         self._loop = asyncio.get_running_loop()
         certificate = None
-        if self.settings.ca_file:
-            certificate = await asyncio.to_thread(_read, self.settings.ca_file)
+        if self.settings.ca_env:
+            certificate = await asyncio.to_thread(_certificate, self.settings.ca_env)
         options: dict[str, Any] = {"insecure": True} if self.settings.insecure else {"root_certs": certificate}
         self.client = await self._call(
             SilaClient,
@@ -485,8 +486,15 @@ class Sila2Driver(Driver):
                 await asyncio.wait_for(asyncio.to_thread(client.close), 2.0)
 
 
-def _read(path: str) -> bytes:
-    return Path(path).expanduser().read_bytes()
+def _certificate(variable: str) -> bytes:
+    """The CA certificate at the path in an environment variable. A device file never names a path."""
+    path = os.environ.get(variable)
+    if not path:
+        raise DriverError(f"Set the {variable} environment variable to the path of the server's CA certificate.")
+    try:
+        return Path(path).expanduser().read_bytes()
+    except OSError as exc:
+        raise DriverError(f"Could not read the CA certificate named by {variable} ({exc}).") from exc
 
 
 def _jsonable(value: Any) -> Any:

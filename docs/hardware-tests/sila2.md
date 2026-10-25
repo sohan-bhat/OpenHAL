@@ -55,7 +55,7 @@ cp openhal/drivers/sila2/examples/thermoshaker.hal.yaml ./device.hal.yaml
 uv run openhal file validate ./device.hal.yaml
 ```
 
-Set the host, port and `ca_file`, and change the feature, property and command names to your device's. Expected. `valid ./device.hal.yaml (thermoshaker, medium hazard, read-only)`.
+Set the host, port and `ca_env`, export that variable with the path of the CA certificate, and change the feature, property and command names to your device's. Expected. `valid ./device.hal.yaml (thermoshaker, medium hazard, read-only)`.
 
 ## Step 3. Identify and read (read-only)
 

@@ -3,7 +3,7 @@ id: thermoshaker
 connect:
   sila2: thermoshaker.lab.local
   port: 50052
-  ca_file: ~/.openhal/certs/thermoshaker-ca.pem
+  ca_env: THERMOSHAKER_CA
   timeout: 5 s
   action_wait: 8 s
 read:

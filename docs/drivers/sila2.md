@@ -59,7 +59,7 @@ SiLA has no general stop command, and the core features have none either, so the
 | `host` | required | SiLA server host name or address |
 | `port` | 50052 | SiLA server port |
 | `insecure` | false | Connect without encryption, for development servers only |
-| `ca_file` | none | PEM file with the server's CA certificate |
+| `ca_env` | none | The name of an environment variable that holds the path of the server's CA certificate, a PEM file. The device file never names the path itself |
 | `timeout` | `5 s` | Per call |
 | `action_wait` | `8 s` | How long an observable command waits before answering `started`. At most 9 s |
 
@@ -68,7 +68,7 @@ SiLA has no general stop command, and the core features have none either, so the
 ```yaml
 device: Thermoshaker
 id: thermoshaker
-connect: { sila2: thermoshaker.lab.local, port: 50052, ca_file: ~/.openhal/certs/thermoshaker-ca.pem }
+connect: { sila2: thermoshaker.lab.local, port: 50052, ca_env: THERMOSHAKER_CA }
 read:
   temperature: { unit: degC, stream: true, map: { feature: TemperatureController, property: CurrentTemperature } }
 write:

@@ -72,7 +72,7 @@ class MqttParams(BaseModel):
     username: str | None = None
     token_env: str | None = Field(default=None, pattern=r"^[A-Z_][A-Z0-9_]*$")
     tls: bool = False
-    ca_file: str | None = None
+    ca_env: str | None = Field(default=None, pattern=r"^[A-Z_][A-Z0-9_]{0,63}$")
     keepalive: int = Field(default=30, ge=5, le=3600)
     timeout: Duration = 5.0
     qos: Literal[0, 1] = 1
@@ -245,6 +245,16 @@ class MqttDriver(Driver):
     async def identify(self) -> dict[str, str]:
         return {"broker": f"{self.settings.host}:{self.settings.port}", "client_id": self._client_id()}
 
+    def _ca_path(self) -> str | None:
+        """The CA bundle path from the environment variable the file names, or None for the system store."""
+        variable = self.settings.ca_env
+        if variable is None:
+            return None
+        path = self._environ(variable)
+        if not path:
+            raise DriverError(f"Set the {variable} environment variable to the path of the broker's CA bundle.")
+        return os.path.expanduser(path)
+
     def _client_id(self) -> str:
         """A stable id of at most 23 characters, unique per device id.
 
@@ -275,7 +285,7 @@ class MqttDriver(Driver):
                     )
             client.username_pw_set(self.settings.username or "", password)
         if self.settings.tls:
-            client.tls_set(ca_certs=self.settings.ca_file)
+            client.tls_set(ca_certs=self._ca_path())
         self._connected.clear()
         self._disconnect_reason = ""
         with self._lock:

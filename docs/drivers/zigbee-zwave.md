@@ -30,7 +30,7 @@ For Zigbee, Zigbee2MQTT must publish to a broker the hub can reach. Turn on avai
 | `node` | required for Z-Wave | The node id |
 | `base_topic` | `zigbee2mqtt` | Zigbee2MQTT's base topic |
 | `username`, `token_env` | none | MQTT user name, and the variable that holds its password |
-| `ca_file` | none | CA bundle for `mqtts://` |
+| `ca_env` | none | An environment variable that holds the path of a CA bundle for `mqtts://` |
 | `timeout` | `5 s` | Connect and acknowledgement deadline |
 
 ## Channel maps

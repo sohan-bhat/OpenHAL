@@ -28,7 +28,7 @@ You need a broker the hub can reach. Mosquitto works well and runs on a Raspberr
 | `client_id` | `oh-` and the device id with a short hash | At most 23 characters, as MQTT 3.1.1 servers must accept. Each device needs its own, because a broker drops the older session when two clients share an id |
 | `username` | none | Broker user name |
 | `token_env` | none | Name of an environment variable holding the broker password |
-| `tls`, `ca_file` | `false`, none | Use TLS, optionally with a CA bundle |
+| `tls`, `ca_env` | `false`, none | Use TLS. `ca_env` names an environment variable that holds the path of a CA bundle, since a device file never names a path |
 | `keepalive` | `30` | Keep-alive interval in seconds |
 | `timeout` | `5 s` | Connect and acknowledgement deadline |
 | `qos` | `1` | Default QoS for commands |

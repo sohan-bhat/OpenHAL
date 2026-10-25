@@ -289,19 +289,27 @@ async def test_a_different_certificate_stops_before_the_login(broker: PrinterBro
     assert broker.connections == 0
 
 
-async def test_ca_file_checks_the_serial_in_the_certificate(broker: PrinterBroker, printer: SimulatedPrinter) -> None:
+async def test_ca_env_checks_the_serial_in_the_certificate(broker: PrinterBroker, printer: SimulatedPrinter) -> None:
     target = f"bambu: 127.0.0.1, port: {broker.port}, serial: {SERIAL}, token_env: {TOKEN_ENV}"
-    extra = f"{{ {target}, ca_file: '{broker.cert_path}' }}"
+    extra = f"{{ {target}, ca_env: BAMBU_TEST_CA }}"
     channels = "read:\n  state: { type: string }"
-    driver = await connected(loads(f"device: T\nid: t\nconnect: {extra}\n{channels}\n"))
+    file = loads(f"device: T\nid: t\nconnect: {extra}\n{channels}\n")
+
+    def with_ca(path: str | None) -> Any:
+        return lambda name: path if name == "BAMBU_TEST_CA" else environ(name)
+
+    driver = await connected(file, environ=with_ca(str(broker.cert_path)))
     assert (await driver.read("state")).value == "idle"
     await driver.close()
-    other = extra.replace(SERIAL, "01S00A000000001")
+    other = loads(f"device: T\nid: t\nconnect: {extra.replace(SERIAL, '01S00A000000001')}\n{channels}\n")
     with pytest.raises(DriverError, match="not 01S00A000000001"):
-        await connected(loads(f"device: T\nid: t\nconnect: {other}\n{channels}\n"))
-    broken = extra.replace(str(broker.cert_path), "/no/such/ca.pem")
-    with pytest.raises(DriverError, match="Could not load ca_file"):
-        await connected(loads(f"device: T\nid: t\nconnect: {broken}\n{channels}\n"))
+        await connected(other, environ=with_ca(str(broker.cert_path)))
+    with pytest.raises(DriverError, match="Could not load the CA certificate named by BAMBU_TEST_CA"):
+        await connected(file, environ=with_ca("/no/such/ca.pem"))
+    with pytest.raises(DriverError, match="Set the BAMBU_TEST_CA environment variable"):
+        await connected(file, environ=with_ca(None))
+    with pytest.raises(ValueError, match="ca_file"):
+        BambuDriver(loads(f"device: T\nid: t\nconnect: {{ {target}, ca_file: /etc/ca.pem }}\n{channels}\n"))
 
 
 async def test_a_wrong_serial_gets_no_report(broker: PrinterBroker, printer: SimulatedPrinter) -> None:
