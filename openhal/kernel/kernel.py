@@ -271,7 +271,12 @@ class Kernel:
             self.audit.append("safe_state", SYSTEM.label, device=device_id, status=result.status, detail=result.detail)
 
     def note_reading(self, device_id: str, reading: Reading) -> None:
-        """Record a value read from a device, converted into the channel's unit (review finding F20)."""
+        """Record a value read from a device, converted into the channel's unit (review finding F20).
+
+        A reading of None means the device can't report this channel, such as a CAN or KNX output
+        with no read-back. It adds nothing, so what the kernel already knows stands. A failed
+        command still marks its channels unknown.
+        """
         runtime = self.devices.get(device_id)
         if runtime is None:
             return
@@ -279,7 +284,6 @@ class Kernel:
         value = reading.value
         unit = runtime.file.channel_unit(reading.channel)
         if value is None:
-            runtime.mark_unknown(reading.channel, now)
             return
         if (
             unit

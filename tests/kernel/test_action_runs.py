@@ -5,8 +5,9 @@ from __future__ import annotations
 import pytest
 
 from openhal.audit.log import AuditLog
+from openhal.drivers.base import Reading
 from openhal.drivers.mock import MockDriver
-from openhal.kernel import Action, Kernel, human
+from openhal.kernel import Action, Kernel, Write, human
 from openhal.spec import loads
 from tests.kernel.conftest import AddDevice, FakeClock
 
@@ -118,3 +119,29 @@ async def test_an_unknown_requirement_never_claims_the_tank_is_empty(
     blocked = await kernel.execute(water(20), PERSON)
     assert blocked.code == "interlock"
     assert blocked.limit == {"interlock": "water needs tank == ok, which is unknown"}
+
+
+NO_READBACK = """
+device: CAN motor drive
+id: drive
+connect: { mock: drive }
+write:
+  speed: { unit: "%", min: 0, max: 100, max_change_per_s: 10 }
+safe_state: { speed: 0 }
+hazard: low
+confirmed: { by: sohan, at: 2026-10-24 }
+"""
+
+
+async def test_a_channel_with_no_read_back_stays_controllable(add: AddDevice, kernel: Kernel, clock: FakeClock) -> None:
+    driver = await add(NO_READBACK)
+    nothing = Reading(channel="speed", value=None, unit="%")
+    kernel.note_reading("drive", nothing)
+    clock.advance(2)
+    first = await kernel.execute(Write(device="drive", channel="speed", value=15, unit="%"), PERSON)
+    assert first.status == "done", first.message
+    kernel.note_reading("drive", nothing)
+    clock.advance(1)
+    second = await kernel.execute(Write(device="drive", channel="speed", value=25, unit="%"), PERSON)
+    assert second.status == "done", second.message
+    assert ("write", "speed", 25.0) in driver.transport_log
