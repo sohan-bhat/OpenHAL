@@ -4,6 +4,7 @@ connect:
   pylabrobot: star
   deck: starlet
   action_wait: 8 s
+  volumes: { "plate:A1": 200 uL }
   layout:
     - { name: tips, resource: hamilton_96_tiprack_1000uL_filter, rails: 3 }
     - { name: plate, resource: cor_96_wellplate_360uL_Fb, rails: 9 }

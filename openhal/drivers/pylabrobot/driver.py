@@ -36,7 +36,7 @@ from openhal.drivers.pylabrobot import deck as decks
 from openhal.drivers.pylabrobot.deck import Placement
 from openhal.drivers.serial import mapping
 from openhal.spec.models import DeviceFile
-from openhal.spec.units import Quantity, UnitError, convert, parse_unit
+from openhal.spec.units import Quantity, UnitError, convert, parse_quantity, parse_unit
 
 BACKENDS: Final = {
     "chatterbox": ("openhal.drivers.pylabrobot.simulator", "RecordingBackend"),
@@ -71,6 +71,7 @@ class PyLabRobotParams(BaseModel):
     serial_number: str | None = Field(default=None, max_length=64)
     setup_on_connect: bool = False
     track_volumes: bool = True
+    volumes: dict[str, str] = Field(default={}, max_length=96, description="Starting volumes, address to quantity.")
     action_wait: float = 8.0
 
     @field_validator("action_wait", mode="before")
@@ -86,6 +87,12 @@ class PyLabRobotParams(BaseModel):
             raise ValueError("give deck_file or layout, not both.")
         if self.backend == "opentrons" and not self.host:
             raise ValueError("the opentrons backend needs host, the robot's address.")
+        for address, quantity in self.volumes.items():
+            try:
+                decks.parse(address)
+                convert(parse_quantity(quantity), "uL")
+            except (DriverError, UnitError) as exc:
+                raise ValueError(f"volumes {address}: {exc}") from None
         names = [item.name for item in self.layout]
         if len(set(names)) != len(names):
             raise ValueError("layout names must be unique.")
@@ -248,6 +255,10 @@ class PyLabRobotDriver(Driver):
                     decks.items(self.deck, value, "tips" if arg == "tips" else "wells")
         self.backend = self._make_backend()
         self.handler = LiquidHandler(backend=self.backend, deck=self.deck)
+        for address, quantity in self.settings.volumes.items():
+            microliters = convert(parse_quantity(quantity), "uL")
+            for well in decks.items(self.deck, address, "wells"):
+                well.tracker.set_volume(microliters)
         self._lost = None
         if self.settings.setup_on_connect:
             await self._guard(self.handler.setup(), "setup")

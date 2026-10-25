@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 from openhal.drivers.base import DriverError
-from openhal.drivers.pylabrobot import deck as decks
 from openhal.drivers.pylabrobot.driver import PyLabRobotDriver
 from openhal.drivers.pylabrobot.simulator import RecordingBackend
 from openhal.spec import load, loads
@@ -23,6 +22,7 @@ connect:
   pylabrobot: chatterbox
   num_channels: 8
   action_wait: 2 s
+  volumes: {{ "plate:A1": 200 uL, "plate:H12": 0.1 mL }}
   layout:
     - {{ name: tips, resource: hamilton_96_tiprack_1000uL_filter, rails: 3 }}
     - {{ name: plate, resource: cor_96_wellplate_360uL_Fb, rails: 9 }}
@@ -66,10 +66,6 @@ def make(
     return driver, recorder, Bench(file, driver)
 
 
-def fill(driver: PyLabRobotDriver, well: str, microliters: float) -> None:
-    decks.items(driver.deck, well, "wells")[0].tracker.set_volume(microliters)
-
-
 async def test_connect_builds_the_deck_without_moving_the_robot() -> None:
     driver, backend, bench = make()
     await bench.connect()
@@ -84,7 +80,7 @@ async def test_connect_builds_the_deck_without_moving_the_robot() -> None:
 
 
 async def test_initialize_then_tips_aspirate_and_dispense() -> None:
-    driver, backend, bench = make()
+    _driver, backend, bench = make()
     await bench.connect()
     assert_done(await bench.act("initialize"))
     assert (await bench.read("initialized")).value is True
@@ -95,7 +91,7 @@ async def test_initialize_then_tips_aspirate_and_dispense() -> None:
     assert (await bench.read("first_tip")).value is True
     assert_done(await bench.act("drop_tips", tips="tips:A1:H1"))
     assert_done(await bench.act("pick_up_tips", tips="tips:A1"))
-    fill(driver, "plate:A1", 200)
+    assert (await bench.read("a1_volume")).value == pytest.approx(200.0)
     assert_done(await bench.act("aspirate", well="plate:A1", volume="50 uL"))
     assert (await bench.read("a1_volume")).value == pytest.approx(150.0)
     assert_done(await bench.act("dispense", well="plate:A2", volume="50 uL"))
@@ -303,6 +299,8 @@ def test_bad_maps_are_rejected(snippet: str, message: str) -> None:
             "unique",
         ),
         ("pylabrobot: robotron", "backend"),
+        ("pylabrobot: chatterbox, volumes: { 'plate:A1': 5 V }", "volumes plate:A1"),
+        ("pylabrobot: chatterbox, volumes: { 'A1': 5 uL }", "not a deck address"),
     ],
 )
 def test_bad_params_are_rejected(params: str, message: str) -> None:
