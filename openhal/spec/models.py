@@ -383,15 +383,41 @@ class ArgSpec(_ValueSpec):
     """One typed action argument."""
 
 
+class Requirement(_Strict):
+    """A condition an action needs, with the reason shown when it doesn't hold."""
+
+    condition: str = Field(max_length=expressions.MAX_LENGTH)
+    message: str | None = Field(default=None, max_length=300)
+
+
+class MaxRuns(_Strict):
+    """At most `count` runs of an action within any window of `per`."""
+
+    count: int = Field(ge=1, le=1000)
+    per: Seconds
+
+    @model_validator(mode="after")
+    def _window(self) -> MaxRuns:
+        if not 1.0 <= self.per <= 7 * 86400.0:
+            raise ValueError("max_runs.per must be between 1 s and 7 days.")
+        return self
+
+
 class Action(_Strict):
     args: dict[Annotated[str, Field(pattern=NAME_PATTERN)], ArgSpec] = {}
-    require: list[str] = []
+    require: list[str | Requirement] = []
+    max_runs: MaxRuns | None = None
     confirm: ConfirmTier = "none"
     confirmed: Confirmation | None = None
     suggested: bool = False
     effects: list[str] = []
     description: str | None = Field(default=None, max_length=500)
     map: dict[str, Any] | None = None
+
+    @property
+    def conditions(self) -> list[tuple[str, str | None]]:
+        """Every requirement as (condition, message), whichever form the file used."""
+        return [(item, None) if isinstance(item, str) else (item.condition, item.message) for item in self.require]
 
 
 class SafeStep(_Strict):
@@ -645,7 +671,7 @@ class DeviceFile(_Strict):
             for effect in action.effects:
                 if effect not in self.write:
                     raise ValueError(f"actions.{name}.effects: {effect!r} is not a write channel.")
-            for index, condition in enumerate(action.require):
+            for index, (condition, _message) in enumerate(action.conditions):
                 self._check_expression(condition, f"actions.{name}.require[{index}]")
         for index, interlock in enumerate(self.interlocks):
             self._check_expression(interlock.if_, f"interlocks[{index}].if")

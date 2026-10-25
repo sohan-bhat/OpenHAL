@@ -379,7 +379,7 @@ def description(hub: Hub, device_id: str) -> m.DeviceDescription:
         name: m.ActionInfo(
             description=spec.description,
             args={arg: arg_spec.model_dump(exclude_none=True) for arg, arg_spec in spec.args.items()},
-            require=spec.require,
+            require=[condition for condition, _message in spec.conditions],
             effects=spec.effects,
             confirm="confirm-each-time" if high else spec.confirm,
             suggested=spec.suggested,

@@ -68,10 +68,28 @@
           "default": null,
           "title": "Map"
         },
+        "max_runs": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MaxRuns"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "require": {
           "default": [],
           "items": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/Requirement"
+              }
+            ]
           },
           "title": "Require",
           "type": "array"
@@ -585,6 +603,29 @@
       "title": "MaxDuration",
       "type": "object"
     },
+    "MaxRuns": {
+      "additionalProperties": false,
+      "description": "At most `count` runs of an action within any window of `per`.",
+      "properties": {
+        "count": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "per": {
+          "description": "A duration with a unit, for example 5 s, 500ms or 10 min.",
+          "title": "Per",
+          "type": "string"
+        }
+      },
+      "required": [
+        "count",
+        "per"
+      ],
+      "title": "MaxRuns",
+      "type": "object"
+    },
     "Provenance": {
       "additionalProperties": false,
       "properties": {
@@ -775,6 +816,35 @@
         }
       },
       "title": "ReadChannel",
+      "type": "object"
+    },
+    "Requirement": {
+      "additionalProperties": false,
+      "description": "A condition an action needs, with the reason shown when it doesn't hold.",
+      "properties": {
+        "condition": {
+          "maxLength": 256,
+          "title": "Condition",
+          "type": "string"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message"
+        }
+      },
+      "required": [
+        "condition"
+      ],
+      "title": "Requirement",
       "type": "object"
     },
     "SafeStep": {
