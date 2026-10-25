@@ -16,7 +16,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "install-pi.sh"
-STUBBED = ("uv", "curl", "sudo", "usermod", "loginctl", "systemctl", "openhal", "ln", "mkdir", "sh")
+STUBBED = ("uv", "curl", "sudo", "apt-get", "usermod", "loginctl", "systemctl", "openhal", "ln", "mkdir", "sh")
 BASH = shutil.which("bash")
 pytestmark = pytest.mark.skipif(BASH is None, reason="bash is not installed")
 
@@ -66,6 +66,7 @@ def test_dry_run_prints_every_step_and_runs_none(tmp_path: Path) -> None:
     assert "rpi-gpio,rpi-camera,pi-i2c-spi,serial,openhal-firmware" in out
     assert f"pip install --python {venv}/bin/python --compile-bytecode" in out
     assert "git+https://github.com/sohan-bhat/OpenHAL" in out
+    assert "sudo apt-get install -y --no-install-recommends build-essential" in out
     assert "sudo usermod -aG" in out
     assert "sudo loginctl enable-linger pi" in out
     assert f"{home}/.local/bin/openhal service install" in out

@@ -7,9 +7,9 @@ Install the OpenHAL hub on a Raspberry Pi.
 
   scripts/install-pi.sh [--dry-run] [--source SPEC]
 
-It installs uv if it is missing, installs the hub with the Pi extras, adds you to the gpio, i2c,
-spi and dialout groups, installs the background service with lingering so the hub runs without a
-login, and prints the command to run next.
+It installs uv if it is missing, the system packages the Pi drivers need and the hub with the Pi
+extras. It adds you to the gpio, i2c, spi and dialout groups, installs the background service with
+lingering so the hub runs without a login, and prints the command to run next.
 
   --dry-run      Print every command and run none.
   --source SPEC  Install from a wheel, a checkout or a git URL.
@@ -86,6 +86,16 @@ if command -v python3 >/dev/null 2>&1 && python3 -c 'import sys; sys.exit(0 if s
   PYTHON="$(command -v python3)"
 else
   say "The system Python is older than 3.12, so uv provides one. The camera driver needs Raspberry Pi OS with Python 3.12 or newer."
+fi
+
+if [ "$DRY_RUN" -eq 1 ] || command -v apt-get >/dev/null 2>&1; then
+  say "Installing the system packages the Pi drivers build with and use"
+  run sudo apt-get update
+  if [ "$PYTHON" = "3.12" ]; then
+    run sudo apt-get install -y --no-install-recommends build-essential
+  else
+    run sudo apt-get install -y --no-install-recommends build-essential python3-dev python3-lgpio python3-picamera2
+  fi
 fi
 
 case "$SOURCE" in
