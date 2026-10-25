@@ -42,19 +42,17 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - The protocol website and the Inspector, all three design critique rounds, merged. WebKit browser tests could not run on this Mac (every WebKit page load stalls here) and still need a run elsewhere.
 - Full-level conformance checks for actions. openhal-firmware declares full and runs them against the compiled PlantWaterer sketch.
 - Code comments removed from all Python and C++ code.
+- The bambu driver ships, approved by the owner on 2026-10-25.
 - Unit safety. pint no longer converts between angles and plain numbers (50 % to a degree channel, 1 Hz to rpm). Channels with no read-back stay controllable under a rate limit. A bare number gets UNIT_INVALID in dry runs instead of a hub error.
 - REST reports conformance, simulated drivers, run limits, requirement reasons, the protocol version and the LAN setting.
 
 ## Next
 
-- Merge the website and the Inspector as they hand back, then run their design critique rounds.
 - REST decision views should carry the hub-built protocol error so MCP reasons always name the confirmation (protocol report, proposal 12).
-- Fix the SCPI driver's disconnect detection on Linux, which is the only CI failure on GitHub (2 tests on ubuntu). The CI badge is back on the README at the owner's request and shows failing until this lands and is pushed. The owner rejected one fix, so this waits on the owner.
 - tests/drivers/firmata/test_firmata.py::test_silent_board_times_out can time out under full-suite load on this Mac. It passes alone.
-- Remove code comments repo-wide after the open branches merge (owner rule).
 - Driver proposals still open. Full-level checks in the conformance suite, a restore_connection hook, a push path for drivers that receive values, cached-read declarations, per-driver install hints, argument references in action requirements, and YAML 1.1 warnings in openhal file validate.
-- bambu needs your legal review before it ships (NEEDS_HUMAN item 3).
-- The starter library (M12), packaging (M13), verification and handoff.
+- The starter library (M12), packaging (M13), verification and handoff, in progress.
+- Confirm on GitHub CI that the scpi fix passes on Linux (the owner approved the fix and the push on 2026-10-25).
 
 ## Milestone 2 review
 
