@@ -245,11 +245,36 @@ test.describe("site search", () => {
     await expect(page).toHaveURL(new RegExp(`${target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
   });
 
+  test("the header field opens the search, Escape closes it and focus comes back", async ({ page }) => {
+    await page.goto("/");
+    const field = page.locator(".search-field");
+    await expect(field).toContainText("Search...");
+    await expect(field.locator(".search-key span:visible")).toHaveCount(1);
+    await field.click();
+    const dialog = page.getByRole("dialog", { name: "Search the site" });
+    await expect(dialog).toBeVisible();
+    await page.locator("#site-search-input").fill("plant waterer");
+    await expect(dialog.locator("a.search-result").first()).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(field).toBeFocused();
+  });
+
   test("a search with no match says so", async ({ page }) => {
     await page.goto("/");
     await page.keyboard.press("Control+k");
     await page.locator("#site-search-input").fill("zqxjvw");
     await expect(page.locator("[data-search-status]")).toHaveText("No page matches “zqxjvw”.");
     await expect(page.locator("a.search-result")).toHaveCount(0);
+  });
+
+  test("on a phone the field is an icon button that opens the same dialog", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await expect(page.locator(".search-field")).toBeHidden();
+    await page.getByRole("button", { name: "Search", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Search the site" })).toBeVisible();
+    await page.locator("#site-search-input").fill("plant waterer");
+    await expect(page.locator("a.search-result").first()).toBeVisible();
   });
 });
