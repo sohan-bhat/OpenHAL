@@ -1,0 +1,39 @@
+device: { name: EQ6-R mount, model: EQ6-R Pro, manufacturer: Sky-Watcher }
+id: eq6
+connect:
+  indi: astro-pi.local
+  port: 7624
+  device: EQMod Mount
+  kind: telescope
+  timeout: 5 s
+  action_wait: 8 s
+read:
+  right_ascension: { unit: deg, every: 2 s }
+  declination: { unit: deg, every: 2 s, range: [-90, 90] }
+  altitude: { unit: deg, every: 2 s }
+  azimuth: { unit: deg, every: 2 s }
+  slewing: { type: bool, every: 1 s }
+  parked: { type: bool, every: 5 s }
+write:
+  tracking: { type: bool }
+actions:
+  abort: { description: "Stop all motion at once (TELESCOPE_ABORT_MOTION)." }
+  park:
+    description: Slew to the park position (TELESCOPE_PARK).
+    confirm: confirm
+  unpark:
+    description: Leave the park position (TELESCOPE_PARK).
+    confirm: confirm
+  slew_to_coordinates:
+    description: Slew to a right ascension and declination, then track.
+    args:
+      right_ascension: { unit: deg, min: 0, max: 359.99 }
+      declination: { unit: deg, min: -20, max: 89 }
+    require: ["parked == false", "slewing == false"]
+    confirm: confirm-each-time
+safe_state:
+  - { tracking: false }
+safe_state_note: "A stop sends TELESCOPE_ABORT_MOTION and turns tracking off. It does not park."
+hazard: medium
+notes: "An EQ6-R on EQMod under indiserver on a Raspberry Pi. Raise the minimum declination until the tube clears the pier at your site before confirming."
+provenance: { source: hand-written, by: openhal indi driver example, at: 2026-10-24 }
