@@ -87,6 +87,31 @@ const image = new URL(ogPath(Astro.url.pathname), Astro.site);
         });
         head.append(button);
       }
+
+      function tableName(wrap: HTMLElement): string {
+        const table = wrap.querySelector("table");
+        const named = table?.getAttribute("aria-label") ?? table?.querySelector("caption")?.textContent;
+        if (named?.trim()) return named.trim();
+        let node: Element | null = wrap.previousElementSibling;
+        while (node && !/^H[1-6]$/.test(node.tagName)) node = node.previousElementSibling;
+        return node?.textContent?.trim() ? `${node.textContent.trim()} table` : "Table";
+      }
+
+      const scrolling = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const wrap = entry.target as HTMLElement;
+          if (wrap.scrollWidth > wrap.clientWidth + 1) {
+            wrap.tabIndex = 0;
+            wrap.setAttribute("role", "region");
+            wrap.setAttribute("aria-label", tableName(wrap));
+          } else {
+            wrap.removeAttribute("tabindex");
+            wrap.removeAttribute("role");
+            wrap.removeAttribute("aria-label");
+          }
+        }
+      });
+      for (const wrap of document.querySelectorAll<HTMLElement>(".table-wrap")) scrolling.observe(wrap);
     </script>
   </body>
 </html>
