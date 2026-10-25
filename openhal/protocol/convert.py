@@ -20,7 +20,7 @@ from openhal.kernel.confirmations import Request
 from openhal.protocol import messages as m
 from openhal.protocol.errors import RpcError, from_kernel
 from openhal.spec.models import Confirmation, DeviceFile
-from openhal.spec.units import UnitError, convert, parse_quantity
+from openhal.spec.units import UnitError, convert, parse_quantity, wire_unit
 
 if TYPE_CHECKING:
     from openhal.audit.log import Entry
@@ -323,7 +323,7 @@ def decision(
         device=kernel.device,
         target=kernel.target,
         value=value,
-        unit=unit,
+        unit=wire_unit(unit),
         error=error,
         request_id=kernel.request_id,
     )
@@ -485,7 +485,7 @@ def reading(hub: Hub, device_id: str, item: DriverReading) -> m.Reading:
         device=device_id,
         channel=item.channel,
         value=views.device_value(file, device_id, item.channel, item.value),
-        unit=item.unit,
+        unit=wire_unit(item.unit),
         at=timestamp(item.at),
         suspect=item.suspect,
     )

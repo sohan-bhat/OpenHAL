@@ -36,7 +36,7 @@ from openhal.protocol.log import MessageLog
 from openhal.protocol.notify import Notifier
 from openhal.protocol.session import Session
 from openhal.protocol.version import is_version, negotiate
-from openhal.spec.units import UnitError, parse_quantity
+from openhal.spec.units import UnitError, parse_quantity, wire_unit
 from openhal.spec.units import convert as convert_units
 
 if TYPE_CHECKING:
@@ -280,7 +280,8 @@ class Dispatcher:
         command = Write(device=params.device, channel=params.channel, value=params.value, unit=params.unit)
         decision = await self.hub.kernel.execute(command, self._who(session), wire=True)
         if decision.status == "done":
-            return m.WriteDone(device=decision.device, channel=params.channel, value=decision.value, unit=decision.unit)
+            unit = wire_unit(decision.unit)
+            return m.WriteDone(device=decision.device, channel=params.channel, value=decision.value, unit=unit)
         if decision.status == "pending" and decision.request_id:
             return m.Pending(request_id=decision.request_id, expires_in_s=self._expires_in(decision.request_id))
         raise convert.decision_error(self.hub, decision, command, self._who(session).label)

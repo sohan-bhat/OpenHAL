@@ -177,3 +177,13 @@ def split_quantity(text: str) -> dict[str, Any] | None:
         return None
     number: float | int = int(magnitude) if magnitude.is_integer() else magnitude
     return {"value": number, "unit": found["unit"]}
+
+
+_PERCENT_WORD: Final = re.compile(r"\bpercent\b")
+
+
+def wire_unit(unit: str | None) -> str | None:
+    """A unit as messages carry it. Device files may say `percent`, messages always say `%`."""
+    if unit is None:
+        return None
+    return _PERCENT_WORD.sub("%", unit).replace(" / ", "/")

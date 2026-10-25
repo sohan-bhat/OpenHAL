@@ -13,6 +13,7 @@ from openhal.kernel.commands import Action, Decision, Write
 from openhal.kernel.confirmations import Request
 from openhal.kernel.kernel import StopReport
 from openhal.spec.models import DeviceFile
+from openhal.spec.units import wire_unit
 
 if TYPE_CHECKING:
     from openhal.hub.hub import Hub
@@ -152,7 +153,7 @@ def device_view(hub: Hub, device_id: str) -> dict[str, Any]:
 def quantity(magnitude: float, unit: str) -> dict[str, Any]:
     """A Quantity object `{value, unit}` (ADR 0016), with whole numbers sent as integers."""
     number: float | int = int(magnitude) if float(magnitude).is_integer() else float(magnitude)
-    return {"value": number, "unit": unit}
+    return {"value": number, "unit": wire_unit(unit)}
 
 
 def action_args(file: DeviceFile | None, action: str, args: Any) -> dict[str, Any]:
@@ -173,6 +174,7 @@ def action_args(file: DeviceFile | None, action: str, args: Any) -> dict[str, An
 def decision_view(decision: Decision, file: DeviceFile | None = None) -> dict[str, Any]:
     """A decision as REST sends it. An action's arguments carry their units when `file` is given."""
     view = decision.model_dump()
+    view["unit"] = wire_unit(decision.unit)
     kind, _, name = decision.target.partition(":")
     if kind == "action" and decision.value is not None:
         view["value"] = action_args(file, name, decision.value)

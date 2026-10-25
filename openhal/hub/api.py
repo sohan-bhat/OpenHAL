@@ -37,6 +37,7 @@ from openhal.protocol.dispatch import Dispatcher
 from openhal.routines.engine import RoutineError
 from openhal.spec.loader import DeviceFileError
 from openhal.spec.models import DeviceFile
+from openhal.spec.units import wire_unit
 from openhal.writer.engine import NotHumanError, WriterError
 
 SESSION_COOKIE = "openhal_session"
@@ -249,7 +250,7 @@ def create_app(hub: Hub) -> FastAPI:
             "channel": body.channel,
             "ok": True,
             "value": value,
-            "unit": reading.unit,
+            "unit": wire_unit(reading.unit),
             "at": reading.at,
             "suspect": reading.suspect,
             "bytes": len(reading.value) if isinstance(reading.value, bytes) else None,

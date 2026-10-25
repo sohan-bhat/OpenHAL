@@ -30,6 +30,7 @@ from openhal.kernel.principals import SYSTEM
 from openhal.kernel.runtime import DeviceRuntime
 from openhal.spec.loader import DeviceFileError, load, warnings_for
 from openhal.spec.models import Approval, DeviceFile
+from openhal.spec.units import wire_unit
 
 log = logging.getLogger("openhal.hub")
 
@@ -216,7 +217,7 @@ class Hub:
                 "value": views.device_value(
                     self.kernel.devices[device_id].file, device_id, reading.channel, reading.value
                 ),
-                "unit": reading.unit,
+                "unit": wire_unit(reading.unit),
                 "at": reading.at,
                 "suspect": reading.suspect,
             }
