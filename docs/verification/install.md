@@ -2,35 +2,35 @@
 
 The goal is under 60 seconds from installing OpenHAL to the first agent read of a self-describing device. Both runs below meet it with room to spare.
 
-Recorded on 2026-10-25 on an Intel Mac (Core i7-8750H, 12 threads, 16 GB, macOS 15.5) with uv 0.13.5 and Python 3.13.2. Other builds were running on the machine at the same time, with a load average near 7, so the times vary by a few seconds between runs.
+Recorded on 2026-10-25 on an Intel Mac (Core i7-8750H, 12 threads, 16 GB, macOS 15.5) with uv 0.13.5 and Python 3.13.2. Two other agents were working on the machine at the time, with a load average near 4.
 
 ## scripts/time-first-read
 
-The script builds the wheel, installs it into a fresh temporary tool folder, runs `openhal init --yes --no-discover --device openhal-firmware=sim:desk-fan` in a temporary HOME, starts `openhald` on a free loopback port and starts `openhal mcp` the way an AI client does. The agent calls `list_devices`, then `read` on `desk-fan.temperature`. Init doesn't run discovery, so nothing probes the machine's ports or network. The simulated board stands in for a board discovery finds on a serial port, and it describes itself over the real firmware protocol.
+The script builds the wheel, installs it into a fresh temporary tool folder, runs `openhal init --yes --no-discover --no-sample --device openhal-firmware=sim:plant-waterer` in a temporary HOME, starts `openhald` on a free loopback port and starts `openhal mcp` the way an AI client does. The agent calls `list_devices`, then `read` on `plant-waterer.soil_moisture`. Init doesn't run discovery, so nothing probes the machine's ports or network. The simulated plant waterer stands in for a board discovery finds on a serial port, and it describes itself over the real firmware protocol. `--no-sample` leaves out the sample file, so the board is added the way a real self-describing board is.
 
 Run 1, uv tool install with a warm package cache.
 
 | Step | Time | What happened |
 |---|---|---|
-| build | 1.40 s | `uv build --wheel` made openhal_hub-0.1.0.dev0-py3-none-any.whl |
-| install | 3.08 s | `uv tool install --compile-bytecode` into a temporary tool folder |
-| init | 6.08 s | config folder, human token, sample, desk-fan added read-only, agent token, client setup printed |
-| hub | 2.95 s | `openhald` answered at 127.0.0.1 |
-| first read | 5.68 s | `list_devices`, then `read` gave desk-fan.temperature = 30.95 degC |
-| install to first read | 17.80 s | |
+| build | 1.14 s | `uv build --wheel` made openhal_hub-0.1.0.dev0-py3-none-any.whl |
+| install | 2.00 s | `uv tool install --compile-bytecode` into a temporary tool folder |
+| init | 2.66 s | config folder, human token, plant-waterer added read-only, agent token, client setup printed |
+| hub | 2.12 s | `openhald` answered at 127.0.0.1 |
+| first read | 2.83 s | `list_devices`, then `read` gave plant-waterer.soil_moisture = 31.0 % |
+| install to first read | 9.61 s | |
 
 Run 2, the same.
 
 | Step | Time | What happened |
 |---|---|---|
-| build | 1.70 s | |
-| install | 3.79 s | |
-| init | 8.11 s | |
-| hub | 3.25 s | |
-| first read | 7.04 s | desk-fan.temperature = 30.99 degC |
-| install to first read | 22.19 s | |
+| build | 0.78 s | |
+| install | 1.39 s | |
+| init | 2.29 s | |
+| hub | 2.03 s | |
+| first read | 2.79 s | plant-waterer.soil_moisture = 31.0 % |
+| install to first read | 8.50 s | |
 
-Other runs of the same script on the same day.
+Earlier runs of the script on the same day, with a busier machine and the previous sample board.
 
 | Run | Install to first read | Notes |
 |---|---|---|

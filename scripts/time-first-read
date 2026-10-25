@@ -5,8 +5,9 @@ Each step is timed.
 
 1. build       uv build makes a wheel from this checkout.
 2. install     uv tool install (or pipx install) puts it in a fresh temporary tool folder.
-3. init        openhal init --yes, in a temporary HOME, adds a simulated self-describing board
-               as a read-only device file, the agent token and the MCP client setup.
+3. init        openhal init --yes --no-sample, in a temporary HOME, adds the simulated plant
+               waterer, a self-describing board, as a read-only device file, plus the agent
+               token and the MCP client setup.
 4. hub         openhald starts on a free loopback port and answers.
 5. first read  openhal mcp starts the way an AI client starts it, and the agent lists the
                devices and reads one channel.
@@ -36,8 +37,8 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BOARD = "desk-fan"
-CHANNEL = "temperature"
+BOARD = "plant-waterer"
+CHANNEL = "soil_moisture"
 GOAL_S = 60.0
 WAIT_S = 60.0
 
@@ -98,7 +99,7 @@ def install(work: Path, env: dict[str, str], installer: str, cold: bool) -> str:
 
 def init(work: Path, env: dict[str, str]) -> str:
     openhal = str(work / "bin" / "openhal")
-    words = [openhal, "init", "--yes", "--no-discover", "--device", f"openhal-firmware=sim:{BOARD}"]
+    words = [openhal, "init", "--yes", "--no-discover", "--no-sample", "--device", f"openhal-firmware=sim:{BOARD}"]
     out = run(words, env)
     device = work / "home" / ".openhal" / "devices" / f"{BOARD}.hal.yaml"
     token = work / "home" / ".openhal" / "agent.token"
