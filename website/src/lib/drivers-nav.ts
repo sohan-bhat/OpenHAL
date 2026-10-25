@@ -11,7 +11,7 @@ export function driversSidebar(): SideGroup[] {
       items: [
         { title: "All drivers", href: "/drivers/" },
         { title: "Coverage plan", href: "/drivers/coverage/" },
-        { title: "Writing a driver", href: "/docs/tutorials/write-a-driver/" },
+        { title: "Build a driver", href: "/docs/tutorials/build-a-driver/" },
       ],
     },
     { name: statusWord("implemented"), items: running.map((driver) => ({ title: driver.name, href: `/drivers/${driver.name}/` })) },

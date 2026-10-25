@@ -42,7 +42,7 @@ const entries = libraryEntries();
                     <td data-label="Driver" class="mono">{entry.driver}</td>
                     <td data-label="Hazard" class="mono">{entry.hazard}</td>
                     <td data-label="Channels">
-                      {entry.reads} read, {entry.writes} write, {entry.actions} actions
+                      {entry.reads} readable, {entry.writes} changeable, {entry.actions} actions
                     </td>
                     <td data-label="Verification">
                       {entry.problems.length > 0 ? <span class="status blocked">invalid</span> : <VerificationBadge status={entry.verification} />}

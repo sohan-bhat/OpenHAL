@@ -11,6 +11,7 @@ const SHORT: Record<string, string> = {
   "Spec changelog": "Device file changelog",
   "Mapping to the Model Hardware Standard": "MHS mapping",
   "OpenHAL firmware protocol, version 1": "Firmware protocol",
+  "Writing a driver": "Driver contract",
 };
 
 export function docTitle(entry: { id: string; body?: string; data: Record<string, unknown> }): string {

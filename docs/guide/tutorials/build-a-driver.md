@@ -1,6 +1,6 @@
-# Write a driver
+# Build a driver
 
-A [Driver](glossary:driver) speaks one protocol. Most devices need only a [Device File](glossary:device-file) for an existing driver. Write a driver when none speaks your device's protocol. This tutorial writes one for a simulated bench lamp and runs the conformance suite on it.
+A [Driver](glossary:driver) speaks one protocol. Most devices need only a [Device File](glossary:device-file) for an existing driver. Build one when none speaks your device's protocol. This tutorial builds one for a simulated bench lamp and runs the conformance suite on it.
 
 ## The contract
 
@@ -90,7 +90,7 @@ assert report.ok
 x-lamp: 11 passed, 0 failed, 1 skipped
 ```
 
-The suite writes 160 % and checks that the kernel blocks it before `_write` runs. The skipped check needs a hook that slows the device down. [Conformance](../conformance.md) lists every check.
+The suite sends 160 % and checks that the kernel blocks it before `_write` runs. The skipped check needs a hook that slows the device down. [Conformance](../conformance.md) lists every check.
 
 ## Add it to the repository
 

@@ -1,6 +1,6 @@
 # Conformance suite
 
-Every driver in the repository passes the same battery of checks before it ships. The suite runs the driver inside a real kernel, against its own mock or simulator, and watches the layer where the driver talks to the protocol. That is how it proves a blocked command never reaches the device.
+Every driver in the repository passes the same battery of checks before it ships. The suite runs the driver inside a real kernel, against its own mock or simulator, and watches the point where the driver talks to the protocol. That is how it proves a blocked command never reaches the device.
 
 ## What it checks
 
@@ -10,9 +10,9 @@ Every driver in the repository passes the same battery of checks before it ships
 | connect | The driver connects to its simulator |
 | describe | Self-description, if the protocol has one, marks every limit as suggested |
 | read every channel | Each read channel returns a value in its declared unit |
-| write inside limits | A write the kernel allows reaches the driver once, already converted |
-| write outside limits is blocked before the driver | A write over the limit never reaches the protocol layer |
-| no write without a kernel grant | Calling the driver without a grant fails |
+| `write inside limits` | A change the kernel allows reaches the driver once, already converted |
+| `write outside limits is blocked before the driver` | A change over the limit never reaches the protocol code |
+| `no write without a kernel grant` | Calling the driver without a grant fails |
 | concurrent access | Commands to one device run one at a time |
 | safe state | The safe state is applied and reported |
 | disconnect and reconnect | A lost connection is noticed and the driver comes back |
@@ -79,8 +79,8 @@ def case() -> ConformanceCase:
     return ConformanceCase(name="mock", file=FILE, make=MockDriver, break_connection=break_connection)
 ```
 
-The case should use a device file that looks like the real device, with real units and limits, so the suite exercises the same conversions the hardware will see. The driver contract is in [writing a driver](../drivers/WRITING-A-DRIVER.md).
+The case should use a device file that looks like the real device, with real units and limits, so the suite exercises the same conversions the hardware will see. The [driver contract](../drivers/WRITING-A-DRIVER.md) has every rule.
 
 ## Passing is not verified
 
-Conformance runs against a simulator. A driver that passes is marked implemented in the catalog. It becomes verified only after a person runs its hardware test plan on a real device and writes a report.
+Conformance runs against a simulator. A driver that passes is marked implemented in the catalog. It becomes verified only after a person runs its hardware test plan on a real device and files a report.

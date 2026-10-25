@@ -1,6 +1,6 @@
 # Quickstart
 
-This guide runs a [Hub](glossary:hub) with a simulated desk fan and sends it one write that is refused and one that is granted. Nothing in it touches real hardware.
+This guide runs a [Hub](glossary:hub) with a simulated desk fan and sends it one command that is refused and one that runs. Nothing in it touches real hardware.
 
 ## Run the hub
 
@@ -25,7 +25,7 @@ devices 1 of 1 connected
 
 The hub listens on `127.0.0.1:7420` only.
 
-## Send two writes
+## Send two commands
 
 ```sh tested
 $ uv run openhal write demo-fan.fan_speed 150 %
@@ -34,7 +34,7 @@ $ uv run openhal write demo-fan.fan_speed 40 %
 done  Done. fan_speed is now 40 %.
 ```
 
-The [Safety Kernel](glossary:safety-kernel) refused the first write before anything reached the device. Over the protocol, the same refusal is `error -32010 LIMIT_EXCEEDED`.
+The [Safety Kernel](glossary:safety-kernel) refused the first command before anything reached the device. Over the protocol, the same refusal is `error -32010 LIMIT_EXCEEDED`.
 
 ## Stop
 

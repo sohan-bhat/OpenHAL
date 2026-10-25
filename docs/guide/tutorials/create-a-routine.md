@@ -1,6 +1,6 @@
-# Write a routine
+# Create a routine
 
-A routine is an automation that runs on the [Hub](glossary:hub) without a model. Triggers say when it runs. Steps say what it does. Every write a step makes goes through the [Safety Kernel](glossary:safety-kernel), like any other command.
+A routine is an automation that runs on the [Hub](glossary:hub) without a model. Triggers say when it runs. Steps say what it does. Every change a step makes goes through the [Safety Kernel](glossary:safety-kernel), like any other command.
 
 ## Start the hub
 
@@ -10,7 +10,7 @@ $ uv run openhal file confirm ~/.openhal/devices/demo-fan.hal.yaml
 $ uv run openhald &
 ```
 
-## Write it
+## Describe it
 
 This routine checks the fan's temperature every 30 seconds and picks a speed.
 
@@ -28,7 +28,7 @@ steps:
 
 ## Store it and dry run it
 
-A new routine starts disabled. A dry run checks every write in every branch against the current state, and nothing reaches the device.
+A new routine starts disabled. A dry run checks every change in every branch against the current state, and nothing reaches the device.
 
 ```sh tested
 $ uv run openhal routine new keep-cool --file keep-cool.yaml

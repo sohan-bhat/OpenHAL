@@ -59,6 +59,8 @@ describe("Markdown copy follows the rules", () => {
         if (/:\s/.test(prose) && !/^\s*[-*] \*\*/.test(prose)) problems.push(`line ${line} has a colon in running prose`);
         for (const word of BANNED) if (prose.toLowerCase().includes(word)) problems.push(`line ${line} uses "${word}"`);
         if (/\bunlock/i.test(prose)) problems.push(`line ${line} says unlock outside code`);
+        if (/\bwrit(e|es|ing|ten)\b/i.test(prose)) problems.push(`line ${line} says write. Say command or change`);
+        if (/\blayers?\b/i.test(prose)) problems.push(`line ${line} says layer`);
       }
       expect(problems).toEqual([]);
     });

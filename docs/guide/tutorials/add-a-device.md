@@ -1,12 +1,12 @@
 # Add a device
 
-Most devices need a [Device File](glossary:device-file) and no new code. This tutorial writes one, validates it, confirms it and shares it. The [device file format](../../../spec/SPEC.md) defines every field.
+Most devices need a [Device File](glossary:device-file) and no new code. This tutorial creates one, validates it, confirms it and shares it. The [device file format](../../../spec/SPEC.md) defines every field.
 
 ## Pick a driver
 
-A device file names one [Driver](glossary:driver). [Drivers](/drivers/) lists each one and its status. If no driver speaks your device's protocol, see [Write a driver](write-a-driver.md).
+A device file names one [Driver](glossary:driver). [Drivers](/drivers/) lists each one and its status. If no driver speaks your device's protocol, see [Build a driver](build-a-driver.md).
 
-## Write the file
+## Describe the device
 
 List what the device can do, then add the limits. Keep each limit at or inside what you would accept with nobody watching.
 
@@ -34,7 +34,7 @@ provenance:
 ```
 
 - Every number channel has a unit.
-- Every number write channel has `min` and `max`.
+- Every number channel you can change has `min` and `max`.
 - Every file has a `safe_state`.
 - A file never holds a password or token. It names an environment variable, as in `token_env: HA_TOKEN`.
 
@@ -60,13 +60,13 @@ The file now records who confirmed it, the date and a hash of the limits.
 
 ## Test it
 
-Copy the file into `~/.openhal/devices/` and restart the hub. Read every channel, then try each write at its smallest value. Run `uv run openhal stop` and check the device reached its safe state. Record what you tested in `provenance.verification`.
+Copy the file into `~/.openhal/devices/` and restart the hub. Read every channel, then try each change at its smallest value. Run `uv run openhal stop` and check the device reached its safe state. Record what you tested in `provenance.verification`.
 
 | Status | Meaning |
 |---|---|
 | `unverified` | Not yet run against the real device |
 | `tested-reads` | Reads checked on the real device |
-| `verified-on-hardware` | Reads, writes and the safe state checked on the real device, with a report |
+| `verified-on-hardware` | Reads, changes and the safe state checked on the real device, with a report |
 
 ## Share it
 

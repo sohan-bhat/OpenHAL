@@ -42,4 +42,4 @@ No. The playground runs a TypeScript port of the kernel's checks. A test runs th
 
 ## What does the device library contain?
 
-Device files that people have written and tested, one per model, each with a verification badge. Files there are CC0. See [Add a device](tutorials/add-a-device.md).
+Device files that people have described and tested, one per model, each with a verification badge. Files there are CC0. See [Add a device](tutorials/add-a-device.md).

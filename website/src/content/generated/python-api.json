@@ -145,8 +145,8 @@
             },
             {
               "name": "ramp_to",
-              "signature": "ramp_to(device: str, channel: str, target: str, *, interval_s: float = 1.0, margin: float = 0.9, sleep: Callable[[float], None] = <built-in function sleep>) -> list[Decision]",
-              "doc": "Move a channel to `target` in steps that each pass its rate limit.\n\nWaits `interval_s` before each step, so the first step is safe even right after another write.\nStops at the first step the kernel does not accept and returns every decision so far."
+              "signature": "ramp_to(device: str, channel: str, target: float | Mapping[str, Any] | str, unit: str | None = None, *, interval_s: float = 1.0, margin: float = 0.9, sleep: Callable[[float], None] = <built-in function sleep>) -> list[Decision]",
+              "doc": "Move a channel to `target` in `unit` in steps that each pass its rate limit.\n\nWaits `interval_s` before each step, so the first step is safe even right after another write.\nStops at the first step the kernel does not accept and returns every decision so far."
             },
             {
               "name": "read",
@@ -210,7 +210,7 @@
             },
             {
               "name": "tighten",
-              "signature": "tighten(device: str, channel: str, *, min: str | None = None, max: str | None = None, rate: str | None = None) -> TightenResult",
+              "signature": "tighten(device: str, channel: str, *, min: Mapping[str, Any] | None = None, max: Mapping[str, Any] | None = None, rate: Mapping[str, Any] | None = None) -> TightenResult",
               "doc": "Narrow limits for this token's session. Widening is refused with `cannot_loosen`."
             },
             {
@@ -240,8 +240,8 @@
             },
             {
               "name": "write",
-              "signature": "write(device: str, channel: str, value: Value) -> Decision",
-              "doc": "Ask the kernel to set a channel. Numbers need a unit, for example `\"60 %\"`."
+              "signature": "write(device: str, channel: str, value: Value, unit: str | None = None) -> Decision",
+              "doc": "Ask the kernel to set a channel. A number needs its unit, as `write(\"desk-fan\", \"fan_speed\", 60, \"%\")`."
             },
             {
               "name": "writer_session",
@@ -383,8 +383,8 @@
             },
             {
               "name": "ramp_to",
-              "signature": "async ramp_to(device: str, channel: str, target: str, *, interval_s: float = 1.0, margin: float = 0.9, sleep: Callable[[float], Awaitable[None]] = sleep) -> list[Decision]",
-              "doc": "Move a channel to `target` in steps that each pass its rate limit.\n\nWaits `interval_s` before each step, so the first step is safe even right after another write.\nStops at the first step the kernel does not accept and returns every decision so far."
+              "signature": "async ramp_to(device: str, channel: str, target: float | Mapping[str, Any] | str, unit: str | None = None, *, interval_s: float = 1.0, margin: float = 0.9, sleep: Callable[[float], Awaitable[None]] = sleep) -> list[Decision]",
+              "doc": "Move a channel to `target` in `unit` in steps that each pass its rate limit.\n\nWaits `interval_s` before each step, so the first step is safe even right after another write.\nStops at the first step the kernel does not accept and returns every decision so far."
             },
             {
               "name": "read",
@@ -448,7 +448,7 @@
             },
             {
               "name": "tighten",
-              "signature": "async tighten(device: str, channel: str, *, min: str | None = None, max: str | None = None, rate: str | None = None) -> TightenResult",
+              "signature": "async tighten(device: str, channel: str, *, min: Mapping[str, Any] | None = None, max: Mapping[str, Any] | None = None, rate: Mapping[str, Any] | None = None) -> TightenResult",
               "doc": "Narrow limits for this token's session. Widening is refused with `cannot_loosen`."
             },
             {
@@ -478,8 +478,8 @@
             },
             {
               "name": "write",
-              "signature": "async write(device: str, channel: str, value: Value) -> Decision",
-              "doc": "Ask the kernel to set a channel. Numbers need a unit, for example `\"60 %\"`."
+              "signature": "async write(device: str, channel: str, value: Value, unit: str | None = None) -> Decision",
+              "doc": "Ask the kernel to set a channel. A number needs its unit, as `write(\"desk-fan\", \"fan_speed\", 60, \"%\")`."
             },
             {
               "name": "writer_session",
@@ -496,7 +496,7 @@
         {
           "name": "Write",
           "kind": "class",
-          "doc": "Set one write channel. Numeric values must carry a unit.",
+          "doc": "Set one write channel. A number carries its unit, in `unit` or as a `{value, unit}` mapping.",
           "fields": [
             {
               "name": "kind",
@@ -516,6 +516,11 @@
             {
               "name": "value",
               "type": "str | bool | dict[str, Any] | int | float",
+              "doc": ""
+            },
+            {
+              "name": "unit",
+              "type": "str | None",
               "doc": ""
             }
           ]

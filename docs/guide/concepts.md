@@ -10,23 +10,14 @@ The [Hub](glossary:hub) is one process on your computer or a Raspberry Pi. It ow
 
 Each device has a [Device File](glossary:device-file) that lists what can be read, what can be changed, the limits on every change and the safe state.
 
-```yaml tested
-device: Desk fan controller
-id: desk-fan
-connect: { serial: auto, board: arduino-uno }
-read:
-  temperature: { unit: degC, every: 1 s }
-write:
-  fan_speed: { unit: percent, min: 0, max: 100, step: 1, max_change_per_s: 20 }
-safe_state: { fan_speed: 0 }
-hazard: low
+```yaml tested include=examples/plant-waterer/plant-waterer.hal.yaml
 ```
 
 A file is read-only until a person confirms its limits. Tools may suggest limits. They can never confirm them.
 
 ## Safety kernel
 
-The [Safety Kernel](glossary:safety-kernel) decides every write and action, from every client, in a fixed order. It checks units, range, step, rate of change, interlocks, the token's scope and confirmation, and stops at the first failure. It is plain code with no model in it. A value it can't trust counts as unsafe.
+The [Safety Kernel](glossary:safety-kernel) decides every command, from every client, in a fixed order. It checks units, range, step, rate of change, interlocks, the token's scope and confirmation, and stops at the first failure. It is plain code with no model in it. A value it can't trust counts as unsafe.
 
 ## Drivers and grants
 
@@ -49,11 +40,11 @@ The specification lists every code.
 
 ## Principals and hazard classes
 
-Every request comes from a principal. A person uses the human token. An agent uses an agent token with a scope, `read`, `control_low` or `control_medium`. A device file sets its hazard class, `low`, `medium` or `high`. Every write to a high hazard device waits for a person.
+Every request comes from a principal. A person uses the human token. An agent uses an agent token with a scope, `read`, `control_low` or `control_medium`. A device file sets its hazard class, `low`, `medium` or `high`. Every change to a high hazard device waits for a person.
 
 ## Conformance levels
 
-Hubs and drivers declare a [Conformance Level](glossary:conformance-level). Core covers discovery and reads. Control adds writes and stop. Full adds actions, routines and confirmations.
+Hubs and drivers declare a [Conformance Level](glossary:conformance-level). Core covers discovery and reads. Control adds changes and stop. Full adds actions, routines and confirmations.
 
 ## What OpenHAL doesn't do
 

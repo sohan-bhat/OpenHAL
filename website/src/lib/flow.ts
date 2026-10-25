@@ -8,7 +8,7 @@ export interface FlowNode {
 }
 
 export const FLOW_NODES: FlowNode[] = [
-  { key: "client", label: "AI client", text: "Sends hal/write over JSON-RPC, directly or through MCP." },
+  { key: "client", label: "AI client", text: "Sends requests over JSON-RPC, directly or through MCP." },
   { key: "hub", label: "OpenHAL hub", text: "Owns every device and passes each request to the Safety Kernel." },
   { key: "files", label: "Device files", text: "Hold each device's channels and the limits a person confirmed." },
   { key: "kernel", label: "Safety kernel", text: "Checks units, range, rate, interlocks and confirmation, in that order." },
@@ -17,7 +17,7 @@ export const FLOW_NODES: FlowNode[] = [
   { key: "device", label: "Device", text: "Applies the command and reports the new value back." },
 ];
 
-export const FLOW_DEFAULT = "Every write passes the Safety Kernel before a Driver may act.";
+export const FLOW_DEFAULT = "Every command passes the Safety Kernel before a Driver may act.";
 
 export interface FlowArt {
   light: string;

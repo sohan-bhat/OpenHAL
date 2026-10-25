@@ -17,7 +17,7 @@ const PAGES = [
   "/inspector/",
   "/docs/",
   "/docs/quickstart/",
-  "/docs/tutorials/write-a-driver/",
+  "/docs/tutorials/build-a-driver/",
   "/docs/architecture/",
   "/blog/",
   "/404/",

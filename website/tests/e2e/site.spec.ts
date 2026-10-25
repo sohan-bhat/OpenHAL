@@ -15,7 +15,7 @@ test.describe("overview", () => {
   test("states the protocol in one sentence and shows the canonical trace", async ({ page }) => {
     const errors = noErrors(page);
     await page.goto("/");
-    await expect(page.locator("h1")).toHaveText("OpenHAL is an open protocol for AI agents to discover, read and control hardware safely.");
+    await expect(page.locator("h1")).toHaveText("An open-source protocol for AI agents to control hardware.");
     const trace = page.locator(".trace").first();
     await expect(trace).toContainText("error -32010 LIMIT_EXCEEDED");
     await expect(trace).toContainText(REASON_150);

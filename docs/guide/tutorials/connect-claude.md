@@ -15,10 +15,10 @@ The token is shown once. A scope limits what the token may do.
 | Scope | Allows |
 |---|---|
 | `read` | Reads only |
-| `control_low` | Writes to low hazard devices |
-| `control_medium` | Writes to low and medium hazard devices |
+| `control_low` | Changes to low hazard devices |
+| `control_medium` | Changes to low and medium hazard devices |
 
-No agent token writes to a high hazard device without a person's approval. `openhal mcp` refuses the human token.
+No agent token changes a high hazard device without a person's approval. `openhal mcp` refuses the human token.
 
 ## Claude Code
 
@@ -47,6 +47,6 @@ Restart Claude Desktop after you edit the file.
 
 ## Try it
 
-Ask Claude to set `demo-fan` to 150 %. The [Safety Kernel](glossary:safety-kernel) blocks the write before it reaches the device, and Claude reports the reason. Ask for 40 % and the write goes through.
+Ask Claude to set `demo-fan` to 150 %. The [Safety Kernel](glossary:safety-kernel) blocks the command before it reaches the device, and Claude reports the reason. Ask for 40 % and the command runs.
 
 `uv run openhal log` lists both requests under the token's name.

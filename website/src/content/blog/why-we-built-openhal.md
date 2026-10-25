@@ -6,7 +6,7 @@ author: OpenHAL contributors
 draft: true
 ---
 
-An AI client can read a datasheet, write a serial protocol and move a motor in an afternoon. Nothing on that path knows the limits a person would set. Nothing enforces them the same way for every client.
+An AI client can read a datasheet, code a serial protocol and move a motor in an afternoon. Nothing on that path knows the limits a person would set. Nothing enforces them the same way for every client.
 
 ## The gap
 
@@ -17,34 +17,14 @@ Single-device tools exist for Arduino boards, 3D printers, bench instruments and
 OpenHAL is an open protocol with a dated specification. It defines two things.
 
 1. The [Device File](glossary:device-file). It lists what a device can read and change, the limits on each change and the safe state. A person confirms the limits. Until then the file is read-only.
-2. The hub protocol. Clients speak JSON-RPC 2.0 to one [Hub](glossary:hub). Its [Safety Kernel](glossary:safety-kernel) decides every write and action before a [Driver](glossary:driver) may act.
+2. The hub protocol. Clients speak JSON-RPC 2.0 to one [Hub](glossary:hub). Its [Safety Kernel](glossary:safety-kernel) decides every command before a [Driver](glossary:driver) may act.
 
-```yaml tested
-device: Desk fan controller
-id: desk-fan
-connect: { openhal-firmware: auto }
-read:
-  temperature: { unit: degC, every: 1 s }
-write:
-  fan_speed: { unit: percent, min: 0, max: 100, max_change_per_s: 20 }
-safe_state: { fan_speed: 0 }
-hazard: low
+```yaml tested include=examples/plant-waterer/plant-waterer.hal.yaml
 ```
 
-A request over the limit is refused with a stable code, a registry name and a reason that cites the rule. A request inside it runs.
+A request over a limit is refused with a stable code, a registry name and a reason that cites the rule. A request inside every limit runs. This trace is recorded from the reference hub with a simulated device.
 
-```json tested
-→ {"jsonrpc": "2.0", "id": 6, "method": "hal/write",
-   "params": {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"}}
-← {"jsonrpc": "2.0", "id": 6, "error": {"code": -32010,
-     "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
-     "data": {"name": "LIMIT_EXCEEDED", "kernelCode": "above_max", "device": "desk-fan", "channel": "fan_speed",
-              "limit": "100 %", "requested": "150 %", "file": "desk-fan.hal.yaml", "confirmedBy": "sohan",
-              "confirmedAt": "2026-10-24"}}}
-→ {"jsonrpc": "2.0", "id": 7, "method": "hal/write",
-   "params": {"device": "desk-fan", "channel": "fan_speed", "value": "60 %"}}
-← {"jsonrpc": "2.0", "id": 7, "result": {"status": "done", "device": "desk-fan", "channel": "fan_speed",
-     "value": 60, "unit": "%"}}
+```scenario
 ```
 
 ## Why a protocol
