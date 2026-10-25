@@ -1,8 +1,21 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
+function findRoot() {
+  for (const start of [dirname(fileURLToPath(import.meta.url)), process.cwd()]) {
+    let dir = start;
+    while (true) {
+      if (existsSync(join(dir, "pyproject.toml")) && existsSync(join(dir, "website", "package.json"))) return `${dir}/`;
+      const up = dirname(dir);
+      if (up === dir) break;
+      dir = up;
+    }
+  }
+  return fileURLToPath(new URL("../../../", import.meta.url));
+}
+
+export const REPO_ROOT = findRoot();
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
