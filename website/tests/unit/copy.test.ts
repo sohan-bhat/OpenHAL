@@ -42,11 +42,29 @@ function proseLines(text: string): Array<[number, string]> {
   return out;
 }
 
+const FILE_WORDS = /^\s+(?:(?:a|an|the|its|your|their|one|this|that|each)\s+)?(?:[\w'-]+\s+){0,2}?(?:config|configs|configuration|file|files|sketch|sketches|driver|drivers|routine|routines|test|tests|plan|code|doc|docs|page|pages|yaml)\b/i;
+
+function jargonWrite(prose: string): boolean {
+  for (const match of prose.matchAll(/\bwrit(e|es|ing|ten)\b/gi)) {
+    if (!FILE_WORDS.test(prose.slice(match.index + match[0].length))) return true;
+  }
+  return false;
+}
+
 const markdown = [
   ...walk(join(repo, "docs", "guide"), [".md"]).filter((path) => !path.endsWith("driver-writer.md")),
   ...walk(join(website, "src", "content"), [".md"]),
 ];
 const markup = walk(join(website, "src"), [".astro", ".svelte", ".ts", ".mjs", ".json"]);
+
+describe("the write rule", () => {
+  it("flags write for a command and allows it for a file", () => {
+    expect(jargonWrite("Its writes and actions are marked suggested.")).toBe(true);
+    expect(jargonWrite("Every write goes through the kernel.")).toBe(true);
+    expect(jargonWrite("Write a client's config for you.")).toBe(false);
+    expect(jargonWrite("It writes a client config only with a flag.")).toBe(false);
+  });
+});
 
 describe("Markdown copy follows the rules", () => {
   for (const path of markdown) {
@@ -59,7 +77,7 @@ describe("Markdown copy follows the rules", () => {
         if (/:\s/.test(prose) && !/^\s*[-*] \*\*/.test(prose)) problems.push(`line ${line} has a colon in running prose`);
         for (const word of BANNED) if (prose.toLowerCase().includes(word)) problems.push(`line ${line} uses "${word}"`);
         if (/\bunlock/i.test(prose)) problems.push(`line ${line} says unlock outside code`);
-        if (/\bwrit(e|es|ing|ten)\b/i.test(prose)) problems.push(`line ${line} says write. Say command or change`);
+        if (jargonWrite(prose)) problems.push(`line ${line} says write. Say command or change`);
         if (/\blayers?\b/i.test(prose)) problems.push(`line ${line} says layer`);
       }
       expect(problems).toEqual([]);
