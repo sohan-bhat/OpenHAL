@@ -4,7 +4,7 @@ import FlowDiagram from "../components/FlowDiagram.astro";
 import MessageTrace from "../components/MessageTrace.astro";
 import { PRODUCT_NAME } from "../config/brand";
 import Base from "../layouts/Base.astro";
-import { drivers, statusWord } from "../lib/catalog";
+import { driverGroups, drivers, statusWord } from "../lib/catalog";
 import { HOME_TITLE } from "../lib/pages";
 import { outcome, scenarioTrace } from "../lib/scenario";
 import { latestVersion, specPages } from "../lib/spec";
@@ -14,7 +14,7 @@ import "../styles/prose.css";
 const quickstart = await getEntry("snippets", "quickstart");
 const { Content: Quickstart } = await render(quickstart!);
 const all = drivers();
-const running = all.filter((driver) => driver.tier > 0 && (driver.status === "implemented" || driver.status === "verified"));
+const groups = driverGroups();
 const planned = all.filter((driver) => driver.status === "planned").length;
 const tested = all.filter((driver) => driver.status === "implemented").length;
 const verified = all.filter((driver) => driver.status === "verified").length;
@@ -45,19 +45,34 @@ const sections = specItems
       <h2 id="devices-title">Device families</h2>
       <p class="summary">
         <span class={`status ${verified ? "ok" : "unverified"}`}>{tested} drivers {statusWord("implemented")}</span>
-        <span class="muted">{verified ? `${verified} verified on hardware.` : "None is verified on hardware yet."} {planned} planned.</span>
+        <span class="muted">{verified ? `${verified} verified on hardware.` : "None is verified on hardware yet."}{planned ? ` ${planned} planned.` : ""}</span>
       </p>
-      <ul class="families">
+      <ul class="groups">
         {
-          running.map((driver) => (
+          groups.map((group) => (
             <li>
-              <a class="mono" href={`/drivers/${driver.name}/`}>{driver.name}</a>
-              <span class="muted">{driver.families.slice(0, 2).join(", ")}</span>
+              <h3>{group.name}</h3>
+              <p class="count">
+                <span class={`status ${group.verified ? "ok" : "unverified"}`}>
+                  {group.verified ? `${group.verified} verified on hardware, ` : ""}
+                  {group.tested} {statusWord("implemented")}
+                </span>
+              </p>
+              <p class="names">
+                {group.drivers.map((driver, index) => (
+                  <>
+                    <a class="mono" href={`/drivers/${driver.name}/`}>
+                      {driver.name}
+                    </a>
+                    {index < group.drivers.length - 1 ? " " : ""}
+                  </>
+                ))}
+              </p>
             </li>
           ))
         }
       </ul>
-      <p><a href="/drivers/">All drivers, with tier, status and hazard</a></p>
+      <p><a href="/drivers/">All {all.length} drivers, with protocols, tier, status and hazard</a></p>
     </section>
 
     <section aria-labelledby="mhs-title" class="block">
@@ -130,23 +145,38 @@ const sections = specItems
     gap: var(--s-2) var(--s-4);
   }
 
-  .families {
+  .groups {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
-    gap: var(--s-3) var(--s-5);
+    gap: var(--s-4) var(--s-5);
+    align-items: start;
   }
 
-  .families li {
+  .groups li {
     display: grid;
-    gap: 2px;
-    padding-top: var(--s-2);
+    gap: var(--s-1);
+    align-content: start;
+    padding-top: var(--s-3);
     border-top: var(--rule);
   }
 
-  .families a {
-    font-weight: 700;
+  .groups h3 {
+    margin: 0;
+    font-size: var(--t-body);
+    line-height: 1.4;
+  }
+
+  .groups .count {
+    margin: 0;
+  }
+
+  .groups .names {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px var(--s-3);
   }
 
   .measure {
@@ -167,9 +197,15 @@ const sections = specItems
     color: var(--text-2);
   }
 
-  @media (min-width: 768px) {
-    .families {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+  @media (min-width: 640px) {
+    .groups {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .groups {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 </style>
