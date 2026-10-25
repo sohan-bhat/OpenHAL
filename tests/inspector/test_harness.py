@@ -44,17 +44,17 @@ def bearer(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-async def test_devices_are_the_mock_fan_heater_and_lamp(base_url: str, harness: Harness) -> None:
+async def test_devices_are_the_mock_waterer_heater_and_lamp(base_url: str, harness: Harness) -> None:
     async with httpx.AsyncClient(base_url=base_url, headers=bearer(harness.human_token)) as client:
         devices = (await client.get("/v1/devices")).json()
-        fan = (await client.get("/v1/devices/desk-fan")).json()
+        waterer = (await client.get("/v1/devices/plant-waterer")).json()
     assert {device["id"]: device["driver"] for device in devices} == {
         "bench-lamp": "mock",
         "curing-heater": "mock",
-        "desk-fan": "mock",
+        "plant-waterer": "mock",
     }
-    assert fan["write"]["fan_speed"]["value"] == 20
-    assert fan["write"]["fan_speed"]["max"] == 100
+    assert waterer["read"]["tank"]["values"] == ["empty", "ok"]
+    assert waterer["actions"]["water"]["args"]["duration"]["max"] == 30
     lamp = next(device for device in devices if device["id"] == "bench-lamp")
     assert lamp["writable"] is False
 
@@ -62,16 +62,19 @@ async def test_devices_are_the_mock_fan_heater_and_lamp(base_url: str, harness: 
 async def test_the_blocked_write_reaches_the_message_log(base_url: str, harness: Harness) -> None:
     async with ProtocolClient(base_url, harness.agent_token, client_name="bench-agent") as rpc:
         with pytest.raises(ProtocolError) as blocked:
-            await rpc.call("hal/write", {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"})
-        pending = await rpc.call(
-            "hal/action", {"device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}}
+            await rpc.call(
+                "hal/action",
+                {"device": "plant-waterer", "action": "water", "args": {"duration": {"value": 120, "unit": "s"}}},
+            )
+        done = await rpc.call(
+            "hal/action",
+            {"device": "plant-waterer", "action": "water", "args": {"duration": {"value": 20, "unit": "s"}}},
         )
     assert blocked.value.code == -32010
     assert blocked.value.name == "LIMIT_EXCEEDED"
-    assert blocked.value.reason == (
-        "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)"
-    )
-    assert pending["status"] == "pending"
+    assert blocked.value.reason.startswith("water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml")
+    assert blocked.value.data["limit"] == {"value": 30, "unit": "s"}
+    assert done["status"] == "done"
 
     async with httpx.AsyncClient(base_url=base_url) as client:
         log = (await client.get("/v1/rpc/log", headers=bearer(harness.human_token))).json()

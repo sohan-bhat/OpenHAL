@@ -1,6 +1,7 @@
 """A real embedded hub with mock devices, for the Inspector's browser tests and screenshots.
 
-Every device runs on the mock driver or the firmware simulator. Nothing reaches hardware.
+Every device runs on the mock driver or the firmware simulator. Nothing reaches hardware. The plant
+waterer is the canonical demo device.
 """
 
 from __future__ import annotations
@@ -17,31 +18,32 @@ from openhal.hub.discovery import DiscoveryResult, Unknown
 from openhal.hub.hub import Hub
 from openhal.kernel.principals import agent, human
 
-DESK_FAN = """\
+PLANT_WATERER = """\
 openhal: "0.1"
-device: Desk fan controller
-id: desk-fan
-connect: { mock: desk-fan, simulate: desk-fan, initial: { fan_speed: 20 } }
+device: Plant waterer
+id: plant-waterer
+connect: { mock: plant-waterer, initial: { soil_moisture: 31, tank: ok } }
 read:
-  temperature: { unit: degC, every: 1 s, range: [-20, 80] }
-write:
-  fan_speed: { unit: percent, min: 0, max: 100, step: 1, max_change_per_s: 20 }
+  soil_moisture: { unit: percent, every: 5 s, range: [0, 100] }
+  tank: { type: enum, values: [empty, ok], every: 2 s }
 actions:
-  spin_test:
-    description: Run the fan at full speed, then return to the set speed.
+  water:
+    description: Run the pump for a set time.
     args:
-      seconds: { unit: s, min: 1, max: 30 }
-    confirm: confirm
-safe_state: { fan_speed: 0 }
+      duration: { unit: s, min: 1, max: 30 }
+    require:
+      - condition: "tank == ok"
+        message: "pump can't run while tank is empty"
+    max_runs: { count: 3, per: 1 h }
+  stop:
+    description: Stop the pump now.
+safe_state:
+  - action: stop
 watchdog:
   heartbeat: 2 s
   on_loss: safe_state
-  max_duration:
-    - when: "fan_speed > 80 %"
-      for: 10 min
-      then: { fan_speed: 50 }
 hazard: low
-notes: "Fan is next to the plant. It falls to 0 % if the hub stops sending heartbeats."
+notes: "An Arduino with a soil probe, a float switch in the tank and a 5 V pump."
 provenance:
   source: hand-written
   by: sohan
@@ -65,15 +67,11 @@ actions:
     args:
       seconds: { unit: s, min: 1, max: 20 }
     confirm: confirm-each-time
-  purge:
-    description: Blow the chamber clear with the heater off.
-    confirm: confirm-each-time
-    effects: [power]
 safe_state: { power: 0 }
 interlocks:
   - if: "power > 0 W"
-    require: "desk-fan.fan_speed >= 30 %"
-    message: "The heater needs the desk fan at 30 % or more."
+    require: "temperature < 70 degC"
+    message: "The heater adds no power above 70 degC."
 watchdog:
   heartbeat: 2 s
   on_loss: safe_state
@@ -105,31 +103,28 @@ provenance:
   at: 2026-10-24
 """
 
-KEEP_COOL = """\
-id: keep-cool
-description: Run the fan harder when the room is warm.
+WATER_WHEN_DRY = """\
+id: water-when-dry
+description: Water the plant when the soil is dry.
 triggers:
-  - every: 30 s
+  - every: 30 min
 steps:
-  - if: "desk-fan.temperature > 28 degC"
+  - if: "plant-waterer.soil_moisture < 30 %"
     then:
-      - write: { device: desk-fan, channel: fan_speed, value: 60 % }
-    else:
-      - write: { device: desk-fan, channel: fan_speed, value: 20 % }
-  - log: checked the fan
+      - action: { device: plant-waterer, action: water, args: { duration: 20 s } }
+  - log: checked the soil
 """
 
 CURE_CYCLE = """\
 id: cure-cycle
-description: Warm the resin for ten minutes with the fan running.
+description: Warm the resin for ten minutes.
 steps:
-  - write: { device: desk-fan, channel: fan_speed, value: 40 % }
   - write: { device: curing-heater, channel: power, value: 30 W }
   - wait: 10 min
   - write: { device: curing-heater, channel: power, value: 0 W }
 """
 
-DEVICE_FILES = {"desk-fan": DESK_FAN, "curing-heater": CURING_HEATER, "bench-lamp": BENCH_LAMP}
+DEVICE_FILES = {"plant-waterer": PLANT_WATERER, "curing-heater": CURING_HEATER, "bench-lamp": BENCH_LAMP}
 
 SIMULATED_BOARD = Unknown(
     id="sim-bench-board",
@@ -161,7 +156,7 @@ async def start(home: Path) -> Harness:
     (home / "routines").mkdir(parents=True, exist_ok=True)
     hub = Hub(HubConfig(home=home), in_memory=True)
     await hub.start()
-    hub.routines.create(human("sohan"), "keep-cool", "yaml", KEEP_COOL)
+    hub.routines.create(human("sohan"), "water-when-dry", "yaml", WATER_WHEN_DRY)
     hub.routines.create(agent("bench-agent", "control_medium"), "cure-cycle", "yaml", CURE_CYCLE)
     hub.last_discovery = DiscoveryResult(unknown=[SIMULATED_BOARD])
     app = create_app(hub)
