@@ -1627,6 +1627,12 @@
               "type": "boolean"
             },
             {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
               "type": "string"
             },
             {
@@ -1634,7 +1640,7 @@
             }
           ],
           "default": null,
-          "description": "What was asked for. A number is a Quantity in the limit's unit.",
+          "description": "What was asked for, a Quantity in the limit's unit when it had one, otherwise as sent.",
           "title": "Requested"
         },
         "runs": {

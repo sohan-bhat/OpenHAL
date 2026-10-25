@@ -114,6 +114,9 @@ async def test_write_errors(transport: Connect, tokens: dict[str, str], hub: Hub
         unit = await write("desk-fan", "fan_speed", "60")
         assert (unit["code"], unit["data"]["name"], unit["data"]["kernelCode"]) == (-32023, "UNIT_INVALID", "bad_unit")
         assert (await write("desk-fan", "fan_speed", 60))["data"]["name"] == "UNIT_INVALID"
+        bare = {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": 40}
+        decided = (await rpc.call("hal/dryRun", {"commands": [bare]}))["decisions"][0]
+        assert (decided["error"]["data"]["name"], decided["error"]["data"]["requested"]) == ("UNIT_INVALID", 40)
         text = await write("desk-fan", "fan_speed", "150 %")
         assert (text["data"]["name"], text["data"]["expected"]) == ("UNIT_INVALID", {"value": 150, "unit": "%"})
         assert (

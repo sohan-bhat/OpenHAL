@@ -113,8 +113,9 @@ class ErrorData(Message):
     action: str | None = None
     argument: str | None = Field(default=None, description="The action argument the error is about.")
     limit: Quantity | None = Field(default=None, description="The limit that applied, such as 100 % or 20 %/s.")
-    requested: Quantity | bool | str | None = Field(
-        default=None, description="What was asked for. A number is a Quantity in the limit's unit."
+    requested: Quantity | bool | int | float | str | None = Field(
+        default=None,
+        description="What was asked for, a Quantity in the limit's unit when it had one, otherwise as sent.",
     )
     runs: int | None = Field(default=None, description="How many runs an action's max_runs allows per window.")
     per: Quantity | None = Field(default=None, description="The window of an action's max_runs.")

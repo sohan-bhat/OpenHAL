@@ -323,7 +323,7 @@ No fields.
 | `action` | string or null | no |  |
 | `argument` | string or null | no | The action argument the error is about. |
 | `limit` | [Quantity](#quantity) or null | no | The limit that applied, such as 100 % or 20 %/s. |
-| `requested` | [Quantity](#quantity) or boolean or string or null | no | What was asked for. A number is a Quantity in the limit's unit. |
+| `requested` | [Quantity](#quantity) or boolean or integer or number or string or null | no | What was asked for, a Quantity in the limit's unit when it had one, otherwise as sent. |
 | `runs` | integer or null | no | How many runs an action's max_runs allows per window. |
 | `per` | [Quantity](#quantity) or null | no | The window of an action's max_runs. |
 | `interlock` | string or null | no | The reason the device file gives for an interlock. |
