@@ -44,10 +44,10 @@ In a terminal it asks a few short questions.
 1. Look for devices. Discovery sends only read-only identify commands.
 2. Add each device it found as a read-only device file. OpenHAL firmware boards and ESPHome nodes describe themselves, and library matches come from the device library. No limit is confirmed for you.
 3. Make a token for your AI client. It is read-only unless you pick another scope.
-4. Write a client's config for you. The setup for Claude Desktop, Claude Code and Cursor is printed either way, and a file is backed up before it changes.
+4. Save a client's config for you. The setup for Claude Desktop, Claude Code and Cursor is printed either way, and a file is backed up before it changes.
 5. Run the hub in the background, starting at login.
 
-`openhal init --yes` takes the safe defaults without asking. It looks for devices, adds them read-only and makes a read token. It writes a client config only with `--client NAME` and installs the service only with `--service`.
+`openhal init --yes` takes the safe defaults without asking. It looks for devices, adds them read-only and makes a read token. It saves a client config only with `--client NAME` and installs the service only with `--service`.
 
 A device that discovery can't see, such as a board on a known port, goes in with `--device`.
 

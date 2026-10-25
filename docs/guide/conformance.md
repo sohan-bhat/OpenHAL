@@ -103,7 +103,7 @@ def case() -> ConformanceCase:
     )
 ```
 
-The plant waterer has no write channel, so the four checks that need one are skipped and the report says why. The other 11 pass. The case should use a device file that looks like the real device, with real units and limits, so the suite exercises the same conversions the hardware will see. The [driver contract](../drivers/WRITING-A-DRIVER.md) has every rule.
+The plant waterer has no control channel, so the four checks that need one are skipped and the report says why. The other 11 pass. The case should use a device file that looks like the real device, with real units and limits, so the suite exercises the same conversions the hardware will see. The [driver contract](../drivers/WRITING-A-DRIVER.md) has every rule.
 
 ## Passing is not verified
 
