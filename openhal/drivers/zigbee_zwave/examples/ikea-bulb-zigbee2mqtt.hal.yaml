@@ -1,0 +1,21 @@
+device: { name: Desk lamp, manufacturer: IKEA, model: TRADFRI LED1545G12 }
+id: desk-lamp
+connect:
+  zigbee-zwave: "mqtt://192.168.1.10:1883"
+  friendly_name: desk_lamp
+  username: openhal
+  token_env: MQTT_PASSWORD
+  timeout: 5 s
+read:
+  linkquality: { unit: dimensionless, every: 30 s }
+write:
+  state: { type: bool }
+  brightness: { unit: percent, min: 1, max: 100, max_change_per_s: 50, map: { scale: 0.39370078740157477 } }
+  color_temp: { unit: dimensionless, min: 250, max: 454 }
+safe_state: { state: false }
+hazard: low
+notes: >-
+  An IKEA bulb paired with Zigbee2MQTT under the friendly name desk_lamp, with the broker at
+  192.168.1.10. Zigbee2MQTT reports brightness as 0 to 254, so the scale turns it into percent.
+  Colour temperature stays in mired (1,000,000 divided by kelvin), because the conversion is not linear.
+provenance: { source: hand-written, by: openhal zigbee-zwave driver example, at: 2026-10-24, from: "https://www.zigbee2mqtt.io/devices/LED1545G12.html" }
