@@ -3,16 +3,18 @@
   <img alt="OpenHAL" src="docs/assets/wordmark-light.svg" height="44">
 </picture>
 
-An open layer between AI agents and real hardware, with a safety kernel that checks every write.
+An open protocol and hub that lets AI agents control real hardware, with a safety kernel that checks every write.
 
-[![License](https://img.shields.io/github/license/sohan-bhat/OpenHAL?color=555)](LICENSE) [![CI](https://img.shields.io/github/actions/workflow/status/sohan-bhat/OpenHAL/ci.yml?branch=main&label=CI)](https://github.com/sohan-bhat/OpenHAL/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/sohan-bhat/OpenHAL?color=555)](LICENSE)
+
+v0.1, in development. Drivers are tested on simulators; hardware verification is in progress.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/trace-dark.svg">
-  <img alt="Message trace. The client sends hal/write with device desk-fan, channel fan_speed, value 150 percent. The hub answers error -32010 LIMIT_EXCEEDED, fan_speed 150 percent exceeds the limit of 100 percent, from desk-fan.hal.yaml confirmed by sohan on 2026-10-24. The client sends hal/write with value 60 percent, and the hub answers result, status done, value 60, unit percent." src="docs/assets/trace-light.svg" width="880">
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="docs/diagrams/flow-narrow-dark.svg">
+  <source media="(max-width: 600px)" srcset="docs/diagrams/flow-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/flow-dark.svg">
+  <img src="docs/diagrams/flow-light.svg" width="900" alt="OpenHAL flow: an AI client sends hal/write to the hub; the safety kernel checks it against the device file's limits; allowed commands go through the driver to the device, and over-limit commands are blocked with LIMIT_EXCEEDED.">
 </picture>
-
-v0.1, in development. Drivers are tested on simulators, and hardware verification is in progress.
 
 ## Quickstart
 
@@ -24,16 +26,23 @@ uv run openhald
 
 The hub starts on `127.0.0.1:7420` with a simulated desk fan, ready for an MCP client ([setup](docs/interfaces/MCP.md)).
 
+## Message trace
+
+```
+→ hal/write    { "device": "desk-fan", "channel": "fan_speed", "value": "150 %" }
+← error -32010 LIMIT_EXCEEDED
+               fan_speed 150 % exceeds the limit of 100 %
+               (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)
+
+→ hal/write    { "device": "desk-fan", "channel": "fan_speed", "value": "60 %" }
+← result       { "status": "done", "value": 60, "unit": "%" }
+```
+
 ## What it does
 
 - **One device file format.** A `.hal.yaml` file says what a device can read and change, with units and limits a person confirmed.
 - **One safety kernel.** Every write is checked for range, rate, interlocks and confirmation before any driver can act.
 - **Drivers for whole device families.** One SCPI driver covers bench instruments and one Moonraker driver covers Klipper printers.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/sequence-dark.svg">
-  <img alt="Sequence diagram with Client, Hub, Safety Kernel, Driver and Device. The Client sends hal/write 150 percent, the Hub asks the Safety Kernel to check limits, the kernel answers blocked above_max and the Hub returns error -32010 LIMIT_EXCEEDED. The Client sends hal/write 60 percent, the kernel answers granted with a single-use grant, the Hub sends the write with the grant to the Driver, the Driver sets the Device to 60 percent and reads back 60 percent, the Hub returns result done and sends a hal/value notification." src="docs/assets/sequence-light.svg" width="880">
-</picture>
 
 ## Supported devices
 
