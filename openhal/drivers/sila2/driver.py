@@ -35,7 +35,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from openhal.drivers.base import Discovered, Driver, DriverError, DriverInfo, Health, Reading
 from openhal.drivers.serial import mapping
 from openhal.drivers.serial.mapping import device_unit
-from openhal.drivers.sila2 import channels
+from openhal.drivers.sila2 import bootstrap, channels
 from openhal.drivers.sila2.channels import ActionMap, ReadMap, WriteMap
 from openhal.spec.models import DeviceFile
 from openhal.spec.units import Quantity, UnitError, convert, parse_unit
@@ -232,6 +232,7 @@ class Sila2Driver(Driver):
         return identity
 
     async def connect(self) -> None:
+        bootstrap.ensure()
         from sila2.client import SilaClient
 
         await self.close()

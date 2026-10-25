@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -304,3 +305,44 @@ def test_example_file_loads_read_only() -> None:
     assert not file.writable
     driver = Sila2Driver(file)
     assert "shake" in driver.actions
+
+
+BOOTSTRAP = """
+import asyncio
+import sys
+from google.protobuf.internal import api_implementation
+import google.protobuf.descriptor_pool
+assert api_implementation.Type() != "python"
+from openhal.drivers.sila2.driver import Sila2Driver
+from openhal.drivers.sila2.simulator import ThermoShakerSim
+from openhal.spec import loads
+
+async def main():
+    sim = ThermoShakerSim()
+    port = sim.start()
+    driver = Sila2Driver(loads(f"device: X\\nid: x\\nconnect: {{ sila2: 127.0.0.1, port: {port}, insecure: true }}\\n"))
+    await driver.connect()
+    print("server", (await driver.identify())["ServerName"])
+    await driver.close()
+    sim.stop()
+
+asyncio.run(main())
+"""
+
+
+def test_sila2_loads_when_protobuf_was_imported_first() -> None:
+    import os
+    import subprocess
+
+    environment = {key: value for key, value in os.environ.items() if key != "PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"}
+    result = subprocess.run(
+        [sys.executable, "-c", BOOTSTRAP],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        cwd=Path(__file__).parents[3],
+        env=environment,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert "server Simulated thermoshaker" in result.stdout

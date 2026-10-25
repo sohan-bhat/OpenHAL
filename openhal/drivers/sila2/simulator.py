@@ -152,6 +152,9 @@ class ThermoShakerSim:
         return self.block.calls
 
     def start(self) -> int:
+        from openhal.drivers.sila2 import bootstrap
+
+        bootstrap.ensure()
         from sila2.framework import Feature
 
         if self._features is None:
