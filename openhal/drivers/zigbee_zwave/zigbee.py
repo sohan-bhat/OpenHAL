@@ -207,10 +207,10 @@ class Zigbee2MqttLink:
                 await self.close()
                 raise DriverError(f"{self.where}: {self._refused}. Check the user name and token_env.")
             if time.monotonic() > deadline:
-                await self.close()
                 missing = (
                     "no CONNACK" if not self._connected.is_set() else f"nothing retained on {self.base}/bridge/devices"
                 )
+                await self.close()
                 raise DriverError(f"{self.where}: {missing}. Check the URL and base_topic, and that Zigbee2MQTT runs.")
             await asyncio.sleep(0.02)
         entry = next(

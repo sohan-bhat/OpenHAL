@@ -5,6 +5,9 @@ the zwave-js value metadata. Conversion uses it.
 
     channel value = convert(raw * scale + offset, from the bridge unit to the channel unit)
 
+Changes run it backwards and round to the bridge's step, or to whole numbers when the bridge's
+limits are whole numbers, as Zigbee2MQTT brightness and Z-Wave levels are.
+
 `map.unit` names the bridge unit when the bridge doesn't report one. Bridge units are mapped to
 registry names the way Home Assistant units are (`°C` is `degC`, `%` is `percent`).
 """
@@ -138,10 +141,16 @@ def encode(value: float | bool | str, spec: Any, feature: Feature, channel_map: 
     if feature.step:
         base = feature.minimum or 0.0
         raw = base + round((raw - base) / feature.step) * feature.step
+    elif _whole(feature.minimum) and _whole(feature.maximum):
+        return round(raw)
     nearest = round(raw)
     if abs(raw - nearest) <= 1e-6 * max(1.0, abs(raw)):
         return int(nearest)
     return round(raw, 6)
+
+
+def _whole(limit: float | None) -> bool:
+    return isinstance(limit, int) and not isinstance(limit, bool)
 
 
 def suspect(value: Any, spec: Any) -> bool:

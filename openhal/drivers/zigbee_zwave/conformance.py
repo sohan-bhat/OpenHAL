@@ -35,13 +35,17 @@ confirmed: { by: conformance, at: 2026-10-24 }
 """
 
 
-def zigbee_file(broker: MqttBroker, *, name: str = "desk_lamp", channels: str = LAMP, extra: str = "") -> DeviceFile:
-    connect = f'{{ zigbee-zwave: "mqtt://127.0.0.1:{broker.port}", friendly_name: {name}, timeout: 2 s{extra} }}'
+def zigbee_file(
+    broker: MqttBroker, *, name: str = "desk_lamp", channels: str = LAMP, extra: str = "", timeout: str = "2 s"
+) -> DeviceFile:
+    connect = f'{{ zigbee-zwave: "mqtt://127.0.0.1:{broker.port}", friendly_name: {name}, timeout: {timeout}{extra} }}'
     return loads(f"device: Conformance lamp\nid: conformance-zigbee\nconnect: {connect}\n{channels}")
 
 
-def zwave_file(sim: ZWaveJsSim, *, node: int = 3, channels: str = DIMMER, extra: str = "") -> DeviceFile:
-    connect = f'{{ zigbee-zwave: "{sim.url}", node: {node}, timeout: 1 s{extra} }}'
+def zwave_file(
+    sim: ZWaveJsSim, *, node: int = 3, channels: str = DIMMER, extra: str = "", timeout: str = "1 s"
+) -> DeviceFile:
+    connect = f'{{ zigbee-zwave: "{sim.url}", node: {node}, timeout: {timeout}{extra} }}'
     return loads(f"device: Conformance dimmer\nid: conformance-zwave\nconnect: {connect}\n{channels}")
 
 
