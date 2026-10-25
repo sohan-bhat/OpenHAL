@@ -1,7 +1,8 @@
 """The limits interview (driver writer, step 7).
 
 Questions cover every write channel and action: unit, min, max, rate, safe value and confirmation
-tier, plus the device's hazard class and its interlocks. Each question carries a conservative
+tier for channels, argument limits, requirements, a run limit and the tier for actions, plus the
+device's hazard class, the action that makes it safe and its interlocks. Each question carries a conservative
 suggestion and the reason for it. Only a human's answers are applied (the engine checks the
 principal), and only when every question is answered does the draft get a `confirmed` entry bound
 to the hash of its limits. Nothing an AI proposes can skip a question.
@@ -22,6 +23,10 @@ TIERS: Final = ("none", "confirm", "confirm-each-time")
 HAZARDS: Final = ("low", "medium", "high")
 _DEFAULT_TIER: Final = {"low": "none", "medium": "confirm", "high": "confirm-each-time"}
 _INTERLOCK: Final = re.compile(r"^\s*if\s+(?P<condition>.+?)\s+require\s+(?P<require>.+?)\s*$", re.I)
+_REQUIREMENT: Final = re.compile(r"^\s*(?P<condition>.+?)(?:\s+because\s+(?P<message>.+?))?\s*$", re.I)
+_RUNS: Final = re.compile(r"^\s*(?P<count>\d+)\s*(?:times?\s+)?(?:per|every|in)\s+(?P<per>.+?)\s*$", re.I)
+_SAFE_ACTION_NAMES: Final = ("stop", "off", "halt", "abort", "park", "disable", "home")
+_NONE: Final = ("none", "no", "")
 
 
 @dataclass(frozen=True)
@@ -69,6 +74,36 @@ def _source_reason(draft: dict[str, Any]) -> str:
         "sketch": "The sketch's code suggests this value.",
         "manual": "The manual suggests this value.",
     }.get(source, "The draft suggests this value.")
+
+
+def _requirements_text(spec: dict[str, Any]) -> str:
+    lines = []
+    for item in spec.get("require") or []:
+        if isinstance(item, dict):
+            message = item.get("message")
+            lines.append(f"{item['condition']} because {message}" if message else str(item["condition"]))
+        else:
+            lines.append(str(item))
+    return "\n".join(lines) or "none"
+
+
+def _runs_text(spec: dict[str, Any]) -> str:
+    runs = spec.get("max_runs")
+    if isinstance(runs, dict) and "count" in runs and "per" in runs:
+        return f"{runs['count']} per {runs['per']}"
+    return "none"
+
+
+def _safe_action(draft: dict[str, Any]) -> str:
+    actions = draft.get("actions") or {}
+    safe = draft.get("safe_state")
+    for step in safe if isinstance(safe, list) else []:
+        if isinstance(step, dict) and step.get("action") in actions:
+            return str(step["action"])
+    for name in _SAFE_ACTION_NAMES:
+        if name in actions and not (actions[name] or {}).get("args"):
+            return name
+    return "none"
 
 
 def hazard_of(draft: dict[str, Any]) -> str:
@@ -200,12 +235,44 @@ def questions(draft: dict[str, Any]) -> list[Question]:
                 )
         asked.append(
             Question(
+                f"{name}.require",
+                f"What must hold before {name} runs? One per line as <condition>, or <condition> because "
+                "<reason>. Answer none for none.",
+                _requirements_text(spec),
+                "The hub checks these before the command reaches the device, for example tank == ok because "
+                "pump can't run while tank is empty.",
+                name,
+                "require",
+            )
+        )
+        asked.append(
+            Question(
+                f"{name}.max_runs",
+                f"How often may {name} run? Answer like 3 per 1 h, or none for no limit.",
+                _runs_text(spec),
+                "A run limit caps how often an agent or a routine can repeat it, even when every run is allowed.",
+                name,
+                "max_runs",
+            )
+        )
+        asked.append(
+            Question(
                 f"{name}.confirm",
                 f"Should {name} need a person's approval? none, confirm or confirm-each-time.",
                 spec.get("confirm", "confirm"),
                 "Actions often do more than one thing, so confirm is the default.",
                 name,
                 "confirm",
+            )
+        )
+    if draft.get("actions"):
+        asked.append(
+            Question(
+                "device.safe_action",
+                "Which action makes the device safe when OpenHAL stops everything? Name one, or none.",
+                _safe_action(draft),
+                "It runs after the safe channel values. Pick one that takes no arguments, such as stop.",
+                field="safe_state",
             )
         )
     asked.append(
@@ -227,6 +294,33 @@ def _number(text: Any, unit: str, question: str) -> float:
         return convert(quantity, unit)
     except UnitError as exc:
         raise AnswerError(f"{question}. {exc}") from exc
+
+
+def _requirements(text: Any, question: str) -> list[Any]:
+    answer = str(text).strip()
+    if answer.lower() in _NONE:
+        return []
+    found: list[Any] = []
+    for line in re.split(r"[\n;]+", answer):
+        if not line.strip():
+            continue
+        match = _REQUIREMENT.match(line)
+        if match is None:
+            raise AnswerError(f"{question}. Write each as <condition> or <condition> because <reason>.")
+        message = match.group("message")
+        condition = match.group("condition")
+        found.append({"condition": condition, "message": message} if message else condition)
+    return found
+
+
+def _runs(text: Any, question: str) -> dict[str, Any] | None:
+    answer = str(text).strip()
+    if answer.lower() in (*_NONE, "no limit"):
+        return None
+    match = _RUNS.match(answer)
+    if match is None:
+        raise AnswerError(f"{question}. Answer like 3 per 1 h, or none.")
+    return {"count": int(match.group("count")), "per": match.group("per")}
 
 
 def _bool(text: Any, question: str) -> bool:
@@ -316,10 +410,35 @@ def apply(draft: dict[str, Any], answers: dict[str, Any], *, by: str, today: dt.
         if tier not in TIERS:
             raise AnswerError(f"{name}.confirm. Answer none, confirm or confirm-each-time.")
         spec["confirm"] = tier
+        requirements = _requirements(answers[f"{name}.require"], f"{name}.require")
+        if requirements:
+            spec["require"] = requirements
+        else:
+            spec.pop("require", None)
+        runs = _runs(answers[f"{name}.max_runs"], f"{name}.max_runs")
+        if runs is None:
+            spec.pop("max_runs", None)
+        else:
+            spec["max_runs"] = runs
 
-    if safe:
-        actions = [step for step in data.get("safe_state") or [] if isinstance(step, dict) and "action" in step]
-        data["safe_state"] = [safe, *actions] if actions else safe
+    existing = data.get("safe_state")
+    action_steps = [step for step in existing or [] if isinstance(step, dict) and "action" in step]
+    if "device.safe_action" in asked:
+        chosen = str(answers["device.safe_action"]).strip()
+        actions = data.get("actions") or {}
+        if chosen.lower() in _NONE:
+            action_steps = []
+        elif chosen not in actions:
+            raise AnswerError(f"device.safe_action. {chosen} isn't an action of this device.")
+        else:
+            kept = [step for step in action_steps if step.get("action") == chosen]
+            if not kept and (actions[chosen] or {}).get("args"):
+                raise AnswerError(f"device.safe_action. {chosen} takes arguments. Name one that takes none.")
+            action_steps = kept or [{"action": chosen}]
+    if safe or action_steps:
+        data["safe_state"] = [*([safe] if safe else []), *action_steps] if action_steps else safe
+    elif "device.safe_action" in asked:
+        data.pop("safe_state", None)
 
     interlocks_text = str(answers["device.interlocks"]).strip()
     if interlocks_text.lower() not in ("none", "no", ""):

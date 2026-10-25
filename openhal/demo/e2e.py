@@ -75,8 +75,13 @@ ANSWERS: Final = {
     "device.hazard": "low",
     "water.duration.min": "1 s",
     "water.duration.max": "30 s",
+    "water.require": "tank == ok because pump can't run while tank is empty",
+    "water.max_runs": "3 per 1 h",
     "water.confirm": "none",
+    "stop.require": "none",
+    "stop.max_runs": "none",
     "stop.confirm": "none",
+    "device.safe_action": "stop",
     "device.interlocks": "none",
 }
 """What the person answers, by question id. A question missing here stops the demo."""
