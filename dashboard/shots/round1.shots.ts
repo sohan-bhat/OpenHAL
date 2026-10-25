@@ -77,7 +77,7 @@ for (const theme of THEMES) {
       await expect(page.locator('li[data-kind="error"]').filter({ hasText: "LIMIT_EXCEEDED" }).first()).toBeAttached();
       if (!phone) {
         await page.waitForTimeout(400);
-        await scrollWithin(page, 'li[data-kind="request"]:has-text("\"value\": 120")', ".scroller", 8);
+        await scrollWithin(page, 'li[data-kind="request"]:has-text("plant-waterer")', ".scroller", 8);
       }
       await shoot(page, "devices", width, theme);
       if (phone) {

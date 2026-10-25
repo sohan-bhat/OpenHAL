@@ -76,6 +76,10 @@
 </section>
 
 <style>
+  .device-list > * {
+    min-width: 0;
+  }
+
   .device-list {
     display: grid;
     gap: var(--s-3);

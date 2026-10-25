@@ -35,7 +35,6 @@
     font-size: var(--t-label);
     font-weight: 700;
     line-height: 1.2;
-    white-space: nowrap;
     color: var(--text-2);
   }
 

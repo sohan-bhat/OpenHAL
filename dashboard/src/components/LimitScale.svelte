@@ -29,7 +29,8 @@
   const scaleMin = $derived(min > 0 ? min - span * 0.12 : min);
   const scaleMax = $derived(max + span * 0.2);
   const pct = (point: number) => ((point - scaleMin) / (scaleMax - scaleMin)) * 100;
-  const ticks = $derived([min, min + span / 2, max]);
+  const middle = $derived(span >= 10 ? Math.round(min + span / 2) : min + span / 2);
+  const ticks = $derived([min, middle, max]);
   const clamp = (point: number) => Math.min(Math.max(point, scaleMin), scaleMax);
 </script>
 
