@@ -8,6 +8,7 @@
     deviceRefs,
     effectiveHazard,
     human,
+    label,
     loadDeviceFile,
     unconfirmed,
     type Command,
@@ -17,10 +18,10 @@
   import { formatG } from "../../lib/kernel/pyformat";
   import { parseDeviceYaml } from "../../lib/kernel/yaml";
   import { CliError, actionArgs, splitPairs, writeValue } from "../../lib/playground/cli";
-  import { displayUnit, requestFor, responseFor } from "../../lib/playground/rpc";
+  import { decisionWire, displayUnit, errorEntry, requestFor, responseFor } from "../../lib/playground/rpc";
   import type { Exchange } from "../../lib/playground/types";
   import { deviceProblems, type Checked } from "../../lib/playground/validate";
-  import { registryFor } from "../../lib/protocol";
+  import { rpcError } from "../../lib/protocol";
   import type { TraceEntry } from "../../lib/trace";
 
   interface Example {
@@ -199,27 +200,22 @@
         : { kind: "action", device: targetDevice, action: target, args: actionArgs(runtime.file, target, words ? splitPairs(words) : []) };
     } catch (error) {
       if (!(error instanceof CliError)) throw error;
-      const entry = registryFor("bad_request");
       log(who, client.client, [
         { kind: "request", method: isWrite ? "hal/write" : "hal/action", params: { device: targetDevice, [isWrite ? "channel" : "action"]: target, value: words } },
-        { kind: "error", code: entry.code, name: entry.name, reason: error.message },
+        errorEntry(rpcError("INVALID_PARAMS", { problems: [error.message] })),
       ]);
       return;
     }
     if (dry) {
       const [decision] = kernel.dryRun([command], client.principal);
-      const response = responseFor(decision, command, fileOf(command.device), TTL_S);
-      const summary =
-        response.kind === "error"
-          ? { status: "blocked", name: response.name, message: response.reason }
-          : { status: decision.status, value: decision.value, unit: displayUnit(decision.unit) };
+      const params = (requestFor(command) as { params: Record<string, unknown> }).params;
       log(who, client.client, [
-        { kind: "request", method: "hal/dryRun", params: { commands: [(requestFor(command) as { params: unknown }).params] } },
-        { kind: "result", result: { decisions: [summary] } },
+        { kind: "request", method: "hal/dryRun", params: { commands: [{ kind: command.kind, ...params }] } },
+        { kind: "result", result: { decisions: [decisionWire(decision, command, fileOf(command.device), label(client.principal))] } },
       ]);
     } else {
       const decision = kernel.execute(command, client.principal);
-      log(who, client.client, [requestFor(command), responseFor(decision, command, fileOf(command.device), TTL_S)]);
+      log(who, client.client, [requestFor(command), responseFor(decision, command, fileOf(command.device), TTL_S, label(client.principal))]);
     }
     version += 1;
   }
@@ -248,7 +244,7 @@
     const report = kernel.stopAll(human("you"), "stop pressed in the playground");
     log("person", "you", [
       { kind: "request", method: "hal/stop", params: { reason: "stop pressed in the playground" } },
-      { kind: "result", result: { devices: report.devices.map((item) => ({ device: item.device, status: item.status })) } },
+      { kind: "result", result: { devices: report.devices.map((item) => ({ device: item.device, status: item.status, detail: item.detail })) } },
     ]);
     unlockText = "";
     unlockError = "";
@@ -278,13 +274,22 @@
       const decision = kernel.confirm(requestId, human("you"));
       log("person", "you", [
         { kind: "request", method: "hal/confirmations/approve", params: { requestId } },
-        responseFor(decision, request.command, fileOf(request.command.device), TTL_S),
+        { kind: "result", result: decisionWire(decision, request.command, fileOf(request.command.device), label(request.principal)) },
       ]);
     } else {
       kernel.reject(requestId, human("you"));
       log("person", "you", [
         { kind: "request", method: "hal/confirmations/reject", params: { requestId } },
-        { kind: "result", result: { requestId, status: "rejected" } },
+        {
+          kind: "result",
+          result: {
+            requestId,
+            status: "rejected",
+            command: { kind: request.command.kind, ...(requestFor(request.command) as { params: Record<string, unknown> }).params },
+            requestedBy: label(request.principal),
+            decidedBy: "human:you",
+          },
+        },
       ]);
     }
     version += 1;

@@ -3,6 +3,8 @@
 Each case registers example device files on the mock driver with a fixed clock, applies its
 steps (time passing, readings, executed commands, stops, approvals) and then evaluates or executes
 one command. The results are what the TypeScript port in website/src/lib/kernel must reproduce.
+Every decision also records its protocol form from openhal.protocol.convert, the Decision object
+with its registry error, so the playground answers exactly as the hub does.
 
 Run `uv run python -m tests.website.kernel_parity` to rewrite expected.json after a kernel change.
 """
@@ -12,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 from openhal.drivers.base import Reading
@@ -20,6 +23,7 @@ from openhal.kernel import Kernel
 from openhal.kernel.checks import Block
 from openhal.kernel.commands import Action, Command, Decision, Write
 from openhal.kernel.principals import Principal, human
+from openhal.protocol import convert
 from openhal.spec import loads
 from openhal.spec.models import DeviceFile
 from tests.kernel.conftest import FakeClock
@@ -87,6 +91,19 @@ def decided(decision: Decision) -> dict[str, Any]:
     return {"status": decision.status, "code": decision.code, "message": decision.message}
 
 
+def standin_hub(kernel: Kernel) -> Any:
+    """Enough of a hub for openhal.protocol.convert, with each file named <id>.hal.yaml."""
+    info = {device: SimpleNamespace(path=f"{device}.hal.yaml") for device in kernel.devices}
+    return SimpleNamespace(kernel=kernel, info=info)
+
+
+def on_the_wire(kernel: Kernel, decision: Decision, command: Command, principal: Principal) -> dict[str, Any]:
+    wire = convert.decision(standin_hub(kernel), decision, command, principal=principal.label).wire()
+    if decision.request_id:
+        wire = json.loads(json.dumps(wire).replace(decision.request_id, "REQUEST_ID"))
+    return {**decided(decision), "wire": wire}
+
+
 async def run_case(spec: dict[str, Any], case: dict[str, Any]) -> dict[str, Any]:
     clock = FakeClock(CLOCK_START)
     kernel = Kernel(clock=clock, approval_key=b"website-parity-approval-key-32b!")
@@ -105,7 +122,7 @@ async def run_case(spec: dict[str, Any], case: dict[str, Any]) -> dict[str, Any]
         result = await kernel.execute(command, principal)
     else:
         result = kernel.evaluate(command, principal)
-    return {"id": case["id"], "steps": steps, "result": decided(result)}
+    return {"id": case["id"], "steps": steps, "result": on_the_wire(kernel, result, command, principal)}
 
 
 async def run_step(
@@ -116,8 +133,9 @@ async def run_step(
         return []
     if "execute" in step:
         results = []
+        command = command_of(step["execute"])
         for _ in range(step.get("repeat", 1)):
-            results.append(decided(await kernel.execute(command_of(step["execute"]), principal)))
+            results.append(on_the_wire(kernel, await kernel.execute(command, principal), command, principal))
         return results
     if "reading" in step:
         item = step["reading"]

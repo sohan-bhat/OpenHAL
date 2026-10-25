@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { Kernel, type Command, type Decision, type Principal, deviceId, human, limitsSha256, loadDeviceFile } from "../../src/lib/kernel";
+import { Kernel, type Command, type Decision, type Principal, deviceId, human, label, limitsSha256, loadDeviceFile } from "../../src/lib/kernel";
+import { decisionWire } from "../../src/lib/playground/rpc";
 import { parseDeviceYaml } from "../../src/lib/kernel/yaml";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
@@ -25,6 +26,13 @@ function decided(decision: Decision) {
   return { status: decision.status, code: decision.code, message: decision.message };
 }
 
+function onTheWire(kernel: Kernel, decision: Decision, command: Command, principal: Principal) {
+  const file = kernel.devices.get(decision.device)?.file;
+  let wire = decisionWire(decision, command, file, label(principal));
+  if (decision.request_id) wire = JSON.parse(JSON.stringify(wire).replaceAll(decision.request_id, "REQUEST_ID"));
+  return { ...decided(decision), wire };
+}
+
 class Clock {
   now = 1000;
   read = () => this.now;
@@ -44,7 +52,8 @@ function runCase(item: Record<string, any>) {
   for (const step of (item.steps ?? []) as Step[]) {
     if ("advance" in step) clock.now += step.advance;
     else if ("execute" in step) {
-      for (let i = 0; i < (step.repeat ?? 1); i++) steps.push(decided(kernel.execute(commandOf(step.execute), principal)));
+      const command = commandOf(step.execute);
+      for (let i = 0; i < (step.repeat ?? 1); i++) steps.push(onTheWire(kernel, kernel.execute(command, principal), command, principal));
     } else if ("reading" in step) {
       const r = step.reading;
       kernel.noteReading(r.device, r.channel, r.value, r.unit ?? null);
@@ -76,7 +85,7 @@ function runCase(item: Record<string, any>) {
   }
   const command = commandOf(item.command);
   const result = item.run === "execute" ? kernel.execute(command, principal) : kernel.evaluate(command, principal);
-  return { id: item.id, steps, result: decided(result) };
+  return { id: item.id, steps, result: onTheWire(kernel, result, command, principal) };
 }
 
 describe("kernel parity with the Python kernel", () => {

@@ -1,5 +1,5 @@
 import { parse } from "yaml";
-import { registryByName } from "./protocol";
+import { buildError } from "./protocol";
 import type { TraceEntry } from "./trace";
 
 export interface Scenario {
@@ -79,17 +79,28 @@ export function scenarioFrom(text: string | undefined): Scenario {
 
 export const SCENARIO: Scenario = scenarioFrom(Object.values(files)[0]);
 
+export function scenarioError(scenario: Scenario = SCENARIO) {
+  return buildError("above_max", {
+    device: scenario.device,
+    target: `write:${scenario.channel}`,
+    facts: {
+      file: scenario.file,
+      confirmedBy: scenario.confirmedBy,
+      confirmedAt: scenario.confirmedAt,
+      unit: scenario.unit,
+      number: true,
+      limits: { max: scenario.limit },
+    },
+    rawValue: `${scenario.requested} ${scenario.unit}`,
+  });
+}
+
 export function scenarioTrace(scenario: Scenario = SCENARIO): TraceEntry[] {
-  const limitExceeded = registryByName("LIMIT_EXCEEDED");
   const q = (value: number) => `${value} ${scenario.unit}`;
+  const error = scenarioError(scenario);
   return [
     { kind: "request", method: "hal/write", params: { device: scenario.device, channel: scenario.channel, value: q(scenario.requested) } },
-    {
-      kind: "error",
-      code: limitExceeded.code,
-      name: limitExceeded.name,
-      reason: `${scenario.channel} ${q(scenario.requested)} exceeds the limit of ${q(scenario.limit)} (${scenario.file}, confirmed by ${scenario.confirmedBy} ${scenario.confirmedAt})`,
-    },
+    { kind: "error", code: error.code, name: String(error.data.name), reason: error.message },
     { kind: "request", method: "hal/write", params: { device: scenario.device, channel: scenario.channel, value: q(scenario.granted) } },
     { kind: "result", result: { status: "done", value: scenario.readBack, unit: scenario.unit } },
   ];
