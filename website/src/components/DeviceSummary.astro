@@ -1,0 +1,108 @@
+---
+// Supported devices on the landing page, straight from drivers/catalog.json.
+import PartLabel from "./PartLabel.astro";
+import { countBy, drivers } from "../lib/catalog";
+
+const all = drivers();
+const running = all.filter((driver) => driver.status === "implemented" || driver.status === "verified");
+const later = all.filter((driver) => !running.includes(driver));
+const statuses = countBy(all, (driver) => driver.status);
+---
+
+<div class="summary">
+  <p class="counts">
+    {
+      [...statuses.entries()].map(([status, count]) => (
+        <span class="count">
+          <span class="mono">{count}</span> <span class="legend">{status}</span>
+        </span>
+      ))
+    }
+    <span class="muted">drivers and bridges in the catalog today.</span>
+  </p>
+  <div class="parts">
+    {
+      running.map((driver) => (
+        <PartLabel
+          name={driver.name}
+          status={driver.status}
+          rows={[
+            ["Protocol", driver.protocols.join(", ")],
+            ["Covers", driver.families.join(", ")],
+            ["Hazard", driver.hazard_default],
+            ["Tested with", driver.tests || "not yet"],
+          ]}
+        />
+      ))
+    }
+  </div>
+  {
+    later.length > 0 && (
+      <p class="later">
+        <span class="legend">Next</span>
+        <span class="names">
+          {later.map((driver) => (
+            <code>{driver.name}</code>
+          ))}
+        </span>
+      </p>
+    )
+  }
+  <p><a href="/devices/">Search every driver by tier, status and hazard</a></p>
+</div>
+
+<style>
+  .summary {
+    display: grid;
+    gap: var(--s-5);
+  }
+
+  .counts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--s-2) var(--s-5);
+  }
+
+  .count .mono {
+    font-size: var(--t-4);
+    line-height: var(--lh-4);
+  }
+
+  .count .legend {
+    color: var(--ink-2);
+  }
+
+  .parts {
+    display: grid;
+    gap: var(--s-4);
+  }
+
+  .later {
+    display: grid;
+    gap: var(--s-2);
+  }
+
+  .later .legend {
+    color: var(--ink-2);
+  }
+
+  .names {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+
+  .names code {
+    font-size: var(--t-0);
+    padding: 2px var(--s-2);
+    border: 1px dashed var(--ink-3);
+    border-radius: var(--radius);
+  }
+
+  @media (min-width: 768px) {
+    .parts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

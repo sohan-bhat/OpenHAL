@@ -1,0 +1,89 @@
+---
+// A device or driver identity block, styled like a component reel label (DESIGN.md, Part label).
+import { statusLamp } from "../lib/catalog";
+
+interface Props {
+  name: string;
+  status: string;
+  rows: Array<[string, string]>;
+  href?: string;
+}
+
+const { name, status, rows, href } = Astro.props;
+---
+
+<article class="part">
+  <header>
+    <h3 class="mono">{href ? <a href={href}>{name}</a> : name}</h3>
+    <span class={`lamp ${statusLamp(status)}`}>{status}</span>
+  </header>
+  <dl>
+    {
+      rows.map(([label, value]) => (
+        <div>
+          <dt class="legend">{label}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))
+    }
+  </dl>
+  <slot />
+</article>
+
+<style>
+  .part {
+    border: 1px solid var(--ink);
+    border-radius: var(--radius);
+    min-width: 0;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-2) var(--s-3);
+    border-bottom: 1px solid var(--ink);
+  }
+
+  h3 {
+    font-family: var(--font-mono);
+    font-size: var(--t-1);
+    line-height: var(--lh-1);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  h3 a {
+    color: var(--ink);
+  }
+
+  dl {
+    margin: 0;
+  }
+
+  dl > div {
+    display: grid;
+    grid-template-columns: 7.5em 1fr;
+    gap: var(--s-2);
+    padding: var(--s-1) var(--s-3);
+    border-bottom: 1px solid var(--rule);
+    font-size: var(--t-1);
+    line-height: var(--lh-1);
+  }
+
+  dl > div:last-child {
+    border-bottom: 0;
+  }
+
+  dt {
+    color: var(--ink-2);
+    padding-top: 2px;
+  }
+
+  dd {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+</style>

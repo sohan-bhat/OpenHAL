@@ -1,0 +1,176 @@
+---
+// The safety model in plain language. Guarantees and the ordered checks come from docs/SAFETY.md.
+import { checks, guarantees, notGuaranteed } from "../lib/safety";
+
+const items = guarantees();
+const rows = checks();
+const limits = notGuaranteed();
+const hardware = limits.find((item) => item.startsWith("Physical safety")) ?? limits[limits.length - 1];
+---
+
+<div class="safety">
+  <div class="plain">
+    <dl class="guarantees">
+      {
+        items.map((item) => (
+          <div>
+            <dt>{item.title}</dt>
+            <dd class="muted">{item.text}</dd>
+          </div>
+        ))
+      }
+    </dl>
+    <p class="limit-note">
+      <span class="lamp warning">Not a safety system</span>
+      <span>{hardware}</span>
+    </p>
+    <p><a href="/docs/safety/">Read the full safety model</a></p>
+  </div>
+  <div class="module checks">
+    <p class="module-legend legend"><span>Checks, in order</span></p>
+    <div class="scroll">
+    <table>
+      <thead>
+        <tr><th class="num" scope="col">#</th><th scope="col">Check</th><th scope="col">Blocks when</th><th scope="col">Code</th></tr>
+      </thead>
+      <tbody>
+        {
+          rows.map((row) => (
+            <tr>
+              <td class="num" data-label="#">{row.number}</td>
+              <td data-label="Check" class="check">{row.check}</td>
+              <td data-label="Blocks when" class="muted">{row.blocksWhen}</td>
+              <td data-label="Code" class="codes">
+                {row.codes.map((code) => <code>{code}</code>)}
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+    </div>
+    <p class="table-note muted">The kernel stops at the first failure. The same command against the same state always gets the same answer.</p>
+  </div>
+</div>
+
+<style>
+  .safety {
+    display: grid;
+    gap: var(--s-7);
+  }
+
+  .guarantees {
+    margin: 0;
+    display: grid;
+    gap: var(--s-4);
+  }
+
+  .guarantees > div {
+    padding-left: var(--s-4);
+    border-left: 2px solid var(--ink);
+  }
+
+  dt {
+    font-family: var(--font-label);
+    font-weight: 700;
+    font-size: var(--t-2);
+    line-height: var(--lh-2);
+  }
+
+  dd {
+    margin: 0;
+    font-size: var(--t-1);
+    line-height: var(--lh-1);
+  }
+
+  .limit-note {
+    margin-top: var(--s-6);
+    display: grid;
+    gap: var(--s-2);
+    font-size: var(--t-1);
+    line-height: var(--lh-1);
+    max-width: 52ch;
+  }
+
+  .limit-note + p {
+    margin-top: var(--s-4);
+  }
+
+  .checks {
+    padding-top: var(--s-6);
+  }
+
+  .scroll {
+    overflow-x: auto;
+  }
+
+  .check {
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .codes code {
+    display: inline-block;
+    margin: 0 var(--s-2) 2px 0;
+  }
+
+  code {
+    font-size: var(--t-0);
+    line-height: var(--lh-0);
+  }
+
+  td.muted {
+    min-width: 18ch;
+  }
+
+  .table-note {
+    margin-top: var(--s-3);
+    font-size: var(--t-1);
+    line-height: var(--lh-1);
+  }
+
+  @media (max-width: 599px) {
+    table,
+    tbody,
+    tr,
+    td {
+      display: block;
+    }
+
+    thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    tr {
+      padding: var(--s-3) 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    td {
+      border: 0;
+      padding: 2px 0;
+      text-align: left;
+    }
+
+    td.num {
+      text-align: left;
+      color: var(--ink-3);
+    }
+
+    .check {
+      white-space: normal;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .safety {
+      grid-template-columns: 5fr 7fr;
+      gap: var(--s-7);
+      align-items: start;
+    }
+  }
+</style>
