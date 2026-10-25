@@ -8,12 +8,9 @@ Phase C. The protocol theme and hub protocol (ADR 0015), the dated specification
 
 Cap is 3 background agents at once (owner, 2026-10-24). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents.
 
-- protocol (own worktree). Owns openhal/protocol/, tests/protocol/, `openhal rpc`, the /rpc and /v1/rpc/log routes, DriverInfo.conformance, the conformance suite and catalog generator, and the generated schema reference. Brief in docs/agents/BRIEF-protocol.md. Restarted from scratch after the crash on 2026-10-24, with nothing saved.
-- spec (own worktree). Owns spec/ except the generated schema, plus tests/spec/test_spec_names.py. Brief in docs/agents/BRIEF-spec.md. Resumed after the crash with 3 commits saved.
 - website (own worktree). Owns website/, docs/guide/, docs/design-rounds/ and tests/website/. Brief in docs/agents/BRIEF-website-2.md (protocol site). Resumed after the crash with 40 commits saved. Round 1 review findings are superseded by the theme change.
 
-Paused for the cap:
-- Inspector (worktree agent-ab1476059128896a1, brief docs/agents/BRIEF-inspector.md). Only a dashboard/package.json existed when it paused. Resume it when a slot frees.
+- Inspector (worktree agent-ab1476059128896a1). Owns dashboard/, openhal/hub/static/, tests/inspector/ and docs/design-rounds/inspector-*. Brief in docs/agents/BRIEF-inspector.md. Resumed after the crash.
 
 ## Done
 
@@ -25,11 +22,13 @@ Paused for the cap:
 - M10. The OpenHAL Arduino library, compiled for arduino:avr:uno and esp32:esp32:esp32, with its driver and a host build that runs conformance against the real C++.
 - Repository published at github.com/sohan-bhat/OpenHAL at the owner's request.
 - The protocol theme in docs/DESIGN.md, design/tokens.css and the Atkinson fonts. ADR 0015 for the JSON-RPC hub protocol.
+- The dated specification 2026-10-24 (spec workstream, merged) and the hub protocol over WebSocket and stdio with the error registry, conformance levels, message log and generated schema (protocol workstream, merged). 1120 tests pass on main.
 - The README per Part 16, with the animated flow diagram built from docs/diagrams/flow.d2 by scripts/build-diagrams, in light, dark and phone variants. Tooling recorded in docs/TOOLING.md.
 
 ## Next
 
-- Merge protocol, spec and website one at a time as they hand back, then resume the Inspector.
+- Merge the website and the Inspector as they hand back, then run their design critique rounds.
+- REST decision views should carry the hub-built protocol error so MCP reasons always name the confirmation (protocol report, proposal 12).
 - Fix the SCPI driver's disconnect detection on Linux, which is the only CI failure (2 of 965 tests on ubuntu). Then restore the CI badge.
 - Remove code comments repo-wide after the open branches merge (owner rule).
 - docs/demo/scenario.yaml from a real hub run, with a consistency test.
