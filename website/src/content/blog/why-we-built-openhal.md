@@ -1,47 +1,62 @@
 ---
 title: Why we built OpenHAL
-description: AI agents can already write the code that moves a motor. Nothing stood between that code and the motor. OpenHAL is that layer, and it is open.
+description: AI clients can already drive hardware. OpenHAL defines one place where every command meets the limits a person confirmed.
 date: 2026-10-24
 author: OpenHAL contributors
 draft: true
 ---
 
-An AI agent can read a datasheet, write a serial protocol and drive a stepper in an afternoon. What it can't do is know that the fan next to your plant should never run flat out for ten minutes, or that the heater on the same bench needs that fan moving first. Somebody has to write that down, and something has to enforce it every time, no matter which agent is asking.
+An AI client can read a datasheet, write a serial protocol and move a motor in an afternoon. Nothing on that path knows the limits a person would set. Nothing enforces them the same way for every client.
 
-## Every tool is an island
+## The gap
 
-When we looked at what exists, we found good single-device tools. There are MCP servers for Arduino boards, for 3D printers, for bench instruments over SCPI and for ROS robots. Home Assistant has its own. Each one has its own idea of a device and its own safety rules, and several have none. Nothing describes a device the same way twice, nothing enforces limits in one place, and nothing lets a routine span a printer and a power supply under the same rules.
+Single-device tools exist for Arduino boards, 3D printers, bench instruments and robots. Each has its own model of a device and its own rules, and some have none. No two describe a device the same way, and no one place decides what may run.
 
-## One file per device, one place that decides
+## The protocol
 
-OpenHAL gives every device a small file that says what can be read, what can be changed, the limits on each change and the safe state. A person confirms those limits. Until then the file is read-only, and no agent can confirm it on anyone's behalf.
+OpenHAL is an open protocol with a dated specification. It defines two things.
 
-A local hub owns every device. Every write and every action, from an MCP client, the command line, a Python script, a routine or the dashboard, goes through one safety kernel. The kernel is plain code with no model in it. It checks units, range, step, rate of change, interlocks and confirmation, in a fixed order, and it fails closed. If it can't trust a value, the command is blocked.
+1. The [Device File](glossary:device-file). It lists what a device can read and change, the limits on each change and the safe state. A person confirms the limits. Until then the file is read-only.
+2. The hub protocol. Clients speak JSON-RPC 2.0 to one [Hub](glossary:hub). Its [Safety Kernel](glossary:safety-kernel) decides every write and action before a [Driver](glossary:driver) may act.
 
 ```yaml tested
 device: Desk fan controller
 id: desk-fan
-connect: { serial: auto, board: arduino-uno }
+connect: { openhal-firmware: auto }
 read:
   temperature: { unit: degC, every: 1 s }
 write:
   fan_speed: { unit: percent, min: 0, max: 100, max_change_per_s: 20 }
 safe_state: { fan_speed: 0 }
-notes: "Fan is next to the plant. Never run above 80 for more than 10 minutes."
+hazard: low
 ```
 
-## The limit line
+A request over the limit is refused with a stable code, a registry name and a reason that cites the rule. A request inside it runs.
 
-Real gauges have a red line where you must not go. We drew every limit in OpenHAL the same way, in the dashboard, on this site and in the playground. When the kernel blocks a command, you see the attempt land past the line and the reason underneath it, in words that name the rule.
+```json tested
+→ {"jsonrpc": "2.0", "id": 6, "method": "hal/write",
+   "params": {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"}}
+← {"jsonrpc": "2.0", "id": 6, "error": {"code": -32010,
+     "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+     "data": {"name": "LIMIT_EXCEEDED", "kernelCode": "above_max", "device": "desk-fan", "channel": "fan_speed",
+              "limit": "100 %", "requested": "150 %", "file": "desk-fan.hal.yaml", "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"}}}
+→ {"jsonrpc": "2.0", "id": 7, "method": "hal/write",
+   "params": {"device": "desk-fan", "channel": "fan_speed", "value": "60 %"}}
+← {"jsonrpc": "2.0", "id": 7, "result": {"status": "done", "device": "desk-fan", "channel": "fan_speed",
+     "value": 60, "unit": "%"}}
+```
 
-## Why open, and why now
+## Why a protocol
 
-Anthropic previewed the Model Hardware Standard in August 2026. It is for labs and advanced manufacturing, in a closed preview. Makers, teaching labs and small labs can't get in, and they are the people with a bench full of equipment and an AI client already open.
+A tool serves one client. A protocol lets any client, in any language, meet any driver under the same rules. MCP remains the interface for agents and maps onto the same methods.
 
-MHS is for labs, in a closed preview. OpenHAL is open and works today. We plan to be compatible. Device files use the same read and write idea, so they can map onto MHS once its spec is public.
+## MHS
 
-## What it doesn't do
+Anthropic's Model Hardware Standard is a limited research preview for invited labs. OpenHAL is not affiliated with Anthropic or MHS. It is open source, usable today with simulators, and it plans to stay compatible.
 
-OpenHAL is not a safety system. It can't make firmware obey, and it doesn't replace an e-stop, an enclosure or an interlock wired in hardware. It makes sure that what an agent asks for is checked against what a person allowed, every time, and it gives you one button that stops everything.
+## What it does not do
 
-The [quickstart](/docs/quickstart/) takes about ten minutes and needs no hardware.
+OpenHAL is not a safety system. It can't make firmware obey, and it doesn't replace e-stops, enclosures or interlocks wired in hardware. It checks each request against what a person allowed, and it stops every device on request.
+
+The [quickstart](/docs/quickstart/) runs a hub with a simulated fan and needs no hardware.

@@ -5,7 +5,8 @@ content. Each document gets a fresh OPENHAL_HOME and runs its snippets in order,
 following along. Shell lines that start with `$ ` are commands, and the lines under a command are
 output it must print. Python runs as written against the same hub. YAML must load as a device
 file, or as a routine with `kind=routine`. `file=NAME` saves a YAML or Python snippet in the working
-folder for later commands and imports. JSON client configs must start `openhal mcp`.
+folder for later commands and imports. JSON client configs must start `openhal mcp`, and JSON message
+traces must match openhal.protocol's methods, schemas and error reasons.
 Nothing touches real hardware or the real ~/.openhal.
 """
 
@@ -21,7 +22,10 @@ from pathlib import Path
 
 import pytest
 import yaml
+from pydantic import TypeAdapter
 
+from openhal.protocol.errors import RpcError
+from openhal.protocol.messages import METHODS
 from openhal.routines.models import Routine
 from openhal.spec import loads
 from tests.website.shell import ROOT, Session, SnippetError, uv_project_command
@@ -123,7 +127,35 @@ def run_yaml(session: Session, snippet: Snippet) -> None:
     save(session, snippet)
 
 
+def run_trace(snippet: Snippet) -> None:
+    """Check a message trace against openhal.protocol: methods, params, results and error reasons."""
+    messages = []
+    for line in snippet.body.splitlines():
+        if line[:1] in ("→", "←"):
+            messages.append(line[1:])
+        elif line.strip():
+            messages[-1] += "\n" + line
+    methods: dict[object, str] = {}
+    for text in messages:
+        message = json.loads(text)
+        assert message["jsonrpc"] == "2.0"
+        if "method" in message:
+            spec = METHODS[message["method"]]
+            spec.params.model_validate(message.get("params", {}))
+            methods[message["id"]] = message["method"]
+        elif "error" in message:
+            error = message["error"]
+            data = dict(error["data"])
+            expected = RpcError(data.pop("name"), data)
+            assert (error["code"], error["message"]) == (expected.code, expected.reason)
+        else:
+            TypeAdapter(METHODS[methods[message["id"]]].result).validate_python(message["result"])
+
+
 def run_json(session: Session, snippet: Snippet) -> None:
+    if snippet.body.lstrip()[:1] in ("→", "←"):
+        run_trace(snippet)
+        return
     data = json.loads(snippet.body)
     server = data["mcpServers"]["openhal"]
     command = uv_project_command([server["command"], *server["args"]])
