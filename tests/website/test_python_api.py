@@ -10,7 +10,9 @@ from tests.website import python_api
 
 def test_reference_is_current() -> None:
     saved = json.loads(python_api.OUTPUT.read_text(encoding="utf-8"))
-    assert saved == json.loads(python_api.render(python_api.generate())), "Run uv run python -m tests.website.python_api."
+    assert saved == json.loads(python_api.render(python_api.generate())), (
+        "Run uv run python -m tests.website.python_api."
+    )
 
 
 def test_every_public_name_is_documented() -> None:

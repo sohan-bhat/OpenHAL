@@ -39,6 +39,15 @@ PHRASES = {
 }
 
 
+def uv_project_command(words: list[str]) -> list[str]:
+    """Strip `uv run --directory DIR` from a client's command, which runs the clone's own CLI."""
+    if not words or Path(words[0]).name != "uv":
+        return words
+    if words[1:3] != ["run", "--directory"] or len(words) < 5:
+        raise SnippetError(f"A client starts the clone's CLI with `uv run --directory DIR openhal`, not {words}.")
+    return words[4:]
+
+
 @dataclass
 class Result:
     command: str
@@ -153,7 +162,8 @@ class Session:
 
     def pytest(self, args: list[str]) -> Result:
         """Run pytest on part of the repository's own suite, as a contributor would."""
-        for arg in args:
+        targets = [arg for before, arg in zip(["", *args], args, strict=False) if before not in ("-k", "-m", "-p")]
+        for arg in targets:
             if not arg.startswith("-") and not (ROOT / arg.split("::")[0]).exists():
                 raise SnippetError(f"pytest target {arg} doesn't exist in the repository.")
         done = subprocess.run(
@@ -200,7 +210,7 @@ class Session:
     def check_claude(self, words: list[str]) -> Result:
         if words[:3] != ["claude", "mcp", "add"] or "--" not in words:
             raise SnippetError("Only `claude mcp add NAME [options] -- openhal mcp ...` snippets can be checked.")
-        inner = words[words.index("--") + 1 :]
+        inner = uv_project_command(words[words.index("--") + 1 :])
         if inner[:2] != ["openhal", "mcp"]:
             raise SnippetError(f"The client should start `openhal mcp`, not {inner}.")
         help_text = self.openhal(["mcp", "--help"]).output

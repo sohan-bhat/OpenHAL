@@ -22,7 +22,16 @@ GROUPS = {
     "Commands": ["Write", "Action"],
     "Results": ["Decision", "Reading", "HubStatus", "DeviceSummary", "DeviceView", "StopReport", "ConfirmationRequest"],
     "Routines and audit": ["RoutineSummary", "Routine", "AuditEntry", "WriterSession"],
-    "Errors": ["OpenHALError", "HubNotRunning", "Unauthorized", "NotFound", "NotSupported", "Refused", "BadRequest", "HubError"],
+    "Errors": [
+        "OpenHALError",
+        "HubNotRunning",
+        "Unauthorized",
+        "NotFound",
+        "NotSupported",
+        "Refused",
+        "BadRequest",
+        "HubError",
+    ],
 }
 
 

@@ -8,4 +8,4 @@ $ uv run openhal init
 $ uv run openhald
 ```
 
-The hub starts on `127.0.0.1:7420` with a simulated desk fan, ready for an MCP client.
+The hub starts on `127.0.0.1:7420` with a simulated fan. The fan is read-only until a person confirms its limits, as the [quickstart](/docs/quickstart/) shows.

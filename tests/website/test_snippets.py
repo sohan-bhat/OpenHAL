@@ -4,7 +4,8 @@ Snippets live in Markdown with a `tested` fence attribute, in docs/guide/ and in
 content. Each document gets a fresh OPENHAL_HOME and runs its snippets in order, like a reader
 following along. Shell lines that start with `$ ` are commands, and the lines under a command are
 output it must print. Python runs as written against the same hub. YAML must load as a device
-file, and `file=NAME` saves it for later commands. JSON client configs must start `openhal mcp`.
+file, or as a routine with `kind=routine`. `file=NAME` saves a YAML or Python snippet in the working
+folder for later commands and imports. JSON client configs must start `openhal mcp`.
 Nothing touches real hardware or the real ~/.openhal.
 """
 
@@ -14,13 +15,16 @@ import contextlib
 import io
 import json
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
+import yaml
 
+from openhal.routines.models import Routine
 from openhal.spec import loads
-from tests.website.shell import ROOT, Session, SnippetError
+from tests.website.shell import ROOT, Session, SnippetError, uv_project_command
 
 SOURCES = [
     *sorted((ROOT / "docs" / "guide").rglob("*.md")),
@@ -83,25 +87,51 @@ def run_shell(session: Session, snippet: Snippet) -> None:
             )
 
 
+def save(session: Session, snippet: Snippet) -> Path | None:
+    name = snippet.option("file")
+    if not name:
+        return None
+    path = session.workdir / name
+    path.write_text(snippet.body, encoding="utf-8")
+    return path
+
+
 def run_python(session: Session, snippet: Snippet) -> None:
+    saved = save(session, snippet)
     out = io.StringIO()
-    with session.environment(), contextlib.chdir(session.workdir), contextlib.redirect_stdout(out):
-        exec(compile(snippet.body, f"{snippet.source.name}:{snippet.line}", "exec"), {"__name__": "__snippet__"})
+    before = set(sys.modules)
+    sys.path.insert(0, str(session.workdir))
+    try:
+        with session.environment(), contextlib.chdir(session.workdir), contextlib.redirect_stdout(out):
+            code = compile(snippet.body, f"{snippet.source.name}:{snippet.line}", "exec")
+            exec(code, {"__name__": saved.stem if saved else "__snippet__"})
+    finally:
+        sys.path.remove(str(session.workdir))
+        for name in set(sys.modules) - before:
+            module = sys.modules[name]
+            if str(session.workdir) in str(getattr(module, "__file__", "") or ""):
+                del sys.modules[name]
 
 
 def run_yaml(session: Session, snippet: Snippet) -> None:
-    file = loads(snippet.body)
-    assert file.device.name
-    name = snippet.option("file")
-    if name:
-        (session.workdir / name).write_text(snippet.body, encoding="utf-8")
+    if snippet.option("kind") == "routine":
+        routine = Routine.model_validate(yaml.safe_load(snippet.body))
+        assert routine.id
+    else:
+        file = loads(snippet.body)
+        assert file.device.name
+    save(session, snippet)
 
 
 def run_json(session: Session, snippet: Snippet) -> None:
     data = json.loads(snippet.body)
     server = data["mcpServers"]["openhal"]
-    assert Path(server["command"]).name == "openhal"
-    assert server["args"][0] == "mcp"
+    command = uv_project_command([server["command"], *server["args"]])
+    assert Path(command[0]).name == "openhal"
+    assert command[1] == "mcp"
+    help_text = session.openhal(["mcp", "--help"]).output
+    for option in (word for word in command[2:] if word.startswith("--")):
+        assert option in help_text, f"openhal mcp has no option {option}."
 
 
 RUNNERS = {
@@ -147,3 +177,16 @@ def test_every_code_snippet_we_write_is_tested() -> None:
 def test_there_are_tested_snippets() -> None:
     count = sum(snippet.tested for path in SOURCES for snippet in snippets(path))
     assert count >= 10
+
+
+def commands(text: str) -> list[str]:
+    block = re.search(r"^## Quickstart\n.*?^```[a-z]*\n(.*?)^```", text, re.M | re.S)
+    assert block, "README.md has no Quickstart code block."
+    return [line.strip() for line in block.group(1).splitlines() if line.strip()]
+
+
+def test_home_quickstart_matches_the_readme() -> None:
+    readme = commands((ROOT / "README.md").read_text(encoding="utf-8"))
+    home = snippets(ROOT / "website" / "src" / "content" / "snippets" / "quickstart.md")[0]
+    ours = [line[2:] for line in home.body.splitlines() if line.startswith("$ ")]
+    assert ours == readme
