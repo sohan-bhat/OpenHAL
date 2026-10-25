@@ -32,7 +32,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - The Arduino plant waterer is the canonical example (examples/plant-waterer/). The Arduino library gained actions with typed arguments, named states and internal outputs, the firmware protocol gained ACT, and the driver, simulator and sketch reader follow. `openhal demo` runs it against a real hub and `--record` writes docs/demo/scenario.yaml, which the README, docs/QUICKSTART.md and the tests read.
 - Action run limits (max_runs) and requirement messages in device files.
 - The README leads with the one-line description, the license and CI badges, the flow diagram, a three-command quickstart and the generated trace. The description is also in pyproject, the CLI help and the GitHub repository description.
-- A new mark (a client circle, an accent kernel bar and a device square), checked against every glyph in Lucide, Heroicons, Material Symbols and Tabler.
+- The mark is the stop bar mark (a request stroke meeting a stop bar above a return stroke). A circle, bar and square mark replaced it on 2026-10-25, and the owner asked for the stop bar mark back the same day.
 - The safety red team suite (100 tests) merged, and its four findings RT-01 to RT-04 fixed. docs/SAFETY-REPORT.md.
 - Driver SDK commands (`openhal driver new`, `driver test`, `driver list`).
 - M11. All sixteen planned drivers are built to the Tier 1 standard and pass conformance on simulators (batch 3 grbl, alpaca, indi, ros2, opcua, sila2, pylabrobot, lerobot, and batch 4 onvif, bambu, can, knx, matter, pi-i2c-spi, upnp, zigbee-zwave). 35 drivers in all. None is verified on hardware.

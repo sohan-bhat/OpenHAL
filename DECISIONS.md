@@ -29,3 +29,4 @@ Small decisions, one line each. Architectural decisions live in docs/adr/.
 - 2026-10-25: A configured GPIO stop button the hub can't watch stops the hub from starting, so no one relies on a stop that isn't there.
 - 2026-10-25: A device file never names a file the hub opens. Certificates and the pylabrobot deck come from environment variables (`ca_env`, `deck_env`), the way `token_env` holds a secret.
 - 2026-10-25: Until a package is published, install commands use the git repository, `uv tool install --compile-bytecode "openhal-hub[extras] @ git+https://github.com/sohan-bhat/OpenHAL"`.
+- 2026-10-25: The stop bar mark is back, at the owner's request. The circle, bar and square mark from earlier the same day is retired.

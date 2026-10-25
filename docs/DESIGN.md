@@ -121,7 +121,7 @@ Scale, mobile then desktop. 13/13 legend, 15/15 secondary, 16/17 body with line 
 ## Logo
 
 - **Wordmark.** "OpenHAL" in Atkinson Hyperlegible Next at weight 700, in `--text`.
-- **Mark.** Three solid shapes in a row on a 16 px grid. A circle for the client, a tall rounded bar for the safety kernel and a rounded square for the device, the flow diagram reduced to its parts. The circle and square are in `--text` and the bar in `--accent`, and it stays legible at 16 px. Built by tools/readme/build.py into docs/assets/mark-{light,dark}.svg and docs/assets/favicon.svg. Before it was adopted it was rendered against every glyph in Lucide, Heroicons, Material Symbols and Tabler. The closest overlap was 0.65 (Tabler arrow-bar-both), where the same icon drawn by two of those sets overlaps 0.45 at the median and a near copy above 0.9.
+- **Mark.** A request stroke ending at a vertical stop bar, above a return stroke pointing back. It reads as a request and an answer with a limit in between. It sits on a 16 px grid with 2 px strokes in `--accent`, and stays legible at 16 px. Built by tools/readme/build.py into docs/assets/mark-{light,dark}.svg, docs/assets/favicon.svg and the wordmarks, which the website reads, and drawn the same way in the Inspector header (dashboard/src/components/Mark.svelte).
 - Original. It never imitates MCP's, Anthropic's or any other logo.
 
 ## Diagrams
