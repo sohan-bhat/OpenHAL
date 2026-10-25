@@ -21,3 +21,4 @@ Small decisions, one line each. Architectural decisions live in docs/adr/.
 - 2026-10-25: `openhal demo` runs the simulated board 40 times faster than real time, and `--real-time` runs it at real speed. Heartbeats always use real time.
 - 2026-10-25: The scenario record leaves out times, so two runs give the same file and a test can rerun the hub and compare.
 - 2026-10-25: In user-facing text a write channel is a control channel. Method names (hal/write), the `openhal write` command and the device file's `write:` section keep their names.
+- 2026-10-25: python-can (LGPL-3.0-only) is used unmodified as an optional dependency of the can driver, like zeroconf. No code is copied.
