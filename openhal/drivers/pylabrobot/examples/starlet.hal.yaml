@@ -1,0 +1,45 @@
+device: { name: STARlet liquid handler, model: Microlab STARlet, manufacturer: Hamilton }
+id: starlet
+connect:
+  pylabrobot: star
+  deck: starlet
+  action_wait: 8 s
+  layout:
+    - { name: tips, resource: hamilton_96_tiprack_1000uL_filter, rails: 3 }
+    - { name: plate, resource: cor_96_wellplate_360uL_Fb, rails: 9 }
+read:
+  initialized: { type: bool }
+  tips_mounted: { unit: dimensionless, range: [0, 8] }
+  source_volume: { unit: uL, map: { container: "plate:A1" } }
+actions:
+  initialize:
+    description: Initialize and home the channels (PyLabRobot setup).
+    confirm: confirm-each-time
+  pick_up_tips:
+    description: Pick up tips from the rack, for example tips:A1:H1.
+    args:
+      tips: { type: string, max_length: 20, pattern: "^tips:[A-H]([1-9]|1[0-2])(:[A-H]([1-9]|1[0-2]))?$" }
+    confirm: confirm-each-time
+  drop_tips:
+    description: Put tips back into the rack spots they came from or others.
+    args:
+      tips: { type: string, max_length: 20, pattern: "^tips:[A-H]([1-9]|1[0-2])(:[A-H]([1-9]|1[0-2]))?$" }
+    confirm: confirm-each-time
+  aspirate:
+    description: Aspirate the same volume from each well.
+    args:
+      well: { type: string, max_length: 20, pattern: "^plate:[A-H]([1-9]|1[0-2])(:[A-H]([1-9]|1[0-2]))?$" }
+      volume: { unit: uL, min: 1, max: 200 }
+    require: ["initialized == true"]
+    confirm: confirm-each-time
+  dispense:
+    description: Dispense the same volume into each well.
+    args:
+      well: { type: string, max_length: 20, pattern: "^plate:[A-H]([1-9]|1[0-2])(:[A-H]([1-9]|1[0-2]))?$" }
+      volume: { unit: uL, min: 1, max: 200 }
+    require: ["initialized == true"]
+    confirm: confirm-each-time
+safe_state_note: "A stop cancels the running operation after its current firmware command. Nothing moves to make it safe. Keep the instrument's own cover interlock closed."
+hazard: high
+notes: "A STARlet with tips on rails 3 and a 96 well plate on rails 9. Match the layout to your deck before confirming."
+provenance: { source: hand-written, by: openhal pylabrobot driver example, at: 2026-10-24 }

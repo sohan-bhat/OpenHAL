@@ -1,0 +1,22 @@
+{
+  "name": "pylabrobot",
+  "tier": 2,
+  "status": "implemented",
+  "protocols": ["PyLabRobot LiquidHandler API"],
+  "families": [
+    "Hamilton Microlab STAR and STARlet",
+    "Tecan Freedom EVO",
+    "Opentrons OT-2"
+  ],
+  "hazard_default": "high",
+  "tests": "PyLabRobot's LiquidHandler on its chatterbox backend, recorded",
+  "estimate": {
+    "devices": "a handful of liquid handler families, each installed in many labs",
+    "reasoning": "PyLabRobot drives the Hamilton STAR line, the Tecan EVO and the Opentrons OT-2 through one API. The driver exposes the liquid handling part of that API, so it covers the families PyLabRobot supports for liquid handling. Plate readers, heaters and shakers in PyLabRobot are not covered yet. The count is a model estimate.",
+    "sources": [
+      "https://docs.pylabrobot.org/",
+      "https://github.com/PyLabRobot/pylabrobot",
+      "https://docs.pylabrobot.org/user_guide/machines.html"
+    ]
+  }
+}
