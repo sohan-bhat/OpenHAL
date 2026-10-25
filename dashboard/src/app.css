@@ -220,12 +220,6 @@ textarea {
   resize: vertical;
 }
 
-.panel {
-  border: var(--rule);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-
 .section {
   display: grid;
   gap: var(--s-3);
