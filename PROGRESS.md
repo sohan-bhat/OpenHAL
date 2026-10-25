@@ -8,12 +8,12 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 5 agents at once (owner, latest 2026-10-24). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- library. The starter library, `openhal library` and library bundling (BRIEF-library.md).
+- quality. Lighthouse, axe, the orphan audit, the plant waterer as the playground default and the library page fixes (BRIEF-quality.md).
 - packaging. The init wizard, launchd and systemd services, the Pi install script and install timing (BRIEF-packaging.md).
 - handoff. CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, ROADMAP, LAUNCH and the hardware test index (BRIEF-handoff.md).
 - e2e. `openhal demo --full`, the end-to-end run on mocks (BRIEF-e2e.md).
 - consistency. The plant waterer in every remaining page, the docs command check and the consistency test (BRIEF-consistency.md).
-- Queued, one at a time as slots free. First Lighthouse, axe, the orphan audit and the playground default for the website and the Inspector. Then a fresh critic that sees only screenshots and docs/DESIGN.md, for the final design scores (only round 1 was scored by a fresh reviewer).
+- Queued. A fresh critic that sees only screenshots and docs/DESIGN.md, for the final design scores (only round 1 was scored by a fresh reviewer).
 
 Kernel coverage on the full suite, 2026-10-25. 100 % of lines but two, 99 % of branches. The four branches left are fail-closed guards the public API can't reach (an expression naming a device the reference check already blocked, a bare name in a hub expression, a missing asyncio task, and a safe state value that isn't a number on a rate-limited number channel).
 
@@ -43,6 +43,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - Full-level conformance checks for actions. openhal-firmware declares full and runs them against the compiled PlantWaterer sketch.
 - Code comments removed from all Python and C++ code.
 - The bambu driver ships, approved by the owner on 2026-10-25.
+- M12. The starter library, 33 unverified device files in library/ across 14 drivers, bundled in the wheel as openhal/library_data, with `openhal library list|show|add`. Discovery no longer matches on a USB class or mDNS type alone.
 - Unit safety. pint no longer converts between angles and plain numbers (50 % to a degree channel, 1 Hz to rpm). Channels with no read-back stay controllable under a rate limit. A bare number gets UNIT_INVALID in dry runs instead of a hub error.
 - REST reports conformance, simulated drivers, run limits, requirement reasons, the protocol version and the LAN setting.
 
