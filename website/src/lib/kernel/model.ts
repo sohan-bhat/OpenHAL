@@ -599,6 +599,63 @@ function build(data: Record<string, Raw>): DeviceFile {
   return file;
 }
 
+/**
+ * Expand the shorthands the spec allows into the shape the JSON Schema describes, the way the
+ * Python models' `before` validators do. A string `device`, top-level `model` and `manufacturer`,
+ * `connect` shorthand and a single safe state mapping all become their full forms. `x-` keys are
+ * dropped. Nothing is checked here. The schema and `loadDeviceFile` do that.
+ */
+export function expandShorthand(data: Raw): Raw {
+  if (!isMapping(data)) return data;
+  const raw: Record<string, Raw> = {};
+  for (const [key, value] of Object.entries(data)) if (!key.startsWith("x-")) raw[key] = value;
+  let device = raw.device;
+  if (typeof device === "string") device = { name: device };
+  if (isMapping(device)) {
+    device = { ...device };
+    for (const key of ["model", "manufacturer"]) {
+      if (key in raw) {
+        if (!(key in (device as Record<string, Raw>))) (device as Record<string, Raw>)[key] = raw[key];
+        delete raw[key];
+      }
+    }
+    raw.device = device;
+  }
+  if (isMapping(raw.connect)) {
+    const connect = raw.connect;
+    if (!("params" in connect && Object.keys(connect).every((key) => key === "driver" || key === "params"))) {
+      const rest = { ...connect };
+      let driver: Raw = rest.driver;
+      delete rest.driver;
+      let params: Record<string, Raw> = rest;
+      if (driver === undefined) {
+        const key = Object.keys(rest).find((name) => (KNOWN_DRIVERS as readonly string[]).includes(name));
+        if (key) {
+          driver = key;
+          const primary = rest[key];
+          delete rest[key];
+          params = { [PRIMARY_PARAM[key] ?? "target"]: primary, ...rest };
+        }
+      }
+      raw.connect = driver === undefined ? { params } : { driver, params };
+    }
+  }
+  let safe = raw.safe_state;
+  if (isMapping(safe)) safe = [safe];
+  if (Array.isArray(safe)) {
+    raw.safe_state = safe.map((step) => {
+      if (!isMapping(step)) return step;
+      const keys = Object.keys(step);
+      if (keys.every((key) => ["values", "action", "args"].includes(key)) && "values" in step) {
+        return step.action === undefined || step.action === null ? { values: step.values } : { action: step.action, args: step.args ?? {} };
+      }
+      if ("action" in step) return step;
+      return { values: { ...step } };
+    });
+  }
+  return raw;
+}
+
 /** Build a device file from parsed YAML. Throws DeviceFileError with the problem and its place. */
 export function loadDeviceFile(data: Raw): DeviceFile {
   if (!isMapping(data)) throw new DeviceFileError(["file: A device file must be a mapping at the top level."]);

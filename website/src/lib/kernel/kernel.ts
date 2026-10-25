@@ -195,6 +195,11 @@ function asValue(target: Runtime, channel: string, raw: unknown): expr.Value | n
   return null;
 }
 
+/** Other devices a file's interlocks, preconditions and watchdog rules name, by id. */
+export function deviceRefs(file: DeviceFile): string[] {
+  return [...new Set(fileRefs(file).map((ref) => ref.device).filter((device): device is string => !!device))].sort();
+}
+
 function fileRefs(file: DeviceFile): expr.Ref[] {
   const names = channelNames(file);
   const texts = [
