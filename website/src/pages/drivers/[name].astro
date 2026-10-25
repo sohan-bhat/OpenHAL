@@ -35,7 +35,6 @@ const rows: Array<[string, string]> = [
 >
   <p slot="after-title" class="statuses">
     <span class={`status ${statusClass(driver.status)}`}>{statusWord(driver.status)}</span>
-    {driver.status !== "verified" && driver.status !== "planned" && <span class="status unverified">unverified on hardware</span>}
   </p>
   <div class="table-wrap">
     <table class="sheet">

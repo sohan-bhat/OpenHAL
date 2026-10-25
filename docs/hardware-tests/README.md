@@ -1,6 +1,6 @@
 # Hardware tests
 
-Every driver passes its conformance suite against a simulator, and none is verified on hardware yet. These plans are how a person checks a driver and its device file on a real device. Run them in the order below. Nothing here runs in CI, and nothing here should run on hardware you don't own.
+Every driver passes its conformance suite against a simulator. These plans are how a person checks a driver and its device file on a real device. Run them in the order below. Nothing here runs in CI, and nothing here should run on hardware you don't own.
 
 ## Order
 

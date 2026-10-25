@@ -141,7 +141,7 @@ test.describe("playground", () => {
 test.describe("catalog pages", () => {
   test("drivers filter by tier and never claim hardware verification", async ({ page }) => {
     await page.goto("/drivers/");
-    await expect(page.getByText("None verified on hardware yet")).toBeVisible();
+    await expect(page.getByText("verified on hardware")).toHaveCount(0);
     const all = await page.locator("[data-driver]").count();
     expect(all).toBeGreaterThan(1);
     await page.getByLabel("Tier").selectOption({ label: "Tier 3" });

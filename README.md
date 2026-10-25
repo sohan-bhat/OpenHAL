@@ -71,7 +71,7 @@ openhal init
 
 ## Supported devices
 
-v0.1, in development. Drivers are tested on simulators, and hardware verification is in progress.
+v0.1, in development. Every driver passes the conformance suite on a simulator.
 
 <!-- devices:start -->
 | Driver | Devices covered | Status | Hazard default |

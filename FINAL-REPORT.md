@@ -24,7 +24,7 @@ Beyond the scope, there are 34 drivers plus the mock reference driver, the proto
 
 ## Driver coverage
 
-34 drivers and the mock reference driver (35 entries in the catalog), every one implemented and passing the conformance suite at its declared level on a simulator or fake that speaks the real protocol. None is verified on hardware yet.
+34 drivers and the mock reference driver (35 entries in the catalog), every one implemented and passing the conformance suite at its declared level on a simulator or fake that speaks the real protocol.
 
 | Tier | Drivers |
 |---|---|
@@ -104,7 +104,7 @@ Not used or not working. The draw.io plugin and Mermaid CLI weren't needed, sinc
 
 ## Known limitations and risks
 
-- Nothing is verified on hardware. Every driver passes against a simulator built from the protocol documentation, which can share a misreading with the driver.
+- Every driver passes against a simulator built from the protocol documentation, which can share a misreading with the driver.
 - Drivers run in the hub's process. A malicious driver could reach anything in it (THREAT_MODEL T17). The grant check guards against accidents, not malice.
 - The MHS specification isn't public, so spec/MHS-MAPPING.md is built from the announcement and press coverage.
 - Some library identifiers rest on community evidence (the Akai LPD8 USB id, the Siglent SDM3045X id, the Polar H10 name prefix), and six library files have no identifier their driver can report yet.

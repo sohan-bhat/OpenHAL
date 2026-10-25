@@ -2,8 +2,6 @@
 
 This plan checks the openhal-firmware driver and the OpenHAL Arduino library on a real board, with the library's `LedStrip` example and its device file from the starter library. It covers what the plant waterer plan doesn't, a control channel with a range and a rate, a library file and a lost USB link. Run [the plant waterer plan](../../examples/plant-waterer/TEST-PLAN.md) first, since it checks discovery, actions and the board's own fallback. [README.md](README.md) has the setup and rules every plan shares. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists.
 
-Status. Not yet run on hardware.
-
 ## What you need
 
 - An Arduino Uno and its USB cable. An ESP32 works too, with the pins in brackets.
@@ -172,4 +170,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/openhal-led-strip-<date>.md` and update the status line above. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/openhal-led-strip-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.

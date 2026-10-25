@@ -2,8 +2,6 @@
 
 The first plan in [docs/hardware-tests/README.md](../../docs/hardware-tests/README.md), which has the setup and rules every plan shares. It is for a person with the parts in [README.md](README.md). Steps 1 to 5 change nothing. Steps 6 to 10 use the relay with the pump unplugged from its supply, so nothing gets wet until step 11. Steps 7 to 9 repeat the three exchanges of the README's message trace on the real board, sent by an agent. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists.
 
-Status. Not yet run on hardware.
-
 ## What you need
 
 - An Arduino Uno wired as README.md says. The soil sensor on A0, the float switch from pin 4 to ground and the relay input on pin 7.
@@ -238,4 +236,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/plant-waterer-<date>.md` and update the status line above. [docs/hardware-tests/README.md](../../docs/hardware-tests/README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/plant-waterer-<date>.md`. [docs/hardware-tests/README.md](../../docs/hardware-tests/README.md#reports) says when it marks the device file `verified-on-hardware`.

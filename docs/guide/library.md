@@ -25,7 +25,7 @@ added
 
 ## Suggested limits
 
-Every library file is unverified. Its control channels and actions are marked `suggested: true`, and its notes start with "Suggested limits." The limits start low on purpose, such as 5 V and 0.5 A on a bench supply or PLA temperatures on a printer. Anything with heat, motion or mains power needs a person to confirm each change.
+A library file's control channels and actions are marked `suggested: true`, and its notes start with "Suggested limits." The limits start low on purpose, such as 5 V and 0.5 A on a bench supply or PLA temperatures on a printer. Anything with heat, motion or mains power needs a person to confirm each change.
 
 ## Confirmation
 

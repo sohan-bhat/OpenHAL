@@ -276,7 +276,7 @@ The repository README follows this structure, in this order, left-aligned.
 4. Quickstart. Three commands in one code block, then one line on what you'll see, generated from the scenario.
 5. The message trace, the three exchanges of the canonical scenario, as a code block generated from the scenario (`uv run python -m openhal.demo.readme`).
 6. "What it does", three bullets.
-7. Supported devices. Status as a sentence, "v0.1, in development. Drivers are tested on simulators, and hardware verification is in progress.", then a table generated from drivers/catalog.json with driver, devices covered, status and hazard default.
+7. Supported devices. Status as a sentence, "v0.1, in development. Every driver passes the conformance suite on a simulator.", then a table generated from drivers/catalog.json with driver, devices covered, status and hazard default.
 8. Safety model, at most five bullets, linking to docs/SAFETY.md.
 9. Relationship to MHS, two sentences.
 10. Contributing a driver or device file, then the license.

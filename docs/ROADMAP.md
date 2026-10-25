@@ -2,7 +2,7 @@
 
 What comes after v0.1, in the order the work should happen. Items carry no dates. OpenHAL is not affiliated with Anthropic or MHS.
 
-Today 34 drivers pass the conformance suite on simulators, and none is verified on hardware. Hardware verification comes before anything else.
+Today 34 drivers pass the conformance suite on simulators.
 
 ## 1. Hardware verification
 

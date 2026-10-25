@@ -35,7 +35,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - The mark is the stop bar mark (a request stroke meeting a stop bar above a return stroke). A circle, bar and square mark replaced it on 2026-10-25, and the owner asked for the stop bar mark back the same day.
 - The safety red team suite (100 tests) merged, and its four findings RT-01 to RT-04 fixed. docs/SAFETY-REPORT.md.
 - Driver SDK commands (`openhal driver new`, `driver test`, `driver list`).
-- M11. All sixteen planned drivers are built to the Tier 1 standard and pass conformance on simulators (batch 3 grbl, alpaca, indi, ros2, opcua, sila2, pylabrobot, lerobot, and batch 4 onvif, bambu, can, knx, matter, pi-i2c-spi, upnp, zigbee-zwave). 35 drivers in all. None is verified on hardware.
+- M11. All sixteen planned drivers are built to the Tier 1 standard and pass conformance on simulators (batch 3 grbl, alpaca, indi, ros2, opcua, sila2, pylabrobot, lerobot, and batch 4 onvif, bambu, can, knx, matter, pi-i2c-spi, upnp, zigbee-zwave). 35 drivers in all.
 - The protocol website and the Inspector, all three design critique rounds, merged. WebKit browser tests could not run on this Mac (every WebKit page load stalls here) and still need a run elsewhere.
 - Full-level conformance checks for actions. openhal-firmware declares full and runs them against the compiled PlantWaterer sketch.
 - Code comments removed from all Python and C++ code.

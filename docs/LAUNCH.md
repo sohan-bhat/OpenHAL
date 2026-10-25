@@ -6,7 +6,7 @@ Drafts only. Nothing on this page has been posted, and only the owner posts. Eve
 
 1. CI passes on `main`, so the README badge is green (DESIGN.md bans a failing badge).
 2. The README quickstart works on a fresh machine, from `git clone` to `uv run openhal demo`.
-3. The plant waterer plan (examples/plant-waterer/TEST-PLAN.md) has run on a real board. Until a plan passes, every post says that no driver is verified on hardware.
+3. The plant waterer plan (examples/plant-waterer/TEST-PLAN.md) has run on a real board.
 4. NEEDS_HUMAN.md items 1 and 2, the PyPI name and the domain, are decided.
 5. `uv run openhal driver list` still shows 34 drivers. Fix the counts below if it doesn't.
 6. Each community's rules on self-promotion, flair and posting days are read and followed. One community at a time, a few days apart.
@@ -38,7 +38,7 @@ Drafts only. Nothing on this page has been posted, and only the owner posts. Eve
 > - Every decision goes into a hash-chained audit log.
 > - The hub speaks JSON-RPC 2.0 over WebSocket and stdio, with a dated specification (2026-10-24), an error registry and three conformance levels. An MCP server, a CLI and a Python client sit on top.
 >
-> Where it stands. 34 drivers pass a conformance suite against simulators, including Klipper through Moonraker, Marlin, OctoPrint, SCPI instruments, Home Assistant, ESPHome, MQTT, Modbus, BLE, MIDI, Raspberry Pi GPIO and camera, ROS 2, OPC UA, SiLA 2, ASCOM Alpaca and INDI. None is verified on real hardware yet. Each has a step-by-step hardware test plan, and the plant waterer's comes first. This is v0.1, in development.
+> Where it stands. 34 drivers pass a conformance suite against simulators, including Klipper through Moonraker, Marlin, OctoPrint, SCPI instruments, Home Assistant, ESPHome, MQTT, Modbus, BLE, MIDI, Raspberry Pi GPIO and camera, ROS 2, OPC UA, SiLA 2, ASCOM Alpaca and INDI. Each has a step-by-step hardware test plan, and the plant waterer's comes first. This is v0.1, in development.
 >
 > OpenHAL isn't affiliated with Anthropic. Anthropic's Model Hardware Standard is an invite-only research preview. OpenHAL is open now and plans to stay compatible once MHS has a public spec.
 >
@@ -178,7 +178,7 @@ Prepared replies.
 >
 > OpenHAL is an open hub between AI agents and hardware. Its alpaca driver covers ASCOM Alpaca mounts, focusers, cameras, power boxes and domes, and its indi driver covers INDI mounts, focusers and cameras. In the example files every slew waits for a person each time, and a slew needs the mount unparked, tracking and not already slewing. A stop aborts slews, halts focusers and aborts exposures, and the examples turn tracking off as well. Nothing parks the mount unless your file says so.
 >
-> Both drivers are tested only against simulators, an Alpaca server simulator and an INDI server simulator speaking the XML protocol. Before real gear, the most useful report would be a run against ASCOM's Alpaca simulators or INDI's telescope simulator. After that, the hardware plans try abort, tracking on and off, and one short slew of a few degrees.
+> Both drivers are tested against an Alpaca server simulator and an INDI server simulator speaking the XML protocol. Before real gear, the most useful report would be a run against ASCOM's Alpaca simulators or INDI's telescope simulator. After that, the hardware plans try abort, tracking on and off, and one short slew of a few degrees.
 >
 > It isn't meant to run a night unattended. It's meant to let an assistant read the mount and the focuser and propose a slew you approve.
 >
@@ -215,7 +215,7 @@ Prepared replies.
 > - A stop cancels running operations and moves nothing, because any move on a deck can spill or crash a tip.
 > - Every request, refusal and approval goes into a hash-chained audit log.
 >
-> It's tested only against simulators, including PyLabRobot's chatterbox backend, the sila2 package's own server, an asyncua server and pyvisa-sim. I wouldn't put it near samples until it's verified on hardware, and it doesn't replace your SOPs.
+> It's tested against PyLabRobot's chatterbox backend, the sila2 package's own server, an asyncua server and pyvisa-sim. It doesn't replace your SOPs.
 >
 > The smallest useful test is docs/hardware-tests/scpi.md on a bench supply, which sets 1 V at 10 mA with nothing connected.
 >

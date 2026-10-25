@@ -45,7 +45,7 @@ const sections = specItems
       <h2 id="devices-title">Device families</h2>
       <p class="summary">
         <span class={`status ${verified ? "ok" : "unverified"}`}>{tested} drivers {statusWord("implemented")}</span>
-        <span class="muted">{verified ? `${verified} verified on hardware.` : "None is verified on hardware yet."}{planned ? ` ${planned} planned.` : ""}</span>
+        <span class="muted">{verified ? `${verified} verified on hardware.` : ""}{planned ? ` ${planned} planned.` : ""}</span>
       </p>
       <ul class="groups">
         {

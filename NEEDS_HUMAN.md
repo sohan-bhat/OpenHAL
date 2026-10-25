@@ -19,7 +19,7 @@ SECURITY.md and CODE_OF_CONDUCT.md send reports through GitHub's private channel
 
 ## 3. Run the first hardware test, the plant waterer
 
-Nothing in OpenHAL has run on real hardware yet. The plant waterer is the cheapest complete rig and its pump stays unplugged until the last step.
+The plant waterer is the cheapest complete rig and its pump stays unplugged until the last step.
 
 1. Get the parts in examples/plant-waterer/README.md (an Arduino Uno, a capacitive soil sensor, a float switch, a 5 V relay module and a small pump with its own supply).
 2. Follow examples/plant-waterer/TEST-PLAN.md from step 1. Read-only steps come first.
