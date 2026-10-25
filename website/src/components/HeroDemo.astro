@@ -1,0 +1,462 @@
+---
+// The hero instrument. A live limit line on the desk fan from spec/examples, driven by the
+// TypeScript kernel port, with a stop bar. Built so a dashboard capture can replace or sit
+// beside it (captures land in public/captures/, see src/lib/captures.ts).
+import "../styles/limit-track.css";
+import { HERO_CHANNEL, HERO_DEVICE, HERO_FILE_PATH, HERO_FIRST_REQUEST, HERO_PRESETS, HERO_START_TEMPERATURE, TRACK_TICKS, cliLine, trackPercent } from "../lib/hero-shared";
+import { heroFile, heroFirstDecision, heroRaw } from "../lib/hero";
+import { effectiveHazard } from "../lib/kernel";
+
+const file = heroFile();
+const spec = file.write[HERO_CHANNEL];
+const first = heroFirstDecision();
+const rate = spec.max_change_per_s ?? 0;
+const confirmed = file.confirmed;
+const raw = JSON.stringify(heroRaw()).replaceAll("<", "\\u003c");
+---
+
+<div class="module instrument" data-hero-demo data-device={HERO_DEVICE} data-channel={HERO_CHANNEL}>
+  <p class="module-legend legend"><span>{file.device.name}</span></p>
+  <p class="demo-tag legend">In-browser demo</p>
+
+  <dl class="part-label" aria-label="Device file">
+    <div><dt class="legend">Id</dt><dd class="mono">{HERO_DEVICE}</dd></div>
+    <div><dt class="legend">Driver</dt><dd class="mono">{file.connect.driver}</dd></div>
+    <div><dt class="legend">Hazard</dt><dd class="mono">{effectiveHazard(file)}</dd></div>
+    <div>
+      <dt class="legend">Limits</dt>
+      <dd>{confirmed ? <span class="lamp ok">Confirmed by {confirmed.by}</span> : <span class="lamp unverified">Unconfirmed</span>}</dd>
+    </div>
+  </dl>
+
+  <div class="readouts">
+    <div class="readout">
+      <p class="legend">Read · temperature</p>
+      <p class="value"><span class="mono num" data-temp>{HERO_START_TEMPERATURE.toFixed(1)}</span><span class="unit legend">°C</span></p>
+    </div>
+    <div class="readout">
+      <p class="legend">Write · {HERO_CHANNEL}</p>
+      <p class="value"><span class="mono num" data-fan>0</span><span class="unit legend">%</span></p>
+    </div>
+    <div class="readout rate-readout">
+      <p class="legend">Rate limit</p>
+      <p class="value"><span class="mono num small">{rate}</span><span class="unit legend">%/s</span></p>
+    </div>
+  </div>
+
+  <div
+    class="limit-track"
+    data-track
+    role="img"
+    aria-label={`${HERO_CHANNEL} track. Limits ${spec.min} % to ${spec.max} %. Now 0 %. Asked for ${HERO_FIRST_REQUEST}, blocked.`}
+  >
+    <div class="rail"></div>
+    <div class="fill" data-fill style={`--from:${trackPercent(spec.min ?? 0)};--to:${trackPercent(0)}`}></div>
+    <div class="rate" data-rate style={`--from:${trackPercent(0)};--to:${trackPercent(spec.max ?? 0)}`}></div>
+    <div class="limit min" data-limit-min style={`--at:${trackPercent(spec.min ?? 0)}`}><span class="limit-flag">Min {spec.min} %</span></div>
+    <div class="limit max" data-limit-max style={`--at:${trackPercent(spec.max ?? 0)}`}><span class="limit-flag">Max {spec.max} %</span></div>
+    <div class="thumb" data-thumb style={`--at:${trackPercent(0)}`}></div>
+    <div class="attempt" data-attempt style={`--at:${trackPercent(150)}`}></div>
+    <div class="ticks" aria-hidden="true">
+      {TRACK_TICKS.map((tick) => <span class="tick" style={`--at:${trackPercent(tick)}`}>{tick}</span>)}
+    </div>
+  </div>
+  <p class="block-reason" data-reason aria-live="polite">{first.status === "blocked" ? first.message : ""}</p>
+
+  <form class="console" data-console aria-label="Send a write as an agent">
+    <p class="legend console-legend">Agent request <span class="muted">· control_low token</span></p>
+    <div class="command-line">
+      <label for="hero-value" class="mono prompt-text"><span aria-hidden="true">$ </span>openhal write {HERO_DEVICE}.{HERO_CHANNEL}</label>
+      <input id="hero-value" class="mono" name="value" value={HERO_FIRST_REQUEST} autocomplete="off" spellcheck="false" data-value disabled />
+      <button class="button send" type="submit" disabled data-send>Send</button>
+    </div>
+    <div class="presets" role="group" aria-label="Example requests">
+      {HERO_PRESETS.map((preset) => <button type="button" class="preset mono" data-preset={preset} disabled>{preset}</button>)}
+    </div>
+    <p class="mono output" data-output>
+      <span class={`lamp ${first.status === "done" ? "ok" : first.status === "blocked" ? "blocked" : "warning"}`} data-lamp>{first.status}</span>
+      <span data-output-text>{cliLine(first).slice(first.status.length)}</span>
+    </p>
+  </form>
+
+  <div class="stopbar" data-stopbar>
+    <div class="stripes" aria-hidden="true"></div>
+    <div class="stop-row" data-running>
+      <p class="legend stop-note">Any client may stop. Only a person may lift the stop.</p>
+      <button type="button" class="stop" data-stop disabled>Stop all</button>
+    </div>
+    <form class="stop-row stopped" data-stopped hidden>
+      <p class="stopped-plate"><span class="legend">Stopped</span><span class="muted-plate">Every device is in its safe state.</span></p>
+      <div class="unlock">
+        <label for="hero-unlock" class="visually-hidden">Type unlock to lift the stop</label>
+        <input id="hero-unlock" class="mono" placeholder="type unlock" autocomplete="off" data-unlock-input />
+        <button type="submit" class="unlock-button">Unlock</button>
+      </div>
+      <p class="unlock-error" data-unlock-error aria-live="polite"></p>
+    </form>
+  </div>
+
+  <p class="footnote">
+    Runs a TypeScript port of the kernel's checks on <a href="/playground/?example=desk-fan-confirmed">{HERO_FILE_PATH}</a>, with the same codes and messages
+    as the hub. Demo data. Nothing here talks to hardware.
+  </p>
+  <script type="application/json" data-hero-file set:html={raw} />
+</div>
+
+<script>
+  import "../scripts/hero-demo";
+</script>
+
+<style>
+  .instrument {
+    padding: var(--s-6) var(--s-4) 0;
+    display: grid;
+    gap: var(--s-4);
+  }
+
+  .demo-tag {
+    position: absolute;
+    top: 0;
+    right: var(--s-3);
+    transform: translateY(-50%);
+    padding: 0 var(--s-2);
+    background: var(--panel);
+    color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+  }
+
+  .demo-tag::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border: 1.5px dashed var(--ink-3);
+    border-radius: 50%;
+  }
+
+  .part-label {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+    border: 1px solid var(--ink);
+    border-radius: var(--radius);
+  }
+
+  .part-label > div {
+    padding: var(--s-1) var(--s-3);
+    border-bottom: 1px solid var(--rule);
+    display: grid;
+    gap: 2px;
+  }
+
+  .part-label > div:nth-child(odd) {
+    border-right: 1px solid var(--rule);
+  }
+
+  .part-label > div:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .part-label dt {
+    color: var(--ink-2);
+  }
+
+  .part-label dd {
+    margin: 0;
+    font-size: var(--t-0);
+    line-height: var(--lh-1);
+    overflow-wrap: anywhere;
+  }
+
+  .readouts {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: var(--s-4);
+  }
+
+  .readout .legend {
+    color: var(--ink-2);
+  }
+
+  .value {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-1);
+  }
+
+  .num {
+    font-size: var(--t-4);
+    line-height: var(--lh-4);
+    font-weight: 500;
+    padding: 0 2px;
+    margin-left: -2px;
+  }
+
+  .num.small {
+    font-size: var(--t-3);
+    line-height: var(--lh-4);
+  }
+
+  .unit {
+    color: var(--ink-2);
+  }
+
+  .rate-readout {
+    text-align: right;
+  }
+
+  .rate-readout .value {
+    justify-content: flex-end;
+  }
+
+  .block-reason {
+    min-height: calc(2 * var(--lh-1));
+    margin-top: calc(-1 * var(--s-3));
+  }
+
+  .console {
+    border-top: 1px solid var(--rule);
+    padding-top: var(--s-3);
+    display: grid;
+    gap: var(--s-2);
+  }
+
+  .console-legend {
+    color: var(--ink);
+  }
+
+  .command-line {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--s-2);
+  }
+
+  .prompt-text {
+    font-size: var(--t-0);
+    line-height: var(--lh-0);
+    color: var(--ink-2);
+  }
+
+  input {
+    font-size: var(--t-1);
+    min-height: 44px;
+    padding: 0 var(--s-3);
+    border: 1px solid var(--ink-2);
+    border-radius: var(--radius);
+    background: var(--panel);
+    color: var(--ink);
+    min-width: 0;
+  }
+
+  input::placeholder {
+    color: var(--ink-2);
+  }
+
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+
+  .preset {
+    min-height: 32px;
+    padding: 0 var(--s-3);
+    font-size: var(--t-0);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .preset:hover:not(:disabled) {
+    border-color: var(--signal);
+    color: var(--signal);
+  }
+
+  .preset:disabled,
+  .send:disabled,
+  .stop:disabled {
+    cursor: default;
+  }
+
+  .output {
+    display: flex;
+    gap: var(--s-2);
+    align-items: baseline;
+    font-size: var(--t-0);
+    line-height: 18px;
+    min-height: 54px;
+    overflow-wrap: anywhere;
+  }
+
+  .output .lamp {
+    flex: none;
+  }
+
+  .stopbar {
+    position: relative;
+    margin: 0 calc(-1 * var(--s-4));
+    background: var(--bezel);
+    color: var(--on-bezel);
+    overflow: hidden;
+  }
+
+  .stripes {
+    position: absolute;
+    inset: 0;
+    background: var(--stripe);
+    transform: translateX(-101%);
+    transition: transform var(--motion-stop-wipe) var(--ease);
+  }
+
+  .stopbar.is-stopped .stripes {
+    transform: none;
+  }
+
+  .stop-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-4);
+    padding: var(--s-3) var(--s-4);
+    flex-wrap: wrap;
+  }
+
+  .stop-note {
+    color: var(--on-bezel);
+    opacity: 0.8;
+    max-width: 30ch;
+  }
+
+  .stop {
+    min-height: 52px;
+    min-width: 160px;
+    padding: 0 var(--s-6);
+    border: 2px solid var(--on-bezel);
+    border-radius: var(--radius);
+    background: var(--blocked);
+    color: var(--panel);
+    font-family: var(--font-label);
+    font-size: var(--t-3);
+    font-weight: 800;
+    letter-spacing: var(--legend-tracking);
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .stop:focus-visible,
+  .unlock-button:focus-visible,
+  .stopbar input:focus-visible {
+    outline: 3px solid var(--on-bezel);
+    outline-offset: 2px;
+  }
+
+  .stopped-plate {
+    display: grid;
+    gap: 2px;
+    padding: var(--s-2) var(--s-3);
+    background: var(--bezel);
+    color: var(--on-bezel);
+    border-radius: var(--radius);
+  }
+
+  .stopped-plate .legend {
+    font-size: var(--t-2);
+    line-height: var(--lh-2);
+    font-weight: 800;
+  }
+
+  .muted-plate {
+    font-size: var(--t-1);
+    line-height: var(--lh-1);
+  }
+
+  .unlock {
+    display: flex;
+    gap: var(--s-2);
+    padding: var(--s-2);
+    background: var(--bezel);
+    border-radius: var(--radius);
+  }
+
+  .stopbar input {
+    width: 9.5em;
+    background: var(--bezel);
+    color: var(--on-bezel);
+    border-color: var(--on-bezel);
+  }
+
+  .stopbar input::placeholder {
+    color: color-mix(in srgb, var(--on-bezel) 72%, var(--bezel));
+  }
+
+  .unlock-button {
+    min-height: 44px;
+    padding: 0 var(--s-4);
+    border: 2px solid var(--on-bezel);
+    border-radius: var(--radius);
+    background: var(--on-bezel);
+    color: var(--bezel);
+    font-family: var(--font-label);
+    font-weight: 800;
+    letter-spacing: var(--legend-tracking);
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .unlock-error:empty {
+    display: none;
+  }
+
+  .unlock-error {
+    width: 100%;
+    padding: var(--s-1) var(--s-3);
+    background: var(--bezel);
+    color: var(--on-bezel);
+    font-size: var(--t-1);
+  }
+
+  .footnote {
+    font-size: var(--t-0);
+    line-height: var(--lh-0);
+    color: var(--ink-2);
+    padding: var(--s-3) 0 var(--s-4);
+  }
+
+  @media (min-width: 600px) {
+    .command-line {
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+    }
+
+    .part-label {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .part-label > div {
+      border-bottom: 0;
+      border-right: 1px solid var(--rule);
+    }
+
+    .part-label > div:last-child {
+      border-right: 0;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .instrument {
+      padding-inline: var(--s-5);
+    }
+
+    .stopbar {
+      margin-inline: calc(-1 * var(--s-5));
+    }
+
+    .stop-row {
+      padding-inline: var(--s-5);
+    }
+  }
+</style>

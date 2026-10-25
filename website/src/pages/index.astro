@@ -1,0 +1,75 @@
+---
+import Base from "../layouts/Base.astro";
+import HeroDemo from "../components/HeroDemo.astro";
+import { PITCH, PRODUCT_NAME } from "../config/brand";
+---
+
+<Base title={`${PRODUCT_NAME}. Real hardware for AI agents, inside limits people set`} description={PITCH} bare>
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <h1 id="hero-title">Real hardware for AI agents. Limits set by people.</h1>
+        <p class="lede">
+          An open hub between any MCP client and your devices. It checks every command against the device's limits before
+          anything moves.
+        </p>
+        <div class="ctas">
+          <a class="button" href="/docs/quickstart/">Start the quickstart</a>
+          <a class="button secondary" href="/playground/">Open the playground</a>
+        </div>
+      </div>
+      <div class="hero-demo" data-capture-slot="hero">
+        <HeroDemo />
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    padding: var(--s-7) 0 var(--s-8);
+  }
+
+  .hero-grid {
+    display: grid;
+    gap: var(--s-7);
+  }
+
+  h1 {
+    font-size: var(--t-5);
+    line-height: var(--lh-5);
+    font-weight: 750;
+    letter-spacing: -0.01em;
+    max-width: 14ch;
+  }
+
+  .lede {
+    margin-top: var(--s-5);
+    font-size: var(--t-2);
+    max-width: 44ch;
+  }
+
+  .ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-3);
+    margin-top: var(--s-6);
+  }
+
+  @media (min-width: 1024px) {
+    .hero {
+      padding-top: var(--s-8);
+    }
+
+    .hero-grid {
+      grid-template-columns: 5fr 7fr;
+      align-items: start;
+    }
+
+    .hero-copy {
+      position: sticky;
+      top: var(--s-6);
+      padding-top: var(--s-5);
+    }
+  }
+</style>
