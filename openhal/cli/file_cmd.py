@@ -12,7 +12,7 @@ from openhal._brand import DEVICE_FILE_SUFFIX
 from openhal.spec.loader import Report, validate_path
 from openhal.spec.schema import device_file_schema
 
-app = typer.Typer(help="Validate device files and print the schema.", no_args_is_help=True)
+app = typer.Typer(help="Validate and confirm device files, and print the schema.", no_args_is_help=True)
 console = Console(highlight=False)
 
 

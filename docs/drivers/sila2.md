@@ -31,7 +31,7 @@ Every channel and action names its SiLA feature in a `map`. The client loads eac
 - connect() opens the gRPC channel and checks every feature, property, command and parameter the file names, with their types. Anything that doesn't fit stops the connect with a reason.
 - Units come from each data type's Unit constraint label. A channel whose unit can't be converted from it is refused on connect.
 - Unobservable properties are read on demand. Observable properties are subscribed on connect and the newest value is kept, so a read costs no round trip and is unknown until the first value arrives.
-- SiLA properties are read only, so a channel changes through a command with one parameter. Without `readback` it reads back as the last value the driver sent.
+- SiLA properties are read-only, so a channel changes through a command with one parameter. Without `readback` it reads back as the last value the driver sent.
 - An observable command waits up to `action_wait` and answers `done` with its responses, or answers `started` and keeps running on the server.
 - Defined execution errors fail the command with their identifier and message, for example `TooHot`. Constraint violations come back as validation errors.
 - The sila2 client is blocking, so every call runs in a worker thread with a deadline. Connecting gets 8 s, since the client compiles each feature definition.

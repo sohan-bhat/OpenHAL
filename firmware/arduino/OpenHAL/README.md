@@ -6,19 +6,34 @@ The board also protects itself. It refuses output values outside the limits you 
 
 ## Sketch
 
+The plant waterer, shortened from `examples/PlantWaterer`. The pump has no channel of its own, so the hub can run it only through `water`, and the board refuses to pump from an empty tank.
+
 ```cpp
 #include <OpenHAL.h>
 
-OpenHAL hal("desk-fan", "1.0.0");
+OpenHAL hal("plant-waterer", "1.0.0");
+OpenHalOutput* pump = nullptr;
+const char* const TANK_STATES[] = {"empty", "ok"};
 
-float readTemperature() { /* your sensor */ }
-void setFan(float percent) { analogWrite(9, percent * 2.55); }
+float readMoisture() { /* your sensor, 0 to 100 */ }
+float readTank() { return digitalRead(4) == LOW ? 1 : 0; }
+void setPump(float on) { digitalWrite(7, on > 0.5f ? HIGH : LOW); }
+
+const char* water(const float* args) {
+  if (readTank() == 0) return "tank_empty";
+  hal.drive(*pump, 1, static_cast<unsigned long>(args[0] * 1000.0f));
+  return nullptr;
+}
 
 void setup() {
+  pinMode(7, OUTPUT);
+  pinMode(4, INPUT_PULLUP);
   Serial.begin(115200);
-  hal.reading("temperature", "degC", readTemperature).every(1000).range(-20, 80);
-  hal.output("fan_speed", "percent", setFan).limits(0, 100).safe(0).rate(20);
-  hal.heartbeat(2000);
+  hal.reading("soil_moisture", "percent", readMoisture).every(1000).range(0, 100);
+  hal.reading("tank", "enum", readTank).states(TANK_STATES, 2).every(1000);
+  pump = &hal.output("pump", "bool", setPump).onOff().safe(0).timeout(30000).internal();
+  hal.action("water", water).arg("duration", "s", 1, 30);
+  hal.heartbeat(3000);
   hal.begin(Serial);
 }
 
@@ -27,7 +42,7 @@ void loop() { hal.poll(); }
 
 `begin()` applies every safe value before it listens, so outputs start in their safe state after a reset.
 
-The short forms `hal.read("temperature", "degC", readTemperature)` and `hal.write("fan_speed", "percent", 0, 100, setFan)` do the same, and `write()` makes the minimum the safe value unless `.safe()` says otherwise.
+An output the hub may set directly works the same way without `.internal()`. The short forms `hal.read("ambient_light", "percent", readLight)` and `hal.write("brightness", "percent", 0, 100, setBrightness)` from the LedStrip example do the same as `reading()` and `output()`, and `write()` makes the minimum the safe value unless `.safe()` says otherwise.
 
 ## Readings and outputs
 
@@ -37,10 +52,10 @@ The short forms `hal.read("temperature", "degC", readTemperature)` and `hal.writ
 | `.every(ms)` | Stream the value every `ms` milliseconds |
 | `.range(lo, hi)` | The range a working sensor reports. The hub flags values outside it |
 | `output(name, unit, fn)` | A value the hub can set. `fn` receives a value already checked against the limits |
-| `.limits(min, max)` | Writes outside this range are refused by the board |
+| `.limits(min, max)` | Values outside this range are refused by the board |
 | `.safe(value)` | Applied at start, on a stop, and when heartbeats stop |
 | `.rate(perSecond)` | The fastest safe change, sent to the hub as a suggested limit |
-| `.timeout(ms)` | Return to the safe value if nothing rewrites the output in time, like a pump's maximum run |
+| `.timeout(ms)` | Return to the safe value if nothing sets the output again in time, like a pump's maximum run |
 | `.onOff()` | A switch with values 0 and 1 |
 | `heartbeat(ms)` | Fall to the safe state when the hub goes quiet for `ms` milliseconds |
 | `applySafeState(reason)` | Apply the safe state from the sketch, for example from a local stop button |
@@ -65,7 +80,7 @@ Names are lowercase letters, digits and underscores, up to 24 characters. Units 
 
 ## Connecting to the hub
 
-Plug the board in and run `openhal discover`. The hub only sends `HELLO`, which never changes anything, to USB serial ports that belong to common Arduino and ESP32 boards. Then `openhal device add` writes a draft device file with every limit marked suggested, and the hub keeps the device read-only until you confirm them.
+Plug the board in and run `openhal discover`. The hub only sends `HELLO`, which never changes anything, to USB serial ports that belong to common Arduino and ESP32 boards. Then `openhal writer start --driver openhal-firmware --param port=<port>` drafts a device file from the board's own description, with every limit marked suggested, and the hub keeps the device read-only until you confirm them. For the plant waterer you can also copy `examples/plant-waterer/plant-waterer.hal.yaml` and follow its test plan.
 
 The wire protocol is in `spec/FIRMWARE-PROTOCOL.md` in the OpenHAL repository.
 

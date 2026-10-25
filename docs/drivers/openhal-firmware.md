@@ -1,20 +1,34 @@
 # openhal-firmware
 
-Boards running the OpenHAL Arduino library (`firmware/arduino/OpenHAL`). The board describes its readings and outputs, enforces its own limits and falls to its safe state when heartbeats stop. Protocol in `spec/FIRMWARE-PROTOCOL.md`.
+Boards running the OpenHAL Arduino library (`firmware/arduino/OpenHAL`). The board describes its readings, outputs and actions, enforces its own limits and falls to its safe state when heartbeats stop. Protocol in `spec/FIRMWARE-PROTOCOL.md`.
 
 ## Device file
 
+The plant waterer from [examples/plant-waterer/](../../examples/plant-waterer/), for a real Uno.
+
 ```yaml
-device: Desk fan controller
-connect: { openhal-firmware: auto }
+device: Arduino plant waterer
+id: plant-waterer
 match:
-  firmware: { product: desk-fan }
+  firmware: { product: plant-waterer }
+connect: { openhal-firmware: auto, boot_s: 2 }
 read:
-  temperature: { unit: degC, stream: true, range: [-20, 80] }
-write:
-  fan_speed: { unit: percent, min: 0, max: 100, max_change_per_s: 20 }
-safe_state: { fan_speed: 0 }
-watchdog: { heartbeat: 1000 ms, on_loss: safe_state }
+  soil_moisture: { unit: "%", every: 1 s, range: [0, 100] }
+  tank: { type: enum, values: [empty, ok], every: 1 s }
+actions:
+  water:
+    description: Run the pump for a number of seconds.
+    args:
+      duration: { unit: s, min: 1, max: 30 }
+    require:
+      - condition: "tank == ok"
+        message: "pump can't run while tank is empty"
+    max_runs: { count: 3, per: 1 h }
+  stop:
+    description: Turn the pump off now.
+safe_state: { action: stop }
+watchdog: { heartbeat: 1 s, on_loss: safe_state }
+hazard: low
 ```
 
 | Parameter | Default | Meaning |
@@ -30,15 +44,15 @@ Install the optional dependency with `uv pip install "openhal-hub[openhal-firmwa
 
 - Connect sends `HELLO`, checks the protocol version, reads `DESC`, and starts a heartbeat at a third of the board's timeout.
 - Reads use a streamed `EVT` value if it is less than 5 s old, otherwise `READ`.
-- Writes send `WRITE` and return the value the board applied. A board refusal (`ERR limit`) becomes a DriverError, and the kernel marks the channel unknown until a readback.
+- Channel changes send `WRITE` and return the value the board applied. Actions send `ACT` with every argument in the board's unit. A board refusal (`ERR limit`, `ERR interlock`) becomes a DriverError, and the kernel marks what the command touched unknown until a readback.
 - `safe_state_support` is native. A stop sends `SAFE` and the kernel also applies the device file's safe state.
-- `describe()` turns `DESC` into device file sections. Every write limit is marked suggested, so the file stays read-only until a person confirms it.
+- `describe()` turns `DESC` into device file sections. Every limit is marked suggested, so the file stays read-only until a person confirms it.
 - Discovery only probes ports whose USB vendor id is Arduino, WCH CH340, Silicon Labs CP210x, Espressif, Adafruit or FTDI, and only sends `HELLO`.
 
 ## Quirks
 
 - Many boards reset when the port opens. Use `boot_s` or the first `HELLO` times out.
-- A sketch that registers channels wrongly (`misconfigured()`) answers writes with `ERR busy misconfigured`. Reads still work.
+- A sketch that registers channels wrongly (`misconfigured()`) answers every `WRITE` and `ACT` with `ERR busy misconfigured`. Reads still work.
 - On an ESP32 the USB CDC port may enumerate under Espressif (303a) or a bridge chip id. Both are probed.
 
 ## Tests

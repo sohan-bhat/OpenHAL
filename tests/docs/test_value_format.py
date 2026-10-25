@@ -1,12 +1,14 @@
-"""Every example in the README, docs/ and spec/ carries numbers as a number and a unit (ADR 0016).
+"""Every example carries numbers as a number and a unit (ADR 0016).
 
-A protocol message, REST body or client call that sends a number as one string such as `"150 %"`
-fails this test. Device files and routine triggers are human-written formats and keep quantity
-strings, so YAML like `max: 100 %` is not checked.
+The README, docs/, spec/, the example and firmware READMEs and every docstring in the openhal
+package are checked. A protocol message, REST body or client call that sends a number as one
+string such as `"150 %"` fails this test. Device files and routine triggers are human-written
+formats and keep quantity strings, so YAML like `max: 100 %` is not checked.
 """
 
 from __future__ import annotations
 
+import ast
 import re
 from pathlib import Path
 
@@ -25,7 +27,29 @@ def documents() -> list[Path]:
     found = [ROOT / "README.md"]
     for folder in ("docs", "spec"):
         found.extend(sorted((ROOT / folder).rglob("*.md")))
+    found += sorted((ROOT / "examples").rglob("*.md"))
+    found.append(ROOT / "firmware" / "arduino" / "OpenHAL" / "README.md")
     return [path for path in found if path.is_file()]
+
+
+def docstrings() -> list[tuple[str, str]]:
+    """Every docstring in the openhal package, with the place it starts."""
+    found = []
+    for path in sorted((ROOT / "openhal").rglob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
+                text = ast.get_docstring(node, clean=False)
+                if text:
+                    found.append((f"{path.relative_to(ROOT)}:{getattr(node, 'lineno', 1)}", text))
+    return found
+
+
+def test_docstrings_carry_numbers_with_units_apart() -> None:
+    found = docstrings()
+    assert len(found) > 500
+    hits = [f"{where} {hit}" for where, text in found for hit in offenders(text)]
+    assert not hits, "Docstrings use quantity strings (ADR 0016):\n" + "\n".join(hits)
 
 
 def offenders(text: str) -> list[str]:

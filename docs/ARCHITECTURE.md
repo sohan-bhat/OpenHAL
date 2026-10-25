@@ -68,9 +68,9 @@ flowchart LR
 | Firmware | `firmware/arduino/OpenHAL/` | Arduino library that makes a maker's device describe itself |
 | Library | `library/` | Shared device files (CC0) |
 
-## The life of a write
+## The life of a command
 
-Every write from every source takes this path. There is no other path to a driver's `_write`.
+Every command from every source takes this path, here the plant waterer's `water` action from an agent. There is no other path to a driver's `_write` or `_action`.
 
 ```mermaid
 sequenceDiagram
@@ -81,13 +81,13 @@ sequenceDiagram
   participant Q as Confirmation queue
   participant D as Driver
   participant L as Audit log
-  A->>M: write fan.fan_speed "60 %"
-  M->>H: POST /v1/write (agent token)
+  A->>M: action plant-waterer.water, duration 20 s
+  M->>H: POST /v1/action (agent token)
   H->>K: evaluate(command, principal)
   K->>K: parse unit, convert to device unit, finite check
-  K->>K: device state (connected, not stopped, file writable)
+  K->>K: device state (connected, not stopped, limits confirmed)
   K->>K: min, max, step, enum
-  K->>K: rate of change, interlocks, watchdog budget
+  K->>K: rate and run limits, interlocks and requirements, watchdog budget
   K->>K: hazard tier, principal scope, confirmation tier
   alt blocked
     K->>L: block entry with reason
@@ -98,17 +98,17 @@ sequenceDiagram
     K->>L: pending entry
     K-->>H: Pending(id)
   else allowed
-    K->>K: issue Grant(device, channel, value, expiry)
-    K->>D: write(channel, value, grant)
+    K->>K: issue Grant(device, target, value, expiry)
+    K->>D: action(name, args, grant)
     D->>K: verify and consume grant
-    D->>D: _write(channel, value)
+    D->>D: _action(name, args)
     D-->>K: result
-    K->>L: write entry (before, after, source)
-    K-->>H: Done(value, unit)
+    K->>L: action entry (before, after, source)
+    K-->>H: Done(result)
   end
 ```
 
-A human approving a queued request sends `POST /v1/confirm/{id}` with a human token. The kernel evaluates the request again with current state (a confirmation never approves a stale check), then follows the allowed branch.
+A human approving a queued request sends `POST /v1/confirmations/{id}/approve` with a human token. The kernel evaluates the request again with current state (a confirmation never approves a stale check), then follows the allowed branch.
 
 ## Device discovery
 
@@ -152,7 +152,7 @@ flowchart TD
   MAN --> DRAFT
   PROBE --> DRAFT
   DRAFT --> INT[7. Limits interview<br/>human answers every limit]
-  INT --> PLAN[8. Staged write test plan<br/>smallest safe value, approval per step]
+  INT --> PLAN[8. Staged test plan<br/>smallest safe value, approval per step]
   PLAN --> SCAF{9. Needs new code?}
   SCAF -->|yes| NEW[openhal driver new<br/>experimental until conformance and hardware test]
   SCAF -->|no| DONE[10. Device file with provenance<br/>plus library submission bundle]
@@ -171,13 +171,13 @@ sequenceDiagram
   participant D as Driver
   T->>R: fire(routine)
   R->>R: routine enabled? approvals valid for high hazard?
-  R->>K: each read and write as principal routine:<name>
+  R->>K: each read and command as principal routine:<name>
   K->>K: same checks as any client
   alt blocked
     K-->>R: Blocked(reason)
     R->>R: stop the run, record failure, apply routine on_block policy
   else allowed
-    K->>D: write with grant
+    K->>D: command with grant
   end
   R->>R: record run history
 ```
@@ -206,11 +206,11 @@ flowchart TD
   LOCK --> CANCEL[Cancel pending confirmations<br/>pause every routine]
   CANCEL --> SAFE[Apply each device's safe state<br/>with kernel-internal grants]
   SAFE --> REPORT[Report per device: safe, failed, no safe state defined]
-  REPORT --> LOCKED[Writes blocked until a human unlocks]
+  REPORT --> LOCKED[Commands blocked until a human unlocks]
   LOCKED --> UNLOCK[openhal unlock or dashboard unlock<br/>human token, typed phrase]
 ```
 
-The lock is set before any safe-state write, so a racing write can't slip in between. Safe-state writes are issued by the kernel to itself and still go through the driver's grant check.
+The lock is set before any safe-state step, so a racing command can't slip in between. Safe-state steps are issued by the kernel to itself and still go through the driver's grant check.
 
 ## Contracts frozen after M1
 

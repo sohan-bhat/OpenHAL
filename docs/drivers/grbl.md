@@ -37,7 +37,7 @@ Other names need a `map`.
 | Map | Meaning |
 |---|---|
 | `{ status: x, frame: work }` | One field of the status report. `state`, `alarm`, `x`, `y`, `z`, `a`, `feed`, `spindle` or `pins` |
-| `{ setting: 130 }` | Any numeric `$` setting, read only. The unit comes from the setting, for example mm for `$130` |
+| `{ setting: 130 }` | Any numeric `$` setting, read-only. The unit comes from the setting, for example mm for `$130` |
 | `{ spindle: ccw }` | Spindle with `M4` instead of `M3` |
 | `{ laser: constant }` | Laser with `M3` instead of `M4` |
 | `{ coolant: mist }` | Coolant output `flood` or `mist` |

@@ -57,7 +57,7 @@ def when(value: dt.date | dt.datetime | None) -> str | None:
 
 
 def file_name(hub: Hub, device_id: str) -> str | None:
-    """The device file's name, for example desk-fan.hal.yaml, when the device came from a file."""
+    """The device file's name, for example plant-waterer.hal.yaml, when the device came from a file."""
     info = hub.info.get(device_id)
     if info is None or not info.path:
         return None
@@ -130,7 +130,7 @@ def _is_session_limit(facts: Facts, limit: dict[str, Any] | None) -> bool:
 
 
 def target_parts(target: str | None) -> tuple[str | None, str | None]:
-    """`write:fan_speed` and `read:fan_speed` as (fan_speed, None), and `action:spin_test` as (None, spin_test)."""
+    """`write:brightness` as (brightness, None), `read:tank` as (tank, None) and `action:water` as (None, water)."""
     kind, _, name = (target or "").partition(":")
     if kind in ("write", "read"):
         return name or None, None

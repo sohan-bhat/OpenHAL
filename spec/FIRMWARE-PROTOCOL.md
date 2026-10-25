@@ -37,24 +37,13 @@ The board enforces its own limits too. That is defense in depth. The hub's safet
 | Message | Meaning |
 |---|---|
 | `0 EVT <name> <value>` | A streamed value (the board's channel has `every` set) |
-| `0 SAFE <reason>` | The board applied its safe state on its own. Reasons include `heartbeat_lost`, `<name>_timeout` and whatever the sketch passes, such as `local_button` |
+| `0 SAFE <reason>` | The board applied its safe state on its own. Reasons include `heartbeat_lost`, `<name>_timeout` and whatever the sketch passes, such as the plant waterer's `tank_empty` |
 | `<seq> ERR <code> <detail>` | A request failed. Codes are `unknown` (verb, channel or action), `limit` (outside the board's own limits), `format` (bad argument), `interlock` (the sketch refused the action, with its reason such as `tank_empty`), `checksum`, `fault` (the sensor returned no value), `busy` (the board refused commands because its sketch registered channels wrongly) |
+
 
 ## Capability document
 
-The `DESC` reply is a compact JSON object.
-
-```json
-{
-  "p": "desk-fan",
-  "v": "1.0.0",
-  "hb": 2000,
-  "r": [{ "n": "temperature", "u": "degC", "e": 1000, "lo": -20, "hi": 80 }],
-  "w": [{ "n": "fan_speed", "u": "percent", "min": 0, "max": 100, "safe": 0, "rate": 20 }]
-}
-```
-
-The plant waterer (examples/plant-waterer/) reports a float switch as states and offers actions instead of a writable pump.
+The `DESC` reply is a compact JSON object. The plant waterer (examples/plant-waterer/) reports its float switch as states and offers actions. Its pump is an output the sketch keeps to itself, so `w` is empty and the pump runs only through `water`.
 
 ```json
 {
@@ -78,33 +67,30 @@ The plant waterer (examples/plant-waterer/) reports a float switch as states and
 | `r` with `s` | A channel with states, such as a float switch. `u` is `enum` and `s` lists the state names, at most 8. `VAL` and `EVT` carry the name |
 | `a` | Actions, at most 4. `n` name and `g` its arguments, at most 3, each with `n`, `u`, `min` and `max` |
 
+The library's LedStrip example reports its one write channel as `{ "n": "brightness", "u": "percent", "min": 0, "max": 100, "safe": 0, "rate": 50 }`.
+
 The hub turns this into a draft device file with every limit marked `suggested: true`. A human still confirms the limits in the interview, and may tighten them below what the board allows.
 
 ## Example session
 
+The plant waterer. A watering over the board's own limit, one that runs, the tank running dry, and a `WRITE` to the pump the sketch keeps to itself.
+
 ```
 host  1 HELLO*53
-board 1 OK openhal 1 desk-fan 1.0.0*39
-host  2 READ temperature*4C
-board 2 VAL temperature 27.4*3A
-host  3 WRITE fan_speed 60*19
-board 3 OK fan_speed 60*40
-host  4 WRITE fan_speed 150*2C
-board 4 ERR limit fan_speed max 100*30
-board 0 EVT temperature 27.1*21
-board 0 SAFE heartbeat_lost*02
-```
-
-The plant waterer.
-
-```
-host  4 ACT water duration 120*3A
-board 4 ERR limit duration max 30*4D
-host  5 ACT water duration 20*0A
-board 5 OK water*44
+board 1 OK openhal 1 plant-waterer 1.0.0*4C
+host  2 READ soil_moisture*68
+board 2 VAL soil_moisture 31*03
+host  3 ACT water duration 120*3D
+board 3 ERR limit duration max 30*4A
+host  4 ACT water duration 20*0B
+board 4 OK water*45
+board 0 EVT soil_moisture 46*1D
 board 0 EVT tank empty*32
-host  6 ACT water duration 20*09
-board 6 ERR interlock tank_empty*06
+host  5 ACT water duration 20*0A
+board 5 ERR interlock tank_empty*05
+host  6 WRITE pump 1*62
+board 6 ERR unknown pump*23
+board 0 SAFE heartbeat_lost*02
 ```
 
 The checksums are real. `openhal.drivers.openhal_firmware.protocol.checksum` computes them, and the Arduino library computes the same value while it prints.
