@@ -225,3 +225,31 @@ test.describe("playground controls", () => {
     expect(await device.locator("option").count()).toBeGreaterThan(0);
   });
 });
+
+test.describe("site search", () => {
+  test("Ctrl K opens the search, which finds an error code and opens it from the keyboard", async ({ page }) => {
+    await page.goto("/drivers/");
+    await page.keyboard.press("Control+k");
+    const dialog = page.getByRole("dialog", { name: "Search the site" });
+    await expect(dialog).toBeVisible();
+    await expect(page.locator("#site-search-input")).toBeFocused();
+    await page.locator("#site-search-input").fill("LIMIT_EXCEEDED");
+    const results = dialog.locator("a.search-result");
+    await expect(results.first()).toBeVisible();
+    expect(await results.evaluateAll((items) => items.map((item) => item.getAttribute("href")))).toContain("/spec/errors/");
+    await expect(dialog.locator("[data-search-status]")).toHaveText(/pages? match/);
+    await page.keyboard.press("ArrowDown");
+    await expect(results.first()).toBeFocused();
+    const target = (await results.first().getAttribute("href"))!;
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(new RegExp(`${target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
+  });
+
+  test("a search with no match says so", async ({ page }) => {
+    await page.goto("/");
+    await page.keyboard.press("Control+k");
+    await page.locator("#site-search-input").fill("zqxjvw");
+    await expect(page.locator("[data-search-status]")).toHaveText("No page matches “zqxjvw”.");
+    await expect(page.locator("a.search-result")).toHaveCount(0);
+  });
+});

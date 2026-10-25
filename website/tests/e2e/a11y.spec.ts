@@ -65,9 +65,21 @@ for (const scheme of ["light", "dark"] as const) {
       await page.goto("/");
       await page.getByRole("button", { name: "Safety kernel" }).focus();
       problems.push(...(await violations(page)).map((item) => `flow focus ${item}`));
-
       expect(problems).toEqual([]);
     });
+  });
+}
+
+for (const scheme of ["light", "dark"] as const) {
+  test(`the open search dialog has no WCAG AA violations on a desktop in the ${scheme} theme`, async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "axe runs once, in Chromium");
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/spec/2026-10-24/basic/messages/");
+    await page.keyboard.press("Control+k");
+    await page.locator("#site-search-input").fill("LIMIT_EXCEEDED");
+    await expect(page.locator("a.search-result").first()).toBeVisible();
+    expect(await violations(page)).toEqual([]);
   });
 }
 

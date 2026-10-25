@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import { PRODUCT_NAME } from "../config/brand";
 import { NAV } from "../config/site";
+import SearchDialog from "./SearchDialog.astro";
 
 const published = (await getCollection("blog")).some((post) => !post.data.draft);
 const links = NAV.filter((link) => link.label !== "Blog" || published);
@@ -51,6 +52,7 @@ const current = (match: string[]) => best > 0 && matchLength(match) === best;
     </details>
   </div>
 </header>
+<SearchDialog />
 
 <style>
   .site-header {
