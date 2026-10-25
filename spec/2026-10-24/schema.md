@@ -76,7 +76,7 @@ The JSON Schema is [schema.json](schema.json). Field names are as they travel on
 | `kind` | `"action"` | no |  |
 | `device` | string | yes | A device id, for example desk-fan. |
 | `action` | string | yes | An action, for example spin_test. |
-| `args` | map of string or boolean or integer or number | no | Arguments by name. Numbers are quantity strings. |
+| `args` | map of [Quantity](#quantity) or boolean or string | no | Arguments by name. Numbers are Quantity objects. |
 
 ### ActionDone
 
@@ -103,7 +103,7 @@ The JSON Schema is [schema.json](schema.json). Field names are as they travel on
 |---|---|---|---|
 | `device` | string | yes |  |
 | `action` | string | yes |  |
-| `args` | object | yes |  |
+| `args` | map of [Quantity](#quantity) or boolean or string | yes | The arguments it ran with. Numbers are Quantity objects. |
 
 ### ActionParams
 
@@ -111,7 +111,7 @@ The JSON Schema is [schema.json](schema.json). Field names are as they travel on
 |---|---|---|---|
 | `device` | string | yes | A device id, for example desk-fan. |
 | `action` | string | yes | An action, for example spin_test. |
-| `args` | map of string or boolean or integer or number | no |  |
+| `args` | map of [Quantity](#quantity) or boolean or string | no |  |
 
 ### ApproveParams
 
@@ -321,8 +321,13 @@ No fields.
 | `device` | string or null | no |  |
 | `channel` | string or null | no |  |
 | `action` | string or null | no |  |
-| `limit` | string or null | no | The limit that applied, as a quantity such as "100 %". |
-| `requested` | string or null | no | The requested value in the channel unit, as "150 %". |
+| `argument` | string or null | no | The action argument the error is about. |
+| `limit` | [Quantity](#quantity) or null | no | The limit that applied, such as 100 % or 20 %/s. |
+| `requested` | [Quantity](#quantity) or boolean or string or null | no | What was asked for. A number is a Quantity in the limit's unit. |
+| `runs` | integer or null | no | How many runs an action's max_runs allows per window. |
+| `per` | [Quantity](#quantity) or null | no | The window of an action's max_runs. |
+| `interlock` | string or null | no | The reason the device file gives for an interlock. |
+| `expected` | [Quantity](#quantity) or null | no | The shape a number sent as one string should take. |
 | `file` | string or null | no | The Device File, for example desk-fan.hal.yaml. |
 | `confirmedBy` | string or null | no | Who confirmed the limit. |
 | `confirmedAt` | string or null | no | When the limit was confirmed, as 2026-10-24. |
@@ -445,6 +450,15 @@ A JSON-RPC notification. It has no id and gets no response.
 | `kind` | `"human"` or `"agent"` or `"routine"` or `"system"` | yes |  |
 | `name` | string | yes |  |
 | `scope` | `"read"` or `"control_low"` or `"control_medium"` | yes |  |
+
+### Quantity
+
+A number and its unit (ADR 0016), for example `{"value": 20, "unit": "s"}`.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `value` | integer or number | yes |  |
+| `unit` | string | yes |  |
 
 ### ReadChannelInfo
 
@@ -598,7 +612,7 @@ A JSON-RPC request. It has an id and expects a response.
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `kind` | `"wait"` | no |  |
-| `duration` | string | yes | A quantity of time such as "2 s", at most 1 h. |
+| `duration` | [Quantity](#quantity) | yes | A time such as 2 s, at most 1 h. |
 
 ### WatchdogInfo
 
@@ -616,6 +630,7 @@ A JSON-RPC request. It has an id and expects a response.
 | `device` | string | yes | A device id, for example desk-fan. |
 | `channel` | string | yes | A channel, for example fan_speed. |
 | `value` | string or boolean or integer or number | yes |  |
+| `unit` | string or null | no |  |
 
 ### WriteChannelInfo
 
@@ -650,4 +665,5 @@ A JSON-RPC request. It has an id and expects a response.
 |---|---|---|---|
 | `device` | string | yes | A device id, for example desk-fan. |
 | `channel` | string | yes | A channel, for example fan_speed. |
-| `value` | string or boolean or integer or number | yes | A quantity string like "60 %", a bool, or an enum value. |
+| `value` | string or boolean or integer or number | yes | A number, a bool, an enum value or text. |
+| `unit` | string or null | no | The unit of a number, such as %. |

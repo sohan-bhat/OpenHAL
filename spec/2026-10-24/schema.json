@@ -455,21 +455,18 @@
           "additionalProperties": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/$defs/Quantity"
               },
               {
                 "type": "boolean"
               },
               {
-                "type": "integer"
-              },
-              {
-                "type": "number"
+                "type": "string"
               }
             ]
           },
           "default": {},
-          "description": "Arguments by name. Numbers are quantity strings.",
+          "description": "Arguments by name. Numbers are Quantity objects.",
           "title": "Args",
           "type": "object"
         }
@@ -579,7 +576,20 @@
           "type": "string"
         },
         "args": {
-          "additionalProperties": true,
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Quantity"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "description": "The arguments it ran with. Numbers are Quantity objects.",
           "title": "Args",
           "type": "object"
         }
@@ -613,16 +623,13 @@
           "additionalProperties": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/$defs/Quantity"
               },
               {
                 "type": "boolean"
               },
               {
-                "type": "integer"
-              },
-              {
-                "type": "number"
+                "type": "string"
               }
             ]
           },
@@ -1586,7 +1593,7 @@
           "default": null,
           "title": "Action"
         },
-        "limit": {
+        "argument": {
           "anyOf": [
             {
               "type": "string"
@@ -1596,12 +1603,30 @@
             }
           ],
           "default": null,
-          "description": "The limit that applied, as a quantity such as \"100 %\".",
-          "title": "Limit"
+          "description": "The action argument the error is about.",
+          "title": "Argument"
+        },
+        "limit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Quantity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The limit that applied, such as 100 % or 20 %/s."
         },
         "requested": {
           "anyOf": [
             {
+              "$ref": "#/$defs/Quantity"
+            },
+            {
+              "type": "boolean"
+            },
+            {
               "type": "string"
             },
             {
@@ -1609,8 +1634,58 @@
             }
           ],
           "default": null,
-          "description": "The requested value in the channel unit, as \"150 %\".",
+          "description": "What was asked for. A number is a Quantity in the limit's unit.",
           "title": "Requested"
+        },
+        "runs": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How many runs an action's max_runs allows per window.",
+          "title": "Runs"
+        },
+        "per": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Quantity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The window of an action's max_runs."
+        },
+        "interlock": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The reason the device file gives for an interlock.",
+          "title": "Interlock"
+        },
+        "expected": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Quantity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The shape a number sent as one string should take."
         },
         "file": {
           "anyOf": [
@@ -2126,6 +2201,35 @@
         "scope"
       ],
       "title": "PrincipalInfo",
+      "type": "object"
+    },
+    "Quantity": {
+      "additionalProperties": false,
+      "description": "A number and its unit (ADR 0016), for example `{\"value\": 20, \"unit\": \"s\"}`.",
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Value"
+        },
+        "unit": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "unit"
+      ],
+      "title": "Quantity",
       "type": "object"
     },
     "ReadChannelInfo": {
@@ -2698,10 +2802,8 @@
           "type": "string"
         },
         "duration": {
-          "description": "A quantity of time such as \"2 s\", at most 1 h.",
-          "maxLength": 40,
-          "title": "Duration",
-          "type": "string"
+          "$ref": "#/$defs/Quantity",
+          "description": "A time such as 2 s, at most 1 h."
         }
       },
       "required": [
@@ -2783,6 +2885,19 @@
             }
           ],
           "title": "Value"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
         }
       },
       "required": [
@@ -3003,8 +3118,22 @@
               "type": "number"
             }
           ],
-          "description": "A quantity string like \"60 %\", a bool, or an enum value.",
+          "description": "A number, a bool, an enum value or text.",
           "title": "Value"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The unit of a number, such as %.",
+          "title": "Unit"
         }
       },
       "required": [
