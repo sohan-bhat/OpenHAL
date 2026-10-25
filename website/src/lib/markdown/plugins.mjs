@@ -1,8 +1,8 @@
 import { dirname, relative, resolve } from "node:path";
 import { SKIP, visit } from "unist-util-visit";
 import { LANGUAGE_NAMES, languageOf, tokenize } from "../highlight.mjs";
-import { REPO_ROOT, glossaryHref } from "../spec-meta.mjs";
-import { routeFor } from "./routes.mjs";
+import { REPO_ROOT, glossaryHref, termAnchor } from "../spec-meta.mjs";
+import { linkFor } from "./routes.mjs";
 
 export { REPO_ROOT };
 
@@ -45,9 +45,9 @@ export function remarkRepoLinks() {
       if (!source || /^[a-z]+:/i.test(url) || url.startsWith("#") || url.startsWith("/")) return undefined;
       const [path, hash] = url.split("#");
       const repoPath = relative(REPO_ROOT, resolve(dirname(source), path)).split("\\").join("/");
-      const route = routeFor(repoPath);
+      const route = linkFor(repoPath);
       if (route) {
-        node.url = hash ? `${route}#${hash}` : route;
+        node.url = hash && !route.includes("#") ? `${route}#${hash}` : route;
       } else if (parent && index !== undefined) {
         parent.children.splice(index, 1, { type: "inlineCode", value: textOf(node) || repoPath });
       }
@@ -107,6 +107,7 @@ export function rehypeTables() {
         let column = 0;
         for (const cell of row.children) {
           if (cell.type !== "element" || cell.tagName !== "td") continue;
+          if (column === 0 && headers[0] === "Term") row.properties = { ...row.properties, id: termAnchor(hastText(cell)) };
           cell.properties = { ...cell.properties, dataLabel: headers[column] ?? "" };
           cell.children = [el("span", { className: ["cell"] }, cell.children)];
           column += 1;

@@ -130,11 +130,20 @@ export function specFiles(version, root = REPO_ROOT) {
   return orderPages(out);
 }
 
-export function glossaryHref(term) {
-  const { latest } = readVersions();
+export function termAnchor(term) {
+  return `term-${term.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+}
+
+export function glossaryHref(term, root = REPO_ROOT) {
+  const { latest } = readVersions(root);
   if (!latest) return null;
-  const file = specFiles(latest).find((path) => /glossary/i.test(path));
-  if (!file) return null;
-  const anchor = term.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  return `/spec/${latest}/${slugOf(file)}/#${anchor}`;
+  const files = specFiles(latest, root);
+  const glossary = files.find((path) => /glossary/i.test(path));
+  if (glossary) return `/spec/${latest}/${slugOf(glossary)}/#${termAnchor(term)}`;
+  const index = files.find((path) => slugOf(path) === "");
+  if (!index) return null;
+  const text = readFileSync(join(root, "spec", latest, index), "utf8");
+  const anchor = termAnchor(term);
+  const defined = [...text.matchAll(/^\|\s*([^|]+?)\s*\|/gm)].some((row) => termAnchor(row[1]) === anchor);
+  return defined ? `/spec/${latest}/#${anchor}` : null;
 }

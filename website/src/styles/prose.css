@@ -84,8 +84,16 @@
 }
 
 .prose .diagram svg {
+  display: block;
   max-width: none;
   height: auto;
+  margin-inline: auto;
+}
+
+@media (min-width: 720px) {
+  .prose .diagram svg {
+    max-width: 100%;
+  }
 }
 
 .prose .diagram-dark {

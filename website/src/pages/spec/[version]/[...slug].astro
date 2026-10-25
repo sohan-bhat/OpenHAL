@@ -48,16 +48,13 @@ const Content = rendered?.Content;
       <VersionSwitcher slot="sidebar-top" current={page.version} slug={page.slug} available={available} />
       <VersionSwitcher slot="sidebar-top-mobile" current={page.version} slug={page.slug} available={available} />
       <p slot="before-title" class="legend">
-        Specification {page.version} {page.number && <span>· Section {page.number}</span>}
+        {page.number ? `Specification ${page.version}, section ${page.number}` : `Specification ${page.version}`}
       </p>
       <Content />
     </DocShell>
   ) : (
     <DocShell title="Specification" sidebar={specSidebar([])} section="Specification">
-      <p>
-        The first dated version, 2026-10-24, is being written. Until it is published, the <a href="/docs/device-file-format/">device file format draft</a> describes
-        device files.
-      </p>
+      <p>No dated version of the specification is published yet.</p>
     </DocShell>
   )
 }

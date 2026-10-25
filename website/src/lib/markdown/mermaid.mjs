@@ -24,7 +24,7 @@ function theme({ text, text2, bg, surface, border, accent }) {
     fontFamily: `"${FONT}", sans-serif`,
     htmlLabels: false,
     flowchart: { htmlLabels: false, curve: "linear", padding: 12, nodeSpacing: 40, rankSpacing: 48, useMaxWidth: false },
-    sequence: { useMaxWidth: false, mirrorActors: false, actorMargin: 48 },
+    sequence: { useMaxWidth: false, mirrorActors: false, actorMargin: 24, wrap: true, width: 120, messageMargin: 28, boxMargin: 6, noteMargin: 6 },
     state: { useMaxWidth: false },
     themeVariables: {
       fontFamily: `"${FONT}", sans-serif`,

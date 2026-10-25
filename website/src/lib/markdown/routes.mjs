@@ -1,4 +1,7 @@
-import { readVersions, slugOf } from "../spec-meta.mjs";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { sourceUrl } from "../../config/repo.mjs";
+import { REPO_ROOT, readVersions, slugOf } from "../spec-meta.mjs";
 
 export const FIXED_ROUTES = [
   { repo: "docs/guide/quickstart.md", route: "/docs/quickstart/", group: "Get started" },
@@ -14,8 +17,6 @@ export const FIXED_ROUTES = [
   { repo: "docs/interfaces/CLI.md", route: "/docs/cli/", group: "Reference" },
   { repo: "docs/interfaces/MCP.md", route: "/docs/mcp/", group: "Reference" },
   { repo: "docs/drivers/WRITING-A-DRIVER.md", route: "/docs/writing-a-driver/", group: "Reference" },
-  { repo: "spec/SPEC.md", route: "/docs/device-file-format/", group: "Reference" },
-  { repo: "spec/CHANGELOG.md", route: "/docs/device-file-changelog/", group: "Reference" },
   { repo: "spec/MHS-MAPPING.md", route: "/docs/mhs-mapping/", group: "Reference" },
   { repo: "spec/FIRMWARE-PROTOCOL.md", route: "/docs/firmware-protocol/", group: "Firmware" },
   { repo: "firmware/arduino/OpenHAL/README.md", route: "/docs/arduino-library/", group: "Firmware" },
@@ -34,14 +35,33 @@ export function routeFor(repoPath) {
   const driver = /^docs\/drivers\/([a-z0-9-]+)\.md$/.exec(path);
   if (driver) return `/drivers/${driver[1]}/`;
   const spec = /^spec\/(\d{4}-\d{2}-\d{2})\/(.+\.md)$/.exec(path);
-  if (spec) {
+  if (spec && existsSync(join(REPO_ROOT, path))) {
     const slug = slugOf(spec[2]);
     return slug ? `/spec/${spec[1]}/${slug}/` : `/spec/${spec[1]}/`;
   }
-  if (path === "spec/versions.json") {
+  const pointer = SPEC_POINTERS[path];
+  if (pointer !== undefined) {
     const { latest } = readVersions();
-    return latest ? `/spec/${latest}/` : null;
+    if (latest) return `/spec/${latest}/${pointer}`;
   }
+  return null;
+}
+
+const SPEC_POINTERS = {
+  "spec/versions.json": "",
+  "spec/SPEC.md": "device-files/",
+  "spec/CHANGELOG.md": "changelog/",
+  "spec/GLOSSARY.md": "#terminology",
+  "spec/ERRORS.md": "safety/#error-registry",
+  "spec/CONFORMANCE.md": "drivers/#conformance-levels",
+  "spec/VERSIONING.md": "#versions",
+};
+
+export function linkFor(repoPath) {
+  const route = routeFor(repoPath);
+  if (route) return route;
+  const path = repoPath.replace(/^\.?\//, "").split("#")[0];
+  if (path && !path.startsWith("..") && existsSync(join(REPO_ROOT, path))) return sourceUrl(path);
   return null;
 }
 

@@ -1,6 +1,6 @@
 export interface SideItem {
   title: string;
-  href: string;
+  href?: string;
   number?: string;
   depth?: number;
 }

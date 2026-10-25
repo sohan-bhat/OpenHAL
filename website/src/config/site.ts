@@ -1,14 +1,6 @@
-export const REPOSITORY_URL = "https://github.com/sohan-bhat/OpenHAL";
-export const REPOSITORY_DIR = "OpenHAL";
-export const DEFAULT_BRANCH = "main";
+import { REPOSITORY_URL } from "./repo.mjs";
 
-export function editUrl(repoPath: string): string {
-  return `${REPOSITORY_URL}/edit/${DEFAULT_BRANCH}/${repoPath}`;
-}
-
-export function sourceUrl(repoPath: string): string {
-  return `${REPOSITORY_URL}/blob/${DEFAULT_BRANCH}/${repoPath}`;
-}
+export { DEFAULT_BRANCH, REPOSITORY_DIR, REPOSITORY_URL, editUrl, sourceUrl } from "./repo.mjs";
 
 export interface NavLink {
   href: string;

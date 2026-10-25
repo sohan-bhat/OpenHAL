@@ -168,10 +168,10 @@ class Session:
 
     def check_clone(self, url: str, folder: str) -> Result:
         """The clone line must name the project's repository and the folder it creates."""
-        site = (ROOT / "website" / "src" / "config" / "site.ts").read_text(encoding="utf-8")
+        site = (ROOT / "website" / "src" / "config" / "repo.mjs").read_text(encoding="utf-8")
         repo = re.search(r'REPOSITORY_URL = "([^"]+)"', site)
         if repo is None or url != repo.group(1):
-            raise SnippetError(f"The clone URL {url} doesn't match REPOSITORY_URL in website/src/config/site.ts.")
+            raise SnippetError(f"The clone URL {url} doesn't match REPOSITORY_URL in website/src/config/repo.mjs.")
         if folder != url.rstrip("/").rsplit("/", 1)[-1]:
             raise SnippetError(f"git clone {url} creates {url.rsplit('/', 1)[-1]}, not {folder}.")
         project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
