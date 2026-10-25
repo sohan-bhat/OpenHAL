@@ -1,0 +1,42 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Page not found" description="This page doesn't exist." noindex>
+  <div class="wrap page">
+    <p class="lamp blocked">Blocked</p>
+    <h1 class="page-title">Page not found</h1>
+    <p class="mono reason">unknown_target  There is no page at this address. It may have moved when the docs were rebuilt from the repository.</p>
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/docs/">Documentation</a></li>
+      <li><a href="/spec/">Spec</a></li>
+      <li><a href="/playground/">Playground</a></li>
+    </ul>
+  </div>
+</Base>
+
+<style>
+  .page {
+    padding-top: var(--s-8);
+    display: grid;
+    gap: var(--s-4);
+    justify-items: start;
+  }
+
+  .reason {
+    font-size: var(--t-1);
+    line-height: var(--lh-1);
+    color: var(--ink-2);
+    max-width: 70ch;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-4);
+    list-style: none;
+    margin: var(--s-4) 0 0;
+    padding: 0;
+  }
+</style>

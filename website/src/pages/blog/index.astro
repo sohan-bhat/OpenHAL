@@ -1,0 +1,76 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import { showDrafts } from "../../lib/drafts";
+
+const posts = (await getCollection("blog"))
+  .filter((post) => !post.data.draft || showDrafts())
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const day = (date: Date) => date.toISOString().slice(0, 10);
+---
+
+<Base title="Blog" description="Notes from the people building OpenHAL.">
+  <div class="wrap page">
+    <header class="head">
+      <h1 class="page-title">Blog</h1>
+    </header>
+    {
+      posts.length ? (
+        <ol class="posts">
+          {posts.map((post) => (
+            <li>
+              <p class="mono date">
+                <time datetime={day(post.data.date)}>{day(post.data.date)}</time>
+                {post.data.draft && <span class="lamp warning">Draft</span>}
+              </p>
+              <h2 class="section-title">
+                <a href={`/blog/${post.id}/`}>{post.data.title}</a>
+              </h2>
+              <p class="muted">{post.data.description}</p>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p class="muted empty">No posts yet. The first one goes out with the launch.</p>
+      )
+    }
+  </div>
+</Base>
+
+<style>
+  .page {
+    padding-top: var(--s-7);
+  }
+
+  .head {
+    padding-bottom: var(--s-5);
+    margin-bottom: var(--s-6);
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .posts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 72ch;
+  }
+
+  .posts li {
+    padding: var(--s-5) 0;
+    border-bottom: 1px solid var(--rule);
+    display: grid;
+    gap: var(--s-2);
+  }
+
+  .date {
+    display: flex;
+    gap: var(--s-3);
+    align-items: center;
+    font-size: var(--t-0);
+    color: var(--ink-2);
+  }
+
+  h2 a {
+    color: var(--ink);
+  }
+</style>
