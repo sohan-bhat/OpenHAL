@@ -47,6 +47,6 @@ Restart Claude Desktop after you edit the file.
 
 ## Try it
 
-Ask Claude to set `demo-fan` to 150 %. The [Safety Kernel](glossary:safety-kernel) blocks the command before it reaches the device, and Claude reports the reason. Ask for 40 % and the command runs.
+Ask Claude to water the plant for 120 seconds. The [Safety Kernel](glossary:safety-kernel) blocks the command before it reaches the board, and Claude reports the reason. Ask for 20 seconds and the command runs.
 
 `uv run openhal log` lists both requests under the token's name.

@@ -6,37 +6,35 @@ A routine is an automation that runs on the [Hub](glossary:hub) without a model.
 
 ```sh tested
 $ uv run openhal init
-$ uv run openhal file confirm ~/.openhal/devices/demo-fan.hal.yaml
+$ uv run openhal file confirm ~/.openhal/devices/plant-waterer.hal.yaml
 $ uv run openhald &
+$ uv run openhal read plant-waterer.soil_moisture
 ```
 
 ## Describe it
 
-This routine checks the fan's temperature every 30 seconds and picks a speed.
+This routine checks the soil every hour and waters the plant for 20 seconds when it is dry.
 
-```yaml tested kind=routine file=keep-cool.yaml
-id: keep-cool
+```yaml tested kind=routine file=morning-water.yaml
+id: morning-water
 triggers:
-  - every: 30 s
+  - every: 1 h
 steps:
-  - if: "demo-fan.temperature > 28 degC"
+  - if: "plant-waterer.soil_moisture < 35 %"
     then:
-      - write: { device: demo-fan, channel: fan_speed, value: 60 % }
-    else:
-      - write: { device: demo-fan, channel: fan_speed, value: 20 % }
+      - action: { device: plant-waterer, action: water, args: { duration: 20 s } }
 ```
 
 ## Store it and dry run it
 
-A new routine starts disabled. A dry run checks every change in every branch against the current state, and nothing reaches the device.
+A new routine starts disabled. A dry run checks every command in every branch against the current state, and nothing reaches the device.
 
 ```sh tested
-$ uv run openhal routine new keep-cool --file keep-cool.yaml
-stored keep-cool, disabled.
-$ uv run openhal routine dry-run keep-cool
+$ uv run openhal routine new morning-water --file morning-water.yaml
+stored morning-water, disabled.
+$ uv run openhal routine dry-run morning-water
 dry run passes
   1. allowed  Allowed.
-  2. allowed  Allowed.
 ```
 
 ## Enable it
@@ -44,26 +42,26 @@ dry run passes
 Only a person may enable a routine, by typing the phrase `enable`. The hub runs the dry run again first.
 
 ```sh tested
-$ uv run openhal routine enable keep-cool
-enabled  keep-cool
+$ uv run openhal routine enable morning-water
+enabled  morning-water
 ```
 
 ## A routine the kernel refuses
 
 A step outside the limits fails the dry run, so the routine can't be enabled.
 
-```yaml tested kind=routine file=full-blast.yaml
-id: full-blast
+```yaml tested kind=routine file=long-soak.yaml
+id: long-soak
 triggers:
-  - every: 30 s
+  - every: 1 h
 steps:
-  - write: { device: demo-fan, channel: fan_speed, value: 150 % }
+  - action: { device: plant-waterer, action: water, args: { duration: 120 s } }
 ```
 
 ```sh tested
-$ uv run openhal routine new full-blast --file full-blast.yaml
-$ uv run openhal routine dry-run full-blast
-blocked above_max  Blocked. The fan_speed limit is 100 % (max). Asked for 150 %.
+$ uv run openhal routine new long-soak --file long-soak.yaml
+$ uv run openhal routine dry-run long-soak
+blocked above_max  Blocked. The duration limit is 30 s (max). Asked for 120 s.
 ```
 
-If a limit tightens after a routine is enabled, its next run is blocked the same way. Over the protocol, `hal/routines/dryRun` returns the same decisions. The [routines section](../../../spec/2026-10-24/routines.md) of the specification defines triggers, steps and approvals for high hazard devices.
+The file also caps the pump at 3 runs per hour, and a routine's runs count toward it. Over the protocol, `hal/routines/dryRun` returns the same decisions. The [routines section](../../../spec/2026-10-24/routines.md) of the specification defines triggers, steps and approvals for high hazard devices.
