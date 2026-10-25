@@ -22,6 +22,7 @@ from urllib.parse import urlparse
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
+from starlette.middleware.gzip import GZipMiddleware
 
 from openhal import __version__
 from openhal._brand import PRODUCT_NAME, SPEC_VERSION
@@ -182,6 +183,7 @@ def create_app(hub: Hub) -> FastAPI:
     """Build the API for one hub."""
     app = FastAPI(title=f"{PRODUCT_NAME} hub", version=__version__, docs_url=None, redoc_url=None)
     app.state.hub = hub
+    app.add_middleware(GZipMiddleware, minimum_size=1024)
 
     @app.middleware("http")
     async def network_guard(request: Request, call_next: Any) -> Response:
@@ -191,7 +193,8 @@ def create_app(hub: Hub) -> FastAPI:
             if not _is_loopback(client) or (host_header and host_header not in _LOOPBACK_HOSTS | {"testserver"}):
                 return JSONResponse({"detail": "This hub only accepts local connections."}, status_code=403)
         response: Response = await call_next(request)
-        response.headers["Cache-Control"] = "no-store"
+        immutable = request.url.path.startswith("/assets/") and response.status_code == 200
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable" if immutable else "no-store"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["X-Frame-Options"] = "DENY"

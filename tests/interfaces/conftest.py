@@ -113,7 +113,7 @@ class BridgeTransport(httpx.BaseTransport):
         async def forward() -> httpx.Response:
             forwarded = httpx.Request(request.method, request.url, headers=request.headers, content=content)
             response = await self.inner.handle_async_request(forwarded)
-            body = await response.aread()
+            body = b"".join([chunk async for chunk in response.aiter_raw()])
             return httpx.Response(response.status_code, headers=response.headers, content=body)
 
         return self.runner.run(forward())

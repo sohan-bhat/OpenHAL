@@ -35,7 +35,7 @@ def test_config_dir_matches() -> None:
 
 def test_site_url_is_one_constant() -> None:
     config = ASTRO_CONFIG.read_text(encoding="utf-8")
-    assert len(re.findall(r'^const SITE_URL = "https://[^"]+";$', config, re.M)) == 1
+    assert len(re.findall(r'^const SITE_URL = process\.env\.OPENHAL_SITE \?\? "https://[^"]+";$', config, re.M)) == 1
     source = ROOT / "website" / "src"
     for path in source.rglob("*"):
         if path.is_file() and path.suffix in (".ts", ".astro", ".svelte", ".mjs", ".md"):

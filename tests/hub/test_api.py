@@ -198,6 +198,21 @@ async def test_pairing_and_csrf(client: httpx.AsyncClient, hub: Hub) -> None:
     assert with_header.status_code == 200
 
 
+async def test_inspector_assets_are_compressed_and_cached_for_good(client: httpx.AsyncClient) -> None:
+    from openhal.hub.api import STATIC_DIR
+
+    script = next((STATIC_DIR / "assets").glob("index-*.js"))
+    response = await client.get(f"/assets/{script.name}", headers={"Accept-Encoding": "gzip"})
+    assert response.status_code == 200
+    assert response.headers["content-encoding"] == "gzip"
+    assert response.headers["cache-control"] == "public, max-age=31536000, immutable"
+    page = await client.get("/")
+    assert page.headers["cache-control"] == "no-store"
+    missing = await client.get("/assets/nothing-here.js")
+    assert missing.status_code == 404
+    assert missing.headers["cache-control"] == "no-store"
+
+
 async def test_security_headers(client: httpx.AsyncClient, hub: Hub) -> None:
     token, _ = hub.tokens.create("claude", "agent", "read")
     response = await client.get("/v1/status", headers=bearer(token))
