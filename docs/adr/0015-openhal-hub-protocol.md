@@ -54,17 +54,17 @@ Notifications from the hub, after `hal/initialized`:
 | Notification | Params | Level |
 |---|---|---|
 | `hal/value` | `{ device, channel, value, unit, at, suspect }` | Core |
-| `hal/blocked` | `{ device, target, error: { code, name, message, data } }` | Control |
+| `hal/blocked` | `{ device, target, error: { code, message, data: { name, ... } } }` | Control |
 | `hal/stopped` | `{ reason, by, devices: [{ device, status }] }` | Control |
 | `hal/deviceAdded` | `{ device: DeviceSummary }` | Core |
 | `hal/deviceRemoved` | `{ device }` | Core |
-| `hal/confirmationRequested` | `{ request: ConfirmationRequest }` | Full |
+| `hal/confirmationRequested` | `{ request: ConfirmationRequest }`, sent only to human principals and to the principal that made the request | Full |
 
 Clients subscribe to all notifications by default. A later version may add filters.
 
 ### Error registry
 
-A blocked or failed command is a JSON-RPC error. `error.code` is the number, `error.message` is the human-readable reason, and `error.data` is `{ name, kernelCode, device?, channel?, limit?, requested?, file?, confirmedBy?, confirmedAt?, requestId? }`. `name` is the registry name and is what clients branch on. Numbers are stable across versions and never reused.
+A blocked or failed command is a JSON-RPC error. `error.code` is the number, `error.message` is the human-readable reason, and `error.data` is `{ name, kernelCode, kernelMessage?, device?, channel?, action?, limit?, requested?, file?, confirmedBy?, confirmedAt?, tightenedBy?, requestId?, method?, routine?, problems? }`. `limit` and `requested` are quantity strings such as `"100 %"` or `"20 %/s"`. `name` is the registry name and is what clients branch on. Numbers are stable across versions and never reused.
 
 | Code | Name | Kernel codes | Meaning |
 |---|---|---|---|
@@ -90,7 +90,7 @@ A blocked or failed command is a JSON-RPC error. `error.code` is the number, `er
 | -32019 | QUEUE_FULL | `queue_full` | The confirmation queue is full |
 | -32020 | DRIVER_ERROR | `driver_error` | The device or its protocol failed, and the channel is unknown until a readback |
 | -32021 | MISCONFIGURED | `misconfigured`, `cannot_loosen` | The hub's device files are inconsistent, or a change would loosen a confirmed limit |
-| -32022 | REQUEST_CLOSED | `expired`, `rejected` | The confirmation request expired or was rejected |
+| -32022 | REQUEST_CLOSED | `expired`, `rejected` | The confirmation request expired or was rejected. An unknown request id gets the same answer with `kernelCode: "expired"`, so a client can't learn another principal's request ids |
 | -32023 | UNIT_INVALID | `bad_unit` | A missing, unknown or incompatible unit, or a value that isn't finite |
 
 Every kernel code maps to exactly one name. A test enforces this.

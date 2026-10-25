@@ -26,9 +26,14 @@ A blocked or failed command is a JSON-RPC error response.
 | `error.data.kernelCode` | The Safety Kernel's code, for example `above_max` |
 | `error.data.kernelMessage` | The Safety Kernel's own message |
 | `error.data.device`, `channel` | The target, when there is one |
-| `error.data.limit`, `requested` | The limit and the requested value, for limit errors |
+| `error.data.limit`, `requested` | The limit and the requested value as quantity strings, such as `"100 %"` or `"20 %/s"` |
 | `error.data.file`, `confirmedBy`, `confirmedAt` | The Device File and the human confirmation behind the limit |
 | `error.data.requestId` | The Confirmation Request, for `CONFIRMATION_REQUIRED` and `REQUEST_CLOSED` |
+| `error.data.action` | The action, for errors about `hal/action` |
+| `error.data.tightenedBy` | The Principal that tightened a session limit, for a `LIMIT_EXCEEDED` caused by it |
+| `error.data.method` | The method, for `METHOD_NOT_FOUND` and for `SCOPE_DENIED` on a human-only method |
+| `error.data.routine` | The routine, for errors raised by a routine step |
+| `error.data.problems` | Each schema problem, for `INVALID_PARAMS` |
 
 Fields that don't apply are omitted.
 
@@ -44,7 +49,7 @@ Fields that don't apply are omitted.
 
 | Type | Summary |
 |---|---|
-| `DeviceSummary` | `id`, `name`, `model`, `manufacturer`, `driver`, `hazard`, `writable`, `connected`, `conformance` and `verification` |
+| `DeviceSummary` | `id`, `name`, `model`, `manufacturer`, `driver`, `hazard`, `writable`, `connected`, `conformance`, `verification` and `unavailable` (why the Device can't take commands right now, or null) |
 | `DeviceDescription` | A `DeviceSummary` plus channels with units and limits, actions, safe state, interlocks, watchdog rules, limits provenance (who confirmed and when, and what is still unconfirmed) and notes as a data block |
 | `Reading` | `{ device, channel, value, unit, at, suspect }` |
 | `Write` | `{ kind: "write", device, channel, value }` |
@@ -321,11 +326,11 @@ The Hub sends these notifications after `hal/initialized`, to every connection.
 | Notification | Params | Sent when |
 |---|---|---|
 | `hal/value` | `{ device, channel, value, unit, at, suspect }` | A value is read, polled or streamed |
-| `hal/blocked` | `{ device, target, error: { code, name, message, data } }` | The Safety Kernel blocks a command from any source |
+| `hal/blocked` | `{ device, target, error: { code, message, data } }`, with the registry name in `data.name` | The Safety Kernel blocks a command from any source |
 | `hal/stopped` | `{ reason, by, devices: [{ device, status }] }` | A stop finishes |
 | `hal/deviceAdded` | `{ device: DeviceSummary }` | A Device is registered |
 | `hal/deviceRemoved` | `{ device }` | A Device is unregistered |
-| `hal/confirmationRequested` | `{ request: ConfirmationRequest }` | A command enters the confirmation queue |
+| `hal/confirmationRequested` | `{ request: ConfirmationRequest }` | A command enters the confirmation queue. Sent only to human Principals and to the Principal that made the request |
 
 A Core Hub sends `hal/value`. A Control Hub also sends `hal/blocked` and `hal/stopped`. A Full Hub also sends `hal/confirmationRequested`. A Hub at any level MAY send `hal/deviceAdded` and `hal/deviceRemoved`. Every Hub lists what it sends in `capabilities.notifications`.
 
