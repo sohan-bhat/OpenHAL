@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from openhal.drivers.base import Conformance, Driver, DriverError, Reading
-from openhal.kernel.commands import Write
+from openhal.kernel.commands import Action, Write
 from openhal.kernel.grants import GrantError
 from openhal.kernel.kernel import Kernel
 from openhal.kernel.principals import human
@@ -103,6 +103,41 @@ def _inside_value(file: DeviceFile) -> tuple[str, Any] | None:
             return name, False
         if spec.type == "enum":
             return name, spec.values[0]
+    return None
+
+
+def _argument_value(spec: Any) -> Any:
+    """A value inside an argument's limits, or None when the suite can't make one."""
+    if spec.type == "number" and spec.min is not None and spec.unit:
+        return f"{spec.min} {spec.unit}"
+    if spec.type == "bool":
+        return False
+    if spec.type == "enum" and spec.values:
+        return spec.values[0]
+    return None
+
+
+def _inside_actions(file: DeviceFile) -> list[tuple[str, dict[str, Any]]]:
+    """Every action with arguments the suite can fill in, fewest arguments first."""
+    found = []
+    for name, spec in file.actions.items():
+        args = {arg: _argument_value(arg_spec) for arg, arg_spec in spec.args.items()}
+        if all(value is not None for value in args.values()):
+            found.append((name, args))
+    return sorted(found, key=lambda item: len(item[1]))
+
+
+def _outside_action(file: DeviceFile) -> tuple[str, dict[str, Any]] | None:
+    """An action call with one numeric argument above its max and the rest inside their limits."""
+    for name, spec in file.actions.items():
+        for arg, arg_spec in spec.args.items():
+            if arg_spec.type != "number" or arg_spec.max is None or not arg_spec.unit:
+                continue
+            others = {other: _argument_value(other_spec) for other, other_spec in spec.args.items() if other != arg}
+            if any(value is None for value in others.values()):
+                continue
+            outside = f"{arg_spec.max + max(1.0, abs(arg_spec.max))} {arg_spec.unit}"
+            return name, {**others, arg: outside}
     return None
 
 
@@ -209,6 +244,55 @@ async def run(case: ConformanceCase) -> Report:
             raise AssertionError("a grant-less call reached the protocol layer")
         return "refused"
 
+    async def action_inside_limits() -> str:
+        if not case.file.writable:
+            raise _Skip("the case's device file is read-only")
+        candidates = _inside_actions(case.file)
+        if not candidates:
+            raise _Skip("no action the suite can fill in")
+        held: list[str] = []
+        for name, args in candidates:
+            before = len(spy.calls)
+            decision = await kernel.execute(Action(device=device_id, action=name, args=args), who)
+            if decision.status == "done":
+                if len(spy.calls) != before + 1:
+                    raise AssertionError(f"an allowed action {name} must reach the driver exactly once")
+                return name
+            if len(spy.calls) != before:
+                raise AssertionError(f"action {name} was {decision.status} but still reached the driver")
+            if decision.status == "failed":
+                raise AssertionError(f"action {name} failed in the driver: {decision.message}")
+            held.append(f"{name} {decision.code}")
+        raise _Skip(f"no action could run in the simulator's state ({', '.join(held)})")
+
+    async def action_outside_limits_is_blocked() -> str:
+        target = _outside_action(case.file)
+        if target is None or not case.file.writable:
+            raise _Skip("no action with a numeric argument")
+        before = len(spy.calls)
+        decision = await kernel.execute(Action(device=device_id, action=target[0], args=target[1]), who)
+        if decision.status != "blocked":
+            raise AssertionError(f"expected blocked, got {decision.status}")
+        if len(spy.calls) != before:
+            raise AssertionError("a blocked action reached the driver")
+        return decision.message
+
+    async def no_action_without_grant() -> str:
+        candidates = _inside_actions(case.file) or [(name, {}) for name in case.file.actions]
+        if not candidates:
+            raise _Skip("no action")
+        name, _args = candidates[0]
+        before = len(spy.calls)
+        try:
+            await driver.action(name, {}, None)
+        except GrantError:
+            pass
+        else:
+            raise AssertionError("driver.action accepted a call without a grant")
+        if len(spy.calls) != before:
+            raise AssertionError("a grant-less action reached the protocol layer")
+        return "refused"
+
     async def concurrent_access() -> str:
         target = _inside_value(case.file)
         if target is None or not case.file.writable:
@@ -264,6 +348,9 @@ async def run(case: ConformanceCase) -> Report:
         ("write inside limits", "control", write_inside_limits),
         ("write outside limits is blocked before the driver", "control", write_outside_limits_is_blocked),
         ("no write without a kernel grant", "control", no_bypass_without_grant),
+        ("action inside limits", "full", action_inside_limits),
+        ("action outside limits is blocked before the driver", "full", action_outside_limits_is_blocked),
+        ("no action without a kernel grant", "full", no_action_without_grant),
         ("concurrent access", "control", concurrent_access),
         ("safe state", "control", safe_state),
         ("disconnect and reconnect", "core", disconnect_and_reconnect),

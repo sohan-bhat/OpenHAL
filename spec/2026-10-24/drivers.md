@@ -78,7 +78,10 @@ The suite tests the declared level and nothing above it. A check that doesn't ap
 | write inside limits | Control | An allowed write reaches the Driver exactly once |
 | write outside limits is blocked before the Driver | Control | A write above `max` is blocked and never reaches the Driver |
 | no write without a kernel Grant | Control | `write` without a Grant raises and nothing reaches the protocol layer |
+| action inside limits | Full | An action with every argument inside its limits is `done` and reaches the Driver exactly once. When no action can run in the simulator's state, the check is skipped and names the reason |
+| action outside limits is blocked before the Driver | Full | An action with a numeric argument above its `max` is blocked and never reaches the Driver |
+| no action without a kernel Grant | Full | `action` without a Grant raises and nothing reaches the protocol layer |
 | concurrent access | Control | Four racing writes each end `done`, `blocked` or `failed` |
 | safe state | Control | A stop leaves the Device in any state but `failed` |
 
-This version of the suite adds no checks for `full`. A `full` Driver passes every Control check.
+A `full` Driver passes every Control check and the three Full checks.

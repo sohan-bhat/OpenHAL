@@ -33,7 +33,7 @@ def test_list_shows_every_driver_with_its_level() -> None:
 def test_test_runs_the_conformance_suite() -> None:
     result = runner.invoke(app, ["driver", "test", "mock"])
     assert result.exit_code == 0, result.output
-    assert "12 passed, 0 skipped, 0 failed" in result.output
+    assert "12 passed, 3 skipped, 0 failed" in result.output
 
 
 def test_test_refuses_an_unknown_driver() -> None:
