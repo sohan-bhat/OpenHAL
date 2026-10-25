@@ -1,0 +1,19 @@
+openhal: "0.1"
+device: { name: Desk fan, model: desk-fan, manufacturer: OpenHAL }
+id: openhal-desk-fan
+match:
+  firmware: { product: desk-fan }
+connect: { openhal-firmware: auto, boot_s: 2 }
+read:
+  temperature: { unit: degC, every: 1 s, range: [-20, 80] }
+write:
+  fan_speed: { unit: percent, min: 0, max: 80, step: 1, max_change_per_s: 10, confirm: confirm, suggested: true }
+safe_state: { fan_speed: 0 }
+watchdog: { heartbeat: 1 s, on_loss: safe_state }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The sketch is the DeskFan example of the OpenHAL Arduino library on an Arduino Uno R3, with the fan
+  driver on pin 9 and a thermistor on A0. The board allows 0 to 100 % and stops the fan when heartbeats
+  stop for 2 s. This file keeps the fan at or below 80 %.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

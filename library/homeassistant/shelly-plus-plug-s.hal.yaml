@@ -1,0 +1,31 @@
+openhal: "0.1"
+device: { name: Shelly Plus Plug S, model: Plus Plug S, manufacturer: Shelly }
+id: shelly-plus-plug-s
+match:
+  homeassistant: "*.shellyplusplugs_*"
+connect:
+  homeassistant: homeassistant.local
+  port: 8123
+  token_env: HA_TOKEN
+  transport: websocket
+  entities:
+    - switch.shellyplusplugs_aabbccddeeff
+    - sensor.shellyplusplugs_aabbccddeeff_power
+    - sensor.shellyplusplugs_aabbccddeeff_energy
+read:
+  power: { unit: W, every: 5 s, range: [0, 2500], map: { entity: sensor.shellyplusplugs_aabbccddeeff_power } }
+  energy: { unit: kWh, every: 60 s, map: { entity: sensor.shellyplusplugs_aabbccddeeff_energy } }
+write:
+  relay:
+    type: bool
+    confirm: confirm-each-time
+    suggested: true
+    map: { entity: switch.shellyplusplugs_aabbccddeeff }
+safe_state: { relay: false }
+hazard: high
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  Home Assistant names a Shelly that has no device name after its device id, such as
+  shellyplusplugs-aabbccddeeff. Replace aabbccddeeff with your plug's id in every entity. The plug switches
+  mains, so every change is confirmed each time and a stop turns it off.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

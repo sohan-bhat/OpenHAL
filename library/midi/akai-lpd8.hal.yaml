@@ -1,0 +1,31 @@
+openhal: "0.1"
+device: { name: Akai LPD8 pad controller, model: LPD8, manufacturer: Akai Professional }
+id: akai-lpd8
+match:
+  usb: ["09e8:0075"]
+  usb_class: midi
+connect: { midi: LPD8, channel: 1 }
+read:
+  knob_1: { unit: percent, stream: true, map: { cc: 1 } }
+  knob_2: { unit: percent, stream: true, map: { cc: 2 } }
+  knob_3: { unit: percent, stream: true, map: { cc: 3 } }
+  knob_4: { unit: percent, stream: true, map: { cc: 4 } }
+  knob_5: { unit: percent, stream: true, map: { cc: 5 } }
+  knob_6: { unit: percent, stream: true, map: { cc: 6 } }
+  knob_7: { unit: percent, stream: true, map: { cc: 7 } }
+  knob_8: { unit: percent, stream: true, map: { cc: 8 } }
+  pad_1: { type: bool, stream: true, map: { note: 36 } }
+  pad_2: { type: bool, stream: true, map: { note: 37 } }
+  pad_3: { type: bool, stream: true, map: { note: 38 } }
+  pad_4: { type: bool, stream: true, map: { note: 39 } }
+  pad_5: { type: bool, stream: true, map: { note: 40 } }
+  pad_6: { type: bool, stream: true, map: { note: 41 } }
+  pad_7: { type: bool, stream: true, map: { note: 42 } }
+  pad_8: { type: bool, stream: true, map: { note: 43 } }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  This is the first LPD8 in program 1, where the knobs send CC 1 to 8 and the pads send notes 36 to 43 on
+  MIDI channel 1. MIDI can't ask a knob where it is, so each control reads unknown until it moves. This file
+  only reads.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

@@ -1,0 +1,19 @@
+openhal: "0.1"
+device: { name: Keysight 34461A multimeter, model: 34461A, manufacturer: Keysight }
+id: keysight-34461a
+match:
+  usb: ["2a8d:1301"]
+  usb_class: usbtmc
+  scpi_idn: "^(Keysight|Agilent) Technologies,34461A"
+connect: { scpi: auto, timeout: 5 s }
+read:
+  dc_voltage: { unit: V, every: 2 s, range: [-1000, 1000], map: { query: "MEAS:VOLT:DC?" } }
+  dc_current: { unit: A, range: [-10, 10], map: { query: "MEAS:CURR:DC?" } }
+  resistance: { unit: ohm, map: { query: "MEAS:RES?" } }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  This file only reads. Each MEAS query changes the function and range, so only the DC voltage is polled.
+  Read current and resistance on request with the test leads in the right jacks. Early units
+  answer as Agilent Technologies.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

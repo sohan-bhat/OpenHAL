@@ -54,3 +54,44 @@ Every external fact used in the design, with the date it was checked.
 ## Protocol and library references
 
 Added as drivers are built. See docs/DEPENDENCIES.md for every dependency, version and license.
+
+## Device library identifiers (checked 2026-10-25)
+
+Where each identifier and default in library/ comes from. Identifiers in backticks are exactly what the files match.
+
+- Linux USB id database, version 2026.06.26. http://www.linux-usb.org/usb.ids (Korg `0944:0117` nanoKONTROL2, Rigol `1ab1:04ce` DS1000Z series, Prusa vendor `2c99`. It lists `09e8:0076` as the LPK25, not the LPD8.)
+- libsigrok udev rules. https://github.com/sigrokproject/libsigrok/blob/master/contrib/60-libsigrok.rules (Rigol DP800 series `1ab1:0e11`, Rigol 1000Z series `1ab1:04ce`, Siglent `f4ec:ee38` for the SDS1104X-E and SDM3055)
+- Siglent SDM3065X resource string `USB0::0xF4EC::0xEE38::...::INSTR`, the SDM3000 family id. https://www.mikrocontroller.net/topic/544731
+- Siglent SPD programming tips, resource string `USB0::0x0483::0x7540::SPD3X...::INSTR` and newline termination only. https://siglentna.com/operating-tip/spd-programming-tips/
+- Siglent SPD3303X Quick Start, `*IDN?` reply `Siglent Technologies,SPD3303X,...`. https://siglentna.com/wp-content/uploads/dlm_uploads/2022/11/SPD3303X_QuickStart_E02A.pdf
+- Keysight 34461A resource string `USB0::0x2A8D::0x1301::MY53216054::0::INSTR` from a real `list_resources()` run. https://www.denshi.club/pc/python/iotpythonstep34-4-dmm-34461a.html
+- ds1054z library documentation, vendor `RIGOL TECHNOLOGIES` and product `DS1054Z` from `*IDN?`. https://ds1054z.readthedocs.io/en/latest/api/ds1054z.html
+- Rigol DP800 and DS1000Z programming guides for `MEAS`, `OUTP`, `APPL`, `:TRIG:STAT?` and `:MEAS:ITEM?`, as in docs/drivers/scpi.md.
+- Prusa i3 MK3 `2c99:0002`, product string "Original Prusa i3 MK3". https://github.com/dorssel/usbipd-win/issues/319
+- Prusa MINI `2c99:000c`. https://github.com/prusa3d/Prusa-Firmware-Buddy/issues/2542
+- Prusa MK4 `2c99:000d`. https://forum.repetier.com/discussion/11481/prusa-mk4-in-repetier-server-einbinden
+- Sovol SV08 factory host name `SPI-XI` on firmware 2.4.6. https://github.com/eric-s-raymond/sovol-SV08-from-scratch/blob/master/unix-setup.adoc
+- RatOS host name `RatOS` before setup, renamed during setup. https://os.ratrig.com/docs/installation and https://docs.ratrig.com/v-core-4-1/commissioning-guide-hub/idex/configuration
+- Moonraker zeroconf service `_moonraker._tcp`. https://github.com/Arksine/moonraker/blob/master/moonraker/components/zeroconf.py
+- ESPHome mDNS TXT records, including `project_name`. https://github.com/esphome/esphome/blob/dev/esphome/components/mdns/mdns_component.cpp
+- Apollo MSR-2 project `ApolloAutomation.MSR-2` and entity names. https://github.com/ApolloAutomation/MSR-2/tree/main/Integrations/ESPHome
+- Apollo AIR-1 project `ApolloAutomation.AIR-1` and entity names. https://github.com/ApolloAutomation/AIR-1/tree/main/Integrations/ESPHome
+- Athom Smart Plug V2 project `China Athom Technology.Athom Plug V2`, entity names and restore mode. https://github.com/athom-tech/athom-configs/blob/main/athom-smart-plug-v2.yaml
+- Shelly Gen2 mDNS service `_shelly._tcp`. https://shelly-api-docs.shelly.cloud/gen2/General/mDNS/
+- Shelly MQTT status topics `<device id>/status/<component>:<id>`, off until `status_ntf` is set. https://shelly-api-docs.shelly.cloud/gen2/ComponentsAndServices/Mqtt/
+- Shelly H&T Gen3 topic `shellyhtg3-<mac>/status/temperature:0` with `tC`, and its sparse reports on battery. https://github.com/home-assistant/core/issues/181421 and https://taphome.com/en/compatibility/shelly-ht-gen3-mqtt/
+- Home Assistant Shelly entity naming from the device id when no device name is set. https://www.home-assistant.io/integrations/shelly/
+- Shelly Plus Plug S and Dimmer Gen3 model names and ids. https://kb.shelly.cloud/knowledge-base/shelly-plus-plug-s and https://kb.shelly.cloud/knowledge-base/shelly-dimmer-gen3
+- Eastron SDM register offsets (voltage `0x00`, current `0x06`, power `0x34`, power factor `0x3E`, frequency `0x46`, import `0x48`, total `0x156`), from Eastron's SDM630 protocol. https://github.com/volkszaehler/mbmd/blob/master/meters/rs485/sdm.go
+- Eastron SDM630 factory address 1 and 9600 baud. https://docs.evcc.io/en/meters/eastron-sdm630-modbus and https://taphome.com/en/compatibility/eastron-sdm630/
+- Akai LPD8 `09e8:0075` from `lsusb` output. https://bbs.archlinux.org/viewtopic.php?id=253043 and https://sourceforge.net/p/alsa/mailman/alsa-user/thread/50B7DA50.2050306@dynamix-tontechnik.ch/
+- Korg nanoKONTROL2 sliders on CC 0 to 7 and knobs on CC 16 to 23. https://support.spectrasonics.net/manual/Omnisphere3HW/3/en/topic/setting-up-the-nanokontrol-2
+- Xiaomi LYWSD03MMC characteristic `ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6` and its byte layout. https://github.com/keks51/lywsd03mmc-client and https://www.b4x.com/android/forum/threads/rmilywsd03mmc-xiaomi-mi-temperature-humidity-monitor-2.131806/
+- pvvx ATC_MiThermometer names such as `ATC_F02AED` and the Environmental Sensing characteristics. https://github.com/pvvx/ATC_MiThermometer
+- Bluetooth Heart Rate service `180d` and measurement `2a37`, and Battery Level `2a19`. https://www.bluetooth.com/specifications/assigned-numbers/
+- Waveshare RPi Relay Board relays on BCM 26, 20 and 21, active low. https://www.waveshare.com/wiki/RPi_Relay_Board
+- Pimoroni Fan SHIM fan on BCM 18 and button on BCM 17. https://pinout.xyz/pinout/fan_shim
+- Raspberry Pi Camera Module 3 (IMX708) and High Quality Camera (IMX477). https://www.raspberrypi.com/documentation/accessories/camera.html
+- ASCOM Remote, an Alpaca server for ASCOM drivers such as GS Server. https://github.com/ASCOMInitiative/ASCOMRemote and https://ascom-standards.org/Downloads/ScopeDrivers.htm
+- Polar H10 names start with `Polar H10 ` followed by the sensor id. This comes from scans people have posted, not from a Polar document, so check it with openhal discover. https://github.com/polarofficial/polar-ble-sdk
+- Akai LPD8 program 1 sends CC 1 to 8 from the knobs and notes 36 to 43 from the pads, as in openhal/drivers/midi/examples/lpd8-pads.hal.yaml.

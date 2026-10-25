@@ -1,0 +1,18 @@
+openhal: "0.1"
+device: { name: Servo arm, model: servo-arm, manufacturer: OpenHAL }
+id: openhal-servo-arm
+match:
+  firmware: { product: servo-arm }
+connect: { openhal-firmware: auto, boot_s: 2 }
+write:
+  angle: { unit: degree, min: 30, max: 150, step: 1, max_change_per_s: 45, confirm: confirm, suggested: true }
+safe_state: { angle: 90 }
+watchdog: { heartbeat: 1 s, on_loss: safe_state }
+hazard: medium
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The sketch is the ServoArm example of the OpenHAL Arduino library, with the servo on pin 3 of an Arduino
+  Uno or pin 13 of an ESP32. The board allows 20 to 160 degrees at 90 degrees per second and returns to 90
+  degrees when heartbeats stop for 3 s. This file keeps the arm between 30 and 150 degrees at half that speed.
+  Check that nothing is in reach of the arm at either end before you confirm.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

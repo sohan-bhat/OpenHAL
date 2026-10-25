@@ -1,0 +1,16 @@
+openhal: "0.1"
+device: { name: Raspberry Pi Camera Module 3, model: Camera Module 3, manufacturer: Raspberry Pi }
+id: raspberry-pi-camera-module-3
+connect: { rpi-camera: 0, configuration: video, width: 1920, height: 1080, jpeg_quality: 85, warmup: 2 s }
+read:
+  frame: { type: image }
+  light: { unit: lux, every: 60 s, map: { metadata: Lux } }
+  exposure: { unit: ms, map: { metadata: ExposureTime } }
+  lens_position: { unit: dimensionless, map: { metadata: LensPosition } }
+  sensor_temperature: { unit: degC, every: 60 s, range: [-20, 80], map: { metadata: SensorTemperature } }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The Camera Module 3 uses the Sony IMX708 sensor with autofocus. This file only reads, with 1920 by 1080
+  JPEG frames from a video configuration. Only one program can hold the camera at a time.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

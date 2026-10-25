@@ -1,0 +1,19 @@
+openhal: "0.1"
+device: { name: Pimoroni Fan SHIM, model: Fan SHIM, manufacturer: Pimoroni }
+id: pimoroni-fan-shim
+connect:
+  rpi-gpio: { fan: 18, button: 17 }
+  pull: up
+  bounce: 50 ms
+  on_connect: keep
+read:
+  button: { type: bool, every: 200 ms, map: { active_high: false } }
+write:
+  fan: { type: bool, suggested: true }
+safe_state: { fan: true }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The fan is on BCM GPIO 18 and the button pulls GPIO 17 low when pressed. The RGB LED on GPIO 14 and 15
+  isn't controlled here. The fan only cools the Pi, so a stop leaves it running.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

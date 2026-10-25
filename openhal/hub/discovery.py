@@ -94,14 +94,20 @@ def _regex(pattern: str, value: str) -> bool:
 
 
 def score(file: DeviceFile, found: Discovered) -> int:
-    """How well a library file matches a discovered device. 0 means no match."""
+    """How well a library file matches a discovered device. 0 means no match.
+
+    A USB class or an mDNS service type only says what kind of device it is, such as any MIDI
+    controller or any ESPHome node. They add to a match on a product identifier but never make one
+    on their own, so a device is never offered a file for a different product of the same kind.
+    """
     ids = found.identifiers
     match = file.match
     points = 0
+    kind = 0
     if match.usb and ids.get("usb", "").lower() in {item.lower() for item in match.usb}:
         points += 3
     if match.usb_class and ids.get("usb_class") == match.usb_class:
-        points += 1
+        kind += 1
     if match.serial_number and "serial_number" in ids and _regex(match.serial_number, ids["serial_number"]):
         points += 2
     if match.scpi_idn and "scpi_idn" in ids and _regex(match.scpi_idn, ids["scpi_idn"]):
@@ -113,7 +119,7 @@ def score(file: DeviceFile, found: Discovered) -> int:
         if advertised & {item.lower() for item in match.ble_services}:
             points += 2
     if match.mdns and ids.get("mdns") == match.mdns:
-        points += 1
+        kind += 1
     if match.modbus_id is not None and ids.get("modbus_id") == str(match.modbus_id):
         points += 1
     if match.homeassistant and "homeassistant" in ids and fnmatch.fnmatch(ids["homeassistant"], match.homeassistant):
@@ -121,9 +127,9 @@ def score(file: DeviceFile, found: Discovered) -> int:
     for section, table in (("moonraker", match.moonraker), ("esphome", match.esphome), ("firmware", match.firmware)):
         if table and all(fnmatch.fnmatch(ids.get(f"{section}.{key}", ""), value) for key, value in table.items()):
             points += 4
-    if file.connect.driver != found.driver:
-        points = 0
-    return points
+    if file.connect.driver != found.driver or points == 0:
+        return 0
+    return points + kind
 
 
 async def discover(

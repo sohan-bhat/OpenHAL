@@ -1,0 +1,41 @@
+openhal: "0.1"
+device: { name: Sovol SV08, model: SV08, manufacturer: Sovol }
+id: sovol-sv08
+match:
+  mdns: _moonraker._tcp
+  moonraker: { hostname: "SPI-XI" }
+connect: { moonraker: SPI-XI.local, port: 7125, transport: websocket, timeout: 5 s }
+read:
+  state: { type: enum, values: [standby, printing, paused, complete, cancelled, error], every: 1 s }
+  extruder_temp: { unit: degC, every: 2 s, range: [0, 320] }
+  bed_temp: { unit: degC, every: 2 s, range: [0, 130] }
+  progress: { unit: percent, every: 5 s }
+write:
+  extruder_target: { unit: degC, min: 0, max: 215, step: 1, max_change_per_s: 10, confirm: confirm, suggested: true }
+  bed_target: { unit: degC, min: 0, max: 60, step: 1, max_change_per_s: 5, confirm: confirm, suggested: true }
+  fan_speed: { unit: percent, min: 0, max: 100, step: 1, suggested: true }
+actions:
+  home:
+    description: Home the axes.
+    args:
+      axes: { type: enum, values: [x, y, z, xy, all] }
+    require: ["state != printing"]
+    confirm: confirm
+    suggested: true
+  pause: { description: Pause the running print., require: ["state == printing"], suggested: true }
+  resume: { description: Resume a paused print., require: ["state == paused"], confirm: confirm, suggested: true }
+  cancel: { description: Cancel the print., confirm: confirm, suggested: true }
+safe_state:
+  - { extruder_target: 0, bed_target: 0, fan_speed: 0 }
+interlocks:
+  - if: "extruder_target > 0 degC"
+    require: "state != error"
+    message: "Clear the printer error before heating."
+watchdog: { heartbeat: 5 s, on_loss: safe_state }
+hazard: high
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The SV08 runs Klipper and Moonraker on its own board. Factory firmware 2.4.6 names the host SPI-XI, so
+  change host if you renamed it. The limits suit PLA, with the hotend at most 215 degC and the bed at most
+  60 degC. Klipper still refuses anything above the max_temp in printer.cfg.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

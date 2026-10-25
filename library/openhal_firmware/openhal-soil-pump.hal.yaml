@@ -1,0 +1,25 @@
+openhal: "0.1"
+device: { name: Soil pump, model: soil-pump, manufacturer: OpenHAL }
+id: openhal-soil-pump
+match:
+  firmware: { product: soil-pump }
+connect: { openhal-firmware: auto, boot_s: 2 }
+read:
+  soil_moisture: { unit: percent, every: 5 s, range: [0, 100] }
+write:
+  pump: { type: bool, confirm: confirm, suggested: true }
+safe_state: { pump: false }
+watchdog:
+  heartbeat: 1 s
+  on_loss: safe_state
+  max_duration:
+    - when: "pump == true"
+      for: 15 s
+      reset_after: 10 min
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The sketch is the SoilPump example of the OpenHAL Arduino library, with the pump on pin 7 of an Arduino
+  Uno or pin 26 of an ESP32. The board stops the pump after 20 s on its own. This file stops it after 15 s
+  and then waits 10 minutes before the pump may run again.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }
