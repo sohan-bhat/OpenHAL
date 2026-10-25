@@ -1,0 +1,148 @@
+/**
+ * Value checks, ported from openhal/kernel/checks.py. Units, types, ranges, steps, enums and the
+ * rate of change. Each failure is a Block with the same code and message as the Python kernel.
+ */
+
+import type { ArgSpec, WriteChannel } from "./model";
+import { formatF, isClose, pyFloatRepr, pyRound } from "./pyformat";
+import { UnitError, convert, formatQuantity, parseQuantity } from "./units";
+
+export class Block extends Error {
+  constructor(
+    public code: string,
+    message: string,
+    public limit: Record<string, unknown> | null = null,
+  ) {
+    super(message);
+  }
+}
+
+export interface Limits {
+  min: number;
+  max: number;
+  rate: number | null;
+}
+
+export type Tightened = Partial<Record<"min" | "max" | "rate", number>>;
+
+function isWriteChannel(spec: WriteChannel | ArgSpec): spec is WriteChannel {
+  return "max_change_per_s" in spec;
+}
+
+/** A channel's file limits combined with session limits, which can only narrow them. */
+export function effectiveLimits(spec: WriteChannel | ArgSpec, tightened?: Tightened | null): Limits {
+  let low = spec.min as number;
+  let high = spec.max as number;
+  let rate = isWriteChannel(spec) ? spec.max_change_per_s : null;
+  if (tightened && Object.keys(tightened).length) {
+    low = Math.max(low, tightened.min ?? low);
+    high = Math.min(high, tightened.max ?? high);
+    if (tightened.rate !== undefined) rate = rate === null ? tightened.rate : Math.min(rate, tightened.rate);
+  }
+  return { min: low, max: high, rate };
+}
+
+function pyRawText(raw: number | bigint): string {
+  if (typeof raw === "bigint") return raw.toString();
+  return Number.isInteger(raw) ? String(raw) : pyFloatRepr(raw);
+}
+
+/** Convert a raw value into the channel's unit and type and check every static limit. */
+export function normalize(
+  name: string,
+  spec: WriteChannel | ArgSpec,
+  raw: unknown,
+  tightened?: Tightened | null,
+): number | boolean | string {
+  if (spec.type === "bool") {
+    if (typeof raw !== "boolean") throw new Block("bad_value", `${name} needs true or false.`);
+    return raw;
+  }
+  if (spec.type === "enum") {
+    if (typeof raw !== "string" || !spec.values.includes(raw)) {
+      throw new Block("bad_value", `${name} must be one of ${spec.values.join(", ")}.`, { values: spec.values });
+    }
+    return raw;
+  }
+  if (spec.type === "string") {
+    if (typeof raw !== "string") throw new Block("bad_value", `${name} needs text.`);
+    if (raw.length > (spec.max_length ?? 0)) throw new Block("bad_value", `${name} may be at most ${spec.max_length} characters.`);
+    if (spec.pattern !== null) {
+      let matched: boolean;
+      try {
+        matched = new RegExp(`^(?:${spec.pattern})$`, "u").test(raw);
+      } catch {
+        matched = false;
+      }
+      if (!matched) throw new Block("bad_value", `${name} doesn't match the allowed pattern.`);
+    }
+    return raw;
+  }
+  return number(name, spec, raw, tightened);
+}
+
+function number(name: string, spec: WriteChannel | ArgSpec, raw: unknown, tightened?: Tightened | null): number {
+  const unit = spec.unit as string;
+  const isNumber = typeof raw === "number" || typeof raw === "bigint";
+  const isMapping = raw !== null && typeof raw === "object" && !Array.isArray(raw);
+  if (typeof raw === "boolean" || !(typeof raw === "string" || isMapping || isNumber)) {
+    throw new Block("bad_unit", `${name} needs a number with a unit, for example ${formatQuantity(1, unit)}.`);
+  }
+  if (isNumber) {
+    const value = raw as number | bigint;
+    throw new Block("bad_unit", `${name} needs a unit. Send ${formatQuantity(Number(value), unit)} rather than ${pyRawText(value)}.`);
+  }
+  let value: number;
+  try {
+    value = convert(parseQuantity(raw), unit);
+  } catch (error) {
+    if (error instanceof UnitError) throw new Block("bad_unit", `${name}: ${error.message}`);
+    throw error;
+  }
+  const limits = effectiveLimits(spec, tightened);
+  const asked = formatQuantity(value, unit);
+  if (value < limits.min && !isClose(value, limits.min, 1e-12, 1e-12)) {
+    throw new Block("below_min", `Blocked. The ${name} limit is ${formatQuantity(limits.min, unit)} (min). Asked for ${asked}.`, {
+      min: limits.min,
+      unit,
+    });
+  }
+  if (value > limits.max && !isClose(value, limits.max, 1e-12, 1e-12)) {
+    throw new Block("above_max", `Blocked. The ${name} limit is ${formatQuantity(limits.max, unit)} (max). Asked for ${asked}.`, {
+      max: limits.max,
+      unit,
+    });
+  }
+  if (spec.step !== null) {
+    const base = spec.min || 0;
+    const steps = (value - base) / spec.step;
+    if (!isClose(steps, pyRound(steps), 0, 1e-6)) {
+      throw new Block(
+        "bad_step",
+        `Blocked. ${name} moves in steps of ${formatQuantity(spec.step, unit)} from ${formatQuantity(base, unit)}. Asked for ${asked}.`,
+        { step: spec.step, unit },
+      );
+    }
+  }
+  return value;
+}
+
+/** Block a change bigger than `rate` times the elapsed time since the reference value. */
+export function checkRate(name: string, unit: string, rate: number | null, next: number, reference: number | null, elapsedS: number): void {
+  if (rate === null || reference === null) return;
+  const elapsed = Math.min(Math.max(elapsedS, 0), 3600);
+  const allowed = rate * elapsed;
+  const change = Math.abs(next - reference);
+  if (change > allowed && !isClose(change, allowed, 1e-9, 1e-9)) {
+    const low = reference - allowed;
+    const high = reference + allowed;
+    const wait = (change - allowed) / rate;
+    throw new Block(
+      "rate_limited",
+      `Blocked. ${name} may change by ${formatQuantity(rate, unit)} per second. ` +
+        `Right now it can go from ${formatQuantity(low, unit)} to ${formatQuantity(high, unit)}. ` +
+        `Asked for ${formatQuantity(next, unit)}, which is possible in ${formatF(wait, 1)} s, or use small steps.`,
+      { rate_per_s: rate, unit, from: low, to: high, wait_s: wait },
+    );
+  }
+}
