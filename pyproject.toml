@@ -48,6 +48,14 @@ midi = ["mido>=1.3.3", "python-rtmidi>=1.5.8"]
 hid = ["hidapi>=0.15.0"]
 uvc = ["opencv-python-headless>=5.0.0.93"]
 http = ["httpx>=0.28.1"]
+onvif = ["httpx>=0.28.1", "defusedxml>=0.7.1"]
+bambu = ["paho-mqtt>=2.1.0"]
+can = ["python-can>=4.6.1"]
+knx = ["xknx>=4.0.0"]
+matter = ["websockets>=13"]
+pi-i2c-spi = ["smbus2>=0.6.1", "spidev>=3.8; sys_platform == 'linux'"]
+upnp = ["async-upnp-client>=0.49.0"]
+zigbee-zwave = ["paho-mqtt>=2.1.0", "websockets>=13"]
 
 [project.scripts]
 openhal = "openhal.cli.main:app"
@@ -64,6 +72,7 @@ dev = [
   "types-PyYAML>=6.0",
   "types-pyserial>=3.5",
   "pyvisa-sim>=0.7",
+  "types-defusedxml>=0.7",
 ]
 
 [build-system]
