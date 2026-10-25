@@ -1,0 +1,18 @@
+{
+  "name": "onvif",
+  "tier": 2,
+  "status": "implemented",
+  "protocols": ["ONVIF Profile S and T over SOAP 1.2", "WS-Discovery"],
+  "families": ["ONVIF IP cameras", "ONVIF PTZ cameras", "network video recorders with ONVIF", "video encoders"],
+  "hazard_default": "low",
+  "tests": "the driver's own SOAP client against a simulated PTZ camera that checks WS-Security digests",
+  "estimate": {
+    "devices": "tens of thousands of conformant products",
+    "reasoning": "ONVIF lists tens of thousands of conformant products from hundreds of manufacturers, most of them Profile S cameras whose device and media services this driver reads. PTZ moves need a PTZ camera, which is a smaller share. Media2, events, imaging and recording are not covered.",
+    "sources": [
+      "https://www.onvif.org/conformant-products/",
+      "https://www.onvif.org/profiles/profile-s/",
+      "https://www.onvif.org/specs/srv/ptz/ONVIF-PTZ-Service-Spec.pdf"
+    ]
+  }
+}
