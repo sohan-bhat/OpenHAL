@@ -17,6 +17,16 @@ for (const scheme of schemeList.split(",")) {
     for (const path of pathList.split(",")) {
       await page.goto(`${base}${path}`, { waitUntil: "networkidle" });
       await page.evaluate(() => document.fonts.ready);
+      if (full) {
+        await page.evaluate(async () => {
+          for (let y = 0; y < document.body.scrollHeight; y += window.innerHeight) {
+            window.scrollTo(0, y);
+            await new Promise((resolve) => setTimeout(resolve, 50));
+          }
+          window.scrollTo(0, 0);
+          await Promise.all([...document.images].filter((image) => !image.complete).map((image) => new Promise((resolve) => image.addEventListener("load", resolve, { once: true }))));
+        });
+      }
       const name = (path.replace(/^\/|\/$/g, "").replaceAll("/", "-") || "home").replaceAll("?", "-").replaceAll("=", "-");
       await page.screenshot({ path: `${outDir}/${name}-${width}-${scheme}${clip ? `-${clip.y}` : ""}.${jpeg ? "jpg" : "png"}`, ...(jpeg ? { type: "jpeg", quality: 60 } : {}), fullPage: full, ...(clip ? { clip: { ...clip, width } } : {}) });
     }
