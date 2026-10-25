@@ -91,6 +91,16 @@ export function formatTime(date: Date | null): string {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${pad(date.getMilliseconds(), 3)}`;
 }
 
+export function clientOf(entry: LogEntry): string {
+  if (entry.client) return entry.client;
+  const message = entry.message;
+  if (isObject(message) && message.method === "hal/initialize" && isObject(message.params)) {
+    const info = message.params.clientInfo;
+    if (isObject(info) && typeof info.name === "string" && info.name) return info.name;
+  }
+  return "unnamed client";
+}
+
 function idKey(client: string, id: unknown): string {
   return `${client}|${JSON.stringify(id)}`;
 }
@@ -131,7 +141,7 @@ export function buildTrace(entries: LogEntry[]): TraceRow[] {
   for (const entry of sorted) {
     const message = entry.message;
     if (!isObject(message)) continue;
-    const client = entry.client ?? "unknown";
+    const client = clientOf(entry);
     if (entry.direction === "in" && typeof message.method === "string" && "id" in message) {
       requests.set(idKey(client, message.id), { method: message.method, devices: devicesIn(message), outcome: "open" });
     }
@@ -139,7 +149,7 @@ export function buildTrace(entries: LogEntry[]): TraceRow[] {
   for (const entry of sorted) {
     const message = entry.message;
     if (!isObject(message) || entry.direction !== "out" || typeof message.method === "string") continue;
-    const request = requests.get(idKey(entry.client ?? "unknown", message.id));
+    const request = requests.get(idKey(clientOf(entry), message.id));
     if (!request) continue;
     request.outcome = "error" in message ? "error" : resultOutcome(message.result);
   }
@@ -147,7 +157,7 @@ export function buildTrace(entries: LogEntry[]): TraceRow[] {
 }
 
 function toRow(entry: LogEntry, requests: Map<string, RequestInfo>): TraceRow {
-  const client = entry.client ?? "unknown";
+  const client = clientOf(entry);
   const base = {
     seq: entry.seq,
     at: parseTime(entry.at),

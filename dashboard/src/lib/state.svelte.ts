@@ -74,7 +74,7 @@ class Inspector {
   }
 
   private startLogSocket(): void {
-    this.logSocket = new LiveSocket("/v1/rpc/log/live", {
+    this.logSocket = new LiveSocket(() => `/v1/rpc/log/live?since=${lastSeq(this.log)}`, {
       message: (data) => {
         const entries = parseLiveFrame(data);
         if (entries.length) this.log = mergeEntries(this.log, entries);
@@ -82,7 +82,6 @@ class Inspector {
       state: (state) => {
         this.logLive = state;
       },
-      open: () => void this.loadLog(lastSeq(this.log)),
     });
     this.logSocket.start();
   }

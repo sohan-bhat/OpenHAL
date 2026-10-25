@@ -15,7 +15,7 @@ export class LiveSocket {
   private stopped = false;
 
   constructor(
-    private readonly path: string,
+    private readonly path: string | (() => string),
     private readonly handlers: SocketHandlers,
   ) {}
 
@@ -35,7 +35,7 @@ export class LiveSocket {
     this.handlers.state("connecting");
     let socket: WebSocket;
     try {
-      socket = new WebSocket(wsUrl(this.path));
+      socket = new WebSocket(wsUrl(typeof this.path === "string" ? this.path : this.path()));
     } catch {
       this.retry();
       return;

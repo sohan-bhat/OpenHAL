@@ -78,6 +78,25 @@ describe("buildTrace", () => {
     expect(response!.head).toBe("error -32003 SCOPE_DENIED");
   });
 
+  it("names a client by its clientInfo before the hub knows it, so initialize pairs with its result", () => {
+    const rows = buildTrace([
+      {
+        seq: 1,
+        at: 1792900000.5,
+        direction: "in",
+        client: null,
+        principal: null,
+        message: { jsonrpc: "2.0", id: 1, method: "hal/initialize", params: { clientInfo: { name: "bench-agent" } } },
+      },
+      { seq: 2, at: 1792900000.6, direction: "out", client: "bench-agent", principal: "agent:bench-agent", message: { jsonrpc: "2.0", id: 1, result: {} } },
+    ]);
+    expect(rows[0]!.client).toBe("bench-agent");
+    expect(rows[0]!.outcome).toBe("granted");
+    expect(rows[1]!.method).toBe("hal/initialize");
+    expect(rows[1]!.startsExchange).toBe(false);
+    expect(rows[0]!.at!.getTime()).toBe(1792900000500);
+  });
+
   it("keeps rows in sequence order", () => {
     const shuffled = [...entries].reverse();
     expect(buildTrace(shuffled).map((row) => row.seq)).toEqual(entries.map((entry) => entry.seq));

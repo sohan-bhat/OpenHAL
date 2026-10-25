@@ -31,21 +31,21 @@ test("STOP puts the hub in the stopped state and UNLOCK needs the typed phrase",
   await expect(page.getByRole("status").filter({ hasText: "STOPPED" })).toHaveCount(0);
 });
 
-async function queueSpinTest(name: string): Promise<string> {
-  const agent = await AgentClient.connect(name, hubState().agentToken);
-  const pending = await agent.call("hal/action", { device: "desk-fan", action: "spin_test", args: { seconds: "5 s" } });
+async function queueVent(name: string): Promise<string> {
+  const agent = await AgentClient.connect(name, hubState().mediumToken);
+  const pending = await agent.call("hal/action", { device: "curing-heater", action: "vent", args: { seconds: "5 s" } });
   agent.close();
   expect(pending.result?.status).toBe("pending");
   return String(pending.result?.requestId);
 }
 
 test("a person approves a pending request and sees the result", async ({ page }) => {
-  const requestId = await queueSpinTest("approve-agent");
+  const requestId = await queueVent("approve-agent");
   await page.goto("/#/confirmations");
   const request = page.getByRole("main").getByRole("listitem").filter({ hasText: requestId });
-  await expect(request).toContainText("agent:approve-agent");
+  await expect(request).toContainText("agent:lab-script");
   await expect(request).toContainText("hal/action");
-  await expect(request).toContainText('"spin_test"');
+  await expect(request).toContainText('"vent"');
   await expect(request).toContainText("dry run");
   await request.getByRole("button", { name: "Approve" }).click();
   const decided = page.getByRole("region", { name: "Your decisions" }).getByRole("listitem").filter({ hasText: requestId });
@@ -54,7 +54,7 @@ test("a person approves a pending request and sees the result", async ({ page })
 });
 
 test("a person rejects a pending request with a reason", async ({ page }) => {
-  const requestId = await queueSpinTest("reject-agent");
+  const requestId = await queueVent("reject-agent");
   await page.goto("/#/confirmations");
   const request = page.getByRole("main").getByRole("listitem").filter({ hasText: requestId });
   await request.getByLabel("Reason to reject, optional").fill("not while the plant is drying");

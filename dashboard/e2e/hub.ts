@@ -12,7 +12,6 @@ export interface HubState {
   humanToken: string;
   agentToken: string;
   mediumToken: string;
-  log: "protocol" | "fixture";
 }
 
 export function hubState(): HubState {

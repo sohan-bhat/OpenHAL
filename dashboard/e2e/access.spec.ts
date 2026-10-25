@@ -45,8 +45,9 @@ test("the Inspector works from the keyboard with visible focus", async ({ page, 
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Audit log", level: 1 })).toBeVisible();
 
-  await page.locator("nav.views a", { hasText: "Devices" }).focus();
+  await page.getByRole("link", { name: /Desk fan controller/ }).focus();
   await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Desk fan controller", level: 1 })).toBeVisible();
   const slider = page.getByRole("slider", { name: "fan_speed new value" });
   await slider.focus();
   const before = Number(await slider.inputValue());
