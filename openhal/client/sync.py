@@ -75,7 +75,7 @@ class Client:
         return self.call(calls.device(device_id))
 
     def read(self, device: str, channel: str | None = None) -> m.Reading:
-        """Read one channel. `read("desk-fan", "temperature")` or `read("desk-fan.temperature")`."""
+        """Read one channel. `read("plant-waterer", "soil_moisture")` or `read("plant-waterer.soil_moisture")`."""
         if channel is None:
             device, channel = split_target(device)
         return self.call(calls.read(device, channel))
@@ -85,7 +85,7 @@ class Client:
         return self.call(calls.read_many(pairs))
 
     def write(self, device: str, channel: str, value: Value, unit: str | None = None) -> m.Decision:
-        """Ask the kernel to set a channel. A number needs its unit, as `write("desk-fan", "fan_speed", 60, "%")`."""
+        """Ask the kernel to set a channel. A number needs its unit, as `write("led-strip", "brightness", 60, "%")`."""
         return self.call(calls.write(device, channel, value, unit))
 
     def action(self, device: str, action: str, args: Mapping[str, Any] | None = None, **kwargs: Any) -> m.Decision:

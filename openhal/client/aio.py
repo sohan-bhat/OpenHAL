@@ -80,7 +80,7 @@ class AsyncClient:
         return await self.call(calls.device(device_id))
 
     async def read(self, device: str, channel: str | None = None) -> m.Reading:
-        """Read one channel. `read("desk-fan", "temperature")` or `read("desk-fan.temperature")`."""
+        """Read one channel. `read("plant-waterer", "soil_moisture")` or `read("plant-waterer.soil_moisture")`."""
         if channel is None:
             device, channel = split_target(device)
         return await self.call(calls.read(device, channel))
@@ -90,7 +90,7 @@ class AsyncClient:
         return await self.call(calls.read_many(pairs))
 
     async def write(self, device: str, channel: str, value: Value, unit: str | None = None) -> m.Decision:
-        """Ask the kernel to set a channel. A number needs its unit, as `write("desk-fan", "fan_speed", 60, "%")`."""
+        """Ask the kernel to set a channel. A number needs its unit, as `write("led-strip", "brightness", 60, "%")`."""
         return await self.call(calls.write(device, channel, value, unit))
 
     async def action(

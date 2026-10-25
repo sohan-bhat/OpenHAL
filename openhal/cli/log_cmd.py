@@ -15,7 +15,7 @@ def register(app: typer.Typer) -> None:
     def log(
         device: str = typer.Option(None, "--device", "-d", help="Only this device."),
         status: str = typer.Option(None, "--status", "-s", help="Only this status, for example blocked."),
-        event: str = typer.Option(None, "--event", "-e", help="Only this event, for example write or stop."),
+        event: str = typer.Option(None, "--event", "-e", help="Only this event, for example action or stop."),
         since: int = typer.Option(0, "--since", help="Only entries after this sequence number."),
         limit: int = typer.Option(50, "--limit", "-n", min=1, max=1000, help="Most entries to show."),
         verify: bool = typer.Option(False, "--verify", help="Check the hash chain instead of listing entries."),

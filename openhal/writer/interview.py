@@ -214,7 +214,7 @@ def questions(draft: dict[str, Any]) -> list[Question]:
             "Any interlocks? One per line as: if <condition> require <condition>. Answer none for none.",
             "none",
             "An interlock blocks a change unless a condition holds, for example "
-            "if heater_power > 0 W require fan_speed >= 30 %.",
+            "if brightness > 60 % require current_draw < 2 A.",
             field="interlocks",
         )
     )

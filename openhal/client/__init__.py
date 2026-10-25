@@ -3,12 +3,12 @@
     from openhal.client import connect
 
     with connect() as hub:
-        print(hub.read("desk-fan", "temperature").value)
-        decision = hub.write("desk-fan", "fan_speed", "40 %")
+        print(hub.read("plant-waterer", "soil_moisture").value)
+        decision = hub.action("plant-waterer", "water", duration={"value": 20, "unit": "s"})
         print(decision.status, decision.message)
 
-The client makes no safety decisions. The hub's kernel decides every write and action, and a
-blocked command comes back as a `Decision`, not an exception. See docs/interfaces/PYTHON.md.
+The client makes no safety decisions. The hub's kernel decides every command, and a blocked
+command comes back as a `Decision`, not an exception. See docs/interfaces/PYTHON.md.
 """
 
 from __future__ import annotations

@@ -23,9 +23,9 @@ from openhal.client import models as m
 from openhal.mcp.errors import Decision, ErrorMapper, tool_error_text
 from openhal.spec.schema import device_file_schema
 
-DeviceId = Annotated[str, Field(description="Device id from list_devices, for example desk-fan.", max_length=48)]
-ChannelName = Annotated[str, Field(description="Channel name from describe_device, for example fan_speed.")]
-ActionName = Annotated[str, Field(description="Action name from describe_device, for example home.")]
+DeviceId = Annotated[str, Field(description="Device id from list_devices, for example plant-waterer.", max_length=48)]
+ChannelName = Annotated[str, Field(description="Channel name from describe_device, for example soil_moisture.")]
+ActionName = Annotated[str, Field(description="Action name from describe_device, for example water.")]
 
 
 class Quantity(BaseModel):
@@ -208,7 +208,8 @@ class Tools:
         targets: Annotated[
             list[str],
             Field(
-                description="Up to 100 targets as device.channel, for example ['desk-fan.temperature'].", max_length=100
+                description="Up to 100 targets as device.channel, for example ['plant-waterer.soil_moisture'].",
+                max_length=100,
             ),
         ],
     ) -> list[m.Reading]:
@@ -217,7 +218,7 @@ class Tools:
         for target in targets:
             device, dot, channel = target.partition(".")
             if not dot:
-                raise ToolError(f"{target!r} is not device.channel, for example desk-fan.temperature.")
+                raise ToolError(f"{target!r} is not device.channel, for example plant-waterer.soil_moisture.")
             pairs.append((device, channel))
         readings = await self._run(lambda hub: hub.read_many(pairs))
         return [_wrap_reading(reading) for reading in readings]

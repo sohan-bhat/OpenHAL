@@ -74,7 +74,7 @@ def register(app: typer.Typer) -> None:
     @app.command()
     @handled
     def read(
-        targets: list[str] = typer.Argument(..., help="One or more device.channel, for example desk-fan.temperature."),  # noqa: B008
+        targets: list[str] = typer.Argument(..., help="One or more device.channel, such as plant-waterer.tank."),  # noqa: B008
         as_json: bool = typer.Option(False, "--json", help="Print JSON."),
     ) -> None:
         """Read channels now."""
@@ -96,7 +96,7 @@ def register(app: typer.Typer) -> None:
     @app.command()
     @handled
     def write(
-        target: str = typer.Argument(..., help="device.channel, for example desk-fan.fan_speed."),
+        target: str = typer.Argument(..., help="device.channel, for example led-strip.brightness."),
         value: list[str] = typer.Argument(..., help="The value with a unit, for example 60 % or 25 degC."),  # noqa: B008
         as_json: bool = typer.Option(False, "--json", help="Print the decision as JSON."),
     ) -> None:
@@ -144,7 +144,9 @@ def register(app: typer.Typer) -> None:
             elif target:
                 commands = [_command(client, target, rest or [])]
             else:
-                raise ValueError("Give a target such as desk-fan.fan_speed 60 %, or --file with a list of commands.")
+                raise ValueError(
+                    "Give a target such as plant-waterer.water duration=20s, or --file with a list of commands."
+                )
             decisions = client.dry_run(commands)
         if as_json:
             print_json(decisions)

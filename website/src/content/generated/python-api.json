@@ -1,6 +1,6 @@
 {
   "module": "openhal.client",
-  "doc": "The Python client of the OpenHAL hub's local API.\n\n    from openhal.client import connect\n\n    with connect() as hub:\n        print(hub.read(\"desk-fan\", \"temperature\").value)\n        decision = hub.write(\"desk-fan\", \"fan_speed\", \"40 %\")\n        print(decision.status, decision.message)\n\nThe client makes no safety decisions. The hub's kernel decides every write and action, and a\nblocked command comes back as a `Decision`, not an exception. See docs/interfaces/PYTHON.md.",
+  "doc": "The Python client of the OpenHAL hub's local API.\n\n    from openhal.client import connect\n\n    with connect() as hub:\n        print(hub.read(\"plant-waterer\", \"soil_moisture\").value)\n        decision = hub.action(\"plant-waterer\", \"water\", duration={\"value\": 20, \"unit\": \"s\"})\n        print(decision.status, decision.message)\n\nThe client makes no safety decisions. The hub's kernel decides every command, and a blocked\ncommand comes back as a `Decision`, not an exception. See docs/interfaces/PYTHON.md.",
   "groups": [
     {
       "name": "Connect",
@@ -151,7 +151,7 @@
             {
               "name": "read",
               "signature": "read(device: str, channel: str | None = None) -> Reading",
-              "doc": "Read one channel. `read(\"desk-fan\", \"temperature\")` or `read(\"desk-fan.temperature\")`."
+              "doc": "Read one channel. `read(\"plant-waterer\", \"soil_moisture\")` or `read(\"plant-waterer.soil_moisture\")`."
             },
             {
               "name": "read_many",
@@ -241,7 +241,7 @@
             {
               "name": "write",
               "signature": "write(device: str, channel: str, value: Value, unit: str | None = None) -> Decision",
-              "doc": "Ask the kernel to set a channel. A number needs its unit, as `write(\"desk-fan\", \"fan_speed\", 60, \"%\")`."
+              "doc": "Ask the kernel to set a channel. A number needs its unit, as `write(\"led-strip\", \"brightness\", 60, \"%\")`."
             },
             {
               "name": "writer_session",
@@ -389,7 +389,7 @@
             {
               "name": "read",
               "signature": "async read(device: str, channel: str | None = None) -> Reading",
-              "doc": "Read one channel. `read(\"desk-fan\", \"temperature\")` or `read(\"desk-fan.temperature\")`."
+              "doc": "Read one channel. `read(\"plant-waterer\", \"soil_moisture\")` or `read(\"plant-waterer.soil_moisture\")`."
             },
             {
               "name": "read_many",
@@ -479,7 +479,7 @@
             {
               "name": "write",
               "signature": "async write(device: str, channel: str, value: Value, unit: str | None = None) -> Decision",
-              "doc": "Ask the kernel to set a channel. A number needs its unit, as `write(\"desk-fan\", \"fan_speed\", 60, \"%\")`."
+              "doc": "Ask the kernel to set a channel. A number needs its unit, as `write(\"led-strip\", \"brightness\", 60, \"%\")`."
             },
             {
               "name": "writer_session",
