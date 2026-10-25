@@ -11,7 +11,6 @@ import asyncio
 import json
 import re
 import tempfile
-import time
 from pathlib import Path
 from typing import Any
 
@@ -24,55 +23,41 @@ STEPS_FILE = ROOT / "website" / "src" / "content" / "demo" / "steps.json"
 
 STORY: list[dict[str, Any]] = [
     {
-        "id": "init",
-        "caption": "Set up the hub. The sample device is a simulated desk fan, so nothing real moves.",
-        "kind": "cli",
-        "commands": ["openhal init"],
-    },
-    {
         "id": "confirm",
-        "caption": (
-            "A person confirms the fan's limits. Until then the file is read-only, and an agent can never confirm."
-        ),
+        "caption": "A person confirms the fan's limits. Agents never can.",
         "kind": "cli",
+        "setup": ["openhal init"],
         "commands": ["openhal file confirm ~/.openhal/devices/demo-fan.hal.yaml --by owner"],
     },
     {
         "id": "devices",
-        "caption": "Start the hub and look at what the fan allows.",
+        "caption": "Start the hub and see what the fan allows.",
         "kind": "cli",
         "commands": ["openhald", "openhal devices demo-fan"],
     },
     {
         "id": "token",
-        "caption": "Give Claude its own token, limited to low hazard devices.",
+        "caption": "Give Claude its own token, for low hazard devices only.",
         "kind": "cli",
         "commands": ["openhal token create --agent --scope control_low --name claude"],
     },
     {
-        "id": "read",
-        "caption": "Claude reads the temperature through the MCP server.",
-        "kind": "mcp",
-        "tool": "read",
-        "args": {"device": "demo-fan", "channel": "temperature"},
-    },
-    {
         "id": "write",
-        "caption": "Claude asks for 40 %. The kernel checks the unit, range, step and rate, then the fan moves.",
+        "caption": "Claude asks for 40 %. Every check passes, so the fan moves.",
         "kind": "mcp",
         "tool": "write",
         "args": {"device": "demo-fan", "channel": "fan_speed", "value": "40 %"},
     },
     {
         "id": "blocked",
-        "caption": "Claude tries 150 %. The kernel blocks it before anything reaches the device.",
+        "caption": "Claude asks for 150 %. The kernel blocks it.",
         "kind": "mcp",
         "tool": "write",
         "args": {"device": "demo-fan", "channel": "fan_speed", "value": "150 %"},
     },
     {
         "id": "stop",
-        "caption": "One command puts every device in its safe state. Writes stay locked until a person lifts the stop.",
+        "caption": "One stop puts every device in its safe state.",
         "kind": "cli",
         "commands": ['openhal stop --reason "demo over"'],
     },
@@ -100,6 +85,9 @@ def generate() -> list[dict[str, Any]]:
         try:
             for step in STORY:
                 frame = {"id": step["id"], "caption": step["caption"], "kind": step["kind"], "capture": ""}
+                for command in step.get("setup", []):
+                    if session.run(command).code != 0:
+                        raise RuntimeError(f"{command} failed.")
                 if step["kind"] == "cli":
                     parts = []
                     for command in step["commands"]:
@@ -108,8 +96,6 @@ def generate() -> list[dict[str, Any]]:
                             raise RuntimeError(f"{command} exited {result.code}.\n{result.output}")
                         if command.startswith("openhal token create"):
                             agent_token = result.output.strip().splitlines()[-1]
-                        if command == "openhald":
-                            time.sleep(3)  # let the rate limit's window open, as a person typing would
                         output = _mask_tokens(result.output.rstrip())
                         parts.append(f"$ {command}" + (f"\n{output}" if output else ""))
                     frame["text"] = "\n\n".join(parts)
