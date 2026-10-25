@@ -1,13 +1,13 @@
 # Hardware test plan for the homeassistant driver
 
-This plan checks the Home Assistant bridge against a real Home Assistant instance. It starts with read-only checks and ends with the smallest safe writes, on a lamp. Stop at the first step that fails and send back the report below.
+This plan checks the Home Assistant bridge against a real Home Assistant instance. It starts with read-only checks and ends with the smallest safe writes, on a lamp. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
 - Home Assistant 2024.1 or newer, reachable from the computer that runs OpenHAL.
 - One dimmable light and one sensor in Home Assistant. A smart bulb and any temperature sensor work.
 - A long-lived access token, exported as `HA_TOKEN`.
-- OpenHAL installed with `uv pip install 'openhal-hub[homeassistant]'`.
+- A checkout of this repository with the homeassistant extra, `uv sync --extra homeassistant`.
 
 ## The read-only probe
 
@@ -67,7 +67,7 @@ hazard: low
 ```
 
 ```
-openhal file validate ./lamp.hal.yaml
+uv run openhal file validate ./lamp.hal.yaml
 ```
 
 Expected. `valid ./lamp.hal.yaml (test-lamp, low hazard, read-only)`.
@@ -75,7 +75,7 @@ Expected. `valid ./lamp.hal.yaml (test-lamp, low hazard, read-only)`.
 ## Step 3. Describe and read over REST (read-only)
 
 ```
-python probe.py ./lamp.hal.yaml
+uv run python probe.py ./lamp.hal.yaml
 ```
 
 Expected. `describe` lists only your two entities, with the light's brightness and colour temperature and the sensor's unit. The reads match the Home Assistant dashboard. A Fahrenheit sensor reads in degC.
@@ -94,14 +94,14 @@ Unplug the bulb, or switch it off at the wall, and wait until Home Assistant sho
 
 ## Step 7. Start the hub
 
-Confirm the limits by adding `confirmed: { by: <your name>, at: <today> }`, then load the file into a fresh hub.
+Read every limit in the file. Then confirm them yourself with `uv run openhal file confirm ./lamp.hal.yaml`. It lists each limit and asks you to type `confirm`. Then load the file into a fresh hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
-openhal init
+uv run openhal init --no-sample
 cp ./lamp.hal.yaml "$OPENHAL_HOME/devices/"
-openhald &
-openhal devices
+uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+uv run openhal devices
 ```
 
 Expected. `test-lamp` is connected and writable.
@@ -109,12 +109,12 @@ Expected. `test-lamp` is connected and writable.
 ## Step 8. The smallest safe writes
 
 ```
-openhal write test-lamp.lamp true
-openhal write test-lamp.lamp_brightness "20 %"
-openhal read test-lamp.lamp_brightness
-openhal stop
-openhal read test-lamp.lamp
-openhal unlock
+uv run openhal write test-lamp.lamp true
+uv run openhal write test-lamp.lamp_brightness "20 %"
+uv run openhal read test-lamp.lamp_brightness
+uv run openhal stop
+uv run openhal read test-lamp.lamp
+uv run openhal unlock
 ```
 
 Expected. The lamp turns on, dims to about 20 %, and turns off at `openhal stop`. The Home Assistant logbook shows the service calls.
@@ -122,16 +122,22 @@ Expected. The lamp turns on, dims to about 20 %, and turns off at `openhal stop`
 ## Step 9. The file's limit wins over Home Assistant's
 
 ```
-openhal write test-lamp.lamp_brightness "90 %"
+uv run openhal write test-lamp.lamp_brightness "90 %"
 ```
 
 Expected. Blocked with code `above_max` (the file allows 60 %), although Home Assistant itself would accept 90 %. The lamp doesn't change. Stop the hub with `kill %1` when done.
 
+## If something fails
+
+Send what [README.md](README.md#if-a-step-fails) lists, plus the Home Assistant version, the entity ids with their state from Developer Tools, and the logbook entries from the same minutes. Never send the token. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+
 ## Report template
 
 ```
-Driver: homeassistant
-OpenHAL version:
+Plan: docs/hardware-tests/homeassistant.md
+Tested by and date:
+OpenHAL: (uv run openhal --version, and git rev-parse --short HEAD)
+Device file: (path, and the sha256 in its confirmed line)
 Home Assistant version:
 Entities used: (light, sensor, their integrations)
 Step 1 API answers:              pass / fail
@@ -143,8 +149,9 @@ Step 6 unavailable device:       pass / fail
 Step 7 hub lists the device:     pass / fail
 Step 8 writes and stop:          pass / fail
 Step 9 file limit wins:          pass / fail
+Audit chain: (the line uv run openhal log --verify prints)
 Anything unexpected (paste exact output):
-Result: verified-on-hardware / failed at step N
+Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-A passing report lets the device file set `provenance.verification.status: verified-on-hardware` with `report:` pointing at the saved report.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.

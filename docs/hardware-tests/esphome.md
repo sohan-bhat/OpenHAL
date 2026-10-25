@@ -1,11 +1,11 @@
 # Hardware test plan for the esphome driver
 
-This plan checks the ESPHome driver on a real node. It starts with read-only checks and ends with the smallest safe writes, on an LED. Stop at the first step that fails and send back the report below.
+This plan checks the ESPHome driver on a real node. It starts with read-only checks and ends with the smallest safe writes, on an LED. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
 - An ESP32 or ESP8266 board flashed with ESPHome 2024.6 or newer, on the same network as the computer that runs OpenHAL.
-- OpenHAL installed with `uv pip install 'openhal-hub[esphome]'`.
+- A checkout of this repository with the esphome extra, `uv sync --extra esphome`.
 - The node's YAML with at least these parts. The onboard LED is the only output.
 
 ```yaml
@@ -96,7 +96,7 @@ hazard: low
 ```
 
 ```
-openhal file validate ./node.hal.yaml
+uv run openhal file validate ./node.hal.yaml
 ```
 
 Expected. `valid ./node.hal.yaml (test-node, low hazard, read-only)`.
@@ -104,7 +104,7 @@ Expected. `valid ./node.hal.yaml (test-node, low hazard, read-only)`.
 ## Step 3. Identify, describe and read (read-only)
 
 ```
-python probe.py ./node.hal.yaml
+uv run python probe.py ./node.hal.yaml
 ```
 
 Expected.
@@ -134,21 +134,21 @@ Expected. `Could not connect to ESPHome` with a hint about `noise_psk_env`. Then
 ## Step 5. Power loss (read-only)
 
 ```
-while true; do python probe.py ./node.hal.yaml; sleep 2; done
+while true; do uv run python probe.py ./node.hal.yaml; sleep 2; done
 ```
 
 Unplug the node for ten seconds, then plug it back in. Expected. Runs fail while it is off and work again once it has booted and joined Wi-Fi. Stop with Ctrl-C.
 
 ## Step 6. Start the hub
 
-Confirm the limits by adding `confirmed: { by: <your name>, at: <today> }`, then load the file into a fresh hub.
+Read every limit in the file. Then confirm them yourself with `uv run openhal file confirm ./node.hal.yaml`. It lists each limit and asks you to type `confirm`. Then load the file into a fresh hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
-openhal init
+uv run openhal init --no-sample
 cp ./node.hal.yaml "$OPENHAL_HOME/devices/"
-openhald &
-openhal devices
+uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+uv run openhal devices
 ```
 
 Expected. `test-node` is connected and writable.
@@ -156,11 +156,11 @@ Expected. `test-node` is connected and writable.
 ## Step 7. The smallest safe write, the LED
 
 ```
-openhal write test-node.test_led true
-openhal read test-node.test_led
-openhal stop
-openhal read test-node.test_led
-openhal unlock
+uv run openhal write test-node.test_led true
+uv run openhal read test-node.test_led
+uv run openhal stop
+uv run openhal read test-node.test_led
+uv run openhal unlock
 ```
 
 Expected. The LED turns on and reads `true`, then turns off at `openhal stop`. The node's log (`esphome logs`) shows each switch command.
@@ -168,17 +168,23 @@ Expected. The LED turns on and reads `true`, then turns off at `openhal stop`. T
 ## Step 8. A button action
 
 ```
-openhal action test-node.restart
-openhal devices
+uv run openhal action test-node.restart
+uv run openhal devices
 ```
 
 Expected. The node restarts. The hub shows it disconnected for a few seconds, then connected again. Stop the hub with `kill %1` when done.
 
+## If something fails
+
+Send what [README.md](README.md#if-a-step-fails) lists, plus the `esphome logs` output from the same minutes, the node's YAML without its keys, and the ESPHome version. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+
 ## Report template
 
 ```
-Driver: esphome
-OpenHAL version:
+Plan: docs/hardware-tests/esphome.md
+Tested by and date:
+OpenHAL: (uv run openhal --version, and git rev-parse --short HEAD)
+Device file: (path, and the sha256 in its confirmed line)
 Board and ESPHome version:
 Encryption in use: yes / no
 Step 1 node on the network:      pass / fail
@@ -189,8 +195,9 @@ Step 5 power loss:               pass / fail
 Step 6 hub lists the device:     pass / fail
 Step 7 LED write and stop:       pass / fail
 Step 8 button action:            pass / fail
+Audit chain: (the line uv run openhal log --verify prints)
 Anything unexpected (paste exact output):
-Result: verified-on-hardware / failed at step N
+Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-A passing report lets the device file set `provenance.verification.status: verified-on-hardware` with `report:` pointing at the saved report.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
