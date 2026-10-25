@@ -1,0 +1,105 @@
+---
+import Base from "../../layouts/Base.astro";
+import { docsNav } from "../../lib/docs-nav";
+
+const nav = await docsNav();
+const intro: Record<string, string> = {
+  Guides: "Start here. Install, the ideas behind the hub, and how to add a device.",
+  Interfaces: "The three ways in. Every one of them goes through the same kernel.",
+  Reference: "What the hub guarantees and how it is built.",
+  Drivers: "Driver coverage and the pages for each driver.",
+  Firmware: "The serial protocol and the Arduino library that makes a board describe itself.",
+  Spec: "The device file format, its changelog and how it maps onto MHS.",
+};
+---
+
+<Base title="Documentation" description="Guides, references and the spec for OpenHAL, rendered from the repository.">
+  <div class="wrap page">
+    <header class="head">
+      <h1 class="page-title">Documentation</h1>
+      <p class="lede">Rendered from the Markdown in the repository at build time, so the site and the code say the same thing.</p>
+    </header>
+    <div class="groups">
+      {
+        nav.map((group) => (
+          <section class="module" aria-labelledby={`group-${group.name}`}>
+            <h2 class="module-legend legend" id={`group-${group.name}`}>
+              {group.name}
+            </h2>
+            {intro[group.name] && <p class="muted intro">{intro[group.name]}</p>}
+            <ul>
+              {group.items.map((item) => (
+                <li>
+                  <a href={item.href}>{item.title}</a>
+                  <code>{item.repo}</code>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
+  </div>
+</Base>
+
+<style>
+  .page {
+    padding-top: var(--s-7);
+  }
+
+  .head {
+    padding-bottom: var(--s-5);
+    border-bottom: 1px solid var(--ink);
+    margin-bottom: var(--s-7);
+  }
+
+  .lede {
+    margin-top: var(--s-3);
+  }
+
+  .groups {
+    display: grid;
+    gap: var(--s-6);
+  }
+
+  h2.module-legend {
+    margin: 0;
+    font-size: var(--t-0);
+  }
+
+  .intro {
+    font-size: var(--t-1);
+    line-height: var(--lh-1);
+    margin-bottom: var(--s-3);
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--s-1) var(--s-3);
+    padding: var(--s-2) 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  li a {
+    font-weight: 700;
+  }
+
+  code {
+    font-size: var(--t-0);
+    color: var(--ink-2);
+  }
+
+  @media (min-width: 768px) {
+    .groups {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

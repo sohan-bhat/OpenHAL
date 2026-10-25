@@ -5,6 +5,7 @@ import { getCollection } from "astro:content";
 import { routeFor } from "./markdown/routes.mjs";
 import { libraryEntries } from "./library";
 import { showDrafts } from "./drafts";
+import { docTitle } from "./docs-nav";
 
 export interface PageInfo {
   path: string;
@@ -35,7 +36,7 @@ export async function allPages(): Promise<PageInfo[]> {
   for (const entry of await getCollection("docs")) {
     const route = routeFor(entry.id);
     if (!route) continue;
-    const title = String(entry.data.title ?? entry.id);
+    const title = docTitle(entry);
     pages.push({ path: route, title, kind: route.startsWith("/spec/") ? "Spec" : "Docs" });
   }
   const spec = pages.find((page) => page.path === "/spec/");
@@ -51,5 +52,6 @@ export async function allPages(): Promise<PageInfo[]> {
   for (const entry of libraryEntries()) {
     pages.push({ path: `/library/${entry.slug}/`, title: entry.title, kind: "Library" });
   }
-  return pages;
+  const seen = new Set<string>();
+  return pages.filter((page) => !seen.has(page.path) && seen.add(page.path));
 }

@@ -25,6 +25,7 @@ export const FIXED_ROUTES = [
 export const DOC_PATTERNS = [
   ...FIXED_ROUTES.map((item) => item.repo),
   "docs/drivers/*.md",
+  "spec/versions/*/SPEC.md",
 ];
 
 /** The site route for a repository path, or null when the file isn't published. */
@@ -34,6 +35,8 @@ export function routeFor(repoPath) {
   if (fixed) return fixed.route;
   const driver = /^docs\/drivers\/([^/]+)\.md$/.exec(path);
   if (driver) return `/docs/drivers/${driver[1].toLowerCase()}/`;
+  const version = /^spec\/versions\/([^/]+)\/SPEC\.md$/.exec(path);
+  if (version) return `/spec/${version[1]}/`;
   return null;
 }
 
@@ -41,5 +44,6 @@ export function groupFor(repoPath) {
   const fixed = FIXED_ROUTES.find((item) => item.repo === repoPath);
   if (fixed) return fixed.group;
   if (repoPath.startsWith("docs/drivers/")) return "Drivers";
+  if (repoPath.startsWith("spec/versions/")) return "Spec versions";
   return "Reference";
 }
