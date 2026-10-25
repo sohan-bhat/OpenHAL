@@ -6,14 +6,17 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 ## Active subagents
 
-Cap is 5 agents at once (owner, latest 2026-10-24). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
+Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- quality. Lighthouse, axe, the orphan audit, the plant waterer as the playground default and the library page fixes (BRIEF-quality.md).
 - packaging. The init wizard, launchd and systemd services, the Pi install script and install timing (BRIEF-packaging.md).
-- handoff. CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, ROADMAP, LAUNCH and the hardware test index (BRIEF-handoff.md).
 - e2e. `openhal demo --full`, the end-to-end run on mocks (BRIEF-e2e.md).
 - consistency. The plant waterer in every remaining page, the docs command check and the consistency test (BRIEF-consistency.md).
-- Queued. A fresh critic that sees only screenshots and docs/DESIGN.md, for the final design scores (only round 1 was scored by a fresh reviewer).
+
+Paused for the cap on 2026-10-25, to resume as slots free, in this order.
+
+1. handoff (branch worktree-agent-a8ee9dde6a0972a09, 11 commits, nothing uncommitted). Done are CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, ROADMAP, LAUNCH and fixes to 31 hardware test plans. Left are the per-plan fixes it had started on indi, lerobot and moonraker, and docs/hardware-tests/README.md, the ordered index with the plant waterer first.
+2. quality (branch worktree-agent-a93add9689c8b7b2f, no work yet). Start it fresh from BRIEF-quality.md.
+3. A fresh critic for the final design scores (BRIEF-critic.md), after quality.
 
 Kernel coverage on the full suite, 2026-10-25. 100 % of lines but two, 99 % of branches. The four branches left are fail-closed guards the public API can't reach (an expression naming a device the reference check already blocked, a bare name in a hub expression, a missing asyncio task, and a safe state value that isn't a number on a rate-limited number channel).
 
