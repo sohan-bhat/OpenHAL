@@ -1,13 +1,13 @@
 # Hardware test plan for the grbl driver
 
-This plan checks the GRBL driver on a real machine. It starts with read-only checks and ends with the smallest safe moves. Stay at the machine for every step that changes something with a hand on the physical emergency stop. Stop at the first step that fails and send back the report below.
+This plan checks the GRBL driver on a real machine. It starts with read-only checks and ends with the smallest safe moves. Stay at the machine for every step that changes something with a hand on the physical emergency stop. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
 - A CNC router or laser on a GRBL 1.1 or grblHAL board with USB, and its cable. Note the version from the controller's `$I` in your usual sender.
 - No bit in the spindle and no material on the bed. For a laser, the laser cap or a scrap of aluminium under the head and the safety glasses for its wavelength.
 - No other program connected to the controller (UGS, Candle, LightBurn, bCNC).
-- OpenHAL installed with `uv pip install 'openhal-hub[grbl]'`.
+- A checkout of this repository with the grbl extra, `uv sync --extra grbl`.
 
 ## The read-only probe
 
@@ -43,7 +43,7 @@ Connecting sends `$I`, `$$` and the `?` status byte. Reads may also send `$G` an
 ## Step 1. The port is listed (read-only)
 
 ```
-python -m serial.tools.list_ports -v
+uv run python -m serial.tools.list_ports -v
 ```
 
 Expected. A port with a USB id such as `1a86:7523` (CH340) or `2341:0043` (Arduino Uno). Note the path and the id.
@@ -52,15 +52,15 @@ Expected. A port with a USB id such as `1a86:7523` (CH340) or `2341:0043` (Ardui
 
 ```
 cp openhal/drivers/grbl/examples/3018-router.hal.yaml ./router.hal.yaml
-openhal file validate ./router.hal.yaml
+uv run openhal file validate ./router.hal.yaml
 ```
 
-Edit `match.usb` or replace `grbl: auto` with the port path. Set `spindle_speed.max` to your spindle's maximum and no higher than `$30`. Expected. `valid ./router.hal.yaml (router, high hazard, read-only)`.
+Edit `match.usb` or replace `grbl: auto` with the port path. Set `spindle_speed.max` to your spindle's maximum and no higher than `$30`. On a laser, add `laser_power: { unit: percent, min: 0, max: 1, confirm: confirm-each-time, map: { laser: constant } }` under `write` and `laser_power: 0` to the safe state, and turn on laser mode (`$32=1`) in your sender. Expected. `valid ./router.hal.yaml (router, high hazard, read-only)`.
 
 ## Step 3. Identify and read (read-only)
 
 ```
-python probe.py ./router.hal.yaml
+uv run python probe.py ./router.hal.yaml
 ```
 
 Expected.
@@ -86,7 +86,7 @@ If homing is enabled the state is `alarm` after power-up. That is correct. `max_
 Run the probe in a loop, and jog the machine a few millimeters with the controller's own buttons or pendant if it has one. Skip this step if it has none.
 
 ```
-while true; do python probe.py ./router.hal.yaml | grep position_x; sleep 1; done
+while true; do uv run python probe.py ./router.hal.yaml | grep position_x; sleep 1; done
 ```
 
 Expected. `position_x` follows the machine. Stop with Ctrl-C.
@@ -97,38 +97,39 @@ Run the loop from step 4, unplug the USB cable for five seconds, then plug it ba
 
 ## Step 6. Start the hub
 
-Confirm the limits by adding `confirmed: { by: <your name>, at: <today> }`, then load the file into a fresh hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
-openhal init
+uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal file confirm ./router.hal.yaml
 cp ./router.hal.yaml "$OPENHAL_HOME/devices/"
-openhald &
-openhal devices
-openhal read router.state
+bash docs/hardware-tests/hub.sh start
+uv run openhal devices
+uv run openhal read router.state
 ```
 
-Expected. `router` is connected, high hazard and writable. If the state is `alarm`, run `openhal action router.home` (with limit switches) or `openhal action router.clear_alarm`, and read the state again until it is `idle`.
+Expected. `router` is connected, high hazard and writable. If the state is `alarm`, run `uv run openhal action router.home` (with limit switches) or `uv run openhal action router.clear_alarm`, and read the state again until it is `idle`.
 
 ## Step 7. Hold and resume without motion
 
 ```
-openhal action router.hold
-openhal read router.state
-openhal action router.resume
-openhal read router.state
+uv run openhal action router.hold
+uv run openhal read router.state
+uv run openhal action router.resume
+uv run openhal read router.state
 ```
 
-Expected. Both actions answer done. The state stays `idle`, because a feed hold with no motion does nothing.
+Expected. `hold` answers `done` and the state reads `hold`, because GRBL 1.1 enters Hold:0 even when nothing moves. `resume` answers `done` and the state is `idle` again. If the state stays `idle` after the hold, `resume` is blocked with `interlock`, because it needs `state == hold`. That is safe, but write down which one you saw, since the simulator assumes the state stays `idle`.
 
 ## Step 8. The smallest move, a 1 mm jog with Z clear
 
 Raise Z by hand or in your sender first, so the tool is well clear of the bed.
 
 ```
-openhal action router.jog x="1 mm" y="0 mm" z="0 mm" feed="100 mm/min"
-openhal read router.position_x
-openhal action router.jog x="-1 mm" y="0 mm" z="0 mm" feed="100 mm/min"
+uv run openhal action router.jog x="1 mm" y="0 mm" z="0 mm" feed="100 mm/min"
+uv run openhal read router.position_x
+uv run openhal action router.jog x="-1 mm" y="0 mm" z="0 mm" feed="100 mm/min"
 ```
 
 Expected. The X axis moves 1 mm and back. The action answers `done`. `position_x` changes by 1.0 mm.
@@ -136,44 +137,57 @@ Expected. The X axis moves 1 mm and back. The action answers `done`. `position_x
 ## Step 9. A blocked jog never reaches the machine
 
 ```
-openhal action router.jog x="50 mm" y="0 mm" z="0 mm" feed="100 mm/min"
+uv run openhal action router.jog x="50 mm" y="0 mm" z="0 mm" feed="100 mm/min"
 ```
 
 Expected. Blocked with code `above_max`. The machine doesn't move.
 
 ## Step 10. The spindle at low speed, then stop
 
-Skip the spindle part on a laser and use `laser_power` at `1 %` with the laser cap on instead.
+Use about a fifth of the `max_spindle` value from step 3. The commands show `2000 rpm` for a `$30` of 10000. The driver refuses a speed above `$30` with `failed driver_error` and sends nothing, and many 3018 boards ship with `$30=1000`. On a laser, put the cap on and run `uv run openhal write router.laser_power "1 %"` instead of the first two commands.
 
 ```
-openhal write router.spindle_speed "2000 rpm"
-openhal read router.spindle_speed
-openhal stop
-openhal read router.spindle_speed
-openhal read router.state
-openhal unlock
+uv run openhal write router.spindle_speed "2000 rpm"
+uv run openhal read router.spindle_speed
+uv run openhal stop
+uv run openhal read router.spindle_speed
+uv run openhal read router.state
+uv run openhal unlock
 ```
 
-Expected. The spindle spins up and the read says `2000 rpm`. After `openhal stop` it spins down and the read says `0 rpm`. The state is `idle`, because nothing was moving. `openhal unlock` asks you to type `unlock`.
+Expected. The spindle spins up and the read says the speed you asked for. After `openhal stop` it spins down and the read says `0 rpm`. The state is `idle`, because nothing was moving. `openhal unlock` asks you to type `unlock`.
 
 ## Step 11. Stop during a jog
 
+Open a second terminal in the checkout and run `export OPENHAL_HOME="$PWD/openhal-test"` there, so the stop can go in while the machine moves.
+
+In the first terminal, start a 20 mm jog. It takes 12 s at 100 mm/min.
+
 ```
-openhal action router.jog x="20 mm" y="0 mm" z="0 mm" feed="100 mm/min"
-openhal stop
-openhal read router.state
-openhal read router.alarm
-openhal unlock
-openhal action router.clear_alarm
+uv run openhal action router.jog x="20 mm" y="0 mm" z="0 mm" feed="100 mm/min"
 ```
 
-Run `openhal stop` within a few seconds of the jog. Expected. The axis decelerates and stops before it reaches 20 mm. The state is `alarm` and the alarm is `3`, which GRBL raises after a reset during motion. `clear_alarm` brings the state back to `idle`. Stop the hub with `kill %1` when done.
+In the second terminal, within a few seconds, stop it.
+
+```
+uv run openhal stop
+uv run openhal read router.state router.alarm router.position_x
+uv run openhal unlock
+```
+
+Expected. The stop reports `router  safe` and the axis decelerates and stops well before 20 mm. The driver holds the feed, waits up to 2 s for the axis to stop, then soft resets GRBL. A hold during a jog cancels the jog, so the state is usually `idle` with alarm `0`. If the reset came while the axis still moved, the state is `alarm` with alarm `3`. Then run `uv run openhal action router.clear_alarm` and read the state until it is `idle`. Write down which one you saw. Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
+
+## If something fails
+
+Send what [README.md](README.md#if-a-step-fails) lists, plus the `$I` and `$$` replies from your usual sender, the machine and board, and whether homing and limit switches are on. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
 
 ## Report template
 
 ```
-Driver: grbl
-OpenHAL version:
+Plan: docs/hardware-tests/grbl.md
+Tested by and date:
+OpenHAL: (uv run openhal --version, and git rev-parse --short HEAD)
+Device file: (path, and the sha256 in its confirmed line)
 Machine and controller: (model, board, GRBL version from $I)
 Host OS and port path:
 Step 1 port listed:              pass / fail
@@ -187,8 +201,9 @@ Step 8 1 mm jog:                 pass / fail
 Step 9 blocked jog:              pass / fail
 Step 10 spindle and stop:        pass / fail
 Step 11 stop during a jog:       pass / fail   (state and alarm after the stop)
+Audit chain: (the line uv run openhal log --verify prints)
 Anything unexpected (paste exact output):
-Result: verified-on-hardware / failed at step N
+Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-A passing report lets the device file set `provenance.verification.status: verified-on-hardware` with `report:` pointing at the saved report.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.

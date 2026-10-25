@@ -2,7 +2,7 @@
 
 This plan checks the hid driver against a real USB HID device. It was written for a homemade macropad with key LEDs (any board running a TinyUSB or Arduino HID sketch whose reports you know), and works the same way for any HID device described in a device file. Writing an LED report is the smallest write that proves the path works.
 
-Run every step from the repository checkout. Don't use a keyboard or mouse you rely on, since some systems release it from the desktop while the driver holds it.
+Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Don't use a keyboard or mouse you rely on, since some systems release it from the desktop while the driver holds it.
 
 ## What you need
 
@@ -115,13 +115,13 @@ Expected. The second run fails with `DriverError` saying no HID interfaces match
 
 ### 6. Confirm the limits
 
-Read the file, decide the limits and the safe state are right, and add this line yourself.
+Read the file and decide the limits and the safe state are right. Then confirm them yourself.
 
-```yaml
-confirmed: { by: <your name>, at: <today's date> }
+```sh
+uv run openhal file confirm my-pad.hal.yaml
 ```
 
-`uv run openhal file validate my-pad.hal.yaml` should now say `writable`.
+It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-pad.hal.yaml` then says `writable`.
 
 ### 7. The smallest safe write
 
@@ -146,19 +146,21 @@ Expected. `desk-macropad safe`, and every key LED goes dark.
 
 ## If something fails
 
-Send the full output of the failing step, the `discover` line for your device, the report descriptor (`hidapitester ... --get-report-descriptor` or `usbhid-dump -e descriptor`), a capture of a few input reports from the same tool, the firmware's report layout, the operating system and your device file.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the `discover` line for your device, the report descriptor (`hidapitester ... --get-report-descriptor` or `usbhid-dump -e descriptor`), a capture of a few input reports from the same tool, the firmware's report layout, the operating system and your device file.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, hid driver
 
+- Plan: docs/hardware-tests/hid.md
 - Device: <manufacturer, model>
 - Firmware: <version>
 - Host: <computer, operating system>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device file: <path>, sha256 <from its confirmed line>
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -173,4 +175,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 8 stop | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```

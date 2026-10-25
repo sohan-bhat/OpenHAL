@@ -2,7 +2,7 @@
 
 This plan checks the knx driver against a real KNX installation through a KNXnet/IP interface. It was made for the example file, a room with a dimmer actuator, a thermostat and a window contact. Change the group addresses to the ones in your ETS project.
 
-Run every step from the repository checkout, on a computer on the same network as the interface. Ask the installation's owner before you change anything on the bus.
+Run every step from the repository checkout, on a computer on the same network as the interface. [README.md](README.md) has the setup and rules every plan shares. Ask the installation's owner before you change anything on the bus.
 
 ## What you need
 
@@ -116,13 +116,13 @@ Expected. `DriverError` or `TimeoutError` saying the interface did not accept a 
 
 ### 6. Confirm the limits
 
-Read the file, decide the limits, the interlock and the safe state are right, and add this line yourself.
+Read the file and decide the limits, the interlock and the safe state are right. Then confirm them yourself.
 
-```yaml
-confirmed: { by: <your name>, at: <today's date> }
+```sh
+uv run openhal file confirm my-room.hal.yaml
 ```
 
-`uv run openhal file validate my-room.hal.yaml` should now say `writable`.
+It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-room.hal.yaml` then says `writable`.
 
 ### 7. The smallest safe change
 
@@ -165,19 +165,21 @@ Expected. `living-room-knx safe`, and the light turns off.
 
 ## If something fails
 
-Send the full output of the failing step, the interface's make, model and firmware, the group addresses and DPTs from ETS for the channels involved, and your device file.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the interface's make, model and firmware, the group addresses and DPTs from ETS for the channels involved, and your device file.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, knx driver
 
+- Plan: docs/hardware-tests/knx.md
 - Installation: <actuator and sensor makes and models>
 - Interface: <make, model, firmware, tunneling or routing>
 - Host: <computer, operating system>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device file: <path>, sha256 <from its confirmed line>
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -194,4 +196,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 10 stop | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```

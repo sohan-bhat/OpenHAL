@@ -2,7 +2,7 @@
 
 This plan checks the modbus driver against real Modbus devices. The read-only part uses an energy meter such as the Eastron SDM120. The write part uses a Modbus RTU relay module with nothing wired to its contacts, because a relay that clicks is the smallest write that proves the path works without moving anything.
 
-Run every step from the repository checkout. Never run the write steps on a drive, heater or valve.
+Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Never run the write steps on a drive, heater or valve.
 
 ## What you need
 
@@ -125,13 +125,13 @@ Run step 4 with `my-relay.hal.yaml` first. It should print `relay_1 = False` (or
 
 ### 6. Confirm the limits
 
-Read the file, decide the limits and the safe state are right, and add this line yourself.
+Read the file and decide the limits and the safe state are right. Then confirm them yourself.
 
-```yaml
-confirmed: { by: <your name>, at: <today's date> }
+```sh
+uv run openhal file confirm my-relay.hal.yaml
 ```
 
-`uv run openhal file validate my-relay.hal.yaml` should now say `writable`.
+It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-relay.hal.yaml` then says `writable`.
 
 ### 7. The smallest safe write
 
@@ -155,19 +155,21 @@ Expected. `relay-module safe`, and the relay clicks off.
 
 ## If something fails
 
-Send the full output of the failing step, the matching mbpoll output, the device model and the register map page from its manual, your device file, and the adapter model. For wrong values, say what the device's own display showed at the same time.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the matching mbpoll output, the device model and the register map page from its manual, your device file, and the adapter model. For wrong values, say what the device's own display showed at the same time.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, modbus driver
 
+- Plan: docs/hardware-tests/modbus.md
 - Device: <manufacturer, model>
 - Firmware: <version>
 - Host: <computer, operating system, RS-485 adapter model>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device files: my-meter.hal.yaml (read-only), and my-relay.hal.yaml, sha256 <from its confirmed line>
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -182,4 +184,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 8 stop | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```

@@ -2,16 +2,16 @@
 
 This plan checks the pi-i2c-spi driver on a Raspberry Pi with a TMP102 breakout on I2C, and optionally an MCP3008 on SPI. It uses the example files. Any register-mapped chip works the same way.
 
-Run every step on the Pi from the repository checkout. Wire with the Pi powered off.
+Run every step on the Pi from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Wire with the Pi powered off.
 
 ## What you need
 
-- A Raspberry Pi with Raspberry Pi OS, I2C and SPI enabled in `sudo raspi-config` under Interface Options, and the user in the `i2c` and `spi` groups.
+- A Raspberry Pi with Raspberry Pi OS Trixie or later, I2C and SPI enabled in `sudo raspi-config` under Interface Options, and the user in the `i2c` and `spi` groups.
 - A TMP102 breakout on pins 1 (3.3 V), 3 (SDA), 5 (SCL) and 6 (ground), with ADD0 to ground so it answers at 0x48.
 - Optionally an MCP3008 on SPI0 with chip select 1 (pin 26), VREF and VDD at 3.3 V, and a potentiometer between 3.3 V and ground on CH0.
 - i2c-tools for an independent view of the bus, `sudo apt install i2c-tools`.
-- The repository with the extra, `uv sync --extra pi-i2c-spi`.
-- Copies of the examples, `cp openhal/drivers/pi_i2c_spi/examples/tmp102-temperature.hal.yaml my-tmp102.hal.yaml` and the same for `mcp3008-adc.hal.yaml`.
+- The repository set up as [README.md](README.md#on-a-raspberry-pi) says, with the pi-i2c-spi extra.
+- Copies of the examples, `cp openhal/drivers/pi_i2c_spi/examples/tmp102-temperature.hal.yaml my-tmp102.hal.yaml` and `cp openhal/drivers/pi_i2c_spi/examples/mcp3008-adc.hal.yaml my-mcp3008.hal.yaml`.
 
 ## The test script
 
@@ -130,13 +130,13 @@ Expected. `DriverError` saying nothing acknowledged at `i2c-1 address 0x48`, wit
 
 ### 7. Confirm the limits
 
-Read the file, decide the limits are right, and add this line yourself.
+Read the file and decide the limits are right. Then confirm them yourself.
 
-```yaml
-confirmed: { by: <your name>, at: <today's date> }
+```sh
+uv run openhal file confirm my-tmp102.hal.yaml
 ```
 
-`uv run openhal file validate my-tmp102.hal.yaml` should now say `writable`.
+It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-tmp102.hal.yaml` then says `writable`.
 
 ### 8. The smallest safe change
 
@@ -169,18 +169,20 @@ Expected. `enclosure-tmp102 no_safe_state`, because the example has no safe stat
 
 ## If something fails
 
-Send the full output of the failing step, the output of `i2cdetect -y 1` and of the i2cget command for the same register, the breakout's make and model, `uname -a`, and your device file.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the output of `i2cdetect -y 1` and of the i2cget command for the same register, the breakout's make and model, `uname -a`, and your device file.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, pi-i2c-spi driver
 
+- Plan: docs/hardware-tests/pi-i2c-spi.md
 - Device: <chip, breakout make, address or chip select>
 - Board: <Raspberry Pi model, operating system, kernel>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device files: my-tmp102.hal.yaml, sha256 <from its confirmed line>, and my-mcp3008.hal.yaml (read-only) if step 5 ran
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -197,4 +199,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 10 stop | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```

@@ -2,7 +2,7 @@
 
 This plan checks the zigbee-zwave driver against a real Zigbee2MQTT install and a real zwave-js-server, using the two example files. It was made for an IKEA TRADFRI bulb on Zigbee2MQTT and a Zooz ZEN04 plug on Z-Wave JS UI. Run the Zigbee steps, the Z-Wave steps or both.
 
-Run every step from the repository checkout. Plug nothing into the Z-Wave plug.
+Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Plug nothing into the Z-Wave plug.
 
 ## What you need
 
@@ -137,13 +137,14 @@ Expected. The values read as before, from the last report, and the health line s
 
 ### 8. Confirm the limits
 
-Read both files, decide the limits and safe states are right, and add this line to each yourself.
+Read both files and decide the limits and safe states are right. Then confirm each one yourself.
 
-```yaml
-confirmed: { by: <your name>, at: <today's date> }
+```sh
+uv run openhal file confirm my-bulb.hal.yaml
+uv run openhal file confirm my-plug.hal.yaml
 ```
 
-`uv run openhal file validate my-bulb.hal.yaml my-plug.hal.yaml` should now say `writable` for both.
+Each lists the file's limits, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-bulb.hal.yaml my-plug.hal.yaml` then says `writable` for both.
 
 ### 9. The smallest safe change on Zigbee
 
@@ -179,19 +180,21 @@ Expected. `desk-lamp safe` and `solder-plug safe`, and both turn off.
 
 ## If something fails
 
-Send the full output of the failing step, the watcher output for the same time, the Zigbee2MQTT or Z-Wave JS UI version and its log lines for the device, the device's model and firmware, and your device file without passwords.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the watcher output for the same time, the Zigbee2MQTT or Z-Wave JS UI version and its log lines for the device, the device's model and firmware, and your device file without passwords.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, zigbee-zwave driver
 
+- Plan: docs/hardware-tests/zigbee-zwave.md
 - Devices: <bulb model and firmware, plug model and firmware>
 - Bridges: <Zigbee2MQTT version and adapter, Z-Wave JS UI or zwave-js-server version and stick>
 - Host: <computer, operating system, broker and version>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device files: my-bulb.hal.yaml and my-plug.hal.yaml, with the sha256 from each confirmed line
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -209,4 +212,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 11 stop | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```
