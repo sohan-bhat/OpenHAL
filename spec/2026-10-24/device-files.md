@@ -245,7 +245,7 @@ approvals:
 
 1. `hazard` is `low`, `medium` or `high`. A file with write channels or actions and no `hazard` is treated as `medium`. A file with no writes is `low`.
 2. High hazard files make every write and action `confirm-each-time`, whatever the channel says.
-3. `approvals` holds human-signed approvals that let a specific routine drive a high hazard Device. `routine` is the routine id. `sha256` is the hash of the routine's canonical content. `at` is a date and time. `signature` is an HMAC that only the Hub's human approval flow can produce ([Safety](safety.md#hazard-classes)).
+3. `approvals` holds human-signed approvals that let a specific routine drive a high hazard Device. `routine` is the routine id. `sha256` is the hash of the routine's canonical content. `at` is a date and time. `signature` is an HMAC that only the Hub's human approval flow can produce ([Safety](safety.md#principals-and-hazard-classes)).
 4. Approvals are valid only on the Hub that signed them. A changed routine no longer matches its approval.
 
 ## 10. Notes
