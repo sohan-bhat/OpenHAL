@@ -4,6 +4,14 @@ import Base from "../../layouts/Base.astro";
 import { libraryEntries } from "../../lib/library";
 
 const entries = libraryEntries();
+const channels = (entry: { reads: number; writes: number; actions: number }) =>
+  [
+    entry.reads ? `${entry.reads} read` : "",
+    entry.writes ? `${entry.writes} control` : "",
+    entry.actions ? `${entry.actions} ${entry.actions === 1 ? "action" : "actions"}` : "",
+  ]
+    .filter(Boolean)
+    .join(", ") || "none";
 ---
 
 <Base title="Device Library" description="Shared OpenHAL device files, one per device model, each with its verification status.">
@@ -11,6 +19,7 @@ const entries = libraryEntries();
     <header class="head">
       <h1>Device Library</h1>
       <p class="lede">Device files for specific models, shared under CC0. A hub that finds a known device starts from its file here.</p>
+      <p class="lede">A library file loads read-only until a person confirms its limits. <a href="/docs/library/">How the library works</a></p>
     </header>
 
     {
@@ -22,6 +31,7 @@ const entries = libraryEntries();
               <input type="search" name="q" placeholder="Model, manufacturer or driver" autocomplete="off" />
             </label>
           </form>
+          <p class="shown muted" aria-live="polite" data-shown>{entries.length} device files.</p>
           <div class="table-wrap">
             <table>
               <thead>
@@ -41,9 +51,7 @@ const entries = libraryEntries();
                     </td>
                     <td data-label="Driver" class="mono">{entry.driver}</td>
                     <td data-label="Hazard" class="mono">{entry.hazard}</td>
-                    <td data-label="Channels">
-                      {entry.reads} readable, {entry.writes} changeable, {entry.actions} actions
-                    </td>
+                    <td data-label="Channels">{channels(entry)}</td>
                     <td data-label="Verification">
                       {entry.problems.length > 0 ? <span class="status blocked">invalid</span> : <VerificationBadge status={entry.verification} />}
                     </td>
@@ -52,6 +60,7 @@ const entries = libraryEntries();
               </tbody>
             </table>
           </div>
+          <p class="empty muted" data-empty hidden>No device file matches. Clear the search to see every file.</p>
         </>
       ) : (
         <p class="empty">
@@ -65,9 +74,17 @@ const entries = libraryEntries();
 <script>
   const form = document.querySelector<HTMLFormElement>("[data-filters]");
   const rows = [...document.querySelectorAll<HTMLElement>("[data-entry]")];
+  const shown = document.querySelector<HTMLElement>("[data-shown]");
+  const empty = document.querySelector<HTMLElement>("[data-empty]");
   form?.addEventListener("input", () => {
     const words = String(new FormData(form).get("q") ?? "").toLowerCase().split(/\s+/).filter(Boolean);
-    for (const row of rows) row.hidden = !words.every((word) => (row.dataset.text ?? "").includes(word));
+    let count = 0;
+    for (const row of rows) {
+      row.hidden = !words.every((word) => (row.dataset.text ?? "").includes(word));
+      if (!row.hidden) count += 1;
+    }
+    if (shown) shown.textContent = words.length ? `${count} of ${rows.length} device files.` : `${rows.length} device files.`;
+    if (empty) empty.hidden = count > 0;
   });
   form?.addEventListener("submit", (event) => event.preventDefault());
 </script>
@@ -91,7 +108,12 @@ const entries = libraryEntries();
 
   .filters {
     max-width: 420px;
-    margin-bottom: var(--s-4);
+    margin-bottom: var(--s-3);
+  }
+
+  .shown {
+    margin-bottom: var(--s-3);
+    font-size: var(--t-small);
   }
 
   .field {

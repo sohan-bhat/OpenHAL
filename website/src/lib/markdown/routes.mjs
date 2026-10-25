@@ -5,12 +5,14 @@ import { REPO_ROOT, readVersions, slugOf } from "../spec-meta.mjs";
 
 export const FIXED_ROUTES = [
   { repo: "docs/guide/quickstart.md", route: "/docs/quickstart/", group: "Get started" },
+  { repo: "docs/guide/install.md", route: "/docs/install/", group: "Get started" },
   { repo: "docs/guide/concepts.md", route: "/docs/concepts/", group: "Get started" },
   { repo: "docs/guide/tutorials/connect-claude.md", route: "/docs/tutorials/connect-claude/", group: "Tutorials" },
   { repo: "docs/guide/tutorials/add-a-device.md", route: "/docs/tutorials/add-a-device/", group: "Tutorials" },
   { repo: "docs/guide/tutorials/build-a-driver.md", route: "/docs/tutorials/build-a-driver/", group: "Tutorials" },
   { repo: "docs/guide/tutorials/create-a-routine.md", route: "/docs/tutorials/create-a-routine/", group: "Tutorials" },
   { repo: "docs/guide/faq.md", route: "/docs/faq/", group: "Get started" },
+  { repo: "docs/guide/library.md", route: "/docs/library/", group: "Reference" },
   { repo: "docs/guide/conformance.md", route: "/docs/conformance/", group: "Reference" },
   { repo: "docs/SAFETY.md", route: "/docs/safety/", group: "Reference" },
   { repo: "docs/ARCHITECTURE.md", route: "/docs/architecture/", group: "Reference" },

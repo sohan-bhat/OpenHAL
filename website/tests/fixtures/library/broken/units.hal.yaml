@@ -1,0 +1,5 @@
+device: Odd sensor
+id: odd-sensor
+connect: { mock: odd }
+read:
+  glow: { unit: blorp, every: 1 s, range: [0, 10] }

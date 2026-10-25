@@ -1,0 +1,8 @@
+device: { name: Air sensor, model: AIR-1, manufacturer: Apollo Automation }
+id: air-sensor
+connect: { esphome: air-sensor.local }
+read:
+  co2: { unit: ppm, every: 60 s }
+  light: { unit: lux, every: 30 s }
+hazard: low
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

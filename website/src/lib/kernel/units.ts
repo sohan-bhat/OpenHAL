@@ -29,6 +29,7 @@ const BASES: Array<[string[], Base]> = [
   [["dimensionless"], { name: "dimensionless", symbol: "", dims: {}, scale: 1 }],
   [["count"], { name: "count", symbol: "count", dims: {}, scale: 1 }],
   [["percent"], { name: "percent", symbol: "%", dims: {}, scale: 0.01 }],
+  [["ppm"], { name: "ppm", symbol: "ppm", dims: {}, scale: 1e-6 }],
   [["radian", "radians", "rad"], { name: "radian", symbol: "rad", dims: {}, scale: 1, prefixable: true }],
   [["degree", "degrees", "deg", "arcdeg"], { name: "degree", symbol: "deg", dims: {}, scale: Math.PI / 180 }],
   [["rpm", "revolutions_per_minute"], { name: "revolutions_per_minute", symbol: "rpm", dims: { time: -1 }, scale: (2 * Math.PI) / 60 }],
@@ -54,6 +55,7 @@ const BASES: Array<[string[], Base]> = [
   [["newton", "newtons", "N"], { name: "newton", symbol: "N", dims: FORCE, scale: 1000, prefixable: true }],
   [["pascal", "Pa"], { name: "pascal", symbol: "Pa", dims: PRESSURE, scale: 1000, prefixable: true }],
   [["bar"], { name: "bar", symbol: "bar", dims: PRESSURE, scale: 1e8, prefixable: true }],
+  [["lux", "lx"], { name: "lux", symbol: "lx", dims: { luminosity: 1, length: -2 }, scale: 1, prefixable: true }],
 ];
 
 const PREFIXES: Array<[string, string, string, number]> = [

@@ -155,9 +155,23 @@ test.describe("catalog pages", () => {
     await expect(page.locator("h1")).toContainText("mock");
   });
 
-  test("the library explains how to contribute while it is empty", async ({ page }) => {
+  test("the library searches its files and never shows an unconfirmed file as confirmed", async ({ page }) => {
     await page.goto("/library/");
-    await expect(page.getByRole("link", { name: "Add a device" })).toHaveAttribute("href", "/docs/tutorials/add-a-device/");
+    const rows = page.locator("[data-entry]");
+    const all = await rows.count();
+    expect(all).toBeGreaterThan(30);
+    await expect(page.locator("[data-shown]")).toHaveText(`${all} device files.`);
+    await page.getByLabel("Search").fill("rigol");
+    await expect(page.locator("[data-shown]")).toHaveText(`2 of ${all} device files.`);
+    await page.getByLabel("Search").fill("no such device");
+    await expect(page.locator("[data-empty]")).toBeVisible();
+    await expect(page.getByRole("link", { name: "How the library works" })).toHaveAttribute("href", "/docs/library/");
+    await page.goto("/library/scpi-keysight-34461a/");
+    await expect(page.locator(".facts")).toContainText("unconfirmed");
+    await expect(page.locator(".facts")).toContainText("This file only reads.");
+    await page.goto("/library/scpi-rigol-dp832/");
+    await expect(page.locator(".facts")).toContainText("set_ch1 (action)");
+    await expect(page.getByRole("table", { name: "Actions" })).toContainText("volts 0 to 5 V, step 0.01");
   });
 
   test("the Python reference is generated from docstrings", async ({ page }) => {

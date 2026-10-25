@@ -1,0 +1,7 @@
+device: { name: Bench multimeter, model: 34461A, manufacturer: Keysight }
+id: bench-meter
+connect: { scpi: auto }
+read:
+  dc_voltage: { unit: V, every: 2 s }
+hazard: low
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

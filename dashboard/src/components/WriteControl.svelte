@@ -89,7 +89,7 @@
 <form class="write" onsubmit={send} aria-labelledby="{ident}-name">
   <div class="top">
     <div class="title">
-      <h4 id="{ident}-name" class="mono">{channel}</h4>
+      <h3 id="{ident}-name" class="mono">{channel}</h3>
       <span class="type muted">{spec.type}{symbol ? ` in ${symbol}` : ""}</span>
     </div>
     <div class="now" aria-live="off">
@@ -219,7 +219,7 @@
     gap: var(--s-3);
   }
 
-  .title h4 {
+  .title h3 {
     font-size: 16px;
   }
 

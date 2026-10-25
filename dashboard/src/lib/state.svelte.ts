@@ -1,6 +1,7 @@
 import { api, ApiError } from "./api";
 import { applyReading, sortDevices, type ReadingEvent } from "./devices";
 import { lastSeq, mergeEntries, parseLiveFrame } from "./logstore";
+import { router } from "./router.svelte";
 import { LiveSocket, type SocketState } from "./socket";
 import type { LogEntry } from "./trace";
 import type { ConfirmationRequest, DeviceSummary, DeviceView, Principal, Status } from "./types";
@@ -14,8 +15,14 @@ interface HubEvent {
   [key: string]: unknown;
 }
 
+function same(next: unknown, current: unknown): boolean {
+  return current !== undefined && current !== null && JSON.stringify(next) === JSON.stringify(current);
+}
+
 class Inspector {
   auth = $state<AuthState>("checking");
+  ready = $state(false);
+  settled = $state(false);
   you = $state<Principal | null>(null);
   status = $state<Status | null>(null);
   devices = $state<DeviceSummary[]>([]);
@@ -35,8 +42,17 @@ class Inspector {
   private pending = new Set<string>();
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private holds = 0;
 
   async boot(): Promise<void> {
+    const routed = router.route.view === "devices" ? router.route.id : null;
+    const first = Promise.all([
+      this.refreshStatus(),
+      this.refreshDevices(),
+      this.refreshConfirmations(),
+      this.loadLog(),
+      routed ? this.refreshDevice(routed) : null,
+    ]);
     try {
       this.you = await api.whoami();
       this.auth = "paired";
@@ -45,12 +61,35 @@ class Inspector {
       if (this.auth === "offline") setTimeout(() => void this.boot(), 3000);
       return;
     }
-    await Promise.all([this.refreshStatus(), this.refreshDevices(), this.refreshConfirmations(), this.loadLog()]);
+    await first;
+    await this.loadSelected();
+    this.ready = true;
     this.startSockets();
     this.pollTimer = setInterval(() => {
       void this.refreshStatus();
       void this.refreshConfirmations();
     }, 5000);
+  }
+
+  hold(): () => void {
+    this.holds += 1;
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.holds -= 1;
+      this.trySettle();
+    };
+  }
+
+  trySettle(): void {
+    if (this.ready && this.holds === 0 && !this.settled) this.settled = true;
+  }
+
+  private async loadSelected(): Promise<void> {
+    if (router.route.view !== "devices") return;
+    const id = router.route.id ?? this.devices[0]?.id;
+    if (id && !this.views[id] && this.devices.some((device) => device.id === id)) await this.refreshDevice(id);
   }
 
   shutdown(): void {
@@ -106,7 +145,8 @@ class Inspector {
 
   async refreshStatus(): Promise<void> {
     try {
-      this.status = await api.status();
+      const status = await api.status();
+      if (!same(status, this.status)) this.status = status;
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) this.auth = "unpaired";
     }
@@ -114,7 +154,8 @@ class Inspector {
 
   async refreshDevices(): Promise<void> {
     try {
-      this.devices = sortDevices(await api.devices());
+      const devices = sortDevices(await api.devices());
+      if (!same(devices, this.devices)) this.devices = devices;
       this.devicesLoaded = true;
       for (const id of Object.keys(this.views)) {
         if (this.devices.some((device) => device.id === id)) void this.refreshDevice(id);
@@ -127,6 +168,7 @@ class Inspector {
   async refreshDevice(id: string): Promise<DeviceView | null> {
     try {
       const view = await api.device(id);
+      if (same(view, this.views[id])) return this.views[id] ?? view;
       this.views = { ...this.views, [id]: view };
       return view;
     } catch {
@@ -136,7 +178,8 @@ class Inspector {
 
   async refreshConfirmations(): Promise<void> {
     try {
-      this.confirmations = await api.confirmations();
+      const confirmations = await api.confirmations();
+      if (!same(confirmations, this.confirmations)) this.confirmations = confirmations;
     } catch {
       return;
     }
@@ -145,7 +188,9 @@ class Inspector {
   private onHubEvent(event: HubEvent): void {
     if (event.type === "reading" && typeof event.device === "string") {
       const view = this.views[event.device];
-      if (view) this.views = { ...this.views, [event.device]: applyReading(view, event as unknown as ReadingEvent) };
+      if (!view) return;
+      const next = applyReading(view, event as unknown as ReadingEvent);
+      if (next !== view) this.views = { ...this.views, [event.device]: next };
       return;
     }
     if (event.type === "state") {

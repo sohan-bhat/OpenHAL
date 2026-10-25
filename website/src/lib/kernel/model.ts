@@ -310,7 +310,13 @@ function readChannel(raw: Raw, where: string): ReadChannel {
   let range: [number, number] | null = null;
   if (raw.range !== undefined && raw.range !== null) {
     if (!Array.isArray(raw.range) || raw.range.length !== 2) throw new Problem(`${where}.range: needs [low, high].`);
-    const items = unit !== null ? raw.range.map((item) => toUnit(item, unit, "range")) : raw.range;
+    let items: Raw[];
+    try {
+      items = unit !== null ? raw.range.map((item) => toUnit(item, unit, "range")) : raw.range;
+    } catch (error) {
+      if (error instanceof UnitError) throw new Problem(`${where}: ${error.message}`);
+      throw error;
+    }
     range = [limit(items[0], `${where}.range`) ?? 0, limit(items[1], `${where}.range`) ?? 0];
   }
   const channel: ReadChannel = {

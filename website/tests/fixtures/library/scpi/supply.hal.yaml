@@ -1,0 +1,16 @@
+device: { name: Bench supply, model: SPD3303X, manufacturer: Siglent }
+id: bench-supply
+connect: { scpi: auto }
+read:
+  ch1_voltage: { unit: V, every: 1 s }
+write:
+  ch1_output: { type: bool, confirm: confirm-each-time, suggested: true }
+actions:
+  set_ch1:
+    args:
+      volts: { unit: V, min: 0, max: 5, step: 0.01 }
+    confirm: confirm-each-time
+    suggested: true
+safe_state: { ch1_output: false }
+hazard: medium
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

@@ -32,6 +32,9 @@
     if (id) void loadDetail(id);
   });
 
+  const settleList = inspector.hold();
+  const settleDetail = inspector.hold();
+
   async function loadList() {
     try {
       routines = await api.routines();
@@ -39,6 +42,8 @@
       routines = [];
     }
     loaded = true;
+    settleList();
+    if (!router.route.id && !routines.length) settleDetail();
   }
 
   async function loadDetail(id: string) {
@@ -48,6 +53,7 @@
     } catch {
       detail = null;
     }
+    settleDetail();
   }
 
   async function act(kind: "dry" | "enable" | "disable" | "run") {

@@ -26,6 +26,8 @@
     void load();
   });
 
+  const settle = inspector.hold();
+
   async function load() {
     try {
       tokens = await api.tokens();
@@ -33,6 +35,7 @@
       error = failure instanceof Error ? failure.message : "Tokens did not load.";
     }
     loaded = true;
+    settle();
   }
 
   async function create(event: SubmitEvent) {

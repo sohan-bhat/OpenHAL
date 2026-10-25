@@ -1,4 +1,3 @@
-# A fixture for the library page tests. Not a real library entry.
 device: { name: Bench power supply, model: DP832, manufacturer: Rigol }
 id: bench-psu
 match:

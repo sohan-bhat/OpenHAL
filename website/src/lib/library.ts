@@ -1,4 +1,4 @@
-import { DeviceFileError, deviceId, effectiveHazard, loadDeviceFile, unconfirmed, type DeviceFile } from "./kernel";
+import { DeviceFileError, UnitError, deviceId, effectiveHazard, loadDeviceFile, unconfirmed, type DeviceFile } from "./kernel";
 import { YamlError, parseDeviceYaml } from "./kernel/yaml";
 
 export type Verification = "unverified" | "tested-reads" | "verified-on-hardware";
@@ -16,6 +16,8 @@ export interface LibraryEntry {
   report: string | null;
   source: string;
   confirmed: boolean;
+  suggested: string[];
+  unconfirmed: string[];
   reads: number;
   writes: number;
   actions: number;
@@ -42,6 +44,18 @@ function matchList(file: DeviceFile): string[] {
   return out;
 }
 
+function suggestedEntries(file: DeviceFile): string[] {
+  return [
+    ...Object.entries(file.write).filter(([, spec]) => spec.suggested).map(([name]) => name),
+    ...Object.entries(file.actions).filter(([, spec]) => spec.suggested).map(([name]) => `${name} (action)`),
+  ];
+}
+
+function isConfirmed(file: DeviceFile): boolean {
+  if (unconfirmed(file).length > 0) return false;
+  return file.confirmed !== null || Object.keys(file.write).length + Object.keys(file.actions).length > 0;
+}
+
 export function parseLibrary(files: Record<string, string>): LibraryEntry[] {
   const entries: LibraryEntry[] = [];
   for (const [path, text] of Object.entries(files)) {
@@ -52,13 +66,13 @@ export function parseLibrary(files: Record<string, string>): LibraryEntry[] {
       file = loadDeviceFile(parseDeviceYaml(text));
     } catch (error) {
       if (error instanceof DeviceFileError) problems = error.problems;
-      else if (error instanceof YamlError) problems = [error.message];
+      else if (error instanceof YamlError || error instanceof UnitError) problems = [error.message];
       else throw error;
     }
     if (!file) {
       entries.push({
         slug, path, title: slug, manufacturer: null, model: null, deviceId: slug, driver: "", hazard: "", verification: "unverified",
-        report: null, source: "", confirmed: false, reads: 0, writes: 0, actions: 0, match: [], text, file: null, problems,
+        report: null, source: "", confirmed: false, suggested: [], unconfirmed: [], reads: 0, writes: 0, actions: 0, match: [], text, file: null, problems,
       });
       continue;
     }
@@ -76,7 +90,9 @@ export function parseLibrary(files: Record<string, string>): LibraryEntry[] {
       verification: verification.status,
       report: verification.report,
       source: provenance.source ?? "hand-written",
-      confirmed: unconfirmed(file).length === 0,
+      confirmed: isConfirmed(file),
+      suggested: suggestedEntries(file),
+      unconfirmed: unconfirmed(file),
       reads: Object.keys(file.read).length,
       writes: Object.keys(file.write).length,
       actions: Object.keys(file.actions).length,

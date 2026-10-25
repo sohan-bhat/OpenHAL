@@ -30,7 +30,7 @@ function firstSentence(text: string): string {
 }
 
 const PLAIN: Record<string, string> = {
-  "One path": "Every write from every client goes through the same kernel.",
+  "One path": "Every command from every client goes through the same kernel.",
   Deterministic: "Plain code with no model. The same command in the same state gets the same answer.",
   "Limits come from humans": "Agents can narrow limits, never widen them.",
   "Stop works": "One stop puts every device in its safe state. Only a person lifts it.",

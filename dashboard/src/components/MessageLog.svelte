@@ -1,6 +1,6 @@
 <script lang="ts">
   import Prose from "./Prose.svelte";
-  import { tick } from "svelte";
+  import { onMount, tick } from "svelte";
   import { SvelteSet } from "svelte/reactivity";
   import { isValueNotification } from "../lib/logstore";
   import { inspector } from "../lib/state.svelte";
@@ -55,6 +55,19 @@
     { value: "notification", label: "notification" },
     { value: "open", label: "no answer yet" },
   ];
+
+  let painted = $state(false);
+
+  onMount(() => {
+    let timer = 0;
+    const frame = requestAnimationFrame(() => {
+      timer = window.setTimeout(() => (painted = true), 0);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
+  });
 
   let lastAnnounced = 0;
   $effect(() => {
@@ -170,7 +183,7 @@
         </button>
       {/if}
       <ol class="trace" aria-label="JSON-RPC messages, oldest first" translate="no">
-        {#each visible as row (row.seq)}
+        {#each painted ? visible : [] as row (row.seq)}
           <li class="row appear {principalClass(row)}" class:start={row.startsExchange} data-kind={row.kind} data-seq={row.seq}>
             <span class="who">
               <span class="time mono">{formatTime(row.at)}</span>

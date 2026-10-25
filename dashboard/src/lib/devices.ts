@@ -1,4 +1,5 @@
 import { fromKernelCode } from "./protocol";
+import { compareText } from "./text";
 import type { Decision, DeviceSummary, DeviceView } from "./types";
 import { formatQuantity } from "./units";
 
@@ -14,6 +15,8 @@ export interface ReadingEvent {
 
 export function applyReading(view: DeviceView, event: ReadingEvent): DeviceView {
   if (view.id !== event.device) return view;
+  const current = view.read[event.channel] ?? view.write[event.channel];
+  if (current && current.known && current.age_s === 0 && JSON.stringify(current.value) === JSON.stringify(event.value)) return view;
   const live = { value: event.value, known: true, age_s: 0 };
   if (event.channel in view.read) {
     return { ...view, read: { ...view.read, [event.channel]: { ...view.read[event.channel]!, ...live } } };
@@ -25,7 +28,7 @@ export function applyReading(view: DeviceView, event: ReadingEvent): DeviceView 
 }
 
 export function sortDevices(devices: DeviceSummary[]): DeviceSummary[] {
-  return [...devices].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+  return [...devices].sort((a, b) => compareText(a.name, b.name) || compareText(a.id, b.id));
 }
 
 export type DecisionTone = "granted" | "pending" | "blocked" | "failed";

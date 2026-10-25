@@ -1,4 +1,3 @@
-# A fixture with a mistake, so the library shows its problem instead of hiding the file.
 device: Broken fan
 connect: { mock: fan }
 write:

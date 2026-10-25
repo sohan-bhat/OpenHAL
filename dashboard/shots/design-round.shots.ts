@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { AgentClient, hubState, signIn, tank } from "../e2e/hub";
 
 const ROUND = process.env.INSPECTOR_ROUND ?? "2";
-const OUT = fileURLToPath(new URL(`../../docs/design-rounds/inspector-round-${ROUND}/`, import.meta.url));
+const OUT = process.env.INSPECTOR_SHOTS ?? fileURLToPath(new URL(`../../docs/design-rounds/inspector-round-${ROUND}/`, import.meta.url));
 const SCENARIO = readFileSync(fileURLToPath(new URL("../../docs/demo/scenario.yaml", import.meta.url)), "utf-8");
 const WIDTHS = [1440, 390] as const;
 const THEMES = ["light", "dark"] as const;
@@ -165,7 +165,7 @@ for (const theme of THEMES) {
       await shoot(page, "writer-detected", width, theme);
       await scrollTo(page, "#interview-title", header);
       await shoot(page, "writer-interview", width, theme);
-      for (const button of await page.getByRole("button", { name: /Use the suggested value/ }).all()) await button.click();
+      for (const button of await page.getByRole("button", { name: /Use suggested value/ }).all()) await button.click();
       await page.getByRole("button", { name: "Confirm these limits" }).click();
       await expect(page.getByText(/added, \d+ removed since the draft/)).toBeVisible();
       await scrollTo(page, ".line.removed", header + 40);
@@ -174,6 +174,27 @@ for (const theme of THEMES) {
     });
   }
 }
+
+test("pairing and offline", async ({ browser }) => {
+  for (const theme of THEMES) {
+    for (const width of WIDTHS) {
+      const viewport = { width, height: width < 800 ? 844 : 900 };
+      const scale = width < 800 ? 2 : 1;
+      const stranger = await browser.newContext({ viewport, colorScheme: theme, reducedMotion: "reduce", deviceScaleFactor: scale });
+      const pair = await stranger.newPage();
+      await pair.goto("/");
+      await expect(pair.getByRole("heading", { name: "Pair this browser with the hub" })).toBeVisible();
+      await shoot(pair, "pair", width, theme);
+      await stranger.close();
+      const page = await open(browser, width, theme);
+      await page.route("**/v1/whoami", (route) => route.abort());
+      await page.goto("/");
+      await expect(page.getByText("does not answer")).toBeVisible();
+      await shoot(page, "offline", width, theme);
+      await page.context().close();
+    }
+  }
+});
 
 test("the stopped state and UNLOCK", async ({ browser }) => {
   for (const theme of THEMES) {
