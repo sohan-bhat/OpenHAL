@@ -119,8 +119,6 @@ class WriterEngine:
         self.hub = hub
         self.sessions: dict[str, Session] = {}
 
-    # ------------------------------------------------------------------ views
-
     def view(self, session: Session) -> dict[str, Any]:
         from openhal.hub.views import data_block
 
@@ -143,8 +141,6 @@ class WriterEngine:
         if session is None:
             raise KeyError(f"There is no driver writer session {session_id!r}.")
         return session
-
-    # ------------------------------------------------------------------ start
 
     async def start(
         self,
@@ -228,7 +224,7 @@ class WriterEngine:
             session.problems.append(f"The {driver} driver couldn't describe the device. {type(exc).__name__}: {exc}")
             return None
         finally:
-            with contextlib.suppress(Exception):  # closing is best effort after a probe
+            with contextlib.suppress(Exception):
                 await asyncio.wait_for(instance.close(), 5.0)
         if identity:
             session.detected["identity"] = identity
@@ -308,8 +304,6 @@ class WriterEngine:
         session.draft = cleaned
         session.status = "interview"
 
-    # ------------------------------------------------------------------ propose
-
     def propose(self, who: Principal, session_id: str, draft_yaml: str) -> Session:
         session = self.get(session_id)
         if session.status == "saved":
@@ -328,8 +322,6 @@ class WriterEngine:
         self._set_draft(session, data)
         self.hub.audit.append("writer_propose", who.label, target=session.id, status=session.status)
         return session
-
-    # ------------------------------------------------------------------ interview
 
     def questions(self, session_id: str) -> list[interview.Question]:
         session = self.get(session_id)
@@ -364,8 +356,6 @@ class WriterEngine:
         self.hub.audit.append("writer_answer", who.label, target=session.id, status=session.status)
         return session
 
-    # ------------------------------------------------------------------ test plan
-
     def _current_file(self, session: Session) -> Any:
         data = session.confirmed or session.draft
         if data is None:
@@ -385,8 +375,6 @@ class WriterEngine:
             else ["The limits are not confirmed yet, so the plan is a preview and was not checked by the kernel."]
         )
         return {"steps": [step.view() for step in steps], "problems": problems}
-
-    # ------------------------------------------------------------------ finish
 
     async def finish(self, who: Principal, session_id: str, save_as: str | None = None) -> dict[str, Any]:
         if who.kind != "human":

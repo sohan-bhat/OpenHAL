@@ -20,7 +20,7 @@ from openhal.spec.models import DeviceFile
 
 @dataclass(frozen=True)
 class TestStep:
-    __test__ = False  # not a pytest class
+    __test__ = False
 
     step: int
     command: dict[str, Any] | str
@@ -120,7 +120,6 @@ async def validate(file: DeviceFile, steps: list[TestStep]) -> list[str]:
     try:
         stand_in = from_data(data)
         if file.writable and isinstance(data.get("confirmed"), dict):
-            # The stand-in only differs in connect. Rebind its confirmation so it is as writable as the file.
             data["confirmed"]["sha256"] = stand_in.limits_sha256()
             stand_in = from_data(data)
     except DeviceFileError as exc:

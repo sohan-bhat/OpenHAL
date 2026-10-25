@@ -392,8 +392,6 @@ def create_app(hub: Hub) -> FastAPI:
             )
         return found
 
-    # ------------------------------------------------------------------ routines (ADR 0014)
-
     def routine_or_404(routine_id: str) -> Any:
         try:
             return hub.routines.get(routine_id)
@@ -461,8 +459,6 @@ def create_app(hub: Hub) -> FastAPI:
         hub.add_approval(body.device, approval)
         return approval.model_dump(mode="json")
 
-    # ------------------------------------------------------------------ discovery (ADR 0014)
-
     @app.post("/v1/discover")
     async def run_discovery(body: DiscoverBody, who: Who) -> dict[str, Any]:
         result = await discovery.discover(body.drivers, registered=set(hub.kernel.devices))
@@ -480,8 +476,6 @@ def create_app(hub: Hub) -> FastAPI:
     async def pair_code(who: Who) -> dict[str, Any]:
         human_only(who)
         return {"code": hub.tokens.new_pairing_code(), "expires_in_s": 300}
-
-    # ------------------------------------------------------------------ driver writer (ADR 0014)
 
     def session_or_404(session_id: str) -> Any:
         try:
@@ -546,8 +540,6 @@ def create_app(hub: Hub) -> FastAPI:
             return await hub.writer.test_plan(session_id)
         except WriterError as exc:
             raise writer_errors(exc) from exc
-
-    # ------------------------------------------------------------------ tokens (human only)
 
     @app.post("/v1/tokens")
     async def create_token(body: TokenBody, who: Who) -> dict[str, Any]:

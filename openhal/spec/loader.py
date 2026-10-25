@@ -51,8 +51,6 @@ class _NoAliasLoader(yaml.SafeLoader):
         return super().compose_node(parent, index)
 
 
-# YAML 1.2 booleans only. In YAML 1.1, on, off, yes and no are booleans, which would turn an
-# enum value such as `off` into False. Device files accept only true and false.
 _NoAliasLoader.yaml_implicit_resolvers = {
     key: [(tag, regexp) for tag, regexp in resolvers if tag != "tag:yaml.org,2002:bool"]
     for key, resolvers in yaml.SafeLoader.yaml_implicit_resolvers.items()

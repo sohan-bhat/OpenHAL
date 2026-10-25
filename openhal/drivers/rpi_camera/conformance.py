@@ -31,7 +31,6 @@ class _Case:
         return RpiCameraDriver(file, picamera2_class=self.rig.picamera2_class())
 
     async def break_connection(self, driver: Driver) -> None:
-        # The camera frontend times out once, as when the ribbon cable is disturbed.
         sensor = self.rig.sensors[0]
         sensor.fail_capture = True
         await driver.health()

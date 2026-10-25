@@ -59,7 +59,6 @@ class Hub:
         self.config = config
         if not in_memory:
             config.ensure_dirs()
-            # The database holds token hashes and the audit log, so only its owner may read it.
             config.db_path.touch(mode=0o600, exist_ok=True)
             config.db_path.chmod(0o600)
         self.audit = AuditLog(":memory:" if in_memory else config.db_path)
@@ -85,8 +84,6 @@ class Hub:
         self._tasks: list[asyncio.Task[None]] = []
         self._listeners: list[Listener] = []
         self.audit.subscribe(self._on_audit)
-
-    # ------------------------------------------------------------------ lifecycle
 
     async def __aenter__(self) -> Hub:
         await self.start()
@@ -123,8 +120,6 @@ class Hub:
             lock.release()
         self._locks.clear()
         self.audit.append("hub_stop", SYSTEM.label, status="done")
-
-    # ------------------------------------------------------------------ devices
 
     def load_device_files(self) -> None:
         """Register every device file in the devices folder. Problems are kept, not raised."""
@@ -182,8 +177,6 @@ class Hub:
     def _start_device_tasks(self, device_id: str) -> None:
         self._tasks.append(asyncio.create_task(self._poll_loop(device_id), name=f"openhal-poll-{device_id}"))
         self._tasks.append(asyncio.create_task(self._heartbeat_loop(device_id), name=f"openhal-heartbeat-{device_id}"))
-
-    # ------------------------------------------------------------------ loops
 
     async def _poll_loop(self, device_id: str) -> None:
         runtime = self.kernel.devices[device_id]
@@ -279,8 +272,6 @@ class Hub:
             "approval_saved", SYSTEM.label, device=device_id, target=f"routine:{approval.routine}", status="done"
         )
 
-    # ------------------------------------------------------------------ live events
-
     def subscribe(self, listener: Listener) -> Callable[[], None]:
         """Receive live events (readings, state, audit). Returns an unsubscribe function."""
         self._listeners.append(listener)
@@ -313,8 +304,6 @@ class Hub:
                 "at": entry.at,
             }
         )
-
-    # ------------------------------------------------------------------ secrets
 
     def _approval_key(self, in_memory: bool) -> bytes:
         if in_memory:

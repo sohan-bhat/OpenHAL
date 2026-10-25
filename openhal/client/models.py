@@ -19,9 +19,6 @@ class Model(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
-# --------------------------------------------------------------------------- hub and identity
-
-
 class Principal(Model):
     kind: str = Field(description="human, agent, routine or system.")
     name: str = Field(description="The name given to the token when it was created.")
@@ -50,9 +47,6 @@ class HubStatus(Model):
     started_at: float | None = None
     load_problems: list[LoadProblem] = []
     you: Principal
-
-
-# --------------------------------------------------------------------------- devices
 
 
 class DeviceSummary(Model):
@@ -146,9 +140,6 @@ class Reading(Model):
     error: str | None = None
 
 
-# --------------------------------------------------------------------------- commands and decisions
-
-
 DecisionStatus = Literal["allowed", "blocked", "needs_confirmation", "done", "pending", "failed"]
 
 
@@ -211,9 +202,6 @@ class ConfirmationRequest(Model):
     result: Decision | None = None
 
 
-# --------------------------------------------------------------------------- audit and drivers
-
-
 class AuditEntry(Model):
     seq: int
     at: float
@@ -243,9 +231,6 @@ class DriverInfo(Model):
     detail: str | None = None
 
 
-# --------------------------------------------------------------------------- discovery (ADR 0014)
-
-
 class Match(Model):
     address: str
     driver: str
@@ -272,9 +257,6 @@ class DiscoveryResult(Model):
     matched: list[Match] = []
     unknown: list[Unknown] = []
     errors: list[DiscoveryError] = []
-
-
-# --------------------------------------------------------------------------- routines (ADR 0014)
 
 
 class StepDecision(Model):
@@ -347,9 +329,6 @@ class OkResult(Model):
     ok: bool
 
 
-# --------------------------------------------------------------------------- driver writer (ADR 0014)
-
-
 class WriterSession(Model):
     id: str
     status: str = Field(description="detecting, drafting, interview, ready or saved.")
@@ -381,7 +360,7 @@ class FinishResult(Model):
 
 
 class TestStep(Model):
-    __test__ = False  # not a pytest class
+    __test__ = False
 
     step: int
     command: dict[str, Any] | str
@@ -393,9 +372,6 @@ class TestPlan(Model):
     __test__ = False
 
     steps: list[TestStep] = []
-
-
-# --------------------------------------------------------------------------- tokens and pairing (proposed)
 
 
 class TokenInfo(Model):

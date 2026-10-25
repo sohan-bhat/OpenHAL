@@ -231,8 +231,6 @@ class MoonrakerDriver(Driver):
                 wanted.setdefault(fan_object(write_map.fan or "fan"), set()).add("speed")
         return {name: sorted(fields) for name, fields in wanted.items()}
 
-    # ------------------------------------------------------------------ transport
-
     def _token(self) -> str | None:
         if self.settings.token_env is None:
             return None
@@ -281,7 +279,7 @@ class MoonrakerDriver(Driver):
             self._ws = await connect(url, additional_headers=headers, open_timeout=self.settings.timeout, proxy=None)
         except (OSError, TimeoutError) as exc:
             raise DriverError(f"Could not open the Moonraker WebSocket at {url} ({exc}).") from exc
-        except Exception as exc:  # websockets raises InvalidStatus, InvalidHandshake and others
+        except Exception as exc:
             raise DriverError(f"Moonraker refused the WebSocket at {url} ({exc}). Check token_env.") from exc
         self._ws_task = asyncio.create_task(self._ws_reader(self._ws))
 
@@ -394,8 +392,6 @@ class MoonrakerDriver(Driver):
         mapping.plain_text(script, "G-code")
         await self._rpc("printer.gcode.script", {"script": script}, deadline=deadline)
 
-    # ------------------------------------------------------------------ identity and describe
-
     async def identify(self) -> dict[str, str]:
         if self._client is None:
             return {"host": self.settings.host}
@@ -415,8 +411,6 @@ class MoonrakerDriver(Driver):
             status = (await self._rpc("printer.objects.query", {"objects": query})).get("status", {})
             settings = status.get("configfile", {}).get("settings", {})
         return _proposal(objects, settings, self.printer_info)
-
-    # ------------------------------------------------------------------ reads
 
     async def _status(self, objects: dict[str, list[str]]) -> dict[str, Any]:
         if self._ws is not None and all(name in self.cache for name in objects):
@@ -482,8 +476,6 @@ class MoonrakerDriver(Driver):
             except UnitError as exc:
                 raise DriverError(f"{channel}: {exc}") from exc
         return value
-
-    # ------------------------------------------------------------------ writes and actions
 
     async def _write(self, channel: str, value: float | bool | str) -> Reading | None:
         write_map = self.writes.get(channel)

@@ -192,8 +192,6 @@ class HidDriver(Driver):
     def _uses_ids(self) -> bool:
         return any(hmap.report != 0 for hmap in self.maps.values())
 
-    # ------------------------------------------------------------------ finding and opening
-
     @classmethod
     async def discover(cls, *, hid_module: Any = None) -> list[Discovered]:
         """List HID interfaces. Enumeration reads the OS device list and never opens a device."""
@@ -338,8 +336,6 @@ class HidDriver(Driver):
                 identity[key] = str(value)[:120]
         return identity
 
-    # ------------------------------------------------------------------ decoding
-
     def _extract(self, payload: bytes, hmap: HidMap) -> int:
         chunk = payload[hmap.byte : hmap.end]
         if len(chunk) < _SIZE[hmap.format]:
@@ -366,8 +362,6 @@ class HidDriver(Driver):
         if channel in self.device.read:
             return self.device.read[channel].type, self.device.read[channel].values
         return self.device.write[channel].type, self.device.write[channel].values
-
-    # ------------------------------------------------------------------ reads
 
     def _require(self) -> Any:
         if self._device is None:
@@ -414,8 +408,6 @@ class HidDriver(Driver):
             and not spec.range[0] <= value <= spec.range[1]
         )
         return Reading(channel, value, unit=unit, at=at, suspect=suspect)
-
-    # ------------------------------------------------------------------ writes
 
     def _raw(self, channel: str, value: float | bool | str, hmap: HidMap) -> tuple[int, float | bool | str]:
         kind, _ = self._kind(channel)
@@ -466,8 +458,6 @@ class HidDriver(Driver):
         buffer[:] = candidate
         self._written[channel] = sent
         return Reading(channel, sent, unit=self.device.channel_unit(channel))
-
-    # ------------------------------------------------------------------ describe
 
     async def describe(self) -> dict[str, Any] | None:
         if self._device is None:

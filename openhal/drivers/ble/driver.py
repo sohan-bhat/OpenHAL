@@ -38,7 +38,6 @@ from openhal.spec.units import parse_duration
 BASE_UUID: Final = "-0000-1000-8000-00805f9b34fb"
 _UUID: Final = re.compile(r"^(?:[0-9a-f]{4}|[0-9a-f]{8}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$")
 
-# Standard characteristics the driver can describe: (name, format, scale, unit, type).
 KNOWN: Final[dict[str, tuple[str, codec.Format, float, str | None, str]]] = {
     "2a6e": ("temperature", "sint16", 0.01, "degC", "number"),
     "2a6f": ("humidity", "uint16", 0.01, "percent", "number"),
@@ -221,8 +220,6 @@ class BleDriver(Driver):
     def _where(self) -> str:
         return f"BLE device {self._address or 'auto'}"
 
-    # ------------------------------------------------------------------ discovery and identity
-
     @classmethod
     async def discover(cls, *, scanner: Any = None, listen_s: float = 5.0) -> list[Discovered]:
         """Listen to advertisements. Scanning never connects to anything."""
@@ -281,8 +278,6 @@ class BleDriver(Driver):
             return bytes(await asyncio.wait_for(self._client.read_gatt_char(char), self.settings.timeout))
         except _errors_or_timeout():
             return None
-
-    # ------------------------------------------------------------------ connection
 
     def _on_disconnect(self, client: Any) -> None:
         self._lost = "the link dropped"
@@ -348,8 +343,6 @@ class BleDriver(Driver):
                 if str(char.uuid).lower() == uuid:
                     return char
         return None
-
-    # ------------------------------------------------------------------ reads and writes
 
     def _require(self) -> Any:
         if self._client is None or not self._client.is_connected:
@@ -446,8 +439,6 @@ class BleDriver(Driver):
             raise DriverError(f"Writing {cmap.characteristic} for {channel} failed ({exc}).") from None
         self._written[channel] = sent
         return Reading(channel, sent, unit=self.device.channel_unit(channel))
-
-    # ------------------------------------------------------------------ describe
 
     async def describe(self) -> dict[str, Any] | None:
         if self._client is None or not self._client.is_connected:

@@ -110,8 +110,6 @@ class ModbusSimulator:
         """The `port` parameter for an RTU device file, or the host for TCP."""
         return f"socket://127.0.0.1:{self.port}" if self.transport == "rtu" else "127.0.0.1"
 
-    # ------------------------------------------------------------------ server
-
     def _device(self) -> SimDevice:
         return SimDevice(
             id=self.unit,

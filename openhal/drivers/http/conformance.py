@@ -51,8 +51,6 @@ class _Case:
         return HttpDriver(file, transport=self.plug.transport())
 
     async def break_connection(self, driver: Driver) -> None:
-        # The client is dropped, as when the device closes the connection. The device stays up,
-        # so the reconnect in the next step can succeed.
         assert isinstance(driver, HttpDriver)
         await driver.close()
 

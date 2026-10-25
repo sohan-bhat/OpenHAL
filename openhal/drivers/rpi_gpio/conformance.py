@@ -38,7 +38,6 @@ class _Case:
         return RpiGpioDriver(file, pin_factory=self.factory)
 
     async def break_connection(self, driver: Driver) -> None:
-        # GPIO can't drop like a cable, but another part of the system can release the pins.
         assert isinstance(driver, RpiGpioDriver)
         for gpio in driver.devices.values():
             gpio.close()

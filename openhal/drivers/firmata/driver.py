@@ -228,8 +228,6 @@ class FirmataDriver(Driver):
         except UnitError:
             raise DriverError(f"{name} needs a unit that converts to {wanted}, or an explicit scale.") from None
 
-    # ------------------------------------------------------------------ discovery and identity
-
     @classmethod
     async def discover(cls) -> list[Discovered]:
         ports = await asyncio.to_thread(list_serial_ports)
@@ -269,8 +267,6 @@ class FirmataDriver(Driver):
             "write": write,
             "notes": "Proposed from the board's capability report. Keep only the pins that are wired.",
         }
-
-    # ------------------------------------------------------------------ connection
 
     async def connect(self) -> None:
         await self.close()
@@ -427,8 +423,6 @@ class FirmataDriver(Driver):
         if len(data) < 3:
             raise DriverError(f"The board sent a malformed pin state for pin {pin}.")
         return data[1], p.unpack7(data[2:])
-
-    # ------------------------------------------------------------------ channels
 
     def _channel(self, name: str) -> _Channel:
         channel = self.channels.get(name)

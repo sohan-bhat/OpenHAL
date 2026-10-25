@@ -92,8 +92,6 @@ class MqttBroker:
         self._server: asyncio.Server | None = None
         self._stopped: asyncio.Event | None = None
 
-    # ------------------------------------------------------------------ control
-
     def start(self) -> MqttBroker:
         if self._thread is not None:
             return self
@@ -181,8 +179,6 @@ class MqttBroker:
     @property
     def client_count(self) -> int:
         return len(self._clients)
-
-    # ------------------------------------------------------------------ protocol
 
     def route(self, topic: str, payload: bytes, retain: bool) -> None:
         """Deliver a publish. Only call this from the broker thread, for example inside a handler."""

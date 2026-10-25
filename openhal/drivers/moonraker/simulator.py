@@ -170,8 +170,6 @@ class MoonrakerSim:
             "startup": "Printer is not ready",
         }.get(value, "Printer is ready")
 
-    # ------------------------------------------------------------------ JSON-RPC methods
-
     def _query(self, objects: dict[str, list[str] | None]) -> dict[str, Any]:
         self.state.step()
         status: dict[str, Any] = {}
@@ -213,8 +211,6 @@ class MoonrakerSim:
             self.klippy_state = "shutdown"
             return "ok"
         raise RpcError(404, f"Method not found: {method}")
-
-    # ------------------------------------------------------------------ HTTP
 
     def http_transport(self) -> httpx.MockTransport:
         return httpx.MockTransport(self._http)
@@ -258,8 +254,6 @@ class MoonrakerSim:
         if (verb, path) in simple:
             return simple[(verb, path)], {}
         raise RpcError(404, f"Not found: {verb} {path}")
-
-    # ------------------------------------------------------------------ WebSocket
 
     async def start_websocket(self) -> int:
         from websockets.asyncio.server import serve

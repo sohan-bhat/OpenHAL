@@ -154,8 +154,6 @@ class MidiDriver(Driver):
         number = mmap.cc if mmap.cc is not None else mmap.note if mmap.note is not None else 0
         return mmap.kind, self._channel(mmap), number
 
-    # ------------------------------------------------------------------ ports
-
     @classmethod
     async def discover(cls, *, backend: Any = None) -> list[Discovered]:
         """List the MIDI ports the system knows. Listing never opens a port."""
@@ -251,8 +249,6 @@ class MidiDriver(Driver):
             identity["output"] = output_name
         return identity
 
-    # ------------------------------------------------------------------ incoming (MIDI thread)
-
     def _on_message(self, message: Any) -> None:
         kind = message.type
         channel = getattr(message, "channel", None)
@@ -270,8 +266,6 @@ class MidiDriver(Driver):
                 self._latest[("program", channel, 0)] = (message.program, now)
             elif kind == "pitchwheel":
                 self._latest[("pitchwheel", channel, 0)] = (message.pitch, now)
-
-    # ------------------------------------------------------------------ reads and writes
 
     def _to_channel(self, raw: int, mmap: MidiMap, kind: str, unit: str | None) -> float | bool:
         if kind == "bool":
@@ -355,8 +349,6 @@ class MidiDriver(Driver):
             raise DriverError(f"Sending {message} failed ({exc}). Check the device is still plugged in.") from None
         self._written[channel] = sent
         return Reading(channel, sent, unit=unit)
-
-    # ------------------------------------------------------------------ describe
 
     async def describe(self, listen_s: float = 3.0) -> dict[str, Any] | None:
         """Propose read channels for every control that sent something. Move each control while it listens."""

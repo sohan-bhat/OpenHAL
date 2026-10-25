@@ -222,8 +222,6 @@ class RpiGpioDriver(Driver):
             return None
         return number
 
-    # ------------------------------------------------------------------ discovery
-
     @classmethod
     async def discover(cls, *, model_file: Path = MODEL_FILE) -> list[Discovered]:
         """Report the Pi this hub runs on, from the device tree. Reads one file."""
@@ -239,8 +237,6 @@ class RpiGpioDriver(Driver):
             identity["pin_factory"] = type(self.pin_factory).__name__
         return identity
 
-    # ------------------------------------------------------------------ lifecycle
-
     def _open(self) -> dict[str, Any]:
         from gpiozero import AngularServo, DigitalInputDevice, DigitalOutputDevice, PWMOutputDevice  # type: ignore[import-untyped]
 
@@ -252,8 +248,6 @@ class RpiGpioDriver(Driver):
             for name, (mode, number, pmap) in self.plan.items():
                 active_high = self.settings.active_high if pmap.active_high is None else pmap.active_high
                 if mode == "input":
-                    # With a pull resistor the active level follows from it (pull up means a button to
-                    # ground reads true when pressed). Without one, the map's active_high decides.
                     pull = pmap.pull or self.settings.pull
                     bounce = pmap.bounce if pmap.bounce is not None else self.settings.bounce
                     pull_up = {"up": True, "down": False, "none": None}[pull]
@@ -316,8 +310,6 @@ class RpiGpioDriver(Driver):
         if closed:
             return Health(connected=False, detail=f"GPIO for {', '.join(closed)} was released")
         return Health(connected=True, detail=f"{len(self.devices)} pins")
-
-    # ------------------------------------------------------------------ reads and writes
 
     def _device(self, channel: str) -> Any:
         if channel not in self.plan:

@@ -63,7 +63,6 @@ class MarlinPrinter:
         self._last_step = time.monotonic()
         self._lock = threading.RLock()
 
-    # The firmware prints a banner after the board resets, which happens when the port opens.
     def on_open(self) -> bytes:
         with self._lock:
             self.last_line = 0

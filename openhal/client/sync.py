@@ -45,8 +45,6 @@ class Client:
             trust_env=False,
         )
 
-    # ------------------------------------------------------------------ plumbing
-
     def __enter__(self) -> Client:
         return self
 
@@ -63,8 +61,6 @@ class Client:
         except httpx.TransportError as exc:
             raise transport_error(self.url, exc) from exc
         return finish(call, response, self.token_source)
-
-    # ------------------------------------------------------------------ hub
 
     def status(self) -> m.HubStatus:
         return self.call(calls.status())
@@ -178,15 +174,11 @@ class Client:
                 break
         return decisions
 
-    # ------------------------------------------------------------------ discovery
-
     def discover(self, drivers: Iterable[str] | None = None) -> m.DiscoveryResult:
         return self.call(calls.discover(drivers))
 
     def unknown_devices(self) -> list[m.Unknown]:
         return self.call(calls.unknown_devices())
-
-    # ------------------------------------------------------------------ routines
 
     def routines(self) -> list[m.RoutineSummary]:
         return self.call(calls.routines())
@@ -215,8 +207,6 @@ class Client:
 
     def approve_routine(self, routine_id: str, device: str) -> m.Approval:
         return self.call(calls.approve_routine(routine_id, device))
-
-    # ------------------------------------------------------------------ driver writer
 
     def start_writer(
         self,
@@ -252,8 +242,6 @@ class Client:
 
     def test_plan(self, session_id: str) -> m.TestPlan:
         return self.call(calls.test_plan(session_id))
-
-    # ------------------------------------------------------------------ tokens and pairing
 
     def tokens(self) -> list[m.TokenInfo]:
         return self.call(calls.tokens())

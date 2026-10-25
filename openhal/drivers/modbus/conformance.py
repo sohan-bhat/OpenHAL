@@ -48,7 +48,6 @@ class _Case:
         return ModbusDriver(file)
 
     async def break_connection(self, driver: Driver) -> None:
-        # The server goes away, which drops the connection, then comes back so the hub can reconnect.
         self.simulator.stop()
         self.simulator.start()
 

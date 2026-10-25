@@ -48,8 +48,6 @@ class AsyncClient:
             trust_env=False,
         )
 
-    # ------------------------------------------------------------------ plumbing
-
     async def __aenter__(self) -> AsyncClient:
         return self
 
@@ -68,8 +66,6 @@ class AsyncClient:
         except httpx.TransportError as exc:
             raise transport_error(self.url, exc) from exc
         return finish(call, response, self.token_source)
-
-    # ------------------------------------------------------------------ hub
 
     async def status(self) -> m.HubStatus:
         return await self.call(calls.status())
@@ -185,15 +181,11 @@ class AsyncClient:
                 break
         return decisions
 
-    # ------------------------------------------------------------------ discovery
-
     async def discover(self, drivers: Iterable[str] | None = None) -> m.DiscoveryResult:
         return await self.call(calls.discover(drivers))
 
     async def unknown_devices(self) -> list[m.Unknown]:
         return await self.call(calls.unknown_devices())
-
-    # ------------------------------------------------------------------ routines
 
     async def routines(self) -> list[m.RoutineSummary]:
         return await self.call(calls.routines())
@@ -222,8 +214,6 @@ class AsyncClient:
 
     async def approve_routine(self, routine_id: str, device: str) -> m.Approval:
         return await self.call(calls.approve_routine(routine_id, device))
-
-    # ------------------------------------------------------------------ driver writer
 
     async def start_writer(
         self,
@@ -260,8 +250,6 @@ class AsyncClient:
     async def test_plan(self, session_id: str) -> m.TestPlan:
         return await self.call(calls.test_plan(session_id))
 
-    # ------------------------------------------------------------------ tokens and pairing
-
     async def tokens(self) -> list[m.TokenInfo]:
         return await self.call(calls.tokens())
 
@@ -273,8 +261,6 @@ class AsyncClient:
 
     async def new_pairing_code(self) -> m.PairingCode:
         return await self.call(calls.new_pairing_code())
-
-    # ------------------------------------------------------------------ live events
 
     async def events(self) -> AsyncIterator[dict[str, Any]]:
         """Yield live events (`hello`, `reading`, `state`, `audit`, `watchdog`) from `/v1/live`.

@@ -33,7 +33,6 @@ from openhal.drivers.base import Discovered, Driver, DriverError, DriverInfo, He
 from openhal.spec.models import DeviceFile
 from openhal.spec.units import parse_duration
 
-# libcamera metadata names and the units they come in (libcamera control_ids.yaml).
 METADATA: Final[dict[str, str]] = {
     "Lux": "lux",
     "ExposureTime": "us",
@@ -147,8 +146,6 @@ class RpiCameraDriver(Driver):
     def number(self) -> int:
         return 0 if self.settings.camera == "auto" else self.settings.camera
 
-    # ------------------------------------------------------------------ discovery
-
     @classmethod
     async def discover(cls, *, picamera2_class: Any = None) -> list[Discovered]:
         """List attached camera modules. This asks libcamera what is attached and opens nothing."""
@@ -180,8 +177,6 @@ class RpiCameraDriver(Driver):
                 identity["model"] = str(entry.get("Model", ""))
                 identity["id"] = str(entry.get("Id", ""))
         return identity
-
-    # ------------------------------------------------------------------ lifecycle
 
     def _open(self) -> Any:
         camera_class = self.camera_class
@@ -248,8 +243,6 @@ class RpiCameraDriver(Driver):
             return Health(connected=False, detail=str(exc))
         return Health(connected=True, detail=f"camera {self.number}")
 
-    # ------------------------------------------------------------------ reads
-
     def _jpeg(self) -> bytes:
         with self._lock:
             if self._camera is None:
@@ -308,8 +301,6 @@ class RpiCameraDriver(Driver):
 
     async def _write(self, channel: str, value: float | bool | str) -> Reading | None:
         raise DriverError("The rpi-camera driver is read-only.")
-
-    # ------------------------------------------------------------------ describe
 
     async def describe(self) -> dict[str, Any] | None:
         if self._camera is None:

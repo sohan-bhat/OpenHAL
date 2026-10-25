@@ -37,8 +37,6 @@ class _Case:
         return MidiDriver(file, backend=FakeMidiBackend(self.controller))
 
     async def break_connection(self, driver: Driver) -> None:
-        # The cable is pulled and plugged back in. The ports the driver holds stay dead until
-        # it reopens them.
         self.controller.unplug()
         self.controller.plug_in()
         assert isinstance(driver, MidiDriver)

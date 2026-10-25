@@ -88,8 +88,6 @@ class DeviceRuntime:
         if not candidates:
             return None
         newest = max(candidates, key=lambda sample: sample.at)
-        # A write channel is a setpoint the device holds while connected, so its last known value
-        # stays valid. Sensor readings go stale.
         if channel not in self.file.write and not newest.commanded and now - newest.at > self.stale_after_s:
             return None
         return newest

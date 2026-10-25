@@ -60,7 +60,6 @@ KINDS = {
     "SelectInfo": "select",
     "ButtonInfo": "button",
 }
-# (kind, attribute) -> channel type it needs, and whether it can be written
 ROLES: dict[tuple[str, str], tuple[str | None, bool]] = {
     ("sensor", "state"): (None, False),
     ("text_sensor", "state"): (None, False),
@@ -191,8 +190,6 @@ class EspHomeDriver(Driver):
                 raise DriverError(f"actions.{name}: ESPHome buttons take no arguments.")
             self.action_bindings[name] = _bind(name, _entity_map(action.map, f"actions.{name}"))
 
-    # ------------------------------------------------------------------ discovery and identity
-
     @classmethod
     async def discover(cls) -> list[Discovered]:
         try:
@@ -218,8 +215,6 @@ class EspHomeDriver(Driver):
             "host": self.settings.host,
             **{key: str(getattr(info, key)) for key in fields if getattr(info, key, "")},
         }
-
-    # ------------------------------------------------------------------ connection
 
     def _secret(self, env: str | None, what: str) -> str | None:
         if env is None:
@@ -316,8 +311,6 @@ class EspHomeDriver(Driver):
         self.states[state.key] = state
         self._updated.set()
 
-    # ------------------------------------------------------------------ reads
-
     def _check_open(self) -> None:
         if self.client is None:
             raise DriverError(f"{self.device.device_id} is not connected. Connect it first.")
@@ -387,8 +380,6 @@ class EspHomeDriver(Driver):
         except UnitError:
             raise DriverError(f"{binding.object_id} reports {source}, which doesn't convert to {unit}.") from None
 
-    # ------------------------------------------------------------------ writes and actions
-
     async def _write(self, channel: str, value: float | bool | str) -> Reading | None:
         binding = self.bindings.get(channel)
         if binding is None or channel not in self.device.write:
@@ -448,8 +439,6 @@ class EspHomeDriver(Driver):
         self._check_open()
         self.client.button_command(binding.info.key)
         return {"pressed": binding.object_id}
-
-    # ------------------------------------------------------------------ describe, health, close
 
     async def describe(self) -> dict[str, Any] | None:
         if self.client is None:

@@ -30,8 +30,6 @@ TRUE_WORDS: Final = frozenset({"1", "on", "true", "high", "yes", "enabled"})
 FALSE_WORDS: Final = frozenset({"0", "off", "false", "low", "no", "disabled"})
 MAX_TEMPLATE: Final = 200
 
-# Unit symbols that home automation systems report (Home Assistant, ESPHome), by registry name.
-# None marks a unit that is known but has no registry equivalent.
 DEVICE_UNITS: Final[dict[str, str | None]] = {
     "°C": "degC",
     "°F": "degF",

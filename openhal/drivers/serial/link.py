@@ -108,7 +108,7 @@ class SerialLink:
 
     @staticmethod
     def _post(loop: asyncio.AbstractEventLoop, callback: Callable[..., None], *args: Any) -> None:
-        with contextlib.suppress(RuntimeError):  # the loop closed while the thread was reading
+        with contextlib.suppress(RuntimeError):
             loop.call_soon_threadsafe(callback, *args)
 
     def _feed(self, data: bytes) -> None:

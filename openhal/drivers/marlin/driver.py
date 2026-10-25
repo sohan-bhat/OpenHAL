@@ -242,8 +242,6 @@ class MarlinDriver(Driver):
         except UnitError:
             raise DriverError(f"{name} needs a unit that converts to {wanted}, not {unit!r}.") from None
 
-    # ------------------------------------------------------------------ discovery and identity
-
     @classmethod
     async def discover(cls) -> list[Discovered]:
         ports = await asyncio.to_thread(list_serial_ports)
@@ -270,8 +268,6 @@ class MarlinDriver(Driver):
                 found[key.lower()] = value.strip()
         self.firmware = found
         return found
-
-    # ------------------------------------------------------------------ connection
 
     async def connect(self) -> None:
         await self.close()
@@ -378,7 +374,6 @@ class MarlinDriver(Driver):
         for key, actual, target in found:
             self.temps[key] = (float(actual), float(target) if target else None)
         if "T" in keys and "T0" not in keys:
-            # A single-extruder report names the active tool T, which is T0.
             self.temps["T0"] = self.temps["T"]
         self.temps_at = time.monotonic()
 
@@ -386,7 +381,6 @@ class MarlinDriver(Driver):
         text = self._history.get(number)
         if text is None or self.link is None:
             return
-        # Marlin follows a resend request with an ok for the rejected line. That ok is not an answer.
         self._skip_ok += 1
         for pending in self._inflight:
             if pending.number is not None and pending.number >= number:
@@ -473,8 +467,6 @@ class MarlinDriver(Driver):
                     self._inflight.remove(pending)
                 raise
 
-    # ------------------------------------------------------------------ reads
-
     async def _temperatures(self) -> dict[str, tuple[float, float | None]]:
         fresh_for = max(self.settings.autoreport * 2.5, 1.0)
         if self.autoreporting and self.temps and time.monotonic() - self.temps_at < fresh_for:
@@ -505,7 +497,6 @@ class MarlinDriver(Driver):
             if write_map.heater is not None:
                 value = await self._temperature(write_map.heater, "target", channel)
                 return Reading(channel, self._from(value, "degC", unit), unit)
-            # Marlin can't report fan speed. Report what this driver last sent, or unknown.
             last = self._fan_sent.get(channel)
             return last if last is not None else Reading(channel, None, unit)
         raise DriverError(f"{self.device.device_id} has no channel {channel!r}.")
@@ -542,8 +533,6 @@ class MarlinDriver(Driver):
             return value
         return convert(Quantity(value, parse_unit(channel_unit)), protocol_unit)
 
-    # ------------------------------------------------------------------ writes and actions
-
     def _heater_command(self, heater: str, celsius: float) -> str:
         if heater in HEATER_CODE:
             return f"{HEATER_CODE[heater]} S{celsius:.1f}"
@@ -560,7 +549,6 @@ class MarlinDriver(Driver):
             await self._gcode(self._heater_command(write_map.heater, celsius))
         else:
             pwm = max(0, min(255, round(float(value) * 255 / 100)))
-            # Until this write succeeds the fan speed is unknown, so a readback must not repeat the old one.
             self._fan_sent.pop(channel, None)
             await self._gcode(f"M106 P{write_map.fan} S{pwm}")
             self._fan_sent[channel] = Reading(channel, value, unit)

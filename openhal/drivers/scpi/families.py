@@ -26,7 +26,6 @@ class Identity:
         return cls(parts[0], parts[1], parts[2], ",".join(parts[3:]).strip(","))
 
 
-# Rated output per channel (volts, amps), used for suggested limits on known supplies.
 RATINGS: dict[str, list[tuple[float, float]]] = {
     "DP832": [(30, 3), (30, 3), (5, 3)],
     "DP832A": [(30, 3), (30, 3), (5, 3)],

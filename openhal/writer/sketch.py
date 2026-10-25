@@ -134,7 +134,6 @@ class SketchFindings:
 
 
 def _strip_comments(text: str) -> str:
-    # Keep line numbers stable by replacing comments with the same number of newlines.
     return _COMMENT.sub(lambda match: "\n" * match.group(0).count("\n"), text)
 
 

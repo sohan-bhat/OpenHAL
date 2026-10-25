@@ -233,7 +233,6 @@ class SimTransport:
         self.open = False
 
     async def connect(self) -> None:
-        # Opening a real port resets most boards, so nothing from an earlier session is left to read.
         while not self.simulator.to_host.empty():
             self.simulator.to_host.get_nowait()
         self.open = True

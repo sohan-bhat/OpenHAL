@@ -92,9 +92,6 @@ def command_body(command: Command) -> dict[str, Any]:
     return body
 
 
-# --------------------------------------------------------------------------- hub
-
-
 def status() -> Call[m.HubStatus]:
     return Call("GET", "/v1/status", _as(m.HubStatus))
 
@@ -204,9 +201,6 @@ def pair(code: str) -> Call[m.OkResult]:
     return Call("POST", "/v1/pair", _as(m.OkResult), {"code": code.strip()})
 
 
-# --------------------------------------------------------------------------- discovery (ADR 0014)
-
-
 def discover(drivers: Iterable[str] | None = None) -> Call[m.DiscoveryResult]:
     body = {"drivers": list(drivers)} if drivers is not None else {}
     return Call("POST", "/v1/discover", _as(m.DiscoveryResult), body)
@@ -214,9 +208,6 @@ def discover(drivers: Iterable[str] | None = None) -> Call[m.DiscoveryResult]:
 
 def unknown_devices() -> Call[list[m.Unknown]]:
     return Call("GET", "/v1/discover/unknown", _list_of(m.Unknown))
-
-
-# --------------------------------------------------------------------------- routines (ADR 0014)
 
 
 def routines() -> Call[list[m.RoutineSummary]]:
@@ -254,9 +245,6 @@ def delete_routine(routine_id: str) -> Call[m.OkResult]:
 
 def approve_routine(routine_id: str, device_id: str) -> Call[m.Approval]:
     return Call("POST", f"/v1/routines/{_seg(routine_id)}/approve", _as(m.Approval), {"device": device_id})
-
-
-# --------------------------------------------------------------------------- driver writer (ADR 0014)
 
 
 def start_writer(
@@ -308,9 +296,6 @@ def test_plan(session_id: str) -> Call[m.TestPlan]:
 
 
 test_plan.__test__ = False  # type: ignore[attr-defined]
-
-
-# --------------------------------------------------------------------------- tokens and pairing (proposed)
 
 
 def tokens() -> Call[list[m.TokenInfo]]:

@@ -132,8 +132,6 @@ class Kernel:
         self._stop_generation = 0
         self._orphans: dict[str, DeviceFile] = {}
 
-    # ------------------------------------------------------------------ registration
-
     def register(self, file: DeviceFile, driver: Driver) -> DeviceRuntime:
         """Add a device and attach its driver to a grant verifier for that device only."""
         device_id = file.device_id
@@ -233,8 +231,6 @@ class Kernel:
     def on_stop(self, hook: StopHook) -> None:
         """Run `hook(reason)` during every stop, after the lock is set (the routine engine pauses here)."""
         self._stop_hooks.append(hook)
-
-    # ------------------------------------------------------------------ connection state
 
     async def connect(self, device_id: str) -> None:
         runtime = self._runtime(device_id)
@@ -351,8 +347,6 @@ class Kernel:
         )
         return reading
 
-    # ------------------------------------------------------------------ evaluation
-
     def evaluate(
         self, command: Command, principal: Principal, *, shadow: Shadow | None = None, wire: bool = False
     ) -> Decision:
@@ -393,7 +387,6 @@ class Kernel:
         self, command: Command, principal: Principal, *, approved: bool, shadow: Shadow | None, wire: bool
     ) -> Decision:
         now = self.clock()
-        # 1. Command shape.
         if not isinstance(command, Write | Action):
             raise Block("bad_request", "Blocked. The command must be a write or an action.")
         runtime = self.devices.get(command.device)
@@ -427,19 +420,14 @@ class Kernel:
                 if missing:
                     parts.append(f"missing arguments {', '.join(sorted(missing))}")
                 raise Block("bad_request", f"Blocked. {command.action} has {' and '.join(parts)}.")
-        # 2. Stop lock.
         if self.stopped:
             raise Block("stopped", "Blocked. The hub is stopped. A human must unlock it before anything can move.")
-        # 3. File state.
         if not file.writable:
             raise Block(
                 "read_only_file",
                 f"Blocked. {command.device} is read-only until a human confirms limits for "
                 f"{', '.join(file.unconfirmed())}. Run the limits interview.",
             )
-        # 4. Device state, including a hub whose interlocks point at devices that aren't registered.
-        # A misspelled id names nothing, so the device it meant to protect can't be known. Every
-        # write waits until the reference is fixed (review finding F17).
         dangling = [
             f"{item.device_id} ({item.reference_problem})" for item in self.devices.values() if item.reference_problem
         ]
@@ -451,7 +439,6 @@ class Kernel:
             )
         if runtime.available:
             raise Block("device_unavailable", f"Blocked. {command.device} is {runtime.available}.")
-        # 5. Principal scope.
         hazard = file.effective_hazard
         if principal.kind == "system":
             raise Block("not_permitted", "Blocked. The system principal is internal to the kernel.")
@@ -465,7 +452,6 @@ class Kernel:
                 f"Blocked. {command.device} is {hazard} hazard and this client's {principal.scope} scope "
                 "doesn't cover it.",
             )
-        # 6 to 9. Units, type, range, step.
         if isinstance(command, Write):
             assert spec is not None
             tightened = self._session_limits.get((principal.label, command.device, command.channel))
@@ -484,7 +470,6 @@ class Kernel:
             digest_value = args
             changes = dict.fromkeys(action_spec.effects, _UNKNOWN)
             self._check_runs(runtime, command.action, action_spec, now, shadow)
-        # 10. Rate of change.
         if isinstance(command, Write) and spec is not None and spec.type == "number":
             assert spec.unit is not None
             limits = effective_limits(
@@ -499,7 +484,6 @@ class Kernel:
                         "Read it first so the change can be measured.",
                     )
                 check_rate(command.channel, spec.unit, limits.rate, float(value), reference, elapsed)
-        # 11. Interlocks and action preconditions.
         resolver = self._resolver(runtime, changes, now, shadow)
         if isinstance(command, Action) and action_spec is not None:
             for condition, message in action_spec.conditions:
@@ -514,7 +498,6 @@ class Kernel:
                         {"interlock": reason} if reason else None,
                     )
         self._check_interlocks(command.device, set(changes), resolver, shadow)
-        # 12. Watchdog budgets.
         for state in runtime.rules:
             if not state.exhausted:
                 continue
@@ -525,7 +508,6 @@ class Kernel:
                     f"Blocked. {state.rule.when} already ran for its {_seconds(state.rule.for_)} limit. "
                     "Wait for the budget to reset.",
                 )
-        # 14. Confirmation. (Check 13, serialization, happens in execute before evaluation.)
         decision_kwargs: dict[str, Any] = {
             "device": command.device,
             "target": command.target,
@@ -713,8 +695,6 @@ class Kernel:
 
         return resolve
 
-    # ------------------------------------------------------------------ execution
-
     async def execute(
         self, command: Command, principal: Principal, *, request: Request | None = None, wire: bool = False
     ) -> Decision:
@@ -735,7 +715,6 @@ class Kernel:
             and request.command == command
             and request.principal == principal
         )
-        # 13. Commands to one device are serialized. A command waits for the device, then is evaluated.
         try:
             await asyncio.wait_for(runtime.lock.acquire(), LOCK_TIMEOUT_S)
         except TimeoutError:
@@ -864,7 +843,6 @@ class Kernel:
             runtime.inflight.difference_update(channels)
             runtime.inflight_task = None
         if not sent or isinstance(command, Action):
-            # The outcome is uncertain, or the action may have changed these channels (F05, F14).
             self._mark_unknown(runtime, channels)
             await self._read_back(runtime, channels)
         self._log(command, principal, result, before=before, request=request)
@@ -938,8 +916,6 @@ class Kernel:
             **details,
         )
 
-    # ------------------------------------------------------------------ dry runs
-
     def dry_run(self, commands: Iterable[Command], principal: Principal, *, wire: bool = False) -> list[Decision]:
         """Evaluate commands in order as if each allowed one had run. Nothing is sent anywhere."""
         shadow = Shadow()
@@ -953,8 +929,6 @@ class Kernel:
                 else:
                     shadow.record_run(command.device, command.action)
         return decisions
-
-    # ------------------------------------------------------------------ confirmations
 
     def _request_changed(self, request: Request, reason: str) -> None:
         self.audit.append(
@@ -1045,8 +1019,6 @@ class Kernel:
         )
         return request
 
-    # ------------------------------------------------------------------ session limits
-
     def tighten(
         self, principal: Principal, device_id: str, channel: str, *, min: Any = None, max: Any = None, rate: Any = None
     ) -> dict[str, float]:
@@ -1114,8 +1086,6 @@ class Kernel:
         self._session_limits[key] = updated
         self.audit.append("tighten", principal.label, device=device_id, target=target, status="done", limits=updated)
         return updated
-
-    # ------------------------------------------------------------------ stop and unlock
 
     async def stop_all(self, principal: Principal, reason: str = "stop requested") -> StopReport:
         """Lock writes, cancel pending requests, pause routines, then put every device in its safe state."""
@@ -1285,8 +1255,6 @@ class Kernel:
         self._approval_windows.clear()
         self.audit.append("unlock", principal.label, status="done")
 
-    # ------------------------------------------------------------------ watchdog
-
     async def tick(self) -> list[str]:
         """Advance max-duration budgets and apply rules whose budget ran out. Returns what fired."""
         fired: list[str] = []
@@ -1295,8 +1263,6 @@ class Kernel:
             resolver = self._resolver(runtime, {}, now, None)
             for state in runtime.rules:
                 active = expressions.evaluate(state.tree, resolver)
-                # Unknown counts as still true once the rule is running, so a sensor that goes quiet
-                # while over the limit can't stop the clock (review finding F12).
                 counting = active is True or (active is None and state.active_since is not None)
                 if counting:
                     state.false_since = None
@@ -1314,7 +1280,6 @@ class Kernel:
                     if state.false_since is None:
                         state.false_since = now
                     reset_after = state.rule.reset_after if state.rule.reset_after is not None else state.rule.for_
-                    # A brief dip doesn't refill the budget (review finding F04).
                     if now - state.false_since >= reset_after:
                         if state.exhausted:
                             self.audit.append(
@@ -1395,8 +1360,6 @@ class Kernel:
         )
         return ok
 
-    # ------------------------------------------------------------------ expressions for routines
-
     def evaluate_expression(self, text: str) -> bool | None:
         """Evaluate an expression against current state. References must name their device.
 
@@ -1415,8 +1378,6 @@ class Kernel:
             return _as_value(target, ref.name, None if sample is None else sample.value)
 
         return expressions.evaluate(tree, resolve)
-
-    # ------------------------------------------------------------------ helpers
 
     def _runtime(self, device_id: str) -> DeviceRuntime:
         runtime = self.devices.get(device_id)

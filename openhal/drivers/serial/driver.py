@@ -212,8 +212,6 @@ class SerialDriver(Driver):
             mapping.render(action_map.command, samples, f"actions.{name}.map.command")
             self._actions[name] = action_map
 
-    # ------------------------------------------------------------------ discovery
-
     @classmethod
     async def discover(cls) -> list[Discovered]:
         ports = await asyncio.to_thread(list_serial_ports)
@@ -234,8 +232,6 @@ class SerialDriver(Driver):
         if self.settings.identify and self.link is not None and self.link.connected:
             identity["reply"] = await self._exchange(self.settings.identify)
         return identity
-
-    # ------------------------------------------------------------------ connection
 
     async def connect(self) -> None:
         await self.close()
@@ -315,8 +311,6 @@ class SerialDriver(Driver):
             await self._send(line)
             return await self._reply(line)
 
-    # ------------------------------------------------------------------ channels
-
     async def read(self, channel: str) -> Reading:
         unit = self.device.channel_unit(channel)
         if channel in self._reads:
@@ -366,7 +360,6 @@ class SerialDriver(Driver):
         spec = self.device.write[channel]
         raw = mapping.encode(value, spec, write_map, f"write.{channel}")
         line = mapping.render(write_map.command, {"value": raw}, f"write.{channel}")
-        # Until this write succeeds the device's value is unknown, so a readback must not repeat the old one.
         self._written.pop(channel, None)
         await self._command(line, write_map.expect, write_map.error)
         reading = Reading(channel, value, self.device.channel_unit(channel))

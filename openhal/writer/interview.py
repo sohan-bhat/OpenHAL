@@ -273,7 +273,6 @@ def apply(draft: dict[str, Any], answers: dict[str, Any], *, by: str, today: dt.
 
             def number(question_id: str, unit: str = unit) -> float:
                 text = str(answers[question_id]).strip()
-                # A bare number typed against the old unit means the new unit.
                 text = re.sub(r"\s*dimensionless$", "", text) if unit != "dimensionless" else text
                 return _number(text, unit, question_id)
 

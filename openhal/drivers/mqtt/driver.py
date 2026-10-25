@@ -217,8 +217,6 @@ class MqttDriver(Driver):
     def _where(self) -> str:
         return f"MQTT broker {self.settings.host}:{self.settings.port}"
 
-    # ------------------------------------------------------------------ paho callbacks (paho's thread)
-
     def _on_connect(self, client: Any, userdata: Any, flags: Any, reason: Any, properties: Any) -> None:
         if getattr(reason, "is_failure", False):
             self._disconnect_reason = f"the broker refused the connection ({reason})"
@@ -240,12 +238,8 @@ class MqttDriver(Driver):
             if self._seen is not None and len(self._seen) < 256:
                 self._seen.setdefault(message.topic, payload)
 
-    # ------------------------------------------------------------------ lifecycle
-
     @classmethod
     async def discover(cls) -> list[Discovered]:
-        # Brokers are found by mDNS (_mqtt._tcp) in the hub. Devices behind a broker are only
-        # visible by listening, which describe() does for a configured broker.
         return []
 
     async def identify(self) -> dict[str, str]:
@@ -306,8 +300,6 @@ class MqttDriver(Driver):
                 await self.close()
                 raise DriverError(f"The {self._where} did not accept the connection, {reason}. Check the credentials.")
             await asyncio.sleep(0.02)
-        # Retained state arrives right after the subscription. Give it a moment so the first
-        # reads see it, but don't wait on topics that have nothing retained.
         settle = time.monotonic() + min(_SETTLE_S, self.settings.timeout)
         while time.monotonic() < settle:
             with self._lock:
@@ -335,8 +327,6 @@ class MqttDriver(Driver):
             return Health(connected=False, detail=f"{self._where} {self._disconnect_reason or 'not connected'}")
         return Health(connected=True, detail=self._where)
 
-    # ------------------------------------------------------------------ reads
-
     async def read(self, channel: str) -> Reading:
         if channel in self.reads:
             spec = self.device.read[channel]
@@ -359,7 +349,6 @@ class MqttDriver(Driver):
         with self._lock:
             latest = self._latest.get(topic)
         if latest is None:
-            # Nothing retained and nothing published since connecting. The value is unknown.
             return Reading(channel, None, unit=unit)
         payload, at = latest
         where = f"topic {topic} for {channel}"
@@ -388,8 +377,6 @@ class MqttDriver(Driver):
             and not spec.range[0] <= value <= spec.range[1]
         )
         return Reading(channel, value, unit=unit, at=at, suspect=suspect)
-
-    # ------------------------------------------------------------------ writes
 
     def _payload(self, wmap: WriteMap, value: float | bool | str) -> bytes:
         item: Any = value
@@ -438,7 +425,6 @@ class MqttDriver(Driver):
             except TimeoutError:
                 pass
             if not info.is_published():
-                # The broker never confirmed. Drop the client so paho can't replay the command later.
                 await self.close()
                 raise TimeoutError(
                     f"The {self._where} didn't acknowledge the command on {wmap.command} within "
@@ -446,8 +432,6 @@ class MqttDriver(Driver):
                 )
         self._written[channel] = value
         return None if wmap.state else Reading(channel, value, unit=self.device.channel_unit(channel))
-
-    # ------------------------------------------------------------------ describe
 
     async def describe(self, listen_s: float = 2.0) -> dict[str, Any] | None:
         """Listen on `discover_topic` and propose a read channel for each topic with a value."""

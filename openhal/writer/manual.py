@@ -76,7 +76,7 @@ def extract(text: str) -> list[ManualCommand]:
         argument = match.group("argument").strip()
         description = match.group("description").strip()
         if _WORDS_ONLY.match(command) and not (argument or description):
-            continue  # a heading in capitals, not a command
+            continue
         if _WORDS_ONLY.match(command) and not argument and not command.endswith("?") and len(description) < 8:
             continue
         key = command.upper().lstrip(":")

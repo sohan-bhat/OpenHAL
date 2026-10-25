@@ -95,8 +95,6 @@ class HomeAssistantSim:
     def set_unavailable(self, entity_id: str) -> None:
         self.entities[entity_id]["state"] = "unavailable"
 
-    # ------------------------------------------------------------------ services
-
     def call_service(self, domain: str, service: str, data: dict[str, Any]) -> list[dict[str, Any]]:
         entity_id = data.get("entity_id")
         self.calls.append((domain, service, dict(data)))
@@ -159,8 +157,6 @@ class HomeAssistantSim:
             "last_changed": "2026-10-24T12:00:00+00:00",
         }
 
-    # ------------------------------------------------------------------ REST
-
     def http_transport(self) -> httpx.MockTransport:
         return httpx.MockTransport(self._http)
 
@@ -194,8 +190,6 @@ class HomeAssistantSim:
                 return httpx.Response(exc.code, json={"message": exc.message})
             return httpx.Response(200, json=changed)
         return httpx.Response(404, json={"message": "Not found"})
-
-    # ------------------------------------------------------------------ WebSocket
 
     async def start_websocket(self) -> int:
         from websockets.asyncio.server import serve

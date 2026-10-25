@@ -151,7 +151,7 @@ class AuditLog:
                 clauses.append(f"{column} = ?")
                 params.append(value)
         params.append(max(1, min(limit, 5000)))
-        where = " AND ".join(clauses)  # only fixed column names, values are bound parameters
+        where = " AND ".join(clauses)
         sql = (
             "SELECT seq, at, event, principal, device, target, status, code, body, prev_hash, hash FROM audit"  # noqa: S608
             f" WHERE {where} ORDER BY seq DESC LIMIT ?"

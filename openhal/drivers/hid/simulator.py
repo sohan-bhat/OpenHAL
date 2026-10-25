@@ -30,19 +30,19 @@ VID, PID = 0x1209, 0x4D48
 PATH = b"sim-hid-0001"
 
 DESCRIPTOR = bytes.fromhex(
-    "05010907a101"  # Generic Desktop, Keypad, Collection (Application)
-    "8501"  # Report ID 1
-    "05091901290415002501750195048102"  # Buttons 1 to 4, one bit each, Input
-    "750495018103"  # 4 bits of padding, Input constant
-    "05010937150026ff00750895018102"  # Dial, 0 to 255, Input
-    "0936150026ff03751095018102"  # Slider, 0 to 1023, 16 bits, Input
-    "8502"  # Report ID 2
-    "05081901290315002501750195039102"  # LEDs 1 to 3, Output
-    "750595019103"  # 5 bits of padding, Output constant
-    "0600ff0901150026ff00750895019102"  # Vendor brightness, Output
-    "8503"  # Report ID 3
-    "0600ff0902150026ff0075089501b102"  # Vendor mode byte, Feature
-    "c0"  # End Collection
+    "05010907a101"
+    "8501"
+    "05091901290415002501750195048102"
+    "750495018103"
+    "05010937150026ff00750895018102"
+    "0936150026ff03751095018102"
+    "8502"
+    "05081901290315002501750195039102"
+    "750595019103"
+    "0600ff0901150026ff00750895019102"
+    "8503"
+    "0600ff0902150026ff0075089501b102"
+    "c0"
 )
 
 

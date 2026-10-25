@@ -91,9 +91,6 @@ def build_server(client: AsyncClient) -> tuple[MCPServer, Tools]:
     return server, tools
 
 
-# --------------------------------------------------------------------------- hub checks and start
-
-
 def hub_answers(url: str, timeout: float = 1.0) -> bool:
     """True if something answers HTTP at the hub address, whatever the status code."""
     try:

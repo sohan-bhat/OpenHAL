@@ -212,11 +212,8 @@ class HttpDriver(Driver):
         except ValidationError as exc:
             raise _map_error(name, exc) from None
 
-    # ------------------------------------------------------------------ lifecycle
-
     @classmethod
     async def discover(cls) -> list[Discovered]:
-        # HTTP has no discovery of its own. mDNS discovery belongs to the hub.
         return []
 
     def _headers(self) -> dict[str, str]:
@@ -284,8 +281,6 @@ class HttpDriver(Driver):
                     identity[str(key)[:64]] = v.show(item)[:200]
         return identity
 
-    # ------------------------------------------------------------------ requests
-
     async def _send(
         self,
         client: httpx.AsyncClient,
@@ -341,8 +336,6 @@ class HttpDriver(Driver):
                 f"{response.text[:80]!r}. Check the path, or set format: text in the map."
             ) from None
 
-    # ------------------------------------------------------------------ reads
-
     async def read(self, channel: str) -> Reading:
         if channel in self.reads:
             spec = self.device.read[channel]
@@ -352,8 +345,6 @@ class HttpDriver(Driver):
             wspec = self.device.write[channel]
             state = self.writes[channel].state
             if state is None:
-                # The device has no read-back for this channel. Report the last value this driver
-                # sent, or None (unknown) before the first write.
                 return Reading(channel, self._written.get(channel), unit=wspec.unit)
             value = await self._read_map(channel, state, wspec.type, wspec.values)
             return Reading(channel, value, unit=wspec.unit)
@@ -388,8 +379,6 @@ class HttpDriver(Driver):
             suspect = not spec.range[0] <= value <= spec.range[1]
         return Reading(channel, value, unit=spec.unit, suspect=suspect)
 
-    # ------------------------------------------------------------------ writes and actions
-
     async def _write(self, channel: str, value: float | bool | str) -> Reading | None:
         wmap = self.writes.get(channel)
         if wmap is None:
@@ -422,8 +411,6 @@ class HttpDriver(Driver):
             return {"status": response.status_code}
         document = self._json(response, f"action {name}")
         return v.extract(document, v.parse_path(amap.json_path), f"action {name}")
-
-    # ------------------------------------------------------------------ describe
 
     async def describe(self) -> dict[str, Any] | None:
         if self.settings.openapi is None:

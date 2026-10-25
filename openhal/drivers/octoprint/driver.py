@@ -192,8 +192,6 @@ class OctoPrintDriver(Driver):
         except UnitError:
             raise DriverError(f"{name} needs a unit that converts to {wanted}.") from None
 
-    # ------------------------------------------------------------------ HTTP
-
     async def connect(self) -> None:
         import httpx
 
@@ -237,8 +235,6 @@ class OctoPrintDriver(Driver):
             return response.json()
         except ValueError:
             raise DriverError(f"OctoPrint sent a reply to {path} that is not JSON.") from None
-
-    # ------------------------------------------------------------------ identity and describe
 
     async def identify(self) -> dict[str, str]:
         if self._client is None:
@@ -293,8 +289,6 @@ class OctoPrintDriver(Driver):
             "notes": "Proposed from the current OctoPrint printer profile. The heater maxima are placeholders.",
         }
 
-    # ------------------------------------------------------------------ reads
-
     async def read(self, channel: str) -> Reading:
         unit = self.device.channel_unit(channel)
         if channel in self.reads:
@@ -310,7 +304,6 @@ class OctoPrintDriver(Driver):
                 return Reading(channel, self._from(value, unit), unit)
             if self._client is None:
                 raise DriverError(f"{self.device.device_id} is not connected. Connect it first.")
-            # OctoPrint can't report fan speed. Report what this driver last sent, or unknown.
             return self._fan_sent.get(channel) or Reading(channel, None, unit)
         raise DriverError(f"{self.device.device_id} has no channel {channel!r}.")
 
@@ -348,8 +341,6 @@ class OctoPrintDriver(Driver):
         if not unit or unit == "degC":
             return celsius
         return convert(Quantity(celsius, parse_unit("degC")), unit)
-
-    # ------------------------------------------------------------------ writes and actions
 
     async def _set_target(self, heater: str, celsius: float) -> None:
         if heater.startswith("tool"):

@@ -38,8 +38,6 @@ class FirmataBoard:
         self._pending_reports = bytearray()
         self._lock = threading.RLock()
 
-    # ------------------------------------------------------------------ board to host
-
     def on_open(self) -> bytes:
         return self._version() + self._firmware()
 
@@ -108,8 +106,6 @@ class FirmataBoard:
                     value = self.analog[channel]
                     out += bytes([p.ANALOG_MESSAGE | channel, *p.split14(value)])
             return out
-
-    # ------------------------------------------------------------------ host to board
 
     def receive(self, data: bytes) -> bytes:
         with self._lock:

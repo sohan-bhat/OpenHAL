@@ -23,8 +23,6 @@ from openhal.client import models as m
 from openhal.mcp.errors import Decision, ErrorMapper, tool_error_text
 from openhal.spec.schema import device_file_schema
 
-# --------------------------------------------------------------------------- shared inputs
-
 DeviceId = Annotated[str, Field(description="Device id from list_devices, for example desk-fan.", max_length=48)]
 ChannelName = Annotated[str, Field(description="Channel name from describe_device, for example fan_speed.")]
 ActionName = Annotated[str, Field(description="Action name from describe_device, for example home.")]
@@ -90,9 +88,6 @@ def arguments(args: dict[str, Argument] | None) -> dict[str, Any]:
     return {name: value.model_dump() if isinstance(value, Quantity) else value for name, value in (args or {}).items()}
 
 
-# --------------------------------------------------------------------------- outputs that add to hub shapes
-
-
 class PlanBlock(BaseModel):
     step: int = Field(description="Index of the step in the plan, from 0.")
     code: str | None = Field(description="Stable block code, for example above_max or interlock.")
@@ -118,8 +113,6 @@ class LimitsInterview(BaseModel):
     next_step: str = Field(description="What to tell the person. Only a human can answer these questions.")
 
 
-# --------------------------------------------------------------------------- the tools
-
 READ_ONLY: Final = ToolAnnotations(read_only_hint=True, destructive_hint=False, open_world_hint=False)
 CONTROL: Final = ToolAnnotations(read_only_hint=False, destructive_hint=True, open_world_hint=True)
 DRAFT: Final = ToolAnnotations(read_only_hint=False, destructive_hint=False, open_world_hint=False)
@@ -140,7 +133,7 @@ def wrap_device_text(source: str, text: str) -> str:
     """Mark text a device produced as data, the same way the hub marks device file notes."""
     closing = f"</{DATA_BLOCK_TAG}>"
     if text.startswith(f"<{DATA_BLOCK_TAG} ") and text.endswith(closing) and text.count(closing) == 1:
-        return text  # the hub already wrapped it
+        return text
     cleaned = text.replace(f"</{DATA_BLOCK_TAG}>", f"</ {DATA_BLOCK_TAG}>")
     return (
         f'<{DATA_BLOCK_TAG} source="{source}">\n'
@@ -186,8 +179,6 @@ class Tools:
         except OpenHALError as exc:
             raise ToolError(tool_error_text(exc)) from exc
 
-    # ------------------------------------------------------------------ devices and reads
-
     async def hub_status(self) -> m.HubStatus:
         """Show the hub's state. stopped is true after stop_all until a person unlocks, and every write is
         blocked meanwhile. Also shows how many devices are connected and how many requests wait for a human."""
@@ -230,8 +221,6 @@ class Tools:
             pairs.append((device, channel))
         readings = await self._run(lambda hub: hub.read_many(pairs))
         return [_wrap_reading(reading) for reading in readings]
-
-    # ------------------------------------------------------------------ control
 
     async def write(self, device: DeviceId, channel: ChannelName, value: CommandValue, unit: Unit = None) -> Decision:
         """Ask the hub to set one write channel. The safety kernel checks units, range, step, rate of change,
@@ -337,8 +326,6 @@ class Tools:
         requests = await self._run(lambda hub: hub.confirmations(include_done=True))
         return ConfirmationStatus(requests=requests, note=CONFIRMATION_NOTE)
 
-    # ------------------------------------------------------------------ routines
-
     async def list_routines(self) -> list[m.RoutineSummary]:
         """List routines with whether each is enabled, the devices it touches, its highest hazard class, its
         triggers and its last run. Routines run without a model, through the same safety kernel."""
@@ -373,8 +360,6 @@ class Tools:
         devices. Returns ok, the decision for each step and any problems with the routine itself."""
         return await self._run(lambda hub: hub.routine_dry_run(routine_id))
 
-    # ------------------------------------------------------------------ audit and drivers
-
     async def get_audit_log(
         self,
         device: Annotated[str | None, Field(description="Only entries for this device.")] = None,
@@ -390,8 +375,6 @@ class Tools:
         """List the protocol drivers and bridges this hub has, whether each is installed, and the protocols
         it speaks. A driver that is not installed says which package to install."""
         return await self._run(lambda hub: hub.drivers())
-
-    # ------------------------------------------------------------------ discovery and the driver writer
 
     async def discover_devices(
         self,

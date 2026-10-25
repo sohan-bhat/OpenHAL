@@ -185,8 +185,6 @@ class HomeAssistantDriver(Driver):
         self._lost: str | None = None
         self._check_maps()
 
-    # ------------------------------------------------------------------ channel mapping
-
     def _check_maps(self) -> None:
         maps: dict[str, ChannelMap] = {}
         specs: dict[str, ReadChannel | WriteChannel] = {**self.device.read, **self.device.write}
@@ -239,8 +237,6 @@ class HomeAssistantDriver(Driver):
                 convert(Quantity(1, parse_unit(spec.unit)), units[role])
             except UnitError:
                 raise DriverError(f"{name}: a {role} channel needs a unit that converts to {units[role]}.") from None
-
-    # ------------------------------------------------------------------ transport
 
     async def connect(self) -> None:
         import httpx
@@ -303,7 +299,7 @@ class HomeAssistantDriver(Driver):
             ws = await connect(url, open_timeout=self.settings.timeout, proxy=None)
         except (OSError, TimeoutError) as exc:
             raise DriverError(f"Could not open the Home Assistant WebSocket at {url} ({exc}).") from exc
-        except Exception as exc:  # websockets raises InvalidStatus, InvalidHandshake and others
+        except Exception as exc:
             raise DriverError(f"Home Assistant refused the WebSocket at {url} ({exc}).") from exc
         try:
             hello = json.loads(await asyncio.wait_for(ws.recv(), self.settings.timeout))
@@ -431,8 +427,6 @@ class HomeAssistantDriver(Driver):
             return
         await self._rest("POST", f"/api/services/{domain}/{service}", {"entity_id": entity_id, **(data or {})})
 
-    # ------------------------------------------------------------------ identity and describe
-
     async def identify(self) -> dict[str, str]:
         identity = {"host": self.settings.host, "entities": ", ".join(self.allowed)}
         if self.ha_version:
@@ -466,8 +460,6 @@ class HomeAssistantDriver(Driver):
         if len(self.allowed) == 1:
             proposal["match"] = {"homeassistant": self.allowed[0]}
         return proposal
-
-    # ------------------------------------------------------------------ reads
 
     async def read(self, channel: str) -> Reading:
         mapped = self.channels.get(channel)
@@ -549,8 +541,6 @@ class HomeAssistantDriver(Driver):
                 f"{mapped.entity} reports {source}, which doesn't convert to {mapped.name}'s {unit}."
             ) from None
 
-    # ------------------------------------------------------------------ writes
-
     async def _write(self, channel: str, value: float | bool | str) -> Reading | None:
         mapped = self.channels.get(channel)
         if mapped is None or channel not in self.device.write:
@@ -580,8 +570,6 @@ class HomeAssistantDriver(Driver):
         else:
             raise DriverError(f"{channel} is read-only in Home Assistant.")
         return Reading(channel, value, unit)
-
-    # ------------------------------------------------------------------ health and close
 
     async def health(self) -> Health:
         if self._client is None:

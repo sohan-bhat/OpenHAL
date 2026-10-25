@@ -108,7 +108,7 @@ def _scan_sysfs(sysfs: Path) -> list[Discovered]:
         label = label_file.read_text(encoding="utf-8", errors="replace").strip() if label_file.is_file() else None
         index_file = entry / "index"
         if index_file.is_file() and index_file.read_text().strip() not in ("", "0"):
-            continue  # metadata nodes that UVC cameras add next to the capture node
+            continue
         found.append(
             Discovered(driver="uvc", address=f"/dev/{entry.name}", identifiers={"usb_class": "video"}, label=label)
         )
@@ -162,14 +162,10 @@ class UvcDriver(Driver):
             return int(name)
         return name
 
-    # ------------------------------------------------------------------ discovery
-
     @classmethod
     async def discover(cls, *, sysfs: Path = SYSFS) -> list[Discovered]:
         """List V4L2 capture devices on Linux from sysfs. Never opens a camera."""
         return await asyncio.to_thread(_scan_sysfs, sysfs)
-
-    # ------------------------------------------------------------------ lifecycle
 
     async def identify(self) -> dict[str, str]:
         identity = {"source": str(self.source), "backend": self.settings.backend}
@@ -227,8 +223,6 @@ class UvcDriver(Driver):
         with self._lock:
             return bool(self._capture is not None and self._capture.grab())
 
-    # ------------------------------------------------------------------ reads
-
     def _capture_jpeg(self) -> bytes:
         cv2 = _cv2()
         with self._lock:
@@ -270,8 +264,6 @@ class UvcDriver(Driver):
 
     async def _write(self, channel: str, value: float | bool | str) -> Reading | None:
         raise DriverError("The uvc driver is read-only.")
-
-    # ------------------------------------------------------------------ describe
 
     async def describe(self) -> dict[str, Any] | None:
         if self._capture is None:

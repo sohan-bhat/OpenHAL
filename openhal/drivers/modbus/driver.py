@@ -240,12 +240,8 @@ class ModbusDriver(Driver):
             raise DriverError(f"{name} runs past register 65535.")
         return rmap
 
-    # ------------------------------------------------------------------ lifecycle
-
     @classmethod
     async def discover(cls) -> list[Discovered]:
-        # Scanning unit ids sends requests to devices nobody configured, and on RTU it can collide
-        # with another master. Devices are added from a device file instead.
         return []
 
     @property
@@ -287,8 +283,6 @@ class ModbusDriver(Driver):
             return Health(connected=False, detail=f"{self._where} is not connected")
         if self._failures >= _FAILURES_BEFORE_UNHEALTHY:
             return Health(connected=False, detail=f"{self._where} stopped answering ({self._failures} failures)")
-        # A TCP socket or a serial port stays open when the device behind it dies, so health
-        # proves the device answers. It reads the first mapped channel, which is read-only.
         probe = next(iter(self.maps), None)
         if probe is not None:
             started = time.monotonic()
@@ -308,7 +302,6 @@ class ModbusDriver(Driver):
         try:
             response = await self._call("read_device_information", read_code=1, object_id=0)
         except (DriverError, TimeoutError):
-            # Read Device Identification is optional in the spec and many devices lack it.
             return identity
         names = {0: "vendor", 1: "product_code", 2: "revision", 3: "vendor_url", 4: "product_name", 5: "model"}
         for key, value in (getattr(response, "information", None) or {}).items():
@@ -334,8 +327,6 @@ class ModbusDriver(Driver):
             "into each channel's map."
         )
         return result
-
-    # ------------------------------------------------------------------ transactions
 
     async def _call(self, method: str, *args: Any, **kwargs: Any) -> Any:
         from pymodbus.exceptions import ConnectionException, ModbusException, ModbusIOException
@@ -384,8 +375,6 @@ class ModbusDriver(Driver):
 
     def _orders(self, rmap: RegisterMap) -> tuple[Order, Order]:
         return rmap.word_order or self.settings.word_order, rmap.byte_order or self.settings.byte_order
-
-    # ------------------------------------------------------------------ reads and writes
 
     async def read(self, channel: str) -> Reading:
         rmap = self.maps.get(channel)

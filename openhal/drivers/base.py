@@ -96,7 +96,6 @@ class Driver(abc.ABC):
         self.params = self.validate_params(device.connect.params)
         self._verify: Verifier | None = None
 
-    # The kernel attaches its verifier once, when the device is registered.
     @final
     def attach(self, verifier: Verifier) -> None:
         if self._verify is not None:
@@ -116,7 +115,6 @@ class Driver(abc.ABC):
         model = cls.params_model.model_validate(params)
         return dict(model.model_dump())
 
-    # Discovery and identification only ever send documented read-only commands.
     @classmethod
     async def discover(cls) -> list[Discovered]:
         return []
@@ -164,7 +162,6 @@ class Driver(abc.ABC):
             raise GrantError(_NO_VERIFIER)
         self._verify(grant, self.device.device_id, target, value)
 
-    # Implementations. Only the final methods above may call these.
     @abc.abstractmethod
     async def _write(self, channel: str, value: float | bool | str) -> Reading | None: ...
 

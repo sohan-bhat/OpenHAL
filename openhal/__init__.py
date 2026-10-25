@@ -16,7 +16,6 @@ __all__ = ["PRODUCT_NAME", "SPEC_VERSION", "__version__", "aconnect", "connect"]
 
 
 def __getattr__(name: str) -> Any:
-    # The client imports httpx, so it loads only when someone asks for it.
     if name in ("connect", "aconnect"):
         from openhal import client
 

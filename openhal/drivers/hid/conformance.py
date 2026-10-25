@@ -46,7 +46,6 @@ class _Case:
         return HidDriver(file, hid_module=FakeHid(self.pad))
 
     async def break_connection(self, driver: Driver) -> None:
-        # Unplug and plug back in. The open handle stays dead until the driver reopens it.
         assert isinstance(driver, HidDriver)
         self.pad.unplug()
         for _ in range(100):

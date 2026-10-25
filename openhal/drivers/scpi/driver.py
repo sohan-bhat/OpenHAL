@@ -155,8 +155,6 @@ class ScpiDriver(Driver):
             mapping.render(action_map.command, samples, f"actions.{name}.map.command")
             self.actions[name] = action_map
 
-    # ------------------------------------------------------------------ VISA plumbing
-
     def _resource_manager(self) -> Any:
         import pyvisa
 
@@ -218,7 +216,7 @@ class ScpiDriver(Driver):
     def _close_session(self) -> None:
         inst, self._inst = self._inst, None
         if inst is not None:
-            with contextlib.suppress(Exception):  # a session that is already gone can't close cleanly
+            with contextlib.suppress(Exception):
                 inst.close()
 
     async def _call(self, work: Callable[[Any], T], what: str) -> T:
@@ -247,8 +245,6 @@ class ScpiDriver(Driver):
     def _reopen(self) -> None:
         self._close_session()
         self._open()
-
-    # ------------------------------------------------------------------ discovery and identity
 
     @classmethod
     async def discover(cls) -> list[Discovered]:
@@ -292,8 +288,6 @@ class ScpiDriver(Driver):
         assert self.idn is not None
         return families.propose(self.idn)
 
-    # ------------------------------------------------------------------ connection
-
     async def connect(self) -> None:
         await self.close()
         await asyncio.to_thread(self._open)
@@ -332,8 +326,6 @@ class ScpiDriver(Driver):
     async def close(self) -> None:
         async with self._lock:
             await asyncio.to_thread(self._close_session)
-
-    # ------------------------------------------------------------------ channels
 
     async def read(self, channel: str) -> Reading:
         unit = self.device.channel_unit(channel)

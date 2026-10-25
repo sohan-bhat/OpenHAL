@@ -22,7 +22,7 @@ from openhal.client.settings import TOKEN_ENV, human_token_path
 @dataclass
 class Check:
     name: str
-    result: str  # ok, warn or fail
+    result: str
     detail: str
 
 

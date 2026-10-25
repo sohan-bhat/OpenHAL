@@ -251,8 +251,6 @@ class RoutineEngine:
         self.kernel.on_stop(self._on_stop)
         self._load()
 
-    # ------------------------------------------------------------------ storage
-
     def _load(self) -> None:
         with self._lock:
             rows = self._conn.execute(
@@ -309,8 +307,6 @@ class RoutineEngine:
     def _file_path(self, record: Record) -> Path:
         suffix = ".routine.py" if record.kind == "python" else ROUTINE_FILE_SUFFIX
         return self.hub.config.routines_dir / f"{record.id}{suffix}"
-
-    # ------------------------------------------------------------------ management
 
     def create(
         self,
@@ -441,8 +437,6 @@ class RoutineEngine:
         scope: Scope = "control_low" if record.enabled_scope == "control_low" else "control_medium"
         return routine(record.id, scope, record.sha256)
 
-    # ------------------------------------------------------------------ dry run
-
     def dry_run(self, routine_id: str) -> dict[str, Any]:
         """Evaluate every command in every branch as the routine would run it, without running anything."""
         record = self.get(routine_id)
@@ -491,8 +485,6 @@ class RoutineEngine:
                     shadow.record(command.device, command.channel, decision.value)
                 else:
                     shadow.record_run(command.device, command.action)
-
-    # ------------------------------------------------------------------ running
 
     async def run(self, routine_id: str, trigger: str = "manual", *, by: Principal | None = None) -> Run:
         """Run a routine now and wait for it to finish."""
@@ -633,8 +625,6 @@ class RoutineEngine:
             }
             for row in rows
         ]
-
-    # ------------------------------------------------------------------ scheduling
 
     async def start(self) -> None:
         self._task = asyncio.create_task(self._scheduler(), name="openhal-routines")

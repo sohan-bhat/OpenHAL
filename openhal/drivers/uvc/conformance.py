@@ -32,7 +32,6 @@ class _Case:
         return UvcDriver(file, capture_factory=capture_factory(self.camera))
 
     async def break_connection(self, driver: Driver) -> None:
-        # The camera is unplugged and plugged back in. The open capture stays dead until reopened.
         assert isinstance(driver, UvcDriver)
         self.camera.unplug()
         await driver.health()
