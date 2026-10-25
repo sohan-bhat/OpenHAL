@@ -150,8 +150,22 @@ const sections = specItems
     margin: 0;
     padding: 0;
     display: grid;
-    gap: var(--s-4) var(--s-5);
+    gap: 0 var(--s-5);
     align-items: start;
+  }
+
+  .groups li + li {
+    margin-top: var(--s-4);
+  }
+
+  @media (min-width: 640px) {
+    .groups {
+      row-gap: var(--s-4);
+    }
+
+    .groups li + li {
+      margin-top: 0;
+    }
   }
 
   .groups li {
@@ -176,6 +190,8 @@ const sections = specItems
     margin: 0;
     display: flex;
     flex-wrap: wrap;
+    align-content: flex-start;
+    align-self: start;
     gap: 2px var(--s-3);
   }
 
@@ -200,6 +216,12 @@ const sections = specItems
   @media (min-width: 640px) {
     .groups {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .groups li {
+      grid-row: span 3;
+      grid-template-rows: subgrid;
+      row-gap: var(--s-1);
     }
   }
 
