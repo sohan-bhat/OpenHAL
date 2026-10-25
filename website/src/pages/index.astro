@@ -8,6 +8,7 @@ import { drivers, statusWord } from "../lib/catalog";
 import { HOME_TITLE } from "../lib/pages";
 import { scenarioTrace } from "../lib/scenario";
 import { latestVersion, specPages } from "../lib/spec";
+import { specSidebar } from "../lib/spec-nav";
 import "../styles/prose.css";
 
 const quickstart = await getEntry("snippets", "quickstart");
@@ -15,9 +16,13 @@ const { Content: Quickstart } = await render(quickstart!);
 const all = drivers();
 const running = all.filter((driver) => driver.tier > 0 && (driver.status === "implemented" || driver.status === "verified"));
 const planned = all.filter((driver) => driver.status === "planned").length;
+const tested = all.filter((driver) => driver.status === "implemented").length;
 const verified = all.filter((driver) => driver.status === "verified").length;
 const latest = latestVersion();
-const sections = latest ? (await specPages(latest)).filter((page) => page.depth === 1) : [];
+const specItems = latest ? specSidebar(await specPages(latest))[0].items : [];
+const sections = specItems
+  .map((item, index) => ({ ...item, href: item.href ?? specItems[index + 1]?.href }))
+  .filter((item) => item.depth === 1 && item.href);
 ---
 
 <Base title={`${PRODUCT_NAME}. ${HOME_TITLE}`} description={HOME_TITLE} bare>
@@ -38,7 +43,7 @@ const sections = latest ? (await specPages(latest)).filter((page) => page.depth 
     <section aria-labelledby="devices-title" class="block">
       <h2 id="devices-title">Device families</h2>
       <p class="summary">
-        <span class={`status ${verified ? "ok" : "unverified"}`}>{running.length} drivers {statusWord("implemented")}</span>
+        <span class={`status ${verified ? "ok" : "unverified"}`}>{tested} drivers {statusWord("implemented")}</span>
         <span class="muted">{verified ? `${verified} verified on hardware.` : "None is verified on hardware yet."} {planned} planned.</span>
       </p>
       <ul class="families">
