@@ -67,7 +67,7 @@ const verified = all.filter((driver) => driver.status === "verified").length;
     <p class="summary">
       <span class="status unverified">{tested} tested on simulator</span>
       <span class={`status ${verified ? "ok" : "unverified"}`}>{verified ? `${verified} verified on hardware` : "None verified on hardware yet"}</span>
-      <span class="status planned">{planned} planned</span>
+      {planned > 0 && <span class="status planned">{planned} planned</span>}
     </p>
     <p class="shown muted" aria-live="polite" data-shown>{all.length} drivers.</p>
 

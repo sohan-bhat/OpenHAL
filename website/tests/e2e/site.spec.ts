@@ -139,12 +139,12 @@ test.describe("playground", () => {
 });
 
 test.describe("catalog pages", () => {
-  test("drivers filter by status and never claim hardware verification", async ({ page }) => {
+  test("drivers filter by tier and never claim hardware verification", async ({ page }) => {
     await page.goto("/drivers/");
     await expect(page.getByText("None verified on hardware yet")).toBeVisible();
     const all = await page.locator("[data-driver]").count();
     expect(all).toBeGreaterThan(1);
-    await page.getByLabel("Status").selectOption("planned");
+    await page.getByLabel("Tier").selectOption({ label: "Tier 3" });
     const shown = await page.locator("[data-driver]:visible").count();
     expect(shown).toBeLessThan(all);
     await expect(page.locator("[data-shown]")).toHaveText(`${shown} of ${all} drivers.`);
