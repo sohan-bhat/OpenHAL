@@ -8,7 +8,7 @@ import { rehypeDiagrams } from "./src/lib/markdown/mermaid.mjs";
 import { rehypeCodeBlocks, rehypeHeadingLinks, rehypeTables, rehypeTypography, remarkRepoLinks, remarkTitle } from "./src/lib/markdown/plugins.mjs";
 import { deviceSchemaValidator } from "./src/lib/schema-validator-plugin.mjs";
 
-const SITE_URL = "https://openhal.dev";
+const SITE_URL = process.env.OPENHAL_SITE ?? "https://openhal.dev";
 
 const interactDirective = {
   name: "openhal-interact-directive",

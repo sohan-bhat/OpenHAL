@@ -52,4 +52,4 @@ Options if you want a different public name, all checked free on PyPI and npm as
 
 ## 6. Domain
 
-openhal.com and openhal.org are registered by someone else. openhal.io looked unregistered on 2026-10-24. openhal.dev could not be checked. Check and buy at a registrar of your choice, then tell the website where it lives (website/astro.config.mjs, `site`).
+openhal.com and openhal.org are registered by someone else. openhal.io looked unregistered on 2026-10-24. openhal.dev could not be checked. The website is published at https://sohan-bhat.github.io/OpenHAL/ until then. Check and buy at a registrar of your choice, add it as the custom domain in the repository's Pages settings, set `OPENHAL_SITE` in .github/workflows/pages.yml to it, and drop the rebase step there, which only exists to serve the site under /OpenHAL/.
