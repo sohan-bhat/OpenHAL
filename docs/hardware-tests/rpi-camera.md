@@ -20,7 +20,6 @@ Run every step on the Pi, from the repository checkout. [README.md](README.md) h
 
 - A Raspberry Pi 4 or 5 with Raspberry Pi OS Trixie or later, and a camera module on the CSI connector. Bookworm's Python 3.11 is older than the 3.12 OpenHAL needs, and picamera2's libcamera bindings load only in the system Python.
 - picamera2 from apt and a virtual environment on the system Python that can see it, set up as [README.md](README.md#on-a-raspberry-pi) says. The driver needs no extra. Check it with `uv run python -c "import picamera2"`.
-
 - A copy of the example file, `cp openhal/drivers/rpi_camera/examples/camera-module-3.hal.yaml my-picam.hal.yaml`.
 
 ## The test script
