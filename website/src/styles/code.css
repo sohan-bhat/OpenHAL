@@ -103,3 +103,13 @@
   color: var(--text-2);
   user-select: none;
 }
+
+.trace-code .trace-arrow {
+  display: inline-block;
+  box-sizing: content-box;
+  width: 1.5ch;
+  height: 0.7em;
+  padding-right: 0.5ch;
+  vertical-align: 0.05em;
+  color: var(--text);
+}

@@ -65,14 +65,48 @@ function classList(node) {
   return Array.isArray(value) ? value.map(String) : value ? String(value).split(" ") : [];
 }
 
-export function codeFigure(text, lang, tested) {
-  const language = languageOf(lang);
-  const spans = tokenize(text, language).map(([cls, value]) =>
+const ARROWS = { "→": "out", "←": "in" };
+
+function arrowElement(direction) {
+  const line = direction === "out" ? { x1: 1, y1: 5, x2: 11, y2: 5 } : { x1: 7, y1: 5, x2: 17, y2: 5 };
+  const head = direction === "out" ? "18,5 11,1.5 11,8.5" : "0,5 7,1.5 7,8.5";
+  return el(
+    "svg",
+    { className: ["trace-arrow"], viewBox: "0 0 18 10", role: "img", ariaLabel: direction === "out" ? "Request" : "Response", fill: "currentColor" },
+    [el("line", { ...line, stroke: "currentColor", strokeWidth: 1.5 }, []), el("polygon", { points: head }, [])],
+  );
+}
+
+function spansOf(text, language) {
+  return tokenize(text, language).map(([cls, value]) =>
     cls ? el("span", { className: [`syn-${cls}`] }, [{ type: "text", value }]) : { type: "text", value },
   );
-  const labels = [el("span", { className: ["legend"] }, [{ type: "text", value: LANGUAGE_NAMES[language] ?? language.toUpperCase() }])];
+}
+
+function isTrace(text, language) {
+  const first = text.split("\n").find((line) => line.trim());
+  return language === "json" && first !== undefined && first[0] in ARROWS;
+}
+
+function traceSpans(text) {
+  const out = [];
+  text.split("\n").forEach((line, index, lines) => {
+    const direction = ARROWS[line[0]];
+    if (direction) out.push(arrowElement(direction), ...spansOf(line.slice(1).replace(/^ /, ""), "json"));
+    else out.push(...spansOf(line, "json"));
+    if (index < lines.length - 1) out.push({ type: "text", value: "\n" });
+  });
+  return out;
+}
+
+export function codeFigure(text, lang, tested) {
+  const language = languageOf(lang);
+  const trace = isTrace(text, language);
+  const spans = trace ? traceSpans(text) : spansOf(text, language);
+  const name = trace ? "Message trace" : (LANGUAGE_NAMES[language] ?? language.toUpperCase());
+  const labels = [el("span", { className: ["legend"] }, [{ type: "text", value: name }])];
   if (tested) labels.push(el("span", { className: ["legend", "tested"] }, [{ type: "text", value: "Tested" }]));
-  return el("figure", { className: ["code-block"], dataLanguage: language, ...(tested ? { dataTested: "true" } : {}) }, [
+  return el("figure", { className: ["code-block", ...(trace ? ["trace-code"] : [])], dataLanguage: language, ...(tested ? { dataTested: "true" } : {}) }, [
     el("div", { className: ["code-head"] }, [el("span", { className: ["labels"] }, labels)]),
     el("pre", { tabIndex: 0 }, [el("code", { className: [`language-${language}`] }, spans)]),
   ]);
