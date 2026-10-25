@@ -103,14 +103,16 @@
     {#if loaded && !shown.length}
       <p class="empty">No tokens. Create one below or run <code>openhal token create --agent --scope read</code>.</p>
     {:else}
-      <table class="grid">
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Client tokens table">
+        <table class="grid">
         <thead>
           <tr><th scope="col">Name</th><th scope="col">Kind</th><th scope="col">Scope</th><th scope="col">Id</th><th scope="col">Created</th><th scope="col">State</th><th scope="col"><span class="visually-hidden">Revoke</span></th></tr>
         </thead>
         <tbody>
           {#each shown as token (token.token_id)}
             <tr class={token.kind}>
-              <td>{token.name}</td>
+              <td class="nobreak">{token.name}</td>
               <td>{token.kind}</td>
               <td class="mono">{token.scope}</td>
               <td class="mono">{token.token_id}</td>
@@ -129,7 +131,8 @@
             </tr>
           {/each}
         </tbody>
-      </table>
+        </table>
+      </div>
     {/if}
 
     <form class="create" onsubmit={create}>

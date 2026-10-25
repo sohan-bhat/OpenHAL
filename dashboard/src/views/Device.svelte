@@ -100,7 +100,9 @@
     {#if Object.keys(view.read).length}
       <section class="section" aria-labelledby="read-title">
         <h2 id="read-title">Read channels</h2>
-        <table class="grid">
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Read channels table">
+          <table class="grid">
           <thead>
             <tr><th scope="col">Channel</th><th scope="col" class="num">Value</th><th scope="col">Range</th><th scope="col">Every</th></tr>
           </thead>
@@ -120,7 +122,8 @@
               </tr>
             {/each}
           </tbody>
-        </table>
+          </table>
+        </div>
       </section>
     {/if}
 

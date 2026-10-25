@@ -280,6 +280,17 @@ textarea {
   color: var(--text);
 }
 
+.view > *,
+.section > * {
+  min-width: 0;
+}
+
+.table-scroll {
+  position: relative;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 table.grid {
   width: 100%;
   border-collapse: collapse;

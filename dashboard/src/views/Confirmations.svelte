@@ -172,7 +172,9 @@
     {#if !decided.length}
       <p class="empty">No decided requests yet.</p>
     {:else}
-      <table class="grid">
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Decided requests table">
+        <table class="grid">
         <thead>
           <tr><th scope="col">Request</th><th scope="col">Command</th><th scope="col">Requested by</th><th scope="col">Status</th><th scope="col">Decided by</th></tr>
         </thead>
@@ -188,7 +190,8 @@
             </tr>
           {/each}
         </tbody>
-      </table>
+        </table>
+      </div>
     {/if}
   </section>
 </div>

@@ -175,7 +175,9 @@
             {#if !detail.history.length}
               <p class="empty">This routine has not run yet.</p>
             {:else}
-              <table class="grid">
+              <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Run history table">
+                <table class="grid">
                 <thead><tr><th scope="col">Run</th><th scope="col">Trigger</th><th scope="col">Started</th><th scope="col">Status</th><th scope="col">Message</th></tr></thead>
                 <tbody>
                   {#each detail.history as run (run.run_id)}
@@ -189,7 +191,8 @@
                     </tr>
                   {/each}
                 </tbody>
-              </table>
+                </table>
+              </div>
             {/if}
           </section>
         </article>
