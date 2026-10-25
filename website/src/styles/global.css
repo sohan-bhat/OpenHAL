@@ -192,8 +192,21 @@ p {
   color: var(--ink-2);
 }
 
+/* A legend with an end label spans the border, and each label carries its own panel background. */
+.module > .module-legend:has(> .end) {
+  right: var(--s-3);
+  justify-content: space-between;
+  padding: 0;
+  background: transparent;
+}
+
+.module > .module-legend:has(> .end) > span {
+  padding: 0 var(--s-2);
+  background: var(--panel);
+}
+
 .module-legend .end {
-  margin-left: auto;
+  color: var(--ink);
 }
 
 /* ------------------------------------------------------------------ buttons */

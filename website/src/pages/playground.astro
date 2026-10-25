@@ -1,0 +1,61 @@
+---
+import "../styles/limit-track.css";
+import Playground from "../components/playground/Playground.svelte";
+import Base from "../layouts/Base.astro";
+
+// Every example from spec/examples, read at build time.
+const files = import.meta.glob<string>("../../../spec/examples/*.hal.yaml", { query: "?raw", import: "default", eager: true });
+const examples = Object.entries(files)
+  .map(([path, text]) => {
+    const name = path.split("/").pop()!.replace(/\.hal\.yaml$/, "");
+    return { name, path: `spec/examples/${name}.hal.yaml`, text };
+  })
+  .sort((a, b) => a.name.localeCompare(b.name));
+---
+
+<Base
+  title="Device file playground"
+  description="Edit an OpenHAL device file, check it against the spec as you type, and watch the kernel's rules block unsafe writes. Runs in your browser."
+>
+  <div class="wrap page">
+    <header class="head">
+      <h1 class="page-title">Device file playground</h1>
+      <p class="lede">
+        Edit a device file and it is checked against the spec's JSON Schema as you type. The controls the dashboard would draw appear
+        beside it, each with its limit line. Then send writes and watch the kernel's rules block the unsafe ones.
+      </p>
+      <p class="demo-note">
+        <span class="lamp unverified">In-browser demo</span>
+        <span class="muted">A TypeScript port of the kernel's checks, with the same codes and messages as the hub. Devices are simulated. Nothing leaves your browser.</span>
+      </p>
+    </header>
+    <Playground client:idle examples={examples} initial="desk-fan-confirmed" />
+  </div>
+</Base>
+
+<style>
+  .page {
+    padding-top: var(--s-7);
+  }
+
+  .head {
+    padding-bottom: var(--s-5);
+    margin-bottom: var(--s-7);
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .lede {
+    margin-top: var(--s-3);
+    max-width: 70ch;
+  }
+
+  .demo-note {
+    margin-top: var(--s-4);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-3);
+    align-items: baseline;
+    font-size: var(--t-1);
+    line-height: var(--lh-1);
+  }
+</style>
