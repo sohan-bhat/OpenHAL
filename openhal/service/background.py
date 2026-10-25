@@ -8,6 +8,7 @@ hub keeps its own rule of listening on loopback only. Every command and file cha
 
 from __future__ import annotations
 
+import getpass
 import os
 import plistlib
 import re
@@ -68,7 +69,7 @@ class Service:
     config_home: Path
     command: list[str] = field(default_factory=daemon_command)
     uid: int = field(default_factory=os.getuid)
-    user: str = field(default_factory=lambda: os.environ.get("USER", "") or "you")
+    user: str = field(default_factory=getpass.getuser)
 
     @property
     def path(self) -> Path:
@@ -164,7 +165,7 @@ class Service:
             shown = self.runner.run(["launchctl", "print", self.target], check=False)
             if not shown.ok:
                 return Status(True, False, detail="installed, not loaded")
-            found_state = re.search(r"^\s*state = (\S+)", shown.output, re.M)
+            found_state = re.search(r"^\s*state = (.+?)\s*$", shown.output, re.M)
             found_pid = re.search(r"^\s*pid = (\d+)", shown.output, re.M)
             launchd_state = found_state.group(1) if found_state else "loaded"
             launchd_pid = int(found_pid.group(1)) if found_pid else None

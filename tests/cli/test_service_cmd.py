@@ -121,6 +121,10 @@ def test_status_restart_and_uninstall(machine: Machine) -> None:
     code, out = run("service", "status")
     assert code == 0, out
     assert "running, pid 4242" in out
+    machine.runner.answers["launchctl print"] = (0, "gui/501/org.openhal.hub = {\n\tstate = not running\n}")
+    code, out = run("service", "status")
+    assert code == 1
+    assert "state    not running" in out
     code, out = run("service", "restart")
     assert code == 0, out
     assert machine.runner.commands[-1] == f"launchctl kickstart -k gui/{os.getuid()}/{LABEL}"

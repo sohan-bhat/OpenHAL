@@ -53,6 +53,7 @@ def machine(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Machine:
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.setenv("OPENHAL_HOME", str(config))
     monkeypatch.setenv("USER", "pi")
+    monkeypatch.setenv("LOGNAME", "pi")
     monkeypatch.delenv("OPENHAL_TOKEN", raising=False)
     monkeypatch.delenv("OPENHAL_URL", raising=False)
     monkeypatch.setattr(runner_module.subprocess, "run", _refuse)
