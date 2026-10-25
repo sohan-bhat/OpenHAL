@@ -346,7 +346,7 @@ class WriterEngine:
         session.problems = [problem for problem in session.problems if not problem.startswith("Interview. ")]
         if known <= set(session.answers):
             try:
-                session.confirmed = interview.apply(session.draft, session.answers, by=who.label)
+                session.confirmed = interview.apply(session.draft, session.answers, by=who.name)
             except interview.AnswerError as exc:
                 session.problems.append(f"Interview. {exc}")
                 session.confirmed = None
@@ -413,7 +413,7 @@ class WriterEngine:
         )
         if file.device_id not in self.hub.kernel.devices:
             try:
-                await self.hub.add_and_start(file)
+                await self.hub.add_and_start(file, path=path)
             except Exception as exc:  # noqa: BLE001 (saved anyway, the person restarts the hub)
                 session.problems.append(f"Saved, but the hub couldn't load it now. {exc}")
         return {"path": str(path), "device_id": file.device_id, "writable": file.writable, "bundle": str(bundle)}

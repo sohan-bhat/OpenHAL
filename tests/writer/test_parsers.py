@@ -52,7 +52,7 @@ def test_openhal_library_sketches_describe_themselves_in_code(example: str) -> N
 
 def test_plant_waterer_sketch_offers_actions_and_hides_the_pump() -> None:
     draft = sketch.draft(sketch.parse((EXAMPLES / "PlantWaterer" / "PlantWaterer.ino").read_text()))
-    assert draft["read"]["tank"] == {"type": "enum", "values": ["empty", "ok"], "stream": True}
+    assert draft["read"]["tank"] == {"type": "enum", "values": ["empty", "ok"], "stream": True, "every": "1 s"}
     assert draft["actions"]["water"]["args"] == {"duration": {"unit": "s", "min": 1.0, "max": 30.0}}
     assert draft["actions"]["stop"] == {"suggested": True}
     assert "write" not in draft

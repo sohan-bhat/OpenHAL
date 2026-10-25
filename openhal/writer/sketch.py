@@ -320,6 +320,7 @@ def _openhal_draft(findings: SketchFindings, device_name: str) -> dict[str, Any]
         )
         if entry.get("every_ms"):
             channel["stream"] = True
+            channel["every"] = f"{max(entry['every_ms'], 50) / 1000:g} s"
         if entry.get("range"):
             channel["range"] = entry["range"]
         read[entry["name"]] = channel

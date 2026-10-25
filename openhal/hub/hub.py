@@ -153,9 +153,11 @@ class Hub:
         self.info[device_id] = DeviceInfo(str(path) if path else None, warnings_for(file))
         return runtime
 
-    async def add_and_start(self, file: DeviceFile, *, driver: Driver | None = None) -> DeviceRuntime:
+    async def add_and_start(
+        self, file: DeviceFile, *, driver: Driver | None = None, path: Path | None = None
+    ) -> DeviceRuntime:
         """Register, connect and start polling one device while the hub runs."""
-        runtime = self.add_device(file, driver=driver)
+        runtime = self.add_device(file, driver=driver, path=path)
         await self._connect(file.device_id)
         if self.started_at is not None:
             self._start_device_tasks(file.device_id)

@@ -64,7 +64,7 @@ def test_the_scripted_person_answers_every_question_and_confirms(record: dict[st
     saved = step(record, "save")
     assert saved["saved"] == "plant-waterer.hal.yaml"
     assert saved["writable"] is True
-    assert saved["confirmed"]["by"] == "human:sohan"
+    assert saved["confirmed"]["by"] == "sohan"
     assert record["confirmed"] == saved["confirmed"]
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", saved["confirmed"]["at"])
 
@@ -112,7 +112,7 @@ def test_a_watering_over_the_limit_never_reaches_the_board(record: dict[str, Any
     assert refused["result"]["code"] == "above_max"
     error = refused["result"]["error"]
     assert (error["code"], error["name"]) == (-32010, "LIMIT_EXCEEDED")
-    assert error["data"]["confirmedBy"] == "human:sohan"
+    assert error["data"]["confirmedBy"] == "sohan"
     assert refused["board_received"] == []
 
 
