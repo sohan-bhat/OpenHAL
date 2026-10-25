@@ -50,9 +50,6 @@ async def _analog_ready(driver: FirmataDriver) -> bool:
     return len(driver.analog_values) >= 4
 
 
-# ---------------------------------------------------------------------- protocol
-
-
 def test_seven_bit_helpers_round_trip() -> None:
     assert p.split14(1023) == (0x7F, 0x07)
     assert p.unpack7(p.pack7(0)) == 0
@@ -84,9 +81,6 @@ def test_parser_skips_malformed_bytes() -> None:
 def test_capabilities_parse() -> None:
     data = bytes([0, 1, 1, 1, 0x7F, 0x7F, 2, 10, 0x7F])
     assert p.parse_capabilities(data) == [{0: 1, 1: 1}, {}, {2: 10}]
-
-
-# ---------------------------------------------------------------------- driver
 
 
 async def test_connect_reads_firmware_and_configures_only_inputs() -> None:

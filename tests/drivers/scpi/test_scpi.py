@@ -195,8 +195,6 @@ async def test_bad_visa_library() -> None:
         await ScpiDriver(file).connect()
 
 
-# ---------------------------------------------------------------------- pyvisa-sim
-
 DMM = """
 device: Bench multimeter
 id: dmm
@@ -236,9 +234,6 @@ async def test_auto_resource_needs_one_match(tmp_path: Path) -> None:
     file = loads(DMM.format(resource="auto", library=library).replace('match: { usb: ["2a8d:1301"] }', ""))
     with pytest.raises(DriverError, match=r"needs match\.usb"):
         await ScpiDriver(file).connect()
-
-
-# ---------------------------------------------------------------------- families and validation
 
 
 @pytest.mark.parametrize(

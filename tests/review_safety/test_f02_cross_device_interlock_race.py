@@ -22,7 +22,7 @@ async def test_f02_parallel_writes_break_cross_device_interlock(
     heater = await add(HEATER)
     assert (await kernel.execute(Write(device="desk-fan", channel="fan_speed", value="40 %"), CLAUDE)).ok
     clock.advance(5)
-    heater.settings.latency_s = 0.2  # any real transport takes some time to answer
+    heater.settings.latency_s = 0.2
 
     await asyncio.gather(
         kernel.execute(Write(device="heater", channel="power", value="50 W"), CLAUDE),

@@ -53,7 +53,6 @@ def build(example: str, out: Path, *defines: str) -> Path:
         check=True,
         capture_output=True,
     )
-    # macOS checks a new binary the first time it runs, which can outlast a short protocol timeout.
     subprocess.run([str(binary)], input=b"", capture_output=True, timeout=30, check=True)
     return binary
 

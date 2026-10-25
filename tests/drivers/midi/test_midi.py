@@ -57,9 +57,6 @@ def test_bad_maps(channels: str, message: str) -> None:
         MidiDriver(loads(f"device: T\nconnect: {{ midi: auto }}\n{channels}\n"))
 
 
-# ---------------------------------------------------------------------- reads
-
-
 async def test_reads_are_unknown_until_controls_move() -> None:
     driver, controller = make()
     await driver.connect()
@@ -101,9 +98,6 @@ async def test_cc_bools_pitch_bend_program_and_channels() -> None:
     assert (await driver.read("bend")).value == pytest.approx(-100.0)
     controller.turn(7, 42, channel=9)
     assert (await driver.read("other")).value == 42.0
-
-
-# ---------------------------------------------------------------------- writes
 
 
 async def test_writes_send_midi_messages() -> None:
@@ -168,9 +162,6 @@ async def test_out_of_range_raw_values_fail() -> None:
     assert controller.received == []
 
 
-# ---------------------------------------------------------------------- ports
-
-
 async def test_port_selection() -> None:
     other = SimulatedController(name="Other Synth")
     pads = SimulatedController()
@@ -213,9 +204,6 @@ async def test_open_errors_become_driver_errors() -> None:
     driver = MidiDriver(FILE, backend=Broken(SimulatedController()))
     with pytest.raises(DriverError, match="error opening port"):
         await driver.connect()
-
-
-# ---------------------------------------------------------------------- discover and describe
 
 
 async def test_discover_lists_ports() -> None:

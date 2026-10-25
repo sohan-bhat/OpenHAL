@@ -41,7 +41,7 @@ async def test_f17_reference_to_missing_device_is_rejected(kernel: Kernel, add: 
     try:
         heater = await add(HEATER)
     except (ValueError, LookupError):
-        return  # rejecting the dangling reference at registration is an acceptable fix
+        return
     decision = await kernel.execute(Write(device="heater", channel="power", value="50 W"), agent("a", "control_low"))
     assert not (heater.values["power"] > 0 and fan.values["fan_speed"] < 30), (
         f"heater on at {heater.values['power']} W with the fan at {fan.values['fan_speed']} %: {decision.status}"

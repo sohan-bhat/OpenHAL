@@ -20,7 +20,7 @@ async def test_f11_failed_watchdog_action_is_retried(kernel: Kernel, add: AddDev
     await kernel.tick()
     clock.advance(61)
 
-    heater.settings.fail_writes = True  # one transient failure while the budget runs out
+    heater.settings.fail_writes = True
     assert await kernel.tick()
     heater.settings.fail_writes = False
 

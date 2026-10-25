@@ -53,8 +53,6 @@ class FakeHub:
     def handles(self, path: str) -> bool:
         return path.startswith(PREFIXES)
 
-    # ------------------------------------------------------------------ dispatch
-
     def handle(self, request: httpx.Request) -> httpx.Response:
         auth = request.headers.get("authorization", "")
         who = self.principals.get(auth.removeprefix("Bearer ").strip())
@@ -91,8 +89,6 @@ class FakeHub:
     @staticmethod
     def _human(who: Who) -> tuple[int, Any] | None:
         return None if who.kind == "human" else (403, {"detail": "Only a human can do this."})
-
-    # ------------------------------------------------------------------ driver writer
 
     def _session(self, session_id: str) -> dict[str, Any]:
         if session_id not in self.sessions:
@@ -159,8 +155,6 @@ class FakeHub:
             }
         ]
         return 200, {"steps": steps}
-
-    # ------------------------------------------------------------------ tokens
 
     def _list_tokens(self, who: Who, body: dict[str, Any]) -> tuple[int, Any]:
         if refused := self._human(who):

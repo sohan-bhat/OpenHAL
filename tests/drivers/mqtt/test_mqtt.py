@@ -57,9 +57,6 @@ def bare(channels: str, connect: str = "{ mqtt: broker.local }") -> DeviceFile:
     return loads(f"device: T\nconnect: {connect}\n{channels}\n")
 
 
-# ---------------------------------------------------------------------- parameters and maps
-
-
 @pytest.mark.parametrize(
     ("connect", "message"),
     [
@@ -100,9 +97,6 @@ def test_topic_matching() -> None:
     assert topic_matches("#", "a")
     assert not topic_matches("a/+", "a/b/c")
     assert not topic_matches("a/b", "a")
-
-
-# ---------------------------------------------------------------------- reads
 
 
 async def test_retained_state_seeds_every_read(broker: MqttBroker, fan: SimulatedFan) -> None:
@@ -192,9 +186,6 @@ async def test_reads_need_a_connection(broker: MqttBroker) -> None:
         await driver.read("nope")
 
 
-# ---------------------------------------------------------------------- writes
-
-
 async def test_commands_reach_the_device_and_state_follows(broker: MqttBroker, fan: SimulatedFan) -> None:
     driver = MqttDriver(device_file(broker))
     kernel = await kernel_for(driver)
@@ -257,9 +248,6 @@ async def test_missing_puback_times_out_and_drops_the_client(broker: MqttBroker,
     assert (await driver.health()).connected is False
 
 
-# ---------------------------------------------------------------------- connection
-
-
 async def test_no_broker_fails_to_connect() -> None:
     broker = MqttBroker()
     driver = MqttDriver(device_file(broker))
@@ -307,9 +295,6 @@ async def test_identify_and_discover(broker: MqttBroker) -> None:
     assert await MqttDriver.discover() == []
 
 
-# ---------------------------------------------------------------------- describe
-
-
 async def test_describe_listens_and_proposes_reads(broker: MqttBroker, fan: SimulatedFan) -> None:
     driver = MqttDriver(device_file(broker))
     assert await driver.describe() is None
@@ -336,9 +321,6 @@ def test_describe_topics_handles_objects_and_limits() -> None:
     assert set(described["read"]) == {"a_t", "a_on", "b", "ch_1"}
     assert described["read"]["a_t"]["map"] == {"state": "a", "format": "json", "json": "$.t"}
     assert "read" not in describe_topics({})
-
-
-# ---------------------------------------------------------------------- examples
 
 
 @pytest.mark.parametrize("path", sorted(EXAMPLES.glob("*.hal.yaml")), ids=lambda path: path.name)

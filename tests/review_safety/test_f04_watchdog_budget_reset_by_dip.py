@@ -18,7 +18,6 @@ def power(value: str) -> Write:
 
 
 async def test_f04_short_dip_restarts_budget(kernel: Kernel, add: AddDevice, clock: FakeClock) -> None:
-    # HEATER rule: power > 40 W for at most 60 s, reset only after 30 s below.
     await add(FAN, settle=0)
     await add(HEATER)
     assert (await kernel.execute(Write(device="desk-fan", channel="fan_speed", value="40 %"), CLAUDE)).ok
@@ -28,7 +27,7 @@ async def test_f04_short_dip_restarts_budget(kernel: Kernel, add: AddDevice, clo
     clock.advance(55)
     assert (await kernel.execute(power("30 W"), CLAUDE)).ok
     await kernel.tick()
-    clock.advance(1)  # far shorter than reset_after (30 s)
+    clock.advance(1)
     assert (await kernel.execute(power("50 W"), CLAUDE)).ok
     await kernel.tick()
     clock.advance(55)

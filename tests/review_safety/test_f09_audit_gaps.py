@@ -19,7 +19,7 @@ async def test_f09_expired_request_is_logged(kernel: Kernel, add: AddDevice, clo
     pending = await kernel.execute(Action(device="heater", action="purge"), CLAUDE)
     assert pending.status == "pending"
     clock.advance(400)
-    kernel.pending()  # the queue expires the request here
+    kernel.pending()
     request_id = pending.request_id
 
     entries = kernel.audit.entries(limit=5000)
@@ -48,7 +48,6 @@ async def test_f09_refused_tighten_with_bad_unit_is_logged(kernel: Kernel, add: 
 
 async def test_f09_safe_state_write_is_logged_as_a_write(kernel: Kernel, add: AddDevice) -> None:
     await add(FAN)
-    # A hardware change made by the system path must still be recorded with its value.
     assert (await kernel.execute(Write(device="desk-fan", channel="fan_speed", value="40 %"), CLAUDE)).ok
     before = len(kernel.audit.entries(event="safe_state"))
     await kernel.stop_all(CLAUDE, "test")

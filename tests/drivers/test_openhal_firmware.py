@@ -44,9 +44,6 @@ async def driver(file: DeviceFile) -> AsyncIterator[OpenHalFirmwareDriver]:
     SIMULATORS.pop("bench", None)
 
 
-# Protocol
-
-
 def test_checksum_matches_the_spec_example() -> None:
     assert (
         protocol.encode(7, "READ", "temperature")
@@ -106,9 +103,6 @@ def test_description_becomes_suggested_sections() -> None:
     assert sections["match"] == {"firmware": {"product": "desk-fan"}}
 
 
-# Simulator
-
-
 async def _ask(sim: FirmwareSimulator, line: str) -> protocol.Message:
     sim.handle(line)
     return protocol.decode(await asyncio.wait_for(sim.to_host.get(), 1))
@@ -137,9 +131,6 @@ async def test_bad_checksum_gets_an_error_not_an_action() -> None:
     reply = await _ask(sim, "1 WRITE fan_speed 60*00")
     assert reply.verb == "ERR"
     assert sim.channels["fan_speed"].value == 0
-
-
-# Driver
 
 
 async def test_connect_identifies_and_describes(driver: OpenHalFirmwareDriver) -> None:

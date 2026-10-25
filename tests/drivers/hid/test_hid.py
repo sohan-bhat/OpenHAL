@@ -49,9 +49,6 @@ async def settle(condition: object) -> None:
     raise AssertionError("condition never held")
 
 
-# ---------------------------------------------------------------------- report descriptor
-
-
 def test_descriptor_parses_every_field() -> None:
     parsed = descriptor.parse(DESCRIPTOR)
     assert parsed.uses_report_ids
@@ -102,9 +99,6 @@ def test_descriptor_edge_cases() -> None:
     assert "bits" in odd["notes"]
 
 
-# ---------------------------------------------------------------------- maps
-
-
 @pytest.mark.parametrize(
     ("channels", "message"),
     [
@@ -132,9 +126,6 @@ def test_bad_maps(channels: str, message: str) -> None:
 def test_bad_params(connect: str, message: str) -> None:
     with pytest.raises(ValueError, match=message):
         HidDriver(device("read:\n  x: { type: bool, map: { report: 1 } }", connect))
-
-
-# ---------------------------------------------------------------------- reads
 
 
 async def test_input_reports_stream_into_reads() -> None:
@@ -188,9 +179,6 @@ async def test_devices_without_report_ids() -> None:
     assert (await driver.read("first")).value == 1.0, "without report ids the first byte is data"
 
 
-# ---------------------------------------------------------------------- writes
-
-
 async def test_output_writes_change_only_their_bits() -> None:
     driver, pad = make()
     kernel = await kernel_for(driver)
@@ -228,9 +216,6 @@ async def test_fill_values_and_refused_reports() -> None:
     decision = await kernel.execute(Write(device="t", channel="wrong", value=True), WHO)
     assert decision.status == "failed"
     assert "refused output report 9" in decision.message
-
-
-# ---------------------------------------------------------------------- finding, opening, unplugging
 
 
 async def test_selection_and_open_errors() -> None:

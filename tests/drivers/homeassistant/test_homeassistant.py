@@ -260,9 +260,6 @@ confirmed: { by: tester, at: 2026-10-24 }
     await bench.close()
 
 
-# ---------------------------------------------------------------------- WebSocket
-
-
 async def test_websocket_reads_from_the_subscription(ws_sim: HomeAssistantSim) -> None:
     bench = await ws_bench(ws_sim).connect()
     driver = bench.driver
@@ -317,9 +314,6 @@ async def test_websocket_refused() -> None:
     file = loads(HOME.format(port=1, transport="websocket"))
     with pytest.raises(DriverError, match="Could not open the Home Assistant WebSocket"):
         await HomeAssistantDriver(file).connect()
-
-
-# ---------------------------------------------------------------------- validation
 
 
 def test_units_from_home_assistant() -> None:

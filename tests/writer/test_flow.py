@@ -76,7 +76,6 @@ async def test_unknown_board_to_confirmed_file(client: httpx.AsyncClient, hub: H
     assert "confirmed" not in draft
     assert all(source.startswith("<device-data ") for source in session["sources"])
 
-    # The agent tries to confirm its own limits. The writer drops it and keeps every limit suggested.
     draft["write"]["fan_speed"]["max"] = 1000
     draft["confirmed"] = {"by": "claude", "at": "2026-10-24"}
     draft["write"]["fan_speed"]["confirmed"] = {"by": "claude", "at": "2026-10-24"}
@@ -140,7 +139,6 @@ async def test_unknown_board_to_confirmed_file(client: httpx.AsyncClient, hub: H
     assert file.provenance.verification.status == "unverified"
     assert (Path(saved["bundle"]) / "TEST-REPORT.md").exists()
 
-    # The new device is live and the kernel enforces the confirmed limits.
     hub.kernel.clock.advance(60)  # type: ignore[attr-defined]
     device = saved["device_id"]
     blocked = await client.post(

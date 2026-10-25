@@ -70,9 +70,6 @@ def ws_bench(sim: MoonrakerSim) -> Bench:
     return Bench(file, MoonrakerDriver(file))
 
 
-# ---------------------------------------------------------------------- HTTP
-
-
 async def test_http_reads_every_convention() -> None:
     sim = MoonrakerSim()
     bench = await http_bench(sim).connect()
@@ -274,9 +271,6 @@ async def test_describe_proposes_channels_from_printer_objects() -> None:
     await bench.close()
 
 
-# ---------------------------------------------------------------------- WebSocket
-
-
 async def test_websocket_subscribes_and_follows_updates(ws_sim: MoonrakerSim) -> None:
     bench = await ws_bench(ws_sim).connect()
     driver = bench.driver
@@ -345,9 +339,6 @@ async def test_websocket_refused() -> None:
     file = loads(text(1, extra=", transport: websocket"))
     with pytest.raises(DriverError, match="Could not open the Moonraker WebSocket"):
         await MoonrakerDriver(file).connect()
-
-
-# ---------------------------------------------------------------------- validation
 
 
 @pytest.mark.parametrize(

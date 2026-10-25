@@ -49,9 +49,6 @@ def device(connect: str, read: str = "", write: str = "", extra: str = "") -> st
 BASE = '{ http: "http://plug.local" }'
 
 
-# ---------------------------------------------------------------------- parameters and maps
-
-
 @pytest.mark.parametrize(
     ("connect", "message"),
     [
@@ -103,9 +100,6 @@ def test_json_paths_and_templates() -> None:
         parse_path("a[1")
     assert render({"on": "{value}", "note": "set to {value}"}, {"value": True}) == {"on": True, "note": "set to true"}
     assert render(["{value}", 3], {"value": 2.0}) == [2.0, 3]
-
-
-# ---------------------------------------------------------------------- reads
 
 
 async def test_reads_every_channel_type() -> None:
@@ -211,9 +205,6 @@ async def test_unknown_channel_and_not_connected() -> None:
         await driver.read("nope")
 
 
-# ---------------------------------------------------------------------- writes and actions
-
-
 async def test_writes_through_the_kernel_send_the_mapped_requests() -> None:
     driver, plug = make()
     kernel = await kernel_for(driver)
@@ -284,9 +275,6 @@ async def test_actions_render_args_and_return_results() -> None:
     assert "404" in decision.message
 
 
-# ---------------------------------------------------------------------- connection, timeouts, auth
-
-
 async def test_connect_fails_cleanly_when_offline() -> None:
     plug = SimulatedPlug(online=False)
     driver, _ = make(plug=plug)
@@ -355,9 +343,6 @@ async def test_oversized_responses_are_refused() -> None:
     driver = HttpDriver(file, transport=httpx.MockTransport(handler))
     with pytest.raises(DriverError, match="max_response_bytes"):
         await driver.connect()
-
-
-# ---------------------------------------------------------------------- identify and describe
 
 
 async def test_identify_with_and_without_a_path() -> None:
@@ -431,9 +416,6 @@ def test_describe_tolerates_odd_documents() -> None:
     assert "without maxLength" in described["notes"]
     assert "no minimum and maximum" in described["notes"]
     assert describe_openapi(OPENAPI, limit=1)["read"].keys() == {"api_status_relay_on"}
-
-
-# ---------------------------------------------------------------------- examples
 
 
 @pytest.mark.parametrize("path", sorted(EXAMPLES.glob("*.hal.yaml")), ids=lambda path: path.name)

@@ -36,7 +36,6 @@ confirmed: { by: tester, at: 2026-10-24 }
 
 
 async def test_f01_interlock_passes_when_guard_state_is_unknown(kernel: Kernel, add: AddDevice) -> None:
-    # The last reading says the guard is OPEN. It is 60 s old, so the hub treats it as unknown.
     press = await add(PRESS, initial={"guard_open": True, "state": "jammed"})
     assert kernel.devices["press"].latest("guard_open", kernel.clock()) is None
 

@@ -55,9 +55,6 @@ async def kernel_for(driver: BleDriver) -> Kernel:
     return kernel
 
 
-# ---------------------------------------------------------------------- uuids and codec
-
-
 def test_uuids() -> None:
     assert normalize_uuid("2A6E") == "00002a6e-0000-1000-8000-00805f9b34fb"
     assert normalize_uuid("0x2a19") == uuid16("2a19")
@@ -122,9 +119,6 @@ def test_codec_offsets_byte_order_and_encode_limits() -> None:
         codec.encode(1 / 3, "sfloat")
 
 
-# ---------------------------------------------------------------------- maps
-
-
 @pytest.mark.parametrize(
     ("channels", "message"),
     [
@@ -143,9 +137,6 @@ def test_codec_offsets_byte_order_and_encode_limits() -> None:
 def test_bad_maps(channels: str, message: str) -> None:
     with pytest.raises(DriverError, match=message):
         BleDriver(loads(f"device: T\nconnect: {{ ble: auto }}\n{channels}\n"))
-
-
-# ---------------------------------------------------------------------- reads
 
 
 async def test_reads_streams_and_plain_characteristics() -> None:
@@ -222,9 +213,6 @@ async def test_write_only_characteristic_reports_last_written_value() -> None:
     assert (await driver.read("secret")).value == 7.0
 
 
-# ---------------------------------------------------------------------- writes
-
-
 async def test_writes_through_the_kernel() -> None:
     peripheral = FakePeripheral()
     driver = make(FILE, peripheral)
@@ -257,9 +245,6 @@ async def test_write_failures() -> None:
     decision = await kernel.execute(Write(device="t", channel="label", value="hello"), WHO)
     assert decision.status == "failed"
     assert peripheral.writes == []
-
-
-# ---------------------------------------------------------------------- connection
 
 
 async def test_auto_address_needs_exactly_one_match() -> None:
@@ -312,9 +297,6 @@ async def test_dropped_link_and_reconnect() -> None:
     assert (await driver.read("humidity")).value == pytest.approx(55.0)
 
 
-# ---------------------------------------------------------------------- identify, describe, discover
-
-
 async def test_identify_and_describe() -> None:
     driver = make(FILE)
     assert await driver.describe() is None
@@ -345,9 +327,6 @@ async def test_discover_lists_advertisers() -> None:
     assert len(found) == 1
     assert found[0].address == ADDRESS
     assert found[0].identifiers == {"ble_services": "181a", "ble_name": "ENV-desk"}
-
-
-# ---------------------------------------------------------------------- examples
 
 
 @pytest.mark.parametrize("path", sorted(EXAMPLES.glob("*.hal.yaml")), ids=lambda path: path.name)

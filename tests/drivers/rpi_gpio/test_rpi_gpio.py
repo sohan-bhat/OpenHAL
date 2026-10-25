@@ -45,9 +45,6 @@ async def kernel_for(driver: RpiGpioDriver) -> Kernel:
     return kernel
 
 
-# ---------------------------------------------------------------------- parameters and maps
-
-
 @pytest.mark.parametrize(
     ("pins", "message"),
     [("{ a: 17, b: 17 }", "more than once"), ("{ a: 28 }", "less than or equal to 27"), ("{ A: 4 }", "pattern")],
@@ -77,9 +74,6 @@ def test_bad_pins(pins: str, message: str) -> None:
 def test_bad_maps(channels: str, message: str) -> None:
     with pytest.raises(DriverError, match=message):
         RpiGpioDriver(device("{ a: 4 }", channels))
-
-
-# ---------------------------------------------------------------------- digital
 
 
 async def test_active_low_relay_and_connect_state() -> None:
@@ -120,9 +114,6 @@ async def test_inputs_follow_the_pull_resistor() -> None:
     assert (await driver.read("sensor")).value is True
     factory.pin(13).drive_low()
     assert (await driver.read("open_drain")).value is True
-
-
-# ---------------------------------------------------------------------- pwm and servo
 
 
 async def test_pwm_duty_in_percent_and_fraction() -> None:
@@ -166,9 +157,6 @@ async def test_safe_state_through_the_kernel() -> None:
     assert pin_state(factory, 18) == pytest.approx(1.0), "fan is active-low here, so 0 % is a high pin"
 
 
-# ---------------------------------------------------------------------- claiming and releasing
-
-
 async def test_pins_held_elsewhere_fail_cleanly() -> None:
     driver, factory = make()
     holder = DigitalOutputDevice(18, pin_factory=factory)
@@ -194,9 +182,6 @@ async def test_released_pins_are_noticed() -> None:
     assert decision.status in ("failed", "blocked")
     with pytest.raises(DriverError, match="no channel"):
         await driver.read("nope")
-
-
-# ---------------------------------------------------------------------- stop button
 
 
 async def test_stop_button_calls_back_on_the_loop() -> None:
@@ -231,9 +216,6 @@ async def test_stop_button_calls_back_on_the_loop() -> None:
 def test_stop_button_pin_comes_from_unused_pins() -> None:
     assert RpiGpioDriver(FILE).stop_button_pin() == 27
     assert RpiGpioDriver(FILE).stop_button_pin("relay") is None
-
-
-# ---------------------------------------------------------------------- identify, discover, describe
 
 
 async def test_discover_reads_the_board_model(tmp_path: Path) -> None:

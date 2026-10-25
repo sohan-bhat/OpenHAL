@@ -54,9 +54,6 @@ def bare(connect: str, channels: str = "read:\n  x: { unit: V, map: { register: 
     return loads(f"device: Test\nconnect: {connect}\n{channels}\n")
 
 
-# ---------------------------------------------------------------------- parameters and maps
-
-
 @pytest.mark.parametrize(
     ("connect", "message"),
     [
@@ -126,9 +123,6 @@ def test_encode_refuses_values_that_do_not_fit(fmt: Any, value: float) -> None:
         encode(value, fmt, "big", "big")
 
 
-# ---------------------------------------------------------------------- reads
-
-
 async def test_reads_every_table_and_format(sim: ModbusSimulator) -> None:
     driver = await connected(conformance.device_file(sim))
     assert (await driver.read("voltage")).value == pytest.approx(230.0)
@@ -169,9 +163,6 @@ async def test_nan_float_is_refused(sim: ModbusSimulator) -> None:
     sim.model.voltage = float("nan")
     with pytest.raises(DriverError, match="not a finite number"):
         await driver.read("voltage")
-
-
-# ---------------------------------------------------------------------- writes
 
 
 async def test_writes_reach_the_right_registers(sim: ModbusSimulator) -> None:
@@ -230,9 +221,6 @@ async def test_device_exceptions_fail_writes_and_reads(sim: ModbusSimulator) -> 
         await other.read("far")
 
 
-# ---------------------------------------------------------------------- connection and timeouts
-
-
 async def test_connect_fails_without_a_server() -> None:
     simulator = ModbusSimulator("tcp")
     driver = ModbusDriver(conformance.device_file(simulator))
@@ -284,9 +272,6 @@ async def test_identify_and_describe(sim: ModbusSimulator) -> None:
     assert await ModbusDriver.discover() == []
 
 
-# ---------------------------------------------------------------------- RTU
-
-
 async def test_rtu_framing_passes_conformance() -> None:
     report = await run(conformance.case("rtu"))
     failures = [f"{result.name}: {result.detail}" for result in report.results if not result.ok and not result.skipped]
@@ -303,9 +288,6 @@ async def test_rtu_reads_and_writes() -> None:
         assert simulator.model.speed_raw == 50
         assert (await driver.identify())["address"].startswith("socket://")
         await driver.close()
-
-
-# ---------------------------------------------------------------------- examples
 
 
 @pytest.mark.parametrize("path", sorted(EXAMPLES.glob("*.hal.yaml")), ids=lambda path: path.name)
