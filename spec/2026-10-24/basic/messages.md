@@ -143,3 +143,208 @@ Reads several channels. Params `{ items: [{ device, channel }] }`. Result `{ rea
      {"device": "desk-fan", "channel": "humidity", "error": {"code": -32004, "message": "desk-fan has no channel humidity.",
       "data": {"name": "UNKNOWN_TARGET", "kernelCode": "unknown_target", "device": "desk-fan", "channel": "humidity"}}}]}}
 ```
+
+### hal/write
+
+Sets one write channel. Params `{ device, channel, value }`. Level Control.
+
+- If every check passes, the Driver applies the value and the result is `{ status: "done", device, channel, value, unit }`.
+- If the command needs a human, it is queued and the result is `{ status: "pending", requestId, expiresInS }`.
+- If the Safety Kernel blocks it, the response is an error from the [registry](../safety.md#error-registry). Nothing reaches the Driver.
+- If the Driver fails, the response is `DRIVER_ERROR` and the channel is unknown until a readback.
+
+A blocked write.
+
+```json
+→ {"jsonrpc": "2.0", "id": 6, "method": "hal/write",
+   "params": {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"}}
+← {"jsonrpc": "2.0", "id": 6, "error": {"code": -32010,
+     "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+     "data": {"name": "LIMIT_EXCEEDED", "kernelCode": "above_max", "device": "desk-fan", "channel": "fan_speed",
+              "limit": "100 %", "requested": "150 %", "file": "desk-fan.hal.yaml", "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24",
+              "kernelMessage": "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %."}}}
+```
+
+A granted write.
+
+```json
+→ {"jsonrpc": "2.0", "id": 7, "method": "hal/write",
+   "params": {"device": "desk-fan", "channel": "fan_speed", "value": "60 %"}}
+← {"jsonrpc": "2.0", "id": 7, "result": {"status": "done", "device": "desk-fan", "channel": "fan_speed",
+     "value": 60, "unit": "%"}}
+```
+
+### hal/dryRun
+
+Evaluates commands in order as if each allowed one had run. Nothing is sent to any Device. Params `{ commands: [Write or Action] }`. Result `{ decisions: [Decision] }`, one per command. A blocked command is reported in its Decision, not as an error response.
+
+```json
+→ {"jsonrpc": "2.0", "id": 8, "method": "hal/dryRun", "params": {"commands": [
+     {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": "150 %"},
+     {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": "60 %"}]}}
+← {"jsonrpc": "2.0", "id": 8, "result": {"decisions": [
+     {"status": "blocked", "device": "desk-fan", "target": "write:fan_speed", "value": null, "unit": "%",
+      "error": {"code": -32010,
+                "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+                "data": {"name": "LIMIT_EXCEEDED", "kernelCode": "above_max", "device": "desk-fan",
+                         "channel": "fan_speed", "limit": "100 %", "requested": "150 %"}}},
+     {"status": "allowed", "device": "desk-fan", "target": "write:fan_speed", "value": 60, "unit": "%"}]}}
+```
+
+### hal/planCheck
+
+Checks a whole plan before any of it runs. Params `{ steps: [Write, Action or Wait] }`, at most 200 steps. Each step is evaluated in order as if the earlier steps had run. A `Wait` step advances the simulated clock, so rate limits are judged as in a real run. Result `{ ok, decisions: [Decision], problems: [string] }`. `decisions` has one entry per `Write` or `Action`. `ok` is `true` only when every Decision is `allowed` and `problems` is empty.
+
+```json
+→ {"jsonrpc": "2.0", "id": 9, "method": "hal/planCheck", "params": {"steps": [
+     {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": "40 %"},
+     {"kind": "wait", "duration": "1 s"},
+     {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": "60 %"}]}}
+← {"jsonrpc": "2.0", "id": 9, "result": {"ok": true, "problems": [], "decisions": [
+     {"status": "allowed", "device": "desk-fan", "target": "write:fan_speed", "value": 40, "unit": "%"},
+     {"status": "allowed", "device": "desk-fan", "target": "write:fan_speed", "value": 60, "unit": "%"}]}}
+```
+
+### hal/stop
+
+Puts every Device in its safe state and locks writes until a human sends `hal/unlock`. Params `{ reason? }`. Any Principal MAY stop. Result `{ devices: [{ device, status, detail }] }` with `status` one of `safe`, `partial`, `failed`, `no_safe_state` or `pending` ([Safety](../safety.md#stop-and-unlock)).
+
+```json
+→ {"jsonrpc": "2.0", "id": 10, "method": "hal/stop", "params": {"reason": "smoke near the fan"}}
+← {"jsonrpc": "2.0", "id": 10, "result": {"devices": [
+     {"device": "desk-fan", "status": "safe", "detail": "smoke near the fan"}]}}
+```
+
+While the Hub is stopped, every write and action gets `STOPPED`.
+
+### hal/unlock
+
+Lifts the stop lock. Params `{ phrase: "unlock" }`. Result `{ ok: true }`.
+
+- Only a human Principal may unlock. Any other Principal gets `SCOPE_DENIED`.
+- A phrase other than `unlock` gets `INVALID_PARAMS`.
+- While a stop is still being applied, the Hub answers `BUSY`.
+
+```json
+→ {"jsonrpc": "2.0", "id": 11, "method": "hal/unlock", "params": {"phrase": "unlock"}}
+← {"jsonrpc": "2.0", "id": 11, "error": {"code": -32003, "message": "Only a human can unlock after a stop.",
+     "data": {"name": "SCOPE_DENIED", "kernelCode": "not_permitted"}}}
+```
+
+The examples below add one action to `desk-fan`. `spin_test` takes `seconds` in `s` from 1 to 30 and has confirmation tier `confirm`.
+
+### hal/action
+
+Runs one action. Params `{ device, action, args }`, with numeric arguments as quantity strings. Level Full. The result is `{ status: "done", result }`, or `{ status: "pending", requestId, expiresInS }` when the action waits for a human. Blocks and failures are errors, as for `hal/write`.
+
+```json
+→ {"jsonrpc": "2.0", "id": 12, "method": "hal/action",
+   "params": {"device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}}}
+← {"jsonrpc": "2.0", "id": 12, "result": {"status": "pending", "requestId": "9f2c41d07a3b6e15", "expiresInS": 300}}
+```
+
+### hal/confirmations/list
+
+Lists Confirmation Requests. Params `{ status? }`. Without `status`, only pending requests are listed. Result `{ requests: [ConfirmationRequest] }`. A human Principal sees every request. Any other Principal sees only its own.
+
+```json
+→ {"jsonrpc": "2.0", "id": 13, "method": "hal/confirmations/list", "params": {}}
+← {"jsonrpc": "2.0", "id": 13, "result": {"requests": [
+     {"requestId": "9f2c41d07a3b6e15", "status": "pending",
+      "command": {"kind": "action", "device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}},
+      "requestedBy": "agent:bench-agent", "createdAt": "2026-10-24T14:02:00Z", "expiresAt": "2026-10-24T14:07:00Z"}]}}
+```
+
+### hal/confirmations/approve
+
+Approves a pending request. Params `{ requestId }`. Only a human Principal may approve. Any other Principal gets `SCOPE_DENIED`. The Safety Kernel runs every check again against the current state, then runs the command. The result is the `Decision`, with `status` `done`, `blocked` or `failed`. A request that is unknown or no longer pending gets `REQUEST_CLOSED`.
+
+```json
+→ {"jsonrpc": "2.0", "id": 14, "method": "hal/confirmations/approve", "params": {"requestId": "9f2c41d07a3b6e15"}}
+← {"jsonrpc": "2.0", "id": 14, "result": {"status": "done", "device": "desk-fan", "target": "action:spin_test",
+     "value": {"seconds": 5}, "unit": null}}
+```
+
+### hal/confirmations/reject
+
+Rejects a pending request. Params `{ requestId, reason? }`. Only a human Principal may reject. The result is the updated `ConfirmationRequest`. A request that is unknown or no longer pending gets `REQUEST_CLOSED`.
+
+```json
+→ {"jsonrpc": "2.0", "id": 15, "method": "hal/confirmations/reject",
+   "params": {"requestId": "9f2c41d07a3b6e15", "reason": "not while the plant is drying"}}
+← {"jsonrpc": "2.0", "id": 15, "result": {"requestId": "9f2c41d07a3b6e15", "status": "rejected",
+     "command": {"kind": "action", "device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}},
+     "requestedBy": "agent:bench-agent", "createdAt": "2026-10-24T14:02:00Z", "expiresAt": "2026-10-24T14:07:00Z",
+     "decidedBy": "human:sohan"}}
+```
+
+### hal/routines/list
+
+Lists stored routines ([Routines](../routines.md)). Params `{}`. Result `{ routines: [RoutineSummary] }`.
+
+```json
+→ {"jsonrpc": "2.0", "id": 16, "method": "hal/routines/list", "params": {}}
+← {"jsonrpc": "2.0", "id": 16, "result": {"routines": [
+     {"id": "keep-cool", "kind": "yaml", "enabled": false, "sha256": "5d41c0a9...", "devices": ["desk-fan"],
+      "maxHazard": "low", "triggers": ["every 30 s"], "disabledReason": "new routine"}]}}
+```
+
+### hal/routines/dryRun
+
+Evaluates every command in every branch of a routine as the routine would send it. Nothing runs. Params `{ routineId }`. Result `{ ok, decisions: [Decision], problems: [string] }`, with `ok` as for `hal/planCheck`. An unknown id gets `UNKNOWN_TARGET`.
+
+```json
+→ {"jsonrpc": "2.0", "id": 17, "method": "hal/routines/dryRun", "params": {"routineId": "keep-cool"}}
+← {"jsonrpc": "2.0", "id": 17, "result": {"ok": true, "problems": [], "decisions": [
+     {"status": "allowed", "device": "desk-fan", "target": "write:fan_speed", "value": 60, "unit": "%"}]}}
+```
+
+### hal/audit/query
+
+Reads the audit log, newest entry first. Params `{ device?, status?, event?, since?, limit? }`. `since` is a sequence number and returns only later entries. `limit` defaults to 200 and is capped at 5000. Result `{ entries: [AuditEntry] }`. Text that quotes a Device is returned inside a data block ([Security](../security.md#prompt-injection)).
+
+```json
+→ {"jsonrpc": "2.0", "id": 18, "method": "hal/audit/query",
+   "params": {"device": "desk-fan", "status": "blocked", "limit": 1}}
+← {"jsonrpc": "2.0", "id": 18, "result": {"entries": [
+     {"seq": 41, "at": "2026-10-24T14:02:00Z", "event": "write", "principal": "agent:bench-agent",
+      "device": "desk-fan", "target": "write:fan_speed", "status": "blocked", "code": "above_max",
+      "body": {"requested": "150 %", "message": "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %."},
+      "hash": "a3f9..."}]}}
+```
+
+## Notifications
+
+The Hub sends these notifications after `hal/initialized`, to every connection.
+
+| Notification | Params | Sent when |
+|---|---|---|
+| `hal/value` | `{ device, channel, value, unit, at, suspect }` | A value is read, polled or streamed |
+| `hal/blocked` | `{ device, target, error: { code, name, message, data } }` | The Safety Kernel blocks a command from any source |
+| `hal/stopped` | `{ reason, by, devices: [{ device, status }] }` | A stop finishes |
+| `hal/deviceAdded` | `{ device: DeviceSummary }` | A Device is registered |
+| `hal/deviceRemoved` | `{ device }` | A Device is unregistered |
+| `hal/confirmationRequested` | `{ request: ConfirmationRequest }` | A command enters the confirmation queue |
+
+A Core Hub sends `hal/value`. A Control Hub also sends `hal/blocked` and `hal/stopped`. A Full Hub also sends `hal/confirmationRequested`. A Hub at any level MAY send `hal/deviceAdded` and `hal/deviceRemoved`. Every Hub lists what it sends in `capabilities.notifications`.
+
+```json
+← {"jsonrpc": "2.0", "method": "hal/value", "params": {"device": "desk-fan", "channel": "fan_speed", "value": 60,
+     "unit": "%", "at": "2026-10-24T14:02:01Z", "suspect": false}}
+← {"jsonrpc": "2.0", "method": "hal/blocked", "params": {"device": "desk-fan", "target": "write:fan_speed",
+     "error": {"code": -32010,
+               "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+               "data": {"name": "LIMIT_EXCEEDED", "kernelCode": "above_max", "device": "desk-fan",
+                        "channel": "fan_speed", "limit": "100 %", "requested": "150 %"}}}}
+← {"jsonrpc": "2.0", "method": "hal/stopped", "params": {"reason": "smoke near the fan", "by": "agent:bench-agent",
+     "devices": [{"device": "desk-fan", "status": "safe"}]}}
+← {"jsonrpc": "2.0", "method": "hal/deviceAdded", "params": {"device": {"id": "desk-fan",
+     "name": "Desk fan controller", "model": null, "manufacturer": null, "driver": "openhal-firmware",
+     "hazard": "low", "writable": true, "connected": true, "conformance": "control", "verification": "unverified"}}}
+← {"jsonrpc": "2.0", "method": "hal/deviceRemoved", "params": {"device": "desk-fan"}}
+← {"jsonrpc": "2.0", "method": "hal/confirmationRequested", "params": {"request": {
+     "requestId": "9f2c41d07a3b6e15", "status": "pending",
+     "command": {"kind": "action", "device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}},
+     "requestedBy": "agent:bench-agent", "createdAt": "2026-10-24T14:02:00Z", "expiresAt": "2026-10-24T14:07:00Z"}}}
+```
