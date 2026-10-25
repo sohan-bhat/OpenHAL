@@ -68,20 +68,20 @@ The suite tests the declared level and nothing above it. A check that doesn't ap
 
 | Check | Level | Passes when |
 |---|---|---|
-| identify | Core | `identify()` returns a mapping of strings |
-| connect | Core | The Safety Kernel connects the Device |
-| describe | Core | `describe()` returns none or only known sections |
-| read every channel | Core | Every readable channel returns a Reading for that channel in the file's unit |
-| disconnect and reconnect | Core | `health()` reports the broken connection, and every channel reads again after reconnecting |
-| timeout handling | Core | A slow read times out or raises `DriverError` |
-| close | Core | `close()` returns |
-| write inside limits | Control | An allowed channel change reaches the Driver exactly once |
-| write outside limits is blocked before the Driver | Control | A value above `max` is blocked and never reaches the Driver |
-| no write without a kernel Grant | Control | `write` without a Grant raises and nothing reaches the protocol code |
-| action inside limits | Full | An action with every argument inside its limits is `done` and reaches the Driver exactly once. When no action can run in the simulator's state, the check is skipped and names the reason |
-| action outside limits is blocked before the Driver | Full | An action with a numeric argument above its `max` is blocked and never reaches the Driver |
-| no action without a kernel Grant | Full | `action` without a Grant raises and nothing reaches the protocol code |
-| concurrent access | Control | Four racing commands each end `done`, `blocked` or `failed` |
-| safe state | Control | A stop leaves the Device in any state but `failed` |
+| `identify` | Core | `identify()` returns a mapping of strings |
+| `connect` | Core | The Safety Kernel connects the Device |
+| `describe` | Core | `describe()` returns none or only known sections |
+| `read every channel` | Core | Every readable channel returns a Reading for that channel in the file's unit |
+| `disconnect and reconnect` | Core | `health()` reports the broken connection, and every channel reads again after reconnecting |
+| `timeout handling` | Core | A slow read times out or raises `DriverError` |
+| `close` | Core | `close()` returns |
+| `write inside limits` | Control | An allowed channel change reaches the Driver exactly once |
+| `write outside limits is blocked before the driver` | Control | A value above `max` is blocked and never reaches the Driver |
+| `no write without a kernel grant` | Control | `write` without a Grant raises and nothing reaches the protocol code |
+| `action inside limits` | Full | An action with every argument inside its limits is `done` and reaches the Driver exactly once. When no action can run in the simulator's state, the check is skipped and names the reason |
+| `action outside limits is blocked before the driver` | Full | An action with a numeric argument above its `max` is blocked and never reaches the Driver |
+| `no action without a kernel grant` | Full | `action` without a Grant raises and nothing reaches the protocol code |
+| `concurrent access` | Control | Four racing commands each end `done`, `blocked` or `failed` |
+| `safe state` | Control | A stop leaves the Device in any state but `failed` |
 
 A `full` Driver passes every Control check and the three Full checks.
