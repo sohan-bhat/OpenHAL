@@ -1,0 +1,26 @@
+device: { name: Fan speed DAC, manufacturer: Microchip, model: MCP4921 }
+id: fan-dac
+connect: { pi-i2c-spi: spi0.0, speed_hz: 1000000, mode: 0, timeout: 500 ms }
+write:
+  control_voltage:
+    unit: V
+    min: 0
+    max: 2.5
+    max_change_per_s: 1
+    map: { data: [0x30, 0x00], length: 2, bits: 12, scale: 0.0008056640625 }
+actions:
+  power_down:
+    description: Clear the SHDN bit so the output goes to high impedance with a 500 kOhm pull-down.
+    effects: [control_voltage]
+    map: { data: [0x00, 0x00] }
+safe_state:
+  - { control_voltage: 0 }
+  - { action: power_down }
+hazard: low
+notes: >-
+  An MCP4921 on SPI bus 0 with chip select 0 and a 3.3 V reference, driving the 0 to 2.5 V speed input
+  of a fan controller. The word is A/B, BUF, GA and SHDN in bits 15 to 12 (0x3 sets 1x gain and active
+  output) and the 12-bit code below them, as in the Microchip MCP4921 datasheet (DS21897). The DAC can't be
+  read back, so control_voltage reads as the last value sent.
+safe_state_note: The DAC keeps its last output if the Pi stops. A pull-down on the fan input makes power loss safe.
+provenance: { source: hand-written, by: openhal pi-i2c-spi driver example, at: 2026-10-24, from: "https://ww1.microchip.com/downloads/en/DeviceDoc/21897B.pdf" }

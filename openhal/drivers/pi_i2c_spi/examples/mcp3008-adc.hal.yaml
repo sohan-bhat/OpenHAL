@@ -1,0 +1,24 @@
+device: { name: Analog inputs, manufacturer: Microchip, model: MCP3008 }
+id: analog-inputs
+connect: { pi-i2c-spi: spi0.1, speed_hz: 1350000, mode: 0, timeout: 500 ms }
+read:
+  potentiometer:
+    unit: V
+    every: 500 ms
+    map: { command: [0x01, 0x80, 0x00], byte: 1, length: 2, bits: 10, scale: 0.0032258064516129 }
+  light_sensor:
+    unit: V
+    every: 1 s
+    map: { command: [0x01, 0x90, 0x00], byte: 1, length: 2, bits: 10, scale: 0.0032258064516129 }
+  supply_divider:
+    unit: V
+    every: 5 s
+    range: [4.5, 5.5]
+    map: { command: [0x01, 0xA0, 0x00], byte: 1, length: 2, bits: 10, scale: 0.0064516129032258 }
+hazard: low
+notes: >-
+  An MCP3008 on SPI bus 0 with chip select 1 and VREF tied to 3.3 V. Each read clocks out the start bit,
+  the single-ended flag and the channel number, and the 10-bit result comes back in the last 10 bits of
+  the reply, as in the Microchip MCP3008 datasheet (DS21295). The supply divider halves the 5 V rail, so
+  its scale is twice the others.
+provenance: { source: hand-written, by: openhal pi-i2c-spi driver example, at: 2026-10-24, from: "https://ww1.microchip.com/downloads/en/DeviceDoc/21295d.pdf" }
