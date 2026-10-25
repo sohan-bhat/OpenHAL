@@ -2,9 +2,11 @@
   "name": "pylabrobot",
   "tier": 2,
   "status": "implemented",
-  "protocols": ["PyLabRobot LiquidHandler API"],
+  "protocols": [
+    "PyLabRobot LiquidHandler API"
+  ],
   "families": [
-    "Hamilton Microlab STAR and STARlet",
+    "Hamilton STAR and STARlet",
     "Tecan Freedom EVO",
     "Opentrons OT-2"
   ],

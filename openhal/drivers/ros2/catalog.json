@@ -2,11 +2,13 @@
   "name": "ros2",
   "tier": 2,
   "status": "implemented",
-  "protocols": ["rosbridge v2 over WebSocket"],
+  "protocols": [
+    "rosbridge v2 over WebSocket"
+  ],
   "families": [
-    "ROS 2 mobile robots (TurtleBot 4, Clearpath, Nav2 based robots)",
-    "ROS 2 arms and manipulators that expose topics, services or actions",
-    "any ROS 2 graph with rosbridge_server"
+    "ROS 2 mobile robots",
+    "ROS 2 arms",
+    "any ROS 2 graph with rosbridge"
   ],
   "hazard_default": "high",
   "tests": "rosbridge v2 WebSocket server simulator with a simulated differential drive robot",

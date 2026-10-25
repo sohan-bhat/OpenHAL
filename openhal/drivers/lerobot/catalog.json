@@ -2,11 +2,13 @@
   "name": "lerobot",
   "tier": 2,
   "status": "implemented",
-  "protocols": ["Hugging Face LeRobot Robot API"],
+  "protocols": [
+    "Hugging Face LeRobot Robot API"
+  ],
   "families": [
-    "SO-100 and SO-101 follower arms",
-    "Koch and OMX follower arms",
-    "other LeRobot robots with joint position actions"
+    "SO-100 and SO-101 arms",
+    "Koch and OMX arms",
+    "other LeRobot arms with joint goals"
   ],
   "hazard_default": "high",
   "tests": "a faithful fake of LeRobot's SOFollower, with each assumption checked in the hardware test plan",

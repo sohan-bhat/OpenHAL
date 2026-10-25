@@ -2,11 +2,13 @@
   "name": "grbl",
   "tier": 2,
   "status": "implemented",
-  "protocols": ["GRBL 1.1 over USB serial"],
+  "protocols": [
+    "GRBL 1.1 over USB serial"
+  ],
   "families": [
-    "desktop CNC routers (Shapeoko, X-Carve, 3018 and 4030 kits, OpenBuilds, Sienci LongMill)",
-    "diode and CO2 laser cutters and engravers on GRBL boards",
-    "pen plotters and other GRBL motion machines"
+    "desktop CNC routers",
+    "diode and CO2 laser engravers",
+    "pen plotters"
   ],
   "hazard_default": "high",
   "tests": "GRBL 1.1 line protocol simulator over a simulated serial port and a real pty",

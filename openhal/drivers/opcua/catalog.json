@@ -2,11 +2,13 @@
   "name": "opcua",
   "tier": 2,
   "status": "implemented",
-  "protocols": ["OPC UA binary over TCP (opc.tcp)"],
+  "protocols": [
+    "OPC UA binary over TCP (opc.tcp)"
+  ],
   "families": [
-    "PLCs with an OPC UA server (Siemens S7-1500, Beckhoff TwinCAT, B&R, CODESYS runtimes)",
-    "LADS and OPC UA for Devices lab instruments",
-    "process equipment, gateways and SCADA servers that publish OPC UA"
+    "PLCs with an OPC UA server",
+    "LADS lab instruments",
+    "process equipment and gateways"
   ],
   "hazard_default": "medium",
   "tests": "asyncua's own OPC UA server running a simulated pump skid",

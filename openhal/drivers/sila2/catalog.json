@@ -2,11 +2,13 @@
   "name": "sila2",
   "tier": 2,
   "status": "implemented",
-  "protocols": ["SiLA 2 over gRPC"],
+  "protocols": [
+    "SiLA 2 over gRPC"
+  ],
   "families": [
-    "lab automation devices with a SiLA 2 server (liquid handlers, plate readers, incubators, shakers)",
-    "SiLA 2 gateways in front of serial lab instruments",
-    "custom SiLA 2 servers written with the sila2 or sila_java packages"
+    "SiLA 2 lab devices",
+    "SiLA 2 gateways",
+    "custom SiLA 2 servers"
   ],
   "hazard_default": "medium",
   "tests": "a thermoshaker served by the sila2 package's own server from feature definitions",

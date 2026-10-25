@@ -2,11 +2,13 @@
   "name": "indi",
   "tier": 2,
   "status": "implemented",
-  "protocols": ["INDI XML protocol 1.7 over TCP"],
+  "protocols": [
+    "INDI XML protocol 1.7 over TCP"
+  ],
   "families": [
-    "telescope mounts (Sky-Watcher EQMod, Celestron, iOptron, Losmandy Gemini, OnStep and others)",
-    "focusers (ZWO EAF, Moonlite, Pegasus, Celestron)",
-    "astronomy cameras (ZWO ASI, QHY, Atik, SBIG, DSLRs through gPhoto)"
+    "telescope mounts",
+    "focusers",
+    "astronomy cameras"
   ],
   "hazard_default": "medium",
   "tests": "INDI server simulator on a local TCP port, speaking the XML protocol",

@@ -2,11 +2,14 @@
   "name": "alpaca",
   "tier": 2,
   "status": "implemented",
-  "protocols": ["ASCOM Alpaca REST", "Alpaca UDP discovery"],
+  "protocols": [
+    "ASCOM Alpaca REST",
+    "Alpaca UDP discovery"
+  ],
   "families": [
-    "telescope mounts (any ASCOM driver through ASCOM Remote, Alpaca native mounts such as OnStepX and ZWO AM5)",
-    "focusers, cameras, switches and power boxes, domes",
-    "INDI devices through an Alpaca bridge"
+    "telescope mounts",
+    "focusers, cameras and power boxes",
+    "observatory domes"
   ],
   "hazard_default": "medium",
   "tests": "Alpaca server simulator on an httpx mock transport, discovery over local UDP",
