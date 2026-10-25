@@ -13,7 +13,7 @@ The knx driver reads and sets KNX group addresses through a KNXnet/IP interface 
 ## Setup
 
 ```sh
-uv pip install 'openhal-hub[knx]'
+uv tool install --compile-bytecode "openhal-hub[knx] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 You need a KNXnet/IP interface or router on the network, and the group address list from the ETS project with each address's DPT.

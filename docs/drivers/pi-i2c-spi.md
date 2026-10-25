@@ -15,7 +15,7 @@ The pi-i2c-spi driver reads and sets I2C and SPI chips on a Raspberry Pi, or any
 ## Setup
 
 ```sh
-uv pip install 'openhal-hub[pi-i2c-spi]'
+uv tool install --compile-bytecode "openhal-hub[pi-i2c-spi] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 Enable I2C and SPI with `sudo raspi-config` (Interface Options) and reboot. Add the hub's user to the `i2c` and `spi` groups. spidev builds only on Linux, so on other systems only the tests run.

@@ -16,7 +16,7 @@ If the devices already live in Home Assistant, the homeassistant driver is the o
 ## Setup
 
 ```sh
-uv pip install 'openhal-hub[zigbee-zwave]'
+uv tool install --compile-bytecode "openhal-hub[zigbee-zwave] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 For Zigbee, Zigbee2MQTT must publish to a broker the hub can reach. Turn on availability in Zigbee2MQTT if you want offline devices reported. For Z-Wave, run zwave-js-server or Z-Wave JS UI with its WebSocket server on, usually port 3000.

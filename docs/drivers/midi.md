@@ -13,7 +13,7 @@ The midi driver reads knobs, faders and pads from MIDI controllers and sends not
 ## Setup
 
 ```sh
-uv pip install 'openhal-hub[midi]'
+uv tool install --compile-bytecode "openhal-hub[midi] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 python-rtmidi has no prebuilt wheel for every Python version and platform. Where none exists, pip builds it from source, which needs a C++ compiler (Xcode command line tools on macOS) and, on Linux, the ALSA headers (`sudo apt install libasound2-dev`). To use another mido backend, set `backend`, for example `backend: mido.backends.portmidi`.

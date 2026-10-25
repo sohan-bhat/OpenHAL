@@ -29,7 +29,7 @@ What this driver does with that.
 ## Setup
 
 ```sh
-uv pip install 'openhal-hub[bambu]'
+uv tool install --compile-bytecode "openhal-hub[bambu] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 1. On the printer's screen, open the network settings, turn on LAN-only mode, then turn on Developer Mode. Note the access code and the serial number shown there.

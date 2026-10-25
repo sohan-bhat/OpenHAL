@@ -14,7 +14,7 @@ The hid driver reads input reports from USB HID devices and sends output and fea
 ## Setup
 
 ```sh
-uv pip install 'openhal-hub[hid]'
+uv tool install --compile-bytecode "openhal-hub[hid] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 The `hidapi` package bundles the hidapi C library. On Linux, a regular user can only open HID devices with a udev rule, for example `/etc/udev/rules.d/70-openhal-hid.rules` containing `KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="0001", MODE="0660", TAG+="uaccess"`, then `sudo udevadm control --reload` and replug the device. On macOS, the app running the hub may need Input Monitoring permission for devices that send keyboard reports.

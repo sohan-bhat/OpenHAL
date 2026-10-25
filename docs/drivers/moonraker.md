@@ -6,7 +6,7 @@ The `moonraker` driver talks to Klipper printers through Moonraker, the API serv
 |---|---|
 | Driver name | `moonraker` |
 | Libraries | httpx 0.28.1 (BSD-3-Clause), websockets 17.3 (BSD-3-Clause) |
-| Extra | `uv pip install 'openhal-hub[moonraker]'` |
+| Extra | `uv tool install --compile-bytecode "openhal-hub[moonraker] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | medium |
 | Safe state | native. `TURN_OFF_HEATERS`. `printer.emergency_stop` only when `emergency_stop_on_stop` is true |
 | Self-describe | yes, from `printer.objects.list` and the `configfile` object |
@@ -49,7 +49,7 @@ There is no raw G-code action, on purpose.
 
 ## Setup
 
-1. Install the extra with `uv pip install 'openhal-hub[moonraker]'`.
+1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[moonraker] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. If Moonraker has `[authorization]` with API keys, put the key in an environment variable such as `MOONRAKER_API_KEY` and set `token_env`. Otherwise add the hub's address to `trusted_clients`.
 3. Start from `openhal/drivers/moonraker/examples/voron-2-4.hal.yaml`, or from the driver's `describe()` output.
 4. Validate with `openhal file validate`, then confirm the limits by hand.

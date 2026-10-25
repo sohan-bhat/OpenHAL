@@ -3,8 +3,10 @@
 `openhal.client` is a sync and an async client of the hub's local API v1. Scripts, the CLI and the MCP server all use it. It makes no safety decisions. The hub's kernel decides every command, and a blocked command comes back as a `Decision`, not as an exception.
 
 ```sh
-uv pip install 'openhal-hub[hub]'
+uv pip install "openhal-hub @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
+
+That puts the client in the current environment, so your own scripts can import it.
 
 ## Connect
 

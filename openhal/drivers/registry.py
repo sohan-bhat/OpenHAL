@@ -76,7 +76,9 @@ def load(name: str) -> type[Driver]:
     except ImportError as exc:
         raise UnknownDriver(
             f"The {name} driver needs an optional dependency that isn't installed ({exc.name}). "
-            f"Install it with: uv pip install 'openhal-hub[{name}]'"
+            f"Install it with uv sync --extra {name} in a checkout, or reinstall the hub with "
+            f'uv tool install --compile-bytecode "openhal-hub[{name}] @ git+https://github.com/sohan-bhat/OpenHAL", '
+            "listing every extra you use."
         ) from exc
     driver = getattr(module, class_name)
     if not (isinstance(driver, type) and issubclass(driver, Driver)):
