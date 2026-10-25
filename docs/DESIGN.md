@@ -163,6 +163,7 @@ Hardware and AI clichés
 - Terminal mockups with fake typing in the hero. Show real commands, static and copyable.
 
 Layout templates
+- Centered title, tagline, subtitle and badge row (the default README layout), on GitHub or the website.
 - Centered hero, one-line subhead, two pill buttons and a product card on the right.
 - Three icon feature cards in a row.
 - Bento grids.
@@ -207,6 +208,28 @@ Copy
 - Exclamation marks.
 - Em dashes.
 - Vague claims without specifics ("works with everything", "blazing fast", "enterprise-grade").
+
+## README and diagrams
+
+The repository README follows this structure, in this order.
+
+1. An SVG wordmark, left-aligned, then one sentence. "An open layer between AI agents and real hardware, with a safety kernel that checks every write." No subtitle that repeats it.
+2. The demo GIF, under 5 MB, 10 seconds at most, looping. An agent asks to set the fan to 150 %, the limit line shows it blocked at 100 %, then it sets 60 % and the fan responds. The alt text says exactly that.
+3. Quickstart. Exactly three commands in one code block, then one line saying what you'll see.
+4. What it does. Three short bullets, no more.
+5. The architecture diagram.
+6. Supported devices. A table generated from drivers/catalog.json with driver, devices covered, status and hazard default. Status is honest, tested on simulator or verified on hardware.
+7. Safety model. Five bullets at most, linking to docs/SAFETY.md.
+8. Relationship to Anthropic's MHS. Two sentences.
+9. Contributing a driver or device file, then the license.
+
+Rules.
+- Everything left-aligned. No centered hero blocks.
+- At most two badges, license and CI status, in the same neutral style. Project status goes in a sentence.
+- No emoji in headings and no horizontal rules between sections.
+- Every image ships as SVG (GIF for the demo) in light and dark variants through `<picture>` with a `prefers-color-scheme: dark` source, on a transparent background or one that matches GitHub's canvas in each mode. Every image has descriptive alt text and is at most 900 px wide.
+- The architecture diagram tells the story of one request, left to right. An agent's write of fan_speed 150 % enters, the device file supplies the limit, the kernel compares them on a large limit-line gauge with every mark labeled (current, max, requested), the write is blocked with its reason, and a second write of 60 % is granted, passes through the driver, reaches the device and reports back. Clients collapse into one node and devices into one node of real examples with their drivers. Monospaced values with units, small-caps labels, and status colors only for meaning, red for blocked and green for granted. It must fail the swap test for any other project.
+- Verify by rendering the README in GitHub's light and dark modes. Nothing may look like a slab, all image text must read at 100 % zoom, and the GIF and quickstart must be visible without scrolling at 1440 by 900.
 
 ## Generic-ness tests
 
