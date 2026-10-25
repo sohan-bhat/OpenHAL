@@ -3,6 +3,7 @@ import { codeHtml } from "../../lib/code";
 import VerificationBadge from "../../components/VerificationBadge.astro";
 import Base from "../../layouts/Base.astro";
 import { formatG } from "../../lib/kernel/pyformat";
+import type { ArgSpec } from "../../lib/kernel/model";
 import { type LibraryEntry, libraryEntries } from "../../lib/library";
 import { displayUnit } from "../../lib/playground/rpc";
 
@@ -13,6 +14,15 @@ export function getStaticPaths() {
 const { entry } = Astro.props as { entry: LibraryEntry };
 const file = entry.file;
 const num = (value: number | null) => (value === null ? "" : formatG(value));
+const limitWord = (spec: { suggested: boolean; confirmed: unknown }) =>
+  spec.suggested ? "suggested" : spec.confirmed || file?.confirmed ? "confirmed" : "unconfirmed";
+function argText(name: string, spec: ArgSpec): string {
+  const unit = displayUnit(spec.unit);
+  const range = spec.min !== null && spec.max !== null ? ` ${formatG(spec.min)} to ${formatG(spec.max)}${unit ? ` ${unit}` : ""}` : unit ? ` in ${unit}` : ` ${spec.type}`;
+  const step = spec.step !== null ? `, step ${formatG(spec.step)}` : "";
+  const values = spec.values.length ? ` ${spec.values.join(", ")}` : "";
+  return `${name}${values || range}${step}`;
+}
 ---
 
 <Base title={entry.title} description={`OpenHAL device file for ${entry.title}.`}>
@@ -46,7 +56,26 @@ const num = (value: number | null) => (value === null ? "" : formatG(value));
               <tr><th scope="row">Model</th><td>{entry.model ?? "not set"}</td></tr>
               <tr><th scope="row">Driver</th><td class="mono"><a href={`/drivers/${entry.driver}/`}>{entry.driver}</a></td></tr>
               <tr><th scope="row">Hazard</th><td class="mono">{entry.hazard}</td></tr>
-              <tr><th scope="row">Limits</th><td>{entry.confirmed ? <span class="status ok">confirmed</span> : <span class="status unverified">unconfirmed</span>}</td></tr>
+              <tr>
+                <th scope="row">Limits</th>
+                <td>
+                  {entry.confirmed ? (
+                    <span class="status ok">confirmed</span>
+                  ) : (
+                    <span class="limits">
+                      <span class="status unverified">unconfirmed</span>
+                      {entry.suggested.length > 0 ? (
+                        <span>Suggested by the library, not yet confirmed by a person: <span class="mono">{entry.suggested.join(", ")}</span>.</span>
+                      ) : entry.writes + entry.actions === 0 ? (
+                        <span>This file only reads. Nothing in it can change the device.</span>
+                      ) : (
+                        <span>Not confirmed: <span class="mono">{entry.unconfirmed.join(", ")}</span>.</span>
+                      )}
+                      {entry.writes + entry.actions > 0 && <a href="/docs/library/#confirmation">How a person confirms them</a>}
+                    </span>
+                  )}
+                </td>
+              </tr>
               {entry.report && <tr><th scope="row">Report</th><td class="mono">{entry.report}</td></tr>}
             </tbody>
           </table>
@@ -54,9 +83,9 @@ const num = (value: number | null) => (value === null ? "" : formatG(value));
           {Object.keys(file.write).length > 0 && (
             <div class="table-wrap">
               <table>
-                <caption class="legend">Channels it can change</caption>
+                <caption class="legend">Control channels</caption>
                 <thead>
-                  <tr><th scope="col">Channel</th><th scope="col">Min</th><th scope="col">Max</th><th scope="col">Step</th><th scope="col">Rate per s</th><th scope="col">Unit</th><th scope="col">Confirm</th></tr>
+                  <tr><th scope="col">Channel</th><th scope="col">Min</th><th scope="col">Max</th><th scope="col">Step</th><th scope="col">Rate per s</th><th scope="col">Unit</th><th scope="col">Confirm</th><th scope="col">Limit</th></tr>
                 </thead>
                 <tbody>
                   {Object.entries(file.write).map(([name, spec]) => (
@@ -68,6 +97,38 @@ const num = (value: number | null) => (value === null ? "" : formatG(value));
                       <td class="mono">{num(spec.max_change_per_s)}</td>
                       <td>{displayUnit(spec.unit) ?? spec.type}</td>
                       <td>{spec.confirm}</td>
+                      <td>{limitWord(spec)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {Object.keys(file.actions).length > 0 && (
+            <div class="table-wrap">
+              <table>
+                <caption class="legend">Actions</caption>
+                <thead>
+                  <tr><th scope="col">Action</th><th scope="col">Arguments</th><th scope="col">Confirm</th><th scope="col">Limit</th></tr>
+                </thead>
+                <tbody>
+                  {Object.entries(file.actions).map(([name, spec]) => (
+                    <tr>
+                      <td class="mono">{name}</td>
+                      <td>
+                        {Object.keys(spec.args).length === 0 ? (
+                          <span class="muted">none</span>
+                        ) : (
+                          <ul class="args">
+                            {Object.entries(spec.args).map(([arg, value]) => (
+                              <li class="mono">{argText(arg, value)}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </td>
+                      <td>{spec.confirm}</td>
+                      <td>{limitWord(spec)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -140,5 +201,18 @@ const num = (value: number | null) => (value === null ? "" : formatG(value));
 
   .problems {
     color: var(--blocked);
+  }
+
+  .limits {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--s-1) var(--s-3);
+  }
+
+  .args {
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 </style>
