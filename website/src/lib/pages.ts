@@ -6,6 +6,7 @@ import { routeFor } from "./markdown/routes.mjs";
 import { libraryEntries } from "./library";
 import { showDrafts } from "./drafts";
 import { docTitle } from "./docs-nav";
+import { specVersions } from "./spec-versions";
 
 export interface PageInfo {
   path: string;
@@ -41,7 +42,7 @@ export async function allPages(): Promise<PageInfo[]> {
   }
   const spec = pages.find((page) => page.path === "/spec/");
   if (spec) {
-    for (const version of (await import("./spec-versions")).specVersions()) {
+    for (const version of specVersions()) {
       pages.push({ path: `/spec/${version.version}/`, title: spec.title, kind: "Spec" });
     }
   }

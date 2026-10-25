@@ -1,7 +1,7 @@
 // The docs navigation, built from the docs collection so new driver pages appear on their own.
 
 import { getCollection } from "astro:content";
-import { groupFor, routeFor } from "./markdown/routes.mjs";
+import { FIXED_ROUTES, groupFor, routeFor } from "./markdown/routes.mjs";
 
 export interface NavItem {
   title: string;
@@ -27,7 +27,7 @@ export async function docsNav(): Promise<NavGroup[]> {
     if (!groups.has(name)) groups.set(name, []);
     groups.get(name)!.push({ title: navTitle(docTitle(entry)), href, repo: entry.id });
   }
-  const fixed = (await import("./markdown/routes.mjs")).FIXED_ROUTES.map((item) => item.repo);
+  const fixed = FIXED_ROUTES.map((item) => item.repo);
   return GROUP_ORDER.filter((name) => groups.has(name)).map((name) => ({
     name,
     items: groups.get(name)!.sort((a, b) => rank(a.repo, fixed, order) - rank(b.repo, fixed, order)),
