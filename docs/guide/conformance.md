@@ -4,22 +4,25 @@ Every driver in the repository passes the same battery of checks before it ships
 
 ## What it checks
 
-| Check | What passes |
-|---|---|
-| identify | Identification answers using read-only commands |
-| connect | The driver connects to its simulator |
-| describe | Self-description, if the protocol has one, marks every limit as suggested |
-| read every channel | Each read channel returns a value in its declared unit |
-| `write inside limits` | A change the kernel allows reaches the driver once, already converted |
-| `write outside limits is blocked before the driver` | A change over the limit never reaches the protocol code |
-| `no write without a kernel grant` | Calling the driver without a grant fails |
-| concurrent access | Commands to one device run one at a time |
-| safe state | The safe state is applied and reported |
-| disconnect and reconnect | A lost connection is noticed and the driver comes back |
-| timeout handling | A slow device times out or raises a driver error instead of hanging |
-| close | The driver closes cleanly |
+The suite tests the driver's declared [Conformance Level](glossary:conformance-level) and nothing above it. Checks above that level are skipped, and the report names the reason.
 
-A check that can't apply to a driver is skipped with a reason, and the report says so.
+| Check | Level | What passes |
+|---|---|---|
+| `identify` | Core | Identification answers using read-only commands |
+| `connect` | Core | The kernel connects the device |
+| `describe` | Core | Self-description, if the protocol has one, uses only known sections |
+| `read every channel` | Core | Each readable channel returns a value in its declared unit |
+| `disconnect and reconnect` | Core | A lost connection is noticed, and every channel reads again afterwards |
+| `timeout handling` | Core | A slow device times out or raises a driver error instead of hanging |
+| `close` | Core | The driver closes cleanly |
+| `write inside limits` | Control | A change the kernel allows reaches the driver exactly once |
+| `write outside limits is blocked before the driver` | Control | A change over the limit never reaches the protocol code |
+| `no write without a kernel grant` | Control | Calling the driver without a grant fails, and nothing reaches the protocol code |
+| `action inside limits` | Full | An action with every argument inside its limits runs and reaches the driver exactly once |
+| `action outside limits is blocked before the driver` | Full | An action with an argument over its limit never reaches the driver |
+| `no action without a kernel grant` | Full | Calling an action without a grant fails, and nothing reaches the protocol code |
+| `concurrent access` | Control | Racing commands each end done, blocked or failed |
+| `safe state` | Control | A stop leaves the device in its safe state |
 
 ## Run it
 
@@ -27,6 +30,13 @@ The suite runs as part of the normal tests. Every driver package with a `conform
 
 ```sh tested
 $ uv run pytest tests/conformance -q
+```
+
+`openhal driver test` runs it for one driver and prints each check. The mock driver declares Control, so the three Full checks are skipped.
+
+```sh tested
+$ uv run openhal driver test mock
+12 passed, 3 skipped, 0 failed
 ```
 
 You can also run it from Python against one driver's case and read the report.
