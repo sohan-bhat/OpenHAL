@@ -99,7 +99,7 @@ def d2_binary() -> str:
 
 
 NARROW_GRID = (
-    "grid-rows: 2\ngrid-columns: 5\nhorizontal-gap: 76\nvertical-gap: 56",
+    "grid-rows: 2\ngrid-columns: 5\nhorizontal-gap: 96\nvertical-gap: 56",
     "grid-columns: 2\ngrid-rows: 5\nhorizontal-gap: 64\nvertical-gap: 52",
 )
 
