@@ -56,6 +56,12 @@ matter = ["websockets>=13"]
 pi-i2c-spi = ["smbus2>=0.6.1", "spidev>=3.8; sys_platform == 'linux'"]
 upnp = ["async-upnp-client>=0.49.0"]
 zigbee-zwave = ["paho-mqtt>=2.1.0", "websockets>=13"]
+grbl = ["pyserial>=3.5"]
+ros2 = ["websockets>=13"]
+opcua = ["asyncua>=2.1.0"]
+sila2 = ["sila2>=0.14.0"]
+alpaca = ["httpx>=0.28.1"]
+pylabrobot = ["pylabrobot>=0.2.2"]
 
 [project.scripts]
 openhal = "openhal.cli.main:app"
