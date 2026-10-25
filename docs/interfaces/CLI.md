@@ -48,7 +48,7 @@ Most commands take `--json` and then print JSON on stdout instead of tables.
 openhal init [--new-token] [--no-sample]
 ```
 
-Creates the config folder (mode 0700), `config.yaml` with the defaults, the human token in `human.token` (mode 0600) and `devices/demo-fan.hal.yaml`, a simulated fan on the mock driver. The sample loads read-only until you confirm its limits with `openhal file confirm`, because only a person may confirm limits. Running `init` again keeps a working token. `--new-token` creates a new one.
+Creates the config folder (mode 0700), `config.yaml` with the defaults, the human token in `human.token` (mode 0600) and `devices/plant-waterer.hal.yaml`, the simulated plant waterer from `examples/plant-waterer/mock/`. The sample loads read-only until you confirm its limits with `openhal file confirm`, because only a person may confirm limits. Running `init` again keeps a working token. `--new-token` creates a new one.
 
 ### openhal doctor
 

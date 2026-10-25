@@ -50,7 +50,7 @@ def test_init_sets_up_the_config_folder(isolated_env: Path) -> None:
     token_file = isolated_env / "human.token"
     assert mode(token_file) == 0o600
     assert token_file.read_text().startswith("ohal_")
-    sample = isolated_env / "devices" / "demo-fan.hal.yaml"
+    sample = isolated_env / "devices" / "plant-waterer.hal.yaml"
     report = validate_path(sample)
     assert report.ok, report.problems
     assert report.file is not None
@@ -66,7 +66,7 @@ def test_init_sets_up_the_config_folder(isolated_env: Path) -> None:
 
 def test_file_confirm_binds_the_limits(isolated_env: Path, terminal: list[str]) -> None:
     run("init")
-    sample = isolated_env / "devices" / "demo-fan.hal.yaml"
+    sample = isolated_env / "devices" / "plant-waterer.hal.yaml"
     terminal.append("confirm")
     code, out = run("file", "confirm", str(sample), "--by", "sohan")
     assert code == 0, out
@@ -77,7 +77,7 @@ def test_file_confirm_binds_the_limits(isolated_env: Path, terminal: list[str]) 
     terminal.append("confirm")
     run("file", "confirm", str(sample))
     assert sample.read_text().count("confirmed:") == 1
-    sample.write_text(sample.read_text().replace("max: 100", "max: 90"))
+    sample.write_text(sample.read_text().replace("max: 30", "max: 25"))
     assert not load(sample).writable, "a changed limit unconfirms the file"
 
 
@@ -91,7 +91,7 @@ def test_human_commands_need_a_terminal(isolated_env: Path, cli_hub: SyncHub) ->
     assert "--phrase can't be used" in out
     sample = isolated_env / "devices" / "x.hal.yaml"
     run("init")
-    code, out = run("file", "confirm", str(isolated_env / "devices" / "demo-fan.hal.yaml"))
+    code, out = run("file", "confirm", str(isolated_env / "devices" / "plant-waterer.hal.yaml"))
     assert code == 1
     assert not sample.exists()
 

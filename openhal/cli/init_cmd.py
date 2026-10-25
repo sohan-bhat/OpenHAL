@@ -25,24 +25,19 @@ routines:
   agent_enable_low_hazard: false
 """
 
-SAMPLE_NAME: Final = "demo-fan.hal.yaml"
-SAMPLE_DEVICE: Final = """\
-# A simulated desk fan. It uses the mock driver, so it never touches hardware.
-# It loads read-only until you confirm its limits with openhal file confirm.
-openhal: "0.1"
-device: Demo desk fan
-id: demo-fan
-connect: { mock: demo-fan, simulate: desk-fan }
-read:
-  temperature: { unit: degC, every: 1 s }
-write:
-  fan_speed: { unit: percent, min: 0, max: 100, step: 1, max_change_per_s: 20 }
-safe_state: { fan_speed: 0 }
-watchdog:
-  heartbeat: 2 s
-hazard: low
-notes: "A simulated fan for trying OpenHAL. Writes change an in-memory value only."
-"""
+SAMPLE_NAME: Final = "plant-waterer.hal.yaml"
+
+
+def sample_device() -> str:
+    """The plant waterer mock (examples/plant-waterer/mock/) without its confirmation.
+
+    The file shipped with OpenHAL was confirmed by the person who wrote it. Your copy is yours to
+    confirm, so it loads read-only until you run openhal file confirm.
+    """
+    from openhal.demo.scenario import example_file
+
+    lines = example_file().read_text(encoding="utf-8").splitlines()
+    return "\n".join(line for line in lines if not line.startswith("confirmed:")) + "\n"
 
 
 def _human_token(db_path: Path, token_path: Path, rotate: bool) -> str:
@@ -65,9 +60,9 @@ def register(app: typer.Typer) -> None:
     @app.command()
     def init(
         new_token: bool = typer.Option(False, "--new-token", help="Create a new human token even if one works."),
-        sample: bool = typer.Option(True, "--sample/--no-sample", help="Add a simulated device file."),
+        sample: bool = typer.Option(True, "--sample/--no-sample", help="Add the simulated plant waterer."),
     ) -> None:
-        """Create the config folder, the human token (mode 0600) and a sample device that uses the mock driver."""
+        """Create the config folder, the human token (mode 0600) and the simulated plant waterer."""
         from openhal.hub.config import HubConfig
         from openhal.spec.loader import validate_path
 
@@ -89,7 +84,7 @@ def register(app: typer.Typer) -> None:
 
         sample_path = config.devices_dir / SAMPLE_NAME
         if sample and not sample_path.exists():
-            sample_path.write_text(SAMPLE_DEVICE, encoding="utf-8")
+            sample_path.write_text(sample_device(), encoding="utf-8")
             report = validate_path(sample_path)
             if not report.ok:  # pragma: no cover (the sample is tested)
                 raise typer.Exit(1)
