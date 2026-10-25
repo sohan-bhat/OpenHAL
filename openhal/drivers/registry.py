@@ -16,7 +16,7 @@ from __future__ import annotations
 import importlib
 import pkgutil
 from functools import cache
-from typing import Final
+from typing import Any, Final
 
 from openhal.drivers.base import Driver
 
@@ -82,3 +82,19 @@ def load(name: str) -> type[Driver]:
     if not (isinstance(driver, type) and issubclass(driver, Driver)):
         raise UnknownDriver(f"{path} is not a Driver subclass.")
     return driver
+
+
+def connect_params(driver: str, address: str) -> dict[str, Any]:
+    """Driver parameters for a discovered address. A `host:port` address fills both for drivers with a port."""
+    from openhal.spec.models import PRIMARY_PARAM
+
+    primary = PRIMARY_PARAM.get(driver, "target")
+    try:
+        model = load(driver).params_model
+    except UnknownDriver:
+        model = None
+    fields = getattr(model, "model_fields", {})
+    host, sep, port = address.rpartition(":")
+    if primary == "host" and "port" in fields and sep and port.isdigit() and host:
+        return {primary: host.strip("[]"), "port": int(port)}
+    return {primary: address}

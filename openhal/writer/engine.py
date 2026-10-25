@@ -76,7 +76,7 @@ def _dump(data: dict[str, Any]) -> str:
     return yaml.safe_dump(data, sort_keys=False, allow_unicode=True, width=100)
 
 
-def _force_suggested(data: dict[str, Any]) -> dict[str, Any]:
+def force_suggested(data: dict[str, Any]) -> dict[str, Any]:
     """Nothing a draft says can confirm a limit. Mark every limit suggested and drop confirmations."""
     cleaned = copy.deepcopy(data)
     for key in ("confirmed", "approvals"):
@@ -206,7 +206,7 @@ class WriterEngine:
             return None
         connect: dict[str, Any] = dict(params)
         if address and PRIMARY_PARAM.get(driver, "target") not in connect:
-            connect[PRIMARY_PARAM.get(driver, "target")] = address
+            connect = {**registry.connect_params(driver, address), **connect}
         try:
             probe_file = from_data(
                 {"device": "Device being described", "connect": {"driver": driver, "params": connect}}
@@ -290,7 +290,7 @@ class WriterEngine:
         return merged
 
     def _set_draft(self, session: Session, data: dict[str, Any]) -> None:
-        cleaned = _force_suggested(data)
+        cleaned = force_suggested(data)
         session.confirmed = None
         session.answers = {}
         try:

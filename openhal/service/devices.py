@@ -24,7 +24,7 @@ from openhal.drivers.base import Driver
 from openhal.hub import discovery
 from openhal.spec.loader import DeviceFileError, from_data, load, parse_yaml
 from openhal.spec.models import PRIMARY_PARAM, DeviceFile
-from openhal.writer.engine import _force_suggested
+from openhal.writer.engine import force_suggested
 
 SELF_DESCRIBING: Final = ("openhal-firmware", "esphome")
 DESCRIBE_TIMEOUT_S: Final = 10.0
@@ -86,20 +86,6 @@ class Existing:
         return bool(sep) and (driver, host) in self.addresses
 
 
-def connect_params(driver: str, address: str) -> dict[str, Any]:
-    """Driver parameters for an address. A `host:port` address fills both for drivers with a port."""
-    primary = PRIMARY_PARAM.get(driver, "target")
-    try:
-        model = registry.load(driver).params_model
-    except registry.UnknownDriver:
-        model = None
-    fields = getattr(model, "model_fields", {})
-    host, sep, port = address.rpartition(":")
-    if primary == "host" and "port" in fields and sep and port.isdigit() and host:
-        return {primary: host.strip("[]"), "port": int(port)}
-    return {primary: address}
-
-
 def _short_connect(driver: str, params: dict[str, Any]) -> dict[str, Any]:
     primary = PRIMARY_PARAM.get(driver, "target")
     rest = {key: value for key, value in params.items() if key != primary}
@@ -107,7 +93,7 @@ def _short_connect(driver: str, params: dict[str, Any]) -> dict[str, Any]:
 
 
 def _finish(data: dict[str, Any], source: str) -> dict[str, Any]:
-    cleaned = _force_suggested(data)
+    cleaned = force_suggested(data)
     provenance = cleaned.get("provenance")
     provenance = dict(provenance) if isinstance(provenance, dict) else {}
     provenance.setdefault("source", source)
@@ -128,7 +114,7 @@ def from_library(match: discovery.Match) -> Offer:
     except (DeviceFileError, OSError) as exc:
         offer.problem = f"The library file {match.library_file} didn't load. {exc}"
         return offer
-    params = {**file.connect.params, **connect_params(match.driver, match.address)}
+    params = {**file.connect.params, **registry.connect_params(match.driver, match.address)}
     data["connect"] = _short_connect(file.connect.driver, params)
     offer.data = _finish(data, "library")
     return offer
@@ -137,7 +123,7 @@ def from_library(match: discovery.Match) -> Offer:
 async def describe(driver_name: str, address: str, *, timeout_s: float = DESCRIBE_TIMEOUT_S) -> dict[str, Any]:
     """Ask a self-describing device what it has, with its driver's read-only commands."""
     driver_class = registry.load(driver_name)
-    params = connect_params(driver_name, address)
+    params = registry.connect_params(driver_name, address)
     probe = from_data({"device": "Device being described", "connect": {"driver": driver_name, "params": params}})
     instance: Driver = driver_class(probe)
     try:
