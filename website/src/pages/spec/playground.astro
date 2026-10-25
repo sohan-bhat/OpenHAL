@@ -40,7 +40,7 @@ const initial = examples.find((item) => scenario.file && item.path.endsWith(`/${
       <p class="lede">Edit a device file, then send requests to a simulated hub. Each answer is the JSON-RPC message the hub sends.</p>
       <p class="note"><span class="status unverified">in-browser demo</span> <span class="muted">A TypeScript port of the safety kernel. It never talks to hardware.</span></p>
     </header>
-    <Playground client:idle examples={examples} initial={initial} suggestion={suggestion} />
+    <Playground client:interact examples={examples} initial={initial} suggestion={suggestion} />
   </div>
 </Base>
 

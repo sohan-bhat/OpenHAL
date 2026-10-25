@@ -151,14 +151,16 @@
     timer = setTimeout(() => rebuild(current), 250);
   });
 
+  rebuild(start.text);
+
   onMount(() => {
     const asked = new URL(window.location.href).searchParams.get("example");
     const chosen = examples.find((item) => item.name === asked);
     if (chosen && chosen.name !== exampleName) {
       exampleName = chosen.name;
       text = chosen.text;
+      rebuild(text);
     }
-    rebuild(text);
     clock = setInterval(() => {
       if (!kernel) return;
       for (const [device, runtime] of kernel.devices) {
