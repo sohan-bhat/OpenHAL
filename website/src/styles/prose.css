@@ -33,12 +33,16 @@
 }
 
 .prose ul,
-.prose ol {
+.prose ol:not(.trace ol) {
   padding-left: var(--s-5);
 }
 
-.prose li + li {
+.prose li + li:not(.trace li) {
   margin-top: var(--s-2);
+}
+
+.prose .trace-figure {
+  margin: var(--s-5) 0 0;
 }
 
 .prose :not(pre) > code {
