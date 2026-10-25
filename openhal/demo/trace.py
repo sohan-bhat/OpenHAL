@@ -2,7 +2,8 @@
 
 `lines()` turns a recorded scenario into the text trace the README, the docs and `openhal demo`
 show. Requests and errors are shown as the hub sent them. Reasons wrap before the device file
-citation so the trace stays narrow.
+citation so the trace stays narrow. Narration that is not a message, such as what held before an
+exchange, is a comment line that starts with `#`.
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ from openhal.protocol.errors import shown
 
 INDENT = "  "
 LABEL = 14
+COMMENT = "# "
 
 
 def compact(value: Any) -> str:
@@ -51,11 +53,11 @@ def _reason(message: str) -> list[str]:
 
 
 def exchange(entry: dict[str, Any], arrows: tuple[str, str] = ARROWS) -> list[str]:
-    """One exchange: what held before it, the request and the hub's answer."""
+    """One exchange: what held before it as a comment, the request and the hub's answer."""
     to_hub, back = arrows
     out: list[str] = []
     if entry.get("before"):
-        out.append(f"{INDENT}{entry['before']}")
+        out.append(f"{COMMENT}{entry['before']}")
     out += _request(entry["request"]["method"], entry["request"]["params"], to_hub)
     error = entry.get("error")
     if error:

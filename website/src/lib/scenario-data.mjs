@@ -78,5 +78,5 @@ export function outcome(scenario = loadScenario()) {
 }
 
 export function scenarioTraceHtml(scenario = loadScenario()) {
-  return traceHtml(scenarioEntries(scenario), { note: "Recorded with openhal demo" });
+  return traceHtml(scenarioEntries(scenario), { label: "Message trace recorded with openhal demo" });
 }

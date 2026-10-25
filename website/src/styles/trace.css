@@ -82,9 +82,16 @@
 }
 
 .trace li.note {
-  display: block;
-  padding-left: calc(22px + var(--s-2));
-  color: var(--text-2);
+  color: var(--syn-comment);
+  font-style: italic;
+}
+
+.trace li + li.note {
+  margin-top: var(--s-2);
+}
+
+.trace li.note + li {
+  margin-top: calc(-1 * var(--s-2));
 }
 
 .trace .summary {
@@ -94,13 +101,6 @@
 .trace-figure {
   margin: 0;
   min-width: 0;
-}
-
-.trace-caption {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--s-3);
-  margin-bottom: var(--s-2);
 }
 
 .trace .who {

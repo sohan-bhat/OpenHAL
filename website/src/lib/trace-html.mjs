@@ -52,14 +52,17 @@ function lineHtml(entry) {
 export function traceItemsHtml(entries) {
   return entries
     .map((entry) => {
-      if (entry.kind === "note") return `<li class="note"><span class="note-text">${escapeHtml(entry.text)}</span></li>`;
+      if (entry.kind === "note") return noteHtml(entry.text);
       const arrow = arrowSvg(entry.kind === "request" ? "out" : "in", entry.kind === "notification");
       return `<li>${arrow}<span class="visually-hidden">${directionWord(entry)}</span><div class="line">${lineHtml(entry)}</div></li>`;
     })
     .join("");
 }
 
-export function traceHtml(entries, { label = "Message trace", note = null } = {}) {
-  const caption = `<span class="legend">${escapeHtml(label)}</span>${note ? `<span class="legend">${escapeHtml(note)}</span>` : ""}`;
-  return `<figure class="trace-figure"><figcaption class="trace-caption">${caption}</figcaption><div class="trace" tabindex="0"><ol>${traceItemsHtml(entries)}</ol></div></figure>`;
+export function noteHtml(text) {
+  return `<li class="note"><span class="note-mark" aria-hidden="true">#</span><span class="visually-hidden">Comment</span><span class="note-text">${escapeHtml(text)}</span></li>`;
+}
+
+export function traceHtml(entries, { label = "Message trace" } = {}) {
+  return `<figure class="trace-figure"><div class="trace" role="region" aria-label="${escapeHtml(label)}" tabindex="0"><ol>${traceItemsHtml(entries)}</ol></div></figure>`;
 }

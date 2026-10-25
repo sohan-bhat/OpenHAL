@@ -30,7 +30,10 @@ const sections = specItems
     <section class="intro" aria-labelledby="home-title">
       <h1 id="home-title">{HOME_TITLE}</h1>
       <FlowDiagram />
-      <MessageTrace entries={scenarioTrace()} note="Recorded with openhal demo" />
+      <div class="trace-block">
+        <MessageTrace entries={scenarioTrace()} label="Message trace recorded with openhal demo" />
+        <p class="trace-after muted">Recorded from <code>openhal demo</code> on the simulated plant waterer.</p>
+      </div>
     </section>
 
     <section aria-labelledby="start-title" class="block">
@@ -116,6 +119,16 @@ const sections = specItems
   .intro {
     display: grid;
     gap: var(--s-6);
+  }
+
+  .trace-block {
+    display: grid;
+    gap: var(--s-3);
+    min-width: 0;
+  }
+
+  .trace-after code {
+    font-size: 0.92em;
   }
 
   h1 {

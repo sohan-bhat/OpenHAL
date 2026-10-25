@@ -16,7 +16,7 @@ export const reasonLines = (reason: string): string[] => lines(reason);
 export function traceText(entries: TraceEntry[]): string {
   return entries
     .map((entry) => {
-      if (entry.kind === "note") return `   ${entry.text}`;
+      if (entry.kind === "note") return `# ${entry.text}`;
       if (entry.kind === "request") return `-> ${entry.method}  ${inlineJson(entry.params)}`;
       if (entry.kind === "notification") return `<- ${entry.method}  ${entry.text ?? inlineJson(entry.params)}`;
       if (entry.kind === "result") return `<- result  ${inlineJson(entry.result)}`;

@@ -48,6 +48,15 @@ describe("the recorded scenario", () => {
     }
   });
 
+  it("writes narration as comments, the same way openhal.demo.trace does", () => {
+    const notes = scenarioTrace(scenario).filter((entry) => entry.kind === "note");
+    expect(notes.length).toBeGreaterThan(0);
+    const site = traceText(notes).split("\n");
+    const python = (expected.scenario.lines as string[]).filter((line) => line.startsWith("#"));
+    expect(site).toEqual(python);
+    for (const line of site) expect(line).toMatch(/^# \S/);
+  });
+
   it("sends the recorded requests and names only registry codes", () => {
     const entries = scenarioTrace(scenario);
     expect(entries.filter((entry) => entry.kind === "request")).toHaveLength(scenario.record.exchanges.length);
