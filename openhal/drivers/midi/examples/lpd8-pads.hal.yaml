@@ -4,7 +4,7 @@
 device: { name: Pad controller, model: LPD8, manufacturer: Akai }
 id: pad-controller
 match:
-  usb: ["09e8:0076"]
+  usb: ["09e8:0075"]
   usb_class: midi
 connect: { midi: "LPD8", channel: 1 }
 read:
