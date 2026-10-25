@@ -56,40 +56,54 @@ assert report.ok
 
 ## Add a case for your driver
 
-A driver supplies one `ConformanceCase` in `openhal/drivers/<name>/conformance.py`. It holds a confirmed device file, a factory that builds the driver against its simulator, and optional hooks that break the connection or slow the device down, so the disconnect and timeout checks mean something.
+A driver supplies one `ConformanceCase` in `openhal/drivers/<name>/conformance.py`. It holds a confirmed device file, a factory that builds the driver against its simulator, and optional hooks that break the connection or slow the device down, so the disconnect and timeout checks mean something. This case runs the openhal-firmware driver against the simulated plant waterer.
 
 ```python tested
 from openhal.conformance import ConformanceCase
 from openhal.drivers.base import Driver
-from openhal.drivers.mock.driver import MockDriver
+from openhal.drivers.openhal_firmware.driver import OpenHalFirmwareDriver
+from openhal.drivers.openhal_firmware.simulator import SIMULATORS
 from openhal.spec import loads
 
 FILE = loads(
     """
-device: Conformance fan
-id: conformance-fan
-connect: { mock: conformance, simulate: desk-fan }
+device: Arduino plant waterer
+id: plant-waterer
+connect: { openhal-firmware: "sim:plant-waterer", timeout_s: 0.3 }
 read:
-  temperature: { unit: degC }
-write:
-  fan_speed: { unit: percent, min: 0, max: 100, max_change_per_s: 50 }
-safe_state: { fan_speed: 0 }
+  soil_moisture: { unit: "%", range: [0, 100] }
+  tank: { type: enum, values: [empty, ok] }
+actions:
+  water:
+    args:
+      duration: { unit: s, min: 1, max: 30 }
+    require: ["tank == ok"]
+  stop: {}
+safe_state: { action: stop }
 hazard: low
 confirmed: { by: conformance, at: 2026-10-24 }
 """
 )
 
 
-async def break_connection(driver: Driver) -> None:
-    assert isinstance(driver, MockDriver)
-    driver.connected = False
+async def unplug(driver: Driver) -> None:
+    assert isinstance(driver, OpenHalFirmwareDriver)
+    assert driver._link is not None
+    await driver._link.transport.close()
+
+
+async def go_quiet(driver: Driver) -> None:
+    SIMULATORS["plant-waterer"].silent = True
 
 
 def case() -> ConformanceCase:
-    return ConformanceCase(name="mock", file=FILE, make=MockDriver, break_connection=break_connection)
+    SIMULATORS.pop("plant-waterer", None)
+    return ConformanceCase(
+        name="openhal-firmware", file=FILE, make=OpenHalFirmwareDriver, break_connection=unplug, make_slow=go_quiet
+    )
 ```
 
-The case should use a device file that looks like the real device, with real units and limits, so the suite exercises the same conversions the hardware will see. The [driver contract](../drivers/WRITING-A-DRIVER.md) has every rule.
+The plant waterer has no write channel, so the four checks that need one are skipped and the report says why. The other 11 pass. The case should use a device file that looks like the real device, with real units and limits, so the suite exercises the same conversions the hardware will see. The [driver contract](../drivers/WRITING-A-DRIVER.md) has every rule.
 
 ## Passing is not verified
 

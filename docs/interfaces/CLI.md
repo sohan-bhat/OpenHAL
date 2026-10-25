@@ -1,6 +1,6 @@
 # Command line reference
 
-`openhal` talks to the hub's local API, so every command except `init`, `file` and `doctor`'s local checks needs a running hub (`openhald`). It makes no safety decisions. The hub's kernel decides every write and action.
+`openhal` talks to the hub's local API, so every command except `init`, `file` and `doctor`'s local checks needs a running hub (`openhald`). It makes no safety decisions. The hub's kernel decides every command.
 
 ## Global options
 
@@ -84,7 +84,7 @@ openhal token revoke TOKEN_ID
 
 `create` prints the token once, on the last line, so `| tail -1` captures it. The hub keeps only a hash. Agent tokens default to the `read` scope. Human tokens always have full scope. `list` shows ids, names, kinds and scopes, never the tokens. `revoke` takes effect on the next request.
 
-These commands use the hub's token routes. When the hub is not running, or has no token routes yet, they work on `hub.db` in the config folder directly, which only the folder's owner can read or write.
+These commands use the hub's token routes. When the hub is not running, or has no token routes yet, they work on `hub.db` in the config folder directly, which only the folder's owner can open.
 
 ## The hub and devices
 
@@ -102,7 +102,7 @@ Hub version and address, who you are, connected devices, pending confirmations, 
 openhal devices [DEVICE] [--json]
 ```
 
-Lists devices with driver, hazard class, writable or read-only, and connection state. With a device id, shows every read channel, every write channel with its limits, max change per second and confirmation tier, every action, the interlocks and the notes.
+Lists devices with driver, hazard class, mode (`writable` or `read-only`) and connection state. With a device id, shows every read channel, every write channel with its limits, max change per second and confirmation tier, every action, the interlocks and the notes.
 
 ### openhal discover
 
@@ -126,11 +126,11 @@ Reads channels now. Exits 1 if any read failed.
 openhal write DEVICE.CHANNEL VALUE... [--json]
 ```
 
-Asks the kernel to set a channel. The value words are joined, so `60 %` and `"60 %"` are the same. The CLI splits the number from its unit before sending, so the hub receives `"value": 60, "unit": "%"` ([ADR 0016](../adr/0016-one-value-format.md)), and `--json` prints values the same way. Numbers need a unit, and the hub converts compatible units (`85 degF` against a degC channel). Bool channels take true, false, on, off, yes, no, 1 or 0. Prints the decision. A blocked write prints its code and message and exits 1.
+Asks the kernel to set a channel. The value words are joined, so `60 %` and `"60 %"` are the same. The CLI splits the number from its unit before sending, so the hub receives `"value": 60, "unit": "%"` ([ADR 0016](../adr/0016-one-value-format.md)), and `--json` prints values the same way. Numbers need a unit, and the hub converts compatible units (`85 degF` against a degC channel). Bool channels take true, false, on, off, yes, no, 1 or 0. Prints the decision. A blocked command prints its code and message and exits 1. The plant waterer has no write channels, because its pump runs only through `water`.
 
 ```
-$ openhal write desk-fan.fan_speed 150 %
-blocked above_max  Blocked. The fan_speed limit is 100 % (max). Asked for 150 %.
+$ openhal write plant-waterer.pump on
+blocked unknown_target  Blocked. plant-waterer has no write channel 'pump'. Write channels are none.
 ```
 
 ### openhal action
@@ -139,7 +139,14 @@ blocked above_max  Blocked. The fan_speed limit is 100 % (max). Asked for 150 %.
 openhal action DEVICE.ACTION [KEY=VALUE ...] [--json]
 ```
 
-Runs an action. Arguments with units are written as `seconds=2s` or `"seconds=2 s"`.
+Runs an action. Arguments with units are typed as `duration=20s` or `"duration=20 s"`.
+
+```
+$ openhal action plant-waterer.water duration=120s
+blocked above_max  Blocked. The duration limit is 30 s (max). Asked for 120 s.
+$ openhal action plant-waterer.water duration=20s
+done  Done. water ran.
+```
 
 ### openhal dry-run
 
@@ -152,8 +159,14 @@ openhal dry-run --file plan.yaml
 Checks commands against the current state without running them. A plan file is a YAML or JSON list of commands, evaluated in order as if the earlier ones had run.
 
 ```yaml
-- { device: desk-fan, channel: fan_speed, value: 40 % }
-- { device: heater, action: pulse, args: { seconds: 2 s } }
+- { device: plant-waterer, action: water, args: { duration: 120 s } }
+- { device: plant-waterer, action: water, args: { duration: 20 s } }
+```
+
+```
+$ openhal dry-run --file plan.yaml
+1. blocked above_max  Blocked. The duration limit is 30 s (max). Asked for 120 s.
+2. allowed  Allowed.
 ```
 
 Exits 1 if any command would be blocked.
@@ -210,19 +223,16 @@ openhal routine approve ID --device DEVICE [--phrase approve]
 
 `new` stores a routine, always disabled. The kind comes from the file suffix unless given. `enable` prints the routine and its dry run first, and refuses if the dry run does not pass. `run` runs it once now. `approve` signs an approval that lets this exact routine content drive a high hazard device. Any change to the routine voids it.
 
-A YAML routine looks like this.
+A YAML routine looks like this. It checks the soil every hour and waters for 20 s when it is dry.
 
 ```yaml
-id: keep-cool
+id: morning-water
 triggers:
-  - every: 30 s
-  - when: "desk-fan.temperature > 28 degC"
+  - every: 1 h
 steps:
-  - if: "desk-fan.temperature > 28 degC"
+  - if: "plant-waterer.soil_moisture < 35 %"
     then:
-      - write: { device: desk-fan, channel: fan_speed, value: 60 % }
-    else:
-      - write: { device: desk-fan, channel: fan_speed, value: 20 % }
+      - action: { device: plant-waterer, action: water, args: { duration: 20 s } }
 ```
 
 ## Driver writer
@@ -236,7 +246,7 @@ openhal writer finish SESSION_ID [--save-as NAME] [--phrase save]
 openhal writer plan SESSION_ID [--json]
 ```
 
-`start` begins a session for a device OpenHAL doesn't know. A draft comes from your MCP client (`propose_device_file`) or from `propose`. Every limit in a draft is stored as suggested. `interview` asks you each limit question with the suggested value and the reason, and a bare number gets the question's unit. `finish` saves the device file into the devices folder. `plan` shows the staged write test plan, smallest safe values first.
+`start` begins a session for a device OpenHAL doesn't know. A draft comes from your MCP client (`propose_device_file`) or from `propose`. Every limit in a draft is stored as suggested. `interview` asks you each limit question with the suggested value and the reason, and a bare number gets the question's unit. `finish` saves the device file into the devices folder. `plan` shows the staged test plan, smallest safe values first.
 
 ## Drivers
 
@@ -256,4 +266,4 @@ openhal file schema
 openhal file confirm PATH [--by NAME] [--phrase confirm]
 ```
 
-`validate` checks files against the spec. `schema` prints the JSON Schema. `confirm` prints every limit in a file, then writes a top-level `confirmed` with your name, the date and the hash of the limits. Any later change to a limit makes the file read-only again. It refuses while any entry is still marked `suggested: true`. Restart `openhald` to load the change.
+`validate` checks files against the spec. `schema` prints the JSON Schema. `confirm` prints every limit in a file, then adds a top-level `confirmed` with your name, the date and the hash of the limits. Any later change to a limit makes the file read-only again. It refuses while any entry is still marked `suggested: true`. Restart `openhald` to load the change.
