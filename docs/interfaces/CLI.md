@@ -158,7 +158,7 @@ openhal dry-run --file plan.yaml
 
 Checks commands against the current state without running them. A plan file is a YAML or JSON list of commands, evaluated in order as if the earlier ones had run.
 
-```yaml
+```yaml file=plan.yaml
 - { device: plant-waterer, action: water, args: { duration: 120 s } }
 - { device: plant-waterer, action: water, args: { duration: 20 s } }
 ```

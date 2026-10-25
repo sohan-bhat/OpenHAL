@@ -37,7 +37,7 @@
 | T12 | Kernel crash leaves a command half-checked | Fail closed on any exception, logged | tests/kernel/test_fail_closed.py |
 | T13 | Remote attacker on the LAN | Localhost bind by default, pairing tokens for LAN | tests/hub/test_bind.py |
 | T14 | Token theft from disk | Tokens stored hashed in the DB, human token file mode 0600 | tests/hub/test_tokens.py |
-| T15 | Audit history edited to hide an event | Append-only triggers, hash chain, `openhal log verify` | tests/audit/test_chain.py |
+| T15 | Audit history edited to hide an event | Append-only triggers, hash chain, `openhal log --verify` | tests/audit/test_chain.py |
 | T16 | Malformed or malicious device file (huge numbers, NaN limits, recursive expressions, path traversal in fields) | Strict schema, finite checks, expression depth limit, no file paths from device files are opened | tests/spec/test_malicious_files.py |
 | T17 | Malicious in-process driver | Drivers get a grant verifier bound to their own device, not the kernel. This stops accidents, not malice, because in-process code can reach any object through introspection. Bundled drivers pass the conformance suite and review. Out-of-process drivers are on the roadmap | review_safety/test_f08_driver_reaches_kernel.py |
 | T18 | Agent with shell access runs the CLI as the human | `confirm.require_tty`, typed phrases, dashboard pairing. Residual risk documented | manual, documented |
