@@ -1,6 +1,6 @@
 # Routines
 
-A routine is an automation that runs on the Hub without a model, such as keeping a room under 28 degC or watering a plant at 07:00. Every write and action a routine makes goes through the Safety Kernel like any other command.
+A routine is an automation that runs on the Hub without a model, such as watering a plant when its soil gets dry or at 07:00. Every write and action a routine makes goes through the Safety Kernel like any other command.
 
 A routine is YAML or Python. YAML routines are data. Python routines are code, so only a human may enable them.
 
@@ -9,17 +9,15 @@ This version exposes `hal/routines/list` and `hal/routines/dryRun`. Drafting, en
 ## YAML routines
 
 ```yaml
-id: keep-cool
+id: water-when-dry
+description: Water for 20 s when the soil is drier than 40 %.
 triggers:
-  - every: 30 s
-  - when: "desk-fan.temperature > 28 degC"
+  - when: "plant-waterer.soil_moisture < 40 %"
 steps:
-  - if: "desk-fan.temperature > 28 degC"
-    then:
-      - write: { device: desk-fan, channel: fan_speed, value: 60 % }
-    else:
-      - write: { device: desk-fan, channel: fan_speed, value: 20 % }
+  - action: { device: plant-waterer, action: water, args: { duration: { value: 20, unit: s } } }
 ```
+
+This is the routine `openhal demo --full` runs ([docs/demo/e2e.yaml](../../docs/demo/e2e.yaml)). An agent drafts it, a person enables it, and it waters once each time the soil turns dry.
 
 A YAML routine is parsed with the same restricted loader as a Device File ([Device files](device-files.md#0-file-format)) and MUST be at most 128 KiB.
 
@@ -58,12 +56,11 @@ A YAML routine is parsed with the same restricted loader as a Device File ([Devi
 ## Python routines
 
 ```python
-TRIGGERS = [{"every": "30 s"}]
+TRIGGERS = [{"when": "plant-waterer.soil_moisture < 40 %"}]
 
 
 async def run(ctx):
-    if ctx.value("desk-fan.temperature > 28 degC"):
-        await ctx.write("desk-fan", "fan_speed", 60, "%")
+    await ctx.action("plant-waterer", "water", duration={"value": 20, "unit": "s"})
 ```
 
 1. A Python routine MUST define `async def run(ctx)`. It MAY define `TRIGGERS` as a literal list of trigger mappings. Without it, the routine is manual.
