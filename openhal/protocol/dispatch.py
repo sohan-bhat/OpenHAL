@@ -198,7 +198,7 @@ class Dispatcher:
         if spec is None or method not in self._methods:
             raise RpcError("METHOD_NOT_FOUND", {"method": method})
         if spec.human_only and session.principal.kind != "human":
-            raise from_kernel("not_permitted", {"kernelMessage": f"Only a person can call {method}."})
+            raise from_kernel("not_permitted", {"kernelMessage": f"Only a person can call {method}.", "method": method})
         parsed = spec.params.model_validate(params)
         result = await self._handlers[method](session, parsed)
         return result.wire()
