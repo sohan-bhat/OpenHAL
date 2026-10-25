@@ -41,23 +41,16 @@ const sections = latest ? (await specPages(latest)).filter((page) => page.depth 
         <span class={`status ${verified ? "ok" : "unverified"}`}>{running.length} drivers {statusWord("implemented")}</span>
         <span class="muted">{verified ? `${verified} verified on hardware.` : "None is verified on hardware yet."} {planned} planned.</span>
       </p>
-      <div class="table-wrap">
-        <table class="families">
-          <thead>
-            <tr><th scope="col">Driver</th><th scope="col">Device families</th></tr>
-          </thead>
-          <tbody>
-            {
-              running.map((driver) => (
-                <tr>
-                  <td data-label="Driver"><a class="mono" href={`/drivers/${driver.name}/`}>{driver.name}</a></td>
-                  <td data-label="Device families">{driver.families.join(", ")}</td>
-                </tr>
-              ))
-            }
-          </tbody>
-        </table>
-      </div>
+      <ul class="families">
+        {
+          running.map((driver) => (
+            <li>
+              <a class="mono" href={`/drivers/${driver.name}/`}>{driver.name}</a>
+              <span class="muted">{driver.families.slice(0, 2).join(", ")}</span>
+            </li>
+          ))
+        }
+      </ul>
       <p><a href="/drivers/">All drivers, with tier, status and hazard</a></p>
     </section>
 
@@ -132,9 +125,23 @@ const sections = latest ? (await specPages(latest)).filter((page) => page.depth 
     gap: var(--s-2) var(--s-4);
   }
 
-  .families td:first-child {
-    white-space: nowrap;
-    width: 1%;
+  .families {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s-3) var(--s-5);
+  }
+
+  .families li {
+    display: grid;
+    gap: 2px;
+    padding-top: var(--s-2);
+    border-top: var(--rule);
+  }
+
+  .families a {
+    font-weight: 700;
   }
 
   .measure {
@@ -155,31 +162,9 @@ const sections = latest ? (await specPages(latest)).filter((page) => page.depth 
     color: var(--text-2);
   }
 
-  @media (max-width: 599px) {
-    .families,
-    .families tbody,
-    .families tr,
-    .families td {
-      display: block;
-    }
-
-    .families thead {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
-    }
-
-    .families tr {
-      padding: var(--s-2) 0;
-      border-bottom: var(--rule);
-    }
-
-    .families td {
-      border: 0;
-      padding: 0;
-      width: auto;
+  @media (min-width: 768px) {
+    .families {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 </style>

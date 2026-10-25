@@ -120,6 +120,9 @@
     const writes = Object.keys(next.write);
     const actions = Object.keys(next.actions);
     if (!writes.includes(target) && !actions.includes(target)) target = writes[0] ?? actions[0] ?? "";
+    if (!requestText && next.write[target]?.type === "number" && next.write[target].max !== null) {
+      requestText = `${formatG(next.write[target].max! * 1.5)} ${displayUnit(next.write[target].unit)}`;
+    }
     readingDrafts = {};
     version += 1;
   }
