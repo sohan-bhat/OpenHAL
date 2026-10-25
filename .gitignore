@@ -14,3 +14,4 @@ node_modules/
 dashboard/dist/
 website/dist/
 website/.astro/
+.claude/
