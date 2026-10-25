@@ -65,6 +65,8 @@ The wire protocol is in `spec/FIRMWARE-PROTOCOL.md` in the OpenHAL repository.
 
 ## Memory
 
+Every example compiles with arduino-cli 1.1.1 for `arduino:avr:uno` (core 1.8.8) and `esp32:esp32:esp32` (Espressif core 3.x) with no warnings from the library. Pins differ per board, so the examples pick ESP32 GPIO numbers when `ESP32` is defined, and ServoArm drives the servo pulse with the LEDC peripheral there because the Arduino Servo library doesn't support ESP32.
+
 No heap allocation. The DeskFan example on an Uno uses 9.5 KB of flash (29 %) and 1,369 bytes of RAM (66 %), including the Arduino serial buffers. Most of the library's share is the 250 byte line buffer and the tables for 8 readings and 8 outputs. Lower `OPENHAL_MAX_READS` and `OPENHAL_MAX_OUTPUTS` to save RAM.
 
 ## Building on a computer

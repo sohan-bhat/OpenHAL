@@ -1,15 +1,24 @@
 // A plant waterer. The hub sees soil moisture and a pump switch. The pump turns itself off after
 // 20 s even if the hub never says so, and the board stops it if the hub goes quiet for 3 s.
 // A local button on pin 2 stops the pump at once.
-// Wiring: a capacitive soil sensor on A2, the pump's relay on pin 7, a button from pin 2 to ground.
+// Wiring: a capacitive soil sensor on A2, the pump's relay on pin 7, a button from pin 2 to ground
+// (GPIO 35, 26 and 27 on an ESP32).
 
 #include <OpenHAL.h>
 
+#if defined(ESP32)
+const int PUMP_PIN = 26;
+const int SOIL_PIN = 35;  // an ADC1 pin, input only
+const int BUTTON_PIN = 27;
+const int SOIL_DRY = 2600;  // ESP32 reads 0 to 4095, calibrate for your sensor
+const int SOIL_WET = 1200;
+#else
 const int PUMP_PIN = 7;
 const int SOIL_PIN = A2;
 const int BUTTON_PIN = 2;
 const int SOIL_DRY = 620;  // raw reading in dry air, calibrate for your sensor
 const int SOIL_WET = 280;  // raw reading in a glass of water
+#endif
 #ifndef PUMP_MAX_RUN_MS
 #define PUMP_MAX_RUN_MS 20000  // the longest the pump may run without a fresh command
 #endif
