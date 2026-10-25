@@ -53,12 +53,12 @@ for (const scheme of ["light", "dark"] as const) {
       problems.push(...(await violations(page)).map((item) => `playground trace ${item}`));
 
       await page.goto("/drivers/");
-      await page.getByLabel("Search").fill("no such driver");
+      await page.getByLabel("Filter", { exact: true }).fill("no such driver");
       await expect(page.locator("[data-empty]")).toBeVisible();
       problems.push(...(await violations(page)).map((item) => `drivers empty ${item}`));
 
       await page.goto("/library/");
-      await page.getByLabel("Search").fill("no such device");
+      await page.getByLabel("Filter", { exact: true }).fill("no such device");
       await expect(page.locator("[data-empty]")).toBeVisible();
       problems.push(...(await violations(page)).map((item) => `library empty ${item}`));
 

@@ -156,9 +156,9 @@ test.describe("catalog filters", () => {
       expect(shown, label).toBeLessThan(all);
       await select.selectOption("");
     }
-    await page.getByLabel("Search").fill("scpi");
+    await page.getByLabel("Filter", { exact: true }).fill("scpi");
     await expect(page.locator("[data-driver]:visible")).toHaveCount(1);
-    await page.getByLabel("Search").fill("no such driver");
+    await page.getByLabel("Filter", { exact: true }).fill("no such driver");
     await expect(page.locator("[data-empty]")).toBeVisible();
     await expect(page.locator("[data-shown]")).toHaveText(`0 of ${all} drivers.`);
   });

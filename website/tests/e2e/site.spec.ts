@@ -190,9 +190,9 @@ test.describe("catalog pages", () => {
     const all = await rows.count();
     expect(all).toBeGreaterThan(30);
     await expect(page.locator("[data-shown]")).toHaveText(`${all} device files.`);
-    await page.getByLabel("Search").fill("rigol");
+    await page.getByLabel("Filter", { exact: true }).fill("rigol");
     await expect(page.locator("[data-shown]")).toHaveText(`2 of ${all} device files.`);
-    await page.getByLabel("Search").fill("no such device");
+    await page.getByLabel("Filter", { exact: true }).fill("no such device");
     await expect(page.locator("[data-empty]")).toBeVisible();
     await expect(page.getByRole("article").getByRole("link", { name: "How the library works" })).toHaveAttribute("href", "/docs/library/");
     await page.goto("/library/scpi-keysight-34461a/");
