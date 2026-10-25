@@ -44,6 +44,7 @@ async def test_devices_list_and_describe(transport: Connect, tokens: dict[str, s
             "connected": True,
             "conformance": "control",
             "verification": "unverified",
+            "unavailable": None,
         }
         described = (await rpc.call("hal/devices/describe", {"device": "desk-fan"}))["device"]
         fan_speed = described["write"]["fan_speed"]

@@ -176,6 +176,9 @@ class DeviceSummary(Message):
     connected: bool
     conformance: Conformance = Field(description="The driver's declared conformance level.")
     verification: str = Field(description="unverified, verified-on-simulator or verified-on-hardware.")
+    unavailable: str | None = Field(
+        default=None, description="Why the device can't take commands right now, or null when it can."
+    )
 
 
 class DevicesListResult(Message):

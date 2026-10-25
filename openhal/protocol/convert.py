@@ -332,6 +332,7 @@ def summary(hub: Hub, device_id: str) -> m.DeviceSummary:
         connected=runtime.connected,
         conformance=runtime.driver.info.conformance,
         verification=file.provenance.verification.status,
+        unavailable=runtime.available,
     )
 
 

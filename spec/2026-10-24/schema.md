@@ -251,6 +251,7 @@ A DeviceSummary plus channels, actions, safe state, interlocks, watchdog rules a
 | `connected` | boolean | yes |  |
 | `conformance` | `"core"` or `"control"` or `"full"` | yes | The driver's declared conformance level. |
 | `verification` | string | yes | unverified, verified-on-simulator or verified-on-hardware. |
+| `unavailable` | string or null | no | Why the device can't take commands right now, or null when it can. |
 | `read` | map of [ReadChannelInfo](#readchannelinfo) | yes |  |
 | `write` | map of [WriteChannelInfo](#writechannelinfo) | yes |  |
 | `actions` | map of [ActionInfo](#actioninfo) | yes |  |
@@ -282,6 +283,7 @@ A DeviceSummary plus channels, actions, safe state, interlocks, watchdog rules a
 | `connected` | boolean | yes |  |
 | `conformance` | `"core"` or `"control"` or `"full"` | yes | The driver's declared conformance level. |
 | `verification` | string | yes | unverified, verified-on-simulator or verified-on-hardware. |
+| `unavailable` | string or null | no | Why the device can't take commands right now, or null when it can. |
 
 ### DevicesListResult
 

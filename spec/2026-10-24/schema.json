@@ -1210,6 +1210,19 @@
           "title": "Verification",
           "type": "string"
         },
+        "unavailable": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Why the device can't take commands right now, or null when it can.",
+          "title": "Unavailable"
+        },
         "read": {
           "additionalProperties": {
             "$ref": "#/$defs/ReadChannelInfo"
@@ -1401,6 +1414,19 @@
           "description": "unverified, verified-on-simulator or verified-on-hardware.",
           "title": "Verification",
           "type": "string"
+        },
+        "unavailable": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Why the device can't take commands right now, or null when it can.",
+          "title": "Unavailable"
         }
       },
       "required": [
