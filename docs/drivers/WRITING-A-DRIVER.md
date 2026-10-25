@@ -2,7 +2,7 @@
 
 A driver speaks one protocol. A device file describes one device and its limits. Most new devices need only a device file on top of an existing driver. Write a new driver only when no protocol driver can talk to the device.
 
-This page is the contract every driver in the repository follows. The full step-by-step tutorial with `openhal driver new` lives in the second half of this page once the driver SDK lands (M9).
+This page is the contract every driver in the repository follows. The tutorial at the end builds a working driver with `openhal driver new`.
 
 ## The package
 
@@ -92,3 +92,33 @@ Rules.
   "estimate": {"devices": "thousands of models", "reasoning": "...", "sources": ["https://..."]}
 }
 ```
+
+## Tutorial
+
+The scaffold is a complete driver of about 80 lines that talks to an in-memory simulator. It passes the conformance suite before you change anything. You then replace the simulator transport with the real protocol, one method at a time, and keep the suite passing.
+
+1. **Scaffold it** from an OpenHAL checkout.
+
+   ```
+   uv run openhal driver new acme-pump --title "Acme pump"
+   ```
+
+   This writes `openhal/drivers/x_acme_pump/` (driver, simulator, conformance case, catalog entry and an example device file), `tests/drivers/x_acme_pump/`, `docs/drivers/x-acme-pump.md` and `docs/hardware-tests/x-acme-pump.md`. New drivers are named `x-...` and marked experimental.
+
+2. **Run the conformance suite.**
+
+   ```
+   uv run openhal driver test x-acme-pump
+   ```
+
+   Every check passes against the simulator.
+
+3. **Write the protocol.** In `driver.py`, replace `connect`, `read` and `_write` with the real transport, and make `simulator.py` speak the same bytes the device does. Keep `discover()` and `identify()` read-only. Never call `_write` yourself, because only the safety kernel's grant reaches it.
+
+4. **Test every error path.** Disconnects, timeouts, malformed replies and refusals each get a test, and each raises `DriverError` with a message that says what to do.
+
+5. **Run the suite again**, then fill in the docs page, the hardware test plan and the catalog entry's estimate with sources.
+
+6. **Promote it.** When it passes conformance and a person has run the hardware test plan, a maintainer adds the plain name to the spec's known drivers and sets its status to implemented.
+
+`openhal driver list` shows every driver with its protocols, hazard default, conformance level and status.

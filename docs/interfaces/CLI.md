@@ -238,6 +238,16 @@ openhal writer plan SESSION_ID [--json]
 
 `start` begins a session for a device OpenHAL doesn't know. A draft comes from your MCP client (`propose_device_file`) or from `propose`. Every limit in a draft is stored as suggested. `interview` asks you each limit question with the suggested value and the reason, and a bare number gets the question's unit. `finish` saves the device file into the devices folder. `plan` shows the staged write test plan, smallest safe values first.
 
+## Drivers
+
+```
+openhal driver list [--json]
+openhal driver test NAME
+openhal driver new NAME [--title TEXT] [--root PATH]
+```
+
+`list` shows every driver with its protocols, hazard default, conformance level and status. `test` runs the conformance suite at the driver's declared level and exits 1 on any failure. `new` scaffolds an experimental `x-NAME` driver with a simulator, conformance case, tests and docs in an OpenHAL checkout, and never overwrites a file. The tutorial is in docs/drivers/WRITING-A-DRIVER.md.
+
 ## Device files
 
 ```
