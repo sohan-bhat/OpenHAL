@@ -17,7 +17,6 @@ const day = post.data.date.toISOString().slice(0, 10);
 
 <Base title={post.data.title} description={post.data.description} type="article" noindex={post.data.draft}>
   <article class="wrap page">
-    <p class="legend"><a href="/blog/">Blog</a></p>
     <header class="head">
       <h1>{post.data.title}</h1>
       <p class="byline">

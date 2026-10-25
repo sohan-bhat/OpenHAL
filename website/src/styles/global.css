@@ -132,11 +132,9 @@ p {
 }
 
 .legend {
-  font-size: var(--t-legend);
+  font-size: var(--t-small);
   line-height: 1.4;
   font-weight: 700;
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.04em;
   color: var(--text-2);
 }
 
@@ -273,10 +271,8 @@ table {
 
 th {
   text-align: left;
-  font-size: var(--t-legend);
+  font-size: var(--t-small);
   font-weight: 700;
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.04em;
   color: var(--text-2);
   padding: var(--s-2) var(--s-3) var(--s-2) 0;
   border-bottom: 1px solid var(--text-2);

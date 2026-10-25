@@ -72,9 +72,8 @@ const image = new URL(ogPath(Astro.url.pathname), Astro.site);
       }
 
       for (const figure of document.querySelectorAll<HTMLElement>("figure.code-block")) {
-        const head = figure.querySelector(".code-head");
         const code = figure.querySelector("pre");
-        if (!head || !code || !navigator.clipboard) continue;
+        if (!code || !navigator.clipboard) continue;
         const button = document.createElement("button");
         button.type = "button";
         button.className = "copy-button";
@@ -85,7 +84,7 @@ const image = new URL(ogPath(Astro.url.pathname), Astro.site);
           button.textContent = "Copied";
           window.setTimeout(() => (button.textContent = "Copy"), 1500);
         });
-        head.append(button);
+        figure.append(button);
       }
 
       function tableName(wrap: HTMLElement): string {

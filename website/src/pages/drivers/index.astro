@@ -10,7 +10,7 @@ const groups = [
   { name: "Planned", rows: all.filter((driver) => driver.status === "planned"), reference: false },
   { name: "Reference driver", rows: references, reference: true },
 ].filter((group) => group.rows.length > 0);
-const { total, tested, verified, planned } = driverCounts();
+const { total } = driverCounts();
 const listed = [...all, ...references];
 const statuses = STATUS_ORDER.filter((status) => all.some((driver) => driver.status === status));
 const tiers = [...new Set(all.map((driver) => driver.tier))].sort();
@@ -77,11 +77,6 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
         )
       }
     </form>
-    <p class="summary">
-      <span class="status unverified">{tested} tested on simulator</span>
-      {verified > 0 && <span class="status ok">{verified} verified on hardware</span>}
-      {planned > 0 && <span class="status planned">{planned} planned</span>}
-    </p>
     <p class="shown muted" aria-live="polite" data-shown>{total} drivers.</p>
 
     <div class="table-wrap">
@@ -220,17 +215,9 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
     width: 100%;
   }
 
-  .summary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-2) var(--s-5);
-    margin: var(--s-5) 0 0;
-  }
-
   .shown {
-    margin: var(--s-3) 0;
+    margin: var(--s-4) 0 var(--s-3);
   }
-
 
   .group-row th {
     padding-top: var(--s-5);
@@ -255,8 +242,9 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
   @media (max-width: 767px) {
     table,
     tbody,
-    tr,
-    td,
+    tr {
+      display: block;
+    }
 
     thead {
       position: absolute;
@@ -266,22 +254,19 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
       clip: rect(0 0 0 0);
     }
 
-    .group-row {
-      display: block;
-    }
-
     .group-row th {
       display: block;
     }
 
-    tr[data-driver] {
+    tr[data-driver],
+    tr[data-reference] {
       padding: var(--s-3) 0;
       border-bottom: var(--rule);
     }
 
     td {
       display: grid;
-      grid-template-columns: 7em minmax(0, 1fr);
+      grid-template-columns: 7.5em minmax(0, 1fr);
       gap: var(--s-2);
       border: 0;
       padding: 2px 0;
@@ -289,10 +274,8 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
 
     td::before {
       content: attr(data-label);
-      font-size: var(--t-legend);
+      font-size: var(--t-small);
       font-weight: 700;
-      font-variant-caps: all-small-caps;
-      letter-spacing: 0.04em;
       color: var(--text-2);
     }
 

@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import GithubSlugger from "github-slugger";
 import { SKIP, visit } from "unist-util-visit";
-import { LANGUAGE_NAMES, languageOf, tokenize } from "../highlight.mjs";
+import { languageOf, tokenize } from "../highlight.mjs";
 import { REPO_ROOT, glossaryHref, termAnchor } from "../spec-meta.mjs";
 import { fromHtml } from "hast-util-from-html";
 import { scenarioTraceHtml } from "../scenario-data.mjs";
@@ -107,11 +107,7 @@ export function codeFigure(text, lang, tested) {
   const language = languageOf(lang);
   const trace = isTrace(text, language);
   const spans = trace ? traceSpans(text) : spansOf(text, language);
-  const name = trace ? "Message trace" : (LANGUAGE_NAMES[language] ?? language.toUpperCase());
-  const labels = [el("span", { className: ["legend"] }, [{ type: "text", value: name }])];
-  if (tested) labels.push(el("span", { className: ["legend", "tested"] }, [{ type: "text", value: "Tested" }]));
   return el("figure", { className: ["code-block", ...(trace ? ["trace-code"] : [])], dataLanguage: language, ...(tested ? { dataTested: "true" } : {}) }, [
-    el("div", { className: ["code-head"] }, [el("span", { className: ["labels"] }, labels)]),
     el("pre", { tabIndex: 0 }, [el("code", { className: [`language-${language}`] }, spans)]),
   ]);
 }

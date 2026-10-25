@@ -27,7 +27,6 @@ function argText(name: string, spec: ArgSpec): string {
 
 <Base title={entry.title} description={`OpenHAL device file for ${entry.title}.`}>
   <div class="wrap page">
-    <p class="legend"><a href="/library/">Device Library</a></p>
     <header class="head">
       <h1>{entry.title}</h1>
       <p class="meta">
@@ -160,7 +159,7 @@ function argText(name: string, spec: ArgSpec): string {
       )
     }
 
-    <Fragment set:html={codeHtml(entry.text, "yaml", entry.path)} />
+    <Fragment set:html={codeHtml(entry.text, "yaml")} />
   </div>
 </Base>
 

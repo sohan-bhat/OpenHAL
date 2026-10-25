@@ -403,8 +403,7 @@
   <div class="side">
     <section class="panel" aria-labelledby="pg-device-title">
       <div class="panel-head">
-        <h2 id="pg-device-title">Device</h2>
-        <span class="legend">Simulated</span>
+        <h2 id="pg-device-title">Simulated device</h2>
       </div>
       {#if file && kernel}
         <dl class="facts">
@@ -476,7 +475,6 @@
     <section class="panel" aria-labelledby="pg-request-title">
       <div class="panel-head">
         <h2 id="pg-request-title">Send a request</h2>
-        <span class="legend">In-browser demo</span>
       </div>
       {#if kernel}
         <form class="request" onsubmit={(event) => { event.preventDefault(); send(); }}>
@@ -555,7 +553,7 @@
     <section class="panel" aria-labelledby="pg-log-title">
       <div class="panel-head">
         <h2 id="pg-log-title">Message log</h2>
-        <span class="legend">JSON-RPC, newest first</span>
+        <p class="muted">JSON-RPC, newest first</p>
       </div>
       <TraceList {exchanges} />
     </section>
@@ -599,6 +597,10 @@
   .example select {
     max-width: 100%;
     min-width: 0;
+  }
+
+  .example .legend {
+    white-space: nowrap;
   }
 
   textarea {

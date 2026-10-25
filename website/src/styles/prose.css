@@ -143,10 +143,8 @@
   .prose td::before {
     content: attr(data-label);
     display: block;
-    font-size: var(--t-legend);
+    font-size: var(--t-small);
     font-weight: 700;
-    font-variant-caps: all-small-caps;
-    letter-spacing: 0.04em;
     color: var(--text-2);
   }
 

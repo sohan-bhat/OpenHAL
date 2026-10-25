@@ -130,15 +130,3 @@ export function highlightHtml(text, lang) {
     .map(([cls, value]) => (cls ? `<span class="syn-${cls}">${escapeHtml(value)}</span>` : escapeHtml(value)))
     .join("");
 }
-
-export const LANGUAGE_NAMES = {
-  sh: "Shell",
-  yaml: "YAML",
-  json: "JSON",
-  python: "Python",
-  ts: "TypeScript",
-  cpp: "C++",
-  ini: "INI",
-  text: "Text",
-  "": "Text",
-};
