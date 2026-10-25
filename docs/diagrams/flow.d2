@@ -1,0 +1,78 @@
+vars: @theme-light
+
+grid-rows: 2
+grid-columns: 5
+horizontal-gap: 76
+vertical-gap: 56
+
+classes: {
+  node: {
+    width: 120
+    height: 84
+    label.near: top-center
+    style: {
+      fill: ${surface}
+      stroke: ${line}
+      stroke-width: 2
+      border-radius: 10
+      font-color: ${text}
+      font-size: 15
+      bold: true
+    }
+  }
+  detail: {
+    shape: text
+    style: {
+      font-color: ${text2}
+      font-size: 13
+      bold: false
+    }
+  }
+  spacer: {
+    width: 120
+    height: 72
+    style.opacity: 0
+  }
+  wire: {
+    style: {
+      stroke: ${accent}
+      stroke-width: 2
+      font: mono
+      font-size: 12
+      font-color: ${text2}
+    }
+  }
+}
+
+client: "AI client" {
+  class: node
+  who: "Claude, Cursor,\nany MCP client" {class: detail}
+}
+hub: "OpenHAL hub" {
+  class: node
+  files: "Device files" {
+    style: {fill: ${surface}; stroke: ${line}; stroke-width: 1; border-radius: 6; font-size: 12; font-color: ${text2}; bold: false}
+  }
+}
+kernel: "Safety kernel" {class: node}
+driver: "Driver" {class: node}
+device: "Device" {class: node}
+
+gap1: "" {class: spacer}
+gap2: "" {class: spacer}
+blocked: "Blocked" {
+  class: node
+  width: 120
+  height: 76
+  style: {stroke: ${blocked}; font-color: ${blocked}; fill: ${blocked-fill}}
+  code: "LIMIT_EXCEEDED:\n150 % > max 100 %" {class: detail; style: {font: mono; font-size: 12; font-color: ${blocked}}}
+}
+gap3: "" {class: spacer}
+gap4: "" {class: spacer}
+
+client -> hub: "hal/write" {class: wire}
+hub.files -> kernel: "check" {class: wire}
+kernel -> driver: "grant" {class: wire}
+driver -> device: "command" {class: wire}
+kernel -> blocked {class: wire; style.stroke: ${blocked}}
+client <- device: "reading" {class: wire; style.stroke: ${line}; style.stroke-width: 1}
