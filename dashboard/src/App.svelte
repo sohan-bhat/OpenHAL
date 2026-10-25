@@ -25,8 +25,17 @@
     settings: "Settings",
   };
 
+  let mainElement = $state<HTMLElement | null>(null);
+
   $effect(() => {
     document.title = `${titles[view] ?? "Devices"} · OpenHAL Inspector`;
+  });
+
+  $effect(() => {
+    void router.route.view;
+    void router.route.id;
+    window.scrollTo(0, 0);
+    if (mainElement) mainElement.scrollTop = 0;
   });
 
   onMount(() => void inspector.boot());
@@ -51,7 +60,7 @@
       <DeviceList />
     </aside>
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-    <main id="main" class="main" tabindex="0" aria-label={titles[view] ?? "Devices"}>
+    <main id="main" class="main" tabindex="0" bind:this={mainElement} aria-label={titles[view] ?? "Devices"}>
       {#if view === "devices"}
         <Device />
       {:else if view === "confirmations"}

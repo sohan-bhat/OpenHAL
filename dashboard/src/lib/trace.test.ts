@@ -62,6 +62,7 @@ describe("buildTrace", () => {
     const blocked = rows.find((row) => row.seq === 6)!;
     expect(blocked.outcome).toBe("error");
     expect(blocked.errorName).toBe("LIMIT_EXCEEDED");
+    expect(blocked.summary).toEqual({ device: "desk-fan", target: "write:fan_speed" });
   });
 
   it("keeps text that is not JSON-RPC as an invalid row", () => {

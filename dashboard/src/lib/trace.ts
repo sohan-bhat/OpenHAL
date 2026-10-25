@@ -37,6 +37,7 @@ export interface TraceRow {
   method?: string;
   id?: string | number | null;
   payload?: unknown;
+  summary?: unknown;
   hasPayload: boolean;
   reason?: string;
   devices: string[];
@@ -205,6 +206,7 @@ function toRow(entry: LogEntry, requests: Map<string, RequestInfo>): TraceRow {
       const name = typeof error.name === "string" ? error.name : errorName(error);
       if (code !== undefined) row.errorCode = code;
       if (name) row.errorName = name;
+      row.summary = { device: params.device, target: params.target };
     }
     return row;
   }

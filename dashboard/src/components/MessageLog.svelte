@@ -186,8 +186,13 @@
             </span>
             <span class="payload">
               {#if row.hasPayload}
-                {@const long = stringifyCompact(row.payload).length > SHORT}
-                <Json value={row.payload} limit={long && !expanded.has(row.seq) ? SHORT : 100000} />
+                {@const short = row.kind === "notification" ? SHORT / 2 : SHORT}
+                {@const long = row.summary !== undefined || stringifyCompact(row.payload).length > short}
+                {#if row.summary !== undefined && !expanded.has(row.seq)}
+                  <Json value={row.summary} />
+                {:else}
+                  <Json value={row.payload} limit={long && !expanded.has(row.seq) ? short : 100000} />
+                {/if}
                 {#if long}
                   <button
                     type="button"
@@ -431,12 +436,16 @@
     }
 
     .trace {
-      grid-template-columns: 22px minmax(0, 1fr);
+      grid-template-columns: 30px minmax(0, 1fr);
+      column-gap: 0;
     }
 
     .row {
       row-gap: 2px;
-      column-gap: var(--s-2);
+    }
+
+    .arrow {
+      padding-right: var(--s-2);
     }
 
     .who {
