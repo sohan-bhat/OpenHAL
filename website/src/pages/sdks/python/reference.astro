@@ -1,0 +1,132 @@
+---
+import api from "../../../content/generated/python-api.json";
+import DocShell from "../../../layouts/DocShell.astro";
+import { highlightHtml } from "../../../lib/highlight.mjs";
+import { sdkSidebar } from "../../../lib/sdk-nav";
+
+interface Member {
+  name: string;
+  signature?: string;
+  doc: string;
+  type?: string;
+}
+
+interface Item {
+  name: string;
+  kind: string;
+  doc: string;
+  signature?: string;
+  bases?: string[];
+  fields?: Member[];
+  methods?: Member[];
+}
+
+const groups = api.groups as Array<{ name: string; items: Item[] }>;
+const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const headings = groups.flatMap((group) => [
+  { depth: 2, slug: slug(group.name), text: group.name },
+  ...group.items.map((item) => ({ depth: 3, slug: slug(item.name), text: item.name })),
+]);
+const paragraphs = (text: string) => text.split(/\n\s*\n/).filter((part) => !/^\s{4}/m.test(part));
+---
+
+<DocShell
+  title="Python API reference"
+  description="Every public name in openhal.client, generated from its docstrings."
+  repo="openhal/client/__init__.py"
+  headings={headings}
+  sidebar={sdkSidebar()}
+  section="SDKs"
+>
+  <p>Generated from the docstrings of <code>{api.module}</code>.</p>
+  {
+    groups.map((group) => (
+      <>
+        <h2 id={slug(group.name)}>
+          <a class="heading-link" href={`#${slug(group.name)}`}>{group.name}</a>
+        </h2>
+        {group.items.map((item) => (
+          <section class="api-item" aria-labelledby={slug(item.name)}>
+            <h3 id={slug(item.name)}>
+              <a class="heading-link" href={`#${slug(item.name)}`}>
+                <code>{item.name}</code>
+              </a>
+              <span class="legend kind">{item.kind}</span>
+            </h3>
+            {item.signature && <pre class="sig" set:html={highlightHtml(item.signature, "python")} />}
+            {item.bases && <p class="muted">Subclass of <code>{item.bases.join(", ")}</code>.</p>}
+            {paragraphs(item.doc).map((part) => <p>{part}</p>)}
+            {item.fields && item.fields.length > 0 && (
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th scope="col">Field</th><th scope="col">Type</th></tr>
+                  </thead>
+                  <tbody>
+                    {item.fields.map((field) => (
+                      <tr>
+                        <td class="mono">{field.name}</td>
+                        <td class="mono">{field.type}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {item.methods && item.methods.length > 0 && (
+              <dl class="methods">
+                {item.methods.map((method) => (
+                  <div>
+                    <dt><code set:html={highlightHtml(method.signature ?? method.name, "python")} /></dt>
+                    {method.doc && <dd>{paragraphs(method.doc)[0]}</dd>}
+                  </div>
+                ))}
+              </dl>
+            )}
+          </section>
+        ))}
+      </>
+    ))
+  }
+</DocShell>
+
+<style>
+  .api-item {
+    margin-top: var(--s-6);
+    display: grid;
+    gap: var(--s-3);
+  }
+
+  .api-item h3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-3);
+    align-items: baseline;
+  }
+
+  .sig {
+    margin: 0;
+    padding: var(--s-3) var(--s-4);
+    background: var(--surface);
+    border: var(--rule);
+    border-radius: var(--radius);
+    overflow-x: auto;
+    font-size: 14px;
+  }
+
+  .methods {
+    margin: 0;
+    display: grid;
+    gap: var(--s-3);
+  }
+
+  .methods dt code {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+
+  .methods dd {
+    margin: var(--s-1) 0 0;
+    color: var(--text-2);
+  }
+</style>
