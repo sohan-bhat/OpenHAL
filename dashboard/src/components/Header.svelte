@@ -44,7 +44,7 @@
     </div>
     <div>
       <dt class="label">Connection</dt>
-      <dd><StatusMark tone={connection.tone} label={connection.label} /></dd>
+      <dd class="connection"><StatusMark tone={connection.tone} label={connection.label} /></dd>
     </div>
     <div>
       <dt class="label">Protocol</dt>
@@ -62,7 +62,7 @@
 
 <p class="hub-line">
   {#if status}{status.product} {status.version}{/if} <span class="mono">{host}</span>
-  <StatusMark tone={connection.tone} label={connection.label} />
+  <span class="connection"><StatusMark tone={connection.tone} label={connection.label} /></span>
   {#if status?.protocol_version}<span class="muted">protocol</span> <span class="mono">{status.protocol_version}</span>{/if}
   {#if status?.conformance}<span class="muted">conformance</span> {status.conformance}{/if}
 </p>
@@ -141,6 +141,11 @@
     margin: 0;
     min-height: 20px;
     font-size: var(--t-ui);
+  }
+
+  .connection {
+    display: inline-block;
+    min-width: 7.5em;
   }
 
   .views {

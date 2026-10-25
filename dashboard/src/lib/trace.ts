@@ -1,4 +1,5 @@
 import { fromCode } from "./protocol";
+import { compareText } from "./text";
 
 export type PrincipalKind = "human" | "agent" | "routine" | "system" | "unknown";
 
@@ -291,7 +292,7 @@ export function filterOptions(rows: TraceRow[]): FilterOptions {
     for (const device of row.devices) devices.add(device);
     if (row.method) methods.add(row.method);
   }
-  const sort = (values: Set<string>) => [...values].sort((a, b) => a.localeCompare(b));
+  const sort = (values: Set<string>) => [...values].sort(compareText);
   return { clients: sort(clients), devices: sort(devices), methods: sort(methods) };
 }
 

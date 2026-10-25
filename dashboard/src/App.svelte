@@ -1,18 +1,38 @@
 <script lang="ts">
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount, tick, untrack, type Component } from "svelte";
   import DeviceList from "./components/DeviceList.svelte";
   import Header from "./components/Header.svelte";
   import MessageLog from "./components/MessageLog.svelte";
   import Mark from "./components/Mark.svelte";
-  import { router } from "./lib/router.svelte";
+  import { router, type View } from "./lib/router.svelte";
   import { inspector } from "./lib/state.svelte";
-  import Audit from "./views/Audit.svelte";
-  import Confirmations from "./views/Confirmations.svelte";
   import Device from "./views/Device.svelte";
-  import Pair from "./views/Pair.svelte";
-  import Routines from "./views/Routines.svelte";
-  import Settings from "./views/Settings.svelte";
-  import Writer from "./views/Writer.svelte";
+
+  type Lazy = "confirmations" | "audit" | "routines" | "writer" | "settings" | "pair";
+  const LOADERS: Record<Lazy, () => Promise<{ default: Component<any> }>> = {
+    confirmations: () => import("./views/Confirmations.svelte"),
+    audit: () => import("./views/Audit.svelte"),
+    routines: () => import("./views/Routines.svelte"),
+    writer: () => import("./views/Writer.svelte"),
+    settings: () => import("./views/Settings.svelte"),
+    pair: () => import("./views/Pair.svelte"),
+  };
+  let loaded = $state<Partial<Record<Lazy, Component<any>>>>({});
+
+  function load(name: Lazy): void {
+    if (loaded[name]) return;
+    void LOADERS[name]().then((module) => {
+      loaded = { ...loaded, [name]: module.default };
+    });
+  }
+
+  const wanted = $derived<Lazy | null>(inspector.auth === "unpaired" ? "pair" : router.route.view === "devices" ? null : (router.route.view as Exclude<View, "devices">));
+  const ViewComponent = $derived(router.route.view === "devices" ? Device : loaded[router.route.view as Lazy] ?? null);
+  const Pair = $derived(loaded.pair ?? null);
+
+  $effect(() => {
+    if (wanted) load(wanted);
+  });
 
   let logOpen = $state(true);
   const view = $derived(router.route.view);
@@ -28,33 +48,59 @@
   let mainElement = $state<HTMLElement | null>(null);
   let chromeHeight = $state(0);
 
+  function measure(element: HTMLElement) {
+    const observer = new ResizeObserver(([entry]) => {
+      chromeHeight = Math.round(entry?.borderBoxSize?.[0]?.blockSize ?? 0);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }
+
   $effect(() => {
     document.title = `${titles[view] ?? "Devices"} · OpenHAL Inspector`;
   });
 
+  let lastRoute = `${router.route.view}/${router.route.id}`;
+
   $effect(() => {
-    void router.route.view;
-    void router.route.id;
+    const route = `${router.route.view}/${router.route.id}`;
+    if (route === lastRoute) return;
+    lastRoute = route;
     window.scrollTo(0, 0);
-    if (mainElement) mainElement.scrollTop = 0;
+    const pane = untrack(() => mainElement);
+    if (pane) pane.scrollTop = 0;
   });
 
-  onMount(() => void inspector.boot());
+  let patient = $state(false);
+  const shell = $derived((inspector.ready && ViewComponent !== null) || patient);
+  const hidden = $derived(!inspector.settled && !patient);
+
+  $effect(() => {
+    if (shell) void tick().then(() => inspector.trySettle());
+  });
+
+  onMount(() => {
+    void inspector.boot();
+    const timer = setTimeout(() => (patient = true), 800);
+    return () => clearTimeout(timer);
+  });
   onDestroy(() => inspector.shutdown());
 </script>
 
 {#if inspector.auth === "unpaired"}
-  <Pair onpaired={() => void inspector.boot()} />
+  {#if Pair}<Pair onpaired={() => void inspector.boot()} />{/if}
 {:else if inspector.auth === "offline"}
   <main class="offline" id="main">
     <div class="brand"><Mark size={24} /><strong>OpenHAL</strong> <span class="muted">Inspector</span></div>
     <p>The hub at <code>{location.host}</code> does not answer. Start it with <code>openhald</code>.</p>
     <p class="muted">Trying again every 3 s.</p>
   </main>
+{:else if !shell}
+  <div class="booting" aria-busy="true"></div>
 {:else}
   <a class="skip-link" href="#main">Skip to content</a>
-  <div class="app" class:log-closed={!logOpen} data-view={view} style="--chrome-height: {chromeHeight}px">
-    <div class="chrome" bind:clientHeight={chromeHeight}>
+  <div class="app" class:log-closed={!logOpen} class:settling={hidden} data-view={view} style="--chrome-height: {chromeHeight}px">
+    <div class="chrome" {@attach measure}>
       <Header />
     </div>
     <aside class="left" aria-label="Device list">
@@ -62,18 +108,10 @@
     </aside>
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <main id="main" class="main" tabindex="0" bind:this={mainElement} aria-label={titles[view] ?? "Devices"}>
-      {#if view === "devices"}
-        <Device />
-      {:else if view === "confirmations"}
-        <Confirmations />
-      {:else if view === "audit"}
-        <Audit />
-      {:else if view === "routines"}
-        <Routines />
-      {:else if view === "writer"}
-        <Writer />
+      {#if ViewComponent}
+        <ViewComponent />
       {:else}
-        <Settings />
+        <div class="pending" aria-busy="true"></div>
       {/if}
     </main>
     <div class="bottom" id="message-log">
@@ -94,6 +132,10 @@
       "left main"
       "left bottom";
     min-height: 100dvh;
+  }
+
+  .settling {
+    visibility: hidden;
   }
 
   .chrome {
@@ -137,6 +179,14 @@
 
   .log-closed .log-slot {
     height: auto;
+  }
+
+  .booting {
+    min-height: 100dvh;
+  }
+
+  .pending {
+    min-height: 60dvh;
   }
 
   .offline {

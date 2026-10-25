@@ -49,6 +49,10 @@
     else session = null;
   });
 
+  const settleUnknown = inspector.hold();
+  const settleSession = inspector.hold();
+  if (!router.route.id) settleSession();
+
   async function loadUnknown() {
     try {
       unknown = await api.unknownDevices();
@@ -56,6 +60,7 @@
       unknown = [];
     }
     unknownLoaded = true;
+    settleUnknown();
   }
 
   async function loadSession(id: string) {
@@ -65,6 +70,7 @@
     } catch (failure) {
       error = failure instanceof Error ? failure.message : "The session did not load.";
     }
+    settleSession();
   }
 
   async function afterSession() {

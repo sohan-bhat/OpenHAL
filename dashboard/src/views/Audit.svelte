@@ -27,10 +27,11 @@
     void load(filters);
   });
 
+  const settle = inspector.hold();
   let timer: ReturnType<typeof setTimeout> | null = null;
   async function load(filters: { device: string; status: string; event: string }) {
     if (timer) clearTimeout(timer);
-    await new Promise<void>((resolve) => (timer = setTimeout(resolve, 120)));
+    if (loaded) await new Promise<void>((resolve) => (timer = setTimeout(resolve, 120)));
     try {
       entries = await api.audit({ ...filters, limit: 200 });
       error = null;
@@ -40,6 +41,7 @@
       error = failure instanceof Error ? failure.message : "The audit log did not load.";
     }
     loaded = true;
+    settle();
   }
 
   async function check() {
