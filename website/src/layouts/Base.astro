@@ -1,0 +1,63 @@
+---
+import "../styles/global.css";
+import sofia from "../../../design/fonts/sofia-sans-condensed-latin-wght-normal.woff2?url";
+import atkinson from "../../../design/fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2?url";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import { PITCH, PRODUCT_NAME } from "../config/brand";
+import { ogPath } from "../lib/pages";
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Leave the product name out of the document title, for the home page. */
+  bare?: boolean;
+  type?: "website" | "article";
+  noindex?: boolean;
+}
+
+const { title, description = PITCH, bare = false, type = "website", noindex = false } = Astro.props;
+const fullTitle = bare ? title : `${title} | ${PRODUCT_NAME}`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const image = new URL(ogPath(Astro.url.pathname), Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#2b3035" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="preload" href={sofia} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={atkinson} as="font" type="font/woff2" crossorigin />
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={PRODUCT_NAME} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${title}. ${PRODUCT_NAME}`} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Header />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

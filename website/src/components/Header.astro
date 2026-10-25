@@ -1,0 +1,137 @@
+---
+import { PRODUCT_NAME } from "../config/brand";
+import { markSvg } from "../lib/brand-mark";
+
+const links = [
+  { href: "/docs/", label: "Docs" },
+  { href: "/spec/", label: "Spec" },
+  { href: "/devices/", label: "Devices" },
+  { href: "/library/", label: "Library" },
+  { href: "/playground/", label: "Playground" },
+  { href: "/blog/", label: "Blog" },
+];
+const path = Astro.url.pathname;
+const current = (href: string) => path === href || path.startsWith(href);
+---
+
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="/" aria-label={`${PRODUCT_NAME} home`}>
+      <Fragment set:html={markSvg({ size: 28 })} />
+      <span class="wordmark">{PRODUCT_NAME}</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        {
+          links.map((link) => (
+            <li>
+              <a href={link.href} aria-current={current(link.href) ? "page" : undefined}>
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    background: var(--bezel);
+    color: var(--on-bezel);
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: var(--s-5);
+    min-height: 56px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    color: var(--on-bezel);
+    text-decoration: none;
+    flex: none;
+  }
+
+  .wordmark {
+    font-family: var(--font-label);
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  nav {
+    margin-left: auto;
+    min-width: 0;
+  }
+
+  ul {
+    display: flex;
+    gap: var(--s-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  a:focus-visible {
+    outline-color: var(--on-bezel);
+  }
+
+  nav a {
+    display: block;
+    padding: var(--s-4) var(--s-2);
+    color: var(--on-bezel);
+    font-family: var(--font-label);
+    font-size: var(--t-1);
+    font-weight: 650;
+    letter-spacing: var(--legend-tracking);
+    text-transform: uppercase;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+
+  nav a:hover {
+    border-bottom-color: color-mix(in srgb, var(--on-bezel) 50%, transparent);
+  }
+
+  nav a[aria-current="page"] {
+    border-bottom-color: var(--on-bezel);
+  }
+
+  @media (max-width: 767px) {
+    .bar {
+      flex-wrap: wrap;
+      gap: 0;
+      padding-top: var(--s-2);
+    }
+
+    nav {
+      margin-left: 0;
+      width: calc(100% + 2 * var(--gutter));
+      margin-inline: calc(-1 * var(--gutter));
+    }
+
+    ul {
+      padding-inline: calc(var(--gutter) - var(--s-2));
+    }
+
+    nav a {
+      padding: var(--s-3) var(--s-2);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    nav a {
+      padding-inline: var(--s-3);
+    }
+  }
+</style>

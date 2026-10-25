@@ -1,0 +1,123 @@
+---
+import { PRODUCT_LONG_NAME, PRODUCT_NAME, SPEC_VERSION } from "../config/brand";
+
+const groups = [
+  {
+    legend: "Start",
+    links: [
+      { href: "/docs/quickstart/", label: "Quickstart" },
+      { href: "/docs/concepts/", label: "Concepts" },
+      { href: "/playground/", label: "Playground" },
+      { href: "/docs/faq/", label: "FAQ" },
+    ],
+  },
+  {
+    legend: "Reference",
+    links: [
+      { href: "/spec/", label: `Spec ${SPEC_VERSION}` },
+      { href: "/docs/safety/", label: "Safety model" },
+      { href: "/docs/cli/", label: "Command line" },
+      { href: "/docs/mcp/", label: "MCP server" },
+    ],
+  },
+  {
+    legend: "Hardware",
+    links: [
+      { href: "/devices/", label: "Supported devices" },
+      { href: "/library/", label: "Device library" },
+      { href: "/docs/arduino-library/", label: "Arduino library" },
+      { href: "/docs/contributing-a-device-file/", label: "Add a device file" },
+    ],
+  },
+];
+---
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="columns">
+      <div class="about">
+        <p class="name">{PRODUCT_NAME}</p>
+        <p class="muted">{PRODUCT_LONG_NAME}. Open source under Apache 2.0.</p>
+        <p class="muted small">
+          Not a safety system. OpenHAL does not replace e-stops, enclosures or interlocks wired in hardware.
+        </p>
+      </div>
+      {
+        groups.map((group) => (
+          <nav aria-label={group.legend}>
+            <p class="legend">{group.legend}</p>
+            <ul>
+              {group.links.map((link) => (
+                <li>
+                  <a href={link.href}>{link.label}</a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))
+      }
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: var(--s-9);
+    border-top: 1px solid var(--ink);
+    padding: var(--s-6) 0 var(--s-7);
+    font-size: var(--t-1);
+    line-height: var(--lh-1);
+  }
+
+  .columns {
+    display: grid;
+    gap: var(--s-6);
+    grid-template-columns: 1fr;
+  }
+
+  .name {
+    font-family: var(--font-label);
+    font-weight: 800;
+    font-size: var(--t-3);
+    line-height: var(--lh-3);
+    letter-spacing: 0.04em;
+  }
+
+  .about p + p {
+    margin-top: var(--s-2);
+  }
+
+  .small {
+    max-width: 40ch;
+  }
+
+  .legend {
+    color: var(--ink-2);
+    margin-bottom: var(--s-2);
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li + li {
+    margin-top: var(--s-1);
+  }
+
+  a {
+    color: var(--ink);
+    text-decoration-color: var(--rule);
+  }
+
+  a:hover {
+    color: var(--signal);
+  }
+
+  @media (min-width: 768px) {
+    .columns {
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+    }
+  }
+</style>
