@@ -7,14 +7,17 @@ interface Props {
   status: string;
   rows: Array<[string, string]>;
   href?: string;
+  /** Heading level for the name, so it fits the page outline. */
+  level?: 2 | 3;
 }
 
-const { name, status, rows, href } = Astro.props;
+const { name, status, rows, href, level = 3 } = Astro.props;
+const Heading = level === 2 ? "h2" : "h3";
 ---
 
 <article class="part">
   <header>
-    <h3 class="mono">{href ? <a href={href}>{name}</a> : name}</h3>
+    <Heading class="mono name">{href ? <a href={href}>{name}</a> : name}</Heading>
     <span class="lamps">
       <span class={`lamp ${statusLamp(status)}`}>{status}</span>
       {status !== "verified" && <span class="lamp unverified">Unverified on hardware</span>}
@@ -56,7 +59,7 @@ const { name, status, rows, href } = Astro.props;
     gap: var(--s-1) var(--s-3);
   }
 
-  h3 {
+  .name {
     font-family: var(--font-mono);
     font-size: var(--t-1);
     line-height: var(--lh-1);
@@ -64,7 +67,7 @@ const { name, status, rows, href } = Astro.props;
     overflow-wrap: anywhere;
   }
 
-  h3 a {
+  .name a {
     color: var(--ink);
   }
 

@@ -62,7 +62,7 @@
 /* How far the value may move right now under its rate limit, a short bracket with diagonal ends. */
 .limit-track .rate {
   position: absolute;
-  top: 34px;
+  top: 30px;
   height: 8px;
   left: calc(var(--from) * 1%);
   width: calc((var(--to) - var(--from)) * 1%);

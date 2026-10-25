@@ -20,13 +20,10 @@ const examples = Object.entries(files)
   <div class="wrap page">
     <header class="head">
       <h1 class="page-title">Device file playground</h1>
-      <p class="lede">
-        Edit a device file and it is checked against the spec's JSON Schema as you type. The controls the dashboard would draw appear
-        beside it, each with its limit line. Then send writes and watch the kernel's rules block the unsafe ones.
-      </p>
+      <p class="lede">Edit a device file. It is checked against the spec as you type, its controls appear with their limit lines, and you can try to break them.</p>
       <p class="demo-note">
         <span class="lamp unverified">In-browser demo</span>
-        <span class="muted">A TypeScript port of the kernel's checks, with the same codes and messages as the hub. Devices are simulated. Nothing leaves your browser.</span>
+        <span class="muted">The kernel port runs in your browser, with the hub's codes and messages. Devices are simulated.</span>
       </p>
     </header>
     <Playground client:idle examples={examples} initial="desk-fan-confirmed" />

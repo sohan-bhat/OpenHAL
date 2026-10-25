@@ -121,11 +121,14 @@ const current = (href: string) => path === href || path.startsWith(href);
     }
 
     ul {
+      flex-wrap: wrap;
+      column-gap: 0;
       padding-inline: calc(var(--gutter) - var(--s-2));
     }
 
     nav a {
       padding: var(--s-3) var(--s-2);
+      min-height: 44px;
     }
   }
 
