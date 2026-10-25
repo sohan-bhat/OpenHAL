@@ -2,8 +2,8 @@
 // from spec/schema (imported at build time, never copied), then the model checks the schema can't
 // express, such as units, min below max and interlock expressions.
 
-import Ajv2020, { type ErrorObject } from "ajv/dist/2020.js";
-import schema from "../../../../spec/schema/device-file.schema.json";
+import type { ErrorObject } from "ajv";
+import validateSchema from "virtual:device-schema-validator";
 import { DeviceFileError, expandShorthand, loadDeviceFile, type DeviceFile } from "../kernel/model";
 import { YamlError, parseDeviceYaml } from "../kernel/yaml";
 
@@ -19,9 +19,6 @@ export interface Checked {
   file: DeviceFile | null;
   problems: Problem[];
 }
-
-const ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false });
-const validateSchema = ajv.compile(schema);
 
 function plainNumbers(value: unknown): unknown {
   if (typeof value === "bigint") return Number(value);

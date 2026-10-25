@@ -7,6 +7,8 @@ import { chromium } from "playwright";
 
 const [outDir = "shots", pathList = "/", widthList = "390,768,1024,1440", schemeList = "light,dark", ...flags] = process.argv.slice(2);
 const full = !flags.includes("--viewport");
+const clipFlag = flags.find((flag) => flag.startsWith("--clip="));
+const clip = clipFlag ? (([y, h]) => ({ x: 0, y: Number(y), height: Number(h) }))(clipFlag.slice(7).split(":")) : null;
 const base = process.env.OPENHAL_PREVIEW_URL ?? "http://127.0.0.1:4322";
 mkdirSync(outDir, { recursive: true });
 
@@ -19,7 +21,7 @@ for (const scheme of schemeList.split(",")) {
       await page.goto(`${base}${path}`, { waitUntil: "networkidle" });
       await page.evaluate(() => document.fonts.ready);
       const name = (path.replace(/^\/|\/$/g, "").replaceAll("/", "-") || "home").replaceAll("?", "-").replaceAll("=", "-");
-      await page.screenshot({ path: `${outDir}/${name}-${width}-${scheme}.png`, fullPage: full });
+      await page.screenshot({ path: `${outDir}/${name}-${width}-${scheme}${clip ? `-${clip.y}` : ""}.png`, fullPage: full, ...(clip ? { clip: { ...clip, width } } : {}) });
     }
     await context.close();
   }

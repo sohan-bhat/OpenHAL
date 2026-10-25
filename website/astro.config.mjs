@@ -6,6 +6,7 @@ import { defineConfig } from "astro/config";
 import rehypeMermaid from "rehype-mermaid";
 import { rehypeCodeBlocks, rehypeTables, remarkRepoLinks, remarkTitle } from "./src/lib/markdown/plugins.mjs";
 import { mermaidConfig, mermaidDarkConfig } from "./src/lib/markdown/mermaid.mjs";
+import { deviceSchemaValidator } from "./src/lib/schema-validator-plugin.mjs";
 
 // The site's address. The domain is not bought yet (NEEDS_HUMAN.md item 2), so this is a
 // placeholder. Change it here and nowhere else.
@@ -30,6 +31,7 @@ export default defineConfig({
   build: { inlineStylesheets: "auto" },
   devToolbar: { enabled: false },
   vite: {
+    plugins: [deviceSchemaValidator()],
     server: { fs: { allow: [".."] } },
   },
 });

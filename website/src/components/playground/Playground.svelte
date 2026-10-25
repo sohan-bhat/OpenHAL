@@ -86,7 +86,8 @@
     }
     return found;
   }
-  const library = exampleFiles();
+  // Parsed only when a file names another device, to keep the first load light.
+  let library: Map<string, { file: DeviceFile; path: string }> | null = null;
 
   // Simulated sensors start in the middle of their sanity range, or at zero without one.
   function simulated(device: DeviceFile): Record<string, unknown> {
@@ -107,6 +108,7 @@
     const mine = deviceId(next);
     const extra: Array<{ id: string; path: string }> = [];
     for (const ref of deviceRefs(next)) {
+      library ??= exampleFiles();
       const other = library.get(ref);
       if (other && ref !== mine) {
         fresh.register(other.file, simulated(other.file));
