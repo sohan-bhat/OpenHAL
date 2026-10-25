@@ -90,7 +90,7 @@ def test_new_never_overwrites(checkout: Path) -> None:
     assert runner.invoke(app, ["driver", "new", "acme-pump", "--root", str(checkout)]).exit_code == 0
     again = runner.invoke(app, ["driver", "new", "acme-pump", "--root", str(checkout)])
     assert again.exit_code == 1
-    assert "nothing was written" in again.output
+    assert "nothing was created" in again.output
 
 
 def test_new_refuses_a_bad_name(checkout: Path) -> None:

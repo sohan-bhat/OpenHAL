@@ -67,7 +67,7 @@ def _command(client: Client, target: str, rest: list[str]) -> dict[str, Any]:
         types = {arg: str(spec.get("type", "number")) for arg, spec in view.actions[name].args.items()}
         return {"kind": "action", "device": device, "action": name, "args": parse_pairs(rest, types)}
     known = sorted([*view.write, *view.actions])
-    raise ValueError(f"{device} has no write channel or action {name!r}. It has {', '.join(known) or 'none'}.")
+    raise ValueError(f"{device} has no control channel or action {name!r}. It has {', '.join(known) or 'none'}.")
 
 
 def register(app: typer.Typer) -> None:
@@ -100,7 +100,7 @@ def register(app: typer.Typer) -> None:
         value: list[str] = typer.Argument(..., help="The value with a unit, for example 60 % or 25 degC."),  # noqa: B008
         as_json: bool = typer.Option(False, "--json", help="Print the decision as JSON."),
     ) -> None:
-        """Set a write channel. The hub's safety kernel decides."""
+        """Set a control channel. The hub's safety kernel decides."""
         device, channel = split_target(target)
         with hub() as client:
             view = client.device(device)
@@ -160,7 +160,7 @@ def register(app: typer.Typer) -> None:
         reason: str = typer.Option("stop from the command line", "--reason", "-r", help="Recorded in the audit log."),
         as_json: bool = typer.Option(False, "--json", help="Print the report as JSON."),
     ) -> None:
-        """Stop everything. Every device goes to its safe state and writes stay blocked until openhal unlock."""
+        """Stop everything. Every device goes to its safe state and commands are refused until openhal unlock."""
         with hub() as client:
             report = client.stop(reason)
         if as_json:
@@ -172,7 +172,7 @@ def register(app: typer.Typer) -> None:
             console.print(table)
             console.print(
                 f"Stopped by {escape(report.by)}. {report.cancelled_requests} pending requests cancelled. "
-                "Writes are blocked until a person runs openhal unlock."
+                "Commands are refused until a person runs openhal unlock."
             )
         if any(item.status in ("failed", "partial") for item in report.devices):
             raise typer.Exit(EXIT_FAILED)
@@ -194,5 +194,5 @@ def register(app: typer.Typer) -> None:
         if result.stopped:
             fail("The hub is still stopped.")
         console.print(
-            "[green]unlocked[/green]  Writes are allowed again. Devices stay in their safe state until changed."
+            "[green]unlocked[/green]  Commands are allowed again. Devices stay in their safe state until changed."
         )

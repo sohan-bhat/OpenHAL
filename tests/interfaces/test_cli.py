@@ -161,7 +161,7 @@ def test_actions_dry_run_and_stop(cli_hub: SyncHub, tmp_path: Path) -> None:
     code, out = run("dry-run", "--file", str(plan), "--json")
     assert [item["status"] for item in json.loads(out)] == ["allowed", "allowed"]
     code, out = run("dry-run", "desk-fan.nothing", "1 %")
-    assert "no write channel or action" in out
+    assert "no control channel or action" in out
     code, out = run("stop", "--reason", "cli test")
     assert code == 0, out
     assert "safe" in out

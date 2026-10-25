@@ -66,7 +66,7 @@ def confirm(
         limits = f"{show(spec.min, spec.unit)} to {show(spec.max, spec.unit)}" if spec.unit else ""
         limits = limits or ", ".join(spec.values or []) or spec.type
         rate = f", at most {show(spec.max_change_per_s, spec.unit)}/s" if spec.max_change_per_s else ""
-        console.print(f"write   {escape(name)}  {escape(limits)}{escape(rate)}")
+        console.print(f"control {escape(name)}  {escape(limits)}{escape(rate)}")
     for name in device.actions:
         console.print(f"action  {escape(name)}")
     for interlock in device.interlocks:
@@ -83,5 +83,5 @@ def confirm(
     again = load(path)
     remaining = again.unconfirmed()
     if remaining:
-        fail(f"Still unconfirmed after writing {path}. {', '.join(remaining)}")
+        fail(f"Still unconfirmed after saving {path}. {', '.join(remaining)}")
     console.print(f"[green]confirmed[/green]  {escape(str(path))} by {escape(who)}. Restart openhald to load it.")

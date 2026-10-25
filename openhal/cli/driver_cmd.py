@@ -145,7 +145,7 @@ def new_driver(
     }
     existing = [path for path in files if (target_root / path).exists()]
     if existing:
-        console.print(f"[red]error[/red]  These exist already, so nothing was written. {escape(', '.join(existing))}")
+        console.print(f"[red]error[/red]  These exist already, so nothing was created. {escape(', '.join(existing))}")
         raise typer.Exit(1)
     for relative, template in files.items():
         path = target_root / relative

@@ -61,7 +61,7 @@ def _print_device(view: DeviceView) -> None:
         condition = f"if {interlock.if_} " if interlock.if_ else ""
         console.print(f"interlock  {escape(condition)}require {escape(interlock.require)}")
     if view.notes:
-        console.print("notes, as written in the device file", style="dim")
+        console.print("notes, as the device file states them", style="dim")
         console.print(escape(view.notes), style="dim")
 
 
@@ -86,7 +86,7 @@ def register(app: typer.Typer) -> None:
             console.print(f"started {when(result.started_at)}")
         if result.stopped:
             console.print(
-                f"[red]stopped[/red]  {escape(result.stop_reason or '')}. Writes are blocked until openhal unlock."
+                f"[red]stopped[/red]  {escape(result.stop_reason or '')}. Commands are refused until openhal unlock."
             )
         for problem in result.load_problems:
             console.print(f"[yellow]not loaded[/yellow]  {escape(problem.path)}")

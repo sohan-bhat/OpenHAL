@@ -14,7 +14,7 @@ from openhal.cli._common import console
 def register(app: typer.Typer) -> None:
     @app.command()
     def demo(
-        record: Path = typer.Option(None, "--record", help="Write the result as YAML, as docs/demo/scenario.yaml."),  # noqa: B008
+        record: Path = typer.Option(None, "--record", help="Save the result as YAML, as docs/demo/scenario.yaml."),  # noqa: B008
         real_time: bool = typer.Option(False, "--real-time", help="Run the simulated board at real speed."),
     ) -> None:
         """Start a hub with the simulated plant waterer and send it three commands as an agent.
