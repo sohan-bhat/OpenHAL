@@ -1,0 +1,992 @@
+{
+  "cases": [
+    {
+      "id": "fan-allowed",
+      "steps": [],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed."
+      }
+    },
+    {
+      "id": "fan-above-max",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "above_max",
+        "message": "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %."
+      }
+    },
+    {
+      "id": "fan-below-min",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "below_min",
+        "message": "Blocked. The fan_speed limit is 0 % (min). Asked for -5 %."
+      }
+    },
+    {
+      "id": "fan-bad-step",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_step",
+        "message": "Blocked. fan_speed moves in steps of 1 % from 0 %. Asked for 20.5 %."
+      }
+    },
+    {
+      "id": "fan-bare-number",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_unit",
+        "message": "fan_speed needs a unit. Send 40 % rather than 40."
+      }
+    },
+    {
+      "id": "fan-wrong-dimension",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_unit",
+        "message": "fan_speed: 40.0 V can't be converted to percent."
+      }
+    },
+    {
+      "id": "fan-unknown-unit",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_unit",
+        "message": "fan_speed: Unknown unit 'blorp'."
+      }
+    },
+    {
+      "id": "fan-no-number",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_unit",
+        "message": "fan_speed: Could not read 'fast' as a number with a unit."
+      }
+    },
+    {
+      "id": "fan-boolean",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_unit",
+        "message": "fan_speed needs a number with a unit, for example 1 %."
+      }
+    },
+    {
+      "id": "fan-rate-from-connect",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "rate_limited",
+        "message": "Blocked. fan_speed may change by 20 % per second. Right now it can go from -20 % to 20 %. Asked for 60 %, which is possible in 2.0 s, or use small steps."
+      }
+    },
+    {
+      "id": "fan-rate-after-write",
+      "steps": [
+        {
+          "status": "done",
+          "code": null,
+          "message": "Done. fan_speed is now 20 %."
+        }
+      ],
+      "result": {
+        "status": "blocked",
+        "code": "rate_limited",
+        "message": "Blocked. fan_speed may change by 20 % per second. Right now it can go from 10 % to 30 %. Asked for 40 %, which is possible in 0.5 s, or use small steps."
+      }
+    },
+    {
+      "id": "fan-rate-unknown",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "rate_limited",
+        "message": "Blocked. fan_speed is rate limited and its current value is unknown. Read it first so the change can be measured."
+      }
+    },
+    {
+      "id": "fan-dimensionless",
+      "steps": [],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed."
+      }
+    },
+    {
+      "id": "fan-quantity-mapping",
+      "steps": [],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed."
+      }
+    },
+    {
+      "id": "fan-done-message",
+      "steps": [],
+      "result": {
+        "status": "done",
+        "code": null,
+        "message": "Done. fan_speed is now 35 %."
+      }
+    },
+    {
+      "id": "fan-unknown-channel",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "unknown_target",
+        "message": "Blocked. desk-fan has no write channel 'speed'. Write channels are fan_speed."
+      }
+    },
+    {
+      "id": "fan-unknown-device",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "unknown_target",
+        "message": "Blocked. There is no device 'fan'. Run openhal devices."
+      }
+    },
+    {
+      "id": "fan-stopped",
+      "steps": [
+        {
+          "status": "stop",
+          "devices": [
+            [
+              "desk-fan",
+              "safe"
+            ]
+          ]
+        }
+      ],
+      "result": {
+        "status": "blocked",
+        "code": "stopped",
+        "message": "Blocked. The hub is stopped. A human must unlock it before anything can move."
+      }
+    },
+    {
+      "id": "fan-unlocked",
+      "steps": [
+        {
+          "status": "stop",
+          "devices": [
+            [
+              "desk-fan",
+              "safe"
+            ]
+          ]
+        }
+      ],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed."
+      }
+    },
+    {
+      "id": "fan-read-scope",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "not_permitted",
+        "message": "Blocked. This client has a read-only token. Ask the owner for a control token."
+      }
+    },
+    {
+      "id": "fan-human",
+      "steps": [],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed."
+      }
+    },
+    {
+      "id": "fan-tightened",
+      "steps": [
+        {
+          "status": "blocked",
+          "code": "cannot_loosen",
+          "message": "Refused. fan_speed max is already 100 %. Session limits can only be tightened."
+        },
+        {
+          "status": "tightened",
+          "limits": {
+            "max": 50.0,
+            "rate": 10.0
+          }
+        },
+        {
+          "status": "blocked",
+          "code": "cannot_loosen",
+          "message": "Refused. fan_speed may already change by at most 10 % per second. Session limits can only be tightened."
+        }
+      ],
+      "result": {
+        "status": "blocked",
+        "code": "above_max",
+        "message": "Blocked. The fan_speed limit is 50 % (max). Asked for 60 %."
+      }
+    },
+    {
+      "id": "fan-tightened-rate",
+      "steps": [
+        {
+          "status": "tightened",
+          "limits": {
+            "rate": 5.0
+          }
+        }
+      ],
+      "result": {
+        "status": "blocked",
+        "code": "rate_limited",
+        "message": "Blocked. fan_speed may change by 5 % per second. Right now it can go from -10 % to 10 %. Asked for 20 %, which is possible in 2.0 s, or use small steps."
+      }
+    },
+    {
+      "id": "fan-unconfirmed",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "read_only_file",
+        "message": "Blocked. desk-fan-controller is read-only until a human confirms limits for file (interlocks, watchdog, safe state and hazard), write.fan_speed. Run the limits interview."
+      }
+    },
+    {
+      "id": "firmware-fan-suggested",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "read_only_file",
+        "message": "Blocked. desk-fan-controller is read-only until a human confirms limits for file (interlocks, watchdog, safe state and hazard), write.fan_speed. Run the limits interview."
+      }
+    },
+    {
+      "id": "hash-stale",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "read_only_file",
+        "message": "Blocked. hash-fan is read-only until a human confirms limits for file (limits changed after they were confirmed). Run the limits interview."
+      }
+    },
+    {
+      "id": "hash-bound",
+      "steps": [],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed."
+      }
+    },
+    {
+      "id": "heater-misconfigured",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "misconfigured",
+        "message": "Blocked. An interlock or condition names a device that isn't registered, so no device can be written until it is fixed. curing-heater (its expressions name desk-fan, which isn't registered)."
+      }
+    },
+    {
+      "id": "heater-interlock",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "interlock",
+        "message": "Blocked by an interlock on curing-heater. The heater needs the desk fan at 30 % or more. Right now desk-fan.fan_speed >= 30 % doesn't hold."
+      }
+    },
+    {
+      "id": "heater-interlock-passes",
+      "steps": [
+        {
+          "status": "done",
+          "code": null,
+          "message": "Done. fan_speed is now 20 %."
+        },
+        {
+          "status": "done",
+          "code": null,
+          "message": "Done. fan_speed is now 40 %."
+        }
+      ],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed."
+      }
+    },
+    {
+      "id": "fan-lowered-under-heater",
+      "steps": [
+        {
+          "status": "done",
+          "code": null,
+          "message": "Done. fan_speed is now 20 %."
+        },
+        {
+          "status": "done",
+          "code": null,
+          "message": "Done. fan_speed is now 40 %."
+        },
+        {
+          "status": "done",
+          "code": null,
+          "message": "Done. power is now 10 W."
+        }
+      ],
+      "result": {
+        "status": "blocked",
+        "code": "interlock",
+        "message": "Blocked by an interlock on curing-heater. The heater needs the desk fan at 30 % or more. Right now desk-fan.fan_speed >= 30 % doesn't hold."
+      }
+    },
+    {
+      "id": "heater-orphan-interlock",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "interlock",
+        "message": "Blocked by an interlock on curing-heater (not registered right now). The heater needs the desk fan at 30 % or more. Right now desk-fan.fan_speed >= 30 % doesn't hold."
+      }
+    },
+    {
+      "id": "heater-low-scope",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "not_permitted",
+        "message": "Blocked. curing-heater is medium hazard and this client's control_low scope doesn't cover it."
+      }
+    },
+    {
+      "id": "heater-milliwatts",
+      "steps": [
+        {
+          "status": "done",
+          "code": null,
+          "message": "Done. fan_speed is now 40 %."
+        }
+      ],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed."
+      }
+    },
+    {
+      "id": "heater-duration-exceeded",
+      "steps": [
+        {
+          "status": "done",
+          "code": null,
+          "message": "Done. fan_speed is now 40 %."
+        },
+        {
+          "status": "done",
+          "code": null,
+          "message": "Done. power is now 50 W."
+        },
+        {
+          "status": "tick",
+          "fired": []
+        },
+        {
+          "status": "tick",
+          "fired": [
+            "curing-heater: power > 40 W"
+          ]
+        }
+      ],
+      "result": {
+        "status": "blocked",
+        "code": "duration_exceeded",
+        "message": "Blocked. power > 40 W already ran for its 15 min limit. Wait for the budget to reset."
+      }
+    },
+    {
+      "id": "psu-needs-confirmation",
+      "steps": [],
+      "result": {
+        "status": "needs_confirmation",
+        "code": "needs_confirmation",
+        "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+      }
+    },
+    {
+      "id": "psu-interlock-stale-reading",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "interlock",
+        "message": "Blocked by an interlock on bench-psu. Channel 1 is limited to 1 A on this bench. Right now ch1_current <= 1 A is unknown."
+      }
+    },
+    {
+      "id": "psu-interlock-over-current",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "interlock",
+        "message": "Blocked by an interlock on bench-psu. Channel 1 is limited to 1 A on this bench. Right now ch1_current <= 1 A doesn't hold."
+      }
+    },
+    {
+      "id": "psu-bad-bool",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_value",
+        "message": "ch1_output needs true or false."
+      }
+    },
+    {
+      "id": "psu-missing-argument",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_request",
+        "message": "Blocked. set_ch1 has missing arguments amps."
+      }
+    },
+    {
+      "id": "psu-unknown-argument",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_request",
+        "message": "Blocked. set_ch1 has unknown arguments ohms."
+      }
+    },
+    {
+      "id": "psu-action-step",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_step",
+        "message": "Blocked. volts moves in steps of 0.01 V from 0 V. Asked for 5.005 V."
+      }
+    },
+    {
+      "id": "psu-action-human",
+      "steps": [],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed."
+      }
+    },
+    {
+      "id": "psu-action-agent",
+      "steps": [],
+      "result": {
+        "status": "needs_confirmation",
+        "code": "needs_confirmation",
+        "message": "Waiting for a human to approve action:set_ch1 on bench-psu."
+      }
+    },
+    {
+      "id": "psu-action-routine",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "needs_confirmation",
+        "message": "Blocked. action:set_ch1 on bench-psu needs a human to confirm, and routines can't wait for one."
+      }
+    },
+    {
+      "id": "psu-unknown-action",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "unknown_target",
+        "message": "Blocked. bench-psu has no action 'reboot'. Actions are set_ch1."
+      }
+    },
+    {
+      "id": "psu-queue-full",
+      "steps": [
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        }
+      ],
+      "result": {
+        "status": "blocked",
+        "code": "queue_full",
+        "message": "This client already has 20 requests waiting for a human. Wait for them to be decided."
+      }
+    },
+    {
+      "id": "psu-stop-cancels",
+      "steps": [
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        },
+        {
+          "status": "stop",
+          "devices": [
+            [
+              "bench-psu",
+              "safe"
+            ]
+          ]
+        }
+      ],
+      "result": {
+        "status": "blocked",
+        "code": "stopped",
+        "message": "Blocked. The hub is stopped. A human must unlock it before anything can move."
+      }
+    },
+    {
+      "id": "laser-door-open",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "interlock",
+        "message": "Blocked by an interlock on laser. The enclosure door must be closed before the laser fires. Right now door_closed == true doesn't hold."
+      }
+    },
+    {
+      "id": "laser-door-closed",
+      "steps": [],
+      "result": {
+        "status": "needs_confirmation",
+        "code": "needs_confirmation",
+        "message": "Waiting for a human to approve write:laser_power on laser."
+      }
+    },
+    {
+      "id": "laser-low-scope",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "not_permitted",
+        "message": "Blocked. laser is high hazard and this client's control_low scope doesn't cover it."
+      }
+    },
+    {
+      "id": "laser-above-max",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "above_max",
+        "message": "Blocked. The laser_power limit is 30 % (max). Asked for 45 %."
+      }
+    },
+    {
+      "id": "laser-pattern",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_value",
+        "message": "file doesn't match the allowed pattern."
+      }
+    },
+    {
+      "id": "laser-too-long",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_value",
+        "message": "file may be at most 200 characters."
+      }
+    },
+    {
+      "id": "laser-require-door",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "interlock",
+        "message": "Blocked. run_job needs door_closed == true, which doesn't hold right now."
+      }
+    },
+    {
+      "id": "laser-require-unknown",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "interlock",
+        "message": "Blocked. run_job needs state == Idle, which is unknown right now."
+      }
+    },
+    {
+      "id": "laser-routine-unsigned",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "needs_confirmation",
+        "message": "Blocked. action:home on laser needs a human to confirm, and routines can't wait for one."
+      }
+    },
+    {
+      "id": "voron-bad-enum",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_value",
+        "message": "axes must be one of x, y, z, all."
+      }
+    },
+    {
+      "id": "voron-home-confirm",
+      "steps": [],
+      "result": {
+        "status": "needs_confirmation",
+        "code": "needs_confirmation",
+        "message": "Waiting for a human to approve action:home on voron."
+      }
+    },
+    {
+      "id": "voron-approval-window",
+      "steps": [
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve action:home on voron."
+        },
+        {
+          "status": "done",
+          "code": null,
+          "message": "Done. home ran."
+        }
+      ],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed."
+      }
+    },
+    {
+      "id": "voron-fahrenheit",
+      "steps": [],
+      "result": {
+        "status": "needs_confirmation",
+        "code": "needs_confirmation",
+        "message": "Waiting for a human to approve write:extruder_target on voron."
+      }
+    },
+    {
+      "id": "voron-fahrenheit-above-max",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "above_max",
+        "message": "Blocked. The extruder_target limit is 260 degC (max). Asked for 315.556 degC."
+      }
+    },
+    {
+      "id": "voron-printer-error",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "interlock",
+        "message": "Blocked by an interlock on voron. Clear the printer error before heating. Right now state != error doesn't hold."
+      }
+    },
+    {
+      "id": "voron-bed-rate",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "rate_limited",
+        "message": "Blocked. bed_target may change by 20 degC per second. Right now it can go from -20 degC to 20 degC. Asked for 100 degC, which is possible in 4.0 s, or use small steps."
+      }
+    },
+    {
+      "id": "voron-pause-needs-printing",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "interlock",
+        "message": "Blocked. pause needs state == printing, which doesn't hold right now."
+      }
+    },
+    {
+      "id": "mount-above-max",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "above_max",
+        "message": "Blocked. The ra limit is 24 hour (max). Asked for 25 hour."
+      }
+    },
+    {
+      "id": "mount-radians",
+      "steps": [],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed."
+      }
+    },
+    {
+      "id": "sensor-no-writes",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "unknown_target",
+        "message": "Blocked. room-sensor has no write channel 'temperature'. Write channels are none."
+      }
+    },
+    {
+      "id": "plant-string-bool",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_value",
+        "message": "pump needs true or false."
+      }
+    },
+    {
+      "id": "plant-pump-on",
+      "steps": [],
+      "result": {
+        "status": "done",
+        "code": null,
+        "message": "Done. pump is now true."
+      }
+    },
+    {
+      "id": "plant-duration",
+      "steps": [
+        {
+          "status": "done",
+          "code": null,
+          "message": "Done. pump is now true."
+        },
+        {
+          "status": "tick",
+          "fired": []
+        },
+        {
+          "status": "tick",
+          "fired": [
+            "plant: pump == true"
+          ]
+        }
+      ],
+      "result": {
+        "status": "blocked",
+        "code": "duration_exceeded",
+        "message": "Blocked. pump == true already ran for its 20 s limit. Wait for the budget to reset."
+      }
+    },
+    {
+      "id": "lamp-bad-step",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "bad_step",
+        "message": "Blocked. brightness moves in steps of 1 % from 1 %. Asked for 50.5 %."
+      }
+    },
+    {
+      "id": "lamp-below-min",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "below_min",
+        "message": "Blocked. The brightness limit is 1 % (min). Asked for 0 %."
+      }
+    },
+    {
+      "id": "pads-led",
+      "steps": [],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed."
+      }
+    },
+    {
+      "id": "meter-read-only",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "unknown_target",
+        "message": "Blocked. energy-meter has no write channel 'power'. Write channels are none."
+      }
+    },
+    {
+      "id": "relay-disconnected",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "device_unavailable",
+        "message": "Blocked. aquarium-light is not connected."
+      }
+    },
+    {
+      "id": "relay-never-connected",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "device_unavailable",
+        "message": "Blocked. aquarium-light is not connected."
+      }
+    },
+    {
+      "id": "camera-no-writes",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "unknown_target",
+        "message": "Blocked. bench-camera has no action 'capture'. Actions are none."
+      }
+    },
+    {
+      "id": "hot-fan-fahrenheit-reading",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "interlock",
+        "message": "Blocked by an interlock on hot-fan. When fan_speed > 50 %, temperature < 35 degC must hold. Right now temperature < 35 degC doesn't hold."
+      }
+    },
+    {
+      "id": "hot-fan-cool-enough",
+      "steps": [],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed."
+      }
+    }
+  ],
+  "hashes": {
+    "spec/examples/alpaca-mount.hal.yaml": "e687dd87c8e351ba141f9c0dfb5492498e5d26c0d499b62decf997c6aa0fba41",
+    "spec/examples/ble-environment-sensor.hal.yaml": "007d1668a8bf7c66ea3c29dddedc51ea4a65b0350b8754f26e892f6e3c504490",
+    "spec/examples/desk-fan-confirmed.hal.yaml": "47cbb6a66eb90fdce97c0a84e1e14e5e2d626541f084101913dd8c8d485c6863",
+    "spec/examples/desk-fan.hal.yaml": "fba5f8f4597564f3460b822e41d0dea06362354be26c20b2c1bc965cbd1c8587",
+    "spec/examples/esphome-plant.hal.yaml": "f28023a4641ea62c214c6544158b3bb48c36d2cd9aae3c83f1847cecf266372a",
+    "spec/examples/grbl-laser.hal.yaml": "cc4db2508c66b08c6d9faa62bdb7f1ca96dfb75c75bd3bd4a2cac9a8de5f1a52",
+    "spec/examples/ha-desk-lamp.hal.yaml": "1b4e2ab0c6a3852c568cac705dc74eb783c0bbd4a5488c64850f3e22f958a698",
+    "spec/examples/klipper-printer.hal.yaml": "2f40d188dd7bddac9188ae26b66dffc4055da22731fe497d2d00a035cdbf7f9d",
+    "spec/examples/midi-controller.hal.yaml": "7a54df08b8a1b090ac216f452e4d60d59806325a87c7a6bfe73d07146dfbbf0a",
+    "spec/examples/modbus-energy-meter.hal.yaml": "3d0906adabf62f81ad813c9d164a3ffba782f16703f73bb42494ea6ce09f5bc9",
+    "spec/examples/openhal-firmware-fan.hal.yaml": "048e83a2029b6f901a23650fec6c31b14a2fc49f8d601269943a9d5c718826b7",
+    "spec/examples/rigol-dp832.hal.yaml": "6054c62e71a0cbce45b73d6816143f9bf80bae25191bcbf80fb973c076a3ea49",
+    "spec/examples/rpi-relay.hal.yaml": "3e9ad3fdf6bd10a4b904ff06d3f1ca6d3555ae4001dfa90f7ebdaca7d6ed995a",
+    "spec/examples/usb-webcam.hal.yaml": "2061a861c5f59ffe95025030dffbddcd5224135911ba37044b927beab05fc114",
+    "spec/examples/workbench-heater.hal.yaml": "821273a34de04624f09cb6379cf2593ec06ea8911648955e5793cadf8330bf0a",
+    "inline:stale-hash": "67ed889d3f453287147d968aa893e8615203b8aad7b356b88d36e20ffe8a2448",
+    "inline:bound-hash": "67ed889d3f453287147d968aa893e8615203b8aad7b356b88d36e20ffe8a2448",
+    "inline:hot-fan": "0ffa2aa9340dd5c9ddea094ebc46df603ee30731a0fd8fb785edc1230f692c7f"
+  }
+}
