@@ -63,5 +63,5 @@ def register(app: typer.Typer) -> None:
             fail(f"The hub is not running at {url} ({exc}). Start it with openhald.", EXIT_NO_HUB)
         except KeyboardInterrupt:
             raise typer.Exit(0) from None
-        except Exception as exc:  # noqa: BLE001 (the bridge ends with a message, not a trace)
+        except Exception as exc:  # noqa: BLE001
             fail(f"The connection to {url} failed ({type(exc).__name__}: {exc}).", EXIT_NO_HUB)

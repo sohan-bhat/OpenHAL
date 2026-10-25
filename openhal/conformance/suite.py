@@ -73,7 +73,7 @@ class _Spy:
 
     def __init__(self, driver: Driver) -> None:
         self.calls: list[tuple[str, Any]] = []
-        original_write = driver._write  # noqa: SLF001 (the suite spies on the protocol layer)
+        original_write = driver._write  # noqa: SLF001
         original_action = driver._action  # noqa: SLF001
 
         async def spy_write(channel: str, value: Any) -> Reading | None:
@@ -122,7 +122,7 @@ async def run(case: ConformanceCase) -> Report:
         except _Skip as skip:
             report.results.append(CheckResult(name, False, str(skip), skipped=True))
             return
-        except Exception as exc:  # noqa: BLE001 (a failing check is a result, not a crash)
+        except Exception as exc:  # noqa: BLE001
             report.results.append(CheckResult(name, False, f"{type(exc).__name__}: {exc}"))
             return
         elapsed = time.monotonic() - started
