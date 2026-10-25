@@ -22,7 +22,7 @@
   {#if simulated > 0}
     <p class="demo">
       <span class="label">Demo data</span>
-      {simulated} of {devices.length} run on the mock driver. No hardware is attached.
+      {simulated} of {devices.length} run on the mock driver.
     </p>
   {/if}
   {#if !inspector.devicesLoaded}

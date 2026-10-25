@@ -101,9 +101,14 @@ async function scrollTo(page: Page, selector: string, below: number): Promise<vo
   }, below);
 }
 
-async function showLog(page: Page): Promise<void> {
+async function showLog(page: Page, phone: boolean): Promise<void> {
   await page.getByRole("button", { name: "Message log", exact: true }).click();
-  await page.locator('li[data-kind="request"]').filter({ hasText: "plant-waterer" }).first().evaluate((row) => {
+  const first = page.locator('li[data-kind="request"]').filter({ hasText: "plant-waterer" }).first();
+  if (phone) {
+    await scrollTo(page, 'li[data-kind="request"]:has-text("plant-waterer")', 90);
+    return;
+  }
+  await first.evaluate((row) => {
     const scroller = row.closest(".scroller") as HTMLElement;
     scroller.scrollTop += row.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 8;
   });
@@ -122,7 +127,7 @@ for (const theme of THEMES) {
       await shoot(page, "devices", width, theme);
       await scrollTo(page, "#actions-title", header);
       await shoot(page, "devices-controls", width, theme);
-      await showLog(page);
+      await showLog(page, phone);
       await shoot(page, "log", width, theme);
 
       await page.goto("/#/devices/curing-heater");

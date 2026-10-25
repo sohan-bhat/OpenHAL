@@ -380,6 +380,10 @@
     white-space: nowrap;
   }
 
+  .row[data-kind="error"] .head {
+    grid-column: 4 / 6;
+  }
+
   .tone-method {
     color: var(--syn-method);
     font-weight: 700;
@@ -444,6 +448,8 @@
     }
 
     .row {
+      grid-template-columns: 30px minmax(0, 1fr);
+      column-gap: 0;
       row-gap: 2px;
     }
 
@@ -462,7 +468,8 @@
       grid-column: 1;
     }
 
-    .head {
+    .head,
+    .row[data-kind="error"] .head {
       grid-column: 2;
       white-space: normal;
     }
