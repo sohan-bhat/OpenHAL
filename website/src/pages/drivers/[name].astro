@@ -1,7 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
 import DocShell from "../../layouts/DocShell.astro";
-import { type Driver, TIER_NAMES, conformanceOf, drivers, statusClass, statusWord } from "../../lib/catalog";
+import { type Driver, TIER_NAMES, conformanceOf, drivers, isReference, statusClass, statusWord } from "../../lib/catalog";
 import { driversSidebar } from "../../lib/drivers-nav";
 
 export async function getStaticPaths() {
@@ -34,7 +34,13 @@ const rows: Array<[string, string]> = [
   section="Drivers"
 >
   <p slot="after-title" class="statuses">
-    <span class={`status ${statusClass(driver.status)}`}>{statusWord(driver.status)}</span>
+    {
+      isReference(driver) ? (
+        <span class="muted">The reference driver. It runs device files in memory, so the driver counts leave it out.</span>
+      ) : (
+        <span class={`status ${statusClass(driver.status)}`}>{statusWord(driver.status)}</span>
+      )
+    }
   </p>
   <div class="table-wrap">
     <table class="sheet">

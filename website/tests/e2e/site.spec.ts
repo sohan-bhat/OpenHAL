@@ -150,6 +150,23 @@ test.describe("catalog pages", () => {
     await expect(page.locator("[data-shown]")).toHaveText(`${shown} of ${all} drivers.`);
   });
 
+  test("the driver counts leave the tier 0 reference driver out", async ({ page }) => {
+    const catalog = JSON.parse(readFileSync(fileURLToPath(new URL("../../../drivers/catalog.json", import.meta.url)), "utf8")) as {
+      drivers: Array<{ name: string; tier: number; status: string }>;
+    };
+    const devices = catalog.drivers.filter((driver) => driver.tier >= 1);
+    const tested = devices.filter((driver) => driver.status === "implemented").length;
+    await page.goto("/");
+    await expect(page.locator("p.summary")).toContainText(`${tested} drivers tested on simulator`);
+    await expect(page.locator(".groups")).not.toContainText("mock");
+    await page.goto("/drivers/");
+    await expect(page.locator("[data-shown]")).toHaveText(`${devices.length} drivers.`);
+    await expect(page.locator("[data-driver]")).toHaveCount(devices.length);
+    for (const driver of catalog.drivers.filter((item) => item.tier === 0)) {
+      await expect(page.locator("[data-reference]").filter({ hasText: driver.name })).toContainText("reference");
+    }
+  });
+
   test("each driver has its own page", async ({ page }) => {
     await page.goto("/drivers/mock/");
     await expect(page.locator("h1")).toContainText("mock");

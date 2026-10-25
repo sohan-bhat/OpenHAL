@@ -46,6 +46,35 @@ export function drivers(): Driver[] {
   });
 }
 
+export function isReference(driver: Driver): boolean {
+  return driver.tier === 0;
+}
+
+export function deviceDrivers(): Driver[] {
+  return drivers().filter((driver) => !isReference(driver));
+}
+
+export function referenceDrivers(): Driver[] {
+  return drivers().filter(isReference);
+}
+
+export interface DriverCounts {
+  total: number;
+  tested: number;
+  verified: number;
+  planned: number;
+}
+
+export function driverCounts(list: Driver[] = deviceDrivers()): DriverCounts {
+  const devices = list.filter((driver) => !isReference(driver));
+  return {
+    total: devices.length,
+    tested: devices.filter((driver) => driver.status === "implemented").length,
+    verified: devices.filter((driver) => driver.status === "verified").length,
+    planned: devices.filter((driver) => driver.status === "planned").length,
+  };
+}
+
 export const TIER_NAMES: Record<number, string> = {
   0: "Reference",
   1: "Tier 1",
@@ -65,14 +94,12 @@ export interface DriverGroup {
 }
 
 export function driverGroups(): DriverGroup[] {
-  const byName = new Map(drivers().map((driver) => [driver.name, driver]));
-  return groupData.groups.map((group) => {
-    const members = group.drivers.map((name) => byName.get(name)).filter((driver): driver is Driver => driver !== undefined);
-    return {
-      name: group.name,
-      drivers: members,
-      tested: members.filter((driver) => driver.status === "implemented").length,
-      verified: members.filter((driver) => driver.status === "verified").length,
-    };
-  });
+  const byName = new Map(deviceDrivers().map((driver) => [driver.name, driver]));
+  return groupData.groups
+    .map((group) => {
+      const members = group.drivers.map((name) => byName.get(name)).filter((driver): driver is Driver => driver !== undefined);
+      const counts = driverCounts(members);
+      return { name: group.name, drivers: members, tested: counts.tested, verified: counts.verified };
+    })
+    .filter((group) => group.drivers.length > 0);
 }
