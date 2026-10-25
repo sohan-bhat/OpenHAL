@@ -22,7 +22,7 @@
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr);
   column-gap: var(--s-2);
-  align-items: baseline;
+  align-items: start;
 }
 
 .trace li.enter {
@@ -38,7 +38,8 @@
 
 .trace .trace-arrow {
   color: var(--text);
-  align-self: center;
+  align-self: start;
+  margin-top: calc((1.6em - 10px) / 2);
 }
 
 .trace .line {
