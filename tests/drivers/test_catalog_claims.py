@@ -60,3 +60,20 @@ def test_the_readme_counts_device_drivers_only() -> None:
     listed = {entry["name"] for entry in DEVICE_DRIVERS if entry["status"] != "planned"}
     assert set(rows) == listed
     assert "mock" not in rows
+
+
+STATUS_WORDS = {"implemented": "tested on simulator", "verified": "verified on hardware", "planned": "planned"}
+
+
+def test_the_coverage_plan_shows_the_catalog_status() -> None:
+    coverage = (ROOT / "docs" / "drivers" / "COVERAGE.md").read_text(encoding="utf-8")
+    statuses = {entry["name"]: STATUS_WORDS.get(entry["status"], entry["status"]) for entry in DEVICE_DRIVERS}
+    seen = set()
+    for line in coverage.splitlines():
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if cells and cells[0] in statuses:
+            seen.add(cells[0])
+            assert statuses[cells[0]] in cells, (
+                f"COVERAGE.md shows {cells[0]} as {cells}, the catalog says {statuses[cells[0]]}"
+            )
+    assert seen == set(statuses), f"COVERAGE.md is missing {sorted(set(statuses) - seen)}"
