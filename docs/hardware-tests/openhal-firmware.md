@@ -26,7 +26,7 @@ Connect the LED with the resistor from pin 7 to GND. Keep pin 4 on GND unless a 
 6. **Confirm.** Run `openhal file confirm ~/.openhal/devices/plant-waterer.hal.yaml` after reading every limit, then restart `openhald`.
 7. **Too long.** Run `openhal action plant-waterer.water duration=120s`. Expect `blocked above_max  Blocked. The duration limit is 30 s (max). Asked for 120 s.` and the LED stays off.
 8. **Short run.** Run `openhal action plant-waterer.water duration=2s`. Expect `done  Done. water ran.`, the LED on, and off again about 2 s later.
-9. **Empty tank.** Disconnect pin 4 and run `openhal action plant-waterer.water duration=2s`. Expect `INTERLOCK_BLOCKED` with "pump can't run while tank is empty" and the LED stays off.
+9. **Empty tank.** Disconnect pin 4 and run `openhal action plant-waterer.water duration=2s`. Expect `blocked interlock  Blocked. Pump can't run while tank is empty. water needs tank == ok, which doesn't hold right now.` and the LED stays off.
 10. **Stop.** Connect pin 4 to GND, run `openhal action plant-waterer.water duration=20s`, then `openhal stop`. Expect the LED off at once and `plant-waterer  safe`. Run `openhal unlock`.
 11. **Board falls safe.** Run `openhal action plant-waterer.water duration=20s`, then stop the hub process. Within 3 s the LED must turn off on its own.
 
