@@ -1,0 +1,102 @@
+.trace {
+  margin: 0;
+  padding: var(--s-4) var(--s-4);
+  background: var(--surface);
+  border: var(--rule);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+.trace ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+
+.trace li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  column-gap: var(--s-2);
+  align-items: baseline;
+}
+
+.trace li.enter {
+  animation: trace-enter var(--motion-message) var(--ease) 1;
+}
+
+@keyframes trace-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.trace .trace-arrow {
+  color: var(--text);
+  align-self: center;
+}
+
+.trace .line {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.trace .head {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--s-4);
+  row-gap: 2px;
+}
+
+.trace .method {
+  color: var(--syn-method);
+  font-weight: 700;
+  min-width: 11ch;
+}
+
+.trace .outcome-error {
+  color: var(--syn-error);
+  font-weight: 700;
+}
+
+.trace .outcome-result {
+  color: var(--ok);
+  font-weight: 700;
+  min-width: 11ch;
+}
+
+.trace .payload {
+  overflow-wrap: anywhere;
+}
+
+.trace .reason {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.trace .who {
+  font-family: var(--font-text);
+  font-size: var(--t-legend);
+  color: var(--text-2);
+}
+
+@media (min-width: 768px) {
+  .trace {
+    padding: var(--s-4) var(--s-5);
+    font-size: 15px;
+  }
+
+  .trace .head {
+    flex-wrap: nowrap;
+  }
+
+  .trace .error-head {
+    flex-wrap: wrap;
+  }
+}

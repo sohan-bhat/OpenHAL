@@ -1,31 +1,28 @@
 ---
+import { getCollection } from "astro:content";
 import { PRODUCT_NAME } from "../config/brand";
+import { NAV } from "../config/site";
 import { markSvg } from "../lib/brand-mark";
 
-const links = [
-  { href: "/docs/", label: "Docs" },
-  { href: "/spec/", label: "Spec" },
-  { href: "/devices/", label: "Devices" },
-  { href: "/library/", label: "Library" },
-  { href: "/playground/", label: "Playground" },
-  { href: "/blog/", label: "Blog" },
-];
+const published = (await getCollection("blog")).some((post) => !post.data.draft);
+const links = NAV.filter((link) => link.label !== "Blog" || published);
 const path = Astro.url.pathname;
-const current = (href: string) => path === href || path.startsWith(href);
+const current = (match: string[]) =>
+  match.some((prefix) => (prefix === "/" ? path === "/" : path.startsWith(prefix)));
 ---
 
 <header class="site-header">
   <div class="wrap bar">
-    <a class="brand" href="/" aria-label={`${PRODUCT_NAME} home`}>
-      <Fragment set:html={markSvg({ size: 28 })} />
+    <a class="brand" href="/" aria-label={`${PRODUCT_NAME} overview`}>
+      <Fragment set:html={markSvg({ size: 22, className: "mark" })} />
       <span class="wordmark">{PRODUCT_NAME}</span>
     </a>
-    <nav aria-label="Main">
+    <nav class="desktop-nav" aria-label="Main">
       <ul>
         {
           links.map((link) => (
             <li>
-              <a href={link.href} aria-current={current(link.href) ? "page" : undefined}>
+              <a href={link.href} aria-current={current(link.match) ? "page" : undefined} rel={link.external ? "noopener" : undefined}>
                 {link.label}
               </a>
             </li>
@@ -33,108 +30,148 @@ const current = (href: string) => path === href || path.startsWith(href);
         }
       </ul>
     </nav>
+    <details class="mobile-nav">
+      <summary>Menu</summary>
+      <nav aria-label="Main">
+        <ul>
+          {
+            links.map((link) => (
+              <li>
+                <a href={link.href} aria-current={current(link.match) ? "page" : undefined} rel={link.external ? "noopener" : undefined}>
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </details>
   </div>
 </header>
 
 <style>
   .site-header {
-    background: var(--bezel);
-    color: var(--on-bezel);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--bg);
+    border-bottom: var(--rule);
   }
 
   .bar {
     display: flex;
     align-items: center;
     gap: var(--s-5);
-    min-height: 56px;
+    min-height: 60px;
   }
 
   .brand {
     display: inline-flex;
     align-items: center;
     gap: var(--s-2);
-    color: var(--on-bezel);
+    color: var(--text);
     text-decoration: none;
     flex: none;
   }
 
-  .wordmark {
-    font-family: var(--font-label);
-    font-size: 21px;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    line-height: 1;
+  .brand :global(.mark) {
+    color: var(--accent);
   }
 
-  nav {
-    margin-left: auto;
-    min-width: 0;
+  .wordmark {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
   }
 
   ul {
-    display: flex;
-    gap: var(--s-1);
+    list-style: none;
     margin: 0;
     padding: 0;
-    list-style: none;
-    overflow-x: auto;
-    scrollbar-width: none;
   }
 
-  a:focus-visible {
-    outline-color: var(--on-bezel);
+  .desktop-nav {
+    display: none;
+    margin-left: auto;
   }
 
-  nav a {
+  .desktop-nav ul {
+    display: flex;
+    gap: var(--s-1);
+  }
+
+  .desktop-nav a {
     display: block;
-    padding: var(--s-4) var(--s-2);
-    color: var(--on-bezel);
-    font-family: var(--font-label);
-    font-size: var(--t-1);
-    font-weight: 650;
-    letter-spacing: var(--legend-tracking);
-    text-transform: uppercase;
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--radius);
+    color: var(--text-2);
+    font-size: var(--t-small);
+    font-weight: 600;
     text-decoration: none;
-    border-bottom: 2px solid transparent;
-    white-space: nowrap;
   }
 
-  nav a:hover {
-    border-bottom-color: color-mix(in srgb, var(--on-bezel) 50%, transparent);
+  .desktop-nav a:hover {
+    color: var(--text);
+    background: var(--surface);
   }
 
-  nav a[aria-current="page"] {
-    border-bottom-color: var(--on-bezel);
+  .desktop-nav a[aria-current="page"] {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
   }
 
-  @media (max-width: 767px) {
-    .bar {
-      flex-wrap: wrap;
-      gap: 0;
-      padding-top: var(--s-2);
-    }
-
-    nav {
-      margin-left: 0;
-      width: calc(100% + 2 * var(--gutter));
-      margin-inline: calc(-1 * var(--gutter));
-    }
-
-    ul {
-      flex-wrap: wrap;
-      column-gap: 0;
-      padding-inline: calc(var(--gutter) - var(--s-2));
-    }
-
-    nav a {
-      padding: var(--s-3) var(--s-2);
-      min-height: 44px;
-    }
+  .mobile-nav {
+    margin-left: auto;
+    position: relative;
   }
 
-  @media (min-width: 1024px) {
-    nav a {
-      padding-inline: var(--s-3);
+  .mobile-nav summary {
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 var(--s-3);
+    border: var(--rule);
+    border-radius: var(--radius);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .mobile-nav summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mobile-nav nav {
+    position: absolute;
+    right: 0;
+    top: calc(100% + var(--s-2));
+    width: min(280px, calc(100vw - 2 * var(--s-4)));
+    padding: var(--s-2);
+    background: var(--bg);
+    border: var(--rule);
+    border-radius: var(--radius);
+  }
+
+  .mobile-nav a {
+    display: block;
+    padding: var(--s-2) var(--s-3);
+    border-radius: 4px;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .mobile-nav a[aria-current="page"] {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  @media (min-width: 1100px) {
+    .desktop-nav {
+      display: block;
+    }
+
+    .mobile-nav {
+      display: none;
     }
   }
 </style>

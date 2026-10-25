@@ -1,0 +1,372 @@
+---
+import type { MarkdownHeading } from "astro";
+import "../styles/prose.css";
+import { editUrl } from "../config/site";
+import type { SideGroup } from "../lib/nav-types";
+import Base from "./Base.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+  repo?: string;
+  headings?: MarkdownHeading[];
+  sidebar: SideGroup[];
+  section: string;
+  canonical?: string;
+  noindex?: boolean;
+}
+
+const { title, description, repo, headings = [], sidebar, section, canonical, noindex } = Astro.props;
+const path = Astro.url.pathname;
+const flat = sidebar.flatMap((group) => group.items);
+const index = flat.findIndex((item) => item.href === path);
+const prev = index > 0 ? flat[index - 1] : null;
+const next = index !== -1 && index < flat.length - 1 ? flat[index + 1] : null;
+const toc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+---
+
+<Base title={title} description={description} canonical={canonical} noindex={noindex}>
+  <div class="wrap shell">
+    <aside class="sidebar" aria-label={section}>
+      <nav class="side-desktop" aria-label={`${section} pages`}>
+        <slot name="sidebar-top" />
+        {
+          sidebar.map((group) => (
+            <div class="group">
+              {group.name && <p class="legend">{group.name}</p>}
+              <ul>
+                {group.items.map((item) => (
+                  <li class={item.depth === 2 ? "nested" : undefined}>
+                    <a href={item.href} aria-current={item.href === path ? "page" : undefined}>
+                      {item.number && <span class="num mono">{item.number}</span>}
+                      <span>{item.title}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </nav>
+      <details class="side-menu">
+        <summary>{section} pages</summary>
+        <nav aria-label={`${section} pages`}>
+          <slot name="sidebar-top-mobile" />
+          {
+            sidebar.map((group) => (
+              <div class="group">
+                {group.name && <p class="legend">{group.name}</p>}
+                <ul>
+                  {group.items.map((item) => (
+                    <li class={item.depth === 2 ? "nested" : undefined}>
+                      <a href={item.href} aria-current={item.href === path ? "page" : undefined}>
+                        {item.number && <span class="num mono">{item.number}</span>}
+                        <span>{item.title}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          }
+        </nav>
+      </details>
+    </aside>
+
+    <article class="content">
+      <header class="page-head">
+        <slot name="before-title" />
+        <h1>{title}</h1>
+        <slot name="after-title" />
+      </header>
+      {
+        toc.length > 1 && (
+          <details class="outline-mobile">
+            <summary>On this page</summary>
+            <ul>
+              {toc.map((heading) => (
+                <li class={heading.depth === 3 ? "nested" : undefined}>
+                  <a href={`#${heading.slug}`}>{heading.text}</a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )
+      }
+      <div class="prose">
+        <slot />
+      </div>
+      <footer class="page-foot">
+        {
+          (prev || next) && (
+            <nav class="pager" aria-label="Previous and next">
+              {prev ? (
+                <a class="prev" href={prev.href}>
+                  <span class="legend">Previous</span>
+                  <span>{prev.title}</span>
+                </a>
+              ) : (
+                <span />
+              )}
+              {next && (
+                <a class="next" href={next.href}>
+                  <span class="legend">Next</span>
+                  <span>{next.title}</span>
+                </a>
+              )}
+            </nav>
+          )
+        }
+        {
+          repo && (
+            <p class="edit">
+              <a href={editUrl(repo)} rel="noopener">
+                Edit on GitHub
+              </a>
+              <span class="muted mono">{repo}</span>
+            </p>
+          )
+        }
+      </footer>
+    </article>
+
+    {
+      toc.length > 1 && (
+        <aside class="outline" aria-label="On this page">
+          <p class="legend">On this page</p>
+          <ul>
+            {toc.map((heading) => (
+              <li class={heading.depth === 3 ? "nested" : undefined}>
+                <a href={`#${heading.slug}`}>{heading.text}</a>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )
+    }
+  </div>
+</Base>
+
+<style>
+  .shell {
+    display: grid;
+    gap: var(--s-5);
+    padding-top: var(--s-5);
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .side-desktop {
+    display: none;
+  }
+
+  .side-menu summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--s-3);
+    border: var(--rule);
+    border-radius: var(--radius);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .side-menu[open] summary {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .side-menu nav {
+    padding: var(--s-2) var(--s-3) var(--s-3);
+    border: var(--rule);
+    border-top: 0;
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+
+  .group + .group {
+    margin-top: var(--s-4);
+  }
+
+  .group .legend {
+    margin-bottom: var(--s-1);
+  }
+
+  .sidebar a {
+    display: flex;
+    gap: var(--s-2);
+    padding: var(--s-1) var(--s-2);
+    border-radius: 4px;
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: var(--t-small);
+    line-height: 1.45;
+  }
+
+  .sidebar a:hover {
+    color: var(--text);
+    background: var(--surface);
+  }
+
+  .sidebar a[aria-current="page"] {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+    font-weight: 700;
+  }
+
+  .sidebar li.nested a {
+    padding-left: var(--s-5);
+  }
+
+  .num {
+    flex: none;
+    min-width: 2.2em;
+    color: var(--text-2);
+  }
+
+  .content {
+    min-width: 0;
+  }
+
+  .page-head {
+    padding-bottom: var(--s-4);
+    margin-bottom: var(--s-5);
+    border-bottom: var(--rule);
+  }
+
+  .outline-mobile {
+    margin-bottom: var(--s-5);
+    padding: var(--s-2) var(--s-3);
+    border: var(--rule);
+    border-radius: var(--radius);
+  }
+
+  .outline-mobile summary {
+    font-weight: 700;
+    cursor: pointer;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+  }
+
+  .outline-mobile ul,
+  .outline ul {
+    display: grid;
+    gap: var(--s-1);
+  }
+
+  .outline-mobile ul {
+    padding: var(--s-2) 0;
+  }
+
+  .outline-mobile a,
+  .outline a {
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: var(--t-small);
+  }
+
+  .outline-mobile a:hover,
+  .outline a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .outline-mobile li.nested,
+  .outline li.nested {
+    padding-left: var(--s-3);
+  }
+
+  .outline {
+    display: none;
+  }
+
+  .outline .legend {
+    margin-bottom: var(--s-2);
+  }
+
+  .page-foot {
+    margin-top: var(--s-8);
+    max-width: var(--measure);
+    display: grid;
+    gap: var(--s-5);
+  }
+
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-3);
+  }
+
+  .pager a {
+    display: grid;
+    gap: 2px;
+    padding: var(--s-3) var(--s-4);
+    border: var(--rule);
+    border-radius: var(--radius);
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .pager a:hover {
+    border-color: var(--accent);
+  }
+
+  .pager .next {
+    text-align: right;
+    grid-column: 2;
+  }
+
+  .edit {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-1) var(--s-3);
+    font-size: var(--t-small);
+  }
+
+  @media (min-width: 1024px) {
+    .shell {
+      grid-template-columns: 240px minmax(0, 1fr);
+      gap: var(--s-7);
+      padding-top: var(--s-6);
+    }
+
+    .side-menu {
+      display: none;
+    }
+
+    .side-desktop {
+      display: block;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 76px;
+      align-self: start;
+      max-height: calc(100dvh - 92px);
+      overflow-y: auto;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .shell {
+      grid-template-columns: 240px minmax(0, 1fr) 220px;
+    }
+
+    .outline {
+      display: block;
+      position: sticky;
+      top: 76px;
+      align-self: start;
+      max-height: calc(100dvh - 92px);
+      overflow-y: auto;
+    }
+
+    .outline-mobile {
+      display: none;
+    }
+  }
+</style>

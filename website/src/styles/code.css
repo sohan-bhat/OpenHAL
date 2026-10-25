@@ -1,0 +1,105 @@
+.code-block {
+  position: relative;
+  margin: var(--s-5) 0 0;
+  border: var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
+  min-width: 0;
+}
+
+.code-block > .code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-height: 36px;
+  padding: 0 var(--s-2) 0 var(--s-4);
+  border-bottom: var(--rule);
+}
+
+.code-block .code-head .tested {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  color: var(--ok);
+}
+
+.code-block .code-head .tested::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ok);
+}
+
+.code-block .code-head .labels {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.copy-button {
+  min-height: 28px;
+  padding: 0 var(--s-2);
+  border: var(--rule);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-2);
+  font: inherit;
+  font-size: var(--t-legend);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.copy-button:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.code-block pre {
+  margin: 0;
+  padding: var(--s-3) var(--s-4) var(--s-4);
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  tab-size: 2;
+}
+
+@media (min-width: 1024px) {
+  .code-block pre {
+    font-size: 15px;
+  }
+}
+
+.syn-key,
+.syn-punct {
+  color: var(--syn-key);
+}
+
+.syn-str {
+  color: var(--syn-string);
+}
+
+.syn-num {
+  color: var(--syn-number);
+}
+
+.syn-method {
+  color: var(--syn-method);
+  font-weight: 700;
+}
+
+.syn-error {
+  color: var(--syn-error);
+  font-weight: 700;
+}
+
+.syn-comment {
+  color: var(--syn-comment);
+  font-style: italic;
+}
+
+.syn-prompt {
+  color: var(--text-2);
+  user-select: none;
+}
