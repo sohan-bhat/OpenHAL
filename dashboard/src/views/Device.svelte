@@ -23,11 +23,11 @@
     !view
       ? ""
       : stopped
-        ? "The hub is stopped. Writes are refused with error -32014 STOPPED until a person lifts the stop."
+        ? "The hub is stopped. Commands are refused with error -32014 STOPPED until a person lifts the stop."
         : !view.writable
-          ? "Read-only. A person has not confirmed this Device File's limits, so writes get error -32015 UNVERIFIED_LIMITS."
+          ? "Read-only. A person has not confirmed this Device File's limits, so commands get error -32015 UNVERIFIED_LIMITS."
           : view.unavailable
-            ? `The device is ${view.unavailable}. Writes get error -32005 DEVICE_UNAVAILABLE.`
+            ? `The device is ${view.unavailable}. Commands get error -32005 DEVICE_UNAVAILABLE.`
             : "",
   );
 
@@ -76,7 +76,7 @@
         <div><dt class="label">driver</dt><dd class="mono">{view.driver}</dd></div>
         <div><dt class="label">conformance</dt><dd>{conformanceFor(view)}</dd></div>
         <div><dt class="label">hazard</dt><dd>{view.hazard}</dd></div>
-        <div><dt class="label">mode</dt><dd>{view.writable ? "writable" : "read-only"}</dd></div>
+        <div><dt class="label">mode</dt><dd>{view.writable ? "takes commands" : "read-only"}</dd></div>
         {#if fileName}<div><dt class="label">device file</dt><dd class="mono">{fileName}</dd></div>{/if}
         {#if view.source}<div><dt class="label">source</dt><dd>{view.source}</dd></div>{/if}
       </dl>
@@ -87,7 +87,7 @@
         <div class="notice">
           <StatusMark tone="unverified" label="limits not confirmed" />
           <p>
-            Writes get <code>error -32015 UNVERIFIED_LIMITS</code> until a person confirms the limits with
+            Commands get <code>error -32015 UNVERIFIED_LIMITS</code> until a person confirms the limits with
             <code>openhal file confirm {fileName ?? view.id}</code> or the limits interview.
           </p>
           {#if view.unconfirmed.length}
@@ -127,8 +127,8 @@
     {#if Object.keys(view.write).length}
       <section class="section" aria-labelledby="write-title">
         <div class="section-head">
-          <h2 id="write-title">Write channels</h2>
-          <p class="muted small">Writes from the Inspector are human writes. The Safety Kernel checks each one.</p>
+          <h2 id="write-title">Control channels</h2>
+          <p class="muted small">A change from the Inspector is made as you, a person. The Safety Kernel checks each one.</p>
         </div>
         <div class="controls">
           {#each Object.entries(view.write) as [name, spec] (name)}

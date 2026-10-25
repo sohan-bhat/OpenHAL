@@ -7,7 +7,7 @@ export interface StatusWord {
 
 export function verificationStatus(status: string): StatusWord {
   if (status === "verified-on-hardware") return { tone: "ok", label: "verified on hardware" };
-  if (status === "tested-reads") return { tone: "unverified", label: "reads tested, writes unverified" };
+  if (status === "tested-reads") return { tone: "unverified", label: "reads tested, commands unverified" };
   return { tone: "unverified", label: "unverified" };
 }
 

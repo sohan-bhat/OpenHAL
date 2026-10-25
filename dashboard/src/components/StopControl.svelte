@@ -52,7 +52,7 @@
   <form method="dialog" onsubmit={unlock}>
     <h2 id="unlock-title">Lift the stop</h2>
     <p>
-      Every device was put in its safe state. Writes and actions stay blocked until a person types the phrase
+      Every device was put in its safe state. Every command stays blocked until a person types the phrase
       <code>unlock</code>.
     </p>
     <label class="field">

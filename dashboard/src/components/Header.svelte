@@ -75,7 +75,7 @@
   <div class="stopped" id="stopped-state" role="status">
     <StatusMark tone="blocked" label="stopped" />
     <p>
-      Every write and action is refused with <code>error -32014 STOPPED</code> until a person lifts the stop with
+      Every command is refused with <code>error -32014 STOPPED</code> until a person lifts the stop with
       UNLOCK.
       {#if status.stop_reason}<span class="reason"><span class="label">Reason</span> {status.stop_reason}</span>{/if}
     </p>

@@ -341,7 +341,7 @@
     {#if saved}
       <section class="section human-surface saved" aria-live="polite">
         <StatusMark tone="ok" label="saved" />
-        <p>Saved <code>{saved.path}</code> as device <a class="mono" href={href("devices", saved.device_id)}>{saved.device_id}</a>, {saved.writable ? "writable" : "read-only"}.</p>
+        <p>Saved <code>{saved.path}</code> as device <a class="mono" href={href("devices", saved.device_id)}>{saved.device_id}</a>, {saved.writable ? "taking commands" : "read-only"}.</p>
       </section>
     {/if}
   {:else if error}
