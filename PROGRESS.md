@@ -2,34 +2,38 @@
 
 ## Current milestone
 
-Phase B. Drivers, interfaces, routines (M3 to M6), with M9 driver writer started by the orchestrator.
+Phase C. The protocol theme and hub protocol (ADR 0015), the dated specification, the website as a protocol site, the README flow diagram, then the Inspector (M7).
 
 ## Active subagents
 
-- interfaces (Opus, own worktree and branch). Owns openhal/client/, openhal/mcp/, openhal/cli/ except file_cmd.py, docs/interfaces/, tests/interfaces/. Brief in docs/agents/BRIEF-interfaces.md. Covers M5.
-- drivers-1 (Opus, own worktree and branch). Owns the serial, firmata, scpi, moonraker, octoprint, marlin, homeassistant and esphome driver packages, their tests and docs. Brief in docs/agents/BRIEF-drivers-1.md. Covers M3 drivers.
-- drivers-2 (Opus, own worktree and branch). Owns the rpi-gpio, rpi-camera, mqtt, modbus, ble, midi, hid, uvc and http driver packages, their tests and docs. Brief in docs/agents/BRIEF-drivers-2.md. Covers M4.
-- Orchestrator builds the driver writer server side (M9) and the firmware library (M10) while these run.
+Cap is 3 background agents at once (owner, 2026-10-24). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents.
 
-Concurrency cap is 3 subagents at once, lower than the 5 the build prompt allows, because the owner's standing rule caps parallel agents at 3. Every coding subagent runs on Opus 5.5 and may not start subagents of its own.
+- protocol (own worktree). Owns openhal/protocol/, tests/protocol/, `openhal rpc`, the /rpc and /v1/rpc/log routes, DriverInfo.conformance, the conformance suite and catalog generator, and the generated schema reference. Brief in docs/agents/BRIEF-protocol.md. Restarted from scratch after the crash on 2026-10-24, with nothing saved.
+- spec (own worktree). Owns spec/ except the generated schema, plus tests/spec/test_spec_names.py. Brief in docs/agents/BRIEF-spec.md. Resumed after the crash with 3 commits saved.
+- website (own worktree). Owns website/, docs/guide/, docs/design-rounds/ and tests/website/. Brief in docs/agents/BRIEF-website-2.md (protocol site). Resumed after the crash with 40 commits saved. Round 1 review findings are superseded by the theme change.
+
+Paused for the cap:
+- Inspector (worktree agent-ab1476059128896a1, brief docs/agents/BRIEF-inspector.md). Only a dashboard/package.json existed when it paused. Resume it when a slot frees.
 
 ## Done
 
-- Repository created at ~/code/openhal.
-- Research brief copied to docs/research/OPENHAL_RESEARCH.md, updated with OpenMHP, DCP, Octopus, HACP and EMQ findings.
-- Name check recorded in docs/research/SOURCES.md.
-
-- M0 complete. ARCHITECTURE, SAFETY, THREAT_MODEL, DESIGN, COVERAGE plan, ADRs 0001 to 0012 and the spec draft are written and committed.
-
-- M1 complete. Pydantic models, JSON Schema, 14 examples, `openhal file validate` and `openhal file schema`, spec CHANGELOG and versioning policy, MHS mapping, DEPENDENCIES. 128 tests, ruff and mypy clean.
-
-- M2 complete. Driver base with sealed methods and single-use grants, the safety kernel with every check, audit log with hash chain and head file, confirmation queue, stop and unlock, dry runs, tokens and pairing, device locks, the hub with polling, heartbeats and reconnects, the local API v1, the conformance suite, driver discovery from packages. Independent safety review done, 22 findings, all fixed (docs/agents/REVIEW-safety.md).
-- M3 discovery and library matching done (openhal/hub/discovery.py). Drivers batch 1 running.
-- M6 routine engine done on the server side (YAML and Python routines, triggers, dry runs with simulated waits, approvals for high hazard, stop disables routines, API routes). CLI and MCP parts come with the interfaces workstream.
+- M0, M1, M2 complete (see the reviews below). Independent safety review with 22 findings, all fixed.
+- M3 and M4. 17 Tier 1 drivers plus openhal-firmware, all passing conformance on simulators. Discovery and library matching.
+- M5. MCP server, CLI and Python client (interfaces workstream), plus token routes, server-side data blocks and the OpenAPI document.
+- M6. Routine engine with API routes.
+- M9 server side. The driver writer (sketch and manual parsing, limits interview, staged test plans, sessions and routes).
+- M10. The OpenHAL Arduino library, compiled for arduino:avr:uno and esp32:esp32:esp32, with its driver and a host build that runs conformance against the real C++.
+- Repository published at github.com/sohan-bhat/OpenHAL at the owner's request.
+- The protocol theme in docs/DESIGN.md, design/tokens.css and the Atkinson fonts. ADR 0015 for the JSON-RPC hub protocol.
+- The README per Part 16, with the animated flow diagram built from docs/diagrams/flow.d2 by scripts/build-diagrams, in light, dark and phone variants. Tooling recorded in docs/TOOLING.md.
 
 ## Next
 
-- Driver writer (M9), firmware library and protocol (M10), wiring the Pi stop button once rpi-gpio lands, then merge the three workstreams one at a time.
+- Merge protocol, spec and website one at a time as they hand back, then resume the Inspector.
+- Fix the SCPI driver's disconnect detection on Linux, which is the only CI failure (2 of 965 tests on ubuntu). Then restore the CI badge.
+- Remove code comments repo-wide after the open branches merge (owner rule).
+- docs/demo/scenario.yaml from a real hub run, with a consistency test.
+- Driver SDK commands (`openhal driver new`, `driver test`, `driver list`), Tier 2 and 3 drivers (M11), the starter library (M12), packaging (M13), the red-team suite, verification and handoff.
 
 ## Milestone 2 review
 

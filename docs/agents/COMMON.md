@@ -17,5 +17,6 @@
   - Never use port 4000. Headless browsers only.
   - Write temp files only in your own scratch folder.
 - Keep at least 2.5 GB of disk free.
+- No comments in code. Don't write `#`, `//` or `/* */` comments, and remove existing ones in files you own. Keep docstrings, and keep the directives tools need (`# noqa`, `# type: ignore`, `// eslint-disable`, shebangs).
 - Method names, error codes and terms come from docs/adr/0015-openhal-hub-protocol.md and must match it exactly.
 - Your final message is your full report: files, tests, decisions, open issues and contract change proposals. The harness may block you from writing report files.

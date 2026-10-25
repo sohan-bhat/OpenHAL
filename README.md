@@ -1,18 +1,20 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/wordmark-dark.svg">
-  <img alt="OpenHAL" src="docs/assets/wordmark-light.svg" height="52">
+  <img alt="OpenHAL" src="docs/assets/wordmark-light.svg" height="44">
 </picture>
 
-An open layer between AI agents and real hardware, with a safety kernel that checks every write.
+An open protocol and hub that lets AI agents control real hardware, with a safety kernel that checks every write.
 
-[![License](https://img.shields.io/github/license/sohan-bhat/OpenHAL?color=555)](LICENSE) [![CI](https://img.shields.io/github/actions/workflow/status/sohan-bhat/OpenHAL/ci.yml?branch=main&label=CI)](https://github.com/sohan-bhat/OpenHAL/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/sohan-bhat/OpenHAL?color=555)](LICENSE)
+
+v0.1, in development. Drivers are tested on simulators; hardware verification is in progress.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/demo-dark.gif">
-  <img alt="Demo with a simulated fan. An agent asks to set fan_speed to 150 percent. The limit line shows the request past the 100 percent maximum and the kernel answers Blocked, the fan_speed limit is 100 percent. The agent then asks for 60 percent, the kernel answers Done, the fan speed reads 60 percent and the room temperature falls from 30.1 to 26.9 degrees Celsius." src="docs/assets/demo-light.gif" width="800">
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="docs/diagrams/flow-narrow-dark.svg">
+  <source media="(max-width: 600px)" srcset="docs/diagrams/flow-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/flow-dark.svg">
+  <img src="docs/diagrams/flow-light.svg" width="900" alt="OpenHAL flow: an AI client sends hal/write to the hub; the safety kernel checks it against the device file's limits; allowed commands go through the driver to the device, and over-limit commands are blocked with LIMIT_EXCEEDED.">
 </picture>
-
-v0.1, in development. Drivers are tested on simulators, and hardware verification is in progress.
 
 ## Quickstart
 
@@ -24,16 +26,23 @@ uv run openhald
 
 The hub starts on `127.0.0.1:7420` with a simulated desk fan, ready for an MCP client ([setup](docs/interfaces/MCP.md)).
 
+## Message trace
+
+```
+→ hal/write    { "device": "desk-fan", "channel": "fan_speed", "value": "150 %" }
+← error -32010 LIMIT_EXCEEDED
+               fan_speed 150 % exceeds the limit of 100 %
+               (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)
+
+→ hal/write    { "device": "desk-fan", "channel": "fan_speed", "value": "60 %" }
+← result       { "status": "done", "value": 60, "unit": "%" }
+```
+
 ## What it does
 
 - **One device file format.** A `.hal.yaml` file says what a device can read and change, with units and limits a person confirmed.
 - **One safety kernel.** Every write is checked for range, rate, interlocks and confirmation before any driver can act.
 - **Drivers for whole device families.** One SCPI driver covers bench instruments and one Moonraker driver covers Klipper printers.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/architecture-dark.svg">
-  <img alt="How one write flows through OpenHAL. An MCP client asks for fan_speed 150 percent and then 60 percent. The device file supplies a maximum of 100 percent and a rate of 20 percent per second. The safety kernel's limit-line gauge shows the current value of 20 percent, the maximum, and both requests. 150 percent is blocked as above_max. 60 percent is granted, the driver uses the single-use grant, the device applies it and reports fan_speed 60 percent back to the client. Example devices are a Klipper printer via Moonraker, an SCPI multimeter via VISA, an ESP32 board via the OpenHAL firmware and Home Assistant plugs." src="docs/assets/architecture-light.svg" width="880">
-</picture>
 
 ## Supported devices
 
@@ -74,7 +83,7 @@ Details in [docs/SAFETY.md](docs/SAFETY.md).
 
 ## Relationship to Anthropic's MHS
 
-Anthropic's Model Hardware Standard is a limited research preview for invited labs. OpenHAL is open source and usable today, and we plan to stay compatible with MHS as it opens up ([mapping](spec/MHS-MAPPING.md)).
+Anthropic's Model Hardware Standard is a limited research preview for invited labs, and OpenHAL is not affiliated with it or with Anthropic. OpenHAL is an open protocol you can use today, and we plan to stay compatible with MHS as it opens up ([mapping](spec/MHS-MAPPING.md)).
 
 ## Contributing
 

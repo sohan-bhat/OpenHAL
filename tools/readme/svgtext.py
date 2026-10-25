@@ -17,9 +17,8 @@ from fontTools.varLib import instancer
 
 FONTS = Path(__file__).resolve().parents[2] / "design" / "fonts"
 FACES = {
-    "label": "sofia-sans-condensed-latin-wght-normal.woff2",
     "text": "atkinson-hyperlegible-next-latin-wght-normal.woff2",
-    "mono": "martian-mono-latin-wght-normal.woff2",
+    "mono": "atkinson-hyperlegible-mono-latin-wght-normal.woff2",
 }
 
 
