@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import datetime as dt
 import time
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -83,14 +84,29 @@ def limit_text(kernel_code: str | None, limit: dict[str, Any] | None) -> str | N
     return f"{text}/s" if key == "rate_per_s" else text
 
 
-def requested(file: DeviceFile | None, channel: str | None, raw: Any) -> str | None:
+@dataclass(frozen=True, slots=True)
+class Facts:
+    """What a device file says about one target, enough to build its errors away from the hub.
+
+    `limits` holds the file's own `max`, `min` and `rate_per_s` in `unit`. The MCP server fills this
+    from hal/devices/describe, the hub fills it from the loaded file.
+    """
+
+    file: str | None = None
+    confirmed_by: str | None = None
+    confirmed_at: str | None = None
+    unit: str | None = None
+    number: bool = False
+    limits: dict[str, float] = field(default_factory=dict)
+
+
+def requested(facts: Facts | None, raw: Any) -> str | None:
     """The requested value in the channel's unit, as `150 %`, or as sent when it can't be converted."""
     if raw is None:
         return None
-    spec = file.write.get(channel) if file is not None and channel is not None else None
-    if spec is not None and spec.type == "number" and spec.unit and isinstance(raw, str | dict):
+    if facts is not None and facts.number and facts.unit and isinstance(raw, str | dict):
         try:
-            return format_quantity(convert(parse_quantity(raw), spec.unit), spec.unit)
+            return format_quantity(convert(parse_quantity(raw), facts.unit), facts.unit)
         except UnitError:
             return str(raw)
     if isinstance(raw, bool):
@@ -98,27 +114,11 @@ def requested(file: DeviceFile | None, channel: str | None, raw: Any) -> str | N
     return str(raw)
 
 
-def _file_limit(file: DeviceFile, channel: str, kernel_code: str) -> dict[str, Any] | None:
-    spec = file.write.get(channel)
-    key = _LIMIT_KEYS.get(kernel_code)
-    if spec is None or spec.unit is None or key not in _SPEC_KEYS:
-        return None
-    value = getattr(spec, _SPEC_KEYS[key])
-    return None if value is None else {key: value, "unit": spec.unit}
-
-
-def _is_session_limit(file: DeviceFile, channel: str | None, limit: dict[str, Any] | None) -> bool:
+def _is_session_limit(facts: Facts, limit: dict[str, Any] | None) -> bool:
     """True when the limit that applied is tighter than the file's own, so a principal set it."""
-    if channel is None or not limit:
+    if not limit:
         return False
-    spec = file.write.get(channel)
-    if spec is None:
-        return False
-    for key, attribute in _SPEC_KEYS.items():
-        own = getattr(spec, attribute)
-        if key in limit and own is not None and limit[key] != own:
-            return True
-    return False
+    return any(key in limit and own != limit[key] for key, own in facts.limits.items())
 
 
 def target_parts(target: str | None) -> tuple[str | None, str | None]:
@@ -138,6 +138,71 @@ def principal_name(label: str | None) -> str | None:
     return label.partition(":")[2] or label
 
 
+def build_error(
+    kernel_code: str | None,
+    *,
+    device: str | None,
+    target: str | None = None,
+    facts: Facts | None = None,
+    kernel_message: str | None = None,
+    raw_value: Any = None,
+    limit: dict[str, Any] | None = None,
+    request_id: str | None = None,
+    principal: str | None = None,
+) -> RpcError:
+    """A registry error for a kernel block, from plain facts. The hub and the MCP server both use it.
+
+    `limit` is the kernel's limit, when the decision carried one. Without it the file's own limit is
+    used. `principal` is the label of whoever sent the command, named when its session limit applied.
+    """
+    channel, action = target_parts(target)
+    key = _LIMIT_KEYS.get(kernel_code or "")
+    if limit is None and facts is not None and key in ("max", "min") and key in facts.limits:
+        limit = {key: facts.limits[key], "unit": facts.unit}
+    data: dict[str, Any] = {
+        "kernelMessage": kernel_message,
+        "device": device,
+        "channel": channel,
+        "action": action,
+        "requested": requested(facts, raw_value) if channel is not None else None,
+        "limit": limit_text(kernel_code, limit),
+        "requestId": request_id,
+    }
+    if facts is not None and from_kernel(kernel_code).name in PROVENANCE_NAMES:
+        if _is_session_limit(facts, limit):
+            data["tightenedBy"] = principal_name(principal) or "this client"
+        else:
+            data["file"] = facts.file
+            data["confirmedBy"] = facts.confirmed_by
+            data["confirmedAt"] = facts.confirmed_at
+    return from_kernel(kernel_code, data)
+
+
+def facts_for(hub: Hub, device: str | None, target: str | None) -> Facts | None:
+    """The facts for one target of a registered device."""
+    runtime = hub.kernel.devices.get(device or "")
+    if runtime is None:
+        return None
+    file = runtime.file
+    channel, action = target_parts(target)
+    confirmed = confirmation(file, channel, action)
+    spec = file.write.get(channel) if channel is not None else None
+    limits: dict[str, float] = {}
+    if spec is not None:
+        for key, attribute in _SPEC_KEYS.items():
+            value = getattr(spec, attribute)
+            if value is not None:
+                limits[key] = value
+    return Facts(
+        file=file_name(hub, file.device_id),
+        confirmed_by=confirmed.by if confirmed is not None else None,
+        confirmed_at=when(confirmed.at) if confirmed is not None else None,
+        unit=spec.unit if spec is not None else None,
+        number=spec is not None and spec.type == "number",
+        limits=limits,
+    )
+
+
 def kernel_error(
     hub: Hub,
     kernel_code: str | None,
@@ -150,35 +215,18 @@ def kernel_error(
     request_id: str | None = None,
     principal: str | None = None,
 ) -> RpcError:
-    """A registry error for a kernel block, with every data field the hub can fill in.
-
-    `limit` is the kernel's limit, when the decision carried one. Without it the file's own limit is
-    used. `principal` is the label of whoever sent the command, named when its session limit applied.
-    """
-    channel, action = target_parts(target)
-    runtime = hub.kernel.devices.get(device or "")
-    file = runtime.file if runtime is not None else None
-    if file is not None and channel is not None and limit is None and kernel_code:
-        limit = _file_limit(file, channel, kernel_code)
-    data: dict[str, Any] = {
-        "kernelMessage": kernel_message,
-        "device": device,
-        "channel": channel,
-        "action": action,
-        "requested": requested(file, channel, raw_value),
-        "limit": limit_text(kernel_code, limit),
-        "requestId": request_id,
-    }
-    name = from_kernel(kernel_code).name
-    if file is not None and name in PROVENANCE_NAMES:
-        if _is_session_limit(file, channel, limit):
-            data["tightenedBy"] = principal_name(principal) or "this client"
-        else:
-            confirmed = confirmation(file, channel, action)
-            data["file"] = file_name(hub, file.device_id)
-            data["confirmedBy"] = confirmed.by if confirmed is not None else None
-            data["confirmedAt"] = when(confirmed.at) if confirmed is not None else None
-    return from_kernel(kernel_code, data)
+    """A registry error for a kernel block, with every data field the hub can fill in."""
+    return build_error(
+        kernel_code,
+        device=device,
+        target=target,
+        facts=facts_for(hub, device, target),
+        kernel_message=kernel_message,
+        raw_value=raw_value,
+        limit=limit,
+        request_id=request_id,
+        principal=principal,
+    )
 
 
 def raw_value(command: Command | None) -> Any:
