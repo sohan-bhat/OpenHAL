@@ -16,6 +16,8 @@ An open-source protocol for AI agents to control hardware.
 
 ## Quickstart
 
+You need [uv](https://docs.astral.sh/uv/) and git. Nothing touches hardware.
+
 ```
 git clone https://github.com/sohan-bhat/OpenHAL
 cd OpenHAL
@@ -51,6 +53,15 @@ You'll see the hub refuse a 120 s watering, hold the pump while the tank is empt
 <!-- trace:end -->
 
 The trace is a real run of the hub against the simulated [plant waterer](examples/plant-waterer/), recorded in [docs/demo/scenario.yaml](docs/demo/scenario.yaml).
+
+## Install
+
+```
+uv tool install --compile-bytecode git+https://github.com/sohan-bhat/OpenHAL
+openhal init
+```
+
+`openhal init` sets up the hub, adds the devices it finds as read-only files and prints the setup for Claude Desktop, Claude Code or Cursor. [The install guide](docs/guide/install.md) covers pipx, the background service and Raspberry Pi.
 
 ## What it does
 
