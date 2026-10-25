@@ -122,7 +122,9 @@ class Session:
         elif program == "claude":
             result = self.check_claude(words)
         else:
-            raise SnippetError(f"The snippet runner doesn't know how to run {program!r}. Add support or drop the tested mark.")
+            raise SnippetError(
+                f"The snippet runner doesn't know how to run {program!r}. Add support or drop the tested mark."
+            )
         if redirect is not None:
             lines = [item for item in result.output.splitlines() if item.strip()]
             redirect.write_text("\n".join(lines[-(tail or 1) :]) + "\n", encoding="utf-8")
@@ -132,10 +134,10 @@ class Session:
     def openhal(self, args: list[str]) -> Result:
         phrase = next((value for key, value in PHRASES.items() if tuple(args[: len(key)]) == key), None)
         with self.environment(), contextlib.chdir(self.workdir), contextlib.ExitStack() as stack:
-            stack.enter_context(mock.patch("getpass.getuser", lambda: "owner"))
+            stack.enter_context(mock.patch("getpass.getuser", return_value="owner"))
             if phrase is not None:
-                stack.enter_context(mock.patch.object(_tty, "interactive", lambda: True))
-                stack.enter_context(mock.patch.object(_tty, "read_phrase", lambda prompt: phrase))
+                stack.enter_context(mock.patch.object(_tty, "interactive", return_value=True))
+                stack.enter_context(mock.patch.object(_tty, "read_phrase", return_value=phrase))
             result = self.runner.invoke(app, args, catch_exceptions=False)
         return Result("openhal " + shlex.join(args), result.exit_code, self.tidy(result.output))
 
@@ -153,7 +155,7 @@ class Session:
         for arg in args:
             if not arg.startswith("-") and not (ROOT / arg.split("::")[0]).exists():
                 raise SnippetError(f"pytest target {arg} doesn't exist in the repository.")
-        done = subprocess.run(  # noqa: S603 (fixed program, arguments checked above)
+        done = subprocess.run(
             [sys.executable, "-m", "pytest", *args, "-p", "no:cacheprovider"],
             cwd=ROOT,
             capture_output=True,

@@ -31,7 +31,9 @@ STORY: list[dict[str, Any]] = [
     },
     {
         "id": "confirm",
-        "caption": "A person confirms the fan's limits. Until then the file is read-only, and an agent can never confirm.",
+        "caption": (
+            "A person confirms the fan's limits. Until then the file is read-only, and an agent can never confirm."
+        ),
         "kind": "cli",
         "commands": ["openhal file confirm ~/.openhal/devices/demo-fan.hal.yaml --by owner"],
     },
@@ -125,7 +127,7 @@ def generate() -> list[dict[str, Any]]:
 VOLATILE = [
     (re.compile(r"\d{4}-\d{2}-\d{2}(T[0-9:.+Z-]+)?"), "<date>"),
     (re.compile(r'"value": -?\d+(\.\d+)?'), '"value": <n>'),
-    (re.compile(r"\d+(\.\d+)? (degC|°C)"), "<n> degC"),
+    (re.compile(r"\d+(\.\d+)?(?=\s+(degC|°C))"), "<n>"),
     (re.compile(r"\b[0-9a-f]{12,64}\b"), "<hex>"),
     (re.compile(r"\b\d+(\.\d+)?\s*s\b"), "<n> s"),
     (re.compile(r"\b(tok|id)_[A-Za-z0-9]+\b"), "<id>"),

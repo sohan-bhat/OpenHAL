@@ -79,13 +79,15 @@ def run_shell(session: Session, snippet: Snippet) -> None:
         else:
             assert result.code == 0, f"{command} exited {result.code}.\n{result.output}"
         for line in expected:
-            assert squash(line) in squash(result.output), f"{command} didn't print {line!r}.\nIt printed\n{result.output}"
+            assert squash(line) in squash(result.output), (
+                f"{command} didn't print {line!r}.\nIt printed\n{result.output}"
+            )
 
 
 def run_python(session: Session, snippet: Snippet) -> None:
     out = io.StringIO()
     with session.environment(), contextlib.chdir(session.workdir), contextlib.redirect_stdout(out):
-        exec(compile(snippet.body, f"{snippet.source.name}:{snippet.line}", "exec"), {"__name__": "__snippet__"})  # noqa: S102
+        exec(compile(snippet.body, f"{snippet.source.name}:{snippet.line}", "exec"), {"__name__": "__snippet__"})
 
 
 def run_yaml(session: Session, snippet: Snippet) -> None:
@@ -103,10 +105,19 @@ def run_json(session: Session, snippet: Snippet) -> None:
     assert server["args"][0] == "mcp"
 
 
-RUNNERS = {"sh": run_shell, "bash": run_shell, "console": run_shell, "python": run_python, "yaml": run_yaml, "json": run_json}
+RUNNERS = {
+    "sh": run_shell,
+    "bash": run_shell,
+    "console": run_shell,
+    "python": run_python,
+    "yaml": run_yaml,
+    "json": run_json,
+}
 
 
-@pytest.mark.parametrize("path", [path for path in SOURCES if path not in NOT_OURS], ids=lambda path: str(path.relative_to(ROOT)))
+@pytest.mark.parametrize(
+    "path", [path for path in SOURCES if path not in NOT_OURS], ids=lambda path: str(path.relative_to(ROOT))
+)
 def test_document_snippets_run(path: Path, tmp_path: Path) -> None:
     session = Session(tmp_path / "home")
     try:
@@ -116,7 +127,9 @@ def test_document_snippets_run(path: Path, tmp_path: Path) -> None:
             try:
                 RUNNERS[snippet.language](session, snippet)
             except (AssertionError, SnippetError, Exception) as exc:
-                raise AssertionError(f"{path.relative_to(ROOT)} line {snippet.line} ({snippet.language}) failed. {exc}") from exc
+                raise AssertionError(
+                    f"{path.relative_to(ROOT)} line {snippet.line} ({snippet.language}) failed. {exc}"
+                ) from exc
     finally:
         session.close()
 
