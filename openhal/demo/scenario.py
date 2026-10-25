@@ -46,14 +46,19 @@ WAIT_S: Final = 15.0
 SCENARIO_PATH: Final = Path("docs") / "demo" / "scenario.yaml"
 
 
-def example_file() -> Path:
-    """The mock device file, from a checkout or from the installed package."""
+def example(*parts: str) -> Path:
+    """A file under examples/plant-waterer/, from a checkout or from the installed package."""
     package = Path(__file__).resolve().parents[1]
     for root in (package, package.parent):
-        candidate = root / "examples" / "plant-waterer" / "mock" / FILE_NAME
+        candidate = root.joinpath("examples", "plant-waterer", *parts)
         if candidate.is_file():
             return candidate
-    raise FileNotFoundError(f"examples/plant-waterer/mock/{FILE_NAME} is missing from this install.")
+    raise FileNotFoundError(f"examples/plant-waterer/{'/'.join(parts)} is missing from this install.")
+
+
+def example_file() -> Path:
+    """The mock device file, from a checkout or from the installed package."""
+    return example("mock", FILE_NAME)
 
 
 def water(seconds: float) -> dict[str, Any]:
