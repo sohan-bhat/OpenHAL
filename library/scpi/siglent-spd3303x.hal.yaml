@@ -1,0 +1,54 @@
+openhal: "0.1"
+device: { name: Siglent SPD3303X power supply, model: SPD3303X, manufacturer: Siglent }
+id: siglent-spd3303x
+match:
+  usb: ["0483:7540"]
+  usb_class: usbtmc
+  scpi_idn: "^Siglent Technologies, ?SPD3303X"
+connect: { scpi: auto, timeout: 2 s, termination: lf }
+read:
+  ch1_voltage: { unit: V, every: 1 s, range: [0, 33], map: { query: "MEAS:VOLT? CH1" } }
+  ch1_current: { unit: A, every: 1 s, range: [0, 3.3], map: { query: "MEAS:CURR? CH1" } }
+  ch2_voltage: { unit: V, every: 1 s, range: [0, 33], map: { query: "MEAS:VOLT? CH2" } }
+  ch2_current: { unit: A, every: 1 s, range: [0, 3.3], map: { query: "MEAS:CURR? CH2" } }
+write:
+  ch1_output: { type: bool, confirm: confirm-each-time, suggested: true, map: { set: "OUTP CH1,{on_off}" } }
+  ch2_output: { type: bool, confirm: confirm-each-time, suggested: true, map: { set: "OUTP CH2,{on_off}" } }
+actions:
+  set_ch1_voltage:
+    description: Set the channel 1 voltage.
+    args:
+      volts: { unit: V, min: 0, max: 5, step: 0.001 }
+    confirm: confirm-each-time
+    suggested: true
+    map: { command: "CH1:VOLT {volts}" }
+  set_ch1_current:
+    description: Set the channel 1 current limit.
+    args:
+      amps: { unit: A, min: 0, max: 0.5, step: 0.001 }
+    confirm: confirm-each-time
+    suggested: true
+    map: { command: "CH1:CURR {amps}" }
+  set_ch2_voltage:
+    description: Set the channel 2 voltage.
+    args:
+      volts: { unit: V, min: 0, max: 5, step: 0.001 }
+    confirm: confirm-each-time
+    suggested: true
+    map: { command: "CH2:VOLT {volts}" }
+  set_ch2_current:
+    description: Set the channel 2 current limit.
+    args:
+      amps: { unit: A, min: 0, max: 0.5, step: 0.001 }
+    confirm: confirm-each-time
+    suggested: true
+    map: { command: "CH2:CURR {amps}" }
+safe_state:
+  - { ch1_output: false, ch2_output: false }
+hazard: medium
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The SPD3303X and SPD3303X-E give 32 V and 3.2 A on channels 1 and 2. This file starts at 5 V and 0.5 A.
+  The supply answers only lines that end in a newline. This file doesn't read the output state back, so
+  the hub shows the last state it set. Channel 3 is set on the front panel and isn't controlled here.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

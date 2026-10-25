@@ -1,0 +1,56 @@
+openhal: "0.1"
+device: { name: Rigol DP832 power supply, model: DP832, manufacturer: Rigol }
+id: rigol-dp832
+match:
+  usb: ["1ab1:0e11"]
+  usb_class: usbtmc
+  scpi_idn: "^RIGOL TECHNOLOGIES,DP832"
+connect: { scpi: auto, timeout: 2 s }
+read:
+  ch1_voltage: { unit: V, every: 1 s, range: [0, 32], map: { query: "MEAS:VOLT? CH1" } }
+  ch1_current: { unit: A, every: 1 s, range: [0, 3.2], map: { query: "MEAS:CURR? CH1" } }
+  ch2_voltage: { unit: V, every: 1 s, range: [0, 32], map: { query: "MEAS:VOLT? CH2" } }
+  ch2_current: { unit: A, every: 1 s, range: [0, 3.2], map: { query: "MEAS:CURR? CH2" } }
+  ch3_voltage: { unit: V, every: 1 s, range: [0, 5.3], map: { query: "MEAS:VOLT? CH3" } }
+  ch3_current: { unit: A, every: 1 s, range: [0, 3.2], map: { query: "MEAS:CURR? CH3" } }
+write:
+  ch1_output:
+    { type: bool, confirm: confirm-each-time, suggested: true, map: { set: "OUTP CH1,{on_off}", get: "OUTP? CH1" } }
+  ch2_output:
+    { type: bool, confirm: confirm-each-time, suggested: true, map: { set: "OUTP CH2,{on_off}", get: "OUTP? CH2" } }
+  ch3_output:
+    { type: bool, confirm: confirm-each-time, suggested: true, map: { set: "OUTP CH3,{on_off}", get: "OUTP? CH3" } }
+actions:
+  set_ch1:
+    description: Set the channel 1 voltage and current limit.
+    args:
+      volts: { unit: V, min: 0, max: 5, step: 0.01 }
+      amps: { unit: A, min: 0, max: 0.5, step: 0.001 }
+    confirm: confirm-each-time
+    suggested: true
+    map: { command: "APPL CH1,{volts},{amps}" }
+  set_ch2:
+    description: Set the channel 2 voltage and current limit.
+    args:
+      volts: { unit: V, min: 0, max: 5, step: 0.01 }
+      amps: { unit: A, min: 0, max: 0.5, step: 0.001 }
+    confirm: confirm-each-time
+    suggested: true
+    map: { command: "APPL CH2,{volts},{amps}" }
+  set_ch3:
+    description: Set the channel 3 voltage and current limit.
+    args:
+      volts: { unit: V, min: 0, max: 3.3, step: 0.01 }
+      amps: { unit: A, min: 0, max: 0.5, step: 0.001 }
+    confirm: confirm-each-time
+    suggested: true
+    map: { command: "APPL CH3,{volts},{amps}" }
+safe_state:
+  - { ch1_output: false, ch2_output: false, ch3_output: false }
+hazard: medium
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The DP832 gives 30 V and 3 A on channels 1 and 2 and 5 V and 3 A on channel 3. This file starts at 5 V
+  and 0.5 A on channels 1 and 2 and 3.3 V and 0.5 A on channel 3. Raise each limit only to what the circuit
+  on that channel can take.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

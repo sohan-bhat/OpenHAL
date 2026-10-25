@@ -1,0 +1,36 @@
+openhal: "0.1"
+device: { name: Rigol DS1054Z oscilloscope, model: DS1054Z, manufacturer: Rigol }
+id: rigol-ds1054z
+match:
+  usb: ["1ab1:04ce"]
+  usb_class: usbtmc
+  scpi_idn: "^RIGOL TECHNOLOGIES,DS1054Z"
+connect: { scpi: auto, timeout: 3 s }
+read:
+  trigger_status:
+    type: enum
+    values: [triggered, waiting, running, auto, stopped]
+    every: 1 s
+    map: { query: ":TRIG:STAT?", lookup: { TD: triggered, WAIT: waiting, RUN: running, AUTO: auto, STOP: stopped } }
+  ch1_vpp: { unit: V, every: 2 s, range: [0, 400], map: { query: ":MEAS:ITEM? VPP,CHAN1" } }
+  ch1_frequency: { unit: Hz, every: 2 s, range: [0, 100000000], map: { query: ":MEAS:ITEM? FREQ,CHAN1" } }
+actions:
+  run:
+    description: Start acquiring.
+    suggested: true
+    map: { command: ":RUN" }
+  stop:
+    description: Stop acquiring and keep the last waveform on screen.
+    suggested: true
+    map: { command: ":STOP" }
+  single:
+    description: Capture one trigger and stop.
+    suggested: true
+    map: { command: ":SING" }
+safe_state_note: "An oscilloscope has nothing to make safe. A stop leaves the scope as it is."
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  A measurement the scope can't make reads as 9.9E37, which falls outside the range and is marked suspect.
+  The DS1000Z family shares the USB id 1ab1 04ce, so the hub checks the IDN reply when it connects.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

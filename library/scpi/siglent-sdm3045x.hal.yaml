@@ -1,0 +1,19 @@
+openhal: "0.1"
+device: { name: Siglent SDM3045X multimeter, model: SDM3045X, manufacturer: Siglent }
+id: siglent-sdm3045x
+match:
+  usb: ["f4ec:ee38"]
+  usb_class: usbtmc
+  scpi_idn: "^Siglent Technologies, ?SDM3045X"
+connect: { scpi: auto, timeout: 5 s }
+read:
+  dc_voltage: { unit: V, every: 2 s, range: [-1000, 1000], map: { query: "MEAS:VOLT:DC?" } }
+  dc_current: { unit: A, range: [-10, 10], map: { query: "MEAS:CURR:DC?" } }
+  resistance: { unit: ohm, map: { query: "MEAS:RES?" } }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  This file only reads. Each MEAS query changes the function and range, so only the DC voltage is polled.
+  Read current and resistance on request with the test leads in the right jacks. Siglent uses the USB id
+  f4ec ee38 for several meters and scopes, so the hub checks the IDN reply when it connects.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }
