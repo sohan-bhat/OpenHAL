@@ -1,70 +1,52 @@
-# OpenHAL
+<h1 align="center">OpenHAL</h1>
 
-The Open Hardware Abstraction Layer. AI agents read and control real hardware through OpenHAL, and a deterministic safety kernel decides every change before it reaches a device.
+<h3 align="center">One open layer between AI agents and real hardware.</h3>
+
+<p align="center">Agents read and control your devices. A safety kernel checks every change first.</p>
+
+<p align="center">
+  <a href="#quickstart"><img alt="Python 3.12+" src="https://img.shields.io/badge/python-3.12%2B-2D5B8C?logo=python&logoColor=white"></a>
+  <a href="docs/interfaces/MCP.md"><img alt="MCP server" src="https://img.shields.io/badge/MCP-server-15181B"></a>
+  <a href="docs/drivers/COVERAGE.md"><img alt="Drivers" src="https://img.shields.io/badge/drivers-17%20protocols-276B43"></a>
+  <a href="#quickstart"><img alt="Platforms" src="https://img.shields.io/badge/runs%20on-macOS%20%7C%20Raspberry%20Pi-2B3035"></a>
+  <a href="LICENSE"><img alt="License Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-F2B705"></a>
+  <img alt="Status" src="https://img.shields.io/badge/status-v0.1%20in%20development-B3261E">
+</p>
 
 ```
 $ openhal write demo-fan.fan_speed 150%
 blocked above_max  Blocked. The fan_speed limit is 100 % (max). Asked for 150 %.
-$ openhal write demo-fan.fan_speed 20%
-done  Done. fan_speed is now 20 %.
 ```
-
-OpenHAL is open source (Apache-2.0) and runs on your own machine. It works with any MCP client (Claude, ChatGPT, Cursor and others), a command line and a Python library.
-
-## How it works
-
-1. **Devices are described in files.** A `.hal.yaml` file lists what a device can read and change, with units and limits. Drivers speak the protocols (serial, SCPI, Modbus, MQTT, BLE, MIDI, HID, Klipper, Home Assistant and more).
-2. **One hub owns every device.** `openhald` holds the connections and the safety kernel. The MCP server, the CLI, the Python library and the dashboard are all clients of its local API.
-3. **The kernel decides.** Every write and action is checked against units, ranges, rate limits, interlocks, watchdogs and confirmation rules. A driver can only change hardware with a single-use grant the kernel issues for that exact command. Stop works in one call and puts every device in its safe state.
-
-Limits come from a person. A device file stays read-only until someone confirms its limits, and nothing an AI proposes can confirm them.
-
-## Status
-
-Version 0.1 is in development. The spec, the safety kernel, the hub and its API, the MCP server, CLI and Python library, 17 Tier 1 drivers, the driver writer and the Arduino library are built and tested against simulators. The dashboard, the website, the device library and packaging are in progress. Nothing has been verified on real hardware yet, and every driver's hardware test plan is in `docs/hardware-tests/`.
 
 ## Quickstart
 
-Requires Python 3.12 or newer and [uv](https://docs.astral.sh/uv/), on macOS or Raspberry Pi OS (64-bit).
-
 ```
-git clone https://github.com/sohan-bhat/OpenHAL.git
-cd OpenHAL
+git clone https://github.com/sohan-bhat/OpenHAL.git && cd OpenHAL
 uv sync --all-extras
 uv run openhal init
 uv run openhald
 ```
 
-In a second terminal.
+Then, in a second terminal.
 
 ```
-uv run openhal status
 uv run openhal read demo-fan.temperature
 ```
 
-`openhal init` installs a simulated desk fan, so all of this runs without hardware. It starts read-only. Run `uv run openhal file confirm ~/.openhal/devices/demo-fan.hal.yaml` to confirm its limits, restart `openhald`, and writes work. To use it from Claude Desktop or another MCP client, see `docs/interfaces/MCP.md`.
+`init` adds a simulated desk fan, so no hardware is needed. To connect Claude or another MCP client, see [docs/interfaces/MCP.md](docs/interfaces/MCP.md).
 
-## Repository
+## How it works
 
-| Path | What it holds |
-|---|---|
-| `spec/` | The device file spec, its JSON Schema, examples and the firmware protocol |
-| `openhal/kernel/` | The safety kernel |
-| `openhal/hub/` | The hub daemon and its local API |
-| `openhal/drivers/` | Protocol drivers and bridges |
-| `openhal/writer/` | The driver writer, from an unknown device to a confirmed file |
-| `openhal/mcp/`, `openhal/cli/`, `openhal/client/` | The MCP server, command line and Python library |
-| `firmware/arduino/OpenHAL/` | The Arduino and ESP32 library |
-| `docs/` | Safety model, threat model, architecture, decisions and driver docs |
+- **Device files** describe what a device can read and change, with units and limits.
+- **Drivers** speak the protocols. Serial, SCPI, Modbus, MQTT, BLE, MIDI, HID, Klipper, Home Assistant and more.
+- **The safety kernel** checks ranges, rates, interlocks and confirmations, and a stop puts every device in its safe state.
 
-## Development
+A device stays read-only until a person confirms its limits. An AI can never confirm them.
 
-```
-uv run pytest
-uv run ruff check openhal tests
-uv run mypy openhal
-```
+## Docs
+
+[Safety model](docs/SAFETY.md) · [Architecture](docs/ARCHITECTURE.md) · [Device file spec](spec/SPEC.md) · [Drivers](docs/drivers/COVERAGE.md) · [CLI](docs/interfaces/CLI.md) · [Python](docs/interfaces/PYTHON.md) · [Arduino library](firmware/arduino/OpenHAL/README.md)
 
 ## License
 
-Apache-2.0. See `LICENSE`.
+Apache-2.0
