@@ -1,0 +1,50 @@
+{
+  "device_file": {
+    "id": "demo-fan",
+    "max": 100.0,
+    "rate": 20,
+    "unit": "%"
+  },
+  "before": {
+    "fan_speed": 20.0,
+    "temperature": 30.1
+  },
+  "requests": [
+    {
+      "by": "claude (agent)",
+      "value": "150 %",
+      "status": "blocked",
+      "code": "above_max",
+      "message": "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %."
+    },
+    {
+      "by": "claude (agent)",
+      "value": "60 %",
+      "status": "done",
+      "code": null,
+      "message": "Done. fan_speed is now 60 %."
+    }
+  ],
+  "after": [
+    {
+      "t": 1.0,
+      "fan_speed": 60.0,
+      "temperature": 28.2
+    },
+    {
+      "t": 2.0,
+      "fan_speed": 60.0,
+      "temperature": 27.3
+    },
+    {
+      "t": 3.0,
+      "fan_speed": 60.0,
+      "temperature": 27.0
+    },
+    {
+      "t": 4.0,
+      "fan_speed": 60.0,
+      "temperature": 26.9
+    }
+  ]
+}
