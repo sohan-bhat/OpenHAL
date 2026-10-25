@@ -30,7 +30,7 @@
   const scaleMax = $derived(max + span * 0.2);
   const pct = (point: number) => ((point - scaleMin) / (scaleMax - scaleMin)) * 100;
   const middle = $derived(span >= 10 ? Math.round(min + span / 2) : min + span / 2);
-  const ticks = $derived([min, middle, max]);
+  const lowerLimit = $derived(min > scaleMin);
   const clamp = (point: number) => Math.min(Math.max(point, scaleMin), scaleMax);
 </script>
 
@@ -55,21 +55,23 @@
       {disabled}
       oninput={(event) => oninput((event.currentTarget as HTMLInputElement).value)}
     />
-    {#if min > scaleMin}
-      <div class="limit min" style="left: {pct(min)}%"><span>min {formatQuantity(min, unit, step)}</span></div>
-    {/if}
-    <div class="limit max" style="left: {pct(max)}%"><span>max {formatQuantity(max, unit, step)}</span></div>
+    {#if lowerLimit}<div class="limit" style="left: {pct(min)}%"></div>{/if}
+    <div class="limit" style="left: {pct(max)}%"></div>
   </div>
-  <div class="ticks" aria-hidden="true">
-    {#each ticks as tick (tick)}
-      <span style="left: {pct(tick)}%">{formatNumber(tick, step)}</span>
-    {/each}
+  <div class="ticks">
+    {#if lowerLimit}
+      <span class="limit-label min" style="left: {pct(min)}%">min {formatQuantity(min, unit, step)}</span>
+    {:else}
+      <span class="tick start" style="left: {pct(min)}%" aria-hidden="true">{formatNumber(min, step)}</span>
+    {/if}
+    <span class="tick" style="left: {pct(middle)}%" aria-hidden="true">{formatNumber(middle, step)}</span>
+    <span class="limit-label max" style="left: {pct(max)}%">max {formatQuantity(max, unit, step)}</span>
   </div>
 </div>
 
 <style>
   .meter {
-    padding: 22px 0 0;
+    padding: 8px 0 0;
   }
 
   .scale {
@@ -156,26 +158,11 @@
 
   .limit {
     position: absolute;
-    top: -22px;
-    bottom: -4px;
+    top: -6px;
+    bottom: -30px;
     width: 0;
+    margin-left: -1px;
     border-left: 2px solid var(--text);
-  }
-
-  .limit span {
-    position: absolute;
-    top: 0;
-    left: 6px;
-    font-family: var(--font-mono);
-    font-size: var(--t-label);
-    font-weight: 700;
-    white-space: nowrap;
-    line-height: 1;
-  }
-
-  .limit.max span {
-    left: auto;
-    right: 6px;
   }
 
   .now-tick {
@@ -191,7 +178,7 @@
 
   .ticks {
     position: relative;
-    height: 22px;
+    height: 30px;
     font-family: var(--font-mono);
     font-size: var(--t-label);
     color: var(--text-2);
@@ -199,9 +186,31 @@
 
   .ticks span {
     position: absolute;
-    top: 6px;
-    transform: translateX(-50%);
+    top: 10px;
     white-space: nowrap;
+    line-height: 1;
+  }
+
+  .tick {
+    transform: translateX(-50%);
+  }
+
+  .tick.start {
+    transform: none;
+  }
+
+  .limit-label {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .limit-label.min {
+    padding-left: 8px;
+  }
+
+  .limit-label.max {
+    padding-right: 8px;
+    transform: translateX(-100%);
   }
 
 </style>
