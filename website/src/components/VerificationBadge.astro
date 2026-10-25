@@ -7,24 +7,10 @@ interface Props {
 
 const { status } = Astro.props;
 const look = {
-  "verified-on-hardware": { lamp: "ok", word: "Verified on hardware" },
-  "tested-reads": { lamp: "warning", word: "Reads tested" },
-  unverified: { lamp: "unverified", word: "Unverified" },
+  "verified-on-hardware": { cls: "ok", word: "verified on hardware" },
+  "tested-reads": { cls: "unverified", word: "reads tested" },
+  unverified: { cls: "unverified", word: "unverified" },
 }[status];
 ---
 
-<span class={`badge ${status}`}><span class={`lamp ${look.lamp}`}>{look.word}</span></span>
-
-<style>
-  .badge {
-    display: inline-flex;
-    padding: 2px var(--s-2);
-    border: 1px solid var(--ink);
-    border-radius: var(--radius);
-  }
-
-  .badge.unverified {
-    border-style: dashed;
-    border-color: var(--ink-3);
-  }
-</style>
+<span class={`status ${look.cls}`}>{look.word}</span>

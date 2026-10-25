@@ -1,218 +1,105 @@
 ---
-import Base from "../../layouts/Base.astro";
 import VerificationBadge from "../../components/VerificationBadge.astro";
+import Base from "../../layouts/Base.astro";
 import { libraryEntries } from "../../lib/library";
 
 const entries = libraryEntries();
-const examples = import.meta.glob<string>("../../../../spec/examples/*.hal.yaml", { query: "?raw", import: "default", eager: true });
-const exampleCount = Object.keys(examples).length;
 ---
 
-<Base title="Device library" description="Shared OpenHAL device files, one per device model, each with a verification badge. CC0.">
+<Base title="Device Library" description="Shared OpenHAL device files, one per device model, each with its verification status.">
   <div class="wrap page">
     <header class="head">
-      <h1 class="page-title">Device library</h1>
-      <p class="lede">
-        Device files people have written and tested, one per model. When a hub finds a device it knows, it starts from the file here.
-        Files in the library are CC0, so anyone can copy them.
-      </p>
+      <h1>Device Library</h1>
+      <p class="lede">Device files for specific models, shared under CC0. A hub that finds a known device starts from its file here.</p>
     </header>
 
     {
       entries.length > 0 ? (
         <>
-          <p class="muted count">{entries.length} device files.</p>
-          <ul class="entries">
-            {entries.map((entry) => (
-              <li class="entry">
-                <div class="name">
-                  <a href={`/library/${entry.slug}/`}>{entry.title}</a>
-                  <code>{entry.path}</code>
-                </div>
-                <dl>
-                  <div>
-                    <dt class="legend">Driver</dt>
-                    <dd class="mono">{entry.driver || "not set"}</dd>
-                  </div>
-                  <div>
-                    <dt class="legend">Hazard</dt>
-                    <dd class="mono">{entry.hazard || "unknown"}</dd>
-                  </div>
-                  <div>
-                    <dt class="legend">Channels</dt>
-                    <dd class="mono">
+          <form class="filters" role="search" aria-label="Filter device files" data-filters>
+            <label class="field">
+              <span class="legend">Search</span>
+              <input type="search" name="q" placeholder="Model, manufacturer or driver" autocomplete="off" />
+            </label>
+          </form>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Device</th>
+                  <th scope="col">Driver</th>
+                  <th scope="col">Hazard</th>
+                  <th scope="col">Channels</th>
+                  <th scope="col">Verification</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((entry) => (
+                  <tr data-entry data-text={[entry.title, entry.manufacturer ?? "", entry.driver, entry.deviceId].join(" ").toLowerCase()}>
+                    <td data-label="Device">
+                      <a href={`/library/${entry.slug}/`}>{entry.title}</a>
+                    </td>
+                    <td data-label="Driver" class="mono">{entry.driver}</td>
+                    <td data-label="Hazard" class="mono">{entry.hazard}</td>
+                    <td data-label="Channels">
                       {entry.reads} read, {entry.writes} write, {entry.actions} actions
-                    </dd>
-                  </div>
-                </dl>
-                {entry.problems.length > 0 ? <span class="lamp blocked">Invalid</span> : <VerificationBadge status={entry.verification} />}
-              </li>
-            ))}
-          </ul>
+                    </td>
+                    <td data-label="Verification">
+                      {entry.problems.length > 0 ? <span class="status blocked">invalid</span> : <VerificationBadge status={entry.verification} />}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       ) : (
-        <section class="module empty" aria-labelledby="empty-title">
-          <p class="module-legend legend">
-            <span>Library</span>
-          </p>
-          <h2 id="empty-title" class="section-title">No device files yet</h2>
-          <p>
-            The shared library opens with the first contributed files. The site lists every file under <code>library/</code> in the
-            repository as soon as it lands, each with its verification badge.
-          </p>
-          <ol>
-            <li>
-              Write a device file for your device. <a href="/docs/contributing-a-device-file/">The guide</a> walks through it.
-            </li>
-            <li>
-              Check it in the <a href="/playground/">playground</a> or with <code>openhal file validate</code>.
-            </li>
-            <li>Test the reads on the real device, then each write at its smallest value.</li>
-            <li>
-              Open a pull request that adds it under <code>library/</code>, with the verification status you reached.
-            </li>
-          </ol>
-          <p class="muted">
-            Until then, the {exampleCount} files in <code>spec/examples/</code> show the format for printers, bench supplies, lasers, sensors
-            and more. They are in the playground's example list.
-          </p>
-        </section>
+        <p class="empty">
+          No device files are in the library yet. <a href="/docs/tutorials/add-a-device/">Add a device</a> to contribute the first one.
+        </p>
       )
     }
-
-    <section class="badges" aria-labelledby="badges-title">
-      <h2 id="badges-title" class="section-title">Verification badges</h2>
-      <dl>
-        <div>
-          <dt><VerificationBadge status="unverified" /></dt>
-          <dd>Nobody has run the file against the real device yet.</dd>
-        </div>
-        <div>
-          <dt><VerificationBadge status="tested-reads" /></dt>
-          <dd>Every read channel was checked on the real device.</dd>
-        </div>
-        <div>
-          <dt><VerificationBadge status="verified-on-hardware" /></dt>
-          <dd>Reads, writes and the safe state were checked on the real device, and the file names the report.</dd>
-        </div>
-      </dl>
-    </section>
   </div>
 </Base>
 
+<script>
+  const form = document.querySelector<HTMLFormElement>("[data-filters]");
+  const rows = [...document.querySelectorAll<HTMLElement>("[data-entry]")];
+  form?.addEventListener("input", () => {
+    const words = String(new FormData(form).get("q") ?? "").toLowerCase().split(/\s+/).filter(Boolean);
+    for (const row of rows) row.hidden = !words.every((word) => (row.dataset.text ?? "").includes(word));
+  });
+  form?.addEventListener("submit", (event) => event.preventDefault());
+</script>
+
 <style>
   .page {
-    padding-top: var(--s-7);
+    padding-top: var(--s-6);
   }
 
   .head {
-    padding-bottom: var(--s-5);
-    margin-bottom: var(--s-7);
-    border-bottom: 1px solid var(--ink);
+    display: grid;
+    gap: var(--s-2);
+    padding-bottom: var(--s-4);
+    margin-bottom: var(--s-5);
+    border-bottom: var(--rule);
   }
 
   .lede {
-    margin-top: var(--s-3);
-    max-width: 70ch;
+    max-width: var(--measure);
   }
 
-  .count {
+  .filters {
+    max-width: 420px;
     margin-bottom: var(--s-4);
   }
 
-  .entries {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .entry {
+  .field {
     display: grid;
-    gap: var(--s-2);
-    padding: var(--s-4) 0;
-    border-top: 1px solid var(--rule);
+    gap: var(--s-1);
   }
 
-  .name {
-    display: grid;
-    gap: 2px;
-  }
-
-  .name a {
-    font-weight: 700;
-  }
-
-  .name code {
-    font-size: var(--t-0);
-    color: var(--ink-2);
-  }
-
-  dl {
-    margin: 0;
-  }
-
-  .entry dl {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-1) var(--s-5);
-  }
-
-  .entry dt {
-    color: var(--ink-2);
-  }
-
-  .entry dd {
-    margin: 0;
-    font-size: var(--t-2);
-  }
-
-  .empty {
-    max-width: 72ch;
-    padding-top: var(--s-6);
-    display: grid;
-    gap: var(--s-4);
-  }
-
-  .empty ol {
-    margin: 0;
-    padding-left: var(--s-5);
-    display: grid;
-    gap: var(--s-2);
-  }
-
-  .empty code {
-    font-size: 0.86em;
-  }
-
-  .badges {
-    margin-top: var(--s-8);
-  }
-
-  .badges dl {
-    margin-top: var(--s-4);
-    display: grid;
-    gap: var(--s-3);
-  }
-
-  .badges dl > div {
-    display: grid;
-    gap: var(--s-2);
-  }
-
-  .badges dd {
-    margin: 0;
-    color: var(--ink-2);
-  }
-
-  @media (min-width: 768px) {
-    .entry {
-      grid-template-columns: 2fr 3fr auto;
-      align-items: center;
-    }
-
-    .badges dl > div {
-      grid-template-columns: 240px 1fr;
-      align-items: center;
-    }
+  .field input {
+    width: 100%;
   }
 </style>
