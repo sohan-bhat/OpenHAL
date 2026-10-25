@@ -10,6 +10,7 @@ import {
   formatDateTime,
   formatDuration,
   formatQuantity,
+  formatTrigger,
   formatValue,
   identifiersOf,
   isQuantity,
@@ -195,6 +196,14 @@ describe("the registry and units", () => {
     expect(code("water duration 120 s exceeds the limit (plant-waterer.hal.yaml)", water)).toEqual(["water"]);
     const text = "Done. water ran.";
     expect(reasonSegments(text, water).map((segment) => segment.text).join("")).toBe(text);
+  });
+
+  it("writes routine triggers in the unit their source uses", () => {
+    expect(formatTrigger("every 1800 s")).toBe("every 30 min");
+    expect(formatTrigger("every 3600 s")).toBe("every 1 h");
+    expect(formatTrigger("every 45 s")).toBe("every 45 s");
+    expect(formatTrigger("at 07:30")).toBe("at 07:30");
+    expect(formatTrigger("when plant-waterer.soil_moisture < 30 %")).toBe("when plant-waterer.soil_moisture < 30 %");
   });
 
   it("names run windows in the largest whole unit", () => {

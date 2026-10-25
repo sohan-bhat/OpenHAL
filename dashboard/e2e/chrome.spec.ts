@@ -189,6 +189,9 @@ test("a routine is selected, dry run, enabled, disabled and run from its buttons
   await page.getByRole("link", { name: /cure-cycle/ }).click();
   await expect(page.getByRole("heading", { name: "cure-cycle" })).toBeVisible();
   await page.getByRole("link", { name: /water-when-dry/ }).click();
+  await expect(page.locator("dl.facts")).toContainText("every 30 min");
+  const drafted = page.getByRole("link", { name: /cure-cycle/ }).locator(".drafted .nobreak");
+  await expect(drafted).toHaveText("agent:bench-agent");
   await page.getByRole("button", { name: "Dry run" }).click();
   await expect(page.getByRole("heading", { name: "Dry run" })).toBeVisible();
   await page.getByRole("button", { name: "Enable" }).click();

@@ -1,10 +1,10 @@
 <script lang="ts">
-  import Prose from "./Prose.svelte";
+  import Reason from "./Reason.svelte";
   import { api } from "../lib/api";
   import { describeDecision, type DecisionSummary } from "../lib/devices";
   import { confirmTier } from "../lib/status";
   import type { WriteSpec } from "../lib/types";
-  import { formatNumber, formatQuantity, quantityString, unitSymbol, valueWidth } from "../lib/units";
+  import { formatNumber, formatQuantity, identifiersOf, quantityString, unitSymbol, valueWidth } from "../lib/units";
   import LimitScale from "./LimitScale.svelte";
   import StatusMark from "./StatusMark.svelte";
 
@@ -200,7 +200,7 @@
             class:pending={outcome.tone === "pending"}>{outcome.head}</span
           >
         {/if}
-        <p class="mono reason"><Prose text={outcome.reason} /></p>
+        <p class="reason"><Reason text={outcome.reason} code={identifiersOf(device, `write:${channel}`)} /></p>
       </div>
     {/if}
   </div>

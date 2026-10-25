@@ -1,8 +1,9 @@
 <script lang="ts">
   import Prose from "../components/Prose.svelte";
+  import Reason from "../components/Reason.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import { api } from "../lib/api";
-  import { formatDateTime } from "../lib/units";
+  import { formatDateTime, formatTrigger, identifiersOf } from "../lib/units";
   import { fromKernelCode } from "../lib/protocol";
   import { href, router } from "../lib/router.svelte";
   import { inspector } from "../lib/state.svelte";
@@ -97,7 +98,7 @@
   </header>
 
   {#if loaded && !routines.length}
-    <p class="empty">No routines. Add one with <code>openhal routine new keep-cool --file keep-cool.routine.yaml</code>.</p>
+    <p class="empty">No routines. Add one with <code><Prose text="openhal routine new keep-cool --file keep-cool.routine.yaml" /></code>.</p>
   {:else}
     <div class="layout">
       <nav class="list" aria-label="Routines">
@@ -110,7 +111,7 @@
                 <StatusMark tone={routine.enabled ? "ok" : "neutral"} label={routine.enabled ? "enabled" : "disabled"} />
                 <span class="muted small">{routine.max_hazard} hazard, {routine.kind}</span>
                 {#if routine.drafted_by}
-                  <span class="small drafted" class:agent={drafted.kind === "agent"}>drafted by <span class="mono">{routine.drafted_by}</span></span>
+                  <span class="small drafted" class:agent={drafted.kind === "agent"}>drafted by <span class="mono nobreak">{routine.drafted_by}</span></span>
                 {/if}
               </a>
             </li>
@@ -127,7 +128,7 @@
           <dl class="facts">
             <div><dt class="label">devices</dt><dd class="mono">{detail.devices.join(", ") || "none"}</dd></div>
             <div><dt class="label">max hazard</dt><dd>{detail.max_hazard}</dd></div>
-            <div><dt class="label">triggers</dt><dd class="mono">{detail.triggers.join(", ") || "manual"}</dd></div>
+            <div><dt class="label">triggers</dt><dd class="mono">{detail.triggers.map(formatTrigger).join(", ") || "manual"}</dd></div>
             <div><dt class="label">sha-256</dt><dd class="mono">{detail.sha256.slice(0, 16)}</dd></div>
             {#if detail.enabled_by}<div><dt class="label">enabled by</dt><dd class="mono">{detail.enabled_by}</dd></div>{/if}
             {#if detail.disabled_reason}<div><dt class="label">disabled because</dt><dd>{detail.disabled_reason}</dd></div>{/if}
@@ -163,7 +164,7 @@
                     {#if registry && decision.status !== "allowed"}
                       <span class="mono code {mark.tone}">{registry.code} {registry.name}</span>
                     {/if}
-                    <span class="mono"><Prose text={decision.text} /></span>
+                    <span><Reason text={decision.text} code={identifiersOf(...detail.devices)} /></span>
                   </li>
                 {/each}
               </ol>
@@ -190,7 +191,7 @@
                     {@const mark = decisionStatus(run.status)}
                     <tr>
                       <td class="mono">{run.run_id}</td>
-                      <td class="mono">{run.trigger ?? ""}</td>
+                      <td class="mono">{run.trigger ? formatTrigger(run.trigger) : ""}</td>
                       <td class="mono">{formatDateTime(run.started_at)}</td>
                       <td><StatusMark tone={mark.tone} label={mark.label} /></td>
                       <td>{run.message}</td>

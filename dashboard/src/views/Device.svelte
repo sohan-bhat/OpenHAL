@@ -1,5 +1,6 @@
 <script lang="ts">
   import ActionControl from "../components/ActionControl.svelte";
+  import Prose from "../components/Prose.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import WriteControl from "../components/WriteControl.svelte";
   import { isSimulated } from "../lib/devices";
@@ -94,7 +95,7 @@
           <StatusMark tone="unverified" label="limits not confirmed" />
           <p>
             Commands get <code>error -32015 UNVERIFIED_LIMITS</code> until a person confirms the limits with
-            <code>openhal file confirm {fileName ?? view.id}</code> or the limits interview.
+            <code><Prose text="openhal file confirm {fileName ?? view.id}" /></code> or the limits interview.
           </p>
           {#if view.unconfirmed.length}
             <p class="muted">Unconfirmed <span class="mono">{view.unconfirmed.join(", ")}</span></p>

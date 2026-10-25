@@ -101,6 +101,10 @@ export function formatDuration(seconds: number): string {
   return `${formatNumber(seconds)} s`;
 }
 
+export function formatTrigger(trigger: string): string {
+  return trigger.replace(/\bevery (\d+(?:\.\d+)?) s\b/g, (_match, seconds: string) => `every ${formatDuration(Number(seconds))}`);
+}
+
 export interface Segment {
   text: string;
   keep: boolean;
