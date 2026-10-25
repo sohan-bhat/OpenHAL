@@ -1,0 +1,22 @@
+"""A simulated ${title} device for tests and the conformance suite.
+
+Replace the in-memory values with a model of the real protocol, so tests exercise the same bytes the
+hardware will see.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+
+@dataclass
+class Simulator:
+    """Channel values, a connection flag and a switch that makes the device stop answering."""
+
+    values: dict[str, float | bool | str] = field(default_factory=dict)
+    connected: bool = False
+    silent: bool = False
+
+
+SIMULATORS: dict[str, Simulator] = {}
+"""Simulators by target, so a test can reach the device behind `target: sim:<name>`."""

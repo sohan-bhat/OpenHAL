@@ -1,0 +1,33 @@
+"""Tests for the ${name} driver."""
+
+from __future__ import annotations
+
+import pytest
+
+from openhal.conformance import run
+from openhal.drivers.base import DriverError
+from openhal.drivers.${pkg} import conformance
+from openhal.drivers.${pkg}.driver import ${cls}
+from openhal.drivers.${pkg}.simulator import SIMULATORS
+
+
+async def test_passes_conformance() -> None:
+    report = await run(conformance.case())
+    failures = [f"{result.name}: {result.detail}" for result in report.results if not result.ok and not result.skipped]
+    assert report.ok, "\n".join(failures)
+
+
+async def test_reads_need_a_connection() -> None:
+    SIMULATORS.pop(conformance.TARGET, None)
+    driver = ${cls}(conformance.FILE)
+    with pytest.raises(DriverError, match="not connected"):
+        await driver.read("temperature")
+
+
+async def test_writes_need_a_kernel_grant() -> None:
+    SIMULATORS.pop(conformance.TARGET, None)
+    driver = ${cls}(conformance.FILE)
+    await driver.connect()
+    with pytest.raises(PermissionError):
+        await driver.write("level", 10.0, None)
+    await driver.close()

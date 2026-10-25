@@ -1,0 +1,27 @@
+# ${name}
+
+Experimental. Scaffolded by `openhal driver new`. It talks to its simulator only, until the real transport is written and it passes conformance and a hardware test.
+
+## Supports
+
+Describe the protocol, the transports and the device families this driver covers.
+
+## Device file
+
+```yaml
+device: ${title} example
+connect: { driver: ${name}, target: "sim:example" }
+read:
+  temperature: { unit: degC, every: 1 s }
+write:
+  level: { unit: percent, min: 0, max: 100, max_change_per_s: 20 }
+safe_state: { level: 0 }
+```
+
+## Limitations
+
+List what the protocol can't do safely, and how the device file must cover it.
+
+## Sources
+
+List the specifications and manuals the protocol knowledge came from.

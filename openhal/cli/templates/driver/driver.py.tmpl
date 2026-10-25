@@ -1,0 +1,77 @@
+"""${title} driver. Describe the protocol, how devices are found and identified, and its quirks.
+
+This scaffold talks to its simulator when the device file says `target: sim:<name>`. Replace
+`connect`, `read` and `_write` with the real transport, keep discovery and identification
+read-only, and keep every change going through `_write`, which only the safety kernel can reach.
+"""
+
+from __future__ import annotations
+
+import asyncio
+from typing import Any, ClassVar
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from openhal.drivers.base import Driver, DriverError, DriverInfo, Health, Reading
+from openhal.drivers.${pkg}.simulator import SIMULATORS, Simulator
+
+
+class ${cls}Params(BaseModel):
+    """Connect parameters from the device file."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    target: str = "sim:default"
+    timeout_s: float = Field(default=1.0, gt=0, le=30)
+
+
+class ${cls}(Driver):
+    """${title} devices. Experimental until it passes conformance and a hardware test."""
+
+    info: ClassVar[DriverInfo] = DriverInfo(
+        name="${name}",
+        protocols=("Name the protocol and transport",),
+        hazard_default="low",
+        summary="One line on the devices this driver covers.",
+        safe_state_support="file",
+        conformance="control",
+    )
+    params_model: ClassVar[type[Any] | None] = ${cls}Params
+
+    def __init__(self, device: Any) -> None:
+        super().__init__(device)
+        self.settings = ${cls}Params.model_validate(self.params)
+        self._sim: Simulator | None = None
+
+    async def connect(self) -> None:
+        if not self.settings.target.startswith("sim:"):
+            raise DriverError("Only the simulator is wired up. Implement the real transport in connect().")
+        self._sim = SIMULATORS.setdefault(self.settings.target, Simulator())
+        self._sim.connected = True
+
+    async def _device(self) -> Simulator:
+        if self._sim is None or not self._sim.connected:
+            raise DriverError(f"{self.device.device_id} is not connected. Connect it first.")
+        if self._sim.silent:
+            await asyncio.sleep(self.settings.timeout_s)
+            raise DriverError(f"{self.device.device_id} didn't answer within {self.settings.timeout_s:g} s.")
+        return self._sim
+
+    async def read(self, channel: str) -> Reading:
+        device = await self._device()
+        return Reading(channel, device.values.get(channel, 0.0), self.device.channel_unit(channel))
+
+    async def _write(self, channel: str, value: float | bool | str) -> Reading | None:
+        device = await self._device()
+        device.values[channel] = value
+        return Reading(channel, value, self.device.channel_unit(channel))
+
+    async def health(self) -> Health:
+        if self._sim is None or not self._sim.connected:
+            return Health(connected=False, detail="not connected")
+        return Health(connected=True)
+
+    async def close(self) -> None:
+        if self._sim is not None:
+            self._sim.connected = False
+        self._sim = None

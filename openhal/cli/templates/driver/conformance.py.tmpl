@@ -1,0 +1,55 @@
+"""Conformance case for the ${name} driver, against its simulator."""
+
+from __future__ import annotations
+
+from openhal.conformance import ConformanceCase
+from openhal.drivers.base import Driver
+from openhal.drivers.${pkg}.driver import ${cls}
+from openhal.drivers.${pkg}.simulator import SIMULATORS
+from openhal.spec import DeviceFile, loads
+
+TARGET = "sim:conformance"
+
+FILE = loads(
+    """
+device: ${title} conformance device
+id: ${slug}-conformance
+connect: { driver: ${name}, target: "sim:conformance", timeout_s: 0.3 }
+read:
+  temperature: { unit: degC }
+write:
+  level: { unit: percent, min: 0, max: 100 }
+safe_state: { level: 0 }
+hazard: low
+confirmed: { by: conformance, at: 2026-10-24 }
+"""
+)
+
+
+def _make(file: DeviceFile) -> Driver:
+    return ${cls}(file)
+
+
+async def _unplug(driver: Driver) -> None:
+    SIMULATORS[TARGET].connected = False
+
+
+async def _silence(driver: Driver) -> None:
+    SIMULATORS[TARGET].silent = True
+
+
+async def _cleanup() -> None:
+    SIMULATORS.pop(TARGET, None)
+
+
+def case() -> ConformanceCase:
+    """A fresh case with a fresh simulator."""
+    SIMULATORS.pop(TARGET, None)
+    return ConformanceCase(
+        name="${name}",
+        file=FILE,
+        make=_make,
+        break_connection=_unplug,
+        make_slow=_silence,
+        cleanup=_cleanup,
+    )

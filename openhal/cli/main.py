@@ -13,6 +13,7 @@ from openhal.cli import (
     confirm_cmd,
     control_cmd,
     doctor_cmd,
+    driver_cmd,
     file_cmd,
     file_confirm_cmd,
     hub_cmd,
@@ -38,6 +39,7 @@ app.add_typer(confirm_cmd.app, name="confirm")
 app.add_typer(routine_cmd.app, name="routine")
 app.add_typer(writer_cmd.app, name="writer")
 app.add_typer(token_cmd.app, name="token")
+app.add_typer(driver_cmd.app, name="driver")
 init_cmd.register(app)
 hub_cmd.register(app)
 control_cmd.register(app)

@@ -61,6 +61,7 @@ STATUS = {
     "verified": "verified on hardware",
     "stub": "stub",
     "planned": "planned",
+    "experimental": "experimental",
 }
 
 

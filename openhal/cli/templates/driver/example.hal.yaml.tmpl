@@ -1,0 +1,9 @@
+device: ${title} example
+connect: { driver: ${name}, target: "sim:example" }
+read:
+  temperature: { unit: degC, every: 1 s }
+write:
+  level: { unit: percent, min: 0, max: 100, max_change_per_s: 20 }
+safe_state: { level: 0 }
+hazard: low
+notes: "A scaffolded example. It loads read-only until a person confirms its limits."
