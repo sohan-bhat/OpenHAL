@@ -148,3 +148,25 @@ def format_quantity(magnitude: float, unit: str) -> str:
     text = f"{magnitude:.6g}"
     shown = "%" if normalize_unit(unit) == "percent" else unit
     return f"{text} {shown}"
+
+
+_QUANTITY_TEXT = re.compile(r"^\s*(?P<number>[-+]?[0-9][0-9.eE+-]{0,30})\s*(?P<unit>[^\s0-9].{0,39}?)\s*$")
+
+
+def split_quantity(text: str) -> dict[str, Any] | None:
+    """Split typed text such as `60%`, `60 %` or `1.5 V` into a Quantity mapping `{value, unit}`.
+
+    Returns None when the text isn't one finite number followed by a unit. The unit isn't checked
+    here, the hub converts and checks it.
+    """
+    found = _QUANTITY_TEXT.match(text)
+    if not found:
+        return None
+    try:
+        magnitude = float(found["number"])
+    except ValueError:
+        return None
+    if not math.isfinite(magnitude):
+        return None
+    number: float | int = int(magnitude) if magnitude.is_integer() else magnitude
+    return {"value": number, "unit": found["unit"]}

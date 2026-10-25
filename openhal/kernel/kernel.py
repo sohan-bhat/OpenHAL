@@ -349,15 +349,23 @@ class Kernel:
 
     # ------------------------------------------------------------------ evaluation
 
-    def evaluate(self, command: Command, principal: Principal, *, shadow: Shadow | None = None) -> Decision:
-        """Decide a command without side effects, as a dry run. Never raises. Fails closed."""
-        return self._decide(command, principal, approved=False, shadow=shadow)
+    def evaluate(
+        self, command: Command, principal: Principal, *, shadow: Shadow | None = None, wire: bool = False
+    ) -> Decision:
+        """Decide a command without side effects, as a dry run. Never raises. Fails closed.
 
-    def _decide(self, command: Command, principal: Principal, *, approved: bool, shadow: Shadow | None) -> Decision:
+        `wire` marks a command from a protocol message, REST body or MCP tool. Its numbers must travel
+        with a separate unit, never as one string (ADR 0016).
+        """
+        return self._decide(command, principal, approved=False, shadow=shadow, wire=wire)
+
+    def _decide(
+        self, command: Command, principal: Principal, *, approved: bool, shadow: Shadow | None, wire: bool = False
+    ) -> Decision:
         target = getattr(command, "target", "unknown")
         device = getattr(command, "device", "unknown")
         try:
-            return self._evaluate(command, principal, approved=approved, shadow=shadow)
+            return self._evaluate(command, principal, approved=approved, shadow=shadow, wire=wire)
         except Block as block:
             return Decision(
                 status="blocked",
@@ -377,7 +385,9 @@ class Kernel:
                 "Nothing was sent to the device.",
             )
 
-    def _evaluate(self, command: Command, principal: Principal, *, approved: bool, shadow: Shadow | None) -> Decision:
+    def _evaluate(
+        self, command: Command, principal: Principal, *, approved: bool, shadow: Shadow | None, wire: bool
+    ) -> Decision:
         now = self.clock()
         # 1. Command shape.
         if not isinstance(command, Write | Action):
@@ -455,13 +465,16 @@ class Kernel:
         if isinstance(command, Write):
             assert spec is not None
             tightened = self._session_limits.get((principal.label, command.device, command.channel))
-            value: Any = normalize(command.channel, spec, command.value, tightened=tightened)
+            value: Any = normalize(
+                command.channel, spec, command.value, unit=command.unit, text=not wire, tightened=tightened
+            )
             digest_value: Any = value
             changes: dict[str, Any] = {command.channel: value}
         else:
             assert action_spec is not None
             args = {
-                name: normalize(name, action_spec.args[name], raw, argument=True) for name, raw in command.args.items()
+                name: normalize(name, action_spec.args[name], raw, text=not wire, argument=True)
+                for name, raw in command.args.items()
             }
             value = args
             digest_value = args
@@ -696,15 +709,17 @@ class Kernel:
 
     # ------------------------------------------------------------------ execution
 
-    async def execute(self, command: Command, principal: Principal, *, request: Request | None = None) -> Decision:
+    async def execute(
+        self, command: Command, principal: Principal, *, request: Request | None = None, wire: bool = False
+    ) -> Decision:
         """Evaluate and, if allowed, run a command. Queues it if it needs a human.
 
         `request` is only honored when it is the queue's own approved request for this exact
-        command, which only `confirm` produces (review finding F13).
+        command, which only `confirm` produces (review finding F13). `wire` is as for `evaluate`.
         """
         runtime = self.devices.get(getattr(command, "device", ""))
         if runtime is None:
-            decision = self.evaluate(command, principal)
+            decision = self.evaluate(command, principal, wire=wire)
             self._log(command, principal, decision)
             return decision
         approved = (
@@ -728,7 +743,7 @@ class Kernel:
             self._log(command, principal, decision)
             return decision
         try:
-            decision = self._decide(command, principal, approved=approved, shadow=None)
+            decision = self._decide(command, principal, approved=approved, shadow=None, wire=wire)
             if decision.status == "needs_confirmation":
                 try:
                     queued = self.queue.add(command, principal, decision, self.clock())
@@ -765,6 +780,7 @@ class Kernel:
                 command.channel,
                 runtime.file.write[command.channel],
                 command.value,
+                unit=command.unit,
                 tightened=self._session_limits.get((principal.label, command.device, command.channel)),
             )
         else:
@@ -891,9 +907,12 @@ class Kernel:
     ) -> None:
         details: dict[str, Any] = {"message": decision.message}
         if isinstance(command, Write):
-            details["requested"] = _jsonable(command.value)
+            asked = command.value if command.unit is None else {"value": command.value, "unit": command.unit}
+            details["requested"] = _jsonable(asked)
         else:
             details["args"] = _jsonable(getattr(command, "args", {}))
+        if decision.limit and decision.status in ("blocked", "failed"):
+            details["limit"] = _jsonable(decision.limit)
         if decision.status == "done":
             details["before"] = before
             details["after"] = decision.value
@@ -915,12 +934,12 @@ class Kernel:
 
     # ------------------------------------------------------------------ dry runs
 
-    def dry_run(self, commands: Iterable[Command], principal: Principal) -> list[Decision]:
+    def dry_run(self, commands: Iterable[Command], principal: Principal, *, wire: bool = False) -> list[Decision]:
         """Evaluate commands in order as if each allowed one had run. Nothing is sent anywhere."""
         shadow = Shadow()
         decisions = []
         for command in commands:
-            decision = self.evaluate(command, principal, shadow=shadow)
+            decision = self.evaluate(command, principal, shadow=shadow, wire=wire)
             decisions.append(decision)
             if decision.status in ("allowed", "needs_confirmation"):
                 if isinstance(command, Write):

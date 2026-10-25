@@ -36,7 +36,7 @@ BLOCK_CODES = (
 
 
 class Write(BaseModel):
-    """Set one write channel. Numeric values must carry a unit."""
+    """Set one write channel. A number carries its unit, in `unit` or as a `{value, unit}` mapping."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -44,6 +44,7 @@ class Write(BaseModel):
     device: str = Field(min_length=1, max_length=48)
     channel: str = Field(min_length=1, max_length=48)
     value: str | bool | dict[str, Any] | int | float
+    unit: str | None = Field(default=None, min_length=1, max_length=40)
 
     @property
     def target(self) -> str:

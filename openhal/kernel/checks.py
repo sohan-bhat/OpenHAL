@@ -6,6 +6,7 @@ names the rule, the limit and what to do (docs/SAFETY.md, checks 6 to 9).
 
 from __future__ import annotations
 
+import json
 import math
 from dataclasses import dataclass
 from typing import Any, Final
@@ -13,7 +14,7 @@ from typing import Any, Final
 import regex
 
 from openhal.spec.models import ArgSpec, WriteChannel
-from openhal.spec.units import UnitError, convert, format_quantity, parse_quantity
+from openhal.spec.units import UnitError, convert, format_quantity, normalize_unit, parse_quantity, split_quantity
 
 PATTERN_TIMEOUT_S: Final = 0.05
 """Patterns run on the regex engine with a time budget, so no value can stall the kernel (review F07)."""
@@ -54,20 +55,51 @@ def effective_limits(spec: WriteChannel | ArgSpec, tightened: dict[str, float] |
     return Limits(low, high, rate)
 
 
+def shaped(name: str, spec: WriteChannel | ArgSpec, raw: Any, unit: str | None = None, *, text: bool = True) -> Any:
+    """A value with its unit attached, in the shape `normalize` takes.
+
+    `unit` is the unit sent beside the value, as protocol messages and REST bodies carry it. Without
+    `text`, a number sent as one string such as `"150 %"` is refused (ADR 0016). Routines and other
+    human-written inputs keep quantity strings.
+    """
+    if unit is not None:
+        if spec.type != "number":
+            raise Block("bad_unit", f"{name} takes a {spec.type} value with no unit.")
+        if isinstance(raw, bool) or not isinstance(raw, int | float):
+            raise Block("bad_unit", f"{name} has a unit, so its value must be a number, not {raw!r}.")
+        return {"value": raw, "unit": unit}
+    if not text and spec.type == "number" and isinstance(raw, str):
+        example = _example(raw, spec.unit or "")
+        raise Block(
+            "bad_unit",
+            f"{name} needs its number and unit apart, as {json.dumps(example)}, not the text {raw!r}.",
+            {"expected": example},
+        )
+    return raw
+
+
+def _example(raw: str, unit: str) -> dict[str, Any]:
+    """The `{value, unit}` a quantity string meant, or a placeholder in the channel's unit."""
+    return split_quantity(raw) or {"value": 1, "unit": "%" if normalize_unit(unit) == "percent" else unit}
+
+
 def normalize(
     name: str,
     spec: WriteChannel | ArgSpec,
     raw: Any,
     *,
+    unit: str | None = None,
+    text: bool = True,
     tightened: dict[str, float] | None = None,
     argument: bool = False,
 ) -> float | bool | str:
     """Convert a raw value into the channel's unit and type and check it against every static limit.
 
-    With `argument`, `name` is an action argument, and limit blocks say so in their details.
+    `unit` and `text` are as for `shaped`. With `argument`, `name` is an action argument, and limit
+    blocks say so in their details.
     """
     try:
-        return _normalize(name, spec, raw, tightened)
+        return _normalize(name, spec, shaped(name, spec, raw, unit, text=text), tightened)
     except Block as block:
         if argument and block.limit is not None:
             raise Block(block.code, block.message, {**block.limit, "argument": name}) from None
