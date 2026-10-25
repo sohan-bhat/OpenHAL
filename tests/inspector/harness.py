@@ -60,6 +60,11 @@ read:
 write:
   power: { unit: W, min: 0, max: 60, max_change_per_s: 10 }
 actions:
+  vent:
+    description: Open the chamber vent for a few seconds.
+    args:
+      seconds: { unit: s, min: 1, max: 20 }
+    confirm: confirm-each-time
   purge:
     description: Blow the chamber clear with the heater off.
     confirm: confirm-each-time
@@ -142,7 +147,6 @@ class Harness:
     human_token: str
     agent_token: str
     medium_token: str
-    log_mode: str
 
 
 def write_device_files(home: Path) -> None:
@@ -150,16 +154,6 @@ def write_device_files(home: Path) -> None:
     devices.mkdir(parents=True, exist_ok=True)
     for device_id, text in DEVICE_FILES.items():
         (devices / f"{device_id}.hal.yaml").write_text(text, encoding="utf-8")
-
-
-def mount_message_log(app: FastAPI, hub: Hub) -> str:
-    routes = {getattr(route, "path", "") for route in app.routes}
-    if "/rpc" in routes and "/v1/rpc/log" in routes:
-        return "protocol"
-    from tests.inspector.rpc_shim import mount
-
-    mount(app, hub)
-    return "fixture"
 
 
 async def start(home: Path) -> Harness:
@@ -171,11 +165,10 @@ async def start(home: Path) -> Harness:
     hub.routines.create(agent("bench-agent", "control_medium"), "cure-cycle", "yaml", CURE_CYCLE)
     hub.last_discovery = DiscoveryResult(unknown=[SIMULATED_BOARD])
     app = create_app(hub)
-    log_mode = mount_message_log(app, hub)
     human_token, _ = hub.tokens.create("sohan", "human")
     agent_token, _ = hub.tokens.create("bench-agent", "agent", "control_low")
     medium_token, _ = hub.tokens.create("lab-script", "agent", "control_medium")
-    return Harness(hub, app, human_token, agent_token, medium_token, log_mode)
+    return Harness(hub, app, human_token, agent_token, medium_token)
 
 
 def state(harness: Harness, port: int) -> dict[str, Any]:
@@ -185,5 +178,4 @@ def state(harness: Harness, port: int) -> dict[str, Any]:
         "humanToken": harness.human_token,
         "agentToken": harness.agent_token,
         "mediumToken": harness.medium_token,
-        "log": harness.log_mode,
     }

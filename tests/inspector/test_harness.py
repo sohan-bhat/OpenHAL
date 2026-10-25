@@ -2,17 +2,19 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import socket
 from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import Any
 
 import httpx
 import pytest
+import uvicorn
 
 from openhal.hub.api import STATIC_DIR
+from openhal.protocol.client import ProtocolClient, ProtocolError
 from tests.inspector.harness import Harness, start
-from tests.inspector.rpc_shim import Connection, Shim
 
 
 @pytest.fixture
@@ -23,86 +25,67 @@ async def harness(tmp_path: Path) -> AsyncIterator[Harness]:
 
 
 @pytest.fixture
-async def client(harness: Harness) -> AsyncIterator[httpx.AsyncClient]:
-    transport = httpx.ASGITransport(app=harness.app, client=("127.0.0.1", 50000))
-    async with httpx.AsyncClient(transport=transport, base_url="http://127.0.0.1:7431") as client:
-        yield client
+async def base_url(harness: Harness) -> AsyncIterator[str]:
+    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listener.bind(("127.0.0.1", 0))
+    port = listener.getsockname()[1]
+    config = uvicorn.Config(harness.app, log_level="warning", lifespan="off", timeout_graceful_shutdown=2)
+    server = uvicorn.Server(config)
+    task = asyncio.create_task(server.serve(sockets=[listener]))
+    while not server.started:  # noqa: ASYNC110
+        await asyncio.sleep(0.01)
+    yield f"http://127.0.0.1:{port}"
+    server.should_exit = True
+    await task
+    listener.close()
 
 
 def bearer(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-async def exchange(connection: Connection, ident: int, method: str, params: dict[str, Any]) -> dict[str, Any]:
-    await connection.receive(json.dumps({"jsonrpc": "2.0", "id": ident, "method": method, "params": params}))
-    while True:
-        message = connection.outbox.get_nowait()
-        connection.shim.log.record("out", connection.client, connection.label, message)
-        if message.get("id") == ident:
-            return message
-
-
-async def test_devices_are_the_mock_fan_heater_and_lamp(client: httpx.AsyncClient, harness: Harness) -> None:
-    devices = (await client.get("/v1/devices", headers=bearer(harness.human_token))).json()
+async def test_devices_are_the_mock_fan_heater_and_lamp(base_url: str, harness: Harness) -> None:
+    async with httpx.AsyncClient(base_url=base_url, headers=bearer(harness.human_token)) as client:
+        devices = (await client.get("/v1/devices")).json()
+        fan = (await client.get("/v1/devices/desk-fan")).json()
     assert {device["id"]: device["driver"] for device in devices} == {
         "bench-lamp": "mock",
         "curing-heater": "mock",
         "desk-fan": "mock",
     }
-    fan = (await client.get("/v1/devices/desk-fan", headers=bearer(harness.human_token))).json()
     assert fan["write"]["fan_speed"]["value"] == 20
     assert fan["write"]["fan_speed"]["max"] == 100
     lamp = next(device for device in devices if device["id"] == "bench-lamp")
     assert lamp["writable"] is False
 
 
-async def test_the_blocked_write_reads_as_in_the_specification(client: httpx.AsyncClient, harness: Harness) -> None:
-    if harness.log_mode != "fixture":
-        pytest.skip("The hub serves the real message log, which the protocol tests cover.")
-    shim: Shim = harness.app.state.rpc_shim
-    connection = Connection(shim, None, None)
-    early = await exchange(connection, 1, "hal/devices/list", {})
-    assert early["error"]["data"]["name"] == "NOT_INITIALIZED"
-    hello = await exchange(
-        connection,
-        2,
-        "hal/initialize",
-        {"protocolVersion": "2026-10-24", "clientInfo": {"name": "bench-agent"}, "token": harness.agent_token},
-    )
-    assert hello["result"]["principal"]["kind"] == "agent"
-    blocked = await exchange(
-        connection, 3, "hal/write", {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"}
-    )
-    assert blocked["error"]["code"] == -32010
-    assert blocked["error"]["data"]["name"] == "LIMIT_EXCEEDED"
-    assert blocked["error"]["message"] == (
+async def test_the_blocked_write_reaches_the_message_log(base_url: str, harness: Harness) -> None:
+    async with ProtocolClient(base_url, harness.agent_token, client_name="bench-agent") as rpc:
+        with pytest.raises(ProtocolError) as blocked:
+            await rpc.call("hal/write", {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"})
+        pending = await rpc.call(
+            "hal/action", {"device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}}
+        )
+    assert blocked.value.code == -32010
+    assert blocked.value.name == "LIMIT_EXCEEDED"
+    assert blocked.value.reason == (
         "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)"
     )
-    pending = await exchange(
-        connection, 4, "hal/action", {"device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}}
-    )
-    assert pending["result"]["status"] == "pending"
+    assert pending["status"] == "pending"
 
-    log = (await client.get("/v1/rpc/log", headers=bearer(harness.human_token))).json()["entries"]
-    assert [entry["direction"] for entry in log[:2]] == ["in", "out"]
-    initialize = next(entry for entry in log if entry["message"].get("method") == "hal/initialize")
-    assert initialize["message"]["params"]["token"] == "[redacted]"
-    assert all(harness.agent_token not in json.dumps(entry) for entry in log)
-    refused = await client.get("/v1/rpc/log", headers=bearer(harness.agent_token))
+    async with httpx.AsyncClient(base_url=base_url) as client:
+        log = (await client.get("/v1/rpc/log", headers=bearer(harness.human_token))).json()
+        refused = await client.get("/v1/rpc/log", headers=bearer(harness.agent_token))
     assert refused.status_code == 403
+    errors = [entry for entry in log if entry["direction"] == "out" and "error" in entry["message"]]
+    assert errors[0]["message"]["error"]["data"]["name"] == "LIMIT_EXCEEDED"
+    assert all(harness.agent_token not in json.dumps(entry) for entry in log)
 
 
-async def test_text_that_is_not_json_gets_parse_error(harness: Harness) -> None:
-    if harness.log_mode != "fixture":
-        pytest.skip("The hub serves the real message log, which the protocol tests cover.")
-    connection = Connection(harness.app.state.rpc_shim, None, None)
-    await connection.receive("{not json")
-    assert connection.outbox.get_nowait()["error"]["code"] == -32700
-
-
-async def test_the_hub_serves_the_built_inspector(client: httpx.AsyncClient) -> None:
+async def test_the_hub_serves_the_built_inspector(base_url: str) -> None:
     if not (STATIC_DIR / "index.html").exists():
         pytest.skip("The Inspector is not built.")
-    page = await client.get("/")
+    async with httpx.AsyncClient(base_url=base_url) as client:
+        page = await client.get("/")
     assert page.status_code == 200
     assert "OpenHAL Inspector" in page.text
