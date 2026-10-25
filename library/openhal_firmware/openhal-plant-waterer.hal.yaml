@@ -1,5 +1,5 @@
 openhal: "0.1"
-device: { name: Plant waterer, model: plant-waterer, manufacturer: OpenHAL }
+device: { name: Arduino plant waterer, model: plant-waterer, manufacturer: OpenHAL }
 id: openhal-plant-waterer
 match:
   firmware: { product: plant-waterer }
@@ -11,7 +11,7 @@ actions:
   water:
     description: Run the pump for a number of seconds.
     args:
-      duration: { unit: s, min: 1, max: 10, step: 1 }
+      duration: { unit: s, min: 1, max: 30, step: 1 }
     require:
       - condition: "tank == ok"
         message: "pump can't run while tank is empty"
@@ -28,5 +28,5 @@ notes: >-
   Suggested limits. A person must confirm every limit before this device can be written.
   The sketch is examples/plant-waterer/plant-waterer.ino on an Arduino Uno R3 or an ESP32 DevKitC.
   The board stops the pump after 30 s, when the tank runs dry and when heartbeats stop for 3 s.
-  This file allows runs of at most 10 s and three runs an hour.
+  This file allows runs of at most 30 s, the sketch's own limit, and three runs an hour.
 provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

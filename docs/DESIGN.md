@@ -21,7 +21,7 @@ Two elements carry the identity.
 
 ### The animated flow diagram
 
-A clean flowchart of one write, left to right. AI client, then OpenHAL hub (with the Device files that feed the kernel), then Safety kernel, then Driver, then Device. A branch from the kernel goes down to a Blocked node, `LIMIT_EXCEEDED: 150 % > max 100 %`. Connector labels in the mono face read `hal/write`, `check`, `grant` and `command`, and a thin return line reads `reading`.
+A clean flowchart of one command, left to right. AI client, then OpenHAL hub (with the Device files that feed the kernel), then Safety kernel, then Driver, then Arduino plant waterer. A branch from the kernel goes down to a Blocked node, `INTERLOCK_BLOCKED: tank empty`. Connector labels in the mono face read `hal/action`, `check`, `grant` and `command`, and a thin return line reads `reading`.
 
 - Rounded rectangles with 1.5 px strokes, equal heights and consistent widths on a grid. Orthogonal connectors with right-angle turns only, one arrowhead style, no crossings.
 - One neutral for nodes and wires, the accent for the active path, red only for the Blocked node and its connector.
@@ -295,4 +295,4 @@ Run these on every screen before calling it done.
 
 1. **Swap.** Put another product's name on it. If it still fits, revise.
 2. **Thumbnail.** Blur a screenshot to 200 px wide. It should still read as a specification with message exchanges.
-3. **Memory.** What does a visitor remember ten minutes later? It should be the flow diagram's blocked branch and the message trace with LIMIT_EXCEEDED.
+3. **Memory.** What does a visitor remember ten minutes later? It should be the flow diagram's blocked branch and the message trace with LIMIT_EXCEEDED and INTERLOCK_BLOCKED.

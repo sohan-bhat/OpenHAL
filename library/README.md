@@ -16,7 +16,7 @@ openhal library add rigol-dp832
 |---|---|---|---|
 | [`openhal-desk-fan`](openhal_firmware/openhal-desk-fan.hal.yaml) | Desk fan | low | 1 control |
 | [`openhal-led-strip`](openhal_firmware/openhal-led-strip.hal.yaml) | LED strip | low | 1 control |
-| [`openhal-plant-waterer`](openhal_firmware/openhal-plant-waterer.hal.yaml) | Plant waterer | low | 2 actions |
+| [`openhal-plant-waterer`](openhal_firmware/openhal-plant-waterer.hal.yaml) | Arduino plant waterer | low | 2 actions |
 | [`openhal-servo-arm`](openhal_firmware/openhal-servo-arm.hal.yaml) | Servo arm | medium | 1 control |
 | [`openhal-soil-pump`](openhal_firmware/openhal-soil-pump.hal.yaml) | Soil pump | low | 1 control |
 
