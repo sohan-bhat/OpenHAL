@@ -108,7 +108,7 @@ RT01 = "RT-01: unit parsing has no time budget or length cap, so a long unit nam
 @pytest.mark.xfail(reason=RT01, strict=True)
 async def test_rt01_long_unit_name_does_not_stall_the_kernel(kernel: Kernel, add: AddDevice) -> None:
     await add(UNITS)
-    value = "1 " + "W" * 5000
+    value = "1 " + "Q" * 5000
     start = time.perf_counter()
     decision = kernel.evaluate(Write(device="rig", channel="heat", value=value), CLAUDE)
     elapsed = time.perf_counter() - start

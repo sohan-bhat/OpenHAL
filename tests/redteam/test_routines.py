@@ -143,7 +143,7 @@ RT01 = "RT-01: a routine value with a long unit name reaches the unbounded unit 
 @pytest.mark.xfail(reason=RT01, strict=True)
 async def test_rt01_a_routine_dry_run_with_a_long_unit_stalls(hub: Hub) -> None:
     source = 'id: stall\nsteps:\n  - write: {{ device: desk-fan, channel: fan_speed, value: "1 {units}" }}\n'
-    hub.routines.create(agent("claude", "control_low"), "stall", "yaml", source.format(units="W" * 5000))
+    hub.routines.create(agent("claude", "control_low"), "stall", "yaml", source.format(units="Z" * 5000))
     start = time.perf_counter()
     result = hub.routines.dry_run("stall")
     elapsed = time.perf_counter() - start
