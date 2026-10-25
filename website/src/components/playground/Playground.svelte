@@ -126,13 +126,20 @@
     version += 1;
   }
 
+  // The text the current kernel was built from. Typing rebuilds it, nothing else does.
+  let builtText: string | null = null;
+
+  function rebuild(current: string): void {
+    if (current === builtText) return;
+    builtText = current;
+    checked = deviceProblems(current);
+    build(checked.file);
+  }
+
   $effect(() => {
     const current = text;
     clearTimeout(timer);
-    timer = setTimeout(() => {
-      checked = deviceProblems(current);
-      build(checked.file);
-    }, 250);
+    timer = setTimeout(() => rebuild(current), 250);
   });
 
   onMount(() => {
@@ -141,9 +148,8 @@
     if (chosen && chosen.name !== exampleName) {
       exampleName = chosen.name;
       text = chosen.text;
-      checked = deviceProblems(chosen.text);
     }
-    build(checked.file);
+    rebuild(text);
     // Simulated devices stream their readings, so values stay fresh and rate windows grow.
     clock = setInterval(() => {
       if (!kernel) return;

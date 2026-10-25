@@ -139,9 +139,9 @@
   left: calc(var(--at) * 1%);
   transform: translateX(-50%);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--t-0);
   line-height: 14px;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .limit-track .tick::before {
