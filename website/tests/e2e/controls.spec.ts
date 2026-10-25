@@ -126,6 +126,24 @@ test.describe("overview", () => {
   });
 });
 
+test.describe("flow highlight", () => {
+  test("the active step and its node share one highlight", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("group", { name: "Click a step" })).toBeVisible();
+    const chip = page.getByRole("button", { name: "Safety kernel" });
+    await chip.click();
+    await expect(chip).toHaveAttribute("aria-pressed", "true");
+    const colors = await page.evaluate(() => {
+      const chipColor = getComputedStyle(document.querySelector(".flow-parts button.active")!).borderTopColor;
+      const node = document.querySelector(".flow svg.d2-svg > g.flow-active > rect.shape")!;
+      return { chip: chipColor, node: getComputedStyle(node).stroke, width: getComputedStyle(node).strokeWidth };
+    });
+    expect(colors.node).toBe(colors.chip);
+    expect(colors.width).toBe("2.5px");
+    await expect(page.locator(".flow-parts button[aria-pressed='true']")).toHaveCount(1);
+  });
+});
+
 test.describe("catalog filters", () => {
   test("each driver filter narrows the table and an impossible search says so", async ({ page }) => {
     await page.goto("/drivers/");
