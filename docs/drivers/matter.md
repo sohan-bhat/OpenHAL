@@ -11,7 +11,7 @@ Checked on 2026-10-24. python-matter-server was archived in June 2026, and 8.1.2
 ## What it supports
 
 - Read channels for any attribute, named by endpoint, cluster and attribute, with scale, offset and unit, one bit of a bitmap, or a lookup for enums.
-- Channels under `write` that set an attribute with `write_attribute`, or run a cluster command such as `MoveToLevelWithOnOff`, or pick `On` and `Off` for a bool. The attribute reads back the result.
+- Control channels that set an attribute with `write_attribute`, or run a cluster command such as `MoveToLevelWithOnOff`, or pick `On` and `Off` for a bool. The attribute reads back the result.
 - Actions that run any cluster command with their arguments in the payload, including timed commands such as door locks need.
 - A check on connect that every attribute exists on the node and every command's cluster exists on its endpoint.
 - Health from the WebSocket and the node's `available` flag.

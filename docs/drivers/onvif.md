@@ -5,7 +5,7 @@ The onvif driver reads an ONVIF camera's identity and stream addresses and moves
 ## What it supports
 
 - Device information (manufacturer, model, firmware, serial number, hardware id) and the chosen profile's name, RTSP stream URI and snapshot URI, as text channels read on connect.
-- Pan, tilt and zoom positions as number channels, and `moving` as a bool. Under `write`, pan, tilt and zoom move the camera there with AbsoluteMove.
+- Pan, tilt and zoom positions as number channels, and `moving` as a bool. As control channels, pan, tilt and zoom move the camera there with AbsoluteMove.
 - Actions for ContinuousMove (`move`), RelativeMove (`step`), AbsoluteMove (`go_to`), presets (`goto_preset`), the home position (`home`) and `stop`.
 - A native safe state that stops pan, tilt and zoom.
 - `discover()` sends one WS-Discovery Probe for network video transmitters.

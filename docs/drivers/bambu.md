@@ -20,7 +20,7 @@ What this driver does with that.
 ## What it supports
 
 - Reads of the print state, nozzle, bed and chamber temperatures and targets, progress, time left, the current and total count from `layer_num` and `total_layer_num`, the job name, the error code and the Wi-Fi signal, plus any other report field through a map.
-- The speed level (silent, standard, sport, ludicrous) and the chamber light as channels under `write`.
+- The speed level (silent, standard, sport, ludicrous) and the chamber light as control channels.
 - Pause, resume and stop as actions.
 - Native safe state. A hub stop sends `stop`, or `pause` with `safe_stop: pause`.
 - `discover()` listens for the printers' own SSDP announcements on UDP port 2021 and sends nothing.
@@ -68,8 +68,8 @@ Channels are named after what they read. A map can read any other field of the r
 | `job` | `subtask_name` | string |
 | `print_error` | `print_error` | dimensionless |
 | `wifi_signal` | `wifi_signal` | string |
-| `speed_level` | `spd_lvl` | enum, under `write` |
-| `chamber_light` | `lights_report` | bool, under `write` |
+| `speed_level` | `spd_lvl` | enum, control channel |
+| `chamber_light` | `lights_report` | bool, control channel |
 
 Actions are named `pause`, `resume` and `stop`, or map to one with `map: { command: pause }`. They take no arguments.
 

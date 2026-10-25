@@ -5,7 +5,7 @@ The upnp driver reads and controls UPnP devices through their SOAP actions, usin
 ## What it supports
 
 - Read channels from any action's output argument, as number, bool, enum or string, with scale, offset and unit.
-- Channels under `write` that call an action with `{value}` in one argument, read back through a `state` map.
+- Control channels that call an action with `{value}` in one argument, read back through a `state` map.
 - Actions that call any SOAP action, with the action's arguments placed by `{name}`.
 - A check on connect that every service, action, argument and output exists, and that types and enum values match the device's service descriptions.
 - `discover()` sends one SSDP M-SEARCH, which only asks devices to announce themselves.
@@ -55,14 +55,14 @@ actions:
 | `args` | Every in-argument of the action, as fixed values or `{value}` and `{name}` places |
 | `output` | Reads. The out-argument to read |
 | `scale`, `offset`, `unit` | channel value = device value × scale + offset, in `unit` |
-| `state` | Channels under `write`. A read map that shows the result |
+| `state` | Control channels. A read map that shows the result |
 
 Arguments are converted to their state variable's type before each call, so `Speed: 1` is sent as the text `1` and a number channel goes out as a whole number when the variable is an integer.
 
 ## How reads and commands behave
 
 - A read calls its action every time. Devices answer queries quickly, and GENA event subscriptions aren't used.
-- A channel under `write` without `state` reads as the last value sent, or no value before the first command.
+- A control channel without `state` reads as the last value sent, or no value before the first command.
 - A SOAP fault becomes `DriverError` with the UPnP error code and description, such as 501 Action Failed or 701 Transition not available.
 - `health()` fetches the description again, which is a plain HTTP GET.
 

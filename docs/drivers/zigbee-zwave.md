@@ -8,7 +8,7 @@ If the devices already live in Home Assistant, the homeassistant driver is the o
 
 - Zigbee2MQTT. Every feature in a device's `exposes` list, binary, numeric, enum and text, including features nested in lights, switches and composite values.
 - zwave-js-server. Every value a node reports, named by command class, endpoint, property and property key, with the unit and states from its metadata.
-- Read channels and channels under `write`. A Z-Wave channel mapped to `currentValue` is set through `targetValue` and read back from `currentValue`.
+- Read channels and control channels. A Z-Wave channel mapped to `currentValue` is set through `targetValue` and read back from `currentValue`.
 - A check on connect that every channel exists on the bridge, can be read or set as the file asks, and has a matching type and unit.
 - Health from the MQTT session, Zigbee2MQTT's bridge state and device availability, or from the WebSocket and the node's dead or alive status.
 - `describe()` proposes channels from what the bridge reports, with the bridge's own limits marked suggested.

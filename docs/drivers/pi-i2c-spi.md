@@ -7,7 +7,7 @@ The pi-i2c-spi driver reads and sets I2C and SPI chips on a Raspberry Pi, or any
 - I2C chips with 8-bit or 16-bit register addresses, and chips read without a register.
 - SPI chips that answer a command in the same transfer, such as most ADCs, and chips that only take values, such as DACs.
 - Read channels of type number, bool and enum, decoded from any byte range or bit range, big or little endian, signed or unsigned, with scale, offset and a device unit.
-- Channels under `write` that set one register, or clock out one SPI word, with the value placed in it.
+- Control channels that set one register, or clock out one SPI word, with the value placed in it.
 - `preserve: true` for I2C configuration registers, which reads the register and changes only the field's bits.
 - Actions that send fixed bytes to a register, with action arguments placed in them.
 - `discover()` lists `/dev/i2c-*` and `/dev/spidev*` without touching any bus.
@@ -59,14 +59,14 @@ actions:
 | `unit` | the channel unit | The unit the device value is in. It is converted to the channel unit |
 | `on`, `off` | `1`, `0` | Raw values for bool channels |
 | `lookup` | none | Raw numbers to enum values |
-| `state` | none | Channels under `write`. A read map that shows the result, often the same register |
+| `state` | none | Control channels. A read map that shows the result, often the same register |
 | `args` | none | Actions. A field map for each action argument |
 
 ## How reads and commands behave
 
-- The driver only changes the registers and byte sequences that the device file's `write` channels and actions list. Connecting changes nothing. Configuration a chip needs before it measures, such as starting conversions, goes in an action so it passes through the safety kernel.
+- The driver only changes the registers and byte sequences that the device file's control channels and actions list. Connecting changes nothing. Configuration a chip needs before it measures, such as starting conversions, goes in an action so it passes through the safety kernel.
 - Values are rounded to the field's raw step, and the reading a command returns shows the value actually sent. A value the field can't hold fails the command and nothing is sent. Nothing is clamped.
-- A `write` channel without `state` reads as the last value sent, or no value before the first command.
+- A control channel without `state` reads as the last value sent, or no value before the first command.
 - `health()` reads the first read channel. Make it a register that is safe to read often, not one that clears on read.
 - Transactions on one device run one at a time. Other devices on the same bus are separate device files, and the kernel's i2c-dev locking keeps their transactions apart.
 

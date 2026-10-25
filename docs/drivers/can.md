@@ -6,7 +6,7 @@ The can driver reads signals out of CAN bus frames and sends frames as commands 
 
 - Classic CAN with 11-bit and 29-bit identifiers, and CAN FD with up to 64 data bytes.
 - Read channels of type number, bool and enum, decoded from any byte range or bit range, big or little endian, signed or unsigned, with scale, offset and a device unit.
-- Channels under `write` that place a value in a frame and send it. Several of them can share one frame.
+- Control channels that place a value in a frame and send it. Several of them can share one frame.
 - Actions that send a fixed frame, with action arguments placed in it.
 - `describe()` listens for a moment and proposes one read channel per frame id it sees.
 - `discover()` lists SocketCAN interfaces that are up. It sends nothing.
@@ -60,7 +60,7 @@ actions:
 | `lookup` | none | Raw numbers to enum values, such as `{ 0: coast, 1: eco }` |
 | `data` | zeros | Command and action frames. The bytes the rest of the frame carries |
 | `dlc` | the longest field | Command and action frames. The frame length in bytes |
-| `state` | none | Channels under `write`. A read map for the status frame that shows the result |
+| `state` | none | Control channels. A read map for the status frame that shows the result |
 | `args` | none | Actions. A field map for each action argument |
 
 A change starts from the last payload the driver sent with that id, so changing `enable` keeps the setpoint that `setpoint` put in the same frame. After reconnecting the frame starts from `data` again.

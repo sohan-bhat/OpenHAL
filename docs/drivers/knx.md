@@ -6,7 +6,7 @@ The knx driver reads and sets KNX group addresses through a KNXnet/IP interface 
 
 - KNXnet/IP tunneling over UDP or TCP, and KNXnet/IP routing over multicast.
 - Read channels of type bool (DPT 1.x), number (numeric DPTs such as 5.001, 7.x, 9.x, 13.x and 14.x), enum (enum DPTs such as 20.102) and string (DPT 16).
-- Channels under `write` that send a GroupValueWrite, read back from the actuator's status address.
+- Control channels that send a GroupValueWrite, read back from the actuator's status address.
 - Units from the DPT, converted to the channel unit, such as DPT 9.001 in degC to a channel in degF.
 - `discover()` sends a KNXnet/IP SEARCH_REQUEST, which only asks interfaces to describe themselves.
 
@@ -46,7 +46,7 @@ write:
 |---|---|
 | `group_address` | The address the channel reads, or sends to. Three-level (`1/2/3`), two-level (`1/2`) or free (`4660`) |
 | `dpt` | The datapoint type, quoted, such as `"9.001"`. YAML reads an unquoted 5.010 as the number 5.01 |
-| `state_address` | For channels under `write`, the actuator's status address to read back |
+| `state_address` | For control channels, the actuator's status address to read back |
 
 Enum channels use the DPT's names in lower case, such as `comfort` and `economy` for DPT 20.102.
 
