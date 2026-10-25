@@ -6,10 +6,7 @@ Phase C. The protocol theme and hub protocol (ADR 0015), the dated specification
 
 ## Active subagents
 
-Cap is 5 agents at once (owner, latest 2026-10-24). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents.
-
-- website, round 3 of 3 (worktree agent-ae4debf25dd3edd4e). Owns website/, docs/guide/ and tests/website/. Rounds 1 and 2 are merged.
-- Inspector, round 3 of 3 (worktree agent-ab1476059128896a1). Owns dashboard/, openhal/hub/static/ and tests/inspector/. Rounds 1 and 2 are merged.
+None. Cap is 5 agents at once (owner, latest 2026-10-24). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents.
 
 Design round screenshots live in docs/design-rounds/, which is gitignored so they never reach a clone.
 
@@ -33,7 +30,9 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - The safety red team suite (100 tests) merged, and its four findings RT-01 to RT-04 fixed. docs/SAFETY-REPORT.md.
 - Driver SDK commands (`openhal driver new`, `driver test`, `driver list`).
 - M11. All sixteen planned drivers are built to the Tier 1 standard and pass conformance on simulators (batch 3 grbl, alpaca, indi, ros2, opcua, sila2, pylabrobot, lerobot, and batch 4 onvif, bambu, can, knx, matter, pi-i2c-spi, upnp, zigbee-zwave). 35 drivers in all. None is verified on hardware.
-- The protocol website and the Inspector, rounds 1 and 2, merged.
+- The protocol website and the Inspector, all three design critique rounds, merged. WebKit browser tests could not run on this Mac (every WebKit page load stalls here) and still need a run elsewhere.
+- Full-level conformance checks for actions. openhal-firmware declares full and runs them against the compiled PlantWaterer sketch.
+- Code comments removed from all Python and C++ code.
 - Unit safety. pint no longer converts between angles and plain numbers (50 % to a degree channel, 1 Hz to rpm). Channels with no read-back stay controllable under a rate limit. A bare number gets UNIT_INVALID in dry runs instead of a hub error.
 - REST reports conformance, simulated drivers, run limits, requirement reasons, the protocol version and the LAN setting.
 
