@@ -1,0 +1,30 @@
+openhal: "0.1"
+device: { name: Shelly Dimmer Gen3, model: Dimmer Gen3, manufacturer: Shelly }
+id: shelly-dimmer-gen3
+match:
+  homeassistant: "*.shellydimmerg3_*"
+connect:
+  homeassistant: homeassistant.local
+  port: 8123
+  token_env: HA_TOKEN
+  transport: websocket
+  entity: light.shellydimmerg3_aabbccddeeff
+write:
+  light: { type: bool, confirm: confirm, suggested: true, map: { entity: light.shellydimmerg3_aabbccddeeff } }
+  light_brightness:
+    unit: percent
+    min: 1
+    max: 80
+    step: 1
+    max_change_per_s: 20
+    confirm: confirm
+    suggested: true
+    map: { entity: light.shellydimmerg3_aabbccddeeff }
+safe_state: { light: false }
+hazard: high
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  Home Assistant names a Shelly that has no device name after its device id, such as
+  shellydimmerg3-aabbccddeeff. Replace aabbccddeeff with your dimmer's id. The dimmer is wired to mains, so
+  each change is confirmed and brightness stops at 80 % until you have checked the lamp it drives.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }
