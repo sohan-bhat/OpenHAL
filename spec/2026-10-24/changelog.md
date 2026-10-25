@@ -19,7 +19,7 @@ The first draft of the OpenHAL specification.
 
 - Identity and library matching (`device`, `id`, `match`).
 - Driver selection with shorthand (`connect`).
-- Read channels, write channels with min, max, step, rate and enum limits, and actions with typed arguments.
+- Read channels, write channels with min, max, step, rate and enum limits, and actions with typed arguments, requirements and run limits.
 - Safe state as values, an action, or ordered steps.
 - Interlocks and the expression language, with three-valued evaluation where unknown never passes.
 - Watchdog heartbeat, loss behavior and max duration rules.

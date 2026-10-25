@@ -7,17 +7,24 @@ This version of the specification defines Device File format 0.1.
 Simple Devices need simple files. This is a complete, valid file.
 
 ```yaml
-device: Desk fan controller
-connect: { serial: auto, board: arduino-uno }
+device: Arduino plant waterer
+id: plant-waterer
+connect: { openhal-firmware: auto }
 read:
-  temperature: { unit: degC, every: 1s }
-write:
-  fan_speed: { unit: percent, min: 0, max: 100, max_change_per_s: 20 }
-safe_state: { fan_speed: 0 }
-notes: "Fan is next to the plant. Never run above 80 for more than 10 minutes."
+  soil_moisture: { unit: "%", every: 1 s }
+  tank: { type: enum, values: [empty, ok] }
+actions:
+  water:
+    args:
+      duration: { unit: s, min: 1, max: 30 }
+    require: ["tank == ok"]
+  stop: {}
+safe_state: { action: stop }
+hazard: low
+notes: "The board turns the pump off on its own after 30 s."
 ```
 
-It loads read-only, because no human has confirmed its limits yet ([section 12](#12-limits-provenance)). Adding `confirmed: { by: sohan, at: 2026-10-24 }` makes it writable.
+It loads read-only, because no human has confirmed its limits yet ([section 12](#12-limits-provenance)). Adding `confirmed: { by: sohan, at: 2026-10-24 }` lets it take commands. The full file for the real board is [examples/plant-waterer/plant-waterer.hal.yaml](../../examples/plant-waterer/plant-waterer.hal.yaml).
 
 ## 0. File format
 
@@ -64,8 +71,8 @@ match:
 | `modbus_id` | integer 1 to 247 | Modbus unit id |
 | `homeassistant` | glob | Entity id pattern, for example `light.desk_*` |
 | `moonraker` | mapping | Fields from Moonraker `printer.info`, for example `{ hostname: "voron*" }` |
-| `esphome` | mapping | Fields from ESPHome device info, for example `{ name: "fan-*", model: "esp32dev" }` |
-| `firmware` | mapping | Fields from the OpenHAL firmware describe reply, for example `{ product: "desk-fan" }` |
+| `esphome` | mapping | Fields from ESPHome device info, for example `{ name: "plant-*", model: "esp32dev" }` |
+| `firmware` | mapping | Fields from the OpenHAL firmware describe reply, for example `{ product: "plant-waterer" }` |
 
 Regexes use Python syntax, MUST be at most 256 characters, and are matched with a timeout.
 
@@ -102,7 +109,8 @@ Device Files MUST NOT contain secrets. Credentials are referenced by environment
 
 ```yaml
 read:
-  temperature: { unit: degC, every: 1 s, range: [-20, 80] }
+  soil_moisture: { unit: "%", every: 1 s, range: [0, 100] }
+  tank: { type: enum, values: [empty, ok], every: 1 s }
   door_closed: { type: bool, stream: true }
   status: { type: enum, values: [idle, printing, paused, error] }
 ```
@@ -118,9 +126,9 @@ read:
 
 ```yaml
 write:
-  fan_speed:
+  brightness:
     unit: percent
-    min: 0
+    min: 1
     max: 100
     step: 1
     max_change_per_s: 20
@@ -141,6 +149,14 @@ write:
 
 ```yaml
 actions:
+  water:
+    description: Run the pump for a number of seconds.
+    args:
+      duration: { unit: s, min: 1, max: 30 }
+    require:
+      - condition: "tank == ok"
+        message: "pump can't run while tank is empty"
+    max_runs: { count: 3, per: 1 h }
   home:
     args:
       axis: { type: enum, values: [x, y, z, all] }
@@ -153,17 +169,18 @@ actions:
 ```
 
 1. An action is a named operation with typed arguments. Argument names follow channel name rules. Argument specs use the same fields and rules as write channels.
-2. `require` is a list of expressions ([section 7](#7-interlocks-and-expressions)) that MUST all hold for the action to run.
+2. `require` is a list of expressions ([section 7](#7-interlocks-and-expressions)) that MUST all hold for the action to run. An entry is an expression, or a mapping with `condition` and a `message` of at most 300 characters that the Hub gives as the reason when the condition doesn't hold.
 3. `confirm` is the confirmation tier, as for write channels. `confirmed` and `suggested` work as for write channels.
-4. `effects` MAY list the write channels the action changes, so interlocks and watchdogs can account for it. Every entry MUST name a write channel of the same file.
-5. `description` MAY describe the action in at most 500 characters. `map` MAY give Driver-specific addressing.
+4. `max_runs` MAY limit an action to `count` runs (1 to 1000) within any window of `per` (1 s to 7 days). Runs that reached the Driver count, whether they were done or failed. A run past the limit is blocked with `rate_limited`.
+5. `effects` MAY list the write channels the action changes, so interlocks and watchdogs can account for it. Every entry MUST name a write channel of the same file.
+6. `description` MAY describe the action in at most 500 characters. `map` MAY give Driver-specific addressing.
 
 ## 6. Safe state
 
 ```yaml
-safe_state: { fan_speed: 0 }
+safe_state: { action: stop }
 # or
-safe_state: { action: park }
+safe_state: { brightness: 1 }
 # or
 safe_state:
   - { output_enabled: false }
@@ -211,7 +228,7 @@ literal  := quantity | number | "true" | "false" | quoted string | bare enum wor
 2. The Hub evaluates both sides against the state after the command, with the commanded value substituted.
 3. If `if` holds and `require` does not, the command is blocked with the interlock's `message`.
 4. A reference to a value the Hub can't currently read counts as unknown. Unknown makes `if` count as holding and `require` count as not holding. Unknown values always lead to a block, never to a pass.
-5. A reference to a Device id that is not registered blocks every write on the Hub until it is fixed ([Safety](safety.md#the-checks-in-order)).
+5. A reference to a Device id that is not registered blocks every command on the Hub until it is fixed ([Safety](safety.md#the-checks-in-order)).
 
 ## 8. Watchdog
 
@@ -220,7 +237,7 @@ watchdog:
   heartbeat: 5 s
   on_loss: safe_state
   max_duration:
-    - when: "fan_speed > 80 %"
+    - when: "brightness > 80 %"
       for: 10 min
       then: safe_state
 ```
@@ -243,8 +260,8 @@ approvals:
     signature: 4b1d...
 ```
 
-1. `hazard` is `low`, `medium` or `high`. A file with write channels or actions and no `hazard` is treated as `medium`. A file with no writes is `low`.
-2. High hazard files make every write and action `confirm-each-time`, whatever the channel says.
+1. `hazard` is `low`, `medium` or `high`. A file with write channels or actions and no `hazard` is treated as `medium`. A file with no write channels and no actions is `low`.
+2. High hazard files make every command `confirm-each-time`, whatever the channel says.
 3. `approvals` holds human-signed approvals that let a specific routine drive a high hazard Device. `routine` is the routine id. `sha256` is the hash of the routine's canonical content. `at` is a date and time. `signature` is an HMAC that only the Hub's human approval flow can produce ([Safety](safety.md#principals-and-hazard-classes)).
 4. Approvals are valid only on the Hub that signed them. A changed routine no longer matches its approval.
 
@@ -260,10 +277,10 @@ provenance:
   source: sketch
   by: openhal writer 0.1.0 with sohan
   at: 2026-10-24
-  from: ./fan/fan.ino
+  from: examples/plant-waterer/plant-waterer.ino
   verification:
     status: tested-reads
-    report: reports/desk-fan-2026-10-24.md
+    report: reports/plant-waterer-2026-10-24.md
 ```
 
 1. `source` is one of `library`, `self-described`, `bridge`, `driver-describe`, `sketch`, `manual` or `hand-written` (default).
@@ -276,12 +293,12 @@ provenance:
 confirmed: { by: sohan, at: 2026-10-24 }
 ```
 
-1. Every limit (min, max, step, rate, values, interlocks, watchdog rules, safe state, hazard) MUST be confirmed by a human before the Device can be written.
+1. Every limit (min, max, step, rate, values, interlocks, watchdog rules, safe state, hazard) MUST be confirmed by a human before the Device takes commands.
 2. `confirmed` at the top level confirms every limit in the file. `confirmed` inside a write channel or action confirms that one. `by` is at most 80 characters. `at` is a date or a date and time.
 3. Interlocks, watchdog rules, the safe state and the hazard class are file-level limits. A file that has any of them needs a top-level `confirmed`. Per-channel confirmations alone don't cover them.
 4. `confirmed.sha256` MAY hold the hash of the file's limits at the moment they were confirmed. `openhal file confirm` writes it. When it is present and the limits have changed since, the whole file is unconfirmed again. Tools SHOULD always write it, and the validator warns when it is missing.
 5. The limits hash covers identity, connection, channels, actions, safe state, interlocks, watchdog rules and hazard. It leaves out confirmations, approvals, notes, provenance, `safe_state_note` and `x-` keys, which can change without changing what the Device is allowed to do.
-6. A file is writable only if every limit is covered by a confirmation, nothing is marked `suggested: true`, and any `confirmed.sha256` still matches. Otherwise it loads read-only, and the Hub says which entries are unconfirmed.
+6. A file takes commands only if every limit is covered by a confirmation, nothing is marked `suggested: true`, and any `confirmed.sha256` still matches. Otherwise it loads read-only, and the Hub says which entries are unconfirmed.
 7. Tools MUST NOT add `confirmed` on their own. Only the human side of the limits interview, or a human editing the file, may add it.
 
 ## Versioning

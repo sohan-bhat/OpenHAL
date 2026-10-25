@@ -26,7 +26,7 @@ The Safety Kernel evaluates a command against the current state in this fixed or
 | 7 | Type and enum | The value is the wrong type, not one of the allowed values, too long, or doesn't match the pattern | `bad_value` | INVALID_VALUE |
 | 8 | Range | Below `min` or above `max`, including session limits | `below_min`, `above_max` | LIMIT_EXCEEDED |
 | 9 | Step | Not a multiple of `step` from `min` | `bad_step` | INVALID_VALUE |
-| 10 | Rate of change | The change from the last known value exceeds `max_change_per_s` times the elapsed time, or the current value is unknown | `rate_limited` | RATE_LIMITED |
+| 10 | Rate | The change from the last known value exceeds `max_change_per_s` times the elapsed time, the current value is unknown, or an action already ran `max_runs` times in its window | `rate_limited` | RATE_LIMITED |
 | 11 | Interlocks | An action's `require` doesn't hold, or an interlock that applies is not satisfied by the current and commanded state | `interlock` | INTERLOCK_BLOCKED |
 | 12 | Watchdog budget | The value would start or continue a state whose max duration is already used up | `duration_exceeded` | WATCHDOG_TRIPPED |
 | 13 | Serialization | Another command holds the Device for longer than 5 s | `busy` | BUSY |
