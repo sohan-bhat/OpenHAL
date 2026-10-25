@@ -30,12 +30,19 @@
     text: string;
   }
 
+  interface Suggestion {
+    device: string;
+    target: string;
+    text: string;
+  }
+
   interface Props {
     examples: Example[];
     initial: string;
+    suggestion?: Suggestion | null;
   }
 
-  let { examples, initial }: Props = $props();
+  let { examples, initial, suggestion = null }: Props = $props();
 
   const CLIENTS: Array<{ key: string; label: string; client: string; principal: Principal }> = [
     { key: "agent-medium", label: "Agent, control_medium token", client: "claude", principal: agent("claude", "control_medium") },
@@ -70,6 +77,7 @@
   const id = $derived(file ? deviceId(file) : "");
   const client = $derived(CLIENTS.find((item) => item.key === clientKey)!);
   const missing = $derived(file ? unconfirmed(file) : []);
+  const targetMethod = $derived(kernel && kernel.devices.get(targetDevice)?.file.actions[target] ? "hal/action" : "hal/write");
 
   function exampleFiles(): Map<string, { file: DeviceFile; path: string }> {
     const found = new Map<string, { file: DeviceFile; path: string }>();
@@ -120,8 +128,10 @@
     targetDevice = mine;
     const writes = Object.keys(next.write);
     const actions = Object.keys(next.actions);
-    if (!writes.includes(target) && !actions.includes(target)) target = writes[0] ?? actions[0] ?? "";
-    if (!requestText && next.write[target]?.type === "number" && next.write[target].max !== null) {
+    const suggested = suggestion && suggestion.device === mine && (writes.includes(suggestion.target) || actions.includes(suggestion.target)) ? suggestion : null;
+    if (!writes.includes(target) && !actions.includes(target)) target = suggested?.target ?? writes[0] ?? actions[0] ?? "";
+    if (!requestText && suggested && suggested.target === target) requestText = suggested.text;
+    else if (!requestText && next.write[target]?.type === "number" && next.write[target].max !== null) {
       requestText = `${formatG(next.write[target].max! * 1.5)} ${displayUnit(next.write[target].unit)}`;
     }
     readingDrafts = {};
@@ -378,7 +388,7 @@
         </ul>
       {:else if missing.length}
         <p class="status unverified">valid, limits unconfirmed</p>
-        <p class="muted">Matches the device file schema. Writes are refused with UNVERIFIED_LIMITS until a person confirms {missing.join(", ")}.</p>
+        <p class="muted">Matches the device file schema. Changes are refused with UNVERIFIED_LIMITS until a person confirms {missing.join(", ")}.</p>
       {:else}
         <p class="status ok">valid</p>
         <p class="muted">Matches the device file schema, and every limit is confirmed.</p>
@@ -402,7 +412,7 @@
         {#if Object.keys(file.write).length}
           <div class="table-wrap">
             <table>
-              <caption class="legend">Write channels</caption>
+              <caption class="legend">Channels it can change</caption>
               <thead>
                 <tr><th scope="col">Channel</th><th scope="col">Value</th><th scope="col">Min</th><th scope="col">Max</th><th scope="col">Rate per s</th><th scope="col">Confirm</th></tr>
               </thead>
@@ -498,7 +508,7 @@
           </label>
           <p id="pg-hint" class="muted">{hint}</p>
           <div class="buttons">
-            <button type="submit" class="button" disabled={!target}>Send hal/write</button>
+            <button type="submit" class="button" disabled={!target}>Send {targetMethod}</button>
             <button type="button" class="button quiet" disabled={!target} onclick={() => send(true)}>Dry run</button>
           </div>
         </form>
