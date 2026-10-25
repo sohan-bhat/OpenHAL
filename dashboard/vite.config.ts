@@ -14,6 +14,9 @@ export default defineConfig({
     assetsDir: "assets",
     target: "es2022",
     chunkSizeWarningLimit: 400,
+    rolldownOptions: {
+      checks: { pluginTimings: false },
+    },
   },
   server: {
     port: 5180,
