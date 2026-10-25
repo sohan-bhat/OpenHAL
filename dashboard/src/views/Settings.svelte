@@ -108,27 +108,29 @@
     {:else}
       <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
       <div class="table-scroll" tabindex="0" role="region" aria-label="Client tokens table">
-        <table class="grid">
+        <table class="grid tokens">
         <thead>
           <tr><th scope="col">Name</th><th scope="col">Kind</th><th scope="col">Scope</th><th scope="col">Id</th><th scope="col">Created</th><th scope="col">State</th><th scope="col"><span class="visually-hidden">Revoke</span></th></tr>
         </thead>
         <tbody>
           {#each shown as token (token.token_id)}
             <tr class={token.kind}>
-              <td class="nobreak">{token.name}</td>
-              <td>{token.kind}</td>
-              <td class="mono">{token.scope}</td>
-              <td class="mono">{token.token_id}</td>
-              <td class="mono">{formatDateTime(token.created_at)}</td>
-              <td><StatusMark tone={token.revoked ? "neutral" : "ok"} label={token.revoked ? "revoked" : "active"} /></td>
+              <td class="name nobreak">{token.name}</td>
+              <td data-label="kind">{token.kind}</td>
+              <td class="mono" data-label="scope">{token.scope}</td>
+              <td class="mono" data-label="id">{token.token_id}</td>
+              <td class="mono" data-label="created">{formatDateTime(token.created_at)}</td>
+              <td data-label="state"><StatusMark tone={token.revoked ? "neutral" : "ok"} label={token.revoked ? "revoked" : "active"} /></td>
               <td class="end">
                 {#if !token.revoked}
-                  {#if confirming === token.token_id}
-                    <button class="button small" type="button" onclick={() => revoke(token.token_id)}>Revoke {token.name}</button>
-                    <button class="button small" type="button" onclick={() => (confirming = null)}>Keep</button>
-                  {:else}
-                    <button class="button small" type="button" onclick={() => (confirming = token.token_id)} aria-label="Revoke {token.name}">Revoke</button>
-                  {/if}
+                  <div class="revoke">
+                    {#if confirming === token.token_id}
+                      <button class="button small" type="button" onclick={() => revoke(token.token_id)}>Revoke {token.name}</button>
+                      <button class="button small" type="button" onclick={() => (confirming = null)}>Keep</button>
+                    {:else}
+                      <button class="button small" type="button" onclick={() => (confirming = token.token_id)} aria-label="Revoke {token.name}">Revoke</button>
+                    {/if}
+                  </div>
                 {/if}
               </td>
             </tr>
@@ -225,26 +227,98 @@
     align-items: center;
     gap: var(--s-2);
     font-size: var(--t-label);
+    cursor: pointer;
   }
 
-  .check input {
-    accent-color: var(--accent);
+  .tokens td {
+    vertical-align: middle;
   }
 
-  tr.agent td:first-child {
+  .tokens tr.agent td:first-child {
     border-left: 2px dashed var(--text-2);
-    padding-left: var(--s-2);
+    padding-left: var(--s-3);
   }
 
-  tr.human td:first-child {
+  .tokens tr.human td:first-child {
     border-left: 2px solid var(--text);
-    padding-left: var(--s-2);
+    padding-left: var(--s-3);
   }
 
-  .end {
+  .tokens .end {
+    padding-right: 0;
+  }
+
+  .revoke {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--s-2);
     justify-content: flex-end;
+  }
+
+  @media (max-width: 767px) {
+    .tokens thead {
+      display: none;
+    }
+
+    .tokens,
+    .tokens tbody {
+      display: block;
+    }
+
+    .tokens tr {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--s-2) var(--s-4);
+      padding: var(--s-3) 0 var(--s-3) var(--s-3);
+      border-bottom: var(--rule);
+    }
+
+    .tokens tr.agent {
+      border-left: 2px dashed var(--text-2);
+    }
+
+    .tokens tr.human {
+      border-left: 2px solid var(--text);
+    }
+
+    .tokens tr td,
+    .tokens tr.agent td:first-child,
+    .tokens tr.human td:first-child {
+      display: grid;
+      align-content: start;
+      gap: 2px;
+      padding: 0;
+      border: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .tokens td[data-label]::before {
+      content: attr(data-label);
+      font-family: var(--font-text);
+      font-size: var(--t-label);
+      font-weight: 700;
+      font-variant-caps: all-small-caps;
+      letter-spacing: 0.04em;
+      color: var(--text-2);
+    }
+
+    .tokens .name {
+      grid-column: 1 / -1;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .tokens .end {
+      grid-column: 1 / -1;
+    }
+
+    .tokens .end:empty {
+      display: none;
+    }
+
+    .revoke {
+      justify-content: flex-start;
+    }
   }
 
   .create {
