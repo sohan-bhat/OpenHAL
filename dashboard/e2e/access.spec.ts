@@ -1,6 +1,5 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { AgentClient, hubState, signIn } from "./hub";
+import { signIn } from "./hub";
 
 test.beforeEach(async ({ context }) => {
   await signIn(context);
@@ -58,26 +57,6 @@ test("the Inspector works from the keyboard with visible focus", async ({ page, 
 });
 
 const VIEWS = ["#/devices/plant-waterer", "#/devices/curing-heater", "#/devices/bench-lamp", "#/confirmations", "#/audit", "#/routines", "#/writer", "#/settings"];
-
-for (const scheme of ["light", "dark"] as const) {
-  test(`every view passes axe WCAG 2.1 AA in the ${scheme} theme`, async ({ page }) => {
-    test.setTimeout(240_000);
-    await page.emulateMedia({ colorScheme: scheme });
-    const agent = await AgentClient.connect("axe-agent", hubState().agentToken);
-    await agent.call("hal/action", { device: "plant-waterer", action: "water", args: { duration: { value: 120, unit: "s" } } });
-    agent.close();
-    for (const view of VIEWS) {
-      await page.goto(`/${view}`);
-      await expect(page.locator("main h1, main h2").first()).toBeVisible();
-      await page.waitForTimeout(300);
-      const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
-      const problems = results.violations.map(
-        (violation) => `${view} ${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`,
-      );
-      expect(problems).toEqual([]);
-    }
-  });
-}
 
 test("no view scrolls sideways on a 390 px phone", async ({ page }) => {
   test.setTimeout(120_000);

@@ -165,7 +165,7 @@ for (const theme of THEMES) {
       await shoot(page, "writer-detected", width, theme);
       await scrollTo(page, "#interview-title", header);
       await shoot(page, "writer-interview", width, theme);
-      for (const button of await page.getByRole("button", { name: /Use the suggested value/ }).all()) await button.click();
+      for (const button of await page.getByRole("button", { name: /Use suggested value/ }).all()) await button.click();
       await page.getByRole("button", { name: "Confirm these limits" }).click();
       await expect(page.getByText(/added, \d+ removed since the draft/)).toBeVisible();
       await scrollTo(page, ".line.removed", header + 40);

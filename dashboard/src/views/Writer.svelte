@@ -292,7 +292,7 @@
                   class="button small"
                   type="button"
                   onclick={() => (answers[question.id] = suggestedText(question))}
-                  aria-label="Use the suggested value for {question.id}"
+                  aria-label="Use suggested value for {question.id}"
                 >
                   Use suggested
                 </button>
