@@ -2,7 +2,7 @@
 
 This plan checks the can driver against a real CAN bus. It was made for a Linux computer (a Raspberry Pi works) with a USB CAN adapter and a VESC motor controller, using the example file. Any node described in a device file works the same way.
 
-Run every step from the repository checkout. Take the load off the motor, or remove the motor, before the steps that change anything.
+Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Take the load off the motor, or remove the motor, before the steps that change anything.
 
 ## What you need
 
@@ -139,13 +139,13 @@ Keep `candump -tz can0` from step 2 running in another terminal while you do the
 
 ### 8. Confirm the limits
 
-Read the file, decide the limits and the safe state are right for your motor, and add this line yourself.
+Read the file and decide the limits and the safe state are right for your motor. Then confirm them yourself.
 
-```yaml
-confirmed: { by: <your name>, at: <today's date> }
+```sh
+uv run openhal file confirm my-vesc.hal.yaml
 ```
 
-`uv run openhal file validate my-vesc.hal.yaml` should now say `writable`.
+It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-vesc.hal.yaml` then says `writable`.
 
 ### 9. The smallest safe frame
 
@@ -179,20 +179,22 @@ Expected. `bench-vesc safe`, candump shows the coast frame `00000101   [4]  00 0
 
 ## If something fails
 
-Send the full output of the failing step, the candump output covering the same time, `ip -details -statistics link show can0`, the adapter model and firmware, the node's firmware version, and your device file.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the candump output covering the same time, `ip -details -statistics link show can0`, the adapter model and firmware, the node's firmware version, and your device file.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, can driver
 
+- Plan: docs/hardware-tests/can.md
 - Device: <manufacturer, model, controller id>
 - Firmware: <version>
 - Adapter: <model, firmware, interface>
 - Host: <computer, operating system, kernel>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device file: <path>, sha256 <from its confirmed line>
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -210,4 +212,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 11 stop | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```

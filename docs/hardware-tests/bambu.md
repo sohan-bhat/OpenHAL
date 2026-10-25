@@ -1,8 +1,8 @@
 # Hardware test plan, bambu driver
 
-This plan checks the bambu driver against a real Bambu Lab printer on the local network. It was made for a P1S with the example file. X1, P1 and A1 printers work the same way. Read the local access status in docs/drivers/bambu.md first.
+This plan checks the bambu driver against a real Bambu Lab printer on the local network. It was made for a P1S with the example file. X1, P1 and A1 printers work the same way. Read the local access status in docs/drivers/bambu.md first. The driver waits on the owner's legal review (NEEDS_HUMAN.md, item 3), so run this plan only once that review says the driver ships.
 
-Run every step from the repository checkout, on a computer on the same network as the printer. Stay next to the printer during the steps that change anything.
+Run every step from the repository checkout, on a computer on the same network as the printer. [README.md](README.md) has the setup and rules every plan shares. Stay next to the printer during the steps that change anything.
 
 ## What you need
 
@@ -141,13 +141,13 @@ Expected. The second run fails with `TimeoutError` or `DriverError` saying the p
 
 ### 9. Confirm the limits
 
-Read the file, decide the limits are right, and add this line yourself.
+Read the file and decide the limits are right. Then confirm them yourself.
 
-```yaml
-confirmed: { by: <your name>, at: <today's date> }
+```sh
+uv run openhal file confirm my-printer.hal.yaml
 ```
 
-`uv run openhal file validate my-printer.hal.yaml` should now say `writable`.
+It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-printer.hal.yaml` then says `writable`.
 
 ### 10. The smallest safe change
 
@@ -203,19 +203,21 @@ Expected. `failed` with the printer's reason and the hint to turn on Developer M
 
 ## If something fails
 
-Send the full output of the failing step, the printer model and firmware version (the `firmware` field from step 4), whether LAN-only mode and Developer Mode were on, and your device file without the access code.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the printer model and firmware version (the `firmware` field from step 4), whether LAN-only mode and Developer Mode were on, and your device file without the access code.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, bambu driver
 
+- Plan: docs/hardware-tests/bambu.md
 - Device: <model, serial number with the last digits hidden>
 - Firmware: <version from identify>
 - Host: <computer, operating system>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device file: <path>, sha256 <from its confirmed line>
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -236,4 +238,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 14 without Developer Mode | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```

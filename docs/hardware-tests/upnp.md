@@ -2,7 +2,7 @@
 
 This plan checks the upnp driver against a real UPnP media renderer. It was made for a Sonos speaker with the example file. Any device whose actions a device file maps works the same way.
 
-Run every step from the repository checkout, on a computer on the same network as the speaker. Keep the speaker's volume low.
+Run every step from the repository checkout, on a computer on the same network as the speaker. [README.md](README.md) has the setup and rules every plan shares. Keep the speaker's volume low.
 
 ## What you need
 
@@ -118,13 +118,13 @@ Expected. `DriverError` or `TimeoutError` saying the description could not be fe
 
 ### 6. Confirm the limits
 
-Read the file, decide the limits and the safe state are right, and add this line yourself.
+Read the file and decide the limits and the safe state are right. Then confirm them yourself.
 
-```yaml
-confirmed: { by: <your name>, at: <today's date> }
+```sh
+uv run openhal file confirm my-speaker.hal.yaml
 ```
 
-`uv run openhal file validate my-speaker.hal.yaml` should now say `writable`.
+It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-speaker.hal.yaml` then says `writable`.
 
 ### 7. The smallest safe change
 
@@ -167,18 +167,20 @@ Expected. `workshop-speaker safe`, playback stops and the volume goes to 10. Wit
 
 ## If something fails
 
-Send the full output of the failing step, the description from step 2, the device's model and firmware, and your device file.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the description from step 2, the device's model and firmware, and your device file.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, upnp driver
 
+- Plan: docs/hardware-tests/upnp.md
 - Device: <manufacturer, model, firmware>
 - Host: <computer, operating system>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device file: <path>, sha256 <from its confirmed line>
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -195,4 +197,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 10 stop | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```
