@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from openhal._brand import DATA_BLOCK_TAG
 from openhal.client import AsyncClient, OpenHALError
 from openhal.client import models as m
+from openhal.mcp.errors import Decision, ErrorMapper, tool_error_text
 from openhal.spec.schema import device_file_schema
 
 # --------------------------------------------------------------------------- shared inputs
@@ -70,6 +71,7 @@ class Step(BaseModel):
 class PlanBlock(BaseModel):
     step: int = Field(description="Index of the step in the plan, from 0.")
     code: str | None = Field(description="Stable block code, for example above_max or interlock.")
+    name: str | None = Field(default=None, description="The registry name, for example LIMIT_EXCEEDED.")
     message: str
 
 
@@ -77,7 +79,7 @@ class PlanCheck(BaseModel):
     all_allowed: bool = Field(description="True when every step would run right now without a human.")
     blocked: list[PlanBlock] = Field(description="Steps the kernel would block, with the reason.")
     needs_confirmation: list[int] = Field(description="Steps that would wait for a human to approve.")
-    decisions: list[m.Decision] = Field(description="The kernel's decision for every step, in order.")
+    decisions: list[Decision] = Field(description="The kernel's decision for every step, in order.")
 
 
 class ConfirmationStatus(BaseModel):
@@ -142,6 +144,11 @@ class Tools:
     def __init__(self, client: AsyncClient) -> None:
         self.client = client
         self.principal: m.Principal | None = None
+        self.errors = ErrorMapper(client)
+
+    @property
+    def label(self) -> str | None:
+        return f"{self.principal.kind}:{self.principal.name}" if self.principal is not None else None
 
     async def _run[T](self, use: Callable[[AsyncClient], Awaitable[T]]) -> T:
         try:
@@ -152,7 +159,7 @@ class Tools:
                 self.principal = principal
             return await use(self.client)
         except OpenHALError as exc:
-            raise ToolError(str(exc)) from exc
+            raise ToolError(tool_error_text(exc)) from exc
 
     # ------------------------------------------------------------------ devices and reads
 
@@ -201,17 +208,20 @@ class Tools:
 
     # ------------------------------------------------------------------ control
 
-    async def write(self, device: DeviceId, channel: ChannelName, value: CommandValue) -> m.Decision:
+    async def write(self, device: DeviceId, channel: ChannelName, value: CommandValue) -> Decision:
         """Ask the hub to set one write channel. The safety kernel checks units, range, step, rate of change,
         interlocks, watchdog budgets, your token's scope and the hazard class. status is done when it ran,
         blocked with a code and message when it did not (do not retry around a limit, tell the person), or
-        pending with a request_id when a person must approve. Use dry_run first when unsure."""
-        return await self._run(lambda hub: hub.write(device, channel, value))
+        pending with a request_id when a person must approve. A blocked decision carries error, with the registry
+        name, number and reason. Use dry_run first when unsure."""
+        decision = await self._run(lambda hub: hub.write(device, channel, value))
+        return await self.errors.decision(decision, value, self.label)
 
-    async def action(self, device: DeviceId, action: ActionName, args: ActionArgs | None = None) -> m.Decision:
+    async def action(self, device: DeviceId, action: ActionName, args: ActionArgs | None = None) -> Decision:
         """Ask the hub to run one action, such as home or pulse, with typed arguments. Checked and answered
         exactly like write, including blocked and pending."""
-        return await self._run(lambda hub: hub.action(device, action, args or {}))
+        decision = await self._run(lambda hub: hub.action(device, action, args or {}))
+        return await self.errors.decision(decision, None, self.label)
 
     async def dry_run(
         self,
@@ -220,13 +230,13 @@ class Tools:
         value: Annotated[str | bool | None, Field(description="Value with unit, for example '60 %'.")] = None,
         action: Annotated[str | None, Field(description="Action name, instead of channel and value.")] = None,
         args: Annotated[dict[str, str | bool] | None, Field(description="Action arguments.")] = None,
-    ) -> m.Decision:
+    ) -> Decision:
         """Check one write or action against the current state without running it. Nothing reaches the
         device. status is allowed, blocked (with code and message) or needs_confirmation."""
         step = Step(device=device, channel=channel, value=value, action=action, args=args or {})
         command = step.command()
         decisions = await self._run(lambda hub: hub.dry_run([command]))
-        return decisions[0]
+        return await self.errors.decision(decisions[0], value, self.label)
 
     async def plan_check(
         self,
@@ -238,9 +248,18 @@ class Tools:
         steps had run, without touching any device. Returns which steps would be blocked and why, and which
         would wait for a person. Fix or drop blocked steps before sending anything."""
         commands = [step.command() for step in steps]
-        decisions = await self._run(lambda hub: hub.dry_run(commands))
+        raw = await self._run(lambda hub: hub.dry_run(commands))
+        decisions = [
+            await self.errors.decision(decision, command.get("value"), self.label)
+            for decision, command in zip(raw, commands, strict=True)
+        ]
         blocked = [
-            PlanBlock(step=index, code=decision.code, message=decision.message)
+            PlanBlock(
+                step=index,
+                code=decision.code,
+                name=decision.error.name if decision.error else None,
+                message=decision.message,
+            )
             for index, decision in enumerate(decisions)
             if decision.status in ("blocked", "failed")
         ]
