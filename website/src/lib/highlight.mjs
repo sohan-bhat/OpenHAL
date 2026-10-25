@@ -7,7 +7,7 @@ const PATTERNS = {
   yaml: [
     ["comment", /#.*/y],
     ["str", /"(?:[^"\\]|\\.)*"|'[^']*'/y],
-    ["num", /-?\d+(?:\.\d+)?(?![\w:-])|\b(?:true|false|null)\b/y],
+    ["num", /(?<![\w.:/-])-?\d+(?:\.\d+)?(?![\w:.-])|\b(?:true|false|null)\b/y],
     ["punct", /[{}[\],]|^\s*-(?=\s)/y],
   ],
   sh: [
@@ -87,8 +87,19 @@ function yamlLine(line) {
     }
     return tokens;
   }
-  tokens.push(...scan(rest, PATTERNS.yaml));
+  if (/^\s*[A-Za-z]/.test(rest) && !/^\s*(?:true|false|null)\s*$/.test(rest)) tokens.push(["", rest]);
+  else tokens.push(...scan(rest, PATTERNS.yaml));
   return tokens;
+}
+
+function yamlLines(text) {
+  let block = null;
+  return text.split(/(?<=\n)/).flatMap((line) => {
+    const indent = /^\s*/.exec(line)[0].length;
+    if (block !== null && (!line.trim() || indent > block)) return [["", line]];
+    block = /:\s*[>|][-+]?\s*$/.test(line) ? indent : null;
+    return yamlLine(line);
+  });
 }
 
 function shLines(text) {
@@ -102,7 +113,7 @@ function shLines(text) {
 export function tokenize(text, lang) {
   const language = languageOf(lang);
   if (language === "json") return jsonKeys(scan(text, PATTERNS.json));
-  if (language === "yaml") return text.split(/(?<=\n)/).flatMap((line) => yamlLine(line));
+  if (language === "yaml") return yamlLines(text);
   if (language === "sh") return shLines(text);
   if (language === "python" || language === "ts") return scan(text, PATTERNS[language]);
   return [["", text]];
