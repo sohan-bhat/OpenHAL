@@ -101,7 +101,7 @@ Expected. The instrument initializes and homes its channels, the same way PyLabR
 
 ## Step 7. One tip, 10 uL of water, and back
 
-PyLabRobot tracks volumes and starts every well empty, so tell it about the water first. Add `volumes: { "plate:A1": 200 uL }` to `connect`, confirm the file again and restart the hub.
+PyLabRobot tracks volumes and starts every well empty. The example tells it about the water with `volumes: { "plate:A1": 200 uL }` in `connect`, so put at least 200 uL in A1 or lower that number before you confirm the file.
 
 ```
 openhal action starlet.pick_up_tips tips="tips:A1"
