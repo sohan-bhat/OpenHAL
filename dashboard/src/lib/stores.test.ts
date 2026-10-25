@@ -1,0 +1,167 @@
+import { describe, expect, it } from "vitest";
+import { applyReading, describeDecision, sortDevices } from "./devices";
+import { diffLines, diffStats } from "./diff";
+import { isValueNotification, lastSeq, mergeEntries, parseLiveFrame } from "./logstore";
+import { conformanceFor, fromKernelCode, REGISTRY } from "./protocol";
+import type { LogEntry } from "./trace";
+import type { DeviceView } from "./types";
+import { formatQuantity, quantityString, unitSymbol } from "./units";
+
+const entry = (seq: number, method = "hal/read"): LogEntry => ({
+  seq,
+  at: seq,
+  direction: "in",
+  client: "bench-agent",
+  principal: "agent:bench-agent",
+  message: { jsonrpc: "2.0", id: seq, method, params: {} },
+});
+
+describe("the message log store", () => {
+  it("parses every frame shape the live feed may send", () => {
+    expect(parseLiveFrame(JSON.stringify(entry(1)))).toHaveLength(1);
+    expect(parseLiveFrame({ entry: entry(2) })).toHaveLength(1);
+    expect(parseLiveFrame({ entries: [entry(3), entry(4)] })).toHaveLength(2);
+    expect(parseLiveFrame([entry(5), { nope: true }])).toHaveLength(1);
+    expect(parseLiveFrame("{broken")).toEqual([]);
+    expect(parseLiveFrame({ type: "hello" })).toEqual([]);
+  });
+
+  it("merges by sequence number without duplicates", () => {
+    const merged = mergeEntries([entry(1), entry(3)], [entry(2), entry(3)]);
+    expect(merged.map((item) => item.seq)).toEqual([1, 2, 3]);
+    expect(lastSeq(merged)).toBe(3);
+    expect(lastSeq([])).toBe(0);
+  });
+
+  it("appends in order and keeps only the newest entries", () => {
+    const many = Array.from({ length: 10 }, (_, index) => entry(index + 1));
+    const merged = mergeEntries(many.slice(0, 5), many.slice(5).reverse(), 6);
+    expect(merged.map((item) => item.seq)).toEqual([5, 6, 7, 8, 9, 10]);
+  });
+
+  it("tells value notifications apart", () => {
+    expect(isValueNotification(entry(1, "hal/value"))).toBe(true);
+    expect(isValueNotification(entry(1, "hal/write"))).toBe(false);
+  });
+});
+
+const fan: DeviceView = {
+  id: "desk-fan",
+  name: "Desk fan controller",
+  model: null,
+  manufacturer: null,
+  driver: "mock",
+  hazard: "low",
+  writable: true,
+  connected: true,
+  unavailable: null,
+  last_error: null,
+  verification: "unverified",
+  source: "hand-written",
+  unconfirmed: [],
+  warnings: [],
+  path: "/tmp/devices/desk-fan.hal.yaml",
+  read: { temperature: { type: "number", unit: "degC", every_s: 1, stream: null, range: [-20, 80], values: null, value: 31, known: true } },
+  write: {
+    fan_speed: {
+      type: "number",
+      unit: "percent",
+      min: 0,
+      max: 100,
+      step: 1,
+      max_change_per_s: 20,
+      values: null,
+      confirm: "none",
+      suggested: null,
+      value: 20,
+      known: true,
+    },
+  },
+  actions: {},
+  interlocks: [],
+  watchdog: { heartbeat_s: 2, on_loss: "safe_state", max_duration: [] },
+  safe_state: [],
+  notes: null,
+};
+
+describe("the device store", () => {
+  it("applies live readings to read and write channels", () => {
+    const read = applyReading(fan, { type: "reading", device: "desk-fan", channel: "temperature", value: 29.5, unit: "degC" });
+    expect(read.read.temperature!.value).toBe(29.5);
+    const written = applyReading(read, { type: "reading", device: "desk-fan", channel: "fan_speed", value: 60, unit: "percent" });
+    expect(written.write.fan_speed!.value).toBe(60);
+    expect(applyReading(fan, { type: "reading", device: "other", channel: "fan_speed", value: 1, unit: null })).toBe(fan);
+  });
+
+  it("sorts devices by name", () => {
+    expect(sortDevices([{ ...fan, name: "b" }, { ...fan, id: "a", name: "a" }]).map((item) => item.name)).toEqual(["a", "b"]);
+  });
+
+  it("describes kernel decisions with registry names", () => {
+    const blocked = describeDecision({
+      status: "blocked",
+      code: "above_max",
+      message: "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %.",
+      device: "desk-fan",
+      target: "write:fan_speed",
+      value: null,
+      unit: "percent",
+      limit: { max: 100 },
+      request_id: null,
+    });
+    expect(blocked.tone).toBe("blocked");
+    expect(blocked.head).toBe("-32010 LIMIT_EXCEEDED");
+    const done = describeDecision({ ...fanDecision(), status: "done", value: 60 });
+    expect(done.word).toBe("granted");
+    expect(done.head).toBe("60 %");
+    expect(describeDecision({ ...fanDecision(), status: "pending", code: "needs_confirmation" }).word).toBe(
+      "confirmation required",
+    );
+  });
+});
+
+function fanDecision() {
+  return {
+    status: "done" as const,
+    code: null,
+    message: "Done.",
+    device: "desk-fan",
+    target: "write:fan_speed",
+    value: null,
+    unit: "percent",
+    limit: null,
+    request_id: null,
+  };
+}
+
+describe("the registry and units", () => {
+  it("maps every kernel code to one name", () => {
+    const codes = REGISTRY.flatMap((item) => item.kernelCodes);
+    expect(new Set(codes).size).toBe(codes.length);
+    expect(fromKernelCode("not_permitted")!.name).toBe("SCOPE_DENIED");
+    expect(fromKernelCode("duration_exceeded")!.name).toBe("WATCHDOG_TRIPPED");
+    expect(fromKernelCode("bad_unit")!.code).toBe(-32023);
+  });
+
+  it("reads conformance from the device or the driver default", () => {
+    expect(conformanceFor({ driver: "mock" })).toBe("control");
+    expect(conformanceFor({ driver: "uvc" })).toBe("core");
+    expect(conformanceFor({ driver: "mock", conformance: "full" })).toBe("full");
+  });
+
+  it("formats quantities with their unit", () => {
+    expect(unitSymbol("percent")).toBe("%");
+    expect(formatQuantity(60, "percent")).toBe("60 %");
+    expect(formatQuantity(31.456, "degC")).toBe("31.46 °C");
+    expect(formatQuantity(null, "percent")).toBe("unknown");
+    expect(quantityString(60, "percent")).toBe("60 %");
+  });
+});
+
+describe("the file diff", () => {
+  it("shows added and removed lines", () => {
+    const lines = diffLines("a\nb: 1\nc\n", "a\nb: 2\nc\nd\n");
+    expect(lines.map((line) => `${line.kind}:${line.text}`)).toEqual(["same:a", "removed:b: 1", "added:b: 2", "same:c", "added:d"]);
+    expect(diffStats(lines)).toEqual({ added: 2, removed: 1 });
+  });
+});
