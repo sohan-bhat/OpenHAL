@@ -6,7 +6,14 @@
       "result": {
         "status": "allowed",
         "code": null,
-        "message": "Allowed."
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": 20.0,
+          "unit": "percent"
+        }
       }
     },
     {
@@ -15,7 +22,30 @@
       "result": {
         "status": "blocked",
         "code": "above_max",
-        "message": "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %."
+        "message": "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32010,
+            "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "LIMIT_EXCEEDED",
+              "kernelCode": "above_max",
+              "kernelMessage": "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "limit": "100 %",
+              "requested": "150 %",
+              "file": "desk-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -24,7 +54,30 @@
       "result": {
         "status": "blocked",
         "code": "below_min",
-        "message": "Blocked. The fan_speed limit is 0 % (min). Asked for -5 %."
+        "message": "Blocked. The fan_speed limit is 0 % (min). Asked for -5 %.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32010,
+            "message": "fan_speed -5 % is below the limit of 0 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "LIMIT_EXCEEDED",
+              "kernelCode": "below_min",
+              "kernelMessage": "Blocked. The fan_speed limit is 0 % (min). Asked for -5 %.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "limit": "0 %",
+              "requested": "-5 %",
+              "file": "desk-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -33,7 +86,30 @@
       "result": {
         "status": "blocked",
         "code": "bad_step",
-        "message": "Blocked. fan_speed moves in steps of 1 % from 0 %. Asked for 20.5 %."
+        "message": "Blocked. fan_speed moves in steps of 1 % from 0 %. Asked for 20.5 %.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32016,
+            "message": "fan_speed 20.5 % is not a step of 1 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INVALID_VALUE",
+              "kernelCode": "bad_step",
+              "kernelMessage": "Blocked. fan_speed moves in steps of 1 % from 0 %. Asked for 20.5 %.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "limit": "1 %",
+              "requested": "20.5 %",
+              "file": "desk-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -42,7 +118,29 @@
       "result": {
         "status": "blocked",
         "code": "bad_unit",
-        "message": "fan_speed needs a unit. Send 40 % rather than 40."
+        "message": "fan_speed needs a unit. Send 40 % rather than 40.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32023,
+            "message": "fan_speed 40 needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "UNIT_INVALID",
+              "kernelCode": "bad_unit",
+              "kernelMessage": "fan_speed needs a unit. Send 40 % rather than 40.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "requested": "40",
+              "file": "desk-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -51,7 +149,29 @@
       "result": {
         "status": "blocked",
         "code": "bad_unit",
-        "message": "fan_speed: 40.0 V can't be converted to percent."
+        "message": "fan_speed: 40.0 V can't be converted to percent.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32023,
+            "message": "fan_speed 40 V needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "UNIT_INVALID",
+              "kernelCode": "bad_unit",
+              "kernelMessage": "fan_speed: 40.0 V can't be converted to percent.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "requested": "40 V",
+              "file": "desk-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -60,7 +180,29 @@
       "result": {
         "status": "blocked",
         "code": "bad_unit",
-        "message": "fan_speed: Unknown unit 'blorp'."
+        "message": "fan_speed: Unknown unit 'blorp'.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32023,
+            "message": "fan_speed 40 blorp needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "UNIT_INVALID",
+              "kernelCode": "bad_unit",
+              "kernelMessage": "fan_speed: Unknown unit 'blorp'.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "requested": "40 blorp",
+              "file": "desk-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -69,7 +211,29 @@
       "result": {
         "status": "blocked",
         "code": "bad_unit",
-        "message": "fan_speed: Could not read 'fast' as a number with a unit."
+        "message": "fan_speed: Could not read 'fast' as a number with a unit.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32023,
+            "message": "fan_speed fast needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "UNIT_INVALID",
+              "kernelCode": "bad_unit",
+              "kernelMessage": "fan_speed: Could not read 'fast' as a number with a unit.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "requested": "fast",
+              "file": "desk-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -78,7 +242,29 @@
       "result": {
         "status": "blocked",
         "code": "bad_unit",
-        "message": "fan_speed needs a number with a unit, for example 1 %."
+        "message": "fan_speed needs a number with a unit, for example 1 %.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32023,
+            "message": "fan_speed true needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "UNIT_INVALID",
+              "kernelCode": "bad_unit",
+              "kernelMessage": "fan_speed needs a number with a unit, for example 1 %.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "requested": "true",
+              "file": "desk-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -87,7 +273,30 @@
       "result": {
         "status": "blocked",
         "code": "rate_limited",
-        "message": "Blocked. fan_speed may change by 20 % per second. Right now it can go from -20 % to 20 %. Asked for 60 %, which is possible in 2.0 s, or use small steps."
+        "message": "Blocked. fan_speed may change by 20 % per second. Right now it can go from -20 % to 20 %. Asked for 60 %, which is possible in 2.0 s, or use small steps.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32011,
+            "message": "fan_speed 60 % changes faster than 20 %/s allows right now (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "RATE_LIMITED",
+              "kernelCode": "rate_limited",
+              "kernelMessage": "Blocked. fan_speed may change by 20 % per second. Right now it can go from -20 % to 20 %. Asked for 60 %, which is possible in 2.0 s, or use small steps.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "limit": "20 %/s",
+              "requested": "60 %",
+              "file": "desk-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -96,13 +305,43 @@
         {
           "status": "done",
           "code": null,
-          "message": "Done. fan_speed is now 20 %."
+          "message": "Done. fan_speed is now 20 %.",
+          "wire": {
+            "status": "done",
+            "device": "desk-fan",
+            "target": "write:fan_speed",
+            "value": 20.0,
+            "unit": "percent"
+          }
         }
       ],
       "result": {
         "status": "blocked",
         "code": "rate_limited",
-        "message": "Blocked. fan_speed may change by 20 % per second. Right now it can go from 10 % to 30 %. Asked for 40 %, which is possible in 0.5 s, or use small steps."
+        "message": "Blocked. fan_speed may change by 20 % per second. Right now it can go from 10 % to 30 %. Asked for 40 %, which is possible in 0.5 s, or use small steps.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32011,
+            "message": "fan_speed 40 % changes faster than 20 %/s allows right now (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "RATE_LIMITED",
+              "kernelCode": "rate_limited",
+              "kernelMessage": "Blocked. fan_speed may change by 20 % per second. Right now it can go from 10 % to 30 %. Asked for 40 %, which is possible in 0.5 s, or use small steps.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "limit": "20 %/s",
+              "requested": "40 %",
+              "file": "desk-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -111,7 +350,29 @@
       "result": {
         "status": "blocked",
         "code": "rate_limited",
-        "message": "Blocked. fan_speed is rate limited and its current value is unknown. Read it first so the change can be measured."
+        "message": "Blocked. fan_speed is rate limited and its current value is unknown. Read it first so the change can be measured.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32011,
+            "message": "fan_speed 10 % changes faster than allowed right now (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "RATE_LIMITED",
+              "kernelCode": "rate_limited",
+              "kernelMessage": "Blocked. fan_speed is rate limited and its current value is unknown. Read it first so the change can be measured.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "requested": "10 %",
+              "file": "desk-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -120,7 +381,14 @@
       "result": {
         "status": "allowed",
         "code": null,
-        "message": "Allowed."
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": 50.0,
+          "unit": "percent"
+        }
       }
     },
     {
@@ -129,7 +397,14 @@
       "result": {
         "status": "allowed",
         "code": null,
-        "message": "Allowed."
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": 30.0,
+          "unit": "percent"
+        }
       }
     },
     {
@@ -138,7 +413,14 @@
       "result": {
         "status": "done",
         "code": null,
-        "message": "Done. fan_speed is now 35 %."
+        "message": "Done. fan_speed is now 35 %.",
+        "wire": {
+          "status": "done",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": 35.0,
+          "unit": "percent"
+        }
       }
     },
     {
@@ -147,7 +429,26 @@
       "result": {
         "status": "blocked",
         "code": "unknown_target",
-        "message": "Blocked. desk-fan has no write channel 'speed'. Write channels are fan_speed."
+        "message": "Blocked. desk-fan has no write channel 'speed'. Write channels are fan_speed.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:speed",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32004,
+            "message": "desk-fan has no channel speed",
+            "data": {
+              "name": "UNKNOWN_TARGET",
+              "kernelCode": "unknown_target",
+              "kernelMessage": "Blocked. desk-fan has no write channel 'speed'. Write channels are fan_speed.",
+              "device": "desk-fan",
+              "channel": "speed",
+              "requested": "20 %"
+            }
+          }
+        }
       }
     },
     {
@@ -156,7 +457,26 @@
       "result": {
         "status": "blocked",
         "code": "unknown_target",
-        "message": "Blocked. There is no device 'fan'. Run openhal devices."
+        "message": "Blocked. There is no device 'fan'. Run openhal devices.",
+        "wire": {
+          "status": "blocked",
+          "device": "fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32004,
+            "message": "fan has no channel fan_speed",
+            "data": {
+              "name": "UNKNOWN_TARGET",
+              "kernelCode": "unknown_target",
+              "kernelMessage": "Blocked. There is no device 'fan'. Run openhal devices.",
+              "device": "fan",
+              "channel": "fan_speed",
+              "requested": "20 %"
+            }
+          }
+        }
       }
     },
     {
@@ -175,7 +495,26 @@
       "result": {
         "status": "blocked",
         "code": "stopped",
-        "message": "Blocked. The hub is stopped. A human must unlock it before anything can move."
+        "message": "Blocked. The hub is stopped. A human must unlock it before anything can move.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32014,
+            "message": "The hub is stopped until a person unlocks it",
+            "data": {
+              "name": "STOPPED",
+              "kernelCode": "stopped",
+              "kernelMessage": "Blocked. The hub is stopped. A human must unlock it before anything can move.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "requested": "20 %"
+            }
+          }
+        }
       }
     },
     {
@@ -194,7 +533,14 @@
       "result": {
         "status": "allowed",
         "code": null,
-        "message": "Allowed."
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": 40.0,
+          "unit": "percent"
+        }
       }
     },
     {
@@ -203,7 +549,26 @@
       "result": {
         "status": "blocked",
         "code": "not_permitted",
-        "message": "Blocked. This client has a read-only token. Ask the owner for a control token."
+        "message": "Blocked. This client has a read-only token. Ask the owner for a control token.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32003,
+            "message": "This token's scope doesn't cover desk-fan",
+            "data": {
+              "name": "SCOPE_DENIED",
+              "kernelCode": "not_permitted",
+              "kernelMessage": "Blocked. This client has a read-only token. Ask the owner for a control token.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "requested": "20 %"
+            }
+          }
+        }
       }
     },
     {
@@ -212,7 +577,14 @@
       "result": {
         "status": "allowed",
         "code": null,
-        "message": "Allowed."
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": 100.0,
+          "unit": "percent"
+        }
       }
     },
     {
@@ -239,7 +611,28 @@
       "result": {
         "status": "blocked",
         "code": "above_max",
-        "message": "Blocked. The fan_speed limit is 50 % (max). Asked for 60 %."
+        "message": "Blocked. The fan_speed limit is 50 % (max). Asked for 60 %.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32010,
+            "message": "fan_speed 60 % exceeds the session limit of 50 % (tightened by claude)",
+            "data": {
+              "name": "LIMIT_EXCEEDED",
+              "kernelCode": "above_max",
+              "kernelMessage": "Blocked. The fan_speed limit is 50 % (max). Asked for 60 %.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "limit": "50 %",
+              "requested": "60 %",
+              "tightenedBy": "claude"
+            }
+          }
+        }
       }
     },
     {
@@ -255,7 +648,28 @@
       "result": {
         "status": "blocked",
         "code": "rate_limited",
-        "message": "Blocked. fan_speed may change by 5 % per second. Right now it can go from -10 % to 10 %. Asked for 20 %, which is possible in 2.0 s, or use small steps."
+        "message": "Blocked. fan_speed may change by 5 % per second. Right now it can go from -10 % to 10 %. Asked for 20 %, which is possible in 2.0 s, or use small steps.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32011,
+            "message": "fan_speed 20 % changes faster than the session limit of 5 %/s allows right now (tightened by claude)",
+            "data": {
+              "name": "RATE_LIMITED",
+              "kernelCode": "rate_limited",
+              "kernelMessage": "Blocked. fan_speed may change by 5 % per second. Right now it can go from -10 % to 10 %. Asked for 20 %, which is possible in 2.0 s, or use small steps.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "limit": "5 %/s",
+              "requested": "20 %",
+              "tightenedBy": "claude"
+            }
+          }
+        }
       }
     },
     {
@@ -264,7 +678,26 @@
       "result": {
         "status": "blocked",
         "code": "read_only_file",
-        "message": "Blocked. desk-fan-controller is read-only until a human confirms limits for file (interlocks, watchdog, safe state and hazard), write.fan_speed. Run the limits interview."
+        "message": "Blocked. desk-fan-controller is read-only until a human confirms limits for file (interlocks, watchdog, safe state and hazard), write.fan_speed. Run the limits interview.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan-controller",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32015,
+            "message": "desk-fan-controller is read-only until a person confirms its limits",
+            "data": {
+              "name": "UNVERIFIED_LIMITS",
+              "kernelCode": "read_only_file",
+              "kernelMessage": "Blocked. desk-fan-controller is read-only until a human confirms limits for file (interlocks, watchdog, safe state and hazard), write.fan_speed. Run the limits interview.",
+              "device": "desk-fan-controller",
+              "channel": "fan_speed",
+              "requested": "20 %"
+            }
+          }
+        }
       }
     },
     {
@@ -273,7 +706,26 @@
       "result": {
         "status": "blocked",
         "code": "read_only_file",
-        "message": "Blocked. desk-fan-controller is read-only until a human confirms limits for file (interlocks, watchdog, safe state and hazard), write.fan_speed. Run the limits interview."
+        "message": "Blocked. desk-fan-controller is read-only until a human confirms limits for file (interlocks, watchdog, safe state and hazard), write.fan_speed. Run the limits interview.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan-controller",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32015,
+            "message": "desk-fan-controller is read-only until a person confirms its limits",
+            "data": {
+              "name": "UNVERIFIED_LIMITS",
+              "kernelCode": "read_only_file",
+              "kernelMessage": "Blocked. desk-fan-controller is read-only until a human confirms limits for file (interlocks, watchdog, safe state and hazard), write.fan_speed. Run the limits interview.",
+              "device": "desk-fan-controller",
+              "channel": "fan_speed",
+              "requested": "20 %"
+            }
+          }
+        }
       }
     },
     {
@@ -282,7 +734,26 @@
       "result": {
         "status": "blocked",
         "code": "read_only_file",
-        "message": "Blocked. hash-fan is read-only until a human confirms limits for file (limits changed after they were confirmed). Run the limits interview."
+        "message": "Blocked. hash-fan is read-only until a human confirms limits for file (limits changed after they were confirmed). Run the limits interview.",
+        "wire": {
+          "status": "blocked",
+          "device": "hash-fan",
+          "target": "write:speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32015,
+            "message": "hash-fan is read-only until a person confirms its limits",
+            "data": {
+              "name": "UNVERIFIED_LIMITS",
+              "kernelCode": "read_only_file",
+              "kernelMessage": "Blocked. hash-fan is read-only until a human confirms limits for file (limits changed after they were confirmed). Run the limits interview.",
+              "device": "hash-fan",
+              "channel": "speed",
+              "requested": "20 %"
+            }
+          }
+        }
       }
     },
     {
@@ -291,7 +762,14 @@
       "result": {
         "status": "allowed",
         "code": null,
-        "message": "Allowed."
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "hash-fan",
+          "target": "write:speed",
+          "value": 20.0,
+          "unit": "percent"
+        }
       }
     },
     {
@@ -300,7 +778,26 @@
       "result": {
         "status": "blocked",
         "code": "misconfigured",
-        "message": "Blocked. An interlock or condition names a device that isn't registered, so no device can be written until it is fixed. curing-heater (its expressions name desk-fan, which isn't registered)."
+        "message": "Blocked. An interlock or condition names a device that isn't registered, so no device can be written until it is fixed. curing-heater (its expressions name desk-fan, which isn't registered).",
+        "wire": {
+          "status": "blocked",
+          "device": "curing-heater",
+          "target": "write:power",
+          "value": null,
+          "unit": "W",
+          "error": {
+            "code": -32021,
+            "message": "The hub's device files are inconsistent, so nothing can be written until they are fixed",
+            "data": {
+              "name": "MISCONFIGURED",
+              "kernelCode": "misconfigured",
+              "kernelMessage": "Blocked. An interlock or condition names a device that isn't registered, so no device can be written until it is fixed. curing-heater (its expressions name desk-fan, which isn't registered).",
+              "device": "curing-heater",
+              "channel": "power",
+              "requested": "10 W"
+            }
+          }
+        }
       }
     },
     {
@@ -309,7 +806,29 @@
       "result": {
         "status": "blocked",
         "code": "interlock",
-        "message": "Blocked by an interlock on curing-heater. The heater needs the desk fan at 30 % or more. Right now desk-fan.fan_speed >= 30 % doesn't hold."
+        "message": "Blocked by an interlock on curing-heater. The heater needs the desk fan at 30 % or more. Right now desk-fan.fan_speed >= 30 % doesn't hold.",
+        "wire": {
+          "status": "blocked",
+          "device": "curing-heater",
+          "target": "write:power",
+          "value": null,
+          "unit": "W",
+          "error": {
+            "code": -32012,
+            "message": "power 10 W is held back by an interlock or requirement that doesn't hold (curing-heater.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INTERLOCK_BLOCKED",
+              "kernelCode": "interlock",
+              "kernelMessage": "Blocked by an interlock on curing-heater. The heater needs the desk fan at 30 % or more. Right now desk-fan.fan_speed >= 30 % doesn't hold.",
+              "device": "curing-heater",
+              "channel": "power",
+              "requested": "10 W",
+              "file": "curing-heater.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -318,18 +837,39 @@
         {
           "status": "done",
           "code": null,
-          "message": "Done. fan_speed is now 20 %."
+          "message": "Done. fan_speed is now 20 %.",
+          "wire": {
+            "status": "done",
+            "device": "desk-fan",
+            "target": "write:fan_speed",
+            "value": 20.0,
+            "unit": "percent"
+          }
         },
         {
           "status": "done",
           "code": null,
-          "message": "Done. fan_speed is now 40 %."
+          "message": "Done. fan_speed is now 40 %.",
+          "wire": {
+            "status": "done",
+            "device": "desk-fan",
+            "target": "write:fan_speed",
+            "value": 40.0,
+            "unit": "percent"
+          }
         }
       ],
       "result": {
         "status": "allowed",
         "code": null,
-        "message": "Allowed."
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "curing-heater",
+          "target": "write:power",
+          "value": 10.0,
+          "unit": "W"
+        }
       }
     },
     {
@@ -338,23 +878,66 @@
         {
           "status": "done",
           "code": null,
-          "message": "Done. fan_speed is now 20 %."
+          "message": "Done. fan_speed is now 20 %.",
+          "wire": {
+            "status": "done",
+            "device": "desk-fan",
+            "target": "write:fan_speed",
+            "value": 20.0,
+            "unit": "percent"
+          }
         },
         {
           "status": "done",
           "code": null,
-          "message": "Done. fan_speed is now 40 %."
+          "message": "Done. fan_speed is now 40 %.",
+          "wire": {
+            "status": "done",
+            "device": "desk-fan",
+            "target": "write:fan_speed",
+            "value": 40.0,
+            "unit": "percent"
+          }
         },
         {
           "status": "done",
           "code": null,
-          "message": "Done. power is now 10 W."
+          "message": "Done. power is now 10 W.",
+          "wire": {
+            "status": "done",
+            "device": "curing-heater",
+            "target": "write:power",
+            "value": 10.0,
+            "unit": "W"
+          }
         }
       ],
       "result": {
         "status": "blocked",
         "code": "interlock",
-        "message": "Blocked by an interlock on curing-heater. The heater needs the desk fan at 30 % or more. Right now desk-fan.fan_speed >= 30 % doesn't hold."
+        "message": "Blocked by an interlock on curing-heater. The heater needs the desk fan at 30 % or more. Right now desk-fan.fan_speed >= 30 % doesn't hold.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32012,
+            "message": "fan_speed 20 % is held back by an interlock or requirement that doesn't hold (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INTERLOCK_BLOCKED",
+              "kernelCode": "interlock",
+              "kernelMessage": "Blocked by an interlock on curing-heater. The heater needs the desk fan at 30 % or more. Right now desk-fan.fan_speed >= 30 % doesn't hold.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "requested": "20 %",
+              "file": "desk-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -363,7 +946,29 @@
       "result": {
         "status": "blocked",
         "code": "interlock",
-        "message": "Blocked by an interlock on curing-heater (not registered right now). The heater needs the desk fan at 30 % or more. Right now desk-fan.fan_speed >= 30 % doesn't hold."
+        "message": "Blocked by an interlock on curing-heater (not registered right now). The heater needs the desk fan at 30 % or more. Right now desk-fan.fan_speed >= 30 % doesn't hold.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32012,
+            "message": "fan_speed 10 % is held back by an interlock or requirement that doesn't hold (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INTERLOCK_BLOCKED",
+              "kernelCode": "interlock",
+              "kernelMessage": "Blocked by an interlock on curing-heater (not registered right now). The heater needs the desk fan at 30 % or more. Right now desk-fan.fan_speed >= 30 % doesn't hold.",
+              "device": "desk-fan",
+              "channel": "fan_speed",
+              "requested": "10 %",
+              "file": "desk-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -372,7 +977,26 @@
       "result": {
         "status": "blocked",
         "code": "not_permitted",
-        "message": "Blocked. curing-heater is medium hazard and this client's control_low scope doesn't cover it."
+        "message": "Blocked. curing-heater is medium hazard and this client's control_low scope doesn't cover it.",
+        "wire": {
+          "status": "blocked",
+          "device": "curing-heater",
+          "target": "write:power",
+          "value": null,
+          "unit": "W",
+          "error": {
+            "code": -32003,
+            "message": "This token's scope doesn't cover curing-heater",
+            "data": {
+              "name": "SCOPE_DENIED",
+              "kernelCode": "not_permitted",
+              "kernelMessage": "Blocked. curing-heater is medium hazard and this client's control_low scope doesn't cover it.",
+              "device": "curing-heater",
+              "channel": "power",
+              "requested": "10 W"
+            }
+          }
+        }
       }
     },
     {
@@ -381,13 +1005,27 @@
         {
           "status": "done",
           "code": null,
-          "message": "Done. fan_speed is now 40 %."
+          "message": "Done. fan_speed is now 40 %.",
+          "wire": {
+            "status": "done",
+            "device": "desk-fan",
+            "target": "write:fan_speed",
+            "value": 40.0,
+            "unit": "percent"
+          }
         }
       ],
       "result": {
         "status": "allowed",
         "code": null,
-        "message": "Allowed."
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "curing-heater",
+          "target": "write:power",
+          "value": 12.5,
+          "unit": "W"
+        }
       }
     },
     {
@@ -396,12 +1034,26 @@
         {
           "status": "done",
           "code": null,
-          "message": "Done. fan_speed is now 40 %."
+          "message": "Done. fan_speed is now 40 %.",
+          "wire": {
+            "status": "done",
+            "device": "desk-fan",
+            "target": "write:fan_speed",
+            "value": 40.0,
+            "unit": "percent"
+          }
         },
         {
           "status": "done",
           "code": null,
-          "message": "Done. power is now 50 W."
+          "message": "Done. power is now 50 W.",
+          "wire": {
+            "status": "done",
+            "device": "curing-heater",
+            "target": "write:power",
+            "value": 50.0,
+            "unit": "W"
+          }
         },
         {
           "status": "tick",
@@ -417,7 +1069,29 @@
       "result": {
         "status": "blocked",
         "code": "duration_exceeded",
-        "message": "Blocked. power > 40 W already ran for its 15 min limit. Wait for the budget to reset."
+        "message": "Blocked. power > 40 W already ran for its 15 min limit. Wait for the budget to reset.",
+        "wire": {
+          "status": "blocked",
+          "device": "curing-heater",
+          "target": "write:power",
+          "value": null,
+          "unit": "W",
+          "error": {
+            "code": -32017,
+            "message": "A watchdog budget on curing-heater is used up until it resets (curing-heater.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "WATCHDOG_TRIPPED",
+              "kernelCode": "duration_exceeded",
+              "kernelMessage": "Blocked. power > 40 W already ran for its 15 min limit. Wait for the budget to reset.",
+              "device": "curing-heater",
+              "channel": "power",
+              "requested": "45 W",
+              "file": "curing-heater.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -426,7 +1100,14 @@
       "result": {
         "status": "needs_confirmation",
         "code": "needs_confirmation",
-        "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+        "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+        "wire": {
+          "status": "needs_confirmation",
+          "device": "bench-psu",
+          "target": "write:ch1_output",
+          "value": true,
+          "unit": null
+        }
       }
     },
     {
@@ -435,7 +1116,29 @@
       "result": {
         "status": "blocked",
         "code": "interlock",
-        "message": "Blocked by an interlock on bench-psu. Channel 1 is limited to 1 A on this bench. Right now ch1_current <= 1 A is unknown."
+        "message": "Blocked by an interlock on bench-psu. Channel 1 is limited to 1 A on this bench. Right now ch1_current <= 1 A is unknown.",
+        "wire": {
+          "status": "blocked",
+          "device": "bench-psu",
+          "target": "write:ch1_output",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32012,
+            "message": "ch1_output true is held back by an interlock or requirement that doesn't hold (bench-psu.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INTERLOCK_BLOCKED",
+              "kernelCode": "interlock",
+              "kernelMessage": "Blocked by an interlock on bench-psu. Channel 1 is limited to 1 A on this bench. Right now ch1_current <= 1 A is unknown.",
+              "device": "bench-psu",
+              "channel": "ch1_output",
+              "requested": "true",
+              "file": "bench-psu.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -444,7 +1147,29 @@
       "result": {
         "status": "blocked",
         "code": "interlock",
-        "message": "Blocked by an interlock on bench-psu. Channel 1 is limited to 1 A on this bench. Right now ch1_current <= 1 A doesn't hold."
+        "message": "Blocked by an interlock on bench-psu. Channel 1 is limited to 1 A on this bench. Right now ch1_current <= 1 A doesn't hold.",
+        "wire": {
+          "status": "blocked",
+          "device": "bench-psu",
+          "target": "write:ch1_output",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32012,
+            "message": "ch1_output true is held back by an interlock or requirement that doesn't hold (bench-psu.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INTERLOCK_BLOCKED",
+              "kernelCode": "interlock",
+              "kernelMessage": "Blocked by an interlock on bench-psu. Channel 1 is limited to 1 A on this bench. Right now ch1_current <= 1 A doesn't hold.",
+              "device": "bench-psu",
+              "channel": "ch1_output",
+              "requested": "true",
+              "file": "bench-psu.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -453,7 +1178,29 @@
       "result": {
         "status": "blocked",
         "code": "bad_value",
-        "message": "ch1_output needs true or false."
+        "message": "ch1_output needs true or false.",
+        "wire": {
+          "status": "blocked",
+          "device": "bench-psu",
+          "target": "write:ch1_output",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32016,
+            "message": "ch1_output on is not a value it accepts (bench-psu.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INVALID_VALUE",
+              "kernelCode": "bad_value",
+              "kernelMessage": "ch1_output needs true or false.",
+              "device": "bench-psu",
+              "channel": "ch1_output",
+              "requested": "on",
+              "file": "bench-psu.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -462,7 +1209,25 @@
       "result": {
         "status": "blocked",
         "code": "bad_request",
-        "message": "Blocked. set_ch1 has missing arguments amps."
+        "message": "Blocked. set_ch1 has missing arguments amps.",
+        "wire": {
+          "status": "blocked",
+          "device": "bench-psu",
+          "target": "action:set_ch1",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32602,
+            "message": "The params don't match the method's schema",
+            "data": {
+              "name": "INVALID_PARAMS",
+              "kernelCode": "bad_request",
+              "kernelMessage": "Blocked. set_ch1 has missing arguments amps.",
+              "device": "bench-psu",
+              "action": "set_ch1"
+            }
+          }
+        }
       }
     },
     {
@@ -471,7 +1236,25 @@
       "result": {
         "status": "blocked",
         "code": "bad_request",
-        "message": "Blocked. set_ch1 has unknown arguments ohms."
+        "message": "Blocked. set_ch1 has unknown arguments ohms.",
+        "wire": {
+          "status": "blocked",
+          "device": "bench-psu",
+          "target": "action:set_ch1",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32602,
+            "message": "The params don't match the method's schema",
+            "data": {
+              "name": "INVALID_PARAMS",
+              "kernelCode": "bad_request",
+              "kernelMessage": "Blocked. set_ch1 has unknown arguments ohms.",
+              "device": "bench-psu",
+              "action": "set_ch1"
+            }
+          }
+        }
       }
     },
     {
@@ -480,7 +1263,29 @@
       "result": {
         "status": "blocked",
         "code": "bad_step",
-        "message": "Blocked. volts moves in steps of 0.01 V from 0 V. Asked for 5.005 V."
+        "message": "Blocked. volts moves in steps of 0.01 V from 0 V. Asked for 5.005 V.",
+        "wire": {
+          "status": "blocked",
+          "device": "bench-psu",
+          "target": "action:set_ch1",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32016,
+            "message": "set_ch1 on bench-psu is not a step of 0.01 V (bench-psu.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INVALID_VALUE",
+              "kernelCode": "bad_step",
+              "kernelMessage": "Blocked. volts moves in steps of 0.01 V from 0 V. Asked for 5.005 V.",
+              "device": "bench-psu",
+              "action": "set_ch1",
+              "limit": "0.01 V",
+              "file": "bench-psu.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -489,7 +1294,17 @@
       "result": {
         "status": "allowed",
         "code": null,
-        "message": "Allowed."
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "bench-psu",
+          "target": "action:set_ch1",
+          "value": {
+            "volts": 5.0,
+            "amps": 0.5
+          },
+          "unit": null
+        }
       }
     },
     {
@@ -498,7 +1313,17 @@
       "result": {
         "status": "needs_confirmation",
         "code": "needs_confirmation",
-        "message": "Waiting for a human to approve action:set_ch1 on bench-psu."
+        "message": "Waiting for a human to approve action:set_ch1 on bench-psu.",
+        "wire": {
+          "status": "needs_confirmation",
+          "device": "bench-psu",
+          "target": "action:set_ch1",
+          "value": {
+            "volts": 5.0,
+            "amps": 0.5
+          },
+          "unit": null
+        }
       }
     },
     {
@@ -507,7 +1332,25 @@
       "result": {
         "status": "blocked",
         "code": "needs_confirmation",
-        "message": "Blocked. action:set_ch1 on bench-psu needs a human to confirm, and routines can't wait for one."
+        "message": "Blocked. action:set_ch1 on bench-psu needs a human to confirm, and routines can't wait for one.",
+        "wire": {
+          "status": "blocked",
+          "device": "bench-psu",
+          "target": "action:set_ch1",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32013,
+            "message": "set_ch1 on bench-psu needs a person to approve it",
+            "data": {
+              "name": "CONFIRMATION_REQUIRED",
+              "kernelCode": "needs_confirmation",
+              "kernelMessage": "Blocked. action:set_ch1 on bench-psu needs a human to confirm, and routines can't wait for one.",
+              "device": "bench-psu",
+              "action": "set_ch1"
+            }
+          }
+        }
       }
     },
     {
@@ -516,7 +1359,25 @@
       "result": {
         "status": "blocked",
         "code": "unknown_target",
-        "message": "Blocked. bench-psu has no action 'reboot'. Actions are set_ch1."
+        "message": "Blocked. bench-psu has no action 'reboot'. Actions are set_ch1.",
+        "wire": {
+          "status": "blocked",
+          "device": "bench-psu",
+          "target": "action:reboot",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32004,
+            "message": "bench-psu has no action reboot",
+            "data": {
+              "name": "UNKNOWN_TARGET",
+              "kernelCode": "unknown_target",
+              "kernelMessage": "Blocked. bench-psu has no action 'reboot'. Actions are set_ch1.",
+              "device": "bench-psu",
+              "action": "reboot"
+            }
+          }
+        }
       }
     },
     {
@@ -525,108 +1386,287 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         }
       ],
       "result": {
         "status": "blocked",
         "code": "queue_full",
-        "message": "This client already has 20 requests waiting for a human. Wait for them to be decided."
+        "message": "This client already has 20 requests waiting for a human. Wait for them to be decided.",
+        "wire": {
+          "status": "blocked",
+          "device": "bench-psu",
+          "target": "write:ch1_output",
+          "value": true,
+          "unit": null,
+          "error": {
+            "code": -32019,
+            "message": "The confirmation queue is full. Wait for pending requests to be decided",
+            "data": {
+              "name": "QUEUE_FULL",
+              "kernelCode": "queue_full",
+              "kernelMessage": "This client already has 20 requests waiting for a human. Wait for them to be decided.",
+              "device": "bench-psu",
+              "channel": "ch1_output",
+              "requested": "true"
+            }
+          }
+        }
       }
     },
     {
@@ -635,7 +1675,15 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu."
+          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "wire": {
+            "status": "pending",
+            "device": "bench-psu",
+            "target": "write:ch1_output",
+            "value": true,
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "stop",
@@ -650,7 +1698,26 @@
       "result": {
         "status": "blocked",
         "code": "stopped",
-        "message": "Blocked. The hub is stopped. A human must unlock it before anything can move."
+        "message": "Blocked. The hub is stopped. A human must unlock it before anything can move.",
+        "wire": {
+          "status": "blocked",
+          "device": "bench-psu",
+          "target": "write:ch1_output",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32014,
+            "message": "The hub is stopped until a person unlocks it",
+            "data": {
+              "name": "STOPPED",
+              "kernelCode": "stopped",
+              "kernelMessage": "Blocked. The hub is stopped. A human must unlock it before anything can move.",
+              "device": "bench-psu",
+              "channel": "ch1_output",
+              "requested": "false"
+            }
+          }
+        }
       }
     },
     {
@@ -659,7 +1726,29 @@
       "result": {
         "status": "blocked",
         "code": "interlock",
-        "message": "Blocked by an interlock on laser. The enclosure door must be closed before the laser fires. Right now door_closed == true doesn't hold."
+        "message": "Blocked by an interlock on laser. The enclosure door must be closed before the laser fires. Right now door_closed == true doesn't hold.",
+        "wire": {
+          "status": "blocked",
+          "device": "laser",
+          "target": "write:laser_power",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32012,
+            "message": "laser_power 10 % is held back by an interlock or requirement that doesn't hold (laser.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INTERLOCK_BLOCKED",
+              "kernelCode": "interlock",
+              "kernelMessage": "Blocked by an interlock on laser. The enclosure door must be closed before the laser fires. Right now door_closed == true doesn't hold.",
+              "device": "laser",
+              "channel": "laser_power",
+              "requested": "10 %",
+              "file": "laser.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -668,7 +1757,14 @@
       "result": {
         "status": "needs_confirmation",
         "code": "needs_confirmation",
-        "message": "Waiting for a human to approve write:laser_power on laser."
+        "message": "Waiting for a human to approve write:laser_power on laser.",
+        "wire": {
+          "status": "needs_confirmation",
+          "device": "laser",
+          "target": "write:laser_power",
+          "value": 10.0,
+          "unit": "percent"
+        }
       }
     },
     {
@@ -677,7 +1773,26 @@
       "result": {
         "status": "blocked",
         "code": "not_permitted",
-        "message": "Blocked. laser is high hazard and this client's control_low scope doesn't cover it."
+        "message": "Blocked. laser is high hazard and this client's control_low scope doesn't cover it.",
+        "wire": {
+          "status": "blocked",
+          "device": "laser",
+          "target": "write:laser_power",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32003,
+            "message": "This token's scope doesn't cover laser",
+            "data": {
+              "name": "SCOPE_DENIED",
+              "kernelCode": "not_permitted",
+              "kernelMessage": "Blocked. laser is high hazard and this client's control_low scope doesn't cover it.",
+              "device": "laser",
+              "channel": "laser_power",
+              "requested": "10 %"
+            }
+          }
+        }
       }
     },
     {
@@ -686,7 +1801,30 @@
       "result": {
         "status": "blocked",
         "code": "above_max",
-        "message": "Blocked. The laser_power limit is 30 % (max). Asked for 45 %."
+        "message": "Blocked. The laser_power limit is 30 % (max). Asked for 45 %.",
+        "wire": {
+          "status": "blocked",
+          "device": "laser",
+          "target": "write:laser_power",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32010,
+            "message": "laser_power 45 % exceeds the limit of 30 % (laser.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "LIMIT_EXCEEDED",
+              "kernelCode": "above_max",
+              "kernelMessage": "Blocked. The laser_power limit is 30 % (max). Asked for 45 %.",
+              "device": "laser",
+              "channel": "laser_power",
+              "limit": "30 %",
+              "requested": "45 %",
+              "file": "laser.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -695,7 +1833,28 @@
       "result": {
         "status": "blocked",
         "code": "bad_value",
-        "message": "file doesn't match the allowed pattern."
+        "message": "file doesn't match the allowed pattern.",
+        "wire": {
+          "status": "blocked",
+          "device": "laser",
+          "target": "action:run_job",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32016,
+            "message": "run_job on laser is not a value it accepts (laser.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INVALID_VALUE",
+              "kernelCode": "bad_value",
+              "kernelMessage": "file doesn't match the allowed pattern.",
+              "device": "laser",
+              "action": "run_job",
+              "file": "laser.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -704,7 +1863,28 @@
       "result": {
         "status": "blocked",
         "code": "bad_value",
-        "message": "file may be at most 200 characters."
+        "message": "file may be at most 200 characters.",
+        "wire": {
+          "status": "blocked",
+          "device": "laser",
+          "target": "action:run_job",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32016,
+            "message": "run_job on laser is not a value it accepts (laser.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INVALID_VALUE",
+              "kernelCode": "bad_value",
+              "kernelMessage": "file may be at most 200 characters.",
+              "device": "laser",
+              "action": "run_job",
+              "file": "laser.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -713,7 +1893,28 @@
       "result": {
         "status": "blocked",
         "code": "interlock",
-        "message": "Blocked. run_job needs door_closed == true, which doesn't hold right now."
+        "message": "Blocked. run_job needs door_closed == true, which doesn't hold right now.",
+        "wire": {
+          "status": "blocked",
+          "device": "laser",
+          "target": "action:run_job",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32012,
+            "message": "run_job on laser is held back by an interlock or requirement that doesn't hold (laser.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INTERLOCK_BLOCKED",
+              "kernelCode": "interlock",
+              "kernelMessage": "Blocked. run_job needs door_closed == true, which doesn't hold right now.",
+              "device": "laser",
+              "action": "run_job",
+              "file": "laser.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -722,7 +1923,28 @@
       "result": {
         "status": "blocked",
         "code": "interlock",
-        "message": "Blocked. run_job needs state == Idle, which is unknown right now."
+        "message": "Blocked. run_job needs state == Idle, which is unknown right now.",
+        "wire": {
+          "status": "blocked",
+          "device": "laser",
+          "target": "action:run_job",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32012,
+            "message": "run_job on laser is held back by an interlock or requirement that doesn't hold (laser.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INTERLOCK_BLOCKED",
+              "kernelCode": "interlock",
+              "kernelMessage": "Blocked. run_job needs state == Idle, which is unknown right now.",
+              "device": "laser",
+              "action": "run_job",
+              "file": "laser.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -731,7 +1953,25 @@
       "result": {
         "status": "blocked",
         "code": "needs_confirmation",
-        "message": "Blocked. action:home on laser needs a human to confirm, and routines can't wait for one."
+        "message": "Blocked. action:home on laser needs a human to confirm, and routines can't wait for one.",
+        "wire": {
+          "status": "blocked",
+          "device": "laser",
+          "target": "action:home",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32013,
+            "message": "home on laser needs a person to approve it",
+            "data": {
+              "name": "CONFIRMATION_REQUIRED",
+              "kernelCode": "needs_confirmation",
+              "kernelMessage": "Blocked. action:home on laser needs a human to confirm, and routines can't wait for one.",
+              "device": "laser",
+              "action": "home"
+            }
+          }
+        }
       }
     },
     {
@@ -740,7 +1980,28 @@
       "result": {
         "status": "blocked",
         "code": "bad_value",
-        "message": "axes must be one of x, y, z, all."
+        "message": "axes must be one of x, y, z, all.",
+        "wire": {
+          "status": "blocked",
+          "device": "voron",
+          "target": "action:home",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32016,
+            "message": "home on voron is not a value it accepts (voron.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INVALID_VALUE",
+              "kernelCode": "bad_value",
+              "kernelMessage": "axes must be one of x, y, z, all.",
+              "device": "voron",
+              "action": "home",
+              "file": "voron.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -749,7 +2010,16 @@
       "result": {
         "status": "needs_confirmation",
         "code": "needs_confirmation",
-        "message": "Waiting for a human to approve action:home on voron."
+        "message": "Waiting for a human to approve action:home on voron.",
+        "wire": {
+          "status": "needs_confirmation",
+          "device": "voron",
+          "target": "action:home",
+          "value": {
+            "axes": "all"
+          },
+          "unit": null
+        }
       }
     },
     {
@@ -758,7 +2028,17 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve action:home on voron."
+          "message": "Waiting for a human to approve action:home on voron.",
+          "wire": {
+            "status": "pending",
+            "device": "voron",
+            "target": "action:home",
+            "value": {
+              "axes": "all"
+            },
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
         },
         {
           "status": "done",
@@ -769,7 +2049,16 @@
       "result": {
         "status": "allowed",
         "code": null,
-        "message": "Allowed."
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "voron",
+          "target": "action:home",
+          "value": {
+            "axes": "all"
+          },
+          "unit": null
+        }
       }
     },
     {
@@ -778,7 +2067,14 @@
       "result": {
         "status": "needs_confirmation",
         "code": "needs_confirmation",
-        "message": "Waiting for a human to approve write:extruder_target on voron."
+        "message": "Waiting for a human to approve write:extruder_target on voron.",
+        "wire": {
+          "status": "needs_confirmation",
+          "device": "voron",
+          "target": "write:extruder_target",
+          "value": 100.00000000000006,
+          "unit": "degC"
+        }
       }
     },
     {
@@ -787,7 +2083,30 @@
       "result": {
         "status": "blocked",
         "code": "above_max",
-        "message": "Blocked. The extruder_target limit is 260 degC (max). Asked for 315.556 degC."
+        "message": "Blocked. The extruder_target limit is 260 degC (max). Asked for 315.556 degC.",
+        "wire": {
+          "status": "blocked",
+          "device": "voron",
+          "target": "write:extruder_target",
+          "value": null,
+          "unit": "degC",
+          "error": {
+            "code": -32010,
+            "message": "extruder_target 315.556 degC exceeds the limit of 260 degC (voron.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "LIMIT_EXCEEDED",
+              "kernelCode": "above_max",
+              "kernelMessage": "Blocked. The extruder_target limit is 260 degC (max). Asked for 315.556 degC.",
+              "device": "voron",
+              "channel": "extruder_target",
+              "limit": "260 degC",
+              "requested": "315.556 degC",
+              "file": "voron.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -796,7 +2115,29 @@
       "result": {
         "status": "blocked",
         "code": "interlock",
-        "message": "Blocked by an interlock on voron. Clear the printer error before heating. Right now state != error doesn't hold."
+        "message": "Blocked by an interlock on voron. Clear the printer error before heating. Right now state != error doesn't hold.",
+        "wire": {
+          "status": "blocked",
+          "device": "voron",
+          "target": "write:extruder_target",
+          "value": null,
+          "unit": "degC",
+          "error": {
+            "code": -32012,
+            "message": "extruder_target 100 degC is held back by an interlock or requirement that doesn't hold (voron.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INTERLOCK_BLOCKED",
+              "kernelCode": "interlock",
+              "kernelMessage": "Blocked by an interlock on voron. Clear the printer error before heating. Right now state != error doesn't hold.",
+              "device": "voron",
+              "channel": "extruder_target",
+              "requested": "100 degC",
+              "file": "voron.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -805,7 +2146,30 @@
       "result": {
         "status": "blocked",
         "code": "rate_limited",
-        "message": "Blocked. bed_target may change by 20 degC per second. Right now it can go from -20 degC to 20 degC. Asked for 100 degC, which is possible in 4.0 s, or use small steps."
+        "message": "Blocked. bed_target may change by 20 degC per second. Right now it can go from -20 degC to 20 degC. Asked for 100 degC, which is possible in 4.0 s, or use small steps.",
+        "wire": {
+          "status": "blocked",
+          "device": "voron",
+          "target": "write:bed_target",
+          "value": null,
+          "unit": "degC",
+          "error": {
+            "code": -32011,
+            "message": "bed_target 100 degC changes faster than 20 degC/s allows right now (voron.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "RATE_LIMITED",
+              "kernelCode": "rate_limited",
+              "kernelMessage": "Blocked. bed_target may change by 20 degC per second. Right now it can go from -20 degC to 20 degC. Asked for 100 degC, which is possible in 4.0 s, or use small steps.",
+              "device": "voron",
+              "channel": "bed_target",
+              "limit": "20 degC/s",
+              "requested": "100 degC",
+              "file": "voron.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -814,7 +2178,28 @@
       "result": {
         "status": "blocked",
         "code": "interlock",
-        "message": "Blocked. pause needs state == printing, which doesn't hold right now."
+        "message": "Blocked. pause needs state == printing, which doesn't hold right now.",
+        "wire": {
+          "status": "blocked",
+          "device": "voron",
+          "target": "action:pause",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32012,
+            "message": "pause on voron is held back by an interlock or requirement that doesn't hold (voron.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INTERLOCK_BLOCKED",
+              "kernelCode": "interlock",
+              "kernelMessage": "Blocked. pause needs state == printing, which doesn't hold right now.",
+              "device": "voron",
+              "action": "pause",
+              "file": "voron.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -823,7 +2208,29 @@
       "result": {
         "status": "blocked",
         "code": "above_max",
-        "message": "Blocked. The ra limit is 24 hour (max). Asked for 25 hour."
+        "message": "Blocked. The ra limit is 24 hour (max). Asked for 25 hour.",
+        "wire": {
+          "status": "blocked",
+          "device": "mount",
+          "target": "action:slew_to",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32010,
+            "message": "slew_to on mount exceeds the limit of 24 hour (mount.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "LIMIT_EXCEEDED",
+              "kernelCode": "above_max",
+              "kernelMessage": "Blocked. The ra limit is 24 hour (max). Asked for 25 hour.",
+              "device": "mount",
+              "action": "slew_to",
+              "limit": "24 hour",
+              "file": "mount.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -832,7 +2239,17 @@
       "result": {
         "status": "allowed",
         "code": null,
-        "message": "Allowed."
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "mount",
+          "target": "action:slew_to",
+          "value": {
+            "ra": 1.5,
+            "dec": 57.29577951308232
+          },
+          "unit": null
+        }
       }
     },
     {
@@ -841,7 +2258,26 @@
       "result": {
         "status": "blocked",
         "code": "unknown_target",
-        "message": "Blocked. room-sensor has no write channel 'temperature'. Write channels are none."
+        "message": "Blocked. room-sensor has no write channel 'temperature'. Write channels are none.",
+        "wire": {
+          "status": "blocked",
+          "device": "room-sensor",
+          "target": "write:temperature",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32004,
+            "message": "room-sensor has no channel temperature",
+            "data": {
+              "name": "UNKNOWN_TARGET",
+              "kernelCode": "unknown_target",
+              "kernelMessage": "Blocked. room-sensor has no write channel 'temperature'. Write channels are none.",
+              "device": "room-sensor",
+              "channel": "temperature",
+              "requested": "20 degC"
+            }
+          }
+        }
       }
     },
     {
@@ -850,7 +2286,29 @@
       "result": {
         "status": "blocked",
         "code": "bad_value",
-        "message": "pump needs true or false."
+        "message": "pump needs true or false.",
+        "wire": {
+          "status": "blocked",
+          "device": "plant",
+          "target": "write:pump",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32016,
+            "message": "pump true is not a value it accepts (plant.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INVALID_VALUE",
+              "kernelCode": "bad_value",
+              "kernelMessage": "pump needs true or false.",
+              "device": "plant",
+              "channel": "pump",
+              "requested": "true",
+              "file": "plant.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -859,7 +2317,14 @@
       "result": {
         "status": "done",
         "code": null,
-        "message": "Done. pump is now true."
+        "message": "Done. pump is now true.",
+        "wire": {
+          "status": "done",
+          "device": "plant",
+          "target": "write:pump",
+          "value": true,
+          "unit": null
+        }
       }
     },
     {
@@ -868,7 +2333,14 @@
         {
           "status": "done",
           "code": null,
-          "message": "Done. pump is now true."
+          "message": "Done. pump is now true.",
+          "wire": {
+            "status": "done",
+            "device": "plant",
+            "target": "write:pump",
+            "value": true,
+            "unit": null
+          }
         },
         {
           "status": "tick",
@@ -884,7 +2356,29 @@
       "result": {
         "status": "blocked",
         "code": "duration_exceeded",
-        "message": "Blocked. pump == true already ran for its 20 s limit. Wait for the budget to reset."
+        "message": "Blocked. pump == true already ran for its 20 s limit. Wait for the budget to reset.",
+        "wire": {
+          "status": "blocked",
+          "device": "plant",
+          "target": "write:pump",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32017,
+            "message": "A watchdog budget on plant is used up until it resets (plant.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "WATCHDOG_TRIPPED",
+              "kernelCode": "duration_exceeded",
+              "kernelMessage": "Blocked. pump == true already ran for its 20 s limit. Wait for the budget to reset.",
+              "device": "plant",
+              "channel": "pump",
+              "requested": "true",
+              "file": "plant.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -893,7 +2387,30 @@
       "result": {
         "status": "blocked",
         "code": "bad_step",
-        "message": "Blocked. brightness moves in steps of 1 % from 1 %. Asked for 50.5 %."
+        "message": "Blocked. brightness moves in steps of 1 % from 1 %. Asked for 50.5 %.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-lamp",
+          "target": "write:brightness",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32016,
+            "message": "brightness 50.5 % is not a step of 1 % (desk-lamp.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INVALID_VALUE",
+              "kernelCode": "bad_step",
+              "kernelMessage": "Blocked. brightness moves in steps of 1 % from 1 %. Asked for 50.5 %.",
+              "device": "desk-lamp",
+              "channel": "brightness",
+              "limit": "1 %",
+              "requested": "50.5 %",
+              "file": "desk-lamp.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -902,7 +2419,30 @@
       "result": {
         "status": "blocked",
         "code": "below_min",
-        "message": "Blocked. The brightness limit is 1 % (min). Asked for 0 %."
+        "message": "Blocked. The brightness limit is 1 % (min). Asked for 0 %.",
+        "wire": {
+          "status": "blocked",
+          "device": "desk-lamp",
+          "target": "write:brightness",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32010,
+            "message": "brightness 0 % is below the limit of 1 % (desk-lamp.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "LIMIT_EXCEEDED",
+              "kernelCode": "below_min",
+              "kernelMessage": "Blocked. The brightness limit is 1 % (min). Asked for 0 %.",
+              "device": "desk-lamp",
+              "channel": "brightness",
+              "limit": "1 %",
+              "requested": "0 %",
+              "file": "desk-lamp.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -911,7 +2451,14 @@
       "result": {
         "status": "allowed",
         "code": null,
-        "message": "Allowed."
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "pads",
+          "target": "write:pad_1_led",
+          "value": true,
+          "unit": null
+        }
       }
     },
     {
@@ -920,7 +2467,26 @@
       "result": {
         "status": "blocked",
         "code": "unknown_target",
-        "message": "Blocked. energy-meter has no write channel 'power'. Write channels are none."
+        "message": "Blocked. energy-meter has no write channel 'power'. Write channels are none.",
+        "wire": {
+          "status": "blocked",
+          "device": "energy-meter",
+          "target": "write:power",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32004,
+            "message": "energy-meter has no channel power",
+            "data": {
+              "name": "UNKNOWN_TARGET",
+              "kernelCode": "unknown_target",
+              "kernelMessage": "Blocked. energy-meter has no write channel 'power'. Write channels are none.",
+              "device": "energy-meter",
+              "channel": "power",
+              "requested": "10 W"
+            }
+          }
+        }
       }
     },
     {
@@ -929,7 +2495,26 @@
       "result": {
         "status": "blocked",
         "code": "device_unavailable",
-        "message": "Blocked. aquarium-light is not connected."
+        "message": "Blocked. aquarium-light is not connected.",
+        "wire": {
+          "status": "blocked",
+          "device": "aquarium-light",
+          "target": "write:relay",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32005,
+            "message": "aquarium-light is disconnected or not ready",
+            "data": {
+              "name": "DEVICE_UNAVAILABLE",
+              "kernelCode": "device_unavailable",
+              "kernelMessage": "Blocked. aquarium-light is not connected.",
+              "device": "aquarium-light",
+              "channel": "relay",
+              "requested": "true"
+            }
+          }
+        }
       }
     },
     {
@@ -938,7 +2523,26 @@
       "result": {
         "status": "blocked",
         "code": "device_unavailable",
-        "message": "Blocked. aquarium-light is not connected."
+        "message": "Blocked. aquarium-light is not connected.",
+        "wire": {
+          "status": "blocked",
+          "device": "aquarium-light",
+          "target": "write:relay",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32005,
+            "message": "aquarium-light is disconnected or not ready",
+            "data": {
+              "name": "DEVICE_UNAVAILABLE",
+              "kernelCode": "device_unavailable",
+              "kernelMessage": "Blocked. aquarium-light is not connected.",
+              "device": "aquarium-light",
+              "channel": "relay",
+              "requested": "true"
+            }
+          }
+        }
       }
     },
     {
@@ -947,7 +2551,25 @@
       "result": {
         "status": "blocked",
         "code": "unknown_target",
-        "message": "Blocked. bench-camera has no action 'capture'. Actions are none."
+        "message": "Blocked. bench-camera has no action 'capture'. Actions are none.",
+        "wire": {
+          "status": "blocked",
+          "device": "bench-camera",
+          "target": "action:capture",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32004,
+            "message": "bench-camera has no action capture",
+            "data": {
+              "name": "UNKNOWN_TARGET",
+              "kernelCode": "unknown_target",
+              "kernelMessage": "Blocked. bench-camera has no action 'capture'. Actions are none.",
+              "device": "bench-camera",
+              "action": "capture"
+            }
+          }
+        }
       }
     },
     {
@@ -956,7 +2578,29 @@
       "result": {
         "status": "blocked",
         "code": "interlock",
-        "message": "Blocked by an interlock on hot-fan. When fan_speed > 50 %, temperature < 35 degC must hold. Right now temperature < 35 degC doesn't hold."
+        "message": "Blocked by an interlock on hot-fan. When fan_speed > 50 %, temperature < 35 degC must hold. Right now temperature < 35 degC doesn't hold.",
+        "wire": {
+          "status": "blocked",
+          "device": "hot-fan",
+          "target": "write:fan_speed",
+          "value": null,
+          "unit": "percent",
+          "error": {
+            "code": -32012,
+            "message": "fan_speed 60 % is held back by an interlock or requirement that doesn't hold (hot-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "INTERLOCK_BLOCKED",
+              "kernelCode": "interlock",
+              "kernelMessage": "Blocked by an interlock on hot-fan. When fan_speed > 50 %, temperature < 35 degC must hold. Right now temperature < 35 degC doesn't hold.",
+              "device": "hot-fan",
+              "channel": "fan_speed",
+              "requested": "60 %",
+              "file": "hot-fan.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
       }
     },
     {
@@ -965,7 +2609,14 @@
       "result": {
         "status": "allowed",
         "code": null,
-        "message": "Allowed."
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "hot-fan",
+          "target": "write:fan_speed",
+          "value": 60.0,
+          "unit": "percent"
+        }
       }
     }
   ],
