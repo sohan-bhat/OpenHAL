@@ -7,6 +7,7 @@ import json
 import socket
 from collections.abc import AsyncIterator
 from pathlib import Path
+from typing import Any
 
 import httpx
 import pytest
@@ -44,14 +45,14 @@ def bearer(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-async def test_devices_are_the_mock_waterer_heater_and_lamp(base_url: str, harness: Harness) -> None:
+async def test_devices_are_the_plant_waterer_and_the_mock_heater_and_lamp(base_url: str, harness: Harness) -> None:
     async with httpx.AsyncClient(base_url=base_url, headers=bearer(harness.human_token)) as client:
         devices = (await client.get("/v1/devices")).json()
         waterer = (await client.get("/v1/devices/plant-waterer")).json()
     assert {device["id"]: device["driver"] for device in devices} == {
         "bench-lamp": "mock",
         "curing-heater": "mock",
-        "plant-waterer": "mock",
+        "plant-waterer": "openhal-firmware",
     }
     assert waterer["read"]["tank"]["values"] == ["empty", "ok"]
     assert waterer["actions"]["water"]["args"]["duration"]["max"] == 30
@@ -59,29 +60,45 @@ async def test_devices_are_the_mock_waterer_heater_and_lamp(base_url: str, harne
     assert lamp["writable"] is False
 
 
-async def test_the_blocked_write_reaches_the_message_log(base_url: str, harness: Harness) -> None:
-    async with ProtocolClient(base_url, harness.agent_token, client_name="bench-agent") as rpc:
-        with pytest.raises(ProtocolError) as blocked:
-            await rpc.call(
-                "hal/action",
-                {"device": "plant-waterer", "action": "water", "args": {"duration": {"value": 120, "unit": "s"}}},
-            )
-        done = await rpc.call(
-            "hal/action",
-            {"device": "plant-waterer", "action": "water", "args": {"duration": {"value": 20, "unit": "s"}}},
-        )
-    assert blocked.value.code == -32010
-    assert blocked.value.name == "LIMIT_EXCEEDED"
-    assert blocked.value.reason.startswith("water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml")
-    assert blocked.value.data["limit"] == {"value": 30, "unit": "s"}
-    assert done["status"] == "done"
+async def tank_reads(client: httpx.AsyncClient, wanted: str) -> None:
+    for _ in range(100):
+        view = (await client.get("/v1/devices/plant-waterer")).json()
+        if view["read"]["tank"]["value"] == wanted:
+            return
+        await asyncio.sleep(0.1)
+    raise AssertionError(f"The tank never read {wanted}.")
 
-    async with httpx.AsyncClient(base_url=base_url) as client:
-        log = (await client.get("/v1/rpc/log", headers=bearer(harness.human_token))).json()
+
+def water(seconds: int) -> dict[str, Any]:
+    return {"device": "plant-waterer", "action": "water", "args": {"duration": {"value": seconds, "unit": "s"}}}
+
+
+async def test_the_demo_scenario_reaches_the_message_log(base_url: str, harness: Harness) -> None:
+    async with (
+        httpx.AsyncClient(base_url=base_url, headers=bearer(harness.human_token)) as client,
+        ProtocolClient(base_url, harness.agent_token, client_name="bench-agent") as rpc,
+    ):
+        with pytest.raises(ProtocolError) as too_long:
+            await rpc.call("hal/action", water(120))
+        await client.post("/_harness/plant-waterer/drain")
+        await tank_reads(client, "empty")
+        with pytest.raises(ProtocolError) as empty:
+            await rpc.call("hal/action", water(20))
+        await client.post("/_harness/plant-waterer/refill")
+        await tank_reads(client, "ok")
+        done = await rpc.call("hal/action", water(20))
+        log = (await client.get("/v1/rpc/log")).json()
         refused = await client.get("/v1/rpc/log", headers=bearer(harness.agent_token))
+    assert too_long.value.name == "LIMIT_EXCEEDED"
+    assert too_long.value.reason == (
+        "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)"
+    )
+    assert empty.value.name == "INTERLOCK_BLOCKED"
+    assert empty.value.reason == "pump can't run while tank is empty"
+    assert done["status"] == "done"
     assert refused.status_code == 403
     errors = [entry for entry in log if entry["direction"] == "out" and "error" in entry["message"]]
-    assert errors[0]["message"]["error"]["data"]["name"] == "LIMIT_EXCEEDED"
+    assert [entry["message"]["error"]["data"]["name"] for entry in errors] == ["LIMIT_EXCEEDED", "INTERLOCK_BLOCKED"]
     assert all(harness.agent_token not in json.dumps(entry) for entry in log)
 
 
