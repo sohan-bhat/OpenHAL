@@ -2,7 +2,7 @@
 
 This plan checks the midi driver against a real USB MIDI controller. It was written for an Akai LPD8, and any class-compliant controller with knobs, pads and pad LEDs works the same way. MIDI writes only change LEDs and parameters on the controller, so the write steps are safe on any controller that isn't wired to something physical.
 
-Run every step from the repository checkout. Close any music software that has the controller open, since some systems give a port to one program at a time.
+Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Close any music software that has the controller open, since some systems give a port to one program at a time.
 
 ## What you need
 
@@ -128,13 +128,13 @@ Watch the controller's pads during these steps. Some controllers don't light the
 
 ### 6. Confirm the limits
 
-Read the file, decide the limits and the safe state are right, and add this line yourself.
+Read the file and decide the limits and the safe state are right. Then confirm them yourself.
 
-```yaml
-confirmed: { by: <your name>, at: <today's date> }
+```sh
+uv run openhal file confirm my-pads.hal.yaml
 ```
 
-`uv run openhal file validate my-pads.hal.yaml` should now say `writable`.
+It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-pads.hal.yaml` then says `writable`.
 
 ### 7. The smallest safe write
 
@@ -157,19 +157,21 @@ Expected. `pad-controller safe`, and both pad LEDs go dark.
 
 ## If something fails
 
-Send the full output of the failing step, the port list from step 1, what the MIDI monitor showed at the same time, the controller model and firmware version, the operating system, and your device file.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the port list from step 1, what the MIDI monitor showed at the same time, the controller model and firmware version, the operating system, and your device file.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, midi driver
 
+- Plan: docs/hardware-tests/midi.md
 - Device: <manufacturer, model>
 - Firmware: <version>
 - Host: <computer, operating system, Python version>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device file: <path>, sha256 <from its confirmed line>
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -184,4 +186,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 8 stop | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```

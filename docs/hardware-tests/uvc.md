@@ -2,7 +2,7 @@
 
 This plan checks the uvc driver against a real USB webcam. The driver is read-only, so every step is read-only. Point the camera at something that is fine to photograph.
 
-Run every step from the repository checkout. Close video call apps first, since some systems give a camera to one app at a time.
+Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Close video call apps first, since some systems give a camera to one app at a time.
 
 ## What you need
 
@@ -129,19 +129,21 @@ Expected. A `DriverError` saying the camera could not be opened. Plug it back in
 
 ## If something fails
 
-Send the full output of the failing step, the camera model and USB id (`lsusb` on Linux, System Information on macOS), `v4l2-ctl --list-formats-ext -d /dev/video0` on Linux, the operating system, and your device file. Don't send frames that show people or private spaces.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the camera model and USB id (`lsusb` on Linux, System Information on macOS), `v4l2-ctl --list-formats-ext -d /dev/video0` on Linux, the operating system, and your device file. Don't send frames that show people or private spaces.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, uvc driver
 
+- Plan: docs/hardware-tests/uvc.md
 - Device: <manufacturer, model>
 - Camera model and USB id: <version>
 - Host: <computer, operating system>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device file: my-camera.hal.yaml (read-only, so it has no confirmed line)
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -153,4 +155,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 5 unplug handling | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```

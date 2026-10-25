@@ -14,18 +14,12 @@ These are the things the fake can't prove, and the steps that check each one.
 | Opening a camera another process holds raises `RuntimeError` | 7 |
 | Capture timing with `warmup` and the default `timeout` | 4, 6 |
 
-Run every step on the Pi, from the repository checkout.
+Run every step on the Pi, from the repository checkout. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
-- A Raspberry Pi 4 or 5 with Raspberry Pi OS Bookworm or later, and a camera module on the CSI connector.
-- picamera2 from apt and a virtual environment that can see it.
-
-```sh
-sudo apt install -y python3-picamera2
-uv venv --system-site-packages
-uv pip install -e .
-```
+- A Raspberry Pi 4 or 5 with Raspberry Pi OS Trixie or later, and a camera module on the CSI connector. Bookworm's Python 3.11 is older than the 3.12 OpenHAL needs, and picamera2's libcamera bindings load only in the system Python.
+- picamera2 from apt and a virtual environment on the system Python that can see it, set up as [README.md](README.md#on-a-raspberry-pi) says. The driver needs no extra. Check it with `uv run python -c "import picamera2"`.
 
 - A copy of the example file, `cp openhal/drivers/rpi_camera/examples/camera-module-3.hal.yaml my-picam.hal.yaml`.
 
@@ -164,19 +158,21 @@ Expected. A `DriverError` saying camera 0 could not be opened and that another p
 
 ## If something fails
 
-Send the full output of the failing step, `rpicam-hello --list-cameras`, the output of `apt policy python3-picamera2`, the Pi model (`cat /proc/device-tree/model`), the OS version (`cat /etc/os-release`), and your device file. Don't send frames that show people or private spaces.
+Send what [README.md](README.md#if-a-step-fails) lists, plus `rpicam-hello --list-cameras`, the output of `apt policy python3-picamera2`, the Pi model (`cat /proc/device-tree/model`), the OS version (`cat /etc/os-release`), and your device file. Don't send frames that show people or private spaces.
 
 ## Report template
 
-Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance.verification` in the device file to `{ status: verified-on-hardware, report: reports/<device-id>-<date>.md }`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, rpi-camera driver
 
+- Plan: docs/hardware-tests/rpi-camera.md
 - Device: <manufacturer, model>
 - Camera module and sensor: <version>
 - Host: <Raspberry Pi model, Raspberry Pi OS version, picamera2 version from apt>
-- OpenHAL commit: <git rev-parse --short HEAD>
+- OpenHAL: <uv run openhal --version>, commit <git rev-parse --short HEAD>
+- Device file: my-picam.hal.yaml (read-only, so it has no confirmed line)
 - Tested by: <name>, <date>
 
 | Step | Result | Notes |
@@ -190,4 +186,6 @@ Save the filled-in report as `reports/<device-id>-<date>.md` and set `provenance
 | 7 a busy camera | pass / fail | |
 
 Anything unexpected:
+
+Result: verified-on-hardware / tested-reads / failed at step N
 ```
