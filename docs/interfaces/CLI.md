@@ -257,3 +257,13 @@ openhal file confirm PATH [--by NAME] [--phrase confirm]
 ```
 
 `validate` checks files against the spec. `schema` prints the JSON Schema. `confirm` prints every limit in a file, then writes a top-level `confirmed` with your name, the date and the hash of the limits. Any later change to a limit makes the file read-only again. It refuses while any entry is still marked `suggested: true`. Restart `openhald` to load the change.
+
+## Device library
+
+```
+openhal library list [--driver NAME] [--json]
+openhal library show NAME [--json]
+openhal library add NAME
+```
+
+`list` shows every starter device file in the library with its driver, hazard class and what it can change. `show` prints what a file matches, every limit it suggests and the file itself, and `--json` gives each limit as a value and a unit. `add` copies a file into the devices folder as it is. It never adds a confirmation, and it refuses to overwrite a file or to add a second file for a device id the folder already has. A name is the file name without `.hal.yaml`, such as `rigol-dp832`. When `discover` matches a library file, it prints the `add` command to run. How matching and confirmation work is in docs/guide/library.md.
