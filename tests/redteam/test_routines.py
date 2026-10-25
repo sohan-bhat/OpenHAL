@@ -8,6 +8,10 @@ and a stop pauses it. Loops are bounded by the run interval and the max runtime.
 
 from __future__ import annotations
 
+import time
+
+import pytest
+
 from openhal.hub.hub import Hub
 from openhal.kernel import agent, human
 from openhal.routines.engine import RoutineError
@@ -131,3 +135,17 @@ steps:
     hub.routines._last_start[record.id] = 1000.0
     assert hub.routines.due(record, now=1000.5) is None
     assert hub.routines.due(record, now=1001.5) is not None
+
+
+RT01 = "RT-01: a routine value with a long unit name reaches the unbounded unit parser through the dry run"
+
+
+@pytest.mark.xfail(reason=RT01, strict=True)
+async def test_rt01_a_routine_dry_run_with_a_long_unit_stalls(hub: Hub) -> None:
+    source = 'id: stall\nsteps:\n  - write: {{ device: desk-fan, channel: fan_speed, value: "1 {units}" }}\n'
+    hub.routines.create(agent("claude", "control_low"), "stall", "yaml", source.format(units="W" * 5000))
+    start = time.perf_counter()
+    result = hub.routines.dry_run("stall")
+    elapsed = time.perf_counter() - start
+    assert result["decisions"][0]["code"] == "bad_unit"
+    assert elapsed < 0.1, f"an agent-drafted routine dry run stalled the hub for {elapsed:.2f} s per step"
