@@ -580,17 +580,29 @@
     {
       "name": "onvif",
       "tier": 2,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "ONVIF"
+        "ONVIF Profile S and T over SOAP 1.2",
+        "WS-Discovery"
       ],
       "families": [
-        "network cameras with PTZ"
+        "ONVIF IP cameras",
+        "ONVIF PTZ cameras",
+        "network video recorders with ONVIF",
+        "video encoders"
       ],
       "hazard_default": "low",
-      "tests": "",
-      "estimate": null,
-      "conformance": "control"
+      "tests": "the driver's own SOAP client against a simulated PTZ camera that checks WS-Security digests",
+      "estimate": {
+        "devices": "tens of thousands of conformant products",
+        "reasoning": "ONVIF lists tens of thousands of conformant products from hundreds of manufacturers, most of them Profile S cameras whose device and media services this driver reads. PTZ moves need a PTZ camera, which is a smaller share. Media2, events, imaging and recording are not covered.",
+        "sources": [
+          "https://www.onvif.org/conformant-products/",
+          "https://www.onvif.org/profiles/profile-s/",
+          "https://www.onvif.org/specs/srv/ptz/ONVIF-PTZ-Service-Spec.pdf"
+        ]
+      },
+      "conformance": "full"
     },
     {
       "name": "opcua",
@@ -657,106 +669,196 @@
     {
       "name": "bambu",
       "tier": 3,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "Bambu Lab local API (terms to be checked first)"
+        "Bambu Lab LAN MQTT over TLS, Developer Mode"
       ],
       "families": [
-        "Bambu Lab printers"
+        "Bambu Lab X1 series",
+        "Bambu Lab P1 series",
+        "Bambu Lab A1 and A1 mini"
       ],
       "hazard_default": "medium",
-      "tests": "",
-      "estimate": null,
-      "conformance": "control"
+      "tests": "real paho-mqtt client over TLS against a simulated printer on an in-process broker",
+      "estimate": {
+        "devices": "about ten printer models",
+        "reasoning": "Bambu Lab sells the X1, P1, A1 and newer H2 and P2 families, which share one report format on the local MQTT broker. Bambu Lab documents Developer Mode for X1, P1, A1 and A1 mini, and only printers in that mode accept the commands this driver sends. Reads work in normal LAN mode too. Bambu Lab doesn't publish the message format, so the field list follows community documentation and may miss model-specific fields.",
+        "sources": [
+          "https://blog.bambulab.com/updates-and-third-party-integration-with-bambu-connect/",
+          "https://blog.bambulab.com/firmware-update-introducing-new-authorization-control-system-2/",
+          "https://github.com/Doridian/OpenBambuAPI/blob/main/mqtt.md",
+          "https://bambulab.com/en/compare"
+        ]
+      },
+      "conformance": "full"
     },
     {
       "name": "can",
       "tier": 3,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "CAN bus through python-can"
+        "CAN 2.0A and 2.0B",
+        "CAN FD",
+        "SocketCAN and USB adapters through python-can"
       ],
       "families": [
-        "CAN devices"
+        "motor controllers (VESC, ODrive, CubeMars)",
+        "battery management systems",
+        "CAN sensor and IO nodes",
+        "vehicle and machine buses with documented frames",
+        "DIY CAN nodes"
       ],
       "hazard_default": "medium",
-      "tests": "",
-      "estimate": null,
-      "conformance": "control"
+      "tests": "python-can virtual bus with a simulated motor drive",
+      "estimate": {
+        "devices": "hundreds of documented node types",
+        "reasoning": "Any node whose broadcast frames and command frames are documented, or listed in a DBC file, can be described with byte and bit fields. That covers hobby and research motor drives such as VESC and ODrive, many battery management systems, and machines that publish periodic CANopen PDOs or J1939 PGNs. Values that need a request and reply protocol (CANopen SDO, J1939 transport, ISO-TP) are not covered, which leaves out much of the automotive diagnostic world.",
+        "sources": [
+          "https://python-can.readthedocs.io/en/stable/interfaces.html",
+          "https://docs.kernel.org/networking/can.html",
+          "https://github.com/vedderb/bldc/blob/master/documentation/comm_can.md",
+          "https://docs.odriverobotics.com/v/latest/manual/can-protocol.html"
+        ]
+      },
+      "conformance": "full"
     },
     {
       "name": "knx",
       "tier": 3,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "KNX"
+        "KNXnet/IP tunneling",
+        "KNXnet/IP tunneling over TCP",
+        "KNXnet/IP routing"
       ],
       "families": [
-        "building automation"
+        "KNX switch and dimmer actuators",
+        "KNX blind actuators",
+        "KNX room thermostats",
+        "KNX sensors and weather stations",
+        "KNX scene and HVAC controllers"
       ],
-      "hazard_default": "medium",
-      "tests": "",
-      "estimate": null,
+      "hazard_default": "low",
+      "tests": "real xknx tunneling against a fake KNXnet/IP server built from xknx's frame classes, with a simulated room",
+      "estimate": {
+        "devices": "thousands of certified products",
+        "reasoning": "KNX is a single standard across hundreds of manufacturers, and every certified device talks in group telegrams with standard datapoint types, which this driver maps from a group address list. KNX Secure devices and device programming are not covered, and the group addresses must come from the installation's ETS project.",
+        "sources": [
+          "https://www.knx.org/knx-en/for-professionals/community/manufacturers/",
+          "https://xknx.io/",
+          "https://github.com/XKNX/xknx"
+        ]
+      },
       "conformance": "control"
     },
     {
       "name": "matter",
       "tier": 3,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "Matter, through the Home Assistant bridge first"
+        "Matter through the Matter Server WebSocket API"
       ],
       "families": [
-        "Matter devices"
+        "Matter lights and plugs",
+        "Matter sensors",
+        "Matter thermostats and fans",
+        "Matter window coverings and locks",
+        "Thread devices through a Matter Server"
       ],
       "hazard_default": "low",
-      "tests": "",
-      "estimate": null,
-      "conformance": "control"
+      "tests": "a WebSocket simulator of the python-matter-server message format with a bulb, a sensor and a thermostat",
+      "estimate": {
+        "devices": "thousands of certified products",
+        "reasoning": "The Connectivity Standards Alliance lists several thousand certified Matter products, and every one exposes its state as standard cluster attributes, which this driver reads by path. The count is limited to devices a Matter Server can commission and to clusters a device file maps, and was tested only against the python-matter-server message format.",
+        "sources": [
+          "https://csa-iot.org/csa-iot_products/",
+          "https://github.com/matter-js/python-matter-server",
+          "https://github.com/matter-js/matterjs-server"
+        ]
+      },
+      "conformance": "full"
     },
     {
       "name": "pi-i2c-spi",
       "tier": 3,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "I2C and SPI on Raspberry Pi"
+        "I2C through Linux i2c-dev",
+        "SPI through Linux spidev"
       ],
       "families": [
-        "I2C and SPI sensors"
+        "I2C temperature and humidity sensors",
+        "SPI and I2C ADCs",
+        "SPI and I2C DACs",
+        "port expanders and PWM drivers",
+        "Raspberry Pi HATs"
       ],
       "hazard_default": "low",
-      "tests": "",
-      "estimate": null,
-      "conformance": "control"
+      "tests": "fake smbus2 and spidev buses with simulated TMP102, MCP3008 and MCP4921 chips",
+      "estimate": {
+        "devices": "hundreds of chip models",
+        "reasoning": "Most I2C and SPI sensors, converters and expanders expose fixed-width registers whose values are linear in the reading, which a register map covers. Distributors list thousands of I2C and SPI parts, but chips that need calibration math (BME280, most IMU fusion), SMBus block protocols with a length byte, or multi-step command sequences are not covered, so the estimate counts only the linear register-mapped ones that hobby and lab boards commonly carry.",
+        "sources": [
+          "https://docs.kernel.org/i2c/dev-interface.html",
+          "https://docs.kernel.org/spi/spidev.html",
+          "https://github.com/kplindegaard/smbus2",
+          "https://learn.adafruit.com/i2c-addresses/the-list"
+        ]
+      },
+      "conformance": "full"
     },
     {
       "name": "upnp",
       "tier": 3,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "UPnP"
+        "UPnP Device Architecture SOAP actions",
+        "SSDP discovery"
       ],
       "families": [
-        "UPnP devices"
+        "UPnP AV media renderers and speakers",
+        "smart TVs with DLNA rendering",
+        "internet gateways (IGD)",
+        "network media servers"
       ],
       "hazard_default": "low",
-      "tests": "",
-      "estimate": null,
-      "conformance": "control"
+      "tests": "async-upnp-client against a fake media renderer with real device and service descriptions and SOAP replies",
+      "estimate": {
+        "devices": "thousands of models",
+        "reasoning": "UPnP and DLNA are built into most networked speakers, TVs, media servers and home routers, and all of them describe their actions in standard XML that this driver checks maps against. Devices that only implement UPnP for discovery and use a private API for control, and features that need GENA events, are not covered.",
+        "sources": [
+          "https://openconnectivity.org/developer/specifications/upnp-resources/upnp/",
+          "https://github.com/StevenLooman/async_upnp_client"
+        ]
+      },
+      "conformance": "full"
     },
     {
       "name": "zigbee-zwave",
       "tier": 3,
-      "status": "planned",
+      "status": "implemented",
       "protocols": [
-        "Zigbee and Z-Wave through Home Assistant"
+        "Zigbee through the Zigbee2MQTT MQTT API",
+        "Z-Wave through the zwave-js-server WebSocket API"
       ],
       "families": [
-        "Zigbee and Z-Wave devices"
+        "Zigbee lights, plugs and sensors",
+        "Z-Wave switches, dimmers and plugs",
+        "Z-Wave multisensors",
+        "Zigbee and Z-Wave thermostats and locks with exposed values"
       ],
       "hazard_default": "low",
-      "tests": "",
-      "estimate": null,
+      "tests": "Zigbee2MQTT simulated on the in-process MQTT broker and a zwave-js-server WebSocket simulator",
+      "estimate": {
+        "devices": "several thousand models",
+        "reasoning": "Zigbee2MQTT lists several thousand supported Zigbee devices and describes each one's values in its exposes list, which this driver reads directly. zwave-js has device configuration files for a few thousand certified Z-Wave products and reports every value with metadata. The count covers devices those bridges support, not every Zigbee or Z-Wave device sold, and leaves out bridge-only features such as scenes, groups and pairing.",
+        "sources": [
+          "https://www.zigbee2mqtt.io/supported-devices/",
+          "https://www.zigbee2mqtt.io/guide/usage/exposes.html",
+          "https://devices.zwave-js.io/",
+          "https://github.com/zwave-js/zwave-js-server"
+        ]
+      },
       "conformance": "control"
     }
   ]

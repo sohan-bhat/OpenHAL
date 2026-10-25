@@ -83,8 +83,16 @@ v0.1, in development. Drivers are tested on simulators, and hardware verificatio
 | `scpi` | bench power supplies, multimeters, oscilloscopes | tested on simulator | medium |
 | `serial` | Arduino and other microcontroller sketches, bench instruments with ASCII command sets, sensor modules with text output | tested on simulator | medium |
 | `uvc` | USB webcams, USB microscopes, HDMI to USB capture cards | tested on simulator | low |
+| `onvif` | ONVIF IP cameras, ONVIF PTZ cameras, network video recorders with ONVIF | tested on simulator | low |
+| `bambu` | Bambu Lab X1 series, Bambu Lab P1 series, Bambu Lab A1 and A1 mini | tested on simulator | medium |
+| `can` | motor controllers (VESC, ODrive, CubeMars), battery management systems, CAN sensor and IO nodes | tested on simulator | medium |
+| `knx` | KNX switch and dimmer actuators, KNX blind actuators, KNX room thermostats | tested on simulator | low |
+| `matter` | Matter lights and plugs, Matter sensors, Matter thermostats and fans | tested on simulator | low |
+| `pi-i2c-spi` | I2C temperature and humidity sensors, SPI and I2C ADCs, SPI and I2C DACs | tested on simulator | low |
+| `upnp` | UPnP AV media renderers and speakers, smart TVs with DLNA rendering, internet gateways (IGD) | tested on simulator | low |
+| `zigbee-zwave` | Zigbee lights, plugs and sensors, Z-Wave switches, dimmers and plugs, Z-Wave multisensors | tested on simulator | low |
 
-Planned: `alpaca`, `grbl`, `indi`, `lerobot`, `onvif`, `opcua`, `pylabrobot`, `ros2`, `sila2`, `bambu`, `can`, `knx`, `matter`, `pi-i2c-spi`, `upnp`, `zigbee-zwave`.
+Planned: `alpaca`, `grbl`, `indi`, `lerobot`, `opcua`, `pylabrobot`, `ros2`, `sila2`.
 <!-- devices:end -->
 
 ## Safety model
