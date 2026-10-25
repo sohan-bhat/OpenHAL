@@ -28,10 +28,10 @@ def register(app: typer.Typer) -> None:
         console.print("[dim]Starting a hub with the simulated plant waterer...[/dim]")
         result = asyncio.run(scenario.run(speed=speed))
         console.print()
-        for line in trace.lines(result):
+        for line in trace.lines(result, trace.ASCII_ARROWS):
             style = "dim" if line.startswith(trace.INDENT) and not line.startswith(trace.INDENT * 2) else ""
             text = escape(line)
-            if line.startswith("← error"):
+            if line.startswith("<- error"):
                 text = f"[bold]{text}[/bold]"
             console.print(f"[{style}]{text}[/{style}]" if style else text)
         console.print()

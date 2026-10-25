@@ -3,7 +3,8 @@
     uv run --with fonttools --with brotli python tools/readme/build.py
 
 Writes docs/assets/wordmark-{light,dark}.svg with the text converted to paths, since GitHub loads no
-web fonts, docs/assets/mark-{light,dark}.svg and docs/assets/favicon.svg. Diagrams are built separately by scripts/build-diagrams.
+web fonts, docs/assets/mark-{light,dark}.svg and docs/assets/favicon.svg. Diagrams are built
+separately by scripts/build-diagrams.
 """
 
 from __future__ import annotations

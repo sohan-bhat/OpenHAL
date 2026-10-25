@@ -29,8 +29,12 @@ def compact(value: Any) -> str:
     return json.dumps(value)
 
 
-def _request(method: str, params: dict[str, Any]) -> list[str]:
-    head = f"→ {method}".ljust(LABEL)
+ARROWS = ("→", "←")
+ASCII_ARROWS = ("->", "<-")
+
+
+def _request(method: str, params: dict[str, Any], out: str) -> list[str]:
+    head = f"{out} {method}".ljust(LABEL)
     keys = list(params)
     if "args" not in keys or len(keys) == 1:
         return [head + compact(params)]
@@ -46,33 +50,34 @@ def _reason(message: str) -> list[str]:
     return [INDENT + message]
 
 
-def exchange(entry: dict[str, Any]) -> list[str]:
+def exchange(entry: dict[str, Any], arrows: tuple[str, str] = ARROWS) -> list[str]:
     """One exchange: what held before it, the request and the hub's answer."""
+    to_hub, back = arrows
     out: list[str] = []
     if entry.get("before"):
         out.append(f"{INDENT}{entry['before']}")
-    out += _request(entry["request"]["method"], entry["request"]["params"])
+    out += _request(entry["request"]["method"], entry["request"]["params"], to_hub)
     error = entry.get("error")
     if error:
-        out.append(f"← error {error['code']} {error['data']['name']}")
+        out.append(f"{back} error {error['code']} {error['data']['name']}")
         out += _reason(error["message"])
     else:
         result = entry.get("result") or {}
-        out.append("← result".ljust(LABEL) + compact({"status": result.get("status")}))
+        out.append(f"{back} result".ljust(LABEL) + compact({"status": result.get("status")}))
     soil = entry.get("soil_moisture")
     if soil:
         before, after = shown(soil["before"]), shown(soil["after"])
-        out.append("← hal/value".ljust(LABEL) + f"soil_moisture rises from {before} to {after}")
+        out.append(f"{back} hal/value".ljust(LABEL) + f"soil_moisture rises from {before} to {after}")
     return out
 
 
-def lines(record: dict[str, Any]) -> list[str]:
-    """The whole trace, exchanges separated by a blank line."""
+def lines(record: dict[str, Any], arrows: tuple[str, str] = ARROWS) -> list[str]:
+    """The whole trace, exchanges separated by a blank line. CLI output passes ASCII_ARROWS."""
     out: list[str] = []
     for index, entry in enumerate(record["exchanges"]):
         if index:
             out.append("")
-        out += exchange(entry)
+        out += exchange(entry, arrows)
     return out
 
 

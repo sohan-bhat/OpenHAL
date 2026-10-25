@@ -1,7 +1,7 @@
 [project]
 name = "openhal-hub"
 version = "0.1.0.dev0"
-description = "Open hardware abstraction layer that lets AI agents safely discover, read, control and automate real hardware."
+description = "An open-source protocol for AI agents to control hardware."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.12"
@@ -72,6 +72,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["openhal"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"examples/plant-waterer" = "openhal/examples/plant-waterer"
 
 [tool.ruff]
 line-length = 120

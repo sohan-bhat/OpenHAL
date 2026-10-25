@@ -29,7 +29,7 @@ from openhal.cli import (
 
 app = typer.Typer(
     name=CLI_NAME,
-    help=f"{PRODUCT_NAME} lets AI agents safely read and control real hardware.",
+    help=f"{PRODUCT_NAME}. An open-source protocol for AI agents to control hardware.",
     no_args_is_help=True,
     add_completion=False,
 )

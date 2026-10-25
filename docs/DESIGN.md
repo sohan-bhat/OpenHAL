@@ -33,12 +33,11 @@ A clean flowchart of one write, left to right. AI client, then OpenHAL hub (with
 A two-column trace of a request and the hub's answer, the way a protocol spec shows an exchange. It appears below the hero on the website, in the README as a code block, in the spec and docs, in the Inspector's message log and in social images.
 
 ```
-→ hal/write   { "device": "desk-fan", "channel": "fan_speed", "value": "150 %" }
+→ hal/action  { "device": "plant-waterer", "action": "water",
+                "args": { "duration": { "value": 120, "unit": "s" } } }
 ← error -32010 LIMIT_EXCEEDED
-              fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)
-
-→ hal/write   { "device": "desk-fan", "channel": "fan_speed", "value": "60 %" }
-← result      { "status": "done", "value": 60, "unit": "%" }
+  water duration 120 s exceeds the limit of 30 s
+  (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)
 ```
 
 - **Direction column.** An arrow pointing right for client to hub, left for hub to client, and a dashed left arrow for notifications, in the text color. Atkinson Hyperlegible Mono has no arrow glyphs, so the arrows are drawn as small inline SVGs in the house diagram style (1.5 px stroke, 6 px filled head), never typed characters. Plain text renditions in a font that has arrows, such as the README code block, use `→` and `←`. CLI output uses `->` and `<-`.
@@ -48,7 +47,7 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
 
 ## Canonical demo scenario
 
-Every example value in the README, website, Inspector screenshots, docs and social images comes from one file, `docs/demo/scenario.yaml`, generated from a real run of the hub against mocks. Device `desk-fan`, channel `fan_speed`, current 20 %, requested 150 %, limit 100 % (max, rate 20 %/s), granted 60 %, read back 60 %. A test checks that every surface using demo values matches the file. Demo values are labeled as demo data where shown.
+Every example value in the README, website, Inspector screenshots, docs and social images comes from one file, `docs/demo/scenario.yaml`, written by `uv run openhal demo --record docs/demo/scenario.yaml` from a real run of the hub against the plant waterer mock (examples/plant-waterer/). The device is an Arduino plant waterer with `soil_moisture` and `tank` readings and one action, `water(duration)`, limited to 30 s, 3 runs per hour and never while the tank is empty. The trace has three exchanges. Watering for 120 s gets `LIMIT_EXCEEDED`. Watering for 20 s with the tank empty gets `INTERLOCK_BLOCKED`. After a refill, watering for 20 s is done and soil moisture rises from 31 % to 46 %. Tests check that the file is still what the hub answers and that every surface matches it. The desk fan stays only as a secondary example in spec/examples/. Demo values are labeled as demo data where shown.
 
 ## Theme mapping
 
@@ -122,7 +121,7 @@ Scale, mobile then desktop. 13/13 legend, 15/15 secondary, 16/17 body with line 
 ## Logo
 
 - **Wordmark.** "OpenHAL" in Atkinson Hyperlegible Next at weight 700, in `--text`.
-- **Mark.** A request stroke ending at a vertical stop bar, above a return stroke pointing back. It reads as a request and an answer with a limit in between. It sits on a 16 px grid with 2 px strokes in `--accent`, and stays legible at 16 px.
+- **Mark.** Three solid shapes in a row on a 16 px grid. A circle for the client, a tall rounded bar for the safety kernel and a rounded square for the device, the flow diagram reduced to its parts. The circle and square are in `--text` and the bar in `--accent`, and it stays legible at 16 px. Built by tools/readme/build.py into docs/assets/mark-{light,dark}.svg and docs/assets/favicon.svg. Before it was adopted it was rendered against every glyph in Lucide, Heroicons, Material Symbols and Tabler. The closest overlap was 0.65 (Tabler arrow-bar-both), where the same icon drawn by two of those sets overlaps 0.45 at the median and a near copy above 0.9.
 - Original. It never imitates MCP's, Anthropic's or any other logo.
 
 ## Diagrams
@@ -271,13 +270,13 @@ Copy
 
 The repository README follows this structure, in this order, left-aligned.
 
-1. The wordmark (SVG, light and dark) and one sentence. "An open protocol and hub that lets AI agents control real hardware, with a safety kernel that checks every write." No subtitle that repeats it.
-2. At most two neutral badges, the license and CI only while it passes. Status as a sentence. "v0.1, in development. Drivers are tested on simulators; hardware verification is in progress."
-3. The animated flow diagram.
-4. Quickstart. Three commands in one code block, then one line on what you'll see.
-5. The message trace, the blocked write then the granted write, as a code block.
+1. The wordmark (SVG, light and dark) and one sentence. "An open-source protocol for AI agents to control hardware." No second sentence and no subtitle. The same sentence is the website subhead, the default OG description, the pyproject description and the GitHub repository description.
+2. Two neutral badges, the license and CI.
+3. The animated flow diagram, directly under the badges.
+4. Quickstart. Three commands in one code block, then one line on what you'll see, generated from the scenario.
+5. The message trace, the three exchanges of the canonical scenario, as a code block generated from the scenario (`uv run python -m openhal.demo.readme`).
 6. "What it does", three bullets.
-7. Supported devices, a table generated from drivers/catalog.json with driver, devices covered, status and hazard default.
+7. Supported devices. Status as a sentence, "v0.1, in development. Drivers are tested on simulators, and hardware verification is in progress.", then a table generated from drivers/catalog.json with driver, devices covered, status and hazard default.
 8. Safety model, at most five bullets, linking to docs/SAFETY.md.
 9. Relationship to MHS, two sentences.
 10. Contributing a driver or device file, then the license.

@@ -3,48 +3,64 @@
   <img alt="OpenHAL" src="docs/assets/wordmark-light.svg" height="44">
 </picture>
 
-An open protocol and hub that lets AI agents control real hardware, with a safety kernel that checks every write.
+An open-source protocol for AI agents to control hardware.
 
-[![License](https://img.shields.io/github/license/sohan-bhat/OpenHAL?color=555)](LICENSE)
-
-v0.1, in development. Drivers are tested on simulators; hardware verification is in progress.
+[![License](https://img.shields.io/github/license/sohan-bhat/OpenHAL?color=555)](LICENSE) [![CI](https://img.shields.io/github/actions/workflow/status/sohan-bhat/OpenHAL/ci.yml?branch=main&label=CI)](https://github.com/sohan-bhat/OpenHAL/actions/workflows/ci.yml)
 
 <picture>
   <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="docs/diagrams/flow-narrow-dark.svg">
   <source media="(max-width: 600px)" srcset="docs/diagrams/flow-narrow-light.svg">
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/flow-dark.svg">
-  <img src="docs/diagrams/flow-light.svg" width="900" alt="OpenHAL flow: an AI client sends hal/write to the hub; the safety kernel checks it against the device file's limits; allowed commands go through the driver to the device, and over-limit commands are blocked with LIMIT_EXCEEDED.">
+  <img src="docs/diagrams/flow-light.svg" width="900" alt="OpenHAL flow. An AI client sends hal/action to the hub. The safety kernel checks it against the device file's limits. An allowed command gets a grant and goes through the driver to the Arduino plant waterer, and the reading comes back to the client. A command that fails a check is blocked with INTERLOCK_BLOCKED because the tank is empty.">
 </picture>
 
 ## Quickstart
 
 ```
-git clone https://github.com/sohan-bhat/OpenHAL && cd OpenHAL
-uv run openhal init
-uv run openhald
+git clone https://github.com/sohan-bhat/OpenHAL
+cd OpenHAL
+uv run openhal demo
 ```
 
-The hub starts on `127.0.0.1:7420` with a simulated desk fan, ready for an MCP client ([setup](docs/interfaces/MCP.md)).
+<!-- outcome:start -->
+You'll see the hub refuse a 120 s watering, hold the pump while the tank is empty, then water for 20 s as soil moisture rises from 31 % to 46 %.
+<!-- outcome:end -->
 
 ## Message trace
 
+<!-- trace:start -->
 ```
-→ hal/write    { "device": "desk-fan", "channel": "fan_speed", "value": "150 %" }
+→ hal/action  { "device": "plant-waterer", "action": "water",
+                "args": { "duration": { "value": 120, "unit": "s" } } }
 ← error -32010 LIMIT_EXCEEDED
-               fan_speed 150 % exceeds the limit of 100 %
-               (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)
+  water duration 120 s exceeds the limit of 30 s
+  (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)
 
-→ hal/write    { "device": "desk-fan", "channel": "fan_speed", "value": "60 %" }
-← result       { "status": "done", "value": 60, "unit": "%" }
+  tank is empty
+→ hal/action  { "device": "plant-waterer", "action": "water",
+                "args": { "duration": { "value": 20, "unit": "s" } } }
+← error -32012 INTERLOCK_BLOCKED
+  pump can't run while tank is empty
+
+  tank refilled
+→ hal/action  { "device": "plant-waterer", "action": "water",
+                "args": { "duration": { "value": 20, "unit": "s" } } }
+← result      { "status": "done" }
+← hal/value   soil_moisture rises from 31 % to 46 %
 ```
+<!-- trace:end -->
+
+The trace is a real run of the hub against the simulated [plant waterer](examples/plant-waterer/), recorded in [docs/demo/scenario.yaml](docs/demo/scenario.yaml).
 
 ## What it does
 
-- **One device file format.** A `.hal.yaml` file says what a device can read and change, with units and limits a person confirmed.
-- **One safety kernel.** Every write is checked for range, rate, interlocks and confirmation before any driver can act.
+- **One device file format.** A `.hal.yaml` file says what a device can read and do, with units and limits a person confirmed.
+- **One safety kernel.** Every command is checked for range, rate, interlocks and confirmation before any driver can act.
 - **Drivers for whole device families.** One SCPI driver covers bench instruments and one Moonraker driver covers Klipper printers.
 
 ## Supported devices
+
+v0.1, in development. Drivers are tested on simulators, and hardware verification is in progress.
 
 <!-- devices:start -->
 | Driver | Devices covered | Status | Hazard default |
@@ -75,8 +91,8 @@ Planned: `alpaca`, `grbl`, `indi`, `lerobot`, `onvif`, `opcua`, `pylabrobot`, `r
 
 - A device file stays read-only until a person confirms its limits, and nothing an AI proposes can confirm them.
 - Drivers can only change hardware with a single-use grant the kernel issues for that exact command.
-- Unknown values never pass a check, so a stale or missing reading blocks the write.
-- One stop puts every device in its safe state and locks writes until a person unlocks.
+- Unknown values never pass a check, so a stale or missing reading blocks the command.
+- One stop puts every device in its safe state and refuses every command until a person unlocks.
 - Every decision goes into a hash-chained audit log.
 
 Details in [docs/SAFETY.md](docs/SAFETY.md).
@@ -87,7 +103,7 @@ Anthropic's Model Hardware Standard is a limited research preview for invited la
 
 ## Contributing
 
-Write a driver with [docs/drivers/WRITING-A-DRIVER.md](docs/drivers/WRITING-A-DRIVER.md) and run the conformance suite with `uv run pytest tests/conformance`. Device files follow [spec/SPEC.md](spec/SPEC.md).
+Build a driver with [the driver guide](docs/drivers/WRITING-A-DRIVER.md) and run the conformance suite with `uv run pytest tests/conformance`. Device files follow [spec/SPEC.md](spec/SPEC.md).
 
 ## License
 
