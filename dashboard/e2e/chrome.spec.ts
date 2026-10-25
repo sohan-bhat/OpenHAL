@@ -171,6 +171,19 @@ test("the audit log filters, and verifies its hash chain", async ({ page }) => {
   }
 });
 
+test("the audit log labels values on a phone and an agent stays dashed when blocked", async ({ page }) => {
+  const agent = await AgentClient.connect("audit-agent", hubState().agentToken);
+  await agent.call("hal/action", { device: "plant-waterer", action: "water", args: { duration: { value: 120, unit: "s" } } });
+  agent.close();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/#/audit");
+  const blocked = page.locator("li.entry.agent.blocked").first();
+  await expect(blocked).toBeVisible();
+  for (const label of ["event", "by", "target", "status"]) await expect(blocked.locator(".cell .key", { hasText: label })).toBeVisible();
+  expect(await blocked.evaluate((row) => getComputedStyle(row).borderLeftStyle)).toBe("dashed");
+  await expect(blocked.locator(".code")).toHaveCSS("white-space", "nowrap");
+});
+
 test("a routine is selected, dry run, enabled, disabled and run from its buttons", async ({ page }) => {
   await page.goto("/#/routines");
   await page.getByRole("link", { name: /cure-cycle/ }).click();
