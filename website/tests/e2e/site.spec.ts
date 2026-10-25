@@ -167,6 +167,18 @@ test.describe("catalog pages", () => {
     }
   });
 
+  test("drivers and the library sit in the same page container as the specification", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const left = async (path: string) => {
+      await page.goto(path);
+      return page.locator("main h1").evaluate((heading) => Math.round(heading.getBoundingClientRect().left));
+    };
+    const spec = await left("/spec/2026-10-24/basic/messages/");
+    for (const path of ["/drivers/", "/drivers/mock/", "/library/", "/library/scpi-rigol-dp832/", "/docs/quickstart/"]) {
+      expect(await left(path), path).toBe(spec);
+    }
+  });
+
   test("each driver has its own page", async ({ page }) => {
     await page.goto("/drivers/mock/");
     await expect(page.locator("h1")).toContainText("mock");
@@ -182,7 +194,7 @@ test.describe("catalog pages", () => {
     await expect(page.locator("[data-shown]")).toHaveText(`2 of ${all} device files.`);
     await page.getByLabel("Search").fill("no such device");
     await expect(page.locator("[data-empty]")).toBeVisible();
-    await expect(page.getByRole("link", { name: "How the library works" })).toHaveAttribute("href", "/docs/library/");
+    await expect(page.getByRole("article").getByRole("link", { name: "How the library works" })).toHaveAttribute("href", "/docs/library/");
     await page.goto("/library/scpi-keysight-34461a/");
     await expect(page.locator(".facts")).toContainText("unconfirmed");
     await expect(page.locator(".facts")).toContainText("This file only reads.");

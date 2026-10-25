@@ -1,10 +1,11 @@
 ---
 import { codeHtml } from "../../lib/code";
 import VerificationBadge from "../../components/VerificationBadge.astro";
-import Base from "../../layouts/Base.astro";
+import DocShell from "../../layouts/DocShell.astro";
 import { formatG } from "../../lib/kernel/pyformat";
 import type { ArgSpec } from "../../lib/kernel/model";
 import { type LibraryEntry, libraryEntries } from "../../lib/library";
+import { librarySidebar } from "../../lib/library-nav";
 import { displayUnit } from "../../lib/playground/rpc";
 
 export function getStaticPaths() {
@@ -25,15 +26,11 @@ function argText(name: string, spec: ArgSpec): string {
 }
 ---
 
-<Base title={entry.title} description={`OpenHAL device file for ${entry.title}.`}>
-  <div class="wrap page">
-    <header class="head">
-      <h1>{entry.title}</h1>
-      <p class="meta">
-        {entry.problems.length > 0 ? <span class="status blocked">invalid</span> : <VerificationBadge status={entry.verification} />}
-        <code>{entry.path}</code>
-      </p>
-    </header>
+<DocShell title={entry.title} description={`OpenHAL device file for ${entry.title}.`} repo={entry.path} sidebar={librarySidebar()} section="Device Library" wide>
+  <p slot="after-title" class="meta">
+    {entry.problems.length > 0 ? <span class="status blocked">invalid</span> : <VerificationBadge status={entry.verification} />}
+    <code>{entry.path}</code>
+  </p>
 
     {
       entry.problems.length > 0 && (
@@ -160,24 +157,11 @@ function argText(name: string, spec: ArgSpec): string {
     }
 
     <Fragment set:html={codeHtml(entry.text, "yaml")} />
-  </div>
-</Base>
+</DocShell>
 
 <style>
-  .page {
-    padding-top: var(--s-6);
-  }
-
-  .head {
-    margin-top: var(--s-2);
-    padding-bottom: var(--s-4);
-    margin-bottom: var(--s-5);
-    border-bottom: var(--rule);
-    display: grid;
-    gap: var(--s-2);
-  }
-
   .meta {
+    margin-top: var(--s-3);
     display: flex;
     flex-wrap: wrap;
     gap: var(--s-2) var(--s-4);

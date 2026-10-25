@@ -1,6 +1,7 @@
 ---
-import Base from "../../layouts/Base.astro";
+import DocShell from "../../layouts/DocShell.astro";
 import { STATUS_ORDER, TIER_NAMES, conformanceOf, deviceDrivers, driverCounts, referenceDrivers, statusClass, statusWord } from "../../lib/catalog";
+import { driversSidebar } from "../../lib/drivers-nav";
 
 const all = deviceDrivers();
 const references = referenceDrivers();
@@ -18,12 +19,15 @@ const hazards = ["low", "medium", "high"].filter((hazard) => listed.some((driver
 const conformances = [...new Set(listed.map(conformanceOf).filter((value): value is string => !!value))];
 ---
 
-<Base title="Drivers" description="Every OpenHAL driver from drivers/catalog.json, with tier, status, conformance level and hazard default.">
-  <div class="wrap page">
-    <header class="head">
-      <h1>Drivers</h1>
-      <p class="lede">A driver speaks one protocol. Statuses come from <code>drivers/catalog.json</code>.</p>
-    </header>
+<DocShell
+  title="Drivers"
+  description="Every OpenHAL driver from drivers/catalog.json, with tier, status, conformance level and hazard default."
+  sidebar={driversSidebar()}
+  section="Drivers"
+  wide
+  pager={false}
+>
+  <p slot="after-title" class="lede">A driver speaks one protocol. Statuses come from <code>drivers/catalog.json</code>.</p>
 
     <form class="filters" role="search" aria-label="Filter drivers" data-filters>
       <label class="field grow">
@@ -149,8 +153,7 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
       )
     }
     <p class="more">The <a href="/library/">Device Library</a> holds device files that run on these drivers.</p>
-  </div>
-</Base>
+</DocShell>
 
 <script>
   const form = document.querySelector<HTMLFormElement>("[data-filters]");
@@ -184,16 +187,9 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
 </script>
 
 <style>
-  .page {
-    padding-top: var(--s-6);
-  }
-
-  .head {
-    display: grid;
-    gap: var(--s-2);
-    padding-bottom: var(--s-4);
-    margin-bottom: var(--s-5);
-    border-bottom: var(--rule);
+  .lede {
+    margin-top: var(--s-3);
+    max-width: var(--measure);
   }
 
   .lede code {
