@@ -22,9 +22,9 @@ The `grbl` driver talks to CNC routers, laser engravers and plotters running GRB
 | `work_x`, `work_y`, `work_z`, `work_a` | read, length | work position, `WPos` |
 | `feed_rate` | read, mm/min or any speed unit | `FS` or `F` |
 | `pins` | read, string | `Pn`, for example `XP` |
-| `spindle_speed` | write, rpm | `M3 S<rpm>`, `M5` at 0 |
-| `laser_power` | write, percent | `M4 S<percent x $30 / 100>`, `M5` at 0 |
-| `flood`, `mist` | write, bool | `M8`, `M7`, `M9` |
+| `spindle_speed` | set, rpm | `M3 S<rpm>`, `M5` at 0 |
+| `laser_power` | set, percent | `M4 S<percent x $30 / 100>`, `M5` at 0 |
+| `flood`, `mist` | set, bool | `M8`, `M7`, `M9` |
 | `home` | action | `$H` |
 | `jog` (args `x`, `y`, `z`, `a`, `feed`) | action | `$J=G21 G91 ...` |
 | `move` (args `x`, `y`, `z`, `a`, `feed`) | action | `G21 G90 G1 ...` |
@@ -111,12 +111,12 @@ hazard: high
 - G-code files are not streamed. Run jobs from a sender, and use this driver to watch, hold and stop them.
 - Overrides (feed, rapid and spindle percentages) are not exposed yet.
 - Only the active work coordinate system is used for `work_*` reads and `set_work_zero`.
-- In laser mode `M4` only fires while moving, so a `laser_power` write alone never burns. `{ laser: constant }` uses `M3`, which keeps the laser at power during moves.
+- In laser mode `M4` only fires while moving, so setting `laser_power` alone never burns. `{ laser: constant }` uses `M3`, which keeps the laser at power during moves.
 - Spindle speeds above `$30` or below `$31` are refused, because GRBL would clamp them silently.
 
 ## Hazard defaults
 
-`high`. Spindles, bits and lasers cut and burn, and axes can crush. The kernel asks a human for every write and action on a high hazard device. Keep `confirm: confirm-each-time` in the file as well, so the intent is visible.
+`high`. Spindles, bits and lasers cut and burn, and axes can crush. The kernel asks a human for every change and action on a high hazard device. Keep `confirm: confirm-each-time` in the file as well, so the intent is visible.
 
 ## Sources
 

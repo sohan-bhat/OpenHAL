@@ -11,7 +11,7 @@ This plan checks the Alpaca driver on a real mount, and optionally a focuser. It
 
 ## The read-only probe
 
-Save this as `probe.py`. It connects, identifies the device and reads every channel. It holds no kernel grant, so it can't write anything.
+Save this as `probe.py`. It connects, identifies the device and reads every channel. It holds no kernel grant, so it can't change anything.
 
 ```python
 import asyncio, json, sys
@@ -166,7 +166,7 @@ Expected. The mount slews to its park position. The action answers `done`, or `s
 
 ## Step 12. Focuser (optional)
 
-Write a focuser file from the describe proposal with `device_type: focuser`, confirm it, add it to the hub and move it 100 steps.
+Make a focuser file from the describe proposal with `device_type: focuser`, confirm it, add it to the hub and move it 100 steps.
 
 ```
 openhal read focuser.position

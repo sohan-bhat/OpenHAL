@@ -1,6 +1,6 @@
 # Hardware test plan for the grbl driver
 
-This plan checks the GRBL driver on a real machine. It starts with read-only checks and ends with the smallest safe moves. Stay at the machine for every write step with a hand on the physical emergency stop. Stop at the first step that fails and send back the report below.
+This plan checks the GRBL driver on a real machine. It starts with read-only checks and ends with the smallest safe moves. Stay at the machine for every step that changes something with a hand on the physical emergency stop. Stop at the first step that fails and send back the report below.
 
 ## What you need
 
@@ -11,7 +11,7 @@ This plan checks the GRBL driver on a real machine. It starts with read-only che
 
 ## The read-only probe
 
-Save this as `probe.py`. It connects, identifies the firmware and reads every channel. It holds no kernel grant, so it can't write anything.
+Save this as `probe.py`. It connects, identifies the firmware and reads every channel. It holds no kernel grant, so it can't change anything.
 
 ```python
 import asyncio, json, sys

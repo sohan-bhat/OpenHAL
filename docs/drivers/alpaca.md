@@ -16,7 +16,7 @@ The `alpaca` driver talks to astronomy devices through ASCOM Alpaca, the REST fo
 
 One device file is one Alpaca device, chosen with `device_type` and `device_number`. Channel names follow these conventions for each type. A map can reach another device on the same server, for example the dome next to its mount.
 
-| Type | Read | Write | Actions |
+| Type | Read | Set | Actions |
 |---|---|---|---|
 | telescope | `right_ascension`, `declination`, `altitude`, `azimuth`, `sidereal_time`, `slewing`, `at_park`, `at_home`, `tracking` | `tracking` | `abort_slew`, `park`, `unpark`, `find_home`, `slew_to_coordinates` (args `right_ascension`, `declination`), `slew_to_alt_az` (args `azimuth`, `altitude`) |
 | focuser | `is_moving`, `temperature`, `max_step` | `position` (steps, through Move) | `halt` |
@@ -24,7 +24,7 @@ One device file is one Alpaca device, chosen with `device_type` and `device_numb
 | switch | `switch_0`, `switch_1`, ... | `switch_0`, `switch_1`, ... | |
 | dome | `azimuth`, `altitude`, `shutter`, `slewing`, `at_park`, `at_home` | | `abort_slew`, `park`, `find_home`, `open_shutter`, `close_shutter`, `slew_to_azimuth` (arg `azimuth`) |
 
-Right ascension and sidereal time come from Alpaca in hours and are reported in degrees, hours times 15, because the unit registry has no hour angle. Write `90 deg` to slew to 6 h.
+Right ascension and sidereal time come from Alpaca in hours and are reported in degrees, hours times 15, because the unit registry has no hour angle. Send `90 deg` to slew to 6 h.
 
 A switch channel is a bool through GetSwitch and SetSwitch, or a number through GetSwitchValue and SetSwitchValue, depending on the channel type.
 
@@ -35,8 +35,8 @@ Other members need a `map`.
 | `{ property: coolerpower, unit: percent }` | Read any property. `unit` is the protocol unit, `scale` multiplies the protocol value |
 | `{ property: shutterstatus, states: [open, closed, opening, closing, error] }` | Read an integer state as an enum |
 | `{ switch: 3 }` | Switch number 3 |
-| `{ property: tracking, param: Tracking }` | Write a property with PUT |
-| `{ method: move, param: Position, integer: true, readback: position }` | Write through a method and read the value back from a property |
+| `{ property: tracking, param: Tracking }` | Set a property with PUT |
+| `{ method: move, param: Position, integer: true, readback: position }` | Set through a method and read the value back from a property |
 | `{ method: slewtoazimuth, wait: slewing, params: { azimuth: { name: Azimuth, unit: deg } } }` | An action. `wait` names a property that is true while it runs |
 | `{ device: dome, number: 0, ... }` | Any of the above on another device of the same server |
 
