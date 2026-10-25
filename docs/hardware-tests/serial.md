@@ -1,12 +1,12 @@
 # Hardware test plan for the serial driver
 
-This plan checks the serial driver on a real board. It starts with read-only checks and ends with the smallest safe writes. Stop at the first step that fails and send back the report below.
+This plan checks the serial driver on a real board. It starts with read-only checks and ends with the smallest safe writes. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
 - An Arduino Uno or any board that runs the sketch below, with its USB cable.
 - Optional. A TMP36 sensor on A0, an LED on pin 13 (the onboard LED is fine) and a small 5 V fan through a logic-level MOSFET on pin 9. Without them the readings are just noise and the outputs drive nothing.
-- OpenHAL installed with `uv pip install 'openhal-hub[serial]'`.
+- A checkout of this repository with the serial extra, `uv sync --extra serial`.
 
 ## The test sketch
 
@@ -88,7 +88,7 @@ asyncio.run(main(sys.argv[1]))
 ## Step 1. The port is listed (read-only)
 
 ```
-python -m serial.tools.list_ports -v
+uv run python -m serial.tools.list_ports -v
 ```
 
 Expected. A port such as `/dev/ttyACM0` or `/dev/cu.usbmodem1101` with `VID:PID=2341:0043` (other boards show other ids). Note the port path and the id.
@@ -99,7 +99,7 @@ Copy the example and set `match.usb` to the id from step 1, or replace `serial: 
 
 ```
 cp openhal/drivers/serial/examples/arduino-fan-board.hal.yaml ./fan-board.hal.yaml
-openhal file validate ./fan-board.hal.yaml
+uv run openhal file validate ./fan-board.hal.yaml
 ```
 
 Expected. `valid ./fan-board.hal.yaml (fan-board, low hazard, read-only)` and a note that the limits are unconfirmed.
@@ -107,7 +107,7 @@ Expected. `valid ./fan-board.hal.yaml (fan-board, low hazard, read-only)` and a 
 ## Step 3. Identify and read (read-only)
 
 ```
-python probe.py ./fan-board.hal.yaml
+uv run python probe.py ./fan-board.hal.yaml
 ```
 
 Expected.
@@ -127,22 +127,22 @@ The temperature is about 20 to 30 with a TMP36 and arbitrary without one. If a r
 Run the probe in a loop and unplug the cable while it runs. Plug it back in after five seconds.
 
 ```
-while true; do python probe.py ./fan-board.hal.yaml; sleep 1; done
+while true; do uv run python probe.py ./fan-board.hal.yaml; sleep 1; done
 ```
 
 Expected. While unplugged each run ends with `Could not open` or `stopped answering`. After replugging the reads come back without restarting anything. Stop the loop with Ctrl-C.
 
 ## Step 5. Start the hub with the device
 
-Confirm the limits by adding `confirmed: { by: <your name>, at: <today> }` to the file. Then give it to a hub in a fresh config folder.
+Read every limit in the file. Then confirm them yourself with `uv run openhal file confirm ./fan-board.hal.yaml`. It lists each limit and asks you to type `confirm`. Then load the file into a fresh hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
-openhal init
+uv run openhal init --no-sample
 cp ./fan-board.hal.yaml "$OPENHAL_HOME/devices/"
-openhald &
-openhal devices
-openhal read fan-board.temperature
+uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+uv run openhal devices
+uv run openhal read fan-board.temperature
 ```
 
 Expected. `fan-board` is listed as connected and writable, and the read returns a temperature in degC.
@@ -152,9 +152,9 @@ Expected. `fan-board` is listed as connected and writable, and the read returns 
 Switch the LED, which drives nothing that can hurt.
 
 ```
-openhal write fan-board.led true
-openhal read fan-board.led
-openhal write fan-board.led false
+uv run openhal write fan-board.led true
+uv run openhal read fan-board.led
+uv run openhal write fan-board.led false
 ```
 
 Expected. The LED turns on, the read says `true`, then it turns off.
@@ -162,11 +162,11 @@ Expected. The LED turns on, the read says `true`, then it turns off.
 ## Step 7. A small fan write and the safe state
 
 ```
-openhal write fan-board.fan_speed "10 %"
-openhal read fan-board.fan_speed
-openhal stop
-openhal read fan-board.fan_speed
-openhal unlock
+uv run openhal write fan-board.fan_speed "10 %"
+uv run openhal read fan-board.fan_speed
+uv run openhal stop
+uv run openhal read fan-board.fan_speed
+uv run openhal unlock
 ```
 
 Expected. The fan reading is about `10.2 %` (the PWM byte is 26). After `openhal stop` it reads `0 %` and the LED is off. `openhal unlock` asks you to type `unlock`.
@@ -174,16 +174,22 @@ Expected. The fan reading is about `10.2 %` (the PWM byte is 26). After `openhal
 ## Step 8. A blocked write never reaches the board
 
 ```
-openhal write fan-board.fan_speed "150 %"
+uv run openhal write fan-board.fan_speed "150 %"
 ```
 
 Expected. Blocked with code `above_max`. The fan doesn't change. Stop the hub with `kill %1` when you are done.
 
+## If something fails
+
+Send what [README.md](README.md#if-a-step-fails) lists, plus the line the Arduino serial monitor shows for the same command at 115200 baud with newline endings, the sketch if you changed it, and the output of `uv run python -m serial.tools.list_ports -v`. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+
 ## Report template
 
 ```
-Driver: serial
-OpenHAL version:
+Plan: docs/hardware-tests/serial.md
+Tested by and date:
+OpenHAL: (uv run openhal --version, and git rev-parse --short HEAD)
+Device file: (path, and the sha256 in its confirmed line)
 Board and firmware: (for example Arduino Uno R3 with the test sketch)
 Host OS and port path:
 Step 1 port listed:            pass / fail
@@ -194,8 +200,9 @@ Step 5 hub lists the device:   pass / fail
 Step 6 LED write:              pass / fail
 Step 7 fan write and stop:     pass / fail   value read after write:
 Step 8 blocked write:          pass / fail
+Audit chain: (the line uv run openhal log --verify prints)
 Anything unexpected (paste exact output):
-Result: verified-on-hardware / failed at step N
+Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-A passing report lets the device file set `provenance.verification.status: verified-on-hardware` with `report:` pointing at the saved report.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
