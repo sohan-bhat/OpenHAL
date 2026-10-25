@@ -1,0 +1,29 @@
+openhal: "0.1"
+device: { name: Xiaomi Mi Temperature and Humidity Monitor 2, model: LYWSD03MMC, manufacturer: Xiaomi }
+id: xiaomi-lywsd03mmc
+match:
+  ble_name: "^LYWSD03MMC$"
+connect: { ble: auto, scan_timeout: 10 s, timeout: 15 s }
+read:
+  temperature:
+    unit: degC
+    stream: true
+    range: [0, 60]
+    map: { characteristic: ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6, format: sint16, byte: 0, scale: 0.01 }
+  humidity:
+    unit: percent
+    stream: true
+    range: [0, 100]
+    map: { characteristic: ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6, format: uint8, byte: 2 }
+  battery_voltage:
+    unit: V
+    stream: true
+    range: [2, 3.3]
+    map: { characteristic: ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6, format: uint16, byte: 3, scale: 0.001 }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  This is the sensor on Xiaomi's own firmware. It sends temperature, humidity and battery voltage together in
+  one notification while connected, and the coin cell drains faster while the hub stays connected. This file
+  only reads.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

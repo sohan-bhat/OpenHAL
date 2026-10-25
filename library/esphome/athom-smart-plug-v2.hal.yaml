@@ -1,0 +1,23 @@
+openhal: "0.1"
+device: { name: Athom Smart Plug V2, model: Smart Plug V2, manufacturer: Athom }
+id: athom-smart-plug-v2
+match:
+  mdns: _esphomelib._tcp
+  esphome: { project_name: China Athom Technology.Athom Plug V2 }
+connect: { esphome: athom-smart-plug-v2.local, port: 6053, timeout: 5 s }
+read:
+  power: { unit: W, every: 10 s, range: [0, 3680], map: { object_id: power } }
+  voltage: { unit: V, every: 10 s, range: [90, 260], map: { object_id: voltage } }
+  current: { unit: A, every: 10 s, range: [0, 16], map: { object_id: current } }
+  energy: { unit: kWh, every: 60 s, map: { object_id: total_energy } }
+write:
+  relay: { type: bool, confirm: confirm-each-time, suggested: true, map: { object_id: switch } }
+safe_state: { relay: false }
+hazard: high
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The plug ships with Athom's ESPHome firmware and switches mains, so every change is confirmed each time
+  and a stop turns it off. After a power cut the plug restores its last relay state, or turns on if it has
+  none, so check what is plugged in before you confirm. The device adds the end of its MAC address to its
+  name, so set host to the name openhal discover shows.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

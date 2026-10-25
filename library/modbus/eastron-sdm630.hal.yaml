@@ -1,0 +1,33 @@
+openhal: "0.1"
+device: { name: Eastron SDM630 energy meter, model: SDM630-Modbus V2, manufacturer: Eastron }
+id: eastron-sdm630
+match:
+  modbus_id: 2
+connect:
+  modbus: rtu
+  port: /dev/ttyUSB0
+  baud: 9600
+  parity: N
+  stopbits: 1
+  unit: 2
+  timeout: 1 s
+read:
+  voltage_l1: { unit: V, every: 2 s, range: [180, 260], map: { register: 0, kind: input, format: float32 } }
+  voltage_l2: { unit: V, every: 2 s, range: [180, 260], map: { register: 2, kind: input, format: float32 } }
+  voltage_l3: { unit: V, every: 2 s, range: [180, 260], map: { register: 4, kind: input, format: float32 } }
+  current_l1: { unit: A, every: 2 s, range: [0, 100], map: { register: 6, kind: input, format: float32 } }
+  current_l2: { unit: A, every: 2 s, range: [0, 100], map: { register: 8, kind: input, format: float32 } }
+  current_l3: { unit: A, every: 2 s, range: [0, 100], map: { register: 10, kind: input, format: float32 } }
+  power: { unit: W, every: 2 s, range: [-70000, 70000], map: { register: 52, kind: input, format: float32 } }
+  power_factor: { unit: dimensionless, every: 10 s, range: [-1, 1], map: { register: 62, kind: input, format: float32 } }
+  frequency: { unit: Hz, every: 10 s, range: [45, 65], map: { register: 70, kind: input, format: float32 } }
+  energy_import: { unit: kWh, every: 60 s, map: { register: 72, kind: input, format: float32 } }
+  energy: { unit: kWh, every: 60 s, map: { register: 342, kind: input, format: float32 } }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  Eastron ships the meter at Modbus address 1 and 9600 baud. This file expects address 2, so it can share an
+  RS-485 bus with the SDM120 file at address 1. Set the address in the meter's setup menu, or change unit
+  and match.modbus_id to 1. Registers are the zero-based input register offsets from Eastron's protocol
+  document, as IEEE 754 floats. This file only reads.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

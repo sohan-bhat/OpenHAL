@@ -22,3 +22,5 @@ Small decisions, one line each. Architectural decisions live in docs/adr/.
 - 2026-10-25: The scenario record leaves out times, so two runs give the same file and a test can rerun the hub and compare.
 - 2026-10-25: In user-facing text a write channel is a control channel. Method names (hal/write), the `openhal write` command and the device file's `write:` section keep their names.
 - 2026-10-25: python-can (LGPL-3.0-only) is used unmodified as an optional dependency of the can driver, like zeroconf. No code is copied.
+- 2026-10-25: The bambu driver ships. The owner reviewed the Bambu Lab terms note in docs/drivers/bambu.md and approved it. It stays LAN only and never contacts Bambu Cloud or presents itself as Bambu software.
+- 2026-10-25: The scpi driver peeks at a raw LAN socket before each exchange and after a timeout, so a socket the instrument closed is a lost connection on every OS. The owner approved fixing it this way instead of hiding the CI badge.

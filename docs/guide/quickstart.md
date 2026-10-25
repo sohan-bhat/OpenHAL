@@ -17,6 +17,16 @@ The demo starts a hub, connects as an agent and sends three commands. This is th
 ```scenario
 ```
 
+## Run the whole system
+
+```sh tested
+$ uv run openhal demo --full
+  soil_moisture rises from 31 % to 46 %
+<- error -32010 LIMIT_EXCEEDED
+```
+
+`--full` starts a hub with no devices. It discovers the simulated board, the driver writer drafts its [Device File](glossary:device-file) from the board and its sketch, and a script answers the limits interview as a person would. An agent then connects through `openhal mcp` and drafts a routine, which a person enables. The routine waters the plant, and the agent's 120 s request never reaches the board. [e2e.yaml](../demo/e2e.yaml) records every step.
+
 ## Run the hub yourself
 
 `init` creates `~/.openhal` with a human token and a [Device File](glossary:device-file) for the simulated plant waterer. The file is read-only until a person confirms its limits.

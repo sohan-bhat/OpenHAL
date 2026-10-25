@@ -1,0 +1,19 @@
+openhal: "0.1"
+device: { name: LED strip, model: led-strip, manufacturer: OpenHAL }
+id: openhal-led-strip
+match:
+  firmware: { product: led-strip }
+connect: { openhal-firmware: auto, boot_s: 2 }
+read:
+  ambient_light: { unit: percent, every: 2 s, range: [0, 100] }
+write:
+  brightness: { unit: percent, min: 0, max: 60, step: 1, max_change_per_s: 25, suggested: true }
+safe_state: { brightness: 0 }
+watchdog: { heartbeat: 5 s, on_loss: safe_state }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The sketch is the LedStrip example of the OpenHAL Arduino library, with the strip driver on pin 6 of an
+  Arduino Uno or pin 25 of an ESP32 and a light sensor on A1 or pin 34. A long strip at full brightness
+  gets warm and can draw more current than its supply gives, so this file stops at 60 %.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

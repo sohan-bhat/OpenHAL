@@ -1,0 +1,16 @@
+openhal: "0.1"
+device: { name: Polar H10 heart rate sensor, model: H10, manufacturer: Polar }
+id: polar-h10
+match:
+  ble_name: "^Polar H10 "
+  ble_services: ["180d"]
+connect: { ble: auto, scan_timeout: 10 s, timeout: 15 s }
+read:
+  heart_rate: { unit: dimensionless, stream: true, range: [30, 220], map: { characteristic: 2a37, format: uint8, byte: 1 } }
+  battery: { unit: percent, every: 10 min, range: [0, 100], map: { characteristic: 2a19, format: uint8 } }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The H10 serves the standard Heart Rate service. Heart rate is in beats per minute and only arrives while
+  someone wears the strap. This file reads it as the single byte after the flags byte. This file only reads.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

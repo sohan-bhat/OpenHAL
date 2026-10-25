@@ -8,9 +8,15 @@ Ports. `port: auto` picks the first serial port whose USB id belongs to a common
 board and answers `HELLO`. `port: sim:<name>` connects to the built-in simulator (tests and the
 demo). Any other value is a serial device path or a pyserial URL.
 
+Discovery probes the ports listed in `OPENHAL_FIRMWARE_PORTS`, comma separated. `auto`, the
+default, stands for every port with a known board USB id. Any other entry is a device path, a
+pyserial URL such as `socket://10.0.0.5:7000`, or `sim:<name>`, so a board behind an unknown
+USB serial chip, a network bridge or a simulator can be found too.
+
 Quirks. Many boards reset when the port opens (DTR), so the driver waits `boot_s` before the first
 `HELLO`. Discovery only sends `HELLO`, which the protocol defines as read-only, and only to ports
-with a known board USB id.
+with a known board USB id or listed by name. It skips a simulated board another link has open, as
+an open serial port refuses a second program.
 """
 
 from __future__ import annotations
@@ -18,6 +24,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import itertools
+import os
 import threading
 import time
 from typing import Any, ClassVar, Final
@@ -40,6 +47,11 @@ from openhal.drivers.openhal_firmware.simulator import SimTransport, simulator_f
 
 BOARD_USB_VENDORS: Final = {"2341", "2a03", "1a86", "10c4", "303a", "239a", "0403"}
 """Arduino, Arduino.org, WCH CH340, Silicon Labs CP210x, Espressif, Adafruit, FTDI."""
+
+PORTS_ENV: Final = "OPENHAL_FIRMWARE_PORTS"
+"""The ports discovery probes, comma separated. `auto` stands for every known board USB port."""
+
+DISCOVERY_BAUD: Final = 115200
 
 
 class FirmwareParams(BaseModel):
@@ -217,14 +229,12 @@ class OpenHalFirmwareDriver(Driver):
 
     def _make_transport(self) -> Any:
         port = self.settings.port
-        if port.startswith("sim:"):
-            return SimTransport(simulator_for(port.removeprefix("sim:") or "default"))
         if port == "auto":
             ports = _board_ports()
             if not ports:
                 raise DriverError("No Arduino or ESP32 board was found. Plug it in, or set port to its device path.")
             port = ports[0][0]
-        return SerialLineTransport(port, self.settings.baud)
+        return _line_transport(port, self.settings.baud)
 
     def _require_link(self) -> _Link:
         if self._link is None:
@@ -264,8 +274,10 @@ class OpenHalFirmwareDriver(Driver):
     @classmethod
     async def discover(cls) -> list[Discovered]:
         found = []
-        for port, vidpid in _board_ports():
-            link = _Link(SerialLineTransport(port, 115200), timeout_s=0.5)
+        for port, identifiers in discovery_ports():
+            if _busy_simulator(port):
+                continue
+            link = _Link(_line_transport(port, DISCOVERY_BAUD), timeout_s=0.5)
             try:
                 await link.open()
                 hello = await link.hello()
@@ -277,7 +289,7 @@ class OpenHalFirmwareDriver(Driver):
                 Discovered(
                     driver="openhal-firmware",
                     address=port,
-                    identifiers={"usb": vidpid, "firmware.product": hello[2], "firmware.version": hello[3]},
+                    identifiers={**identifiers, "firmware.product": hello[2], "firmware.version": hello[3]},
                     label=f"OpenHAL board {hello[2]}",
                 )
             )
@@ -373,6 +385,30 @@ class OpenHalFirmwareDriver(Driver):
             await self._link.close()
         self._link = None
         self.connected = False
+
+
+def _line_transport(port: str, baud: int) -> Any:
+    """The line transport for a port, the simulator behind `sim:<name>` or a serial port."""
+    if port.startswith("sim:"):
+        return SimTransport(simulator_for(port.removeprefix("sim:") or "default"))
+    return SerialLineTransport(port, baud)
+
+
+def _busy_simulator(port: str) -> bool:
+    return port.startswith("sim:") and simulator_for(port.removeprefix("sim:") or "default").open_links > 0
+
+
+def discovery_ports() -> list[tuple[str, dict[str, str]]]:
+    """The ports discovery probes, from `OPENHAL_FIRMWARE_PORTS`, each with the identifiers it already has."""
+    ports: dict[str, dict[str, str]] = {}
+    for entry in os.environ.get(PORTS_ENV, "auto").split(","):
+        name = entry.strip()
+        if name == "auto":
+            for port, vidpid in _board_ports():
+                ports.setdefault(port, {"usb": vidpid})
+        elif name:
+            ports.setdefault(name, {})
+    return list(ports.items())
 
 
 def _board_ports() -> list[tuple[str, str]]:

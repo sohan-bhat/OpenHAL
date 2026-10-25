@@ -1,0 +1,27 @@
+openhal: "0.1"
+device: { name: Eastron SDM120 energy meter, model: SDM120-Modbus, manufacturer: Eastron }
+id: eastron-sdm120
+match:
+  modbus_id: 1
+connect:
+  modbus: rtu
+  port: /dev/ttyUSB0
+  baud: 2400
+  parity: N
+  stopbits: 1
+  unit: 1
+  timeout: 1 s
+read:
+  voltage: { unit: V, every: 2 s, range: [180, 260], map: { register: 0, kind: input, format: float32 } }
+  current: { unit: A, every: 2 s, range: [0, 45], map: { register: 6, kind: input, format: float32 } }
+  power: { unit: W, every: 2 s, range: [-10000, 10000], map: { register: 12, kind: input, format: float32 } }
+  power_factor: { unit: dimensionless, every: 10 s, range: [-1, 1], map: { register: 30, kind: input, format: float32 } }
+  frequency: { unit: Hz, every: 10 s, range: [45, 65], map: { register: 70, kind: input, format: float32 } }
+  energy: { unit: kWh, every: 60 s, map: { register: 342, kind: input, format: float32 } }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The meter ships at Modbus address 1, 2400 baud, 8 data bits, no parity and one stop bit. Registers are the
+  zero-based input register offsets from Eastron's protocol document, as IEEE 754 floats. This file only
+  reads. Set port to your USB to RS-485 adapter.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

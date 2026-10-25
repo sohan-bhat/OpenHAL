@@ -1,0 +1,17 @@
+openhal: "0.1"
+device: { name: Xiaomi LYWSD03MMC with pvvx firmware, model: LYWSD03MMC pvvx, manufacturer: Xiaomi }
+id: xiaomi-lywsd03mmc-pvvx
+match:
+  ble_name: "^ATC_[0-9A-F]{6}$"
+connect: { ble: auto, scan_timeout: 10 s, timeout: 15 s }
+read:
+  temperature: { unit: degC, stream: true, range: [0, 60], map: { characteristic: 2a6e, format: sint16, scale: 0.01 } }
+  humidity: { unit: percent, stream: true, range: [0, 100], map: { characteristic: 2a6f, format: uint16, scale: 0.01 } }
+  battery: { unit: percent, every: 10 min, range: [0, 100], map: { characteristic: 2a19, format: uint8 } }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  This is the same sensor flashed with the pvvx ATC_MiThermometer firmware, which names it ATC_ followed by
+  the end of its MAC address and serves the standard Environmental Sensing characteristics. This file only
+  reads.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

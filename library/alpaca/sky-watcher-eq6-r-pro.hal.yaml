@@ -1,0 +1,47 @@
+openhal: "0.1"
+device: { name: Sky-Watcher EQ6-R Pro mount, model: EQ6-R Pro, manufacturer: Sky-Watcher }
+id: sky-watcher-eq6-r-pro
+connect:
+  alpaca: observatory.local
+  port: 11111
+  device_type: telescope
+  device_number: 0
+  timeout: 5 s
+  action_wait: 8 s
+read:
+  right_ascension: { unit: deg, every: 2 s, range: [0, 360] }
+  declination: { unit: deg, every: 2 s, range: [-90, 90] }
+  altitude: { unit: deg, every: 2 s, range: [-90, 90] }
+  azimuth: { unit: deg, every: 2 s, range: [0, 360] }
+  slewing: { type: bool, every: 1 s }
+  at_park: { type: bool, every: 5 s }
+write:
+  tracking: { type: bool, confirm: confirm, suggested: true }
+actions:
+  abort_slew: { description: "Stop any slew at once (AbortSlew).", suggested: true }
+  park:
+    description: Slew to the park position and stop tracking.
+    confirm: confirm-each-time
+    suggested: true
+  unpark:
+    description: Leave the park position so the mount can move.
+    confirm: confirm
+    suggested: true
+  slew_to_coordinates:
+    description: Slew to a right ascension and declination while tracking.
+    args:
+      right_ascension: { unit: deg, min: 0, max: 359.99 }
+      declination: { unit: deg, min: 0, max: 85 }
+    require: ["at_park == false", "tracking == true", "slewing == false"]
+    confirm: confirm-each-time
+    suggested: true
+safe_state:
+  - { action: abort_slew }
+  - { tracking: false }
+hazard: medium
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The mount talks to the hub through an Alpaca server on the computer it is plugged into, such as GS Server
+  with ASCOM Remote. Set host and port to that server. Slews are limited to declinations from 0 to 85
+  degrees until you know where the tube clears the pier, the tripod and the horizon at your site.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

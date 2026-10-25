@@ -6,6 +6,7 @@ import typer
 from rich.markup import escape
 from rich.table import Table
 
+from openhal.cli import library_cmd
 from openhal.cli._common import console, handled, hub, print_json, show, when
 from openhal.client.models import DeviceView
 
@@ -133,10 +134,13 @@ def register(app: typer.Typer) -> None:
             return
         for match in result.matched:
             known = f"as {match.device_id}" if match.device_id else "with no device file yet"
-            source = f", library file {match.library_file}" if match.library_file else ""
-            console.print(
-                f"[green]matched[/green]  {escape(match.label or match.address)} {escape(known)}{escape(source)}"
-            )
+            console.print(f"[green]matched[/green]  {escape(match.label or match.address)} {escape(known)}")
+            if match.library_file:
+                name = library_cmd.name_for(match.library_file)
+                console.print(
+                    f"  The library has {escape(name)}, and the hub has no device file for it yet. "
+                    f"Add it with openhal library add {escape(name)}"
+                )
         for unknown in result.unknown:
             console.print(
                 f"[yellow]unknown[/yellow]  {escape(unknown.id)}  {escape(unknown.label or '')} at "

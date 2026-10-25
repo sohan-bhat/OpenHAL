@@ -1,0 +1,17 @@
+openhal: "0.1"
+device: { name: Raspberry Pi High Quality Camera, model: High Quality Camera, manufacturer: Raspberry Pi }
+id: raspberry-pi-hq-camera
+connect: { rpi-camera: 0, configuration: still, jpeg_quality: 90, warmup: 2 s, timeout: 15 s }
+read:
+  frame: { type: image }
+  light: { unit: lux, every: 60 s, map: { metadata: Lux } }
+  exposure: { unit: ms, map: { metadata: ExposureTime } }
+  analogue_gain: { unit: dimensionless, map: { metadata: AnalogueGain } }
+  colour_temperature: { unit: K, every: 60 s, map: { metadata: ColourTemperature } }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The High Quality Camera uses the Sony IMX477 sensor with a C or CS mount lens and manual focus. This file
+  only reads, with full resolution stills, which take a few seconds each. Only one program can hold the
+  camera at a time.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

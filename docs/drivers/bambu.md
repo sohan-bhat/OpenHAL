@@ -8,7 +8,7 @@ Checked on 2026-10-24. Read this before you connect a printer.
 
 - In January 2025 Bambu Lab added Authorization Control to its firmware. Starting a print and controlling motion, temperature, fans, the AMS and calibration now need authorization in cloud mode and in normal LAN mode. Status reports over MQTT stay readable. X1 printers got it first, from firmware 01.08.03.00, and the P and A series followed.
 - Bambu Lab's follow-up post describes Developer Mode, an opt-in setting for X1, P1, A1 and A1 mini printers. It must be turned on at the printer, leaves MQTT, the live stream and FTP open on the local network, and makes the owner responsible for securing that network. Bambu Lab says it won't give customer support for this mode. Later guides report Developer Mode on newer models too, but this wasn't checked on an H2D or P2S.
-- Bambu Lab's Terms of Use restrict using its technology to develop software associated with its products without consent (section 3.1, quoted secondhand because the terms page didn't load here). In April 2026 Bambu Lab sent a cease-and-desist letter to the maintainer of an OrcaSlicer fork that reached Bambu Cloud by presenting itself as Bambu Studio. The owner has been asked to review this before the driver ships (NEEDS_HUMAN.md).
+- Bambu Lab's Terms of Use restrict using its technology to develop software associated with its products without consent (section 3.1, quoted secondhand because the terms page didn't load here). In April 2026 Bambu Lab sent a cease-and-desist letter to the maintainer of an OrcaSlicer fork that reached Bambu Cloud by presenting itself as Bambu Studio. The owner reviewed this on 2026-10-25 and approved shipping the driver.
 
 What this driver does with that.
 

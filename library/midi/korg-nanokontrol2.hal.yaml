@@ -1,0 +1,39 @@
+openhal: "0.1"
+device: { name: Korg nanoKONTROL2 controller, model: nanoKONTROL2, manufacturer: Korg }
+id: korg-nanokontrol2
+match:
+  usb: ["0944:0117"]
+  usb_class: midi
+connect: { midi: nanoKONTROL2, channel: 1 }
+read:
+  slider_1: { unit: percent, stream: true, map: { cc: 0 } }
+  slider_2: { unit: percent, stream: true, map: { cc: 1 } }
+  slider_3: { unit: percent, stream: true, map: { cc: 2 } }
+  slider_4: { unit: percent, stream: true, map: { cc: 3 } }
+  slider_5: { unit: percent, stream: true, map: { cc: 4 } }
+  slider_6: { unit: percent, stream: true, map: { cc: 5 } }
+  slider_7: { unit: percent, stream: true, map: { cc: 6 } }
+  slider_8: { unit: percent, stream: true, map: { cc: 7 } }
+  knob_1: { unit: percent, stream: true, map: { cc: 16 } }
+  knob_2: { unit: percent, stream: true, map: { cc: 17 } }
+  knob_3: { unit: percent, stream: true, map: { cc: 18 } }
+  knob_4: { unit: percent, stream: true, map: { cc: 19 } }
+  knob_5: { unit: percent, stream: true, map: { cc: 20 } }
+  knob_6: { unit: percent, stream: true, map: { cc: 21 } }
+  knob_7: { unit: percent, stream: true, map: { cc: 22 } }
+  knob_8: { unit: percent, stream: true, map: { cc: 23 } }
+  play: { type: bool, stream: true, map: { cc: 41 } }
+  stop: { type: bool, stream: true, map: { cc: 42 } }
+  record: { type: bool, stream: true, map: { cc: 45 } }
+write:
+  play_led: { type: bool, suggested: true, map: { cc: 41 } }
+  stop_led: { type: bool, suggested: true, map: { cc: 42 } }
+  record_led: { type: bool, suggested: true, map: { cc: 45 } }
+safe_state: { play_led: false, stop_led: false, record_led: false }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  These are the factory CC numbers in scene 1 on MIDI channel 1. The LEDs follow the hub only after you set
+  LED mode to External in the KORG KONTROL Editor. MIDI can't ask a slider where it is, so each control reads
+  unknown until it moves.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }
