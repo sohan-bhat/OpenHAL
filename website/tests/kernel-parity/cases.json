@@ -1,6 +1,7 @@
 {
   "about": "Commands run through the Python kernel (tests/website/test_kernel_parity.py) and the TypeScript port (website/tests/unit/kernel-parity.test.ts). Both must give the same status, code and message. Devices run on the mock driver with a fixed clock that starts at 1000 s.",
   "files": {
+    "plant-waterer": "examples/plant-waterer/mock/plant-waterer.hal.yaml",
     "desk-fan": "spec/examples/desk-fan-confirmed.hal.yaml",
     "desk-fan-unconfirmed": "spec/examples/desk-fan.hal.yaml",
     "firmware-fan": "spec/examples/openhal-firmware-fan.hal.yaml",
@@ -228,9 +229,13 @@
     {"id": "waterer-run-limit", "devices": ["waterer"], "steps": [{"reading": {"device": "parity-waterer", "channel": "tank", "value": "ok"}}, {"execute": {"device": "parity-waterer", "action": "water", "args": {"duration": "10 s"}}, "repeat": 3}, {"advance": 60}, {"reading": {"device": "parity-waterer", "channel": "tank", "value": "ok"}}], "command": {"device": "parity-waterer", "action": "water", "args": {"duration": "10 s"}}},
     {"id": "waterer-run-window-passes", "devices": ["waterer"], "steps": [{"reading": {"device": "parity-waterer", "channel": "tank", "value": "ok"}}, {"execute": {"device": "parity-waterer", "action": "water", "args": {"duration": "10 s"}}, "repeat": 3}, {"advance": 3601}, {"reading": {"device": "parity-waterer", "channel": "tank", "value": "ok"}}], "command": {"device": "parity-waterer", "action": "water", "args": {"duration": "10 s"}}},
     {"id": "waterer-text-on-wire", "devices": ["waterer"], "steps": [{"reading": {"device": "parity-waterer", "channel": "tank", "value": "ok"}}], "command": {"device": "parity-waterer", "action": "water", "args": {"duration": "twenty seconds"}}},
-    {"id": "waterer-wrong-unit", "devices": ["waterer"], "steps": [{"reading": {"device": "parity-waterer", "channel": "tank", "value": "ok"}}], "command": {"device": "parity-waterer", "action": "water", "args": {"duration": "20 %"}}}
+    {"id": "waterer-wrong-unit", "devices": ["waterer"], "steps": [{"reading": {"device": "parity-waterer", "channel": "tank", "value": "ok"}}], "command": {"device": "parity-waterer", "action": "water", "args": {"duration": "20 %"}}},
+    {"id": "scenario-too-long", "devices": ["plant-waterer"], "steps": [{"reading": {"device": "plant-waterer", "channel": "tank", "value": "ok"}}], "command": {"device": "plant-waterer", "action": "water", "args": {"duration": "120 s"}}, "run": "execute"},
+    {"id": "scenario-tank-empty", "devices": ["plant-waterer"], "steps": [{"reading": {"device": "plant-waterer", "channel": "tank", "value": "empty"}}], "command": {"device": "plant-waterer", "action": "water", "args": {"duration": "20 s"}}, "run": "execute"},
+    {"id": "scenario-watered", "devices": ["plant-waterer"], "steps": [{"reading": {"device": "plant-waterer", "channel": "tank", "value": "empty"}}, {"advance": 2}, {"reading": {"device": "plant-waterer", "channel": "tank", "value": "ok"}}], "command": {"device": "plant-waterer", "action": "water", "args": {"duration": "20 s"}}, "run": "execute"}
   ],
   "hashes": [
+    "examples/plant-waterer/mock/plant-waterer.hal.yaml",
     "spec/examples/alpaca-mount.hal.yaml",
     "spec/examples/ble-environment-sensor.hal.yaml",
     "spec/examples/desk-fan-confirmed.hal.yaml",

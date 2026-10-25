@@ -25,6 +25,7 @@ from typer.testing import CliRunner
 
 from openhal.cli import _tty
 from openhal.cli.main import app
+from openhal.drivers.openhal_firmware.simulator import SIMULATORS
 from tests.website.embedded_hub import EmbeddedHub
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -71,11 +72,14 @@ class Session:
         self.workdir.mkdir(parents=True, exist_ok=True)
         self.hub: EmbeddedHub | None = None
         self.runner = CliRunner()
+        self.cloned: str | None = None
 
     def close(self) -> None:
+        """Stop the hub and forget simulated boards, as a reader's next terminal session would start fresh."""
         if self.hub is not None:
             self.hub.stop()
             self.hub = None
+        SIMULATORS.clear()
 
     @contextlib.contextmanager
     def environment(self) -> Iterator[None]:
@@ -109,9 +113,15 @@ class Session:
         match = re.match(r"^(.*?)\s*\|\s*tail -(\d+)\s*>\s*(\S+)$", line)
         if match:
             line, tail, redirect = match.group(1), int(match.group(2)), Path(self.expand(match.group(3)))
-        clone = re.fullmatch(r"git clone (\S+) && cd (\S+)", line)
+        clone = re.fullmatch(r"git clone (\S+)(?: && cd (\S+))?", line)
         if clone:
-            return self.check_clone(clone.group(1), clone.group(2))
+            self.cloned = clone.group(1)
+            return self.check_clone(clone.group(1), clone.group(2) or clone.group(1).rstrip("/").rsplit("/", 1)[-1])
+        folder = re.fullmatch(r"cd (\S+)", line)
+        if folder:
+            if self.cloned is None or folder.group(1) != self.cloned.rstrip("/").rsplit("/", 1)[-1]:
+                raise SnippetError(f"cd {folder.group(1)} doesn't enter the folder git clone made.")
+            return Result(line, 0, "")
         words = shlex.split(self.expand(line))
         if not words:
             return Result(line, 0, "")

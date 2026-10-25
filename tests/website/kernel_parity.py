@@ -19,6 +19,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+import yaml
+
+from openhal.demo import trace
 from openhal.drivers.base import Reading
 from openhal.drivers.mock import MockDriver
 from openhal.kernel import Kernel
@@ -207,7 +210,9 @@ def run_all() -> dict[str, Any]:
     hashes = {path: loads((ROOT / path).read_text(encoding="utf-8")).limits_sha256() for path in spec["hashes"]}
     for name, text in spec["inline"].items():
         hashes[f"inline:{name}"] = loads(text).limits_sha256()
-    return {"cases": asyncio.run(every_case()), "hashes": hashes}
+    record = yaml.safe_load((ROOT / "docs" / "demo" / "scenario.yaml").read_text(encoding="utf-8"))
+    scenario = {"outcome": trace.outcome(record), "lines": trace.lines(record)}
+    return {"cases": asyncio.run(every_case()), "hashes": hashes, "scenario": scenario}
 
 
 def render(results: dict[str, Any]) -> str:

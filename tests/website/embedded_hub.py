@@ -2,7 +2,7 @@
 
 It loads the config folder at `home` exactly as `openhald` would and serves the local API on a free
 loopback port, never port 4000. Devices come from that folder, so with the `openhal init` sample it
-runs one simulated desk fan on the mock driver. Nothing here can reach hardware.
+runs the simulated plant waterer. Nothing here can reach hardware.
 """
 
 from __future__ import annotations

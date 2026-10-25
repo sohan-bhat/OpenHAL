@@ -1189,7 +1189,7 @@
           "unit": null,
           "error": {
             "code": -32012,
-            "message": "Channel 1 is limited to 1 A on this bench.",
+            "message": "ch1_current <= 1 A is unknown right now",
             "data": {
               "name": "INTERLOCK_BLOCKED",
               "kernelCode": "interlock",
@@ -1197,7 +1197,7 @@
               "device": "bench-psu",
               "channel": "ch1_output",
               "requested": true,
-              "interlock": "Channel 1 is limited to 1 A on this bench.",
+              "interlock": "ch1_current <= 1 A is unknown right now",
               "file": "bench-psu.hal.yaml",
               "confirmedBy": "sohan",
               "confirmedAt": "2026-10-24"
@@ -2035,13 +2035,14 @@
           "unit": null,
           "error": {
             "code": -32012,
-            "message": "run_job on laser is held back by an interlock or requirement that doesn't hold (laser.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "run_job needs state == Idle, which is unknown",
             "data": {
               "name": "INTERLOCK_BLOCKED",
               "kernelCode": "interlock",
               "kernelMessage": "Blocked. run_job needs state == Idle, which is unknown right now.",
               "device": "laser",
               "action": "run_job",
+              "interlock": "run_job needs state == Idle, which is unknown",
               "file": "laser.hal.yaml",
               "confirmedBy": "sohan",
               "confirmedAt": "2026-10-24"
@@ -2853,7 +2854,7 @@
       "result": {
         "status": "blocked",
         "code": "interlock",
-        "message": "Blocked. pump can't run while tank is empty. water needs tank == ok, which doesn't hold right now.",
+        "message": "Blocked. Pump can't run while tank is empty. water needs tank == ok, which doesn't hold right now.",
         "wire": {
           "status": "blocked",
           "device": "parity-waterer",
@@ -2866,7 +2867,7 @@
             "data": {
               "name": "INTERLOCK_BLOCKED",
               "kernelCode": "interlock",
-              "kernelMessage": "Blocked. pump can't run while tank is empty. water needs tank == ok, which doesn't hold right now.",
+              "kernelMessage": "Blocked. Pump can't run while tank is empty. water needs tank == ok, which doesn't hold right now.",
               "device": "parity-waterer",
               "action": "water",
               "interlock": "pump can't run while tank is empty",
@@ -2884,7 +2885,7 @@
       "result": {
         "status": "blocked",
         "code": "interlock",
-        "message": "Blocked. pump can't run while tank is empty. water needs tank == ok, which is unknown right now.",
+        "message": "Blocked. Pump can't run while tank is empty. water needs tank == ok, which is unknown right now.",
         "wire": {
           "status": "blocked",
           "device": "parity-waterer",
@@ -2893,14 +2894,14 @@
           "unit": null,
           "error": {
             "code": -32012,
-            "message": "pump can't run while tank is empty",
+            "message": "water needs tank == ok, which is unknown",
             "data": {
               "name": "INTERLOCK_BLOCKED",
               "kernelCode": "interlock",
-              "kernelMessage": "Blocked. pump can't run while tank is empty. water needs tank == ok, which is unknown right now.",
+              "kernelMessage": "Blocked. Pump can't run while tank is empty. water needs tank == ok, which is unknown right now.",
               "device": "parity-waterer",
               "action": "water",
-              "interlock": "pump can't run while tank is empty",
+              "interlock": "water needs tank == ok, which is unknown",
               "file": "parity-waterer.hal.yaml",
               "confirmedBy": "sohan",
               "confirmedAt": "2026-10-24"
@@ -3156,9 +3157,101 @@
           }
         }
       }
+    },
+    {
+      "id": "scenario-too-long",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "above_max",
+        "message": "Blocked. The duration limit is 30 s (max). Asked for 120 s.",
+        "wire": {
+          "status": "blocked",
+          "device": "plant-waterer",
+          "target": "action:water",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32010,
+            "message": "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
+            "data": {
+              "name": "LIMIT_EXCEEDED",
+              "kernelCode": "above_max",
+              "kernelMessage": "Blocked. The duration limit is 30 s (max). Asked for 120 s.",
+              "device": "plant-waterer",
+              "action": "water",
+              "argument": "duration",
+              "limit": {
+                "value": 30,
+                "unit": "s"
+              },
+              "requested": {
+                "value": 120,
+                "unit": "s"
+              },
+              "file": "plant-waterer.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "scenario-tank-empty",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "interlock",
+        "message": "Blocked. Pump can't run while tank is empty. water needs tank == ok, which doesn't hold right now.",
+        "wire": {
+          "status": "blocked",
+          "device": "plant-waterer",
+          "target": "action:water",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32012,
+            "message": "pump can't run while tank is empty",
+            "data": {
+              "name": "INTERLOCK_BLOCKED",
+              "kernelCode": "interlock",
+              "kernelMessage": "Blocked. Pump can't run while tank is empty. water needs tank == ok, which doesn't hold right now.",
+              "device": "plant-waterer",
+              "action": "water",
+              "interlock": "pump can't run while tank is empty",
+              "file": "plant-waterer.hal.yaml",
+              "confirmedBy": "sohan",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "scenario-watered",
+      "steps": [],
+      "result": {
+        "status": "done",
+        "code": null,
+        "message": "Done. water ran.",
+        "wire": {
+          "status": "done",
+          "device": "plant-waterer",
+          "target": "action:water",
+          "value": {
+            "duration": {
+              "value": 20,
+              "unit": "s"
+            }
+          },
+          "unit": null
+        }
+      }
     }
   ],
   "hashes": {
+    "examples/plant-waterer/mock/plant-waterer.hal.yaml": "04505be094b281d522aed6e739d8a8c73012adc37e9c22954eb342e49a510396",
     "spec/examples/alpaca-mount.hal.yaml": "988958a79223776ba4d7331e8daec63934e2d5771844d5bfde8b19731365d530",
     "spec/examples/ble-environment-sensor.hal.yaml": "007d1668a8bf7c66ea3c29dddedc51ea4a65b0350b8754f26e892f6e3c504490",
     "spec/examples/desk-fan-confirmed.hal.yaml": "47cbb6a66eb90fdce97c0a84e1e14e5e2d626541f084101913dd8c8d485c6863",
@@ -3178,5 +3271,27 @@
     "inline:bound-hash": "67ed889d3f453287147d968aa893e8615203b8aad7b356b88d36e20ffe8a2448",
     "inline:hot-fan": "0ffa2aa9340dd5c9ddea094ebc46df603ee30731a0fd8fb785edc1230f692c7f",
     "inline:waterer": "d5491ef1e63f99b656de01fece078affd4644e65df0356f690f4c69a07488ccb"
+  },
+  "scenario": {
+    "outcome": "You'll see the hub refuse a 120 s watering, hold the pump while the tank is empty, then water for 20 s as soil moisture rises from 31 % to 46 %.",
+    "lines": [
+      "→ hal/action  { \"device\": \"plant-waterer\", \"action\": \"water\",",
+      "                \"args\": { \"duration\": { \"value\": 120, \"unit\": \"s\" } } }",
+      "← error -32010 LIMIT_EXCEEDED",
+      "  water duration 120 s exceeds the limit of 30 s",
+      "  (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
+      "",
+      "  tank is empty",
+      "→ hal/action  { \"device\": \"plant-waterer\", \"action\": \"water\",",
+      "                \"args\": { \"duration\": { \"value\": 20, \"unit\": \"s\" } } }",
+      "← error -32012 INTERLOCK_BLOCKED",
+      "  pump can't run while tank is empty",
+      "",
+      "  tank refilled",
+      "→ hal/action  { \"device\": \"plant-waterer\", \"action\": \"water\",",
+      "                \"args\": { \"duration\": { \"value\": 20, \"unit\": \"s\" } } }",
+      "← result      { \"status\": \"done\" }",
+      "← hal/value   soil_moisture rises from 31 % to 46 %"
+    ]
   }
 }

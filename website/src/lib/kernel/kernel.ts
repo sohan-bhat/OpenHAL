@@ -561,11 +561,12 @@ export class Kernel {
         const result = expr.evaluate(expr.parseCached(condition, channelNames(file)), resolver);
         if (result !== true) {
           const held = result === null ? "is unknown" : "doesn't hold";
-          const detail = message ? `${message}. ` : "";
+          const detail = message ? `${message.slice(0, 1).toUpperCase()}${message.slice(1)}. ` : "";
+          const reason = result === false ? message : `${command.action} needs ${condition}, which is unknown`;
           throw new Block(
             "interlock",
             `Blocked. ${detail}${command.action} needs ${condition}, which ${held} right now.`,
-            message ? { interlock: message } : null,
+            reason ? { interlock: reason } : null,
           );
         }
       }
@@ -672,10 +673,11 @@ export class Kernel {
           const detail = interlock.message ?? `When ${interlock.if_}, ${interlock.require} must hold.`;
           const state = satisfied === null ? "is unknown" : "doesn't hold";
           const where = owner !== null ? ownerId : `${ownerId} (not registered right now)`;
+          const reason = satisfied === false ? interlock.message : `${interlock.require} is unknown right now`;
           throw new Block(
             "interlock",
             `Blocked by an interlock on ${where}. ${detail} Right now ${interlock.require} ${state}.`,
-            interlock.message ? { interlock: interlock.message } : null,
+            reason ? { interlock: reason } : null,
           );
         }
       }

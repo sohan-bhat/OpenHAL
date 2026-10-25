@@ -24,6 +24,7 @@ def test_expected_results_match_the_python_kernel() -> None:
     for got, want in zip(actual["cases"], expected["cases"], strict=True):
         assert got == want, f"case {got['id']} changed. Regenerate expected.json if the kernel change is deliberate."
     assert actual["hashes"] == expected["hashes"]
+    assert actual["scenario"] == expected["scenario"], "docs/demo/scenario.yaml changed. Regenerate expected.json."
 
 
 def test_cases_cover_every_block_code_the_port_implements() -> None:
