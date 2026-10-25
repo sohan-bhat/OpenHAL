@@ -1,19 +1,36 @@
 """The one unit registry OpenHAL uses, and helpers to parse quantities and durations.
 
 Every numeric value the hub handles is converted through this registry (ADR 0005). The registry
-is created once with pint's default definitions and never loads user definitions.
+is created once with pint's default definitions and never loads user definitions. It is built on
+first use, because building it takes about a second and most CLI commands never need it.
 """
 
 from __future__ import annotations
 
+import functools
 import math
 import re
 from typing import Any, Final
 
 import pint
 
-ureg: Final = pint.UnitRegistry(autoconvert_offset_to_baseunit=False, cache_folder=None)
-Quantity = ureg.Quantity
+
+@functools.cache
+def registry() -> pint.UnitRegistry:
+    """The one shared registry, built the first time a unit is parsed."""
+    return pint.UnitRegistry(autoconvert_offset_to_baseunit=False, cache_folder=None)
+
+
+def Quantity(magnitude: Any, unit: Any) -> pint.Quantity:  # noqa: N802 (reads like the pint class it builds)
+    """A pint quantity in the shared registry."""
+    return registry().Quantity(magnitude, unit)
+
+
+def __getattr__(name: str) -> Any:
+    if name == "ureg":
+        return registry()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 _COMPACT_DURATION: Final = re.compile(r"^\s*([0-9]*\.?[0-9]+)\s*(ms|s|min|h)\s*$")
 _UNIT_ALIASES: Final = {"%": "percent", "%/s": "percent / second"}
@@ -41,7 +58,7 @@ def parse_unit(unit: str) -> pint.Unit:
     if len(unit) > MAX_UNIT_LENGTH:
         raise UnitError(f"A unit may be at most {MAX_UNIT_LENGTH} characters.")
     try:
-        parsed = ureg.parse_units(normalize_unit(unit))
+        parsed = registry().parse_units(normalize_unit(unit))
     except (pint.errors.UndefinedUnitError, pint.errors.DefinitionSyntaxError, ValueError) as exc:
         raise UnitError(f"Unknown unit {unit!r}.") from exc
     return parsed
@@ -101,7 +118,7 @@ def convert(quantity: pint.Quantity, unit: str) -> float:
 
 def _angle_power(unit: pint.Unit) -> float:
     """How many angles a unit carries, 1 for degree, rad/s or rpm and 0 for percent or Hz."""
-    _factor, root = ureg.get_root_units(unit)
+    _factor, root = registry().get_root_units(unit)
     power = dict(root._units).get("radian", 0)  # noqa: SLF001
     return float(str(power))
 
