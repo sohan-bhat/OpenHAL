@@ -1,0 +1,16 @@
+---
+import type { Verification } from "../lib/library";
+
+interface Props {
+  status: Verification;
+}
+
+const { status } = Astro.props;
+const look = {
+  "verified-on-hardware": { cls: "ok", word: "verified on hardware" },
+  "tested-reads": { cls: "unverified", word: "reads tested" },
+  unverified: { cls: "unverified", word: "unverified" },
+}[status];
+---
+
+<span class={`status ${look.cls}`}>{look.word}</span>

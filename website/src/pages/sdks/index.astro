@@ -1,0 +1,36 @@
+---
+import { getEntry, render } from "astro:content";
+import DocShell from "../../layouts/DocShell.astro";
+import { sdkSidebar } from "../../lib/sdk-nav";
+import "../../styles/prose.css";
+
+const snippet = await getEntry("snippets", "python-sdk");
+const { Content: Example } = await render(snippet!);
+---
+
+<DocShell title="SDKs" description="Client libraries for the OpenHAL hub protocol." sidebar={sdkSidebar()} section="SDKs">
+  <p>An SDK speaks the hub protocol for you. The hub's safety kernel still decides every command.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th scope="col">Language</th><th scope="col">Package</th><th scope="col">Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="/sdks/python/">Python</a></td>
+          <td class="mono">openhal.client</td>
+          <td><span class="status ok">reference</span></td>
+        </tr>
+        <tr>
+          <td><a href="/sdks/typescript/">TypeScript</a></td>
+          <td class="mono">not published</td>
+          <td><span class="status planned">planned</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <h2 id="python">Python</h2>
+  <p>The Python SDK ships in the repository. A blocked command comes back as a decision, not an exception.</p>
+  <Example />
+  <p><a href="/sdks/python/">Python guide</a> and <a href="/sdks/python/reference/">API reference</a></p>
+</DocShell>

@@ -1,0 +1,173 @@
+---
+import { getCollection } from "astro:content";
+import { PRODUCT_NAME } from "../config/brand";
+import { NAV } from "../config/site";
+
+const published = (await getCollection("blog")).some((post) => !post.data.draft);
+const links = NAV.filter((link) => link.label !== "Blog" || published);
+const path = Astro.url.pathname;
+const current = (match: string[]) =>
+  match.some((prefix) => (prefix === "/" ? path === "/" : path.startsWith(prefix)));
+---
+
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="/" aria-label={`${PRODUCT_NAME} overview`}>
+      <picture class="wordmark">
+        <source media="(prefers-color-scheme: dark)" srcset="/brand/wordmark-dark.svg" />
+        <img src="/brand/wordmark-light.svg" alt={PRODUCT_NAME} width="107" height="24" />
+      </picture>
+    </a>
+    <nav class="desktop-nav" aria-label="Main">
+      <ul>
+        {
+          links.map((link) => (
+            <li>
+              <a href={link.href} aria-current={current(link.match) ? "page" : undefined} rel={link.external ? "noopener" : undefined}>
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <details class="mobile-nav">
+      <summary>Menu</summary>
+      <nav aria-label="Main">
+        <ul>
+          {
+            links.map((link) => (
+              <li>
+                <a href={link.href} aria-current={current(link.match) ? "page" : undefined} rel={link.external ? "noopener" : undefined}>
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </details>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--bg);
+    border-bottom: var(--rule);
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: var(--s-5);
+    min-height: 60px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    color: var(--text);
+    text-decoration: none;
+    flex: none;
+  }
+
+  .wordmark,
+  .wordmark img {
+    display: block;
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .desktop-nav {
+    display: none;
+    margin-left: auto;
+  }
+
+  .desktop-nav ul {
+    display: flex;
+    gap: var(--s-1);
+  }
+
+  .desktop-nav a {
+    display: block;
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--radius);
+    color: var(--text-2);
+    font-size: var(--t-small);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .desktop-nav a:hover {
+    color: var(--text);
+    background: var(--surface);
+  }
+
+  .desktop-nav a[aria-current="page"] {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  }
+
+  .mobile-nav {
+    margin-left: auto;
+    position: relative;
+  }
+
+  .mobile-nav summary {
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 var(--s-3);
+    border: var(--rule);
+    border-radius: var(--radius);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .mobile-nav summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mobile-nav nav {
+    position: absolute;
+    right: 0;
+    top: calc(100% + var(--s-2));
+    width: min(280px, calc(100vw - 2 * var(--s-4)));
+    padding: var(--s-2);
+    background: var(--bg);
+    border: var(--rule);
+    border-radius: var(--radius);
+  }
+
+  .mobile-nav a {
+    display: block;
+    padding: var(--s-2) var(--s-3);
+    border-radius: 4px;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .mobile-nav a[aria-current="page"] {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  @media (min-width: 1100px) {
+    .desktop-nav {
+      display: block;
+    }
+
+    .mobile-nav {
+      display: none;
+    }
+  }
+</style>

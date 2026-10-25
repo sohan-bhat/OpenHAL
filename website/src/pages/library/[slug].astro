@@ -1,0 +1,144 @@
+---
+import { codeHtml } from "../../lib/code";
+import VerificationBadge from "../../components/VerificationBadge.astro";
+import Base from "../../layouts/Base.astro";
+import { formatG } from "../../lib/kernel/pyformat";
+import { type LibraryEntry, libraryEntries } from "../../lib/library";
+import { displayUnit } from "../../lib/playground/rpc";
+
+export function getStaticPaths() {
+  return libraryEntries().map((entry) => ({ params: { slug: entry.slug }, props: { entry } }));
+}
+
+const { entry } = Astro.props as { entry: LibraryEntry };
+const file = entry.file;
+const num = (value: number | null) => (value === null ? "" : formatG(value));
+---
+
+<Base title={entry.title} description={`OpenHAL device file for ${entry.title}.`}>
+  <div class="wrap page">
+    <p class="legend"><a href="/library/">Device Library</a></p>
+    <header class="head">
+      <h1>{entry.title}</h1>
+      <p class="meta">
+        {entry.problems.length > 0 ? <span class="status blocked">invalid</span> : <VerificationBadge status={entry.verification} />}
+        <code>{entry.path}</code>
+      </p>
+    </header>
+
+    {
+      entry.problems.length > 0 && (
+        <ul class="problems">
+          {entry.problems.map((problem) => (
+            <li>{problem}</li>
+          ))}
+        </ul>
+      )
+    }
+
+    {
+      file && (
+        <div class="sheet">
+          <table class="facts">
+            <tbody>
+              <tr><th scope="row">Id</th><td class="mono">{entry.deviceId}</td></tr>
+              <tr><th scope="row">Manufacturer</th><td>{entry.manufacturer ?? "not set"}</td></tr>
+              <tr><th scope="row">Model</th><td>{entry.model ?? "not set"}</td></tr>
+              <tr><th scope="row">Driver</th><td class="mono"><a href={`/drivers/${entry.driver}/`}>{entry.driver}</a></td></tr>
+              <tr><th scope="row">Hazard</th><td class="mono">{entry.hazard}</td></tr>
+              <tr><th scope="row">Limits</th><td>{entry.confirmed ? <span class="status ok">confirmed</span> : <span class="status unverified">unconfirmed</span>}</td></tr>
+              {entry.report && <tr><th scope="row">Report</th><td class="mono">{entry.report}</td></tr>}
+            </tbody>
+          </table>
+
+          {Object.keys(file.write).length > 0 && (
+            <div class="table-wrap">
+              <table>
+                <caption class="legend">Channels it can change</caption>
+                <thead>
+                  <tr><th scope="col">Channel</th><th scope="col">Min</th><th scope="col">Max</th><th scope="col">Step</th><th scope="col">Rate per s</th><th scope="col">Unit</th><th scope="col">Confirm</th></tr>
+                </thead>
+                <tbody>
+                  {Object.entries(file.write).map(([name, spec]) => (
+                    <tr>
+                      <td class="mono">{name}</td>
+                      <td class="mono">{num(spec.min)}</td>
+                      <td class="mono">{num(spec.max)}</td>
+                      <td class="mono">{num(spec.step)}</td>
+                      <td class="mono">{num(spec.max_change_per_s)}</td>
+                      <td>{displayUnit(spec.unit) ?? spec.type}</td>
+                      <td>{spec.confirm}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {Object.keys(file.read).length > 0 && (
+            <div class="table-wrap">
+              <table>
+                <caption class="legend">Read channels</caption>
+                <thead>
+                  <tr><th scope="col">Channel</th><th scope="col">Type</th><th scope="col">Unit</th><th scope="col">Every</th></tr>
+                </thead>
+                <tbody>
+                  {Object.entries(file.read).map(([name, spec]) => (
+                    <tr>
+                      <td class="mono">{name}</td>
+                      <td>{spec.type}</td>
+                      <td>{displayUnit(spec.unit) ?? ""}</td>
+                      <td class="mono">{spec.every === null ? (spec.stream ? "stream" : "on request") : `${formatG(spec.every)} s`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    <Fragment set:html={codeHtml(entry.text, "yaml", entry.path)} />
+  </div>
+</Base>
+
+<style>
+  .page {
+    padding-top: var(--s-6);
+  }
+
+  .head {
+    margin-top: var(--s-2);
+    padding-bottom: var(--s-4);
+    margin-bottom: var(--s-5);
+    border-bottom: var(--rule);
+    display: grid;
+    gap: var(--s-2);
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-4);
+    align-items: center;
+  }
+
+  .sheet {
+    display: grid;
+    gap: var(--s-6);
+  }
+
+  .facts th {
+    width: 10em;
+  }
+
+  caption {
+    text-align: left;
+    padding-bottom: var(--s-2);
+  }
+
+  .problems {
+    color: var(--blocked);
+  }
+</style>

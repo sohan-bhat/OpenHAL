@@ -1,0 +1,16 @@
+# A fixture for the library page tests. Not a real library entry.
+device: { name: Bench power supply, model: DP832, manufacturer: Rigol }
+id: bench-psu
+match:
+  usb: ["1ab1:0e11"]
+connect: { driver: scpi, resource: auto }
+read:
+  ch1_voltage: { unit: V, every: 500 ms }
+write:
+  ch1_output: { type: bool, confirm: confirm-each-time }
+safe_state: { ch1_output: false }
+hazard: medium
+provenance:
+  source: driver-describe
+  verification: { status: verified-on-hardware, report: reports/dp832.md }
+confirmed: { by: tester, at: 2026-10-24 }

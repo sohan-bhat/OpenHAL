@@ -1,0 +1,14 @@
+---
+import { getEntry, render } from "astro:content";
+import DocShell from "../../layouts/DocShell.astro";
+import { docTitle } from "../../lib/docs-nav";
+import { driversSidebar } from "../../lib/drivers-nav";
+
+const entry = await getEntry("docs", "docs/drivers/COVERAGE.md");
+if (!entry) throw new Error("docs/drivers/COVERAGE.md is missing.");
+const { Content, headings, remarkPluginFrontmatter } = await render(entry);
+---
+
+<DocShell title={String(remarkPluginFrontmatter.title ?? docTitle(entry))} repo={entry.id} headings={headings} sidebar={driversSidebar()} section="Drivers">
+  <Content />
+</DocShell>

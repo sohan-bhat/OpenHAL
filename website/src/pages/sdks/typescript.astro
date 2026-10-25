@@ -1,0 +1,9 @@
+---
+import DocShell from "../../layouts/DocShell.astro";
+import { sdkSidebar } from "../../lib/sdk-nav";
+---
+
+<DocShell title="TypeScript SDK" description="The TypeScript SDK for the OpenHAL hub protocol is planned." sidebar={sdkSidebar()} section="SDKs">
+  <p slot="after-title"><span class="status planned">planned</span></p>
+  <p>There is no TypeScript SDK yet. Any WebSocket client can speak the hub protocol directly, as JSON-RPC 2.0 messages at <code>ws://127.0.0.1:7420/rpc</code>.</p>
+</DocShell>

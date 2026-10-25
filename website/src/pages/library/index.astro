@@ -1,0 +1,105 @@
+---
+import VerificationBadge from "../../components/VerificationBadge.astro";
+import Base from "../../layouts/Base.astro";
+import { libraryEntries } from "../../lib/library";
+
+const entries = libraryEntries();
+---
+
+<Base title="Device Library" description="Shared OpenHAL device files, one per device model, each with its verification status.">
+  <div class="wrap page">
+    <header class="head">
+      <h1>Device Library</h1>
+      <p class="lede">Device files for specific models, shared under CC0. A hub that finds a known device starts from its file here.</p>
+    </header>
+
+    {
+      entries.length > 0 ? (
+        <>
+          <form class="filters" role="search" aria-label="Filter device files" data-filters>
+            <label class="field">
+              <span class="legend">Search</span>
+              <input type="search" name="q" placeholder="Model, manufacturer or driver" autocomplete="off" />
+            </label>
+          </form>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Device</th>
+                  <th scope="col">Driver</th>
+                  <th scope="col">Hazard</th>
+                  <th scope="col">Channels</th>
+                  <th scope="col">Verification</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((entry) => (
+                  <tr data-entry data-text={[entry.title, entry.manufacturer ?? "", entry.driver, entry.deviceId].join(" ").toLowerCase()}>
+                    <td data-label="Device">
+                      <a href={`/library/${entry.slug}/`}>{entry.title}</a>
+                    </td>
+                    <td data-label="Driver" class="mono">{entry.driver}</td>
+                    <td data-label="Hazard" class="mono">{entry.hazard}</td>
+                    <td data-label="Channels">
+                      {entry.reads} readable, {entry.writes} changeable, {entry.actions} actions
+                    </td>
+                    <td data-label="Verification">
+                      {entry.problems.length > 0 ? <span class="status blocked">invalid</span> : <VerificationBadge status={entry.verification} />}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : (
+        <p class="empty">
+          No device files are in the library yet. <a href="/docs/tutorials/add-a-device/">Add a device</a> to contribute the first one.
+        </p>
+      )
+    }
+  </div>
+</Base>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>("[data-filters]");
+  const rows = [...document.querySelectorAll<HTMLElement>("[data-entry]")];
+  form?.addEventListener("input", () => {
+    const words = String(new FormData(form).get("q") ?? "").toLowerCase().split(/\s+/).filter(Boolean);
+    for (const row of rows) row.hidden = !words.every((word) => (row.dataset.text ?? "").includes(word));
+  });
+  form?.addEventListener("submit", (event) => event.preventDefault());
+</script>
+
+<style>
+  .page {
+    padding-top: var(--s-6);
+  }
+
+  .head {
+    display: grid;
+    gap: var(--s-2);
+    padding-bottom: var(--s-4);
+    margin-bottom: var(--s-5);
+    border-bottom: var(--rule);
+  }
+
+  .lede {
+    max-width: var(--measure);
+  }
+
+  .filters {
+    max-width: 420px;
+    margin-bottom: var(--s-4);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--s-1);
+  }
+
+  .field input {
+    width: 100%;
+  }
+</style>

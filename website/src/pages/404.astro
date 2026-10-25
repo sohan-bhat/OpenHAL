@@ -1,0 +1,51 @@
+---
+import MessageTrace from "../components/MessageTrace.astro";
+import Base from "../layouts/Base.astro";
+import { registryByName } from "../lib/protocol";
+
+const unknown = registryByName("UNKNOWN_TARGET");
+const entries = [
+  { kind: "request" as const, method: "GET", params: { path: "/no-such-page/" } },
+  { kind: "error" as const, code: unknown.code, name: unknown.name, reason: "There is no page at this address." },
+];
+---
+
+<Base title="Page not found" description="There is no page at this address.">
+  <div class="wrap page">
+    <h1>Page not found</h1>
+    <div data-not-found>
+      <MessageTrace entries={entries} label="What happened" />
+    </div>
+    <ul class="links">
+      <li><a href="/">Overview</a></li>
+      <li><a href="/spec/latest/">Specification</a></li>
+      <li><a href="/docs/">Documentation</a></li>
+    </ul>
+  </div>
+</Base>
+
+<script>
+  const payload = document.querySelector("[data-not-found] .payload");
+  if (payload && location.pathname !== "/404/" && location.pathname !== "/404.html") {
+    const string = payload.querySelector(".syn-str");
+    if (string) string.textContent = JSON.stringify(location.pathname);
+  }
+</script>
+
+<style>
+  .page {
+    max-width: 880px;
+    padding-top: var(--s-7);
+    display: grid;
+    gap: var(--s-5);
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-4);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+</style>

@@ -1,0 +1,78 @@
+---
+import { getCollection, render } from "astro:content";
+import DocShell from "../../layouts/DocShell.astro";
+import { type Driver, TIER_NAMES, conformanceOf, drivers, statusClass, statusWord } from "../../lib/catalog";
+import { driversSidebar } from "../../lib/drivers-nav";
+
+export async function getStaticPaths() {
+  const docs = await getCollection("docs");
+  return drivers().map((driver) => ({
+    params: { name: driver.name },
+    props: { driver, entry: docs.find((entry) => entry.id === `docs/drivers/${driver.name}.md`) ?? null },
+  }));
+}
+
+const { driver, entry } = Astro.props as { driver: Driver; entry: Awaited<ReturnType<typeof getCollection<"docs">>>[number] | null };
+const rendered = entry ? await render(entry) : null;
+const Content = rendered?.Content;
+const rows: Array<[string, string]> = [
+  ["Tier", TIER_NAMES[driver.tier] ?? String(driver.tier)],
+  ["Protocol", driver.protocols.join(", ")],
+  ["Covers", driver.families.join(", ")],
+  ["Hazard default", driver.hazard_default],
+  ...(conformanceOf(driver) ? ([["Conformance", conformanceOf(driver)!]] as Array<[string, string]>) : []),
+  ...(driver.tests ? ([["Tested with", driver.tests]] as Array<[string, string]>) : []),
+];
+---
+
+<DocShell
+  title={driver.name}
+  description={`The ${driver.name} driver. ${driver.protocols.join(", ")}.`}
+  repo={entry ? entry.id : undefined}
+  headings={rendered?.headings ?? []}
+  sidebar={driversSidebar()}
+  section="Drivers"
+>
+  <p slot="after-title" class="statuses">
+    <span class={`status ${statusClass(driver.status)}`}>{statusWord(driver.status)}</span>
+    {driver.status !== "verified" && driver.status !== "planned" && <span class="status unverified">unverified on hardware</span>}
+  </p>
+  <div class="table-wrap">
+    <table class="sheet">
+      <tbody>
+        {
+          rows.map(([label, value]) => (
+            <tr>
+              <th scope="row">{label}</th>
+              <td>{value}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  {
+    driver.estimate && (
+      <p class="muted">
+        <strong>Estimated reach.</strong> {driver.estimate.devices}. {driver.estimate.reasoning}
+      </p>
+    )
+  }
+  {Content ? <Content /> : <p class="muted">This driver has no documentation page yet.</p>}
+</DocShell>
+
+<style>
+  .statuses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-4);
+    margin-top: var(--s-3);
+  }
+
+  .sheet th {
+    width: 11em;
+    font-size: var(--t-legend);
+    vertical-align: top;
+    border-bottom: var(--rule);
+  }
+</style>

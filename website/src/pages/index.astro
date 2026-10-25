@@ -1,0 +1,175 @@
+---
+import { getEntry, render } from "astro:content";
+import FlowDiagram from "../components/FlowDiagram.astro";
+import MessageTrace from "../components/MessageTrace.astro";
+import { PRODUCT_NAME } from "../config/brand";
+import Base from "../layouts/Base.astro";
+import { drivers, statusWord } from "../lib/catalog";
+import { HOME_TITLE } from "../lib/pages";
+import { outcome, scenarioTrace } from "../lib/scenario";
+import { latestVersion, specPages } from "../lib/spec";
+import { specSidebar } from "../lib/spec-nav";
+import "../styles/prose.css";
+
+const quickstart = await getEntry("snippets", "quickstart");
+const { Content: Quickstart } = await render(quickstart!);
+const all = drivers();
+const running = all.filter((driver) => driver.tier > 0 && (driver.status === "implemented" || driver.status === "verified"));
+const planned = all.filter((driver) => driver.status === "planned").length;
+const tested = all.filter((driver) => driver.status === "implemented").length;
+const verified = all.filter((driver) => driver.status === "verified").length;
+const latest = latestVersion();
+const specItems = latest ? specSidebar(await specPages(latest))[0].items : [];
+const sections = specItems
+  .map((item, index) => ({ ...item, href: item.href ?? specItems[index + 1]?.href }))
+  .filter((item) => item.depth === 1 && item.href);
+---
+
+<Base title={`${PRODUCT_NAME}. ${HOME_TITLE}`} description={HOME_TITLE} bare>
+  <div class="wrap home">
+    <section class="intro" aria-labelledby="home-title">
+      <h1 id="home-title">{HOME_TITLE}</h1>
+      <FlowDiagram />
+      <MessageTrace entries={scenarioTrace()} note="Recorded with openhal demo" />
+    </section>
+
+    <section aria-labelledby="start-title" class="block">
+      <h2 id="start-title">Quickstart</h2>
+      <div class="prose quickstart">
+        <Quickstart />
+        <p>{outcome().replace(/(\d) (?=[%a-zA-Z])/g, "$1\u00a0")}</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="devices-title" class="block">
+      <h2 id="devices-title">Device families</h2>
+      <p class="summary">
+        <span class={`status ${verified ? "ok" : "unverified"}`}>{tested} drivers {statusWord("implemented")}</span>
+        <span class="muted">{verified ? `${verified} verified on hardware.` : "None is verified on hardware yet."} {planned} planned.</span>
+      </p>
+      <ul class="families">
+        {
+          running.map((driver) => (
+            <li>
+              <a class="mono" href={`/drivers/${driver.name}/`}>{driver.name}</a>
+              <span class="muted">{driver.families.slice(0, 2).join(", ")}</span>
+            </li>
+          ))
+        }
+      </ul>
+      <p><a href="/drivers/">All drivers, with tier, status and hazard</a></p>
+    </section>
+
+    <section aria-labelledby="mhs-title" class="block">
+      <h2 id="mhs-title">MHS</h2>
+      <p class="measure">
+        Anthropic's Model Hardware Standard is a limited research preview for invited labs. OpenHAL is an independent open protocol, not
+        affiliated with Anthropic or MHS, and plans to stay compatible as MHS opens up.
+      </p>
+    </section>
+
+    <section aria-labelledby="spec-title" class="block">
+      <h2 id="spec-title">Specification</h2>
+      {
+        sections.length ? (
+          <ol class="spec-links">
+            {sections.map((page) => (
+              <li>
+                <a href={page.href}>
+                  <span class="mono num">{page.number}</span> {page.title}
+                </a>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <ul class="spec-links">
+            <li><a href="/spec/">Specification</a></li>
+            <li><a href="/docs/safety/">Safety model</a></li>
+          </ul>
+        )
+      }
+    </section>
+  </div>
+</Base>
+
+<style>
+  .home {
+    max-width: 1040px;
+    padding-top: var(--s-7);
+  }
+
+  .intro {
+    display: grid;
+    gap: var(--s-6);
+  }
+
+  h1 {
+    max-width: 24ch;
+  }
+
+  .block {
+    margin-top: var(--s-8);
+    display: grid;
+    gap: var(--s-4);
+    min-width: 0;
+  }
+
+  .quickstart {
+    max-width: none;
+    min-width: 0;
+  }
+
+  .quickstart :global(.code-block) {
+    margin-top: 0;
+  }
+
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2) var(--s-4);
+  }
+
+  .families {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s-3) var(--s-5);
+  }
+
+  .families li {
+    display: grid;
+    gap: 2px;
+    padding-top: var(--s-2);
+    border-top: var(--rule);
+  }
+
+  .families a {
+    font-weight: 700;
+  }
+
+  .measure {
+    max-width: var(--measure);
+  }
+
+  .spec-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s-1);
+  }
+
+  .num {
+    display: inline-block;
+    min-width: 2em;
+    color: var(--text-2);
+  }
+
+  @media (min-width: 768px) {
+    .families {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

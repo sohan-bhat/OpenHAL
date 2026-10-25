@@ -1,0 +1,100 @@
+---
+import { statusLamp } from "../lib/catalog";
+
+interface Props {
+  name: string;
+  status: string;
+  rows: Array<[string, string]>;
+  href?: string;
+  level?: 2 | 3;
+}
+
+const { name, status, rows, href, level = 3 } = Astro.props;
+const Heading = level === 2 ? "h2" : "h3";
+---
+
+<article class="part">
+  <header>
+    <Heading class="mono name">{href ? <a href={href}>{name}</a> : name}</Heading>
+    <span class="lamps">
+      <span class={`lamp ${statusLamp(status)}`}>{status}</span>
+      {status !== "verified" && <span class="lamp unverified">Unverified on hardware</span>}
+    </span>
+  </header>
+  <dl>
+    {
+      rows.map(([label, value]) => (
+        <div>
+          <dt class="legend">{label}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))
+    }
+  </dl>
+  <slot />
+</article>
+
+<style>
+  .part {
+    border: 1px solid var(--ink);
+    border-radius: var(--radius);
+    min-width: 0;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-2) var(--s-3);
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .lamps {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--s-1) var(--s-3);
+  }
+
+  .name {
+    font-family: var(--font-mono);
+    font-size: var(--t-1);
+    line-height: var(--lh-1);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .name a {
+    color: var(--ink);
+  }
+
+  dl {
+    margin: 0;
+  }
+
+  dl > div {
+    display: grid;
+    grid-template-columns: 7.5em 1fr;
+    gap: var(--s-2);
+    padding: var(--s-1) var(--s-3);
+    border-bottom: 1px solid var(--rule);
+    font-size: var(--t-2);
+    line-height: var(--lh-2);
+  }
+
+  dl > div:last-child {
+    border-bottom: 0;
+  }
+
+  dt {
+    color: var(--ink-2);
+    padding-top: 2px;
+  }
+
+  dd {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+</style>

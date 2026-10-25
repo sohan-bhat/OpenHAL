@@ -1,0 +1,24 @@
+---
+import DocShell from "../../layouts/DocShell.astro";
+import { docsSidebar } from "../../lib/docs-nav";
+
+const sidebar = await docsSidebar();
+---
+
+<DocShell title="Documentation" description="Guides, tutorials and reference for OpenHAL." sidebar={sidebar} section="Documentation">
+  <p>Start with the quickstart, then the tutorial that matches what you want to do.</p>
+  {
+    sidebar.map((group) => (
+      <>
+        <h2>{group.name}</h2>
+        <ul>
+          {group.items.map((item) => (
+            <li>
+              <a href={item.href}>{item.title}</a>
+            </li>
+          ))}
+        </ul>
+      </>
+    ))
+  }
+</DocShell>

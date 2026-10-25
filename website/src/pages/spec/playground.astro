@@ -1,0 +1,74 @@
+---
+import "../../styles/trace.css";
+import Playground from "../../components/playground/Playground.svelte";
+import Base from "../../layouts/Base.astro";
+import { loadScenario } from "../../lib/scenario";
+
+const files = {
+  ...import.meta.glob<string>("../../../../examples/**/*.hal.yaml", { query: "?raw", import: "default", eager: true }),
+  ...import.meta.glob<string>("../../../../spec/examples/*.hal.yaml", { query: "?raw", import: "default", eager: true }),
+};
+const examples = Object.entries(files)
+  .map(([path, text]) => {
+    const name = path.split("/").pop()!.replace(/\.hal\.yaml$/, "");
+    return { name, path: path.replace(/^(\.\.\/)+/, ""), text };
+  })
+  .sort((a, b) => Number(b.text.includes("confirmed:")) - Number(a.text.includes("confirmed:")))
+  .filter((item, index, all) => all.findIndex((other) => other.name === item.name) === index)
+  .sort((a, b) => a.name.localeCompare(b.name));
+const scenario = loadScenario();
+const first = scenario.record.exchanges[0]?.request;
+const params = (first?.params ?? {}) as Record<string, any>;
+const quantityText = (value: any) => (value && typeof value === "object" && "value" in value ? `${value.value} ${value.unit}` : String(value));
+const suggestion = first
+  ? {
+      device: String(params.device),
+      target: String(first.method === "hal/action" ? params.action : params.channel),
+      text:
+        first.method === "hal/action"
+          ? Object.entries(params.args ?? {}).map(([name, value]) => `${name}=${quantityText(value)}`).join(" ")
+          : params.unit ? `${params.value} ${params.unit}` : String(params.value),
+      readings: Object.fromEntries(
+        scenario.record.exchanges.flatMap((exchange) => (exchange.soil_moisture ? [["soil_moisture", exchange.soil_moisture.before.value]] : [])),
+      ),
+    }
+  : null;
+const initial = examples.find((item) => scenario.file && item.path.endsWith(`/${scenario.file}`))?.name ?? examples.find((item) => item.name === scenario.device)?.name ?? "desk-fan-confirmed";
+---
+
+<Base title="Playground" description="Edit an OpenHAL device file, validate it as you type, and see the hub's JSON-RPC answer to each request. Runs in your browser.">
+  <div class="wrap page">
+    <header class="head">
+      <p class="legend"><a href="/spec/latest/">Specification</a></p>
+      <h1>Playground</h1>
+      <p class="lede">Edit a device file, then send requests to a simulated hub. Each answer is the JSON-RPC message the hub sends.</p>
+      <p class="note"><span class="status unverified">in-browser demo</span> <span class="muted">A TypeScript port of the safety kernel. It never talks to hardware.</span></p>
+    </header>
+    <Playground client:interact examples={examples} initial={initial} suggestion={suggestion} />
+  </div>
+</Base>
+
+<style>
+  .page {
+    padding-top: var(--s-6);
+  }
+
+  .head {
+    display: grid;
+    gap: var(--s-2);
+    padding-bottom: var(--s-4);
+    margin-bottom: var(--s-5);
+    border-bottom: var(--rule);
+  }
+
+  .lede {
+    max-width: var(--measure);
+  }
+
+  .note {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-3);
+    align-items: center;
+  }
+</style>

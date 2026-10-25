@@ -1,0 +1,73 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import { showDrafts } from "../../lib/drafts";
+
+const posts = (await getCollection("blog"))
+  .filter((post) => !post.data.draft || showDrafts())
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const day = (date: Date) => date.toISOString().slice(0, 10);
+---
+
+<Base title="Blog" description="Posts from the people building OpenHAL.">
+  <div class="wrap page">
+    <h1>Blog</h1>
+    {
+      posts.length ? (
+        <ol class="posts">
+          {posts.map((post) => (
+            <li>
+              <p class="meta">
+                <time class="mono" datetime={day(post.data.date)}>{day(post.data.date)}</time>
+                {post.data.draft && <span class="status planned">draft</span>}
+              </p>
+              <h2>
+                <a href={`/blog/${post.id}/`}>{post.data.title}</a>
+              </h2>
+              <p class="muted">{post.data.description}</p>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p class="muted">No posts are published yet.</p>
+      )
+    }
+  </div>
+</Base>
+
+<style>
+  .page {
+    max-width: 880px;
+    padding-top: var(--s-7);
+    display: grid;
+    gap: var(--s-5);
+  }
+
+  .posts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .posts li {
+    padding: var(--s-4) 0;
+    border-bottom: var(--rule);
+    display: grid;
+    gap: var(--s-2);
+  }
+
+  .meta {
+    display: flex;
+    gap: var(--s-3);
+    align-items: center;
+    color: var(--text-2);
+  }
+
+  h2 {
+    font-size: var(--t-h3);
+  }
+
+  h2 a {
+    color: var(--text);
+  }
+</style>

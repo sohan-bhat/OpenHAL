@@ -1,0 +1,92 @@
+---
+import "../styles/global.css";
+import "../styles/code.css";
+import atkinson from "../../../design/fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2?url";
+import atkinsonMono from "../../../design/fonts/atkinson-hyperlegible-mono-latin-wght-normal.woff2?url";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import { PITCH, PRODUCT_NAME } from "../config/brand";
+import { ogPath } from "../lib/pages";
+
+interface Props {
+  title: string;
+  description?: string;
+  bare?: boolean;
+  type?: "website" | "article";
+  noindex?: boolean;
+  canonical?: string;
+}
+
+const { title, description = PITCH, bare = false, type = "website", noindex = false, canonical: canonicalPath } = Astro.props;
+const fullTitle = bare ? title : `${title} | ${PRODUCT_NAME}`;
+const canonical = new URL(canonicalPath ?? Astro.url.pathname, Astro.site);
+const image = new URL(ogPath(Astro.url.pathname), Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#fcfcfd" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d0f12" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="preload" href={atkinson} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={atkinsonMono} as="font" type="font/woff2" crossorigin />
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={PRODUCT_NAME} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${title}. ${PRODUCT_NAME}`} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Header />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+    <script>
+      function commandsOf(figure: HTMLElement, text: string): string {
+        if (figure.dataset.language !== "sh" || !/^\$ /m.test(text)) return text;
+        return text
+          .split("\n")
+          .filter((line) => line.startsWith("$ "))
+          .map((line) => line.slice(2))
+          .join("\n");
+      }
+
+      for (const figure of document.querySelectorAll<HTMLElement>("figure.code-block")) {
+        const head = figure.querySelector(".code-head");
+        const code = figure.querySelector("pre");
+        if (!head || !code || !navigator.clipboard) continue;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "copy-button";
+        button.textContent = "Copy";
+        button.setAttribute("aria-label", "Copy code");
+        button.addEventListener("click", async () => {
+          await navigator.clipboard.writeText(commandsOf(figure, code.innerText.replace(/\n$/, "")));
+          button.textContent = "Copied";
+          window.setTimeout(() => (button.textContent = "Copy"), 1500);
+        });
+        head.append(button);
+      }
+    </script>
+  </body>
+</html>

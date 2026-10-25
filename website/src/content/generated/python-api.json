@@ -1,0 +1,1309 @@
+{
+  "module": "openhal.client",
+  "doc": "The Python client of the OpenHAL hub's local API.\n\n    from openhal.client import connect\n\n    with connect() as hub:\n        print(hub.read(\"desk-fan\", \"temperature\").value)\n        decision = hub.write(\"desk-fan\", \"fan_speed\", \"40 %\")\n        print(decision.status, decision.message)\n\nThe client makes no safety decisions. The hub's kernel decides every write and action, and a\nblocked command comes back as a `Decision`, not an exception. See docs/interfaces/PYTHON.md.",
+  "groups": [
+    {
+      "name": "Connect",
+      "items": [
+        {
+          "name": "connect",
+          "kind": "function",
+          "signature": "connect(url: str | None = None, token: str | None = None, *, home: Path | str | None = None, timeout: float = 15.0, transport: httpx.BaseTransport | None = None, check: bool = True) -> Client",
+          "doc": "Connect to the hub. With `check`, asks the hub who we are so a bad address or token fails now."
+        },
+        {
+          "name": "aconnect",
+          "kind": "function",
+          "signature": "async aconnect(url: str | None = None, token: str | None = None, *, home: Path | str | None = None, timeout: float = 15.0, transport: httpx.AsyncBaseTransport | None = None, check: bool = True) -> AsyncClient",
+          "doc": "Connect to the hub. With `check`, asks the hub who we are so a bad address or token fails now."
+        },
+        {
+          "name": "Client",
+          "kind": "class",
+          "doc": "A blocking client of the hub's local API v1.\n\nThe client makes no safety decisions. Every write and action is decided by the hub's kernel,\nand a blocked command comes back as a `Decision` with status `blocked`, not an exception.",
+          "signature": "Client(url: str | None = None, token: str | None = None, *, home: Path | str | None = None, timeout: float = 15.0, transport: httpx.BaseTransport | None = None, use_human_token_file: bool = True) -> None",
+          "methods": [
+            {
+              "name": "action",
+              "signature": "action(device: str, action: str, args: Mapping[str, Any] | None = None, **kwargs: Any) -> Decision",
+              "doc": ""
+            },
+            {
+              "name": "answer",
+              "signature": "answer(session_id: str, answers: Mapping[str, Any]) -> WriterSession",
+              "doc": "Answer limits interview questions. Needs a human token."
+            },
+            {
+              "name": "approve",
+              "signature": "approve(request_id: str) -> Decision",
+              "doc": "Approve a queued request. Needs a human token. The kernel checks it again first."
+            },
+            {
+              "name": "approve_routine",
+              "signature": "approve_routine(routine_id: str, device: str) -> Approval",
+              "doc": ""
+            },
+            {
+              "name": "audit",
+              "signature": "audit(*, device: str | None = None, status: str | None = None, event: str | None = None, since: int = 0, limit: int = 200) -> list[AuditEntry]",
+              "doc": ""
+            },
+            {
+              "name": "call",
+              "signature": "call(call: Call[T]) -> T",
+              "doc": "Send one call and parse the answer. Raises a subclass of `OpenHALError` on failure."
+            },
+            {
+              "name": "close",
+              "signature": "close() -> None",
+              "doc": ""
+            },
+            {
+              "name": "confirmation",
+              "signature": "confirmation(request_id: str) -> ConfirmationRequest",
+              "doc": ""
+            },
+            {
+              "name": "confirmations",
+              "signature": "confirmations(*, include_done: bool = False) -> list[ConfirmationRequest]",
+              "doc": ""
+            },
+            {
+              "name": "create_routine",
+              "signature": "create_routine(routine_id: str, source: str, *, kind: str = yaml) -> Routine",
+              "doc": "Store a routine. It always starts disabled."
+            },
+            {
+              "name": "create_token",
+              "signature": "create_token(name: str, *, kind: str = agent, scope: str = read) -> NewToken",
+              "doc": ""
+            },
+            {
+              "name": "delete_routine",
+              "signature": "delete_routine(routine_id: str) -> OkResult",
+              "doc": ""
+            },
+            {
+              "name": "device",
+              "signature": "device(device_id: str) -> DeviceView",
+              "doc": ""
+            },
+            {
+              "name": "devices",
+              "signature": "devices() -> list[DeviceSummary]",
+              "doc": ""
+            },
+            {
+              "name": "disable_routine",
+              "signature": "disable_routine(routine_id: str) -> Routine",
+              "doc": ""
+            },
+            {
+              "name": "discover",
+              "signature": "discover(drivers: Iterable[str] | None = None) -> DiscoveryResult",
+              "doc": ""
+            },
+            {
+              "name": "drivers",
+              "signature": "drivers() -> list[DriverInfo]",
+              "doc": ""
+            },
+            {
+              "name": "dry_run",
+              "signature": "dry_run(commands: Iterable[Command]) -> list[Decision]",
+              "doc": "Evaluate commands in order without running them. Nothing reaches a driver."
+            },
+            {
+              "name": "enable_routine",
+              "signature": "enable_routine(routine_id: str) -> Routine",
+              "doc": ""
+            },
+            {
+              "name": "finish",
+              "signature": "finish(session_id: str, save_as: str | None = None) -> FinishResult",
+              "doc": ""
+            },
+            {
+              "name": "interview",
+              "signature": "interview(session_id: str) -> Interview",
+              "doc": ""
+            },
+            {
+              "name": "new_pairing_code",
+              "signature": "new_pairing_code() -> PairingCode",
+              "doc": ""
+            },
+            {
+              "name": "pair",
+              "signature": "pair(code: str) -> OkResult",
+              "doc": ""
+            },
+            {
+              "name": "propose",
+              "signature": "propose(session_id: str, draft_yaml: str) -> WriterSession",
+              "doc": "Store a draft device file. The hub marks every limit in it as suggested."
+            },
+            {
+              "name": "ramp_to",
+              "signature": "ramp_to(device: str, channel: str, target: float | Mapping[str, Any] | str, unit: str | None = None, *, interval_s: float = 1.0, margin: float = 0.9, sleep: Callable[[float], None] = <built-in function sleep>) -> list[Decision]",
+              "doc": "Move a channel to `target` in `unit` in steps that each pass its rate limit.\n\nWaits `interval_s` before each step, so the first step is safe even right after another write.\nStops at the first step the kernel does not accept and returns every decision so far."
+            },
+            {
+              "name": "read",
+              "signature": "read(device: str, channel: str | None = None) -> Reading",
+              "doc": "Read one channel. `read(\"desk-fan\", \"temperature\")` or `read(\"desk-fan.temperature\")`."
+            },
+            {
+              "name": "read_many",
+              "signature": "read_many(items: Iterable[str | tuple[str, str]]) -> list[Reading]",
+              "doc": ""
+            },
+            {
+              "name": "reject",
+              "signature": "reject(request_id: str, reason: str = ) -> ConfirmationRequest",
+              "doc": ""
+            },
+            {
+              "name": "revoke_token",
+              "signature": "revoke_token(token_id: str) -> OkResult",
+              "doc": ""
+            },
+            {
+              "name": "routine",
+              "signature": "routine(routine_id: str) -> Routine",
+              "doc": ""
+            },
+            {
+              "name": "routine_dry_run",
+              "signature": "routine_dry_run(routine_id: str) -> RoutineDryRun",
+              "doc": ""
+            },
+            {
+              "name": "routines",
+              "signature": "routines() -> list[RoutineSummary]",
+              "doc": ""
+            },
+            {
+              "name": "run_routine",
+              "signature": "run_routine(routine_id: str) -> Run",
+              "doc": ""
+            },
+            {
+              "name": "start_writer",
+              "signature": "start_writer(*, unknown_id: str | None = None, driver: str | None = None, params: Mapping[str, Any] | None = None, sketch_path: str | None = None, manual_text: str | None = None) -> WriterSession",
+              "doc": ""
+            },
+            {
+              "name": "status",
+              "signature": "status() -> HubStatus",
+              "doc": ""
+            },
+            {
+              "name": "stop",
+              "signature": "stop(reason: str = stop requested) -> StopReport",
+              "doc": "Put every device in its safe state and lock writes until a human unlocks."
+            },
+            {
+              "name": "test_plan",
+              "signature": "test_plan(session_id: str) -> TestPlan",
+              "doc": ""
+            },
+            {
+              "name": "tighten",
+              "signature": "tighten(device: str, channel: str, *, min: Mapping[str, Any] | None = None, max: Mapping[str, Any] | None = None, rate: Mapping[str, Any] | None = None) -> TightenResult",
+              "doc": "Narrow limits for this token's session. Widening is refused with `cannot_loosen`."
+            },
+            {
+              "name": "tokens",
+              "signature": "tokens() -> list[TokenInfo]",
+              "doc": ""
+            },
+            {
+              "name": "unknown_devices",
+              "signature": "unknown_devices() -> list[Unknown]",
+              "doc": ""
+            },
+            {
+              "name": "unlock",
+              "signature": "unlock(phrase: str) -> UnlockResult",
+              "doc": "Lift the stop lock. Needs a human token and the phrase `unlock`."
+            },
+            {
+              "name": "verify_audit",
+              "signature": "verify_audit() -> AuditVerify",
+              "doc": ""
+            },
+            {
+              "name": "whoami",
+              "signature": "whoami() -> Principal",
+              "doc": ""
+            },
+            {
+              "name": "write",
+              "signature": "write(device: str, channel: str, value: Value, unit: str | None = None) -> Decision",
+              "doc": "Ask the kernel to set a channel. A number needs its unit, as `write(\"desk-fan\", \"fan_speed\", 60, \"%\")`."
+            },
+            {
+              "name": "writer_session",
+              "signature": "writer_session(session_id: str) -> WriterSession",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "name": "AsyncClient",
+          "kind": "class",
+          "doc": "An asyncio client of the hub's local API v1.\n\nThe client makes no safety decisions. Every write and action is decided by the hub's kernel,\nand a blocked command comes back as a `Decision` with status `blocked`, not an exception.",
+          "signature": "AsyncClient(url: str | None = None, token: str | None = None, *, home: Path | str | None = None, timeout: float = 15.0, transport: httpx.AsyncBaseTransport | None = None, use_human_token_file: bool = True) -> None",
+          "methods": [
+            {
+              "name": "aclose",
+              "signature": "async aclose() -> None",
+              "doc": ""
+            },
+            {
+              "name": "action",
+              "signature": "async action(device: str, action: str, args: Mapping[str, Any] | None = None, **kwargs: Any) -> Decision",
+              "doc": ""
+            },
+            {
+              "name": "answer",
+              "signature": "async answer(session_id: str, answers: Mapping[str, Any]) -> WriterSession",
+              "doc": "Answer limits interview questions. Needs a human token."
+            },
+            {
+              "name": "approve",
+              "signature": "async approve(request_id: str) -> Decision",
+              "doc": "Approve a queued request. Needs a human token. The kernel checks it again first."
+            },
+            {
+              "name": "approve_routine",
+              "signature": "async approve_routine(routine_id: str, device: str) -> Approval",
+              "doc": ""
+            },
+            {
+              "name": "audit",
+              "signature": "async audit(*, device: str | None = None, status: str | None = None, event: str | None = None, since: int = 0, limit: int = 200) -> list[AuditEntry]",
+              "doc": ""
+            },
+            {
+              "name": "call",
+              "signature": "async call(call: Call[T]) -> T",
+              "doc": "Send one call and parse the answer. Raises a subclass of `OpenHALError` on failure."
+            },
+            {
+              "name": "confirmation",
+              "signature": "async confirmation(request_id: str) -> ConfirmationRequest",
+              "doc": ""
+            },
+            {
+              "name": "confirmations",
+              "signature": "async confirmations(*, include_done: bool = False) -> list[ConfirmationRequest]",
+              "doc": ""
+            },
+            {
+              "name": "create_routine",
+              "signature": "async create_routine(routine_id: str, source: str, *, kind: str = yaml) -> Routine",
+              "doc": "Store a routine. It always starts disabled."
+            },
+            {
+              "name": "create_token",
+              "signature": "async create_token(name: str, *, kind: str = agent, scope: str = read) -> NewToken",
+              "doc": ""
+            },
+            {
+              "name": "delete_routine",
+              "signature": "async delete_routine(routine_id: str) -> OkResult",
+              "doc": ""
+            },
+            {
+              "name": "device",
+              "signature": "async device(device_id: str) -> DeviceView",
+              "doc": ""
+            },
+            {
+              "name": "devices",
+              "signature": "async devices() -> list[DeviceSummary]",
+              "doc": ""
+            },
+            {
+              "name": "disable_routine",
+              "signature": "async disable_routine(routine_id: str) -> Routine",
+              "doc": ""
+            },
+            {
+              "name": "discover",
+              "signature": "async discover(drivers: Iterable[str] | None = None) -> DiscoveryResult",
+              "doc": ""
+            },
+            {
+              "name": "drivers",
+              "signature": "async drivers() -> list[DriverInfo]",
+              "doc": ""
+            },
+            {
+              "name": "dry_run",
+              "signature": "async dry_run(commands: Iterable[Command]) -> list[Decision]",
+              "doc": "Evaluate commands in order without running them. Nothing reaches a driver."
+            },
+            {
+              "name": "enable_routine",
+              "signature": "async enable_routine(routine_id: str) -> Routine",
+              "doc": ""
+            },
+            {
+              "name": "events",
+              "signature": "events() -> AsyncIterator[dict[str, Any]]",
+              "doc": "Yield live events (`hello`, `reading`, `state`, `audit`, `watchdog`) from `/v1/live`.\n\nNeeds the `websockets` package, which the `hub` extra installs."
+            },
+            {
+              "name": "finish",
+              "signature": "async finish(session_id: str, save_as: str | None = None) -> FinishResult",
+              "doc": ""
+            },
+            {
+              "name": "interview",
+              "signature": "async interview(session_id: str) -> Interview",
+              "doc": ""
+            },
+            {
+              "name": "new_pairing_code",
+              "signature": "async new_pairing_code() -> PairingCode",
+              "doc": ""
+            },
+            {
+              "name": "pair",
+              "signature": "async pair(code: str) -> OkResult",
+              "doc": ""
+            },
+            {
+              "name": "propose",
+              "signature": "async propose(session_id: str, draft_yaml: str) -> WriterSession",
+              "doc": "Store a draft device file. The hub marks every limit in it as suggested."
+            },
+            {
+              "name": "ramp_to",
+              "signature": "async ramp_to(device: str, channel: str, target: float | Mapping[str, Any] | str, unit: str | None = None, *, interval_s: float = 1.0, margin: float = 0.9, sleep: Callable[[float], Awaitable[None]] = sleep) -> list[Decision]",
+              "doc": "Move a channel to `target` in `unit` in steps that each pass its rate limit.\n\nWaits `interval_s` before each step, so the first step is safe even right after another write.\nStops at the first step the kernel does not accept and returns every decision so far."
+            },
+            {
+              "name": "read",
+              "signature": "async read(device: str, channel: str | None = None) -> Reading",
+              "doc": "Read one channel. `read(\"desk-fan\", \"temperature\")` or `read(\"desk-fan.temperature\")`."
+            },
+            {
+              "name": "read_many",
+              "signature": "async read_many(items: Iterable[str | tuple[str, str]]) -> list[Reading]",
+              "doc": ""
+            },
+            {
+              "name": "reject",
+              "signature": "async reject(request_id: str, reason: str = ) -> ConfirmationRequest",
+              "doc": ""
+            },
+            {
+              "name": "revoke_token",
+              "signature": "async revoke_token(token_id: str) -> OkResult",
+              "doc": ""
+            },
+            {
+              "name": "routine",
+              "signature": "async routine(routine_id: str) -> Routine",
+              "doc": ""
+            },
+            {
+              "name": "routine_dry_run",
+              "signature": "async routine_dry_run(routine_id: str) -> RoutineDryRun",
+              "doc": ""
+            },
+            {
+              "name": "routines",
+              "signature": "async routines() -> list[RoutineSummary]",
+              "doc": ""
+            },
+            {
+              "name": "run_routine",
+              "signature": "async run_routine(routine_id: str) -> Run",
+              "doc": ""
+            },
+            {
+              "name": "start_writer",
+              "signature": "async start_writer(*, unknown_id: str | None = None, driver: str | None = None, params: Mapping[str, Any] | None = None, sketch_path: str | None = None, manual_text: str | None = None) -> WriterSession",
+              "doc": ""
+            },
+            {
+              "name": "status",
+              "signature": "async status() -> HubStatus",
+              "doc": ""
+            },
+            {
+              "name": "stop",
+              "signature": "async stop(reason: str = stop requested) -> StopReport",
+              "doc": "Put every device in its safe state and lock writes until a human unlocks."
+            },
+            {
+              "name": "test_plan",
+              "signature": "async test_plan(session_id: str) -> TestPlan",
+              "doc": ""
+            },
+            {
+              "name": "tighten",
+              "signature": "async tighten(device: str, channel: str, *, min: Mapping[str, Any] | None = None, max: Mapping[str, Any] | None = None, rate: Mapping[str, Any] | None = None) -> TightenResult",
+              "doc": "Narrow limits for this token's session. Widening is refused with `cannot_loosen`."
+            },
+            {
+              "name": "tokens",
+              "signature": "async tokens() -> list[TokenInfo]",
+              "doc": ""
+            },
+            {
+              "name": "unknown_devices",
+              "signature": "async unknown_devices() -> list[Unknown]",
+              "doc": ""
+            },
+            {
+              "name": "unlock",
+              "signature": "async unlock(phrase: str) -> UnlockResult",
+              "doc": "Lift the stop lock. Needs a human token and the phrase `unlock`."
+            },
+            {
+              "name": "verify_audit",
+              "signature": "async verify_audit() -> AuditVerify",
+              "doc": ""
+            },
+            {
+              "name": "whoami",
+              "signature": "async whoami() -> Principal",
+              "doc": ""
+            },
+            {
+              "name": "write",
+              "signature": "async write(device: str, channel: str, value: Value, unit: str | None = None) -> Decision",
+              "doc": "Ask the kernel to set a channel. A number needs its unit, as `write(\"desk-fan\", \"fan_speed\", 60, \"%\")`."
+            },
+            {
+              "name": "writer_session",
+              "signature": "async writer_session(session_id: str) -> WriterSession",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Commands",
+      "items": [
+        {
+          "name": "Write",
+          "kind": "class",
+          "doc": "Set one write channel. A number carries its unit, in `unit` or as a `{value, unit}` mapping.",
+          "fields": [
+            {
+              "name": "kind",
+              "type": "Literal",
+              "doc": ""
+            },
+            {
+              "name": "device",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "channel",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "value",
+              "type": "str | bool | dict[str, Any] | int | float",
+              "doc": ""
+            },
+            {
+              "name": "unit",
+              "type": "str | None",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "name": "Action",
+          "kind": "class",
+          "doc": "Run one action with typed arguments.",
+          "fields": [
+            {
+              "name": "kind",
+              "type": "Literal",
+              "doc": ""
+            },
+            {
+              "name": "device",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "action",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "args",
+              "type": "dict",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Results",
+      "items": [
+        {
+          "name": "Decision",
+          "kind": "class",
+          "doc": "The kernel's answer to one write or action.",
+          "fields": [
+            {
+              "name": "status",
+              "type": "str",
+              "doc": "allowed, blocked, needs_confirmation, done, pending or failed."
+            },
+            {
+              "name": "code",
+              "type": "str | None",
+              "doc": "The stable block code, for example above_max."
+            },
+            {
+              "name": "message",
+              "type": "str",
+              "doc": "What happened and what to do next."
+            },
+            {
+              "name": "device",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "target",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "value",
+              "type": "Any",
+              "doc": ""
+            },
+            {
+              "name": "unit",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "limit",
+              "type": "dict[str, Any] | None",
+              "doc": "The limit that blocked the command, with unit."
+            },
+            {
+              "name": "request_id",
+              "type": "str | None",
+              "doc": "Set when the command waits for a human."
+            }
+          ]
+        },
+        {
+          "name": "Reading",
+          "kind": "class",
+          "doc": "",
+          "fields": [
+            {
+              "name": "device",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "channel",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "ok",
+              "type": "bool",
+              "doc": "False when the driver could not read. `error` says why."
+            },
+            {
+              "name": "value",
+              "type": "Any",
+              "doc": ""
+            },
+            {
+              "name": "unit",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "at",
+              "type": "float | None",
+              "doc": ""
+            },
+            {
+              "name": "suspect",
+              "type": "bool | None",
+              "doc": ""
+            },
+            {
+              "name": "bytes",
+              "type": "int | None",
+              "doc": "Length of a binary value, which is not returned inline."
+            },
+            {
+              "name": "error",
+              "type": "str | None",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "name": "HubStatus",
+          "kind": "class",
+          "doc": "",
+          "fields": [
+            {
+              "name": "product",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "version",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "spec",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "stopped",
+              "type": "bool",
+              "doc": "True after a stop until a human unlocks. Every write is blocked meanwhile."
+            },
+            {
+              "name": "stop_reason",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "devices",
+              "type": "int",
+              "doc": ""
+            },
+            {
+              "name": "connected",
+              "type": "int",
+              "doc": ""
+            },
+            {
+              "name": "pending_confirmations",
+              "type": "int",
+              "doc": ""
+            },
+            {
+              "name": "started_at",
+              "type": "float | None",
+              "doc": ""
+            },
+            {
+              "name": "load_problems",
+              "type": "list",
+              "doc": ""
+            },
+            {
+              "name": "you",
+              "type": "Principal",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "name": "DeviceSummary",
+          "kind": "class",
+          "doc": "",
+          "fields": [
+            {
+              "name": "id",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "name",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "model",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "manufacturer",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "driver",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "hazard",
+              "type": "str",
+              "doc": "low, medium or high. High hazard commands always wait for a human."
+            },
+            {
+              "name": "writable",
+              "type": "bool",
+              "doc": "False while the device file has unconfirmed limits."
+            },
+            {
+              "name": "connected",
+              "type": "bool",
+              "doc": ""
+            },
+            {
+              "name": "unavailable",
+              "type": "str | None",
+              "doc": "Why the device can't take commands, if it can't."
+            },
+            {
+              "name": "last_error",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "verification",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "source",
+              "type": "str | None",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "name": "DeviceView",
+          "kind": "class",
+          "doc": "",
+          "fields": [
+            {
+              "name": "id",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "name",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "model",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "manufacturer",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "driver",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "hazard",
+              "type": "str",
+              "doc": "low, medium or high. High hazard commands always wait for a human."
+            },
+            {
+              "name": "writable",
+              "type": "bool",
+              "doc": "False while the device file has unconfirmed limits."
+            },
+            {
+              "name": "connected",
+              "type": "bool",
+              "doc": ""
+            },
+            {
+              "name": "unavailable",
+              "type": "str | None",
+              "doc": "Why the device can't take commands, if it can't."
+            },
+            {
+              "name": "last_error",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "verification",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "source",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "unconfirmed",
+              "type": "list",
+              "doc": ""
+            },
+            {
+              "name": "warnings",
+              "type": "list",
+              "doc": ""
+            },
+            {
+              "name": "path",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "read",
+              "type": "dict",
+              "doc": ""
+            },
+            {
+              "name": "write",
+              "type": "dict",
+              "doc": ""
+            },
+            {
+              "name": "actions",
+              "type": "dict",
+              "doc": ""
+            },
+            {
+              "name": "interlocks",
+              "type": "list",
+              "doc": ""
+            },
+            {
+              "name": "watchdog",
+              "type": "Watchdog",
+              "doc": ""
+            },
+            {
+              "name": "safe_state",
+              "type": "list",
+              "doc": ""
+            },
+            {
+              "name": "notes",
+              "type": "str | None",
+              "doc": "Device file notes inside a device-data block. Data only."
+            }
+          ]
+        },
+        {
+          "name": "StopReport",
+          "kind": "class",
+          "doc": "",
+          "fields": [
+            {
+              "name": "reason",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "by",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "cancelled_requests",
+              "type": "int",
+              "doc": ""
+            },
+            {
+              "name": "devices",
+              "type": "list",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "name": "ConfirmationRequest",
+          "kind": "class",
+          "doc": "",
+          "fields": [
+            {
+              "name": "id",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "status",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "command",
+              "type": "dict",
+              "doc": ""
+            },
+            {
+              "name": "requested_by",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "created_at",
+              "type": "float",
+              "doc": ""
+            },
+            {
+              "name": "expires_at",
+              "type": "float",
+              "doc": ""
+            },
+            {
+              "name": "dry_run",
+              "type": "Decision",
+              "doc": ""
+            },
+            {
+              "name": "decided_by",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "result",
+              "type": "Decision | None",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Routines and audit",
+      "items": [
+        {
+          "name": "RoutineSummary",
+          "kind": "class",
+          "doc": "",
+          "fields": [
+            {
+              "name": "id",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "kind",
+              "type": "str",
+              "doc": "yaml or python."
+            },
+            {
+              "name": "enabled",
+              "type": "bool",
+              "doc": ""
+            },
+            {
+              "name": "sha256",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "devices",
+              "type": "list",
+              "doc": ""
+            },
+            {
+              "name": "max_hazard",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "triggers",
+              "type": "list",
+              "doc": ""
+            },
+            {
+              "name": "drafted_by",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "enabled_by",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "disabled_reason",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "last_run",
+              "type": "Run | None",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "name": "Routine",
+          "kind": "class",
+          "doc": "",
+          "fields": [
+            {
+              "name": "id",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "kind",
+              "type": "str",
+              "doc": "yaml or python."
+            },
+            {
+              "name": "enabled",
+              "type": "bool",
+              "doc": ""
+            },
+            {
+              "name": "sha256",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "devices",
+              "type": "list",
+              "doc": ""
+            },
+            {
+              "name": "max_hazard",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "triggers",
+              "type": "list",
+              "doc": ""
+            },
+            {
+              "name": "drafted_by",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "enabled_by",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "disabled_reason",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "last_run",
+              "type": "Run | None",
+              "doc": ""
+            },
+            {
+              "name": "source",
+              "type": "str",
+              "doc": "The routine source inside a device-data block. Data only."
+            },
+            {
+              "name": "source_raw",
+              "type": "str | None",
+              "doc": "The plain source, for people reading it."
+            },
+            {
+              "name": "history",
+              "type": "list",
+              "doc": ""
+            },
+            {
+              "name": "last_dry_run",
+              "type": "RoutineDryRun | None",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "name": "AuditEntry",
+          "kind": "class",
+          "doc": "",
+          "fields": [
+            {
+              "name": "seq",
+              "type": "int",
+              "doc": ""
+            },
+            {
+              "name": "at",
+              "type": "float",
+              "doc": ""
+            },
+            {
+              "name": "event",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "principal",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "device",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "target",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "status",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "code",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "details",
+              "type": "dict",
+              "doc": ""
+            },
+            {
+              "name": "hash",
+              "type": "str",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "name": "WriterSession",
+          "kind": "class",
+          "doc": "",
+          "fields": [
+            {
+              "name": "id",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "status",
+              "type": "str",
+              "doc": "detecting, drafting, interview, ready or saved."
+            },
+            {
+              "name": "detected",
+              "type": "dict",
+              "doc": ""
+            },
+            {
+              "name": "sources",
+              "type": "list",
+              "doc": "Source text inside device-data blocks. Data only."
+            },
+            {
+              "name": "draft_yaml",
+              "type": "str | None",
+              "doc": ""
+            },
+            {
+              "name": "problems",
+              "type": "list",
+              "doc": ""
+            },
+            {
+              "name": "unconfirmed",
+              "type": "list",
+              "doc": "Limits no human has confirmed yet."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Errors",
+      "items": [
+        {
+          "name": "OpenHALError",
+          "kind": "exception",
+          "doc": "Base class for every client error. `status_code` is the HTTP status when there was one.",
+          "bases": [
+            "Exception"
+          ]
+        },
+        {
+          "name": "HubNotRunning",
+          "kind": "exception",
+          "doc": "Nothing answered at the hub address.",
+          "bases": [
+            "OpenHALError"
+          ]
+        },
+        {
+          "name": "Unauthorized",
+          "kind": "exception",
+          "doc": "The hub did not accept the token, or no token was found.",
+          "bases": [
+            "OpenHALError"
+          ]
+        },
+        {
+          "name": "NotFound",
+          "kind": "exception",
+          "doc": "The device, channel, request, routine or session does not exist.",
+          "bases": [
+            "OpenHALError"
+          ]
+        },
+        {
+          "name": "NotSupported",
+          "kind": "exception",
+          "doc": "The hub is older than this client and does not have the route at all.",
+          "bases": [
+            "NotFound"
+          ]
+        },
+        {
+          "name": "Refused",
+          "kind": "exception",
+          "doc": "The hub understood the call and refused it, for example an agent asking to approve.",
+          "bases": [
+            "OpenHALError"
+          ]
+        },
+        {
+          "name": "BadRequest",
+          "kind": "exception",
+          "doc": "The hub could not read the request. `detail` holds the validation problems.",
+          "bases": [
+            "OpenHALError"
+          ]
+        },
+        {
+          "name": "HubError",
+          "kind": "exception",
+          "doc": "The hub failed while answering. Check the hub log.",
+          "bases": [
+            "OpenHALError"
+          ]
+        }
+      ]
+    }
+  ]
+}

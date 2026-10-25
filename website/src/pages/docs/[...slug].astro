@@ -1,0 +1,23 @@
+---
+import { getCollection, render } from "astro:content";
+import DocShell from "../../layouts/DocShell.astro";
+import { docTitle, docsSidebar } from "../../lib/docs-nav";
+import { routeFor } from "../../lib/markdown/routes.mjs";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("docs");
+  return entries
+    .map((entry) => ({ entry, route: routeFor(entry.id) }))
+    .filter(({ route }) => route?.startsWith("/docs/"))
+    .map(({ entry, route }) => ({ params: { slug: route!.slice("/docs/".length, -1) }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content, headings, remarkPluginFrontmatter } = await render(entry);
+const title = String(remarkPluginFrontmatter.title ?? docTitle(entry));
+const sidebar = await docsSidebar();
+---
+
+<DocShell title={title} repo={entry.id} headings={headings} sidebar={sidebar} section="Documentation">
+  <Content />
+</DocShell>

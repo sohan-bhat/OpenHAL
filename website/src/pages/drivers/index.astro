@@ -1,0 +1,273 @@
+---
+import Base from "../../layouts/Base.astro";
+import { STATUS_ORDER, TIER_NAMES, conformanceOf, drivers, statusClass, statusWord } from "../../lib/catalog";
+
+const all = drivers();
+const groups = [
+  { name: "Verified on hardware", rows: all.filter((driver) => driver.status === "verified") },
+  { name: "Tested on simulator", rows: all.filter((driver) => driver.status !== "planned" && driver.status !== "verified") },
+  { name: "Planned", rows: all.filter((driver) => driver.status === "planned") },
+].filter((group) => group.rows.length > 0);
+const tested = all.filter((driver) => driver.status !== "planned" && driver.status !== "verified").length;
+const planned = all.filter((driver) => driver.status === "planned").length;
+const statuses = STATUS_ORDER.filter((status) => all.some((driver) => driver.status === status));
+const tiers = [...new Set(all.map((driver) => driver.tier))].sort();
+const hazards = ["low", "medium", "high"].filter((hazard) => all.some((driver) => driver.hazard_default === hazard));
+const conformances = [...new Set(all.map(conformanceOf).filter((value): value is string => !!value))];
+const verified = all.filter((driver) => driver.status === "verified").length;
+---
+
+<Base title="Drivers" description="Every OpenHAL driver from drivers/catalog.json, with tier, status, conformance level and hazard default.">
+  <div class="wrap page">
+    <header class="head">
+      <h1>Drivers</h1>
+      <p class="lede">A driver speaks one protocol. Statuses come from <code>drivers/catalog.json</code>.</p>
+    </header>
+
+    <form class="filters" role="search" aria-label="Filter drivers" data-filters>
+      <label class="field grow">
+        <span class="legend">Search</span>
+        <input type="search" name="q" placeholder="Name, protocol or device family" autocomplete="off" />
+      </label>
+      <label class="field">
+        <span class="legend">Tier</span>
+        <select name="tier">
+          <option value="">Any</option>
+          {tiers.map((tier) => <option value={String(tier)}>{TIER_NAMES[tier] ?? `Tier ${tier}`}</option>)}
+        </select>
+      </label>
+      <label class="field">
+        <span class="legend">Status</span>
+        <select name="status">
+          <option value="">Any</option>
+          {statuses.map((status) => <option value={status}>{statusWord(status)}</option>)}
+        </select>
+      </label>
+      {
+        conformances.length > 0 && (
+          <label class="field">
+            <span class="legend">Conformance</span>
+            <select name="conformance">
+              <option value="">Any</option>
+              {conformances.map((level) => (
+                <option value={level}>{level}</option>
+              ))}
+            </select>
+          </label>
+        )
+      }
+      <label class="field">
+        <span class="legend">Hazard</span>
+        <select name="hazard">
+          <option value="">Any</option>
+          {hazards.map((hazard) => <option value={hazard}>{hazard}</option>)}
+        </select>
+      </label>
+    </form>
+    <p class="summary">
+      <span class="status unverified">{tested} tested on simulator</span>
+      <span class={`status ${verified ? "ok" : "unverified"}`}>{verified ? `${verified} verified on hardware` : "None verified on hardware yet"}</span>
+      <span class="status planned">{planned} planned</span>
+    </p>
+    <p class="shown muted" aria-live="polite" data-shown>{all.length} drivers.</p>
+
+    <div class="table-wrap">
+      <table class="drivers" aria-label="Drivers">
+        <thead>
+          <tr>
+            <th scope="col">Driver</th>
+            <th scope="col">Status</th>
+            <th scope="col">Tier</th>
+            {conformances.length > 0 && <th scope="col">Conformance</th>}
+            <th scope="col">Protocol</th>
+            <th scope="col">Covers</th>
+            <th scope="col">Hazard</th>
+          </tr>
+        </thead>
+        {
+          groups.map((group) => (
+            <tbody data-group>
+              <tr class="group-row">
+                <th scope="colgroup" colspan={conformances.length > 0 ? 7 : 6}>
+                  {group.name}
+                </th>
+              </tr>
+              {group.rows.map((driver) => (
+                <tr
+                  data-driver
+                  data-tier={String(driver.tier)}
+                  data-status={driver.status}
+                  data-hazard={driver.hazard_default}
+                  data-conformance={conformanceOf(driver) ?? ""}
+                  data-text={[driver.name, ...driver.protocols, ...driver.families].join(" ").toLowerCase()}
+                >
+                  <td data-label="Driver">
+                    <a class="mono" href={`/drivers/${driver.name}/`}>{driver.name}</a>
+                  </td>
+                  <td data-label="Status">
+                    <span class={`status ${statusClass(driver.status)}`}>{statusWord(driver.status)}</span>
+                  </td>
+                  <td data-label="Tier">{TIER_NAMES[driver.tier] ?? driver.tier}</td>
+                  {conformances.length > 0 && (
+                    <td data-label="Conformance">
+                      {conformanceOf(driver) ?? ""}
+                      {driver.status === "planned" && conformanceOf(driver) && <span class="muted"> target</span>}
+                    </td>
+                  )}
+                  <td data-label="Protocol">{driver.protocols.join(", ")}</td>
+                  <td data-label="Covers">{driver.families.join(", ")}</td>
+                  <td data-label="Hazard" class="mono">{driver.hazard_default}</td>
+                </tr>
+              ))}
+            </tbody>
+          ))
+        }
+      </table>
+    </div>
+    <p class="empty muted" data-empty hidden>No driver matches. Clear a filter to see more.</p>
+    <p class="more">The <a href="/library/">Device Library</a> holds device files that run on these drivers.</p>
+  </div>
+</Base>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>("[data-filters]");
+  const items = [...document.querySelectorAll<HTMLElement>("[data-driver]")];
+  const groups = [...document.querySelectorAll<HTMLElement>("[data-group]")];
+  const shown = document.querySelector<HTMLElement>("[data-shown]");
+  const empty = document.querySelector<HTMLElement>("[data-empty]");
+  function apply() {
+    if (!form) return;
+    const data = new FormData(form);
+    const words = String(data.get("q") ?? "").toLowerCase().split(/\s+/).filter(Boolean);
+    let count = 0;
+    for (const item of items) {
+      const match =
+        words.every((word) => (item.dataset.text ?? "").includes(word)) &&
+        (!data.get("tier") || item.dataset.tier === data.get("tier")) &&
+        (!data.get("status") || item.dataset.status === data.get("status")) &&
+        (!data.get("conformance") || item.dataset.conformance === data.get("conformance")) &&
+        (!data.get("hazard") || item.dataset.hazard === data.get("hazard"));
+      item.hidden = !match;
+      if (match) count += 1;
+    }
+    for (const group of groups) group.hidden = !group.querySelector("[data-driver]:not([hidden])");
+    if (shown) shown.textContent = `${count} of ${items.length} drivers.`;
+    if (empty) empty.hidden = count > 0;
+  }
+  form?.addEventListener("input", apply);
+  form?.addEventListener("submit", (event) => event.preventDefault());
+</script>
+
+<style>
+  .page {
+    padding-top: var(--s-6);
+  }
+
+  .head {
+    display: grid;
+    gap: var(--s-2);
+    padding-bottom: var(--s-4);
+    margin-bottom: var(--s-5);
+    border-bottom: var(--rule);
+  }
+
+  .lede code {
+    font-size: 0.9em;
+  }
+
+  .filters {
+    display: grid;
+    gap: var(--s-3);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--s-1);
+  }
+
+  .field input,
+  .field select {
+    width: 100%;
+  }
+
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-5);
+    margin: var(--s-5) 0 0;
+  }
+
+  .shown {
+    margin: var(--s-3) 0;
+  }
+
+
+  .group-row th {
+    padding-top: var(--s-5);
+    color: var(--text-2);
+    border-bottom: var(--rule);
+  }
+
+  td:first-child {
+    white-space: nowrap;
+  }
+
+  .more {
+    margin-top: var(--s-5);
+  }
+
+  @media (min-width: 768px) {
+    .filters {
+      grid-template-columns: 2fr repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 767px) {
+    table,
+    tbody,
+    tr,
+    td,
+
+    thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    .group-row {
+      display: block;
+    }
+
+    .group-row th {
+      display: block;
+    }
+
+    tr[data-driver] {
+      padding: var(--s-3) 0;
+      border-bottom: var(--rule);
+    }
+
+    td {
+      display: grid;
+      grid-template-columns: 7em minmax(0, 1fr);
+      gap: var(--s-2);
+      border: 0;
+      padding: 2px 0;
+    }
+
+    td::before {
+      content: attr(data-label);
+      font-size: var(--t-legend);
+      font-weight: 700;
+      font-variant-caps: all-small-caps;
+      letter-spacing: 0.04em;
+      color: var(--text-2);
+    }
+
+    td > :global(*) {
+      min-width: 0;
+    }
+  }
+</style>

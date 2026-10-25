@@ -1,0 +1,81 @@
+---
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import DocShell from "../layouts/DocShell.astro";
+
+const SHOTS = [
+  { file: "inspector-overview", alt: "The Inspector with the device list, a device pane and the message log, on mock devices" },
+  { file: "inspector-blocked", alt: "The Inspector message log showing error -32010 LIMIT_EXCEEDED for a command over its limit, on mock devices" },
+  { file: "inspector-stopped", alt: "The Inspector after a stop, with every device in its safe state, on mock devices" },
+];
+
+function shot(name: string) {
+  const path = join(process.cwd(), "public", "captures", `${name}.png`);
+  if (!existsSync(path)) return null;
+  const bytes = readFileSync(path);
+  return { src: `/captures/${name}.png`, width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+}
+
+const shots = SHOTS.map((item) => ({ ...item, image: shot(item.file) })).filter((item) => item.image);
+const sidebar = [
+  {
+    name: "",
+    items: [
+      { title: "Inspector", href: "/inspector/" },
+      { title: "Safety model", href: "/docs/safety/" },
+      { title: "Command line", href: "/docs/cli/" },
+    ],
+  },
+];
+---
+
+<DocShell title="Inspector" description="The OpenHAL Inspector shows every device and every message, and stops everything in one click." sidebar={sidebar} section="Inspector">
+  <p slot="after-title"><span class="status planned">in development</span></p>
+  <p>The Inspector is the hub's dashboard. It shows every device and every JSON-RPC message, and stops everything in one click.</p>
+
+  <h2 id="panes">Panes</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th scope="col">Pane</th><th scope="col">Shows</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Devices</td><td>Every device with its conformance level and verification</td></tr>
+        <tr><td>Device</td><td>The selected device's channels, limits and live values</td></tr>
+        <tr><td>Message log</td><td>Every request, response, notification and error, as formatted JSON-RPC</td></tr>
+        <tr><td>Stop</td><td>Always visible. Any client may stop. Only a person may lift the stop</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="open">Open it</h2>
+  <p>The hub serves the Inspector at <code>http://127.0.0.1:7420/</code> once its build ships. Pair a browser with the six digit code from <code>openhal pair</code>.</p>
+
+  {
+    shots.length > 0 && (
+      <>
+        <h2 id="screenshots">Screenshots</h2>
+        <p class="muted">Demo data, from the Inspector running on mock devices.</p>
+        {shots.map((item) => (
+          <figure class="shot">
+            <img src={item.image!.src} width={item.image!.width} height={item.image!.height} alt={item.alt} loading="lazy" decoding="async" />
+          </figure>
+        ))}
+      </>
+    )
+  }
+</DocShell>
+
+<style>
+  .shot {
+    margin: var(--s-4) 0 0;
+    border: var(--rule);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .shot img {
+    width: 100%;
+    height: auto;
+  }
+</style>
