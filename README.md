@@ -1,6 +1,6 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/wordmark-dark.svg">
-  <img alt="OpenHAL" src="docs/assets/wordmark-light.svg" height="52">
+  <img alt="OpenHAL" src="docs/assets/wordmark-light.svg" height="44">
 </picture>
 
 An open layer between AI agents and real hardware, with a safety kernel that checks every write.
@@ -8,8 +8,8 @@ An open layer between AI agents and real hardware, with a safety kernel that che
 [![License](https://img.shields.io/github/license/sohan-bhat/OpenHAL?color=555)](LICENSE) [![CI](https://img.shields.io/github/actions/workflow/status/sohan-bhat/OpenHAL/ci.yml?branch=main&label=CI)](https://github.com/sohan-bhat/OpenHAL/actions/workflows/ci.yml)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/demo-dark.gif">
-  <img alt="Demo with a simulated fan. An agent asks to set fan_speed to 150 percent. The limit line shows the request past the 100 percent maximum and the kernel answers Blocked, the fan_speed limit is 100 percent. The agent then asks for 60 percent, the kernel answers Done, the fan speed reads 60 percent and the room temperature falls from 30.1 to 26.9 degrees Celsius." src="docs/assets/demo-light.gif" width="800">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/trace-dark.svg">
+  <img alt="Message trace. The client sends hal/write with device desk-fan, channel fan_speed, value 150 percent. The hub answers error -32010 LIMIT_EXCEEDED, fan_speed 150 percent exceeds the limit of 100 percent, from desk-fan.hal.yaml confirmed by sohan on 2026-10-24. The client sends hal/write with value 60 percent, and the hub answers result, status done, value 60, unit percent." src="docs/assets/trace-light.svg" width="880">
 </picture>
 
 v0.1, in development. Drivers are tested on simulators, and hardware verification is in progress.
@@ -31,8 +31,8 @@ The hub starts on `127.0.0.1:7420` with a simulated desk fan, ready for an MCP c
 - **Drivers for whole device families.** One SCPI driver covers bench instruments and one Moonraker driver covers Klipper printers.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/architecture-dark.svg">
-  <img alt="How one write flows through OpenHAL. An MCP client asks for fan_speed 150 percent and then 60 percent. The device file supplies a maximum of 100 percent and a rate of 20 percent per second. The safety kernel's limit-line gauge shows the current value of 20 percent, the maximum, and both requests. 150 percent is blocked as above_max. 60 percent is granted, the driver uses the single-use grant, the device applies it and reports fan_speed 60 percent back to the client. Example devices are a Klipper printer via Moonraker, an SCPI multimeter via VISA, an ESP32 board via the OpenHAL firmware and Home Assistant plugs." src="docs/assets/architecture-light.svg" width="880">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/sequence-dark.svg">
+  <img alt="Sequence diagram with Client, Hub, Safety Kernel, Driver and Device. The Client sends hal/write 150 percent, the Hub asks the Safety Kernel to check limits, the kernel answers blocked above_max and the Hub returns error -32010 LIMIT_EXCEEDED. The Client sends hal/write 60 percent, the kernel answers granted with a single-use grant, the Hub sends the write with the grant to the Driver, the Driver sets the Device to 60 percent and reads back 60 percent, the Hub returns result done and sends a hal/value notification." src="docs/assets/sequence-light.svg" width="880">
 </picture>
 
 ## Supported devices
@@ -74,7 +74,7 @@ Details in [docs/SAFETY.md](docs/SAFETY.md).
 
 ## Relationship to Anthropic's MHS
 
-Anthropic's Model Hardware Standard is a limited research preview for invited labs. OpenHAL is open source and usable today, and we plan to stay compatible with MHS as it opens up ([mapping](spec/MHS-MAPPING.md)).
+Anthropic's Model Hardware Standard is a limited research preview for invited labs, and OpenHAL is not affiliated with it or with Anthropic. OpenHAL is an open protocol you can use today, and we plan to stay compatible with MHS as it opens up ([mapping](spec/MHS-MAPPING.md)).
 
 ## Contributing
 
