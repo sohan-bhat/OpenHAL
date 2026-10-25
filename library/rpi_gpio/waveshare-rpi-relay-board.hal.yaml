@@ -1,0 +1,19 @@
+openhal: "0.1"
+device: { name: Waveshare RPi Relay Board, model: RPi Relay Board, manufacturer: Waveshare }
+id: waveshare-rpi-relay-board
+connect:
+  rpi-gpio: { relay_1: 26, relay_2: 20, relay_3: 21 }
+  active_high: false
+  on_connect: "off"
+write:
+  relay_1: { type: bool, confirm: confirm-each-time, suggested: true }
+  relay_2: { type: bool, confirm: confirm-each-time, suggested: true }
+  relay_3: { type: bool, confirm: confirm-each-time, suggested: true }
+safe_state: { relay_1: false, relay_2: false, relay_3: false }
+safe_state_note: "When the hub stops, the pins are released. Check that a released pin leaves each relay open."
+hazard: high
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  The board has three relays on BCM GPIO 26, 20 and 21, and a low level closes a relay. Fit the Relay_JMP
+  jumpers so the Pi drives them. The relays can switch mains, so every change is confirmed each time.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }
