@@ -1,9 +1,9 @@
-"""Build the OpenHAL wordmark in the protocol theme, in light and dark variants.
+"""Build the OpenHAL mark, wordmark and favicon in the protocol theme, in light and dark variants.
 
     uv run --with fonttools --with brotli python tools/readme/build.py
 
 Writes docs/assets/wordmark-{light,dark}.svg with the text converted to paths, since GitHub loads no
-web fonts. Diagrams are built separately by scripts/build-diagrams.
+web fonts, docs/assets/mark-{light,dark}.svg and docs/assets/favicon.svg. Diagrams are built separately by scripts/build-diagrams.
 """
 
 from __future__ import annotations
@@ -100,28 +100,60 @@ def draw_runs(c: Canvas, runs: list[Run], x: float, y: float, size: float) -> No
         x += c.text(value, x, y, face="mono", size=size, fill=color, weight=weight)
 
 
-def mark(c: Canvas, x: float, y: float, scale: float, color: str) -> None:
-    """The mark on its 16 unit grid. A request stroke meets a stop bar, a return stroke points back."""
+MARK_SHAPES = (
+    ("circle", {"cx": 3.4, "cy": 8, "r": 2.4}, "ink"),
+    ("rect", {"x": 7.05, "y": 2, "width": 2.5, "height": 12, "rx": 1.25}, "accent"),
+    ("rect", {"x": 10.8, "y": 5.9, "width": 4.2, "height": 4.2, "rx": 1}, "ink"),
+)
+"""The mark on its 16 unit grid. A client, the kernel that checks every command, and a device."""
 
-    def line(u0: float, v0: float, u1: float, v1: float) -> None:
-        c.add(
-            f'<line x1="{x + u0 * scale}" y1="{y + v0 * scale}" x2="{x + u1 * scale}" y2="{y + v1 * scale}" '
-            f'stroke="{color}" stroke-width="{2 * scale}" stroke-linecap="round"/>'
-        )
 
-    line(11, 2, 11, 14)
-    line(2, 5, 8.5, 5)
-    line(8.5, 11, 5, 11)
-    points = " ".join(f"{x + u * scale:.2f},{y + v * scale:.2f}" for u, v in ((1.2, 11), (5.4, 7.8), (5.4, 14.2)))
-    c.add(f'<polygon points="{points}" fill="{color}"/>')
+def mark_markup(x: float, y: float, scale: float, ink: str, accent: str) -> str:
+    parts = []
+    for tag, attrs, role in MARK_SHAPES:
+        fill = accent if role == "accent" else ink
+        placed = {
+            key: (value * scale + (x if key in ("cx", "x") else y if key in ("cy", "y") else 0))
+            if key in ("cx", "x", "cy", "y")
+            else value * scale
+            for key, value in attrs.items()
+        }
+        rendered = " ".join(f'{key}="{value:.3g}"' for key, value in placed.items())
+        parts.append(f'<{tag} {rendered} fill="{fill}"/>')
+    return "".join(parts)
+
+
+def mark(c: Canvas, x: float, y: float, scale: float, t: dict[str, str]) -> None:
+    c.add(mark_markup(x, y, scale, t["text"], t["accent"]))
+
+
+def mark_svg(t: dict[str, str]) -> str:
+    c = Canvas(64, 64, "OpenHAL", "The OpenHAL mark. A circle, a bar and a square in a row.")
+    c.add('<g transform="scale(4)">' + mark_markup(0, 0, 1, t["text"], t["accent"]) + "</g>")
+    return c.svg().replace('viewBox="0 0 64 64"', 'viewBox="0 0 64 64" shape-rendering="geometricPrecision"')
+
+
+def favicon() -> str:
+    """One file for browsers, with the dark variant under prefers-color-scheme."""
+    light, dark = THEMES["light"], THEMES["dark"]
+    shapes = mark_markup(0, 0, 1, "var(--ink)", "var(--accent)").replace('fill="var(--ink)"', 'class="ink"')
+    shapes = shapes.replace('fill="var(--accent)"', 'class="accent"')
+    style = (
+        f".ink{{fill:{light['text']}}}.accent{{fill:{light['accent']}}}"
+        f"@media (prefers-color-scheme: dark){{.ink{{fill:{dark['text']}}}.accent{{fill:{dark['accent']}}}}}"
+    )
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">'
+        f"<title>OpenHAL</title><style>{style}</style>{shapes}</svg>\n"
+    )
 
 
 def wordmark(t: dict[str, str]) -> str:
     size = 34
     text_w = width("OpenHAL", "text", size, 700)
-    c = Canvas(round(48 + text_w + 2), 44, "OpenHAL", "The OpenHAL mark and wordmark.")
-    mark(c, 0, 4, 2.25, t["accent"])
-    c.text("OpenHAL", 48, 34, face="text", size=size, weight=700, fill=t["text"])
+    c = Canvas(round(44 + text_w + 2), 44, "OpenHAL", "The OpenHAL mark and wordmark.")
+    mark(c, 0, 4, 2.25, t)
+    c.text("OpenHAL", 44, 34, face="text", size=size, weight=700, fill=t["text"])
     return c.svg()
 
 
@@ -129,7 +161,9 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     for name, theme in THEMES.items():
         (OUT / f"wordmark-{name}.svg").write_text(wordmark(theme))
-    print(f"Wrote the wordmark SVGs to {OUT}")
+        (OUT / f"mark-{name}.svg").write_text(mark_svg(theme))
+    (OUT / "favicon.svg").write_text(favicon())
+    print(f"Wrote the wordmark, mark and favicon SVGs to {OUT}")
 
 
 if __name__ == "__main__":
