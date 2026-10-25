@@ -1,0 +1,19 @@
+{
+  "name": "midi",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["MIDI 1.0 over USB MIDI class", "MIDI 1.0 over DIN through an interface", "virtual MIDI ports"],
+  "families": ["pad and knob controllers", "keyboards", "synthesizers", "control surfaces with LEDs and motorised faders", "DIY USB MIDI boards"],
+  "hazard_default": "low",
+  "tests": "fake mido backend with a simulated pad controller, real mido messages",
+  "estimate": {
+    "devices": "thousands of models",
+    "reasoning": "Every class-compliant USB MIDI device works without a vendor driver on Linux, macOS and Windows, and MIDI 1.0 has been the standard for controllers and instruments since 1983. Any device whose MIDI implementation chart lists its CCs and notes can be described in a device file. Devices that only work through vendor SysEx are not covered.",
+    "sources": [
+      "https://midi.org/midi-1-0-core-specifications",
+      "https://www.usb.org/sites/default/files/midi10.pdf",
+      "https://mido.readthedocs.io/",
+      "https://spotlightkid.github.io/python-rtmidi/"
+    ]
+  }
+}

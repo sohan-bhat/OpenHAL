@@ -1,0 +1,19 @@
+{
+  "name": "rpi-camera",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["libcamera through picamera2"],
+  "families": ["Raspberry Pi Camera Module 1, 2 and 3", "Raspberry Pi High Quality and Global Shutter cameras", "Raspberry Pi AI Camera", "third-party CSI modules with libcamera support"],
+  "hazard_default": "low",
+  "tests": "fake Picamera2 class built from the picamera2 manual, untested on a real Pi until the hardware plan is run",
+  "estimate": {
+    "devices": "tens of camera modules",
+    "reasoning": "The official Raspberry Pi camera range is about eight modules, and libcamera supports a few dozen more third-party sensors on the CSI connector. Every one that libcamera can open works through picamera2 the same way, so the driver covers the whole set without per-model code. USB cameras on a Pi use the uvc driver instead.",
+    "sources": [
+      "https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf",
+      "https://www.raspberrypi.com/documentation/accessories/camera.html",
+      "https://www.raspberrypi.com/documentation/computers/camera_software.html",
+      "https://github.com/raspberrypi/picamera2"
+    ]
+  }
+}

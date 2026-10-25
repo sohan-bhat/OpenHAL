@@ -1,0 +1,12 @@
+# A Raspberry Pi Camera Module 3 (Sony IMX708) on a Raspberry Pi 5 or 4, read-only.
+# Frames are 1920x1080 JPEGs from a video configuration, which captures quickly. Light level and
+# exposure come from libcamera's per-frame metadata.
+device: { name: Plant camera, model: Camera Module 3, manufacturer: Raspberry Pi }
+id: plant-camera
+connect: { rpi-camera: 0, configuration: video, width: 1920, height: 1080, jpeg_quality: 85, warmup: 2 s }
+read:
+  frame: { type: image }
+  light: { unit: lux, every: 60 s, map: { metadata: Lux } }
+  exposure: { unit: ms, map: { metadata: ExposureTime } }
+  sensor_temperature: { unit: degC, every: 60 s, map: { metadata: SensorTemperature } }
+hazard: low

@@ -1,0 +1,24 @@
+# A homemade USB macropad (for example a Raspberry Pi Pico running a TinyUSB HID sketch) that
+# uses the pid.codes test ids 1209:0001. Its firmware defines these reports, which is what a
+# device file for any custom HID gadget needs to know.
+#   Input report 1:  byte 0 bits 0 to 3 are buttons 1 to 4, byte 1 is a knob from 0 to 255.
+#   Output report 2: byte 0 bits 0 to 3 are the four key LEDs, byte 1 is LED brightness.
+# It loads read-only until a human checks the limits and adds confirmed: { by: <name>, at: <date> }.
+device: { name: Desk macropad, model: Pico macropad }
+id: desk-macropad
+match:
+  usb: ["1209:0001"]
+  usb_class: hid
+connect: { hid: auto }
+read:
+  key_1: { type: bool, stream: true, map: { report: 1, byte: 0, mask: 0x01 } }
+  key_2: { type: bool, stream: true, map: { report: 1, byte: 0, mask: 0x02 } }
+  key_3: { type: bool, stream: true, map: { report: 1, byte: 0, mask: 0x04 } }
+  key_4: { type: bool, stream: true, map: { report: 1, byte: 0, mask: 0x08 } }
+  knob: { unit: percent, stream: true, map: { report: 1, byte: 1, scale: 0.392156862745098 } }
+write:
+  key_1_led: { type: bool, map: { report: 2, kind: output, byte: 0, mask: 0x01, length: 2 } }
+  key_2_led: { type: bool, map: { report: 2, kind: output, byte: 0, mask: 0x02, length: 2 } }
+  led_brightness: { unit: dimensionless, min: 0, max: 255, step: 1, map: { report: 2, kind: output, byte: 1 } }
+safe_state: { key_1_led: false, key_2_led: false, led_brightness: 0 }
+hazard: low

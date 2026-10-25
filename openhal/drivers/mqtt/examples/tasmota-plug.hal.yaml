@@ -1,0 +1,33 @@
+# A smart plug running Tasmota firmware, through a local MQTT broker such as Mosquitto.
+# Topics follow Tasmota's defaults (https://tasmota.github.io/docs/MQTT/) for a device whose
+# Topic is set to bench_plug. Run `PowerRetain 1` on the plug so its relay state is retained.
+# It loads read-only until a human checks the limits and adds confirmed: { by: <name>, at: <date> }.
+device: { name: Bench plug, model: Tasmota smart plug }
+id: bench-mqtt-plug
+connect:
+  mqtt: 192.168.1.10
+  port: 1883
+  username: openhal
+  token_env: MQTT_PASSWORD
+  timeout: 3 s
+read:
+  power:
+    unit: W
+    stream: true
+    range: [0, 3600]
+    map: { state: tele/bench_plug/SENSOR, format: json, json: ENERGY.Power }
+  voltage:
+    unit: V
+    stream: true
+    map: { state: tele/bench_plug/SENSOR, format: json, json: ENERGY.Voltage }
+  energy_today:
+    unit: kWh
+    stream: true
+    map: { state: tele/bench_plug/SENSOR, format: json, json: ENERGY.Today }
+write:
+  relay:
+    type: bool
+    map: { state: stat/bench_plug/POWER, command: cmnd/bench_plug/POWER, on: "ON", off: "OFF" }
+safe_state: { relay: false }
+hazard: medium
+notes: "Switches a mains load. The hazard depends on what is plugged in."

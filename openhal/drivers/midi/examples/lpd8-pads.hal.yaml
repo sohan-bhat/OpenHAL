@@ -1,0 +1,19 @@
+# An Akai LPD8 pad controller in its factory program 1. Knobs send CC 1 to 8 and pads send
+# notes 36 to 43 on MIDI channel 1. Whether a pad LED follows an incoming Note On depends on
+# the controller and its firmware, so check it with the hardware test plan before relying on it.
+device: { name: Pad controller, model: LPD8, manufacturer: Akai }
+id: pad-controller
+match:
+  usb: ["09e8:0076"]
+  usb_class: midi
+connect: { midi: "LPD8", channel: 1 }
+read:
+  knob_1: { unit: percent, stream: true, map: { cc: 1 } }
+  knob_2: { unit: percent, stream: true, map: { cc: 2 } }
+  pad_1: { type: bool, stream: true, map: { note: 36 } }
+  pad_1_velocity: { unit: dimensionless, stream: true, range: [0, 127], map: { note: 36 } }
+write:
+  pad_1_led: { type: bool, map: { note: 36 } }
+  pad_2_led: { type: bool, map: { note: 37 } }
+safe_state: { pad_1_led: false, pad_2_led: false }
+hazard: low

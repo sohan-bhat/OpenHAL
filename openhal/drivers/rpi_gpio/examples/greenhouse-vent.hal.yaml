@@ -1,0 +1,29 @@
+# A small greenhouse controller on a Raspberry Pi. An active-low relay board switches a 12 V
+# heat mat, a 5 V PWM fan runs from GPIO 18, a hobby servo opens the vent, and a reed switch on
+# the door pulls GPIO 22 to ground when the door is shut. GPIO 27 has a stop button for the hub.
+# Pin numbers are BCM GPIO numbers, not header pin numbers.
+# It loads read-only until a human checks the limits and adds confirmed: { by: <name>, at: <date> }.
+device: Greenhouse controller
+id: greenhouse
+connect:
+  rpi-gpio: { heat_mat: 17, fan: 18, vent: 12, door_closed: 22, stop_button: 27 }
+  active_high: false
+  pull: up
+  bounce: 50 ms
+read:
+  door_closed: { type: bool, every: 1 s }
+write:
+  heat_mat: { type: bool }
+  fan: { unit: percent, min: 0, max: 100, step: 5, map: { active_high: true, frequency: 25000 } }
+  vent: { unit: degree, min: 0, max: 80, max_change_per_s: 30, map: { mode: servo, min_angle: -90, max_angle: 90 } }
+safe_state: { heat_mat: false, fan: 0, vent: 0 }
+safe_state_note: "If the hub stops, the pins are released. Fit a pull-up on the relay input so a released pin means off."
+interlocks:
+  - if: "heat_mat == true"
+    require: "door_closed == true"
+    message: "Close the door before heating."
+watchdog:
+  max_duration:
+    - when: "heat_mat == true"
+      for: 2 h
+hazard: medium

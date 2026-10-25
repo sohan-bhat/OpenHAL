@@ -1,0 +1,20 @@
+{
+  "name": "ble",
+  "tier": 1,
+  "status": "implemented",
+  "protocols": ["Bluetooth Low Energy GATT"],
+  "families": ["environmental sensors", "battery powered sensors", "BLE LED and relay boards", "DIY ESP32, nRF52 and Pico W peripherals"],
+  "hazard_default": "low",
+  "tests": "fake BleakClient and BleakScanner with a simulated Environmental Sensing peripheral",
+  "estimate": {
+    "devices": "thousands of models",
+    "reasoning": "Any BLE peripheral whose characteristics use standard formats can be described in a device file, and describe() maps the SIG Environmental Sensing and Battery services automatically. Billions of BLE devices ship each year, but many use encrypted or undocumented vendor protocols, so the realistic count is the devices with standard services or a documented GATT table, which is still thousands of models.",
+    "sources": [
+      "https://www.bluetooth.com/specifications/specs/core-specification-5-4/",
+      "https://www.bluetooth.com/specifications/gss/",
+      "https://www.bluetooth.com/specifications/assigned-numbers/",
+      "https://www.bluetooth.com/specifications/specs/environmental-sensing-service-1-0/",
+      "https://bleak.readthedocs.io/"
+    ]
+  }
+}

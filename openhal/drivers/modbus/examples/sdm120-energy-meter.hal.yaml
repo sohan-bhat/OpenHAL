@@ -1,0 +1,23 @@
+# An Eastron SDM120 single-phase energy meter on a USB to RS-485 adapter, read-only.
+# Register addresses are the zero-based input register offsets from Eastron's SDM120 Modbus
+# protocol document (30001 is register 0). Values are IEEE 754 float32, high word first.
+# The meter ships at 2400 baud, 8 data bits, no parity, one stop bit, unit id 1.
+device: { name: Workshop energy meter, model: SDM120-Modbus, manufacturer: Eastron }
+id: workshop-meter
+match:
+  modbus_id: 1
+connect:
+  modbus: rtu
+  port: /dev/ttyUSB0
+  baud: 2400
+  parity: N
+  unit: 1
+  timeout: 1 s
+read:
+  voltage: { unit: V, every: 2 s, range: [180, 260], map: { register: 0, kind: input, format: float32 } }
+  current: { unit: A, every: 2 s, range: [0, 45], map: { register: 6, kind: input, format: float32 } }
+  power: { unit: W, every: 2 s, range: [-10000, 10000], map: { register: 12, kind: input, format: float32 } }
+  power_factor: { unit: dimensionless, every: 10 s, range: [-1, 1], map: { register: 30, kind: input, format: float32 } }
+  frequency: { unit: Hz, every: 10 s, range: [45, 65], map: { register: 70, kind: input, format: float32 } }
+  energy: { unit: kWh, every: 60 s, map: { register: 342, kind: input, format: float32 } }
+hazard: low
