@@ -222,7 +222,6 @@ def test_the_scenario_limits_are_the_mock_files_limits() -> None:
 DESK_FAN = re.compile(r"(?i)\bdesk[- _]fan\b")
 DESK_FAN_ALLOWED = {
     "docs/DESIGN.md": "says the desk fan stays only in spec/examples/",
-    "spec/2026-10-24/routines.md": "the e2e workstream replaces its desk fan routine with the demo's routine",
 }
 """Pages outside spec/examples/ that may still name the desk fan, and why."""
 
