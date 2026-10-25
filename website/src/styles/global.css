@@ -464,8 +464,8 @@ p {
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--t-1);
-  line-height: var(--lh-1);
+  font-size: var(--t-2);
+  line-height: var(--lh-2);
 }
 
 th {
@@ -542,8 +542,3 @@ th.num {
   max-width: 100%;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  html {
-    scroll-behavior: smooth;
-  }
-}

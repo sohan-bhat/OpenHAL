@@ -57,7 +57,7 @@
   let targetDevice = $state("");
   let target = $state("");
   let requestText = $state("");
-  let log = $state<Array<{ key: number; line: string; status: string; code: string | null; message: string }>>([]);
+  let log = $state<Array<{ key: number; who: "agent" | "person"; line: string; status: string; code: string | null; message: string }>>([]);
   let attempt = $state.raw<{ device: string; channel: string; value: number; code: string; key: number } | null>(null);
   let unlockText = $state("");
   let unlockError = $state("");
@@ -188,9 +188,9 @@
     return "blocked";
   }
 
-  function remember(line: string, decision: Pick<Decision, "status" | "code" | "message">): void {
+  function remember(line: string, decision: Pick<Decision, "status" | "code" | "message">, who: "agent" | "person" = "person"): void {
     counter += 1;
-    log = [{ key: counter, line, status: decision.status, code: decision.code, message: decision.message }, ...log].slice(0, 30);
+    log = [{ key: counter, who, line, status: decision.status, code: decision.code, message: decision.message }, ...log].slice(0, 30);
   }
 
   function showAttempt(device: string, channel: string, raw: unknown, decision: Decision): void {
@@ -224,11 +224,11 @@
         : { kind: "action", device: targetDevice, action: target, args: actionArgs(runtime.file, target, words ? splitPairs(words) : []) };
     } catch (error) {
       if (!(error instanceof CliError)) throw error;
-      remember(line, { status: "error", code: null, message: error.message });
+      remember(line, { status: "error", code: null, message: error.message }, principal.kind === "human" ? "person" : "agent");
       return;
     }
     const decision = dry ? kernel.dryRun([command], principal)[0] : kernel.execute(command, principal);
-    remember(line, decision);
+    remember(line, decision, principal.kind === "human" ? "person" : "agent");
     if (command.kind === "write" && decision.status === "blocked") showAttempt(targetDevice, target, command.value, decision);
     else attempt = null;
     version += 1;
@@ -553,8 +553,8 @@
                 <li>
                   <span class="mono small">{request.requestId}</span>
                   <span>{request.command.kind === "write" ? `${request.command.channel} = ${String(request.command.value)}` : `${request.command.action}`}</span>
-                  <button type="button" class="small-button" onclick={() => decide(request.requestId, true)}>Approve</button>
-                  <button type="button" class="small-button" onclick={() => decide(request.requestId, false)}>Reject</button>
+                  <button type="button" class="person-button" onclick={() => decide(request.requestId, true)}>Approve</button>
+                  <button type="button" class="person-button" onclick={() => decide(request.requestId, false)}>Reject</button>
                 </li>
               {/each}
             </ul>
@@ -563,7 +563,8 @@
 
         <ol class="log" aria-label="Decisions, newest first" aria-live="polite">
           {#each log as entry (entry.key)}
-            <li>
+            <li class={entry.who}>
+              <p class="who legend">{entry.who === "person" ? "Person" : "Agent"}</p>
               <p class="mono line"><span aria-hidden="true">$ </span>{entry.line}</p>
               <p class="decision">
                 <span class={`lamp ${lampFor(entry.status)}`}>{entry.status}</span>
@@ -591,7 +592,7 @@
           </form>
         {:else}
           <div class="stop-row">
-            <p class="legend note">Stop puts every simulated device in its safe state.</p>
+            <p class="note">Stop puts every simulated device in its safe state.</p>
             <button type="button" class="stop" onclick={stopAll} disabled={!kernel}>Stop all</button>
           </div>
         {/if}
@@ -638,7 +639,7 @@
   input {
     min-height: 40px;
     padding: 0 var(--s-2);
-    font-size: var(--t-1);
+    font-size: var(--t-2);
     max-width: 100%;
   }
 
@@ -663,8 +664,8 @@
 
   .problems {
     margin-top: var(--s-3);
-    font-size: var(--t-1);
-    line-height: var(--lh-1);
+    font-size: var(--t-2);
+    line-height: var(--lh-2);
     display: grid;
     gap: var(--s-2);
   }
@@ -682,7 +683,7 @@
     flex-wrap: wrap;
     gap: var(--s-1) var(--s-2);
     padding-left: var(--s-3);
-    border-left: 2px solid var(--blocked);
+    border-left: 2px solid var(--ink);
   }
 
   .problems code {
@@ -804,8 +805,8 @@
   }
 
   .small {
-    font-size: var(--t-0);
-    line-height: var(--lh-0);
+    font-size: var(--t-2);
+    line-height: var(--lh-2);
   }
 
   .switch {
@@ -908,8 +909,41 @@
   }
 
   .log li {
-    padding: var(--s-2) 0;
+    padding: var(--s-2) var(--s-3);
     border-top: 1px solid var(--rule);
+  }
+
+  /* An agent's request and a person's decision never look alike. */
+  .log li.agent {
+    border-left: 3px dashed var(--ink-2);
+  }
+
+  .log li.person {
+    border-left: 6px solid var(--bezel);
+    background: color-mix(in srgb, var(--bezel) 8%, var(--panel));
+  }
+
+  .who {
+    color: var(--ink-2);
+  }
+
+  .person-button {
+    min-height: 40px;
+    padding: 0 var(--s-4);
+    border: 2px solid var(--bezel);
+    border-radius: var(--radius);
+    background: var(--bezel);
+    color: var(--on-bezel);
+    font-family: var(--font-label);
+    font-weight: 800;
+    letter-spacing: var(--legend-tracking);
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .person-button:focus-visible {
+    outline: 3px solid var(--signal);
+    outline-offset: 2px;
   }
 
   .line {
@@ -924,8 +958,8 @@
     flex-wrap: wrap;
     align-items: baseline;
     gap: var(--s-1) var(--s-2);
-    font-size: var(--t-1);
-    line-height: var(--lh-1);
+    font-size: var(--t-2);
+    line-height: var(--lh-2);
   }
 
   .decision code {
@@ -964,18 +998,19 @@
 
   .note {
     color: var(--on-bezel);
-    max-width: 30ch;
+    max-width: 34ch;
   }
 
   .stop {
-    min-height: 48px;
-    padding: 0 var(--s-5);
+    min-height: 56px;
+    min-width: 180px;
+    padding: 0 var(--s-6);
     border: 2px solid var(--on-bezel);
     border-radius: var(--radius);
     background: var(--blocked);
     color: var(--panel);
     font-family: var(--font-label);
-    font-size: var(--t-2);
+    font-size: var(--t-3);
     font-weight: 800;
     letter-spacing: var(--legend-tracking);
     text-transform: uppercase;
@@ -987,11 +1022,11 @@
     background: var(--bezel);
     color: var(--on-bezel);
     border-radius: var(--radius);
-    font-size: var(--t-1);
+    font-size: var(--t-2);
   }
 
   .plate .legend {
-    font-size: var(--t-1);
+    font-size: var(--t-2);
     font-weight: 800;
     margin-right: var(--s-2);
   }

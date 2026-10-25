@@ -98,7 +98,7 @@ export function rehypeCodeBlocks() {
                 {
                   type: "element",
                   tagName: "span",
-                  properties: { className: ["tested"], title: "Run against the real CLI by tests/website/test_snippets.py" },
+                  properties: { className: ["tested"] },
                   children: [{ type: "text", value: "Tested" }],
                 },
               ]
