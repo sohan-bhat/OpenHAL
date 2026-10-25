@@ -8,11 +8,10 @@ Phase C. The protocol theme and hub protocol (ADR 0015), the dated specification
 
 Cap is 5 agents at once (owner, latest 2026-10-24). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents.
 
-- website (own worktree). Owns website/, docs/guide/, docs/design-rounds/ and tests/website/. Brief in docs/agents/BRIEF-website-2.md (protocol site). Resumed after the crash with 40 commits saved. Round 1 review findings are superseded by the theme change.
+- website, round 3 of 3 (worktree agent-ae4debf25dd3edd4e). Owns website/, docs/guide/ and tests/website/. Rounds 1 and 2 are merged.
+- Inspector, round 3 of 3 (worktree agent-ab1476059128896a1). Owns dashboard/, openhal/hub/static/ and tests/inspector/. Rounds 1 and 2 are merged.
 
-- Inspector (worktree agent-ab1476059128896a1). Owns dashboard/, openhal/hub/static/, tests/inspector/ and docs/design-rounds/inspector-*. Brief in docs/agents/BRIEF-inspector.md. Resumed after the crash.
-- drivers-3 (own worktree). grbl, ros2, opcua, sila2, indi, alpaca, pylabrobot, lerobot. Brief in docs/agents/BRIEF-drivers-3.md.
-- drivers-4 (own worktree). onvif, bambu, can, knx, matter, pi-i2c-spi, upnp, zigbee-zwave. Brief in docs/agents/BRIEF-drivers-4.md. The owner asked for all sixteen planned drivers to be built, Tier 3 included.
+Design round screenshots live in docs/design-rounds/, which is gitignored so they never reach a clone.
 
 ## Done
 
@@ -33,6 +32,10 @@ Cap is 5 agents at once (owner, latest 2026-10-24). Every coding agent runs on O
 - A new mark (a client circle, an accent kernel bar and a device square), checked against every glyph in Lucide, Heroicons, Material Symbols and Tabler.
 - The safety red team suite (100 tests) merged, and its four findings RT-01 to RT-04 fixed. docs/SAFETY-REPORT.md.
 - Driver SDK commands (`openhal driver new`, `driver test`, `driver list`).
+- M11. All sixteen planned drivers are built to the Tier 1 standard and pass conformance on simulators (batch 3 grbl, alpaca, indi, ros2, opcua, sila2, pylabrobot, lerobot, and batch 4 onvif, bambu, can, knx, matter, pi-i2c-spi, upnp, zigbee-zwave). 35 drivers in all. None is verified on hardware.
+- The protocol website and the Inspector, rounds 1 and 2, merged.
+- Unit safety. pint no longer converts between angles and plain numbers (50 % to a degree channel, 1 Hz to rpm). Channels with no read-back stay controllable under a rate limit. A bare number gets UNIT_INVALID in dry runs instead of a hub error.
+- REST reports conformance, simulated drivers, run limits, requirement reasons, the protocol version and the LAN setting.
 
 ## Next
 
@@ -41,7 +44,9 @@ Cap is 5 agents at once (owner, latest 2026-10-24). Every coding agent runs on O
 - Fix the SCPI driver's disconnect detection on Linux, which is the only CI failure on GitHub (2 tests on ubuntu). The CI badge is back on the README at the owner's request and shows failing until this lands and is pushed. The owner rejected one fix, so this waits on the owner.
 - tests/drivers/firmata/test_firmata.py::test_silent_board_times_out can time out under full-suite load on this Mac. It passes alone.
 - Remove code comments repo-wide after the open branches merge (owner rule).
-- Tier 2 and 3 drivers (M11, two agents running), the starter library (M12), packaging (M13), verification and handoff.
+- Driver proposals still open. Full-level checks in the conformance suite, a restore_connection hook, a push path for drivers that receive values, cached-read declarations, per-driver install hints, argument references in action requirements, and YAML 1.1 warnings in openhal file validate.
+- bambu needs your legal review before it ships (NEEDS_HUMAN item 3).
+- The starter library (M12), packaging (M13), verification and handoff.
 
 ## Milestone 2 review
 
