@@ -142,7 +142,7 @@ async def test_unknown_board_to_confirmed_file(client: httpx.AsyncClient, hub: H
     hub.kernel.clock.advance(60)  # type: ignore[attr-defined]
     device = saved["device_id"]
     blocked = await client.post(
-        "/v1/write", json={"device": device, "channel": "fan_speed", "value": "150 %"}, headers=bearer(agent)
+        "/v1/write", json={"device": device, "channel": "fan_speed", "value": 150, "unit": "%"}, headers=bearer(agent)
     )
     assert blocked.json()["code"] == "above_max"
     events = [entry.event for entry in hub.audit.entries(limit=200)]
@@ -237,7 +237,7 @@ async def test_plan_validation_catches_a_step_the_kernel_would_block() -> None:
     assert await plan.validate(file, steps) == []
     bad = [
         *steps,
-        plan.TestStep(99, {"kind": "write", "device": "fan", "channel": "speed", "value": "150 %"}, "", True),
+        plan.TestStep(99, {"kind": "write", "device": "fan", "channel": "speed", "value": 150, "unit": "%"}, "", True),
     ]
     problems = await plan.validate(file, bad)
     assert problems

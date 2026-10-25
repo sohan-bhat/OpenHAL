@@ -28,19 +28,37 @@ from openhal.spec.schema import device_file_schema
 DeviceId = Annotated[str, Field(description="Device id from list_devices, for example desk-fan.", max_length=48)]
 ChannelName = Annotated[str, Field(description="Channel name from describe_device, for example fan_speed.")]
 ActionName = Annotated[str, Field(description="Action name from describe_device, for example home.")]
+
+
+class Quantity(BaseModel):
+    """A number and its unit, for example {"value": 20, "unit": "s"}."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    value: float = Field(allow_inf_nan=False)
+    unit: str = Field(min_length=1, max_length=40, description="The unit, for example %, degC, A, s or mm/s.")
+
+
 CommandValue = Annotated[
-    str | bool,
+    float | bool | str,
     Field(
         description=(
-            "The value to set. Numbers always need a unit, as a string such as '60 %', '25 degC', '1.5 A' or "
-            "'120 mm/s'. The hub converts compatible units. Bool channels take true or false. Enum and string "
-            "channels take the text."
+            "The value to set. A number goes here with its unit in unit, for example value 60 and unit %. "
+            "Bool channels take true or false. Enum and string channels take the text."
         )
     ),
 ]
+Unit = Annotated[
+    str | None,
+    Field(
+        description="The unit of a number value, for example %, degC, A or mm/s. The hub converts compatible units.",
+        max_length=40,
+    ),
+]
+Argument = Quantity | bool | str
 ActionArgs = Annotated[
-    dict[str, str | bool],
-    Field(description="Arguments by name. Numbers need a unit, for example {'seconds': '2 s'}."),
+    dict[str, Argument],
+    Field(description='Arguments by name. A number is {"value": 20, "unit": "s"}.'),
 ]
 
 
@@ -51,18 +69,25 @@ class Step(BaseModel):
 
     device: DeviceId
     channel: str | None = Field(default=None, description="Write channel. Use together with value.")
-    value: str | bool | None = Field(default=None, description="Value with unit, for example '60 %'.")
+    value: float | bool | str | None = Field(default=None, description="The value. A number needs unit too.")
+    unit: str | None = Field(default=None, max_length=40, description="The unit of a number value, for example %.")
     action: str | None = Field(default=None, description="Action name. Use instead of channel and value.")
-    args: dict[str, str | bool] = Field(default={}, description="Action arguments. Numbers need a unit.")
+    args: dict[str, Argument] = Field(default={}, description='Action arguments. A number is {"value", "unit"}.')
 
     def command(self) -> dict[str, Any]:
         if (self.channel is None) == (self.action is None):
             raise ToolError("Each step needs either channel and value (a write) or action (an action), not both.")
         if self.channel is not None:
             if self.value is None:
-                raise ToolError(f"The write to {self.device}.{self.channel} needs a value with a unit.")
-            return {"kind": "write", "device": self.device, "channel": self.channel, "value": self.value}
-        return {"kind": "action", "device": self.device, "action": self.action, "args": self.args}
+                raise ToolError(f"The write to {self.device}.{self.channel} needs a value.")
+            body = {"kind": "write", "device": self.device, "channel": self.channel, "value": self.value}
+            return body if self.unit is None else {**body, "unit": self.unit}
+        return {"kind": "action", "device": self.device, "action": self.action, "args": arguments(self.args)}
+
+
+def arguments(args: dict[str, Argument] | None) -> dict[str, Any]:
+    """Action arguments as the hub takes them, Quantity objects as `{value, unit}` mappings."""
+    return {name: value.model_dump() if isinstance(value, Quantity) else value for name, value in (args or {}).items()}
 
 
 # --------------------------------------------------------------------------- outputs that add to hub shapes
@@ -208,35 +233,37 @@ class Tools:
 
     # ------------------------------------------------------------------ control
 
-    async def write(self, device: DeviceId, channel: ChannelName, value: CommandValue) -> Decision:
+    async def write(self, device: DeviceId, channel: ChannelName, value: CommandValue, unit: Unit = None) -> Decision:
         """Ask the hub to set one write channel. The safety kernel checks units, range, step, rate of change,
         interlocks, watchdog budgets, your token's scope and the hazard class. status is done when it ran,
         blocked with a code and message when it did not (do not retry around a limit, tell the person), or
         pending with a request_id when a person must approve. A blocked decision carries error, with the registry
         name, number and reason. Use dry_run first when unsure."""
-        decision = await self._run(lambda hub: hub.write(device, channel, value))
-        return await self.errors.decision(decision, value, self.label)
+        decision = await self._run(lambda hub: hub.write(device, channel, value, unit))
+        return await self.errors.decision(decision, {"kind": "write", "value": value, "unit": unit}, self.label)
 
     async def action(self, device: DeviceId, action: ActionName, args: ActionArgs | None = None) -> Decision:
         """Ask the hub to run one action, such as home or pulse, with typed arguments. Checked and answered
         exactly like write, including blocked and pending."""
-        decision = await self._run(lambda hub: hub.action(device, action, args or {}))
-        return await self.errors.decision(decision, None, self.label)
+        body = arguments(args)
+        decision = await self._run(lambda hub: hub.action(device, action, body))
+        return await self.errors.decision(decision, {"kind": "action", "args": body}, self.label)
 
     async def dry_run(
         self,
         device: DeviceId,
         channel: Annotated[str | None, Field(description="Write channel. Use with value.")] = None,
-        value: Annotated[str | bool | None, Field(description="Value with unit, for example '60 %'.")] = None,
+        value: Annotated[float | bool | str | None, Field(description="The value. A number needs unit too.")] = None,
+        unit: Unit = None,
         action: Annotated[str | None, Field(description="Action name, instead of channel and value.")] = None,
-        args: Annotated[dict[str, str | bool] | None, Field(description="Action arguments.")] = None,
+        args: Annotated[dict[str, Argument] | None, Field(description="Action arguments.")] = None,
     ) -> Decision:
         """Check one write or action against the current state without running it. Nothing reaches the
         device. status is allowed, blocked (with code and message) or needs_confirmation."""
-        step = Step(device=device, channel=channel, value=value, action=action, args=args or {})
+        step = Step(device=device, channel=channel, value=value, unit=unit, action=action, args=args or {})
         command = step.command()
         decisions = await self._run(lambda hub: hub.dry_run([command]))
-        return await self.errors.decision(decisions[0], value, self.label)
+        return await self.errors.decision(decisions[0], command, self.label)
 
     async def plan_check(
         self,
@@ -250,7 +277,7 @@ class Tools:
         commands = [step.command() for step in steps]
         raw = await self._run(lambda hub: hub.dry_run(commands))
         decisions = [
-            await self.errors.decision(decision, command.get("value"), self.label)
+            await self.errors.decision(decision, command, self.label)
             for decision, command in zip(raw, commands, strict=True)
         ]
         blocked = [
@@ -281,13 +308,20 @@ class Tools:
         self,
         device: DeviceId,
         channel: ChannelName,
-        min: Annotated[str | None, Field(description="New lower bound with unit, for example '10 %'.")] = None,
-        max: Annotated[str | None, Field(description="New upper bound with unit, for example '50 %'.")] = None,
-        rate: Annotated[str | None, Field(description="New max change per second, for example '5 %/s'.")] = None,
+        min: Annotated[
+            Quantity | None, Field(description='New lower bound, for example {"value": 10, "unit": "%"}.')
+        ] = None,
+        max: Annotated[
+            Quantity | None, Field(description='New upper bound, for example {"value": 50, "unit": "%"}.')
+        ] = None,
+        rate: Annotated[
+            Quantity | None, Field(description='New max change per second, for example {"value": 5, "unit": "%/s"}.')
+        ] = None,
     ) -> m.TightenResult:
         """Narrow a channel's limits for your own session, for example to stay well under the device max.
         Limits can only get tighter. A request that would widen one is refused with code cannot_loosen."""
-        return await self._run(lambda hub: hub.tighten(device, channel, min=min, max=max, rate=rate))
+        low, high, speed = (Quantity.model_validate(item).model_dump() if item else None for item in (min, max, rate))
+        return await self._run(lambda hub: hub.tighten(device, channel, min=low, max=high, rate=speed))
 
     async def get_confirmation_status(
         self,

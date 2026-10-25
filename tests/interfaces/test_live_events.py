@@ -34,7 +34,7 @@ async def test_events_stream(served: str, tokens: Tokens) -> None:
         events = client.events()
         hello = await asyncio.wait_for(anext(events), 5)
         assert hello == {"type": "hello", "you": {"kind": "agent", "name": "claude"}}
-        await client.write("desk-fan", "fan_speed", "20 %")
+        await client.write("desk-fan", "fan_speed", 20, "%")
         seen = []
         while not any(event.get("type") == "audit" and event.get("event") == "write" for event in seen):
             seen.append(await asyncio.wait_for(anext(events), 5))

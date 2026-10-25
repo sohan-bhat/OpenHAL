@@ -179,6 +179,28 @@
         "title": "ProposeBody",
         "type": "object"
       },
+      "QuantityBody": {
+        "additionalProperties": false,
+        "description": "A number and its unit (ADR 0016), for example `{\"value\": 50, \"unit\": \"%\"}`.",
+        "properties": {
+          "unit": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "value",
+          "unit"
+        ],
+        "title": "QuantityBody",
+        "type": "object"
+      },
       "ReadBody": {
         "additionalProperties": false,
         "properties": {
@@ -286,35 +308,33 @@
           "max": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/QuantityBody"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Max"
+            ]
           },
           "min": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/QuantityBody"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Min"
+            ]
           },
           "rate": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/QuantityBody"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Rate"
+            "description": "A rate such as 5 %/s."
           }
         },
         "required": [
@@ -415,7 +435,7 @@
       },
       "Write": {
         "additionalProperties": false,
-        "description": "Set one write channel. Numeric values must carry a unit.",
+        "description": "Set one write channel. A number carries its unit, in `unit` or as a `{value, unit}` mapping.",
         "properties": {
           "channel": {
             "maxLength": 48,
@@ -434,6 +454,19 @@
             "default": "write",
             "title": "Kind",
             "type": "string"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
           },
           "value": {
             "anyOf": [

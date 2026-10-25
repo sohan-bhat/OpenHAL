@@ -92,13 +92,13 @@ async def test_writes_return_the_kernel_decision(
 ) -> None:
     clock: FakeClock = hub.kernel.clock  # type: ignore[assignment]
     tools = tools_for(async_transport, tokens.medium)
-    blocked = await tools.write("desk-fan", "fan_speed", "150 %")
+    blocked = await tools.write("desk-fan", "fan_speed", 150, "%")
     assert blocked.status == "blocked"
     assert blocked.code == "above_max"
     assert blocked.limit == {"max": 100.0, "unit": "percent"}
-    assert (await tools.write("desk-fan", "fan_speed", "20 %")).status == "done"
+    assert (await tools.write("desk-fan", "fan_speed", 20, "%")).status == "done"
     clock.advance(1)
-    assert (await tools.write("desk-fan", "fan_speed", "40 %")).status == "done"
+    assert (await tools.write("desk-fan", "fan_speed", 40, "%")).status == "done"
     pending = await tools.action("heater", "purge")
     assert pending.status == "pending"
     assert pending.request_id
@@ -107,14 +107,14 @@ async def test_writes_return_the_kernel_decision(
     assert "openhal confirm approve" in status.note
     assert len((await tools.get_confirmation_status()).requests) == 1
 
-    dry = await tools.dry_run("desk-fan", channel="fan_speed", value="300 %")
+    dry = await tools.dry_run("desk-fan", channel="fan_speed", value=300, unit="%")
     assert dry.code == "above_max"
     with pytest.raises(ToolError, match="either channel"):
         await tools.dry_run("desk-fan")
     plan = await tools.plan_check(
         [
-            Step(device="desk-fan", channel="fan_speed", value="40 %"),
-            Step(device="desk-fan", channel="fan_speed", value="500 %"),
+            Step(device="desk-fan", channel="fan_speed", value=40, unit="%"),
+            Step(device="desk-fan", channel="fan_speed", value=500, unit="%"),
             Step(device="heater", action="purge"),
         ]
     )
@@ -122,16 +122,16 @@ async def test_writes_return_the_kernel_decision(
     assert [block.step for block in plan.blocked] == [1]
     assert plan.needs_confirmation == [2]
 
-    tightened = await tools.tighten_limits("desk-fan", "fan_speed", max="50 %")
+    tightened = await tools.tighten_limits("desk-fan", "fan_speed", max={"value": 50, "unit": "%"})
     assert tightened.ok
-    loosened = await tools.tighten_limits("desk-fan", "fan_speed", max="90 %")
+    loosened = await tools.tighten_limits("desk-fan", "fan_speed", max={"value": 90, "unit": "%"})
     assert loosened.code == "cannot_loosen"
     entries = await tools.get_audit_log(event="tighten")
     assert [entry.status for entry in entries] == ["blocked", "done"]
 
     report = await tools.stop_all("test stop")
     assert report.cancelled_requests == 1
-    after = await tools.write("desk-fan", "fan_speed", "10 %")
+    after = await tools.write("desk-fan", "fan_speed", 10, "%")
     assert after.code == "stopped"
 
 
@@ -187,7 +187,9 @@ async def test_through_the_sdk_client(async_transport: httpx.ASGITransport, toke
         assert write.output_schema is not None
         assert "code" in write.output_schema["properties"]
 
-        result = await client.call_tool("write", {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"})
+        result = await client.call_tool(
+            "write", {"device": "desk-fan", "channel": "fan_speed", "value": 150, "unit": "%"}
+        )
         assert not result.is_error
         assert result.structured_content is not None
         assert result.structured_content["code"] == "above_max"

@@ -36,6 +36,7 @@ from openhal.protocol import websocket as rpc_transport
 from openhal.protocol.dispatch import Dispatcher
 from openhal.routines.engine import RoutineError
 from openhal.spec.loader import DeviceFileError
+from openhal.spec.models import DeviceFile
 from openhal.writer.engine import NotHumanError, WriterError
 
 SESSION_COOKIE = "openhal_session"
@@ -87,13 +88,21 @@ class DryRunBody(BaseModel):
     commands: list[Annotated[Write | Action, Field(discriminator="kind")]] = Field(max_length=200)
 
 
+class QuantityBody(BaseModel):
+    """A number and its unit (ADR 0016), for example `{"value": 50, "unit": "%"}`."""
+
+    model_config = ConfigDict(extra="forbid")
+    value: float = Field(allow_inf_nan=False)
+    unit: str = Field(min_length=1, max_length=40)
+
+
 class TightenBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
     device: str
     channel: str
-    min: str | None = None
-    max: str | None = None
-    rate: str | None = None
+    min: QuantityBody | None = None
+    max: QuantityBody | None = None
+    rate: QuantityBody | None = Field(default=None, description="A rate such as 5 %/s.")
 
 
 class StopBody(BaseModel):
@@ -250,23 +259,32 @@ def create_app(hub: Hub) -> FastAPI:
     async def read_many(body: ReadManyBody, who: Who) -> list[dict[str, Any]]:
         return [await _read(item, who) for item in body.items]
 
+    def file_of(device: str) -> DeviceFile | None:
+        runtime = hub.kernel.devices.get(device)
+        return runtime.file if runtime is not None else None
+
     @app.post("/v1/write")
     async def write(command: Write, who: Who) -> dict[str, Any]:
-        return views.decision_view(await hub.kernel.execute(command, who))
+        return views.decision_view(await hub.kernel.execute(command, who, wire=True))
 
     @app.post("/v1/action")
     async def action(command: Action, who: Who) -> dict[str, Any]:
-        return views.decision_view(await hub.kernel.execute(command, who))
+        decision = await hub.kernel.execute(command, who, wire=True)
+        return views.decision_view(decision, file_of(decision.device))
 
     @app.post("/v1/dry_run")
     async def dry_run(body: DryRunBody, who: Who) -> list[dict[str, Any]]:
-        return [views.decision_view(decision) for decision in hub.kernel.dry_run(body.commands, who)]
+        decisions = hub.kernel.dry_run(body.commands, who, wire=True)
+        return [views.decision_view(decision, file_of(decision.device)) for decision in decisions]
 
     @app.post("/v1/tighten")
     async def tighten(body: TightenBody, who: Who) -> dict[str, Any]:
         device_or_404(body.device)
         try:
-            limits = hub.kernel.tighten(who, body.device, body.channel, min=body.min, max=body.max, rate=body.rate)
+            low, high, rate = (
+                item.model_dump() if item is not None else None for item in (body.min, body.max, body.rate)
+            )
+            limits = hub.kernel.tighten(who, body.device, body.channel, min=low, max=high, rate=rate)
         except Block as block:
             return {"ok": False, "code": block.code, "message": block.message}
         except LookupError as exc:

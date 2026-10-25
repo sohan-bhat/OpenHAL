@@ -23,7 +23,7 @@ from openhal.client import AsyncClient, OpenHALError
 from openhal.client import models as m
 from openhal.client.errors import HubNotRunning
 from openhal.protocol.client import ProtocolClient, ProtocolError
-from openhal.protocol.convert import Facts, build_error, target_parts
+from openhal.protocol.convert import Facts, body_value, build_error, target_parts
 from openhal.protocol.errors import BY_NAME
 
 HTTP_NAMES: Final = {
@@ -145,8 +145,10 @@ class ErrorMapper:
             return facts_from_view(await self.client.device(device), target)
         return None
 
-    async def decision(self, decision: m.Decision, raw_value: Any = None, principal: str | None = None) -> Decision:
-        """The decision with `error` set when it was blocked or failed."""
+    async def decision(
+        self, decision: m.Decision, body: dict[str, Any] | None = None, principal: str | None = None
+    ) -> Decision:
+        """The decision with `error` set when it was blocked or failed. `body` is the command as sent."""
         result = Decision.model_validate(decision.model_dump())
         if decision.status not in ("blocked", "failed"):
             return result
@@ -156,7 +158,7 @@ class ErrorMapper:
             target=decision.target,
             facts=await self.facts(decision.device, decision.target),
             kernel_message=decision.message,
-            raw_value=raw_value,
+            raw_value=body_value(body, decision.limit),
             limit=decision.limit,
             request_id=decision.request_id,
             principal=principal,

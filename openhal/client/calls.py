@@ -68,12 +68,27 @@ def split_target(target: str) -> tuple[str, str]:
     return device, name
 
 
+def flat(value: Value, unit: str | None = None) -> dict[str, Any]:
+    """A channel value as REST carries it, the number and its unit apart (ADR 0016).
+
+    A Quantity mapping such as `{"value": 60, "unit": "%"}` is split into the two fields.
+    """
+    if isinstance(value, Mapping) and "value" in value:
+        return {"value": value["value"], "unit": value.get("unit")}
+    body: dict[str, Any] = {"value": value}
+    if unit is not None:
+        body["unit"] = unit
+    return body
+
+
 def command_body(command: Command) -> dict[str, Any]:
     if isinstance(command, Write | Action):
-        return command.model_dump()
+        return command.model_dump(exclude_none=True)
     body = dict(command)
     if "kind" not in body:
         body["kind"] = "action" if "action" in body else "write"
+    if body["kind"] == "write" and "value" in body:
+        body.update(flat(body["value"], body.get("unit")))
     return body
 
 
@@ -105,8 +120,8 @@ def read_many(items: Iterable[tuple[str, str]]) -> Call[list[m.Reading]]:
     return Call("POST", "/v1/read_many", _list_of(m.Reading), body)
 
 
-def write(device_id: str, channel: str, value: Value) -> Call[m.Decision]:
-    body = {"kind": "write", "device": device_id, "channel": channel, "value": value}
+def write(device_id: str, channel: str, value: Value, unit: str | None = None) -> Call[m.Decision]:
+    body = {"kind": "write", "device": device_id, "channel": channel, **flat(value, unit)}
     return Call("POST", "/v1/write", _as(m.Decision), body)
 
 
@@ -121,12 +136,18 @@ def dry_run(commands: Iterable[Command]) -> Call[list[m.Decision]]:
 
 
 def tighten(
-    device_id: str, channel: str, *, min: str | None = None, max: str | None = None, rate: str | None = None
+    device_id: str,
+    channel: str,
+    *,
+    min: Mapping[str, Any] | None = None,
+    max: Mapping[str, Any] | None = None,
+    rate: Mapping[str, Any] | None = None,
 ) -> Call[m.TightenResult]:
+    """Session limits as Quantity mappings, for example `max={"value": 50, "unit": "%"}`."""
     body: dict[str, Any] = {"device": device_id, "channel": channel}
     for key, value in (("min", min), ("max", max), ("rate", rate)):
         if value is not None:
-            body[key] = value
+            body[key] = dict(value)
     return Call("POST", "/v1/tighten", _as(m.TightenResult), body)
 
 

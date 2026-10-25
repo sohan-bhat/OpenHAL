@@ -56,17 +56,17 @@ async def test_status_devices_and_reads(async_transport: httpx.ASGITransport, to
 
 async def test_write_action_and_dry_run(async_transport: httpx.ASGITransport, tokens: Tokens) -> None:
     async with aclient(async_transport, tokens.agent) as hub:
-        blocked = await hub.write("desk-fan", "fan_speed", "150 %")
+        blocked = await hub.write("desk-fan", "fan_speed", 150, "%")
         assert blocked.status == "blocked"
         assert blocked.code == "above_max"
         assert not blocked.ok
-        done = await hub.write("desk-fan", "fan_speed", "20 %")
+        done = await hub.write("desk-fan", "fan_speed", 20, "%")
         assert done.ok
         assert (await hub.read("desk-fan", "fan_speed")).value == 20.0
         decisions = await hub.dry_run(
             [
-                Write(device="desk-fan", channel="fan_speed", value="20 %"),
-                {"device": "desk-fan", "channel": "fan_speed", "value": "300 %"},
+                Write(device="desk-fan", channel="fan_speed", value=20, unit="%"),
+                {"device": "desk-fan", "channel": "fan_speed", "value": 300, "unit": "%"},
                 Action(device="heater", action="purge"),
             ]
         )
@@ -85,8 +85,8 @@ def _bad_write() -> object:
 async def test_confirmations_tighten_and_stop(async_transport: httpx.ASGITransport, tokens: Tokens, hub: Hub) -> None:
     clock: FakeClock = hub.kernel.clock  # type: ignore[assignment]
     async with aclient(async_transport, tokens.medium) as agent, aclient(async_transport, tokens.human) as human:
-        for speed in ("20 %", "40 %"):
-            await agent.write("desk-fan", "fan_speed", speed)
+        for speed in (20, 40):
+            await agent.write("desk-fan", "fan_speed", speed, "%")
             clock.advance(1)
         pending = await agent.action("heater", "purge")
         assert pending.pending
@@ -104,10 +104,10 @@ async def test_confirmations_tighten_and_stop(async_transport: httpx.ASGITranspo
         rejected = await human.reject(again.request_id or "", "not now")
         assert rejected.status == "rejected"
 
-        tightened = await agent.tighten("desk-fan", "fan_speed", max="50 %")
+        tightened = await agent.tighten("desk-fan", "fan_speed", max={"value": 50, "unit": "%"})
         assert tightened.ok
         assert tightened.limits == {"max": 50.0}
-        loosened = await agent.tighten("desk-fan", "fan_speed", max="90 %")
+        loosened = await agent.tighten("desk-fan", "fan_speed", max={"value": 90, "unit": "%"})
         assert loosened.code == "cannot_loosen"
 
         report = await agent.stop("test")
@@ -122,7 +122,7 @@ async def test_confirmations_tighten_and_stop(async_transport: httpx.ASGITranspo
 
 async def test_audit_drivers_and_pair(async_transport: httpx.ASGITransport, tokens: Tokens, hub: Hub) -> None:
     async with aclient(async_transport, tokens.agent) as client:
-        await client.tighten("desk-fan", "fan_speed", max="50 %")
+        await client.tighten("desk-fan", "fan_speed", max={"value": 50, "unit": "%"})
         entries = await client.audit(event="tighten")
         assert [entry.status for entry in entries] == ["done"]
         assert all(entry.hash for entry in entries)
@@ -164,8 +164,8 @@ async def test_ramp_to_passes_the_rate_limit(async_transport: httpx.ASGITranspor
         clock.advance(seconds)
 
     async with aclient(async_transport, tokens.agent) as client:
-        assert (await client.write("desk-fan", "fan_speed", "0 %")).ok
-        assert (await client.write("desk-fan", "fan_speed", "80 %")).code == "rate_limited"
+        assert (await client.write("desk-fan", "fan_speed", 0, "%")).ok
+        assert (await client.write("desk-fan", "fan_speed", 80, "%")).code == "rate_limited"
         decisions = await client.ramp_to("desk-fan", "fan_speed", "80 %", sleep=sleep)
         assert all(decision.ok for decision in decisions), [d.message for d in decisions]
         assert len(decisions) > 1
@@ -181,10 +181,10 @@ def test_sync_client_against_the_hub(sync_hub: SyncHub) -> None:
         assert hub.device("heater").actions["pulse"].confirm == "confirm"
         assert hub.read("desk-fan", "temperature").ok
         assert len(hub.read_many(["desk-fan.temperature"])) == 1
-        assert hub.write("desk-fan", "fan_speed", "20 %").ok
-        assert hub.dry_run([Write(device="desk-fan", channel="fan_speed", value="200 %")])[0].code == "above_max"
-        assert hub.action("heater", "pulse", seconds="2 s").status in ("blocked", "pending")
-        assert hub.tighten("desk-fan", "fan_speed", max="60 %").ok
+        assert hub.write("desk-fan", "fan_speed", 20, "%").ok
+        assert hub.dry_run([Write(device="desk-fan", channel="fan_speed", value=200, unit="%")])[0].code == "above_max"
+        assert hub.action("heater", "pulse", seconds={"value": 2, "unit": "s"}).status in ("blocked", "pending")
+        assert hub.tighten("desk-fan", "fan_speed", max={"value": 60, "unit": "%"}).ok
         decisions = hub.ramp_to("desk-fan", "fan_speed", "50 %", sleep=clock.advance)
         assert decisions[-1].ok
         assert hub.audit(limit=5)

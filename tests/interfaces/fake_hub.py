@@ -153,7 +153,7 @@ class FakeHub:
         steps = [
             {
                 "step": 1,
-                "command": {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": "5 %"},
+                "command": {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": 5, "unit": "%"},
                 "expected": "fan turns slowly",
                 "needs_approval": True,
             }

@@ -18,25 +18,43 @@ from openhal.cli._common import (
     fail,
     handled,
     hub,
-    parse_bool,
     parse_pairs,
+    parse_quantity_text,
     print_decision,
     print_json,
     show,
     styled,
+    typed,
 )
 from openhal.client import Client, split_target
 from openhal.client.models import DeviceView
 
 
 def _write_value(view: DeviceView, channel: str, words: list[str]) -> Any:
+    """The typed words as the hub takes them. `60 %` becomes `{"value": 60, "unit": "%"}`."""
     text = " ".join(words).strip()
     if not text:
         raise ValueError("Give a value, with a unit for numbers, for example 60 % or 25 degC.")
     spec = view.write.get(channel)
-    if spec is not None and spec.type == "bool":
-        return parse_bool(text)
-    return text
+    return typed(text, spec.type if spec is not None else None, channel)
+
+
+def _shaped(client: Client, command: dict[str, Any]) -> dict[str, Any]:
+    """A command from a plan file with typed numbers such as `60 %` split into number and unit."""
+    view = client.device(str(command.get("device", "")))
+    kind = command.get("kind") or ("action" if "action" in command else "write")
+    if kind == "write":
+        spec = view.write.get(str(command.get("channel", "")))
+        value = command.get("value")
+        if spec is not None and spec.type == "number" and isinstance(value, str):
+            return {**command, "kind": "write", "value": parse_quantity_text(value, str(command["channel"]))}
+        return {**command, "kind": "write"}
+    args = dict(command.get("args") or {})
+    specs = view.actions[str(command["action"])].args if command.get("action") in view.actions else {}
+    for name, value in args.items():
+        if str(specs.get(name, {}).get("type", "number")) == "number" and isinstance(value, str):
+            args[name] = parse_quantity_text(value, name)
+    return {**command, "kind": "action", "args": args}
 
 
 def _command(client: Client, target: str, rest: list[str]) -> dict[str, Any]:
@@ -120,9 +138,9 @@ def register(app: typer.Typer) -> None:
         with hub() as client:
             if plan is not None:
                 loaded = yaml.safe_load(plan.read_text(encoding="utf-8"))
-                if not isinstance(loaded, list):
+                if not isinstance(loaded, list) or not all(isinstance(item, dict) for item in loaded):
                     raise ValueError(f"{plan} must hold a list of commands.")
-                commands = loaded
+                commands = [_shaped(client, item) for item in loaded]
             elif target:
                 commands = [_command(client, target, rest or [])]
             else:

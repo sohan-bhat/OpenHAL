@@ -61,12 +61,16 @@ async def test_status_and_devices(client: httpx.AsyncClient, hub: Hub) -> None:
 async def test_write_is_decided_by_the_kernel(client: httpx.AsyncClient, hub: Hub) -> None:
     token, _ = hub.tokens.create("claude", "agent", "control_low")
     blocked = await client.post(
-        "/v1/write", json={"device": "desk-fan", "channel": "fan_speed", "value": "150 %"}, headers=bearer(token)
+        "/v1/write",
+        json={"device": "desk-fan", "channel": "fan_speed", "value": 150, "unit": "%"},
+        headers=bearer(token),
     )
     assert blocked.json()["code"] == "above_max"
     assert blocked.json()["message"] == "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %."
     done = await client.post(
-        "/v1/write", json={"device": "desk-fan", "channel": "fan_speed", "value": "20 %"}, headers=bearer(token)
+        "/v1/write",
+        json={"device": "desk-fan", "channel": "fan_speed", "value": 20, "unit": "%"},
+        headers=bearer(token),
     )
     assert done.json()["status"] == "done"
     reading = await client.post("/v1/read", json={"device": "desk-fan", "channel": "fan_speed"}, headers=bearer(token))
@@ -78,7 +82,9 @@ async def test_write_is_decided_by_the_kernel(client: httpx.AsyncClient, hub: Hu
 async def test_read_only_token(client: httpx.AsyncClient, hub: Hub) -> None:
     token, _ = hub.tokens.create("viewer", "agent", "read")
     response = await client.post(
-        "/v1/write", json={"device": "desk-fan", "channel": "fan_speed", "value": "10 %"}, headers=bearer(token)
+        "/v1/write",
+        json={"device": "desk-fan", "channel": "fan_speed", "value": 10, "unit": "%"},
+        headers=bearer(token),
     )
     assert response.json()["code"] == "not_permitted"
     many = await client.post(
@@ -96,10 +102,10 @@ async def test_confirmations_need_a_human(client: httpx.AsyncClient, hub: Hub) -
     other_token, _ = hub.tokens.create("other", "agent", "control_medium")
     human_token, _ = hub.tokens.create("owner", "human")
     clock: FakeClock = hub.kernel.clock  # type: ignore[assignment]
-    for speed in ("20 %", "40 %"):
+    for speed in (20, 40):
         await client.post(
             "/v1/write",
-            json={"device": "desk-fan", "channel": "fan_speed", "value": speed},
+            json={"device": "desk-fan", "channel": "fan_speed", "value": speed, "unit": "%"},
             headers=bearer(agent_token),
         )
         clock.advance(1)
@@ -133,21 +139,25 @@ async def test_dry_run_tighten_audit_and_drivers(client: httpx.AsyncClient, hub:
     token, _ = hub.tokens.create("claude", "agent", "control_low")
     plan = {
         "commands": [
-            {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": "20 %"},
-            {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": "120 %"},
+            {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": 20, "unit": "%"},
+            {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": 120, "unit": "%"},
         ]
     }
     decisions = (await client.post("/v1/dry_run", json=plan, headers=bearer(token))).json()
     assert [decision["status"] for decision in decisions] == ["allowed", "blocked"]
     tightened = (
         await client.post(
-            "/v1/tighten", json={"device": "desk-fan", "channel": "fan_speed", "max": "50 %"}, headers=bearer(token)
+            "/v1/tighten",
+            json={"device": "desk-fan", "channel": "fan_speed", "max": {"value": 50, "unit": "%"}},
+            headers=bearer(token),
         )
     ).json()
     assert tightened == {"ok": True, "limits": {"max": 50.0}}
     loosened = (
         await client.post(
-            "/v1/tighten", json={"device": "desk-fan", "channel": "fan_speed", "max": "90 %"}, headers=bearer(token)
+            "/v1/tighten",
+            json={"device": "desk-fan", "channel": "fan_speed", "max": {"value": 90, "unit": "%"}},
+            headers=bearer(token),
         )
     ).json()
     assert loosened["code"] == "cannot_loosen"

@@ -12,6 +12,7 @@ from openhal._brand import DATA_BLOCK_TAG
 from openhal.kernel.commands import Action, Decision, Write
 from openhal.kernel.confirmations import Request
 from openhal.kernel.kernel import StopReport
+from openhal.spec.models import DeviceFile
 
 if TYPE_CHECKING:
     from openhal.hub.hub import Hub
@@ -148,8 +149,34 @@ def device_view(hub: Hub, device_id: str) -> dict[str, Any]:
     return view
 
 
-def decision_view(decision: Decision) -> dict[str, Any]:
-    return decision.model_dump()
+def quantity(magnitude: float, unit: str) -> dict[str, Any]:
+    """A Quantity object `{value, unit}` (ADR 0016), with whole numbers sent as integers."""
+    number: float | int = int(magnitude) if float(magnitude).is_integer() else float(magnitude)
+    return {"value": number, "unit": unit}
+
+
+def action_args(file: DeviceFile | None, action: str, args: Any) -> dict[str, Any]:
+    """The arguments an action ran with, numbers as Quantity objects in the argument's unit."""
+    if not isinstance(args, dict):
+        return {}
+    spec = file.actions.get(action) if file is not None else None
+    shown: dict[str, Any] = {}
+    for name, value in args.items():
+        arg = spec.args.get(name) if spec is not None else None
+        if arg is not None and arg.unit and isinstance(value, int | float) and not isinstance(value, bool):
+            shown[name] = quantity(float(value), arg.unit)
+        else:
+            shown[name] = value
+    return shown
+
+
+def decision_view(decision: Decision, file: DeviceFile | None = None) -> dict[str, Any]:
+    """A decision as REST sends it. An action's arguments carry their units when `file` is given."""
+    view = decision.model_dump()
+    kind, _, name = decision.target.partition(":")
+    if kind == "action" and decision.value is not None:
+        view["value"] = action_args(file, name, decision.value)
+    return view
 
 
 def command_view(command: Write | Action) -> dict[str, Any]:

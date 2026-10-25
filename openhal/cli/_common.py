@@ -19,6 +19,7 @@ from rich.console import Console
 from rich.markup import escape
 
 from openhal.client.settings import home_dir, read_token_file
+from openhal.spec.units import split_quantity
 
 if TYPE_CHECKING:
     import httpx
@@ -187,13 +188,29 @@ def parse_bool(text: str) -> bool:
     raise ValueError(f"Expected true or false, got {text!r}.")
 
 
+def parse_quantity_text(text: str, name: str) -> dict[str, Any]:
+    """Typed text such as `60%` or `2 s` as the Quantity mapping the hub takes (ADR 0016)."""
+    found = split_quantity(text)
+    if found is None:
+        raise ValueError(f"{name} needs a number with a unit, for example 60 % or 2 s. Got {text!r}.")
+    return found
+
+
+def typed(text: str, kind: str | None, name: str) -> Any:
+    """Typed text in the shape a channel or argument of `kind` takes. Numbers become Quantity mappings."""
+    if kind == "bool":
+        return parse_bool(text)
+    if kind == "number":
+        return parse_quantity_text(text, name)
+    return text
+
+
 def parse_pairs(pairs: list[str], types: dict[str, str] | None = None) -> dict[str, Any]:
-    """Parse key=value arguments. Bool arguments become true or false, everything else stays text."""
+    """Parse key=value arguments. Bool arguments become true or false, numbers become Quantity mappings."""
     parsed: dict[str, Any] = {}
     for pair in pairs:
         key, eq, value = pair.partition("=")
         if not eq or not key:
             raise ValueError(f"Arguments look like key=value, for example seconds=2s. Got {pair!r}.")
-        kind = (types or {}).get(key)
-        parsed[key] = parse_bool(value) if kind == "bool" else value
+        parsed[key] = typed(value, (types or {}).get(key), key)
     return parsed

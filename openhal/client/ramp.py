@@ -21,8 +21,8 @@ class RampPlan:
     unit: str
     start: float
     target: float
-    values: list[str]
-    """Each value to send, with its unit, one interval apart."""
+    values: list[float]
+    """Each value to send in `unit`, one interval apart."""
     interval_s: float
 
 
@@ -61,7 +61,7 @@ def plan_ramp(
         start = float(spec.value)
     rate = spec.max_change_per_s
     if rate is None or rate <= 0 or math.isclose(start, goal):
-        return RampPlan(channel, unit, start, goal, [format_quantity(goal, unit)], interval_s)
+        return RampPlan(channel, unit, start, goal, [goal], interval_s)
     stride = rate * interval_s * margin
     if spec.step:
         stride = max(spec.step, math.floor(stride / spec.step) * spec.step)
@@ -70,13 +70,13 @@ def plan_ramp(
                 f"{view.id}.{channel} moves in steps of {format_quantity(spec.step, unit)}, more than the rate "
                 f"limit allows in {interval_s:g} s. Use a longer interval."
             )
-    values: list[str] = []
+    values: list[float] = []
     current = start
     direction = 1.0 if goal > start else -1.0
     while abs(goal - current) > stride and len(values) < 10_000:
         current += direction * stride
-        values.append(format_quantity(_snap(current, spec.min, spec.step), unit))
-    values.append(format_quantity(goal, unit))
+        values.append(_snap(current, spec.min, spec.step))
+    values.append(goal)
     return RampPlan(channel, unit, start, goal, values, interval_s)
 
 

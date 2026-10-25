@@ -88,9 +88,9 @@ class Client:
         pairs = [split_target(item) if isinstance(item, str) else item for item in items]
         return self.call(calls.read_many(pairs))
 
-    def write(self, device: str, channel: str, value: Value) -> m.Decision:
-        """Ask the kernel to set a channel. Numbers need a unit, for example `"60 %"`."""
-        return self.call(calls.write(device, channel, value))
+    def write(self, device: str, channel: str, value: Value, unit: str | None = None) -> m.Decision:
+        """Ask the kernel to set a channel. A number needs its unit, as `write("desk-fan", "fan_speed", 60, "%")`."""
+        return self.call(calls.write(device, channel, value, unit))
 
     def action(self, device: str, action: str, args: Mapping[str, Any] | None = None, **kwargs: Any) -> m.Decision:
         return self.call(calls.action(device, action, {**(args or {}), **kwargs}))
@@ -100,7 +100,13 @@ class Client:
         return self.call(calls.dry_run(commands))
 
     def tighten(
-        self, device: str, channel: str, *, min: str | None = None, max: str | None = None, rate: str | None = None
+        self,
+        device: str,
+        channel: str,
+        *,
+        min: Mapping[str, Any] | None = None,
+        max: Mapping[str, Any] | None = None,
+        rate: Mapping[str, Any] | None = None,
     ) -> m.TightenResult:
         """Narrow limits for this token's session. Widening is refused with `cannot_loosen`."""
         return self.call(calls.tighten(device, channel, min=min, max=max, rate=rate))
@@ -165,7 +171,7 @@ class Client:
         decisions: list[m.Decision] = []
         for value in plan.values:
             sleep(plan.interval_s)
-            decision = self.write(device, channel, value)
+            decision = self.write(device, channel, value, plan.unit)
             decisions.append(decision)
             if not decision.ok:
                 break
