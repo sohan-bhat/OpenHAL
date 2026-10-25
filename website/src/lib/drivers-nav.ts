@@ -16,5 +16,5 @@ export function driversSidebar(): SideGroup[] {
     },
     { name: statusWord("implemented"), items: running.map((driver) => ({ title: driver.name, href: `/drivers/${driver.name}/` })) },
     { name: "Planned", items: planned.map((driver) => ({ title: driver.name, href: `/drivers/${driver.name}/` })) },
-  ];
+  ].filter((group) => group.items.length > 0);
 }
