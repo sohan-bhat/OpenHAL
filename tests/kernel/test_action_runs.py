@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
+
 import pytest
 
 from openhal.audit.log import AuditLog
@@ -145,3 +148,54 @@ async def test_a_channel_with_no_read_back_stays_controllable(add: AddDevice, ke
     second = await kernel.execute(Write(device="drive", channel="speed", value=25, unit="%"), PERSON)
     assert second.status == "done", second.message
     assert ("write", "speed", 25.0) in driver.transport_log
+
+
+async def test_a_run_the_hub_never_finished_still_counts_after_a_restart(clock: FakeClock) -> None:
+    audit = AuditLog(":memory:")
+    first = Kernel(audit, clock=clock, approval_key=b"test-approval-key-32-bytes-long!")
+    file = loads(WATERER)
+    driver = MockDriver(file)
+    first.register(file, driver)
+    await first.connect("waterer")
+    for _ in range(2):
+        clock.advance(2)
+        first.note_reading("waterer", await driver.read("tank"))
+        assert (await first.execute(water(5), PERSON)).status == "done"
+    clock.advance(2)
+    first.note_reading("waterer", await driver.read("tank"))
+    driver.settings.latency_s = 5
+    hanging = asyncio.create_task(first.execute(water(5), PERSON))
+    for _ in range(100):
+        if audit.entries(event="action_start", limit=10)[2:]:
+            break
+        await asyncio.sleep(0.01)
+    assert len(audit.entries(event="action_start", limit=10)) == 3
+    second = Kernel(audit, clock=clock, approval_key=b"test-approval-key-32-bytes-long!")
+    other = MockDriver(file)
+    second.register(file, other)
+    await second.connect("waterer")
+    clock.advance(2)
+    second.note_reading("waterer", await other.read("tank"))
+    blocked = await second.execute(water(5), PERSON)
+    assert blocked.code == "rate_limited"
+    hanging.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await hanging
+
+
+async def test_a_finished_run_is_counted_once_after_a_restart(clock: FakeClock) -> None:
+    audit = AuditLog(":memory:")
+    first = Kernel(audit, clock=clock, approval_key=b"test-approval-key-32-bytes-long!")
+    file = loads(WATERER)
+    driver = MockDriver(file)
+    first.register(file, driver)
+    await first.connect("waterer")
+    clock.advance(2)
+    first.note_reading("waterer", await driver.read("tank"))
+    assert (await first.execute(water(5), PERSON)).status == "done"
+    finished = audit.entries(event="action", limit=1)[0]
+    assert finished.body["details"]["started"] == audit.entries(event="action_start", limit=1)[0].seq
+    second = Kernel(audit, clock=clock, approval_key=b"test-approval-key-32-bytes-long!")
+    second.register(file, MockDriver(file))
+    await second.connect("waterer")
+    assert len(second.devices["waterer"].runs["water"]) == 1

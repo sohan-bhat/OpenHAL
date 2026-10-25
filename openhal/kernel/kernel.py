@@ -158,15 +158,26 @@ class Kernel:
         return runtime
 
     def _seed_runs(self, runtime: DeviceRuntime) -> None:
-        """Restore recent action runs from the audit log, so a restart doesn't reset a max_runs window."""
+        """Restore recent action runs from the audit log, so a restart doesn't reset a max_runs window.
+
+        A run counts from its `action_start` entry, written before the driver is called, so a run
+        the hub never finished (it was killed mid-command) still counts. A finished entry with no
+        start, from a log written before starts were logged, counts on its own.
+        """
         limited = {name: spec.max_runs for name, spec in runtime.file.actions.items() if spec.max_runs is not None}
         if not limited:
             return
         wall, now = time.time(), self.clock()
-        for entry in self.audit.entries(device=runtime.device_id, event="action", limit=5000):
+        starts = self.audit.entries(device=runtime.device_id, event="action_start", limit=5000)
+        finished = [
+            entry
+            for entry in self.audit.entries(device=runtime.device_id, event="action", limit=5000)
+            if entry.status in ("done", "failed") and "started" not in (entry.body.get("details") or {})
+        ]
+        for entry in [*starts, *finished]:
             name = (entry.target or "").removeprefix("action:")
             rule = limited.get(name)
-            if rule is None or entry.status not in ("done", "failed"):
+            if rule is None:
                 continue
             age = wall - entry.at
             if 0 <= age < rule.per:
@@ -773,8 +784,13 @@ class Kernel:
             channels = list(spec.effects)
             value = {name: normalize(name, spec.args[name], raw, argument=True) for name, raw in command.args.items()}
         grant = self.grants.issue(runtime.device_id, command.target, value)
+        started: int | None = None
         if isinstance(command, Action):
             runtime.runs.setdefault(command.action, []).append(self.clock())
+            if runtime.file.actions[command.action].max_runs is not None:
+                started = self.audit.append(
+                    "action_start", principal.label, device=runtime.device_id, target=command.target, status="started"
+                ).seq
         runtime.inflight.update(channels)
         runtime.inflight_task = asyncio.current_task()
         sent = False
@@ -818,6 +834,7 @@ class Kernel:
                     ),
                     before=before,
                     request=request,
+                    started=started,
                 )
                 raise
             task = asyncio.current_task()
@@ -845,7 +862,7 @@ class Kernel:
         if not sent or isinstance(command, Action):
             self._mark_unknown(runtime, channels)
             await self._read_back(runtime, channels)
-        self._log(command, principal, result, before=before, request=request)
+        self._log(command, principal, result, before=before, request=request, started=started)
         if generation != self._stop_generation:
             await self._reapply_after_stop(runtime)
         return result
@@ -888,8 +905,11 @@ class Kernel:
         *,
         before: Any = None,
         request: Request | None = None,
+        started: int | None = None,
     ) -> None:
         details: dict[str, Any] = {"message": decision.message}
+        if started is not None:
+            details["started"] = started
         if isinstance(command, Write):
             asked = command.value if command.unit is None else {"value": command.value, "unit": command.unit}
             details["requested"] = _jsonable(asked)

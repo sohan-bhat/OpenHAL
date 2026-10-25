@@ -171,7 +171,7 @@ actions:
 1. An action is a named operation with typed arguments. Argument names follow channel name rules. Argument specs use the same fields and rules as write channels.
 2. `require` is a list of expressions ([section 7](#7-interlocks-and-expressions)) that MUST all hold for the action to run. An entry is an expression, or a mapping with `condition` and a `message` of at most 300 characters that the Hub gives as the reason when the condition doesn't hold.
 3. `confirm` is the confirmation tier, as for write channels. `confirmed` and `suggested` work as for write channels.
-4. `max_runs` MAY limit an action to `count` runs (1 to 1000) within any window of `per` (1 s to 7 days). Runs that reached the Driver count, whether they were done or failed. A run past the limit is blocked with `rate_limited`.
+4. `max_runs` MAY limit an action to `count` runs (1 to 1000) within any window of `per` (1 s to 7 days). Runs that reached the Driver count, whether they were done or failed. A run past the limit is blocked with `rate_limited`. The window survives a Hub restart, and a run counts from the moment it is granted, so a run the Hub never finished still counts.
 5. `effects` MAY list the write channels the action changes, so interlocks and watchdogs can account for it. Every entry MUST name a write channel of the same file.
 6. `description` MAY describe the action in at most 500 characters. `map` MAY give Driver-specific addressing.
 
