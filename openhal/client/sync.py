@@ -156,18 +156,19 @@ class Client:
         self,
         device: str,
         channel: str,
-        target: str,
+        target: float | Mapping[str, Any] | str,
+        unit: str | None = None,
         *,
         interval_s: float = 1.0,
         margin: float = 0.9,
         sleep: Callable[[float], None] = time.sleep,
     ) -> list[m.Decision]:
-        """Move a channel to `target` in steps that each pass its rate limit.
+        """Move a channel to `target` in `unit` in steps that each pass its rate limit.
 
         Waits `interval_s` before each step, so the first step is safe even right after another write.
         Stops at the first step the kernel does not accept and returns every decision so far.
         """
-        plan = plan_ramp(self.device(device), channel, target, interval_s=interval_s, margin=margin)
+        plan = plan_ramp(self.device(device), channel, target, unit, interval_s=interval_s, margin=margin)
         decisions: list[m.Decision] = []
         for value in plan.values:
             sleep(plan.interval_s)

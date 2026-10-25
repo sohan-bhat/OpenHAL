@@ -126,7 +126,7 @@ Reads channels now. Exits 1 if any read failed.
 openhal write DEVICE.CHANNEL VALUE... [--json]
 ```
 
-Asks the kernel to set a channel. The value words are joined, so `60 %` and `"60 %"` are the same. Numbers need a unit, and the hub converts compatible units (`85 degF` against a degC channel). Bool channels take true, false, on, off, yes, no, 1 or 0. Prints the decision. A blocked write prints its code and message and exits 1.
+Asks the kernel to set a channel. The value words are joined, so `60 %` and `"60 %"` are the same. The CLI splits the number from its unit before sending, so the hub receives `"value": 60, "unit": "%"` ([ADR 0016](../adr/0016-one-value-format.md)), and `--json` prints values the same way. Numbers need a unit, and the hub converts compatible units (`85 degF` against a degC channel). Bool channels take true, false, on, off, yes, no, 1 or 0. Prints the decision. A blocked write prints its code and message and exits 1.
 
 ```
 $ openhal write desk-fan.fan_speed 150 %

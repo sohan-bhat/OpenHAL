@@ -205,9 +205,13 @@ class RoutineContext:
         reading = await self._engine.kernel.read(device, channel, self._principal)
         return reading.value
 
-    async def write(self, device: str, channel: str, value: Any) -> Decision:
+    async def write(self, device: str, channel: str, value: Any, unit: str | None = None) -> Decision:
+        """Set a channel. A number takes its unit apart, as `write("desk-fan", "fan_speed", 60, "%")`."""
         return await self._engine.command(
-            Write(device=device, channel=channel, value=value), self._principal, self._run, raise_on_block=True
+            Write(device=device, channel=channel, value=value, unit=unit),
+            self._principal,
+            self._run,
+            raise_on_block=True,
         )
 
     async def action(self, device: str, action: str, **args: Any) -> Decision:

@@ -6,7 +6,7 @@ Limits are meaningless without units, and unit tricks are an obvious bypass (ask
 
 ## Decision
 
-- Every numeric value in a device file, a command, a routine and an API payload is a quantity string or a value plus a unit. Bare numbers are rejected with an error that names the expected unit.
+- Every numeric value in a device file, a command, a routine and an API payload carries a unit. Device files and routines use quantity strings, and messages carry a number and a unit apart (ADR 0016). Bare numbers are rejected with an error that names the expected unit.
 - The kernel converts every incoming value to the channel's declared unit with one shared pint registry before any check runs. Conversion failures block the command.
 - Temperatures are absolute quantities. Rate limits on temperature use delta units (`delta_degC/s`) internally, so offset units convert correctly.
 - `percent` and `dimensionless` are both supported. A percent channel accepts `50 %`, `50 percent` and `0.5` with an explicit `dimensionless` unit, all compared in percent.

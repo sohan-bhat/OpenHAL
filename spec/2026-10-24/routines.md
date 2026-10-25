@@ -63,11 +63,11 @@ TRIGGERS = [{"every": "30 s"}]
 
 async def run(ctx):
     if ctx.value("desk-fan.temperature > 28 degC"):
-        await ctx.write("desk-fan", "fan_speed", "60 %")
+        await ctx.write("desk-fan", "fan_speed", 60, "%")
 ```
 
 1. A Python routine MUST define `async def run(ctx)`. It MAY define `TRIGGERS` as a literal list of trigger mappings. Without it, the routine is manual.
-2. `ctx` offers `read(device, channel)`, `write(device, channel, value)`, `action(device, action, **args)`, `wait(duration)` of at most 1 h, `value(expression)` and `log(message)`.
+2. `ctx` offers `read(device, channel)`, `write(device, channel, value, unit)`, `action(device, action, **args)` with numbers as `{"value": 2, "unit": "s"}`, `wait(duration)` of at most 1 h, `value(expression)` and `log(message)`.
 3. Every device operation goes through `ctx`, and `ctx` goes through the Safety Kernel. A blocked command ends the run.
 4. Python routines run in the Hub process as trusted code. The Hub does not sandbox them ([Security](security.md#what-is-not-guaranteed)).
 

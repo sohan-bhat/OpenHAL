@@ -28,7 +28,7 @@ from openhal.client import aconnect
 async def main() -> None:
     hub = await aconnect()
     async with hub:
-        decision = await hub.write("desk-fan", "fan_speed", "40 %")
+        decision = await hub.write("desk-fan", "fan_speed", 40, "%")
         print(decision.status, decision.message)
 
 asyncio.run(main())
@@ -74,7 +74,7 @@ All derive from `openhal.client.OpenHALError`, which has `message`, `status_code
 `decision.ok` is true for done and allowed. `decision.pending` is true when it waits for a person.
 
 ```python
-decision = hub.write("desk-fan", "fan_speed", "150 %")
+decision = hub.write("desk-fan", "fan_speed", 150, "%")
 if decision.status == "blocked":
     print(decision.code, decision.limit)   # above_max {'max': 100.0, 'unit': 'percent'}
 elif decision.pending:
@@ -101,20 +101,20 @@ Every method exists on `Client` and, as a coroutine, on `AsyncClient`.
 |---|---|
 | `read(device, channel)` or `read("device.channel")` | `POST /v1/read` |
 | `read_many(["device.channel", ("device", "channel")])` | `POST /v1/read_many` |
-| `write(device, channel, value)` | `POST /v1/write` |
-| `action(device, action, args=None, **kwargs)` | `POST /v1/action` |
+| `write(device, channel, value, unit=None)`, a number with its unit apart | `POST /v1/write` |
+| `action(device, action, args=None, **kwargs)`, numbers as `{"value": 2, "unit": "s"}` | `POST /v1/action` |
 | `dry_run([Write(...), Action(...), {...}])` | `POST /v1/dry_run` |
-| `tighten(device, channel, min=None, max=None, rate=None)` | `POST /v1/tighten` |
+| `tighten(device, channel, min=None, max=None, rate=None)`, each a Quantity mapping | `POST /v1/tighten` |
 | `stop(reason)` | `POST /v1/stop` |
 | `unlock(phrase)` | `POST /v1/unlock` (human) |
-| `ramp_to(device, channel, target, interval_s=1.0, margin=0.9)` | several `POST /v1/write` |
+| `ramp_to(device, channel, target, unit, interval_s=1.0, margin=0.9)` | several `POST /v1/write` |
 
 `Write` and `Action` are the kernel's command models, exported from `openhal.client`. A plain dict with `device` and `channel` and `value`, or `device` and `action` and `args`, works too.
 
 `ramp_to` moves a channel to a target in steps that each pass its `max_change_per_s`, waiting `interval_s` before each step, with `margin` of the allowed change per step. The kernel still checks every step, and the ramp stops at the first step it does not accept. It returns every decision.
 
 ```python
-for decision in hub.ramp_to("desk-fan", "fan_speed", "80 %"):
+for decision in hub.ramp_to("desk-fan", "fan_speed", 80, "%"):
     print(decision.status, decision.message)
 ```
 

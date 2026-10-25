@@ -92,6 +92,8 @@ On start, `openhal mcp` checks the hub. If nothing answers, it starts `openhald`
 
 The list and input schemas live in `openhal/mcp/tools.py`. Every tool has a description written for models, typed inputs and typed outputs. Values carry their unit, and blocked decisions carry a stable code, a message and the limit that blocked them.
 
+Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)). `write` takes `value` 60 and `unit` `%`. Action arguments and session limits take `{"value": 2, "unit": "s"}`. A number sent as one string such as `"60 %"` comes back blocked with UNIT_INVALID and the shape to use.
+
 | Tool | What it does |
 |---|---|
 | `hub_status` | Hub state, stop lock, connected devices, pending confirmations |

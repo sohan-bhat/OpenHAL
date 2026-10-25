@@ -9,7 +9,9 @@ kernel still checks every step.
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import Any
 
 from openhal.client.models import DeviceView
 from openhal.spec.units import UnitError, convert, format_quantity, parse_quantity
@@ -29,13 +31,14 @@ class RampPlan:
 def plan_ramp(
     view: DeviceView,
     channel: str,
-    target: str,
+    target: float | Mapping[str, Any] | str,
+    unit: str | None = None,
     *,
     interval_s: float = 1.0,
     margin: float = 0.9,
     start: float | None = None,
 ) -> RampPlan:
-    """Work out the steps from the channel's current value to `target`.
+    """Work out the steps from the channel's current value to `target`, a number in `unit` or a Quantity mapping.
 
     `start` overrides the current value the hub reports, for example right after a read.
     """
@@ -48,9 +51,10 @@ def plan_ramp(
         raise ValueError("margin must be above 0 and at most 1.")
     if interval_s <= 0:
         raise ValueError("interval_s must be above 0.")
+    asked = {"value": target, "unit": unit} if unit is not None else target
     unit = spec.unit
     try:
-        goal = convert(parse_quantity(target), unit)
+        goal = convert(parse_quantity(asked), unit)
     except UnitError as exc:
         raise ValueError(f"{view.id}.{channel}: {exc}") from exc
     if start is None:

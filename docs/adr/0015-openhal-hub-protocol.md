@@ -36,7 +36,7 @@ OpenHAL is presented and specified as an open protocol, the way MCP is. Until no
 | `hal/devices/describe` | `{ device }` | `{ device: DeviceDescription }` (channels, units, limits, actions, safe state, hazard, conformance, verification, limits provenance) | Core |
 | `hal/read` | `{ device, channel }` | `{ device, channel, value, unit, at, suspect }` | Core |
 | `hal/readMany` | `{ items: [{ device, channel }] }` | `{ readings: [Reading or error] }` | Core |
-| `hal/write` | `{ device, channel, value }` with `value` a quantity string like `"60 %"` or a bool or enum | `{ status: "done", device, channel, value, unit }` or `{ status: "pending", requestId, expiresInS }` | Control |
+| `hal/write` | `{ device, channel, value, unit }`, a number with its unit apart (ADR 0016), or a bool or enum | `{ status: "done", device, channel, value, unit }` or `{ status: "pending", requestId, expiresInS }` | Control |
 | `hal/dryRun` | `{ commands: [Write or Action] }` | `{ decisions: [Decision] }` | Control |
 | `hal/planCheck` | `{ steps: [Write, Action or wait] }` | `{ ok, decisions: [Decision], problems: [str] }` | Control |
 | `hal/stop` | `{ reason? }` | `{ devices: [{ device, status, detail }] }` | Control |
@@ -64,7 +64,7 @@ Clients subscribe to all notifications by default. A later version may add filte
 
 ### Error registry
 
-A blocked or failed command is a JSON-RPC error. `error.code` is the number, `error.message` is the human-readable reason, and `error.data` is `{ name, kernelCode, kernelMessage?, device?, channel?, action?, limit?, requested?, file?, confirmedBy?, confirmedAt?, tightenedBy?, requestId?, method?, routine?, problems? }`. `limit` and `requested` are quantity strings such as `"100 %"` or `"20 %/s"`. `name` is the registry name and is what clients branch on. Numbers are stable across versions and never reused.
+A blocked or failed command is a JSON-RPC error. `error.code` is the number, `error.message` is the human-readable reason, and `error.data` is `{ name, kernelCode, kernelMessage?, device?, channel?, action?, limit?, requested?, file?, confirmedBy?, confirmedAt?, tightenedBy?, requestId?, method?, routine?, problems? }`. `limit` and `requested` are Quantity objects such as `{"value": 100, "unit": "%"}` (ADR 0016). `name` is the registry name and is what clients branch on. Numbers are stable across versions and never reused.
 
 | Code | Name | Kernel codes | Meaning |
 |---|---|---|---|

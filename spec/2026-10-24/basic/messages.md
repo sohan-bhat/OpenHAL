@@ -26,7 +26,11 @@ A blocked or failed command is a JSON-RPC error response.
 | `error.data.kernelCode` | The Safety Kernel's code, for example `above_max` |
 | `error.data.kernelMessage` | The Safety Kernel's own message |
 | `error.data.device`, `channel` | The target, when there is one |
-| `error.data.limit`, `requested` | The limit and the requested value as quantity strings, such as `"100 %"` or `"20 %/s"` |
+| `error.data.limit`, `requested` | The limit and the requested value as Quantity objects, such as `{"value": 100, "unit": "%"}` or `{"value": 20, "unit": "%/s"}`. A non-numeric `requested` is the value as sent |
+| `error.data.argument` | The action argument, for an error about one argument |
+| `error.data.runs`, `per` | An action's `max_runs`, for a `RATE_LIMITED` about runs. `per` is a Quantity such as `{"value": 1, "unit": "h"}` |
+| `error.data.interlock` | The Device File's reason for an interlock or requirement. When present it is the whole `message` |
+| `error.data.expected` | For `UNIT_INVALID` on a number sent as one string, the Quantity it should have been |
 | `error.data.file`, `confirmedBy`, `confirmedAt` | The Device File and the human confirmation behind the limit |
 | `error.data.requestId` | The Confirmation Request, for `CONFIRMATION_REQUIRED` and `REQUEST_CLOSED` |
 | `error.data.action` | The action, for errors about `hal/action` |
@@ -39,7 +43,8 @@ Fields that don't apply are omitted.
 
 ## Values
 
-- A numeric value sent to the Hub MUST be a quantity string with a unit, such as `"60 %"` or `"85 degF"`. A bare number is refused with `UNIT_INVALID`.
+- A number travels with its unit apart, never as one string ([ADR 0016](../../../docs/adr/0016-one-value-format.md)). A channel value is `"value": 60, "unit": "%"`. Everywhere else a number is a Quantity object `{ "value": 60, "unit": "%" }`.
+- A number without a unit, or sent as one string such as `"60 %"`, is refused with `UNIT_INVALID`. A `unit` on a non-numeric value is refused the same way.
 - A `bool` channel takes `true` or `false`. An `enum` channel takes one of its values as a string. A `string` channel takes a string.
 - A numeric value sent by the Hub is a number in the channel's declared unit, with that unit in `unit`.
 - `at` is the time a value was observed, as an RFC 3339 timestamp in UTC.
@@ -52,9 +57,10 @@ Fields that don't apply are omitted.
 | `DeviceSummary` | `id`, `name`, `model`, `manufacturer`, `driver`, `hazard`, `writable`, `connected`, `conformance`, `verification` and `unavailable` (why the Device can't take commands right now, or null) |
 | `DeviceDescription` | A `DeviceSummary` plus channels with units and limits, actions, safe state, interlocks, watchdog rules, limits provenance (who confirmed and when, and what is still unconfirmed) and notes as a data block |
 | `Reading` | `{ device, channel, value, unit, at, suspect }` |
-| `Write` | `{ kind: "write", device, channel, value }` |
-| `Action` | `{ kind: "action", device, action, args }`, with numeric `args` as quantity strings |
-| `Wait` | `{ kind: "wait", duration }`, with `duration` a quantity of time such as `"2 s"`, at most 1 h |
+| `Quantity` | `{ value, unit }`, a finite number and its unit |
+| `Write` | `{ kind: "write", device, channel, value, unit? }` |
+| `Action` | `{ kind: "action", device, action, args }`, with numeric `args` as Quantity objects |
+| `Wait` | `{ kind: "wait", duration }`, with `duration` a Quantity of time such as `{"value": 2, "unit": "s"}`, at most 1 h |
 | `Decision` | `{ status, device, target, value, unit, error?, requestId? }`. `target` is `write:<channel>` or `action:<name>`. `error` has the shape of a JSON-RPC error object |
 | `ConfirmationRequest` | `{ requestId, status, command, requestedBy, createdAt, expiresAt, decidedBy? }`. `command` is a `Write` or an `Action` |
 | `RoutineSummary` | `{ id, kind, enabled, sha256, devices, maxHazard, triggers, disabledReason? }` |
@@ -151,7 +157,7 @@ Reads several channels. Params `{ items: [{ device, channel }] }`. Result `{ rea
 
 ### hal/write
 
-Sets one write channel. Params `{ device, channel, value }`. Level Control.
+Sets one write channel. Params `{ device, channel, value, unit }`. A number carries its unit in `unit`, as `"value": 60, "unit": "%"` ([ADR 0016](../../../docs/adr/0016-one-value-format.md)). A number sent as one string such as `"60 %"` gets `UNIT_INVALID`. Level Control.
 
 - If every check passes, the Driver applies the value and the result is `{ status: "done", device, channel, value, unit }`.
 - If the command needs a human, it is queued and the result is `{ status: "pending", requestId, expiresInS }`.
@@ -162,11 +168,12 @@ A blocked write.
 
 ```json
 → {"jsonrpc": "2.0", "id": 6, "method": "hal/write",
-   "params": {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"}}
+   "params": {"device": "desk-fan", "channel": "fan_speed", "value": 150, "unit": "%"}}
 ← {"jsonrpc": "2.0", "id": 6, "error": {"code": -32010,
      "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
      "data": {"name": "LIMIT_EXCEEDED", "kernelCode": "above_max", "device": "desk-fan", "channel": "fan_speed",
-              "limit": "100 %", "requested": "150 %", "file": "desk-fan.hal.yaml", "confirmedBy": "sohan",
+              "limit": {"value": 100, "unit": "%"},
+                         "requested": {"value": 150, "unit": "%"}, "file": "desk-fan.hal.yaml", "confirmedBy": "sohan",
               "confirmedAt": "2026-10-24",
               "kernelMessage": "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %."}}}
 ```
@@ -175,7 +182,7 @@ A granted write.
 
 ```json
 → {"jsonrpc": "2.0", "id": 7, "method": "hal/write",
-   "params": {"device": "desk-fan", "channel": "fan_speed", "value": "60 %"}}
+   "params": {"device": "desk-fan", "channel": "fan_speed", "value": 60, "unit": "%"}}
 ← {"jsonrpc": "2.0", "id": 7, "result": {"status": "done", "device": "desk-fan", "channel": "fan_speed",
      "value": 60, "unit": "%"}}
 ```
@@ -186,14 +193,15 @@ Evaluates commands in order as if each allowed one had run. Nothing is sent to a
 
 ```json
 → {"jsonrpc": "2.0", "id": 8, "method": "hal/dryRun", "params": {"commands": [
-     {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": "150 %"},
-     {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": "60 %"}]}}
+     {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": 150, "unit": "%"},
+     {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": 60, "unit": "%"}]}}
 ← {"jsonrpc": "2.0", "id": 8, "result": {"decisions": [
      {"status": "blocked", "device": "desk-fan", "target": "write:fan_speed", "value": null, "unit": "%",
       "error": {"code": -32010,
                 "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
                 "data": {"name": "LIMIT_EXCEEDED", "kernelCode": "above_max", "device": "desk-fan",
-                         "channel": "fan_speed", "limit": "100 %", "requested": "150 %"}}},
+                         "channel": "fan_speed", "limit": {"value": 100, "unit": "%"},
+                         "requested": {"value": 150, "unit": "%"}}}},
      {"status": "allowed", "device": "desk-fan", "target": "write:fan_speed", "value": 60, "unit": "%"}]}}
 ```
 
@@ -203,9 +211,9 @@ Checks a whole plan before any of it runs. Params `{ steps: [Write, Action or Wa
 
 ```json
 → {"jsonrpc": "2.0", "id": 9, "method": "hal/planCheck", "params": {"steps": [
-     {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": "40 %"},
-     {"kind": "wait", "duration": "1 s"},
-     {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": "60 %"}]}}
+     {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": 40, "unit": "%"},
+     {"kind": "wait", "duration": {"value": 1, "unit": "s"}},
+     {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": 60, "unit": "%"}]}}
 ← {"jsonrpc": "2.0", "id": 9, "result": {"ok": true, "problems": [], "decisions": [
      {"status": "allowed", "device": "desk-fan", "target": "write:fan_speed", "value": 40, "unit": "%"},
      {"status": "allowed", "device": "desk-fan", "target": "write:fan_speed", "value": 60, "unit": "%"}]}}
@@ -241,11 +249,11 @@ The examples below add one action to `desk-fan`. `spin_test` takes `seconds` in 
 
 ### hal/action
 
-Runs one action. Params `{ device, action, args }`, with numeric arguments as quantity strings. Level Full. The result is `{ status: "done", result }`, or `{ status: "pending", requestId, expiresInS }` when the action waits for a human. Blocks and failures are errors, as for `hal/write`.
+Runs one action. Params `{ device, action, args }`, with numeric arguments as Quantity objects such as `{"value": 5, "unit": "s"}`. Level Full. The result is `{ status: "done", result }`, or `{ status: "pending", requestId, expiresInS }` when the action waits for a human. Blocks and failures are errors, as for `hal/write`.
 
 ```json
 → {"jsonrpc": "2.0", "id": 12, "method": "hal/action",
-   "params": {"device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}}}
+   "params": {"device": "desk-fan", "action": "spin_test", "args": {"seconds": {"value": 5, "unit": "s"}}}}
 ← {"jsonrpc": "2.0", "id": 12, "result": {"status": "pending", "requestId": "9f2c41d07a3b6e15", "expiresInS": 300}}
 ```
 
@@ -257,7 +265,7 @@ Lists Confirmation Requests. Params `{ status? }`. Without `status`, only pendin
 → {"jsonrpc": "2.0", "id": 13, "method": "hal/confirmations/list", "params": {}}
 ← {"jsonrpc": "2.0", "id": 13, "result": {"requests": [
      {"requestId": "9f2c41d07a3b6e15", "status": "pending",
-      "command": {"kind": "action", "device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}},
+      "command": {"kind": "action", "device": "desk-fan", "action": "spin_test", "args": {"seconds": {"value": 5, "unit": "s"}}},
       "requestedBy": "agent:bench-agent", "createdAt": "2026-10-24T14:02:00Z", "expiresAt": "2026-10-24T14:07:00Z"}]}}
 ```
 
@@ -268,7 +276,7 @@ Approves a pending request. Params `{ requestId }`. Only a human Principal may a
 ```json
 → {"jsonrpc": "2.0", "id": 14, "method": "hal/confirmations/approve", "params": {"requestId": "9f2c41d07a3b6e15"}}
 ← {"jsonrpc": "2.0", "id": 14, "result": {"status": "done", "device": "desk-fan", "target": "action:spin_test",
-     "value": {"seconds": 5}, "unit": null}}
+     "value": {"seconds": {"value": 5, "unit": "s"}}, "unit": null}}
 ```
 
 ### hal/confirmations/reject
@@ -279,7 +287,7 @@ Rejects a pending request. Params `{ requestId, reason? }`. Only a human Princip
 → {"jsonrpc": "2.0", "id": 15, "method": "hal/confirmations/reject",
    "params": {"requestId": "9f2c41d07a3b6e15", "reason": "not while the plant is drying"}}
 ← {"jsonrpc": "2.0", "id": 15, "result": {"requestId": "9f2c41d07a3b6e15", "status": "rejected",
-     "command": {"kind": "action", "device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}},
+     "command": {"kind": "action", "device": "desk-fan", "action": "spin_test", "args": {"seconds": {"value": 5, "unit": "s"}}},
      "requestedBy": "agent:bench-agent", "createdAt": "2026-10-24T14:02:00Z", "expiresAt": "2026-10-24T14:07:00Z",
      "decidedBy": "human:sohan"}}
 ```
@@ -315,7 +323,7 @@ Reads the audit log, newest entry first. Params `{ device?, status?, event?, sin
 ← {"jsonrpc": "2.0", "id": 18, "result": {"entries": [
      {"seq": 41, "at": "2026-10-24T14:02:00Z", "event": "write", "principal": "agent:bench-agent",
       "device": "desk-fan", "target": "write:fan_speed", "status": "blocked", "code": "above_max",
-      "body": {"requested": "150 %", "message": "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %."},
+      "body": {"requested": {"value": 150, "unit": "%"}, "message": "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %."},
       "hash": "a3f9..."}]}}
 ```
 
@@ -341,7 +349,8 @@ A Core Hub sends `hal/value`. A Control Hub also sends `hal/blocked` and `hal/st
      "error": {"code": -32010,
                "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
                "data": {"name": "LIMIT_EXCEEDED", "kernelCode": "above_max", "device": "desk-fan",
-                        "channel": "fan_speed", "limit": "100 %", "requested": "150 %"}}}}
+                        "channel": "fan_speed", "limit": {"value": 100, "unit": "%"},
+                         "requested": {"value": 150, "unit": "%"}}}}}
 ← {"jsonrpc": "2.0", "method": "hal/stopped", "params": {"reason": "smoke near the fan", "by": "agent:bench-agent",
      "devices": [{"device": "desk-fan", "status": "safe"}]}}
 ← {"jsonrpc": "2.0", "method": "hal/deviceAdded", "params": {"device": {"id": "desk-fan",
@@ -350,6 +359,6 @@ A Core Hub sends `hal/value`. A Control Hub also sends `hal/blocked` and `hal/st
 ← {"jsonrpc": "2.0", "method": "hal/deviceRemoved", "params": {"device": "desk-fan"}}
 ← {"jsonrpc": "2.0", "method": "hal/confirmationRequested", "params": {"request": {
      "requestId": "9f2c41d07a3b6e15", "status": "pending",
-     "command": {"kind": "action", "device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}},
+     "command": {"kind": "action", "device": "desk-fan", "action": "spin_test", "args": {"seconds": {"value": 5, "unit": "s"}}},
      "requestedBy": "agent:bench-agent", "createdAt": "2026-10-24T14:02:00Z", "expiresAt": "2026-10-24T14:07:00Z"}}}
 ```

@@ -34,13 +34,13 @@ sequenceDiagram
     participant D as Driver
     participant V as Device
 
-    C->>H: hal/write { device: desk-fan, channel: fan_speed, value: "150 %" }
+    C->>H: hal/write { device: desk-fan, channel: fan_speed, value: 150, unit: "%" }
     H->>K: evaluate Write(desk-fan, fan_speed, 150 %)
     K-->>H: blocked, above_max
     H-->>C: error -32010 LIMIT_EXCEEDED
     Note over C,H: fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)
 
-    C->>H: hal/write { device: desk-fan, channel: fan_speed, value: "60 %" }
+    C->>H: hal/write { device: desk-fan, channel: fan_speed, value: 60, unit: "%" }
     H->>K: evaluate Write(desk-fan, fan_speed, 60 %)
     K->>K: every check passes, issue a single-use Grant
     K->>D: write(fan_speed, 60, Grant)
