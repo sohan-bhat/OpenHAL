@@ -1,0 +1,23 @@
+{
+  "name": "sila2",
+  "tier": 2,
+  "status": "implemented",
+  "protocols": ["SiLA 2 over gRPC"],
+  "families": [
+    "lab automation devices with a SiLA 2 server (liquid handlers, plate readers, incubators, shakers)",
+    "SiLA 2 gateways in front of serial lab instruments",
+    "custom SiLA 2 servers written with the sila2 or sila_java packages"
+  ],
+  "hazard_default": "medium",
+  "tests": "a thermoshaker served by the sila2 package's own server from feature definitions",
+  "estimate": {
+    "devices": "dozens of commercial device families and any custom SiLA 2 server",
+    "reasoning": "SiLA 2 is the lab automation standard from the SiLA consortium. Several vendors ship SiLA 2 servers for their instruments, and integrators wrap older instruments with SiLA 2 gateways. The driver reads any feature's properties and runs its commands without generated code, so coverage follows the feature definitions a server offers. The count is a model estimate.",
+    "sources": [
+      "https://sila-standard.com/standards/",
+      "https://gitlab.com/SiLA2/sila_base",
+      "https://gitlab.com/SiLA2/sila_python",
+      "https://sila2.gitlab.io/sila_python/"
+    ]
+  }
+}
