@@ -12,7 +12,7 @@ const SITE_URL = "https://openhal.dev";
 export default defineConfig({
   site: SITE_URL,
   trailingSlash: "always",
-  integrations: [svelte(), sitemap({ filter: (page) => !page.includes("/og/") && !page.includes("/spec/latest/") })],
+  integrations: [svelte(), sitemap({ filter: (page) => !page.includes("/og/") && !page.includes("/spec/latest/") && !page.endsWith("/spec/") })],
   markdown: {
     syntaxHighlight: false,
     processor: unified({

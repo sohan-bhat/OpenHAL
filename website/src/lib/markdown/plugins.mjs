@@ -1,4 +1,5 @@
 import { dirname, relative, resolve } from "node:path";
+import GithubSlugger from "github-slugger";
 import { SKIP, visit } from "unist-util-visit";
 import { LANGUAGE_NAMES, languageOf, tokenize } from "../highlight.mjs";
 import { REPO_ROOT, glossaryHref, termAnchor } from "../spec-meta.mjs";
@@ -155,9 +156,12 @@ export function rehypeTables() {
 
 export function rehypeHeadingLinks() {
   return (tree) => {
+    const slugger = new GithubSlugger();
     visit(tree, "element", (node) => {
-      if (!/^h[2-4]$/.test(node.tagName) || !node.properties?.id) return;
-      node.children = [el("a", { className: ["heading-link"], href: `#${node.properties.id}` }, node.children)];
+      if (!/^h[1-6]$/.test(node.tagName)) return;
+      node.properties ??= {};
+      if (typeof node.properties.id !== "string") node.properties.id = slugger.slug(hastText(node));
+      if (/^h[2-4]$/.test(node.tagName)) node.children = [el("a", { className: ["heading-link"], href: `#${node.properties.id}` }, node.children)];
     });
   };
 }
