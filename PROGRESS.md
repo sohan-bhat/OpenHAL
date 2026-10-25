@@ -13,7 +13,9 @@ Cap is 5 agents at once (owner, latest 2026-10-24). Every coding agent runs on O
 - handoff. CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, ROADMAP, LAUNCH and the hardware test index (BRIEF-handoff.md).
 - e2e. `openhal demo --full`, the end-to-end run on mocks (BRIEF-e2e.md).
 - consistency. The plant waterer in every remaining page, the docs command check and the consistency test (BRIEF-consistency.md).
-- Queued. Lighthouse, axe and the orphan audit for the website and the Inspector, when a slot frees.
+- Queued, one at a time as slots free. First Lighthouse, axe, the orphan audit and the playground default for the website and the Inspector. Then a fresh critic that sees only screenshots and docs/DESIGN.md, for the final design scores (only round 1 was scored by a fresh reviewer).
+
+Kernel coverage on the full suite, 2026-10-25. 100 % of lines but two, 99 % of branches. The four branches left are fail-closed guards the public API can't reach (an expression naming a device the reference check already blocked, a bare name in a hub expression, a missing asyncio task, and a safe state value that isn't a number on a rate-limited number channel).
 
 Design round screenshots live in docs/design-rounds/, which is gitignored so they never reach a clone.
 
