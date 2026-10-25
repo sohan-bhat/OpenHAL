@@ -1,0 +1,19 @@
+{
+  "name": "zigbee-zwave",
+  "tier": 3,
+  "status": "implemented",
+  "protocols": ["Zigbee through the Zigbee2MQTT MQTT API", "Z-Wave through the zwave-js-server WebSocket API"],
+  "families": ["Zigbee lights, plugs and sensors", "Z-Wave switches, dimmers and plugs", "Z-Wave multisensors", "Zigbee and Z-Wave thermostats and locks with exposed values"],
+  "hazard_default": "low",
+  "tests": "Zigbee2MQTT simulated on the in-process MQTT broker and a zwave-js-server WebSocket simulator",
+  "estimate": {
+    "devices": "several thousand models",
+    "reasoning": "Zigbee2MQTT lists several thousand supported Zigbee devices and describes each one's values in its exposes list, which this driver reads directly. zwave-js has device configuration files for a few thousand certified Z-Wave products and reports every value with metadata. The count covers devices those bridges support, not every Zigbee or Z-Wave device sold, and leaves out bridge-only features such as scenes, groups and pairing.",
+    "sources": [
+      "https://www.zigbee2mqtt.io/supported-devices/",
+      "https://www.zigbee2mqtt.io/guide/usage/exposes.html",
+      "https://devices.zwave-js.io/",
+      "https://github.com/zwave-js/zwave-js-server"
+    ]
+  }
+}
