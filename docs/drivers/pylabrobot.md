@@ -61,7 +61,7 @@ A stop cancels running operations. The instrument finishes the firmware command 
 ## Setup
 
 1. Install the extra with `uv pip install 'openhal-hub[pylabrobot]'`, plus PyLabRobot's USB or HTTP extras for your instrument.
-2. Write the deck layout to match the physical deck, or save one from PyLabRobot.
+2. Lay out the deck in the file to match the physical deck, or save one from PyLabRobot.
 3. Start from `openhal/drivers/pylabrobot/examples/starlet.hal.yaml`, or call `describe` for a proposal.
 4. Run `openhal file validate`, then confirm the limits by hand.
 
