@@ -55,13 +55,13 @@ Names are lowercase letters, digits and underscores, up to 24 characters. Units 
 
 ## Examples
 
-| Example | Board shows the hub |
-|---|---|
-| DeskFan | A thermistor temperature and a PWM fan |
-| LedStrip | An ambient light level and LED brightness |
-| ServoArm | A servo angle kept away from its end stops |
-| PlantWaterer | Soil moisture, a tank float switch and a `water` action that refuses to pump from an empty tank. The canonical OpenHAL example (examples/plant-waterer/) |
-| SoilPump | Soil moisture and a pump that stops itself after 20 s, with a local stop button |
+| Example | Board shows the hub | Wiring on an Uno (ESP32 pins in brackets) |
+|---|---|---|
+| PlantWaterer | Soil moisture, a tank float switch and a `water` action that refuses to pump from an empty tank. The canonical OpenHAL example (examples/plant-waterer/) | Capacitive soil sensor on A0 (GPIO 35), float switch from pin 4 to ground (GPIO 27), pump relay on pin 7 (GPIO 26) |
+| DeskFan | A thermistor temperature streamed every second and a PWM fan. The board refuses fan_speed outside 0 to 100 % and stops the fan when the hub goes quiet for 2 s | A 10k NTC thermistor and a 10k resistor as a divider on A0, the fan's MOSFET gate on pin 9 |
+| LedStrip | An ambient light level and the brightness of a 12 V LED strip | MOSFET gate on pin 6 (GPIO 25), photoresistor divider on A1 (GPIO 34) |
+| ServoArm | A servo angle kept between 20 and 160 degrees so the arm can't hit its end stops. It parks at 90 degrees on a stop and when the hub goes quiet. On ESP32 the sketch drives the 50 Hz pulse with the LEDC peripheral, since the Arduino Servo library doesn't support it | Servo signal on pin 3 (GPIO 13), servo powered from its own 5 V supply |
+| SoilPump | Soil moisture and a pump that stops itself after 20 s, with a local stop button. The board also stops it when the hub goes quiet for 3 s | Capacitive soil sensor on A2 (GPIO 35), pump relay on pin 7 (GPIO 26), button from pin 2 to ground (GPIO 27) |
 
 ## Connecting to the hub
 

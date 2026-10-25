@@ -1,5 +1,3 @@
-// Runs a sketch on a desktop. Exits when stdin closes. Pin writes are logged to stderr.
-
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +12,7 @@ namespace {
 int pins[128];
 struct timespec started;
 bool closed = false;
-}  // namespace
+}
 
 unsigned long millis() {
   struct timespec now;

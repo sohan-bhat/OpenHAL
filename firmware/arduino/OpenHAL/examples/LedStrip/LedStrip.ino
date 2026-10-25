@@ -1,11 +1,8 @@
-// A 12 V LED strip on a MOSFET. The hub sees brightness and an ambient light reading.
-// Wiring: the MOSFET gate on pin 6, a photoresistor divider on A1 (GPIO 25 and GPIO 34 on an ESP32).
-
 #include <OpenHAL.h>
 
 #if defined(ESP32)
-const int STRIP_PIN = 25;  // any output-capable GPIO
-const int LIGHT_PIN = 34;  // an ADC1 pin, input only
+const int STRIP_PIN = 25;
+const int LIGHT_PIN = 34;
 #else
 const int STRIP_PIN = 6;
 const int LIGHT_PIN = A1;
@@ -21,7 +18,7 @@ void setup() {
   pinMode(STRIP_PIN, OUTPUT);
   Serial.begin(115200);
   hal.read("ambient_light", "percent", readLight).every(2000).range(0, 100);
-  hal.write("brightness", "percent", 0, 100, setBrightness).rate(50);  // safe value is the minimum
+  hal.write("brightness", "percent", 0, 100, setBrightness).rate(50);
   hal.heartbeat(5000);
   hal.begin(Serial);
 }

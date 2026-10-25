@@ -1,7 +1,3 @@
-// A small stand-in for the Arduino core, so the library and its examples build and run on a
-// desktop for tests. Serial is the process's stdin and stdout. Analog inputs read from
-// OPENHAL_HOST_A0..A3 environment variables (raw 0 to 1023, default 512).
-
 #ifndef OPENHAL_HOST_ARDUINO_H
 #define OPENHAL_HOST_ARDUINO_H
 
@@ -49,7 +45,6 @@ class HostSerial : public Stream {
 
 extern HostSerial Serial;
 
-// Output pins the sketch last wrote, for tests (pin number to value).
 int hostPinValue(int pin);
 
 void setup();

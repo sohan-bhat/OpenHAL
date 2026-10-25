@@ -1,17 +1,12 @@
-// A hobby servo that points a small arm. The hub sees angle, limited to 20 to 160 degrees so the
-// arm can't hit its end stops. It parks at 90 degrees on SAFE and when the hub goes quiet.
-// Wiring: the servo signal on pin 3 (GPIO 13 on an ESP32), with the servo powered from its own 5 V supply.
-
 #include <OpenHAL.h>
 
 #if defined(ESP32)
-// The Arduino Servo library doesn't support ESP32, so drive the 50 Hz pulse with the LEDC peripheral.
 const int SERVO_PIN = 13;
 
 void attachServo() { ledcAttach(SERVO_PIN, 50, 16); }
 
 void setAngle(float degrees) {
-  float pulseUs = 500.0f + degrees * (2000.0f / 180.0f);  // 0.5 ms to 2.5 ms
+  float pulseUs = 500.0f + degrees * (2000.0f / 180.0f);
   ledcWrite(SERVO_PIN, static_cast<uint32_t>(pulseUs / 20000.0f * 65535.0f));
 }
 #else

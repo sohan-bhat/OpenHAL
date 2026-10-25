@@ -1,4 +1,3 @@
-// Host stand-in for the Arduino Servo library.
 #ifndef OPENHAL_HOST_SERVO_H
 #define OPENHAL_HOST_SERVO_H
 

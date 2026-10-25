@@ -1,7 +1,3 @@
-// A desk fan with a thermistor. The hub sees temperature (streamed every second) and fan_speed.
-// Wiring: a 10k NTC thermistor and a 10k resistor as a divider on A0, the fan's MOSFET gate on pin 9.
-// The board refuses fan_speed outside 0 to 100 % and stops the fan if the hub goes quiet for 2 s.
-
 #include <OpenHAL.h>
 
 const int FAN_PIN = 9;
@@ -11,7 +7,7 @@ OpenHAL hal("desk-fan", "1.0.0");
 
 float readTemperature() {
   int raw = analogRead(THERMISTOR_PIN);
-  if (raw <= 0 || raw >= 1023) return NAN;  // open or shorted sensor
+  if (raw <= 0 || raw >= 1023) return NAN;
   float resistance = 10000.0f * raw / (1023.0f - raw);
   float kelvin = 1.0f / (1.0f / 298.15f + log(resistance / 10000.0f) / 3950.0f);
   return kelvin - 273.15f;

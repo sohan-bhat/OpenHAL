@@ -1,5 +1,3 @@
-// OpenHAL for Arduino. See OpenHAL.h. No heap allocation, no printf, works on AVR and ESP32.
-
 #include "OpenHAL.h"
 
 #include <string.h>
@@ -29,7 +27,7 @@ bool parseSeq(const char* text, unsigned int* out) {
   return true;
 }
 
-}  // namespace
+}
 
 bool openhalValidName(const char* name) {
   if (name == nullptr || name[0] < 'a' || name[0] > 'z') return false;
@@ -634,7 +632,6 @@ void OpenHAL::put(const char* text) {
 void OpenHAL::putText(const char* text) {
   if (text == nullptr) return;
   for (const char* c = text; *c; ++c) {
-    // Product, version and unit strings come from the sketch and go into JSON and the line format.
     bool printable = *c > ' ' && *c <= '~' && *c != '"' && *c != '\\' && *c != '*';
     if (printable) putChar(*c);
   }
