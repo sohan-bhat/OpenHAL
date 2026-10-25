@@ -26,6 +26,7 @@
   };
 
   let mainElement = $state<HTMLElement | null>(null);
+  let chromeHeight = $state(0);
 
   $effect(() => {
     document.title = `${titles[view] ?? "Devices"} · OpenHAL Inspector`;
@@ -52,8 +53,8 @@
   </main>
 {:else}
   <a class="skip-link" href="#main">Skip to content</a>
-  <div class="app" class:log-closed={!logOpen} data-view={view}>
-    <div class="chrome">
+  <div class="app" class:log-closed={!logOpen} data-view={view} style="--chrome-height: {chromeHeight}px">
+    <div class="chrome" bind:clientHeight={chromeHeight}>
       <Header />
     </div>
     <aside class="left" aria-label="Device list">
@@ -75,7 +76,7 @@
         <Settings />
       {/if}
     </main>
-    <div class="bottom">
+    <div class="bottom" id="message-log">
       <div class="log-slot">
         <MessageLog collapsed={!logOpen} ontoggle={() => (logOpen = !logOpen)} />
       </div>
@@ -87,28 +88,35 @@
   .app {
     display: grid;
     grid-template-columns: var(--pane-left) minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto 1fr;
     grid-template-areas:
       "chrome chrome"
       "left main"
-      "bottom bottom";
-    height: 100dvh;
+      "left bottom";
+    min-height: 100dvh;
   }
 
   .chrome {
     grid-area: chrome;
+    position: sticky;
+    top: 0;
+    z-index: 3;
   }
 
   .left {
     grid-area: left;
+    position: sticky;
+    top: var(--chrome-height);
+    align-self: start;
+    max-height: calc(100dvh - var(--chrome-height));
     overflow: auto;
-    border-right: var(--rule);
   }
 
   .main {
     grid-area: main;
-    overflow: auto;
-    padding: var(--s-5) var(--s-6);
+    min-width: 0;
+    padding: var(--s-5) var(--s-6) var(--s-7);
+    border-left: var(--rule);
   }
 
   .main:focus-visible {
@@ -118,10 +126,13 @@
   .bottom {
     grid-area: bottom;
     border-top: var(--rule);
+    border-left: var(--rule);
+    scroll-margin-top: var(--chrome-height);
   }
 
   .log-slot {
-    height: var(--log-height);
+    height: calc(100dvh - var(--chrome-height));
+    min-height: 420px;
   }
 
   .log-closed .log-slot {
@@ -153,8 +164,15 @@
     }
 
     .left {
-      border-right: 0;
+      position: static;
+      max-height: none;
+      overflow: visible;
       border-bottom: var(--rule);
+    }
+
+    .bottom {
+      border-left: 0;
+      scroll-margin-top: 72px;
     }
 
     .app:not([data-view="devices"]) .left {
@@ -163,11 +181,12 @@
 
     .main {
       padding: var(--s-4);
-      overflow: visible;
+      border-left: 0;
     }
 
     .log-slot {
       height: auto;
+      min-height: 0;
     }
   }
 </style>

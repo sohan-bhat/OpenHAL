@@ -17,6 +17,13 @@
   );
   const pending = $derived(inspector.confirmations.filter((request) => request.status === "pending").length);
   const host = typeof location === "undefined" ? "" : location.host;
+
+  function showLog() {
+    const log = document.getElementById("message-log");
+    if (!log) return;
+    log.scrollIntoView({ block: "start" });
+    document.getElementById("log-title")?.focus();
+  }
 </script>
 
 <header class="top">
@@ -68,6 +75,9 @@
         </a>
       </li>
     {/each}
+    <li class="jump">
+      <button type="button" onclick={showLog}>Message log</button>
+    </li>
   </ul>
 </nav>
 
@@ -160,8 +170,24 @@
     margin-bottom: -1px;
   }
 
-  .views a:hover {
+  .views a:hover,
+  .jump button:hover {
     color: var(--text);
+  }
+
+  .jump {
+    margin-left: auto;
+  }
+
+  .jump button {
+    min-height: 40px;
+    padding: 0 var(--s-2);
+    border: 0;
+    background: none;
+    color: var(--text-2);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
   }
 
   .views a[aria-current="page"] {

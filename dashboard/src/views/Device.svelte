@@ -244,7 +244,7 @@
   .facts,
   .safety {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
     gap: var(--s-3) var(--s-4);
     margin: 0;
   }

@@ -94,7 +94,7 @@
 <section class="log" class:collapsed aria-labelledby="log-title">
   <div class="log-head">
     <div class="title">
-      <h2 id="log-title">Message log</h2>
+      <h2 id="log-title" tabindex="-1">Message log</h2>
       {#if inspector.logAvailable}<StatusMark tone={live.tone} label={live.label} />{/if}
       <span class="muted count">{matching.length} of {rows.length} messages</span>
       {#if ontoggle}
@@ -158,7 +158,7 @@
         No messages yet. Clients connect to <code>ws://{host}/rpc</code> and send <code>hal/initialize</code>.
       </p>
     {:else if !matching.length}
-      <div class="empty">
+      <div class="empty filters-empty">
         <p>No messages match these filters.</p>
         <button type="button" class="button small" onclick={() => (filters = { ...NO_FILTERS })}>Clear filters</button>
       </div>
@@ -303,10 +303,13 @@
 
   .empty {
     margin: var(--s-3) 0;
+    background: var(--bg);
+  }
+
+  .filters-empty {
     display: grid;
     gap: var(--s-2);
     justify-items: start;
-    background: var(--bg);
   }
 
   .older {

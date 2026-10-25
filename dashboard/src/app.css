@@ -5,7 +5,6 @@
   --t-ui: 15px;
   --t-mono: 14.5px;
   --pane-left: 300px;
-  --log-height: 40vh;
   --focus: 2px solid var(--accent);
   --row-gap: var(--s-3);
 }
