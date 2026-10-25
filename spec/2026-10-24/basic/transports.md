@@ -11,10 +11,10 @@ Every transport carries JSON-RPC 2.0 messages encoded as UTF-8 JSON. This versio
 
 ## stdio
 
-1. A Client that spawns a process runs `openhal rpc`. It bridges standard input and output to the Hub's WebSocket.
+1. A Client that spawns a process runs `openhal rpc`. It bridges the process's `stdin` and `stdout` to the Hub's WebSocket.
 2. Each message is one line of UTF-8 JSON ending in `\n`. A message MUST NOT contain a raw newline.
-3. The bridge writes nothing but messages to standard output. Diagnostics go to standard error.
-4. When standard input closes, the bridge closes the WebSocket.
+3. The bridge writes nothing but messages to `stdout`. Diagnostics go to `stderr`.
+4. When `stdin` closes, the bridge closes the WebSocket.
 
 ## Authentication
 
