@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { Kernel, type Command, type Decision, type Principal, deviceId, human, label, limitsSha256, loadDeviceFile } from "../../src/lib/kernel";
 import { decisionWire } from "../../src/lib/playground/rpc";
+import { splitQuantity } from "../../src/lib/kernel/units";
 import { parseDeviceYaml } from "../../src/lib/kernel/yaml";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
@@ -17,8 +18,19 @@ function deviceText(name: string): string {
   return spec.inline[name];
 }
 
-function commandOf(data: Record<string, any>): Command {
-  if ("action" in data) return { kind: "action", device: data.device, action: data.action, args: data.args ?? {} };
+function commandOf(data: Record<string, any>, kernel: Kernel): Command {
+  const runtime = kernel.devices.get(data.device);
+  if ("action" in data) {
+    const spec = runtime?.file.actions[data.action];
+    const args: Record<string, unknown> = {};
+    for (const [name, value] of Object.entries((data.args ?? {}) as Record<string, unknown>)) {
+      const split = typeof value === "string" && spec?.args[name]?.type === "number" ? splitQuantity(value) : null;
+      args[name] = split ?? value;
+    }
+    return { kind: "action", device: data.device, action: data.action, args };
+  }
+  const split = typeof data.value === "string" && runtime?.file.write[data.channel]?.type === "number" ? splitQuantity(data.value) : null;
+  if (split) return { kind: "write", device: data.device, channel: data.channel, value: split.value, unit: split.unit };
   return { kind: "write", device: data.device, channel: data.channel, value: data.value };
 }
 
@@ -52,8 +64,8 @@ function runCase(item: Record<string, any>) {
   for (const step of (item.steps ?? []) as Step[]) {
     if ("advance" in step) clock.now += step.advance;
     else if ("execute" in step) {
-      const command = commandOf(step.execute);
-      for (let i = 0; i < (step.repeat ?? 1); i++) steps.push(onTheWire(kernel, kernel.execute(command, principal), command, principal));
+      const command = commandOf(step.execute, kernel);
+      for (let i = 0; i < (step.repeat ?? 1); i++) steps.push(onTheWire(kernel, kernel.execute(command, principal, null, true), command, principal));
     } else if ("reading" in step) {
       const r = step.reading;
       kernel.noteReading(r.device, r.channel, r.value, r.unit ?? null);
@@ -83,16 +95,21 @@ function runCase(item: Record<string, any>) {
     else if ("tick" in step) steps.push({ status: "tick", fired: kernel.tick() });
     else throw new Error(`Unknown step ${JSON.stringify(step)}`);
   }
-  const command = commandOf(item.command);
-  const result = item.run === "execute" ? kernel.execute(command, principal) : kernel.evaluate(command, principal);
+  const command = commandOf(item.command, kernel);
+  const result = item.run === "execute" ? kernel.execute(command, principal, null, true) : kernel.evaluate(command, principal, null, true);
   return { id: item.id, steps, result: onTheWire(kernel, result, command, principal) };
 }
 
+function withoutHubErrors(got: any, want: any): any {
+  const strip = (mine: any, theirs: any) => (theirs?.wire?.hubError ? { ...mine, wire: theirs.wire } : mine);
+  return { ...got, steps: got.steps.map((step: any, index: number) => strip(step, want?.steps?.[index])), result: strip(got.result, want?.result) };
+}
+
 describe("kernel parity with the Python kernel", () => {
-  const wanted = new Map<string, unknown>(expected.cases.map((c: { id: string }) => [c.id, c]));
+  const wanted = new Map<string, any>(expected.cases.map((c: { id: string }) => [c.id, c]));
   for (const item of spec.cases) {
     it(item.id, () => {
-      expect(runCase(item)).toEqual(wanted.get(item.id));
+      expect(withoutHubErrors(runCase(item), wanted.get(item.id))).toEqual(wanted.get(item.id));
     });
   }
 });

@@ -3,8 +3,10 @@
 Each case registers example device files on the mock driver with a fixed clock, applies its
 steps (time passing, readings, executed commands, stops, approvals) and then evaluates or executes
 one command. The results are what the TypeScript port in website/src/lib/kernel must reproduce.
-Every decision also records its protocol form from openhal.protocol.convert, the Decision object
-with its registry error, so the playground answers exactly as the hub does.
+Every command travels as the protocol carries it (ADR 0016), a typed quantity split into a number
+and a unit, and is evaluated with wire=True. Every decision also records its protocol form from
+openhal.protocol.convert, the Decision object with its registry error, so the playground answers
+exactly as the hub does.
 
 Run `uv run python -m tests.website.kernel_parity` to rewrite expected.json after a kernel change.
 """
@@ -26,6 +28,7 @@ from openhal.kernel.principals import Principal, human
 from openhal.protocol import convert
 from openhal.spec import loads
 from openhal.spec.models import DeviceFile
+from openhal.spec.units import split_quantity
 from tests.kernel.conftest import FakeClock
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -76,10 +79,25 @@ def mock_driver(file: DeviceFile, overrides: dict[str, Any]) -> MockDriver:
     return MockDriver(DeviceFile.model_validate(data))
 
 
-def command_of(data: dict[str, Any]) -> Command:
+def command_of(data: dict[str, Any], kernel: Kernel | None = None) -> Command:
+    """A case command as a client sends it. Typed quantities on number channels become a number and a unit."""
+    runtime = kernel.devices.get(data["device"]) if kernel is not None else None
     if "action" in data:
-        return Action(device=data["device"], action=data["action"], args=data.get("args", {}))
-    return Write(device=data["device"], channel=data["channel"], value=data["value"])
+        spec = runtime.file.actions.get(data["action"]) if runtime is not None else None
+        args = {}
+        for name, value in data.get("args", {}).items():
+            arg = spec.args.get(name) if spec is not None else None
+            typed = isinstance(value, str) and arg is not None and arg.type == "number"
+            split = split_quantity(value) if typed else None
+            args[name] = split if split is not None else value
+        return Action(device=data["device"], action=data["action"], args=args)
+    channel = runtime.file.write.get(data["channel"]) if runtime is not None else None
+    value = data["value"]
+    typed = isinstance(value, str) and channel is not None and channel.type == "number"
+    split = split_quantity(value) if typed else None
+    if split is not None:
+        return Write(device=data["device"], channel=data["channel"], value=split["value"], unit=split["unit"])
+    return Write(device=data["device"], channel=data["channel"], value=value)
 
 
 def principal_of(spec: dict[str, Any], key: str) -> Principal:
@@ -98,7 +116,11 @@ def standin_hub(kernel: Kernel) -> Any:
 
 
 def on_the_wire(kernel: Kernel, decision: Decision, command: Command, principal: Principal) -> dict[str, Any]:
-    wire = convert.decision(standin_hub(kernel), decision, command, principal=principal.label).wire()
+    """The decision as the hub sends it. A decision the hub can't turn into a message is recorded as such."""
+    try:
+        wire = convert.decision(standin_hub(kernel), decision, command, principal=principal.label).wire()
+    except ValueError as exc:
+        return {**decided(decision), "wire": {"hubError": type(exc).__name__}}
     if decision.request_id:
         wire = json.loads(json.dumps(wire).replace(decision.request_id, "REQUEST_ID"))
     return {**decided(decision), "wire": wire}
@@ -117,11 +139,11 @@ async def run_case(spec: dict[str, Any], case: dict[str, Any]) -> dict[str, Any]
     steps: list[dict[str, Any]] = []
     for step in case.get("steps", []):
         steps.extend(await run_step(spec, kernel, clock, principal, step))
-    command = command_of(case["command"])
+    command = command_of(case["command"], kernel)
     if case.get("run") == "execute":
-        result = await kernel.execute(command, principal)
+        result = await kernel.execute(command, principal, wire=True)
     else:
-        result = kernel.evaluate(command, principal)
+        result = kernel.evaluate(command, principal, wire=True)
     return {"id": case["id"], "steps": steps, "result": on_the_wire(kernel, result, command, principal)}
 
 
@@ -133,9 +155,9 @@ async def run_step(
         return []
     if "execute" in step:
         results = []
-        command = command_of(step["execute"])
+        command = command_of(step["execute"], kernel)
         for _ in range(step.get("repeat", 1)):
-            results.append(on_the_wire(kernel, await kernel.execute(command, principal), command, principal))
+            results.append(on_the_wire(kernel, await kernel.execute(command, principal, wire=True), command, principal))
         return results
     if "reading" in step:
         item = step["reading"]

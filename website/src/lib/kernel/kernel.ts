@@ -6,6 +6,7 @@ import {
   type MaxDuration,
   type WriteChannel,
   channelNames,
+  conditions,
   channelUnit,
   deviceId,
   effectiveHazard,
@@ -46,6 +47,7 @@ export interface WriteCommand {
   device: string;
   channel: string;
   value: unknown;
+  unit?: string | null;
 }
 
 export interface ActionCommand {
@@ -104,6 +106,7 @@ export interface Runtime {
   accepted: Map<string, Sample>;
   unknownSince: Map<string, number>;
   rules: RuleState[];
+  runs: Map<string, number[]>;
 }
 
 export interface Request {
@@ -128,6 +131,7 @@ export interface Shadow {
   values: Map<string, unknown>;
   stamps: Map<string, number>;
   now: number;
+  runs?: Map<string, number[]>;
 }
 
 const UNKNOWN = Symbol("unknown");
@@ -193,7 +197,7 @@ function fileRefs(file: DeviceFile): expr.Ref[] {
   const texts = [
     ...file.interlocks.map((item) => item.if_),
     ...file.interlocks.map((item) => item.require),
-    ...Object.values(file.actions).flatMap((action) => action.require),
+    ...Object.values(file.actions).flatMap((action) => conditions(action).map(([condition]) => condition)),
     ...file.watchdog.max_duration.map((rule) => rule.when),
   ];
   const found = new Map<string, expr.Ref>();
@@ -308,6 +312,7 @@ export class Kernel {
         failures: 0,
         retryAt: 0,
       })),
+      runs: new Map(),
     };
     this.devices.set(id, runtime);
     this.orphans.delete(id);
@@ -418,13 +423,13 @@ export class Kernel {
   }
 
 
-  evaluate(command: Command, principal: Principal, shadow: Shadow | null = null): Decision {
-    return this.decide(command, principal, false, shadow);
+  evaluate(command: Command, principal: Principal, shadow: Shadow | null = null, wire = false): Decision {
+    return this.decide(command, principal, false, shadow, wire);
   }
 
-  private decide(command: Command, principal: Principal, approved: boolean, shadow: Shadow | null): Decision {
+  private decide(command: Command, principal: Principal, approved: boolean, shadow: Shadow | null, wire = false): Decision {
     try {
-      return this.evaluateChecks(command, principal, approved, shadow);
+      return this.evaluateChecks(command, principal, approved, shadow, wire);
     } catch (error) {
       if (error instanceof Block) {
         return this.decision("blocked", command, { code: error.code, message: error.message, limit: error.limit });
@@ -451,7 +456,25 @@ export class Kernel {
     };
   }
 
-  private evaluateChecks(command: Command, principal: Principal, approved: boolean, shadow: Shadow | null): Decision {
+  private checkRuns(runtime: Runtime, action: string, spec: ActionSpec, now: number, shadow: Shadow | null): void {
+    const rule = spec.max_runs;
+    if (rule === null) return;
+    const at = now + (shadow !== null ? shadow.now : 0);
+    const times = [...(runtime.runs.get(action) ?? [])];
+    if (shadow !== null) times.push(...(shadow.runs?.get(key(deviceId(runtime.file), action)) ?? []).map((offset) => now + offset));
+    const recent = times.filter((moment) => at - moment >= 0 && at - moment < rule.per);
+    if (recent.length >= rule.count) {
+      const wait = Math.max(0, Math.min(...recent) + rule.per - at);
+      throw new Block(
+        "rate_limited",
+        `Blocked. ${action} may run at most ${rule.count} times per ${seconds(rule.per)}. ` +
+          `It ran ${recent.length} times in that window. Try again in ${seconds(wait)}.`,
+        { runs: rule.count, per_s: rule.per },
+      );
+    }
+  }
+
+  private evaluateChecks(command: Command, principal: Principal, approved: boolean, shadow: Shadow | null, wire = false): Decision {
     const now = this.clock();
     const runtime = this.devices.get(command.device);
     if (!runtime) throw new Block("unknown_target", `Blocked. There is no device ${pyStrRepr(command.device)}. Run openhal devices.`);
@@ -510,13 +533,14 @@ export class Kernel {
     let changes: Map<string, unknown>;
     if (command.kind === "write") {
       const tightened = this.sessionLimits.get(key(label(principal), command.device, command.channel));
-      value = normalize(command.channel, spec!, command.value, tightened);
+      value = normalize(command.channel, spec!, command.value, { unit: command.unit ?? null, text: !wire, tightened });
       changes = new Map([[command.channel, value]]);
     } else {
       const args: Record<string, unknown> = {};
-      for (const [name, raw] of Object.entries(command.args)) args[name] = normalize(name, actionSpec!.args[name], raw);
+      for (const [name, raw] of Object.entries(command.args)) args[name] = normalize(name, actionSpec!.args[name], raw, { text: !wire, argument: true });
       value = args;
       changes = new Map(actionSpec!.effects.map((effect) => [effect, UNKNOWN]));
+      this.checkRuns(runtime, command.action, actionSpec!, now, shadow);
     }
     if (command.kind === "write" && spec!.type === "number") {
       const limits = effectiveLimits(spec!, this.sessionLimits.get(key(label(principal), command.device, command.channel)));
@@ -533,11 +557,16 @@ export class Kernel {
     }
     const resolver = this.resolver(runtime, changes, now, shadow);
     if (command.kind === "action") {
-      for (const condition of actionSpec!.require) {
+      for (const [condition, message] of conditions(actionSpec!)) {
         const result = expr.evaluate(expr.parseCached(condition, channelNames(file)), resolver);
         if (result !== true) {
           const held = result === null ? "is unknown" : "doesn't hold";
-          throw new Block("interlock", `Blocked. ${command.action} needs ${condition}, which ${held} right now.`);
+          const detail = message ? `${message}. ` : "";
+          throw new Block(
+            "interlock",
+            `Blocked. ${detail}${command.action} needs ${condition}, which ${held} right now.`,
+            message ? { interlock: message } : null,
+          );
         }
       }
     }
@@ -643,7 +672,11 @@ export class Kernel {
           const detail = interlock.message ?? `When ${interlock.if_}, ${interlock.require} must hold.`;
           const state = satisfied === null ? "is unknown" : "doesn't hold";
           const where = owner !== null ? ownerId : `${ownerId} (not registered right now)`;
-          throw new Block("interlock", `Blocked by an interlock on ${where}. ${detail} Right now ${interlock.require} ${state}.`);
+          throw new Block(
+            "interlock",
+            `Blocked by an interlock on ${where}. ${detail} Right now ${interlock.require} ${state}.`,
+            interlock.message ? { interlock: interlock.message } : null,
+          );
         }
       }
     }
@@ -664,16 +697,16 @@ export class Kernel {
   }
 
 
-  execute(command: Command, principal: Principal, request: Request | null = null): Decision {
+  execute(command: Command, principal: Principal, request: Request | null = null, wire = false): Decision {
     const runtime = this.devices.get(command.device);
-    if (!runtime) return this.evaluate(command, principal);
+    if (!runtime) return this.evaluate(command, principal, null, wire);
     const approved =
       request !== null &&
       this.requests.get(request.requestId) === request &&
       request.status === "approved" &&
       JSON.stringify(request.command) === JSON.stringify(command) &&
       label(request.principal) === label(principal);
-    const decision = this.decide(command, principal, approved, null);
+    const decision = this.decide(command, principal, approved, null, wire);
     if (decision.status === "needs_confirmation") {
       const queued = this.queueAdd(command, principal, decision);
       if (typeof queued === "string") return { ...decision, status: "blocked", code: "queue_full", message: queued };
@@ -686,31 +719,40 @@ export class Kernel {
   private run(runtime: Runtime, command: Command, principal: Principal, decision: Decision): Decision {
     const id = deviceId(runtime.file);
     if (command.kind === "write") {
-      const value = normalize(
-        command.channel,
-        runtime.file.write[command.channel],
-        command.value,
-        this.sessionLimits.get(key(label(principal), command.device, command.channel)),
-      );
+      const value = normalize(command.channel, runtime.file.write[command.channel], command.value, {
+        unit: command.unit ?? null,
+        tightened: this.sessionLimits.get(key(label(principal), command.device, command.channel)),
+      });
       runtime.values[command.channel] = value;
       runtime.accepted.set(command.channel, { value, at: this.clock(), commanded: true });
       runtime.unknownSince.delete(command.channel);
       this.noteReading(id, command.channel, value, channelUnit(runtime.file, command.channel));
       return { ...decision, status: "done", message: `Done. ${command.channel} is now ${display(value, decision.unit)}.` };
     }
-    const effects = runtime.file.actions[command.action].effects;
+    const spec = runtime.file.actions[command.action];
+    const args: Record<string, unknown> = {};
+    for (const [name, raw] of Object.entries(command.args)) args[name] = normalize(name, spec.args[name], raw, { argument: true });
+    const runs = runtime.runs.get(command.action) ?? [];
+    runs.push(this.clock());
+    runtime.runs.set(command.action, runs);
+    const effects = spec.effects;
     for (const channel of effects) markUnknown(runtime, channel, this.clock());
     for (const channel of effects) this.noteReading(id, channel, runtime.values[channel], channelUnit(runtime.file, channel));
-    return { ...decision, status: "done", message: `Done. ${command.action} ran.` };
+    return { ...decision, status: "done", value: args, message: `Done. ${command.action} ran.` };
   }
 
-  dryRun(commands: Command[], principal: Principal): Decision[] {
-    const shadow: Shadow = { values: new Map(), stamps: new Map(), now: 0 };
+  dryRun(commands: Command[], principal: Principal, wire = false): Decision[] {
+    const shadow: Shadow = { values: new Map(), stamps: new Map(), now: 0, runs: new Map() };
     return commands.map((command) => {
-      const decision = this.evaluate(command, principal, shadow);
-      if ((decision.status === "allowed" || decision.status === "needs_confirmation") && command.kind === "write") {
-        shadow.values.set(key(command.device, command.channel), decision.value);
-        shadow.stamps.set(key(command.device, command.channel), shadow.now);
+      const decision = this.evaluate(command, principal, shadow, wire);
+      if (decision.status === "allowed" || decision.status === "needs_confirmation") {
+        if (command.kind === "write") {
+          shadow.values.set(key(command.device, command.channel), decision.value);
+          shadow.stamps.set(key(command.device, command.channel), shadow.now);
+        } else {
+          const runKey = key(command.device, command.action);
+          shadow.runs!.set(runKey, [...(shadow.runs!.get(runKey) ?? []), shadow.now]);
+        }
       }
       return decision;
     });

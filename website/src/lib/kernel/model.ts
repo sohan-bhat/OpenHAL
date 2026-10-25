@@ -63,9 +63,20 @@ export interface ReadChannel {
   map: Record<string, Raw> | null;
 }
 
+export interface Requirement {
+  condition: string;
+  message: string | null;
+}
+
+export interface MaxRuns {
+  count: number;
+  per: number;
+}
+
 export interface ActionSpec {
   args: Record<string, ArgSpec>;
-  require: string[];
+  require: Array<string | Requirement>;
+  max_runs: MaxRuns | null;
   confirm: ConfirmTier;
   confirmed: Confirmation | null;
   suggested: boolean;
@@ -320,9 +331,38 @@ function readChannel(raw: Raw, where: string): ReadChannel {
   return channel;
 }
 
+export function conditions(action: ActionSpec): Array<[string, string | null]> {
+  return action.require.map((item) => (typeof item === "string" ? [item, null] : [item.condition, item.message]));
+}
+
+function requirements(value: Raw, where: string): Array<string | Requirement> {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) throw new Problem(`${where}: needs a list.`);
+  return value.map((item, index) => {
+    if (typeof item === "string") return item;
+    const at = `${where}[${index}]`;
+    if (!isMapping(item)) throw new Problem(`${at}: needs a condition, or a mapping with condition and message.`);
+    checkUnknownKeys(item, ["condition", "message"], at);
+    return { condition: str(item.condition, `${at}.condition`, expr.MAX_LENGTH), message: optStr(item.message, `${at}.message`, 300) };
+  });
+}
+
+function maxRuns(value: Raw, where: string): MaxRuns | null {
+  if (value === undefined || value === null) return null;
+  if (!isMapping(value)) throw new Problem(`${where}: needs count and per.`);
+  checkUnknownKeys(value, ["count", "per"], where);
+  const count = num(value.count);
+  if (count === null || !Number.isInteger(count) || count < 1 || count > 1000) {
+    throw new Problem(`${where}.count: needs a whole number from 1 to 1000.`);
+  }
+  const per = seconds(value.per, `${where}.per`);
+  if (!(per >= 1 && per <= 7 * 86400)) throw new Problem(`${where}: max_runs.per must be between 1 s and 7 days.`);
+  return { count, per };
+}
+
 function actionSpec(raw: Raw, where: string): ActionSpec {
   if (!isMapping(raw)) throw new Problem(`${where}: needs a mapping.`);
-  checkUnknownKeys(raw, ["args", "require", "confirm", "confirmed", "suggested", "effects", "description", "map"], where);
+  checkUnknownKeys(raw, ["args", "require", "max_runs", "confirm", "confirmed", "suggested", "effects", "description", "map"], where);
   const args: Record<string, ArgSpec> = {};
   if (raw.args !== undefined) {
     if (!isMapping(raw.args)) throw new Problem(`${where}.args: needs a mapping.`);
@@ -333,7 +373,8 @@ function actionSpec(raw: Raw, where: string): ActionSpec {
   }
   return {
     args,
-    require: strList(raw.require, `${where}.require`),
+    require: requirements(raw.require, `${where}.require`),
+    max_runs: maxRuns(raw.max_runs, `${where}.max_runs`),
     confirm: oneOf(raw.confirm, ["none", "confirm", "confirm-each-time"] as const, `${where}.confirm`, "none"),
     confirmed: confirmation(raw.confirmed, `${where}.confirmed`),
     suggested: bool(raw.suggested, `${where}.suggested`),
@@ -568,7 +609,7 @@ function build(data: Record<string, Raw>): DeviceFile {
     for (const effect of action.effects) {
       if (!(effect in write)) throw new Problem(`actions.${actionName}.effects: ${pyStrRepr(effect)} is not a write channel.`);
     }
-    action.require.forEach((condition, index) => checkExpression(file, condition, `actions.${actionName}.require[${index}]`));
+    conditions(action).forEach(([condition], index) => checkExpression(file, condition, `actions.${actionName}.require[${index}]`));
   }
   interlocks.forEach((item, index) => {
     checkExpression(file, item.if_, `interlocks[${index}].if`);
@@ -758,7 +799,9 @@ function limitsData(file: DeviceFile): Record<string, unknown> {
         name,
         {
           args: Object.fromEntries(Object.entries(action.args).map(([arg, spec]) => [arg, dumpValueSpec(spec)])),
-          require: action.require, confirm: action.confirm, suggested: action.suggested, effects: action.effects,
+          require: action.require,
+          max_runs: action.max_runs === null ? null : { count: action.max_runs.count, per: secondsText(action.max_runs.per) },
+          confirm: action.confirm, suggested: action.suggested, effects: action.effects,
           description: action.description, map: mapOrNull(action.map),
         },
       ]),

@@ -1,6 +1,6 @@
 import type { ArgSpec, WriteChannel } from "./model";
-import { formatF, isClose, pyFloatRepr, pyRound } from "./pyformat";
-import { UnitError, convert, formatQuantity, parseQuantity } from "./units";
+import { formatF, isClose, pyFloatRepr, pyRound, pyStrRepr } from "./pyformat";
+import { UnitError, convert, formatQuantity, normalizeUnit, parseQuantity, splitQuantity } from "./units";
 
 export class Block extends Error {
   constructor(
@@ -41,12 +41,55 @@ function pyRawText(raw: number | bigint): string {
   return Number.isInteger(raw) ? String(raw) : pyFloatRepr(raw);
 }
 
-export function normalize(
-  name: string,
-  spec: WriteChannel | ArgSpec,
-  raw: unknown,
-  tightened?: Tightened | null,
-): number | boolean | string {
+export interface NormalizeOptions {
+  unit?: string | null;
+  text?: boolean;
+  tightened?: Tightened | null;
+  argument?: boolean;
+}
+
+function jsonNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : pyFloatRepr(value);
+}
+
+function quantityJson(quantity: { value: number; unit: string }): string {
+  return `{"value": ${jsonNumber(quantity.value)}, "unit": ${JSON.stringify(quantity.unit)}}`;
+}
+
+export function shaped(name: string, spec: WriteChannel | ArgSpec, raw: unknown, unit: string | null = null, text = true): unknown {
+  if (unit !== null) {
+    if (spec.type !== "number") throw new Block("bad_unit", `${name} takes a ${spec.type} value with no unit.`);
+    if (typeof raw !== "number") throw new Block("bad_unit", `${name} has a unit, so its value must be a number, not ${reprOf(raw)}.`);
+    return { value: raw, unit };
+  }
+  if (!text && spec.type === "number" && typeof raw === "string") {
+    const example = splitQuantity(raw) ?? { value: 1, unit: normalizeUnit(spec.unit ?? "") === "percent" ? "%" : (spec.unit ?? "") };
+    throw new Block("bad_unit", `${name} needs its number and unit apart, as ${quantityJson(example)}, not the text ${pyStrRepr(raw)}.`, {
+      expected: example,
+    });
+  }
+  return raw;
+}
+
+function reprOf(raw: unknown): string {
+  if (typeof raw === "string") return pyStrRepr(raw);
+  if (typeof raw === "boolean") return raw ? "True" : "False";
+  if (raw === null || raw === undefined) return "None";
+  return String(raw);
+}
+
+export function normalize(name: string, spec: WriteChannel | ArgSpec, raw: unknown, options: NormalizeOptions = {}): number | boolean | string {
+  try {
+    return normalizeShaped(name, spec, shaped(name, spec, raw, options.unit ?? null, options.text ?? true), options.tightened);
+  } catch (error) {
+    if (options.argument && error instanceof Block) {
+      throw new Block(error.code, error.message, error.limit !== null ? { ...error.limit, argument: name } : { argument: name });
+    }
+    throw error;
+  }
+}
+
+function normalizeShaped(name: string, spec: WriteChannel | ArgSpec, raw: unknown, tightened?: Tightened | null): number | boolean | string {
   if (spec.type === "bool") {
     if (typeof raw !== "boolean") throw new Block("bad_value", `${name} needs true or false.`);
     return raw;

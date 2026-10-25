@@ -1,5 +1,6 @@
 import type { Decision, DeviceFile } from "./kernel";
-import { UnitError, convert, formatQuantity, parseQuantity } from "./kernel/units";
+import { formatG } from "./kernel/pyformat";
+import { UnitError, convert, parseQuantity } from "./kernel/units";
 
 export type Data = Record<string, unknown>;
 type Template = (data: Data) => string;
@@ -18,10 +19,62 @@ export interface JsonRpcError {
   data: Data;
 }
 
-const has = (data: Data, key: string): boolean => data[key] !== undefined && data[key] !== null && data[key] !== "" && data[key] !== false;
+const has = (data: Data, key: string): boolean => {
+  const value = data[key];
+  if (value === undefined || value === null || value === "" || value === false || value === 0) return false;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object") return Object.keys(value).length > 0;
+  return true;
+};
+
+export interface Quantity {
+  value: number;
+  unit: string;
+}
+
+function isQuantity(value: unknown): value is Quantity {
+  return value !== null && typeof value === "object" && "value" in value && !!(value as Quantity).unit;
+}
+
+export function shown(value: unknown): string {
+  if (isQuantity(value)) return `${formatG(Number(value.value), 6)} ${value.unit === "percent" ? "%" : value.unit}`;
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "number") return Number.isInteger(value) ? String(value) : String(value);
+  return String(value);
+}
+
+function pyJsonText(value: unknown): string {
+  if (typeof value === "string") {
+    let out = '"';
+    for (const char of value) {
+      const code = char.codePointAt(0)!;
+      if (char === '"') out += '\\"';
+      else if (char === "\\") out += "\\\\";
+      else if (char === "\n") out += "\\n";
+      else if (char === "\t") out += "\\t";
+      else if (code < 0x20 || code > 0x7e) {
+        const units = code > 0xffff ? [0xd800 + ((code - 0x10000) >> 10), 0xdc00 + ((code - 0x10000) & 0x3ff)] : [code];
+        out += units.map((unit) => `\\u${unit.toString(16).padStart(4, "0")}`).join("");
+      } else out += char;
+    }
+    return `${out}"`;
+  }
+  if (typeof value === "number") return Number.isInteger(value) ? String(value) : String(value);
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (value === null || value === undefined) return "null";
+  if (Array.isArray(value)) return `[${value.map(pyJsonText).join(", ")}]`;
+  return `{${Object.entries(value as Record<string, unknown>).map(([key, item]) => `${pyJsonText(key)}: ${pyJsonText(item)}`).join(", ")}}`;
+}
+
+function requestedShown(data: Data): string | null {
+  return data.requested !== undefined && data.requested !== null ? shown(data.requested) : null;
+}
 
 function subject(data: Data): string {
-  if (has(data, "channel")) return [data.channel, data.requested].filter((part) => part !== undefined && part !== null).map(String).join(" ");
+  if (has(data, "channel")) return [String(data.channel), requestedShown(data)].filter((part): part is string => part !== null).join(" ");
+  if (has(data, "action") && has(data, "argument")) {
+    return [String(data.action), String(data.argument), requestedShown(data)].filter((part): part is string => !!part).join(" ");
+  }
   if (has(data, "action")) return has(data, "device") ? `${data.action} on ${data.device}` : String(data.action);
   return has(data, "device") ? String(data.device) : "The command";
 }
@@ -39,18 +92,31 @@ function limitExceeded(data: Data): string {
   if (!has(data, "limit")) return `${subject(data)} is outside its confirmed limits${provenance(data)}`;
   const tightened = has(data, "tightenedBy");
   const verb = data.kernelCode === "below_min" ? "is below" : "exceeds";
-  const text = `${subject(data)} ${verb} the ${tightened ? "session limit" : "limit"} of ${data.limit}`;
+  const text = `${subject(data)} ${verb} the ${tightened ? "session limit" : "limit"} of ${shown(data.limit)}`;
   return text + (tightened ? session(data) : provenance(data));
 }
 
 function rateLimited(data: Data): string {
+  if (has(data, "runs") && has(data, "per")) {
+    return `${has(data, "action") ? data.action : "The action"} may run at most ${data.runs} times per ${shown(data.per)}${provenance(data)}`;
+  }
   if (!has(data, "limit")) return `${subject(data)} changes faster than allowed right now${provenance(data)}`;
-  if (has(data, "tightenedBy")) return `${subject(data)} changes faster than the session limit of ${data.limit} allows right now${session(data)}`;
-  return `${subject(data)} changes faster than ${data.limit} allows right now${provenance(data)}`;
+  const limit = shown(data.limit);
+  if (has(data, "tightenedBy")) return `${subject(data)} changes faster than the session limit of ${limit} allows right now${session(data)}`;
+  return `${subject(data)} changes faster than ${limit} allows right now${provenance(data)}`;
+}
+
+function unitInvalid(data: Data): string {
+  if (has(data, "expected")) {
+    const name = has(data, "argument") ? data.argument : has(data, "channel") ? data.channel : "The value";
+    const sent = typeof data.requested === "string" ? `, not ${pyJsonText(data.requested)}` : "";
+    return `${name} needs its number and unit apart, as ${pyJsonText(data.expected)}${sent}`;
+  }
+  return `${subject(data)} needs a finite number with a unit it can convert${provenance(data)}`;
 }
 
 function invalidValue(data: Data): string {
-  if (data.kernelCode === "bad_step" && has(data, "limit")) return `${subject(data)} is not a step of ${data.limit}${provenance(data)}`;
+  if (data.kernelCode === "bad_step" && has(data, "limit")) return `${subject(data)} is not a step of ${shown(data.limit)}${provenance(data)}`;
   return `${subject(data)} is not a value it accepts${provenance(data)}`;
 }
 
@@ -124,7 +190,8 @@ export const ERROR_REGISTRY: RegistryEntry[] = [
     name: "INTERLOCK_BLOCKED",
     kernelCodes: ["interlock"],
     meaning: "An interlock or action requirement doesn't hold, or a value it needs is unknown",
-    template: (data) => `${subject(data)} is held back by an interlock or requirement that doesn't hold${provenance(data)}`,
+    template: (data) =>
+      has(data, "interlock") ? String(data.interlock) : `${subject(data)} is held back by an interlock or requirement that doesn't hold${provenance(data)}`,
   },
   {
     code: -32013,
@@ -194,7 +261,7 @@ export const ERROR_REGISTRY: RegistryEntry[] = [
     name: "UNIT_INVALID",
     kernelCodes: ["bad_unit"],
     meaning: "A missing, unknown or incompatible unit, or a value that isn't finite",
-    template: (data) => `${subject(data)} needs a finite number with a unit it can convert${provenance(data)}`,
+    template: unitInvalid,
   },
 ];
 
@@ -265,25 +332,44 @@ export function factsFor(file: DeviceFile, target: string | null, fileName: stri
   };
 }
 
-export function limitText(kernelCode: string | null, limit: Record<string, unknown> | null): string | null {
-  const key = LIMIT_KEYS[kernelCode ?? ""];
-  if (!key || !limit || typeof limit[key] !== "number" || !limit.unit) return null;
-  const text = formatQuantity(limit[key] as number, String(limit.unit));
-  return key === "rate_per_s" ? `${text}/s` : text;
+export function quantity(magnitude: number, unit: string): Quantity {
+  return { value: magnitude, unit };
 }
 
-export function requestedText(facts: Facts | null, raw: unknown): string | null {
+export function window(seconds: number): Quantity {
+  for (const [unit, size] of [["d", 86400], ["h", 3600], ["min", 60]] as const) {
+    if (seconds >= size && Number.isInteger(seconds / size)) return quantity(seconds / size, unit);
+  }
+  return quantity(seconds, "s");
+}
+
+export function limitQuantity(kernelCode: string | null, limit: Record<string, unknown> | null): Quantity | null {
+  const key = LIMIT_KEYS[kernelCode ?? ""];
+  if (!key || !limit || typeof limit[key] !== "number" || !limit.unit) return null;
+  const unit = String(limit.unit);
+  return quantity(limit[key] as number, key === "rate_per_s" ? `${unit}/s` : unit);
+}
+
+export function requestedValue(raw: unknown, unit: string | null, number: boolean): unknown {
   if (raw === undefined || raw === null) return null;
-  if (facts?.number && facts.unit && (typeof raw === "string" || (typeof raw === "object" && raw !== null))) {
+  if (number && unit && typeof raw !== "boolean" && (typeof raw === "string" || typeof raw === "number" || typeof raw === "object")) {
     try {
-      return formatQuantity(convert(parseQuantity(raw as string), facts.unit), facts.unit);
+      return quantity(convert(parseQuantity(raw), unit), unit);
     } catch (error) {
-      if (error instanceof UnitError) return String(raw);
+      if (error instanceof UnitError) return typeof raw === "string" ? raw : null;
       throw error;
     }
   }
-  if (typeof raw === "boolean") return String(raw);
-  return String(raw);
+  if (typeof raw === "string" || typeof raw === "boolean" || typeof raw === "number") return raw;
+  return null;
+}
+
+function requestedFor(kernelCode: string | null, facts: Facts | null, raw: unknown, limit: Record<string, unknown> | null, about: string | null): unknown {
+  if (about === null || raw === undefined || raw === null) return null;
+  if (kernelCode === "bad_unit") return typeof raw === "string" || typeof raw === "boolean" || typeof raw === "number" ? raw : null;
+  const unit = (limit?.unit as string | undefined) || facts?.unit || null;
+  const number = !!limit?.unit || (facts !== null && facts.number);
+  return requestedValue(raw, unit, number);
 }
 
 function isSessionLimit(facts: Facts, limit: Record<string, unknown> | null): boolean {
@@ -310,15 +396,23 @@ export function buildError(kernelCode: string | null, input: ErrorFacts): JsonRp
   const key = LIMIT_KEYS[kernelCode ?? ""];
   let limit = input.limit ?? null;
   if (limit === null && facts && (key === "max" || key === "min") && key in facts.limits) limit = { [key]: facts.limits[key], unit: facts.unit };
+  const argument = typeof limit?.argument === "string" ? limit.argument : null;
   const data: Data = {
     kernelMessage: input.kernelMessage,
     device: input.device,
     channel,
     action,
-    requested: channel !== null ? requestedText(facts, input.rawValue) : null,
-    limit: limitText(kernelCode, limit),
+    argument,
+    requested: requestedFor(kernelCode, facts, input.rawValue, limit, channel ?? argument),
+    limit: limitQuantity(kernelCode, limit),
     requestId: input.requestId,
   };
+  if (limit && "runs" in limit && typeof limit.per_s === "number") {
+    data.runs = limit.runs;
+    data.per = window(limit.per_s);
+  }
+  if (limit && limit.interlock) data.interlock = String(limit.interlock);
+  if (limit && limit.expected && typeof limit.expected === "object") data.expected = limit.expected;
   if (facts && PROVENANCE_NAMES.has(registryFor(kernelCode).name)) {
     if (isSessionLimit(facts, limit)) data.tightenedBy = principalName(input.principal ?? null) ?? "this client";
     else {
@@ -330,13 +424,26 @@ export function buildError(kernelCode: string | null, input: ErrorFacts): JsonRp
   return fromKernel(kernelCode, data);
 }
 
-export function decisionError(decision: Decision, file: DeviceFile | undefined, rawValue: unknown, fileName: string | null, principal: string | null = null): JsonRpcError {
+export function bodyValue(command: { kind: string; value?: unknown; unit?: string | null; args?: Record<string, unknown> } | null, limit: Record<string, unknown> | null = null): unknown {
+  if (!command) return null;
+  if (command.kind === "write") return command.unit === undefined || command.unit === null ? command.value : { value: command.value, unit: command.unit };
+  if (limit && limit.argument) return (command.args ?? {})[String(limit.argument)] ?? null;
+  return null;
+}
+
+export function decisionError(
+  decision: Decision,
+  file: DeviceFile | undefined,
+  command: { kind: string; value?: unknown; unit?: string | null; args?: Record<string, unknown> } | null,
+  fileName: string | null,
+  principal: string | null = null,
+): JsonRpcError {
   return buildError(decision.code, {
     device: decision.device,
     target: decision.target,
     facts: file ? factsFor(file, decision.target, fileName) : null,
     kernelMessage: decision.message,
-    rawValue,
+    rawValue: bodyValue(command, decision.limit),
     limit: decision.limit,
     requestId: decision.request_id,
     principal,

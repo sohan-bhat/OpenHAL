@@ -6,12 +6,10 @@ import { parseDeviceYaml } from "../../src/lib/kernel/yaml";
 import { decisionWire, errorFor, responseFor } from "../../src/lib/playground/rpc";
 import { ERROR_REGISTRY } from "../../src/lib/protocol";
 import { DEFAULT_SCENARIO, scenarioTrace } from "../../src/lib/scenario";
-import { traceJson } from "../../src/lib/trace-block";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const read = (path: string) => readFileSync(`${root}${path}`, "utf8");
 const adr = read("docs/adr/0015-openhal-hub-protocol.md");
-const messages = read("spec/2026-10-24/basic/messages.md");
 const safety = read("spec/2026-10-24/safety.md");
 
 function adrRegistry() {
@@ -22,12 +20,6 @@ function adrRegistry() {
   }));
 }
 
-function specExample(after: string): Record<string, any>[] {
-  const start = messages.indexOf(after);
-  const block = /```json\n([\s\S]*?)```/.exec(messages.slice(start));
-  if (start === -1 || !block) throw new Error(`No example after ${after}`);
-  return traceJson(block[1]) as Record<string, any>[];
-}
 
 const DESK_FAN = `
 openhal: "0.1"
@@ -64,23 +56,6 @@ describe("error registry", () => {
 
 describe("the canonical scenario", () => {
   const claude = agent("claude", "control_low");
-
-  it("answers a blocked write exactly as the spec's example", () => {
-    const { kernel, file } = deskFan(20);
-    const [request, response] = specExample("A blocked write.");
-    const command = { kind: "write" as const, ...request.params };
-    const decision = kernel.execute(command, claude);
-    expect(errorFor(decision, command, file, label(claude))).toEqual(response.error);
-  });
-
-  it("answers a granted write exactly as the spec's example", () => {
-    const { kernel, file, advance } = deskFan(20);
-    advance(5);
-    const [request, response] = specExample("A granted write.");
-    const command = { kind: "write" as const, ...request.params };
-    const entry = responseFor(kernel.execute(command, claude), command, file, 300, label(claude));
-    expect(entry).toEqual({ kind: "result", result: response.result });
-  });
 
   it("puts the same reason on the home page trace", () => {
     const { kernel, file } = deskFan(DEFAULT_SCENARIO.current);

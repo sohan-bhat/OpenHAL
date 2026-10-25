@@ -196,7 +196,7 @@
     let command: Command;
     try {
       command = isWrite
-        ? { kind: "write", device: targetDevice, channel: target, value: writeValue(runtime.file, target, words) }
+        ? { kind: "write", device: targetDevice, channel: target, ...writeValue(runtime.file, target, words) }
         : { kind: "action", device: targetDevice, action: target, args: actionArgs(runtime.file, target, words ? splitPairs(words) : []) };
     } catch (error) {
       if (!(error instanceof CliError)) throw error;
@@ -207,14 +207,14 @@
       return;
     }
     if (dry) {
-      const [decision] = kernel.dryRun([command], client.principal);
+      const [decision] = kernel.dryRun([command], client.principal, true);
       const params = (requestFor(command) as { params: Record<string, unknown> }).params;
       log(who, client.client, [
         { kind: "request", method: "hal/dryRun", params: { commands: [{ kind: command.kind, ...params }] } },
         { kind: "result", result: { decisions: [decisionWire(decision, command, fileOf(command.device), label(client.principal))] } },
       ]);
     } else {
-      const decision = kernel.execute(command, client.principal);
+      const decision = kernel.execute(command, client.principal, null, true);
       log(who, client.client, [requestFor(command), responseFor(decision, command, fileOf(command.device), TTL_S, label(client.principal))]);
     }
     version += 1;

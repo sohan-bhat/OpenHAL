@@ -371,3 +371,14 @@ export function formatQuantity(magnitude: number, unit: string): string {
   const shown = normalizeUnit(unit) === "percent" ? "%" : unit;
   return `${formatG(magnitude, 6)} ${shown}`;
 }
+
+const QUANTITY_TEXT = /^\s*([-+]?[0-9][0-9.eE+-]{0,30})\s*([^\s0-9].{0,39}?)\s*$/;
+
+export function splitQuantity(text: string): { value: number; unit: string } | null {
+  const found = QUANTITY_TEXT.exec(text);
+  if (!found) return null;
+  if (!/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(found[1])) return null;
+  const magnitude = Number(found[1]);
+  if (!Number.isFinite(magnitude)) return null;
+  return { value: magnitude, unit: found[2] };
+}
