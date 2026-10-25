@@ -9,7 +9,11 @@ import { describe, expect, it } from "vitest";
 
 const repo = fileURLToPath(new URL("../../../", import.meta.url));
 const website = join(repo, "website");
-const BANNED = ["seamless", "supercharge", "elevate", "effortless", "empower", "revolutionary", "welcome to"];
+const BANNED = [
+  "seamless", "supercharge", "elevate", "effortless", "empower", "revolutionary", "next-generation", "cutting-edge",
+  "game-changer", "magic", "harness", "unleash", "journey", "welcome to", "the future of", "say goodbye", "blazing fast",
+  "enterprise-grade", "works with everything",
+];
 
 function walk(dir: string, suffixes: string[]): string[] {
   return readdirSync(dir).flatMap((name) => {
