@@ -1,0 +1,21 @@
+# Rules for every workstream
+
+- You work in your own git worktree on your own branch. Never push, deploy, publish packages, create accounts or post anything. The orchestrator merges and pushes.
+- Never send anything to real hardware. Mocks and simulators only. Never weaken a safety rule.
+- Don't start subagents or forks.
+- Change only the paths your brief says you own. Need a contract change? Propose it in your report.
+- Python setup: `export PATH="$HOME/Library/Python/3.13/bin:$PATH"`, then `uv sync --all-extras`.
+- Before every hand-back these must pass: `uv run pytest`, `uv run ruff check openhal tests`, `uv run ruff format --check openhal tests` and `uv run mypy openhal`, plus your own app's build and tests.
+- Commits are small and logical, about 50 to 450 changed lines, with conventional messages. They are authored by the existing global git identity. Never set git config, never pass --author, and add no trailers of any kind.
+- Copy rules
+  - No em or en dashes. No colons or semicolons in running prose (headings, labels, tables and code are fine).
+  - No exclamation marks. No banned words (docs/DESIGN.md, Banned).
+  - Keep text short. The owner wants simple, digestible pages.
+- docs/DESIGN.md is binding for anything visual. Load the skills frontend-design:frontend-design, design-taste-frontend, web-design-guidelines and playwright-cli before UI work.
+- Processes
+  - Start servers in the background and stop them by their exact PID. Never pkill by pattern.
+  - Never use port 4000. Headless browsers only.
+  - Write temp files only in your own scratch folder.
+- Keep at least 2.5 GB of disk free.
+- Method names, error codes and terms come from docs/adr/0015-openhal-hub-protocol.md and must match it exactly.
+- Your final message is your full report: files, tests, decisions, open issues and contract change proposals. The harness may block you from writing report files.
