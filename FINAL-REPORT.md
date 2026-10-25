@@ -67,13 +67,23 @@ Safety fixes made during verification, each with a test.
 
 ## Website and Inspector
 
-PENDING. Filled in when the quality workstream (Lighthouse, axe, the orphan audit) and the fresh critic hand back.
+The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
-Known before that. The website builds 93 pages with zero warnings, and the Inspector builds clean. Both have unit tests and Playwright tests in Chromium and Firefox with axe in both themes. WebKit page loads stall on this Mac, so WebKit is item 2 in NEEDS_HUMAN.md.
+| Check | Website | Inspector |
+|---|---|---|
+| Design rounds | Three critique rounds, then a final review by a fresh critic from screenshots and DESIGN.md only | Three critique rounds, then the same final review |
+| Final critic score | 3.5 of 5 | 4 of 5 |
+| Lighthouse, mobile | 100 on every template, 99 on the schema reference and 97 on the Python reference | 93 to 95 before the hub gzipped and cached its assets, which measured 99 behind a gzip proxy |
+| Lighthouse, desktop | 100 on every template | 100 on every view, 96 best practices on the pairing page |
+| axe (WCAG 2.1 A and AA) | 0 violations on all 114 sitemap pages and the 404, both themes | 0 violations on every view and state, both themes, 1440 and 390 px |
+
+docs/verification/ui.md has every score and the commands, and docs/verification/orphans.md has the orphan audit.
+
+The critic's verdict. The protocol voice holds on the home page, spec, playground, quickstart and 404, and the Inspector's STOP and UNLOCK, confirmations, message log and stopped state express the protocol exactly. What held the scores back was mostly phones (the drivers table, wide driver pages, the library table, the Inspector's settings table and audit log), a coverage page that still called four drivers planned, the hub port shown four different ways, and slider numbers with no units. A website round and an Inspector round with those fixes were running when this report was written.
 
 ## Subagent log
 
-18 subagents ran, every one on Opus 5.5, each in its own git worktree with a brief in docs/agents/.
+19 subagents ran, every one on Opus 5.5, each in its own git worktree with a brief in docs/agents/.
 
 | Workstream | What it did |
 |---|---|
@@ -93,6 +103,7 @@ Known before that. The website builds 93 pages with zero warnings, and the Inspe
 | Consistency | The plant waterer on every page, the docs check and the consistency check |
 | Handoff | CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, ROADMAP, LAUNCH and the hardware test plans |
 | Quality | Lighthouse, axe and the orphan audit |
+| Final critic | Scored the website and Inspector from screenshots and DESIGN.md only |
 
 No workstream was cut for usage limits. Two were paused when the owner lowered the cap from 5 to 3 on 2026-10-25 (handoff with 11 commits saved, quality before it changed anything), and both were resumed and finished.
 
