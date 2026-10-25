@@ -1,0 +1,23 @@
+{
+  "name": "alpaca",
+  "tier": 2,
+  "status": "implemented",
+  "protocols": ["ASCOM Alpaca REST", "Alpaca UDP discovery"],
+  "families": [
+    "telescope mounts (any ASCOM driver through ASCOM Remote, Alpaca native mounts such as OnStepX and ZWO AM5)",
+    "focusers, cameras, switches and power boxes, domes",
+    "INDI devices through an Alpaca bridge"
+  ],
+  "hazard_default": "medium",
+  "tests": "Alpaca server simulator on an httpx mock transport, discovery over local UDP",
+  "estimate": {
+    "devices": "hundreds of models, every ASCOM device reachable through ASCOM Remote",
+    "reasoning": "Alpaca is the network form of ASCOM, the standard driver interface for astronomy gear on Windows. ASCOM Remote exposes every installed ASCOM driver over Alpaca, and a growing number of mounts, focusers and observatory controllers speak Alpaca natively on Linux and embedded boards. The count is a model estimate.",
+    "sources": [
+      "https://ascom-standards.org/api/",
+      "https://ascom-standards.org/Developer/Alpaca.htm",
+      "https://github.com/ASCOMInitiative/ASCOMRemote",
+      "https://ascom-standards.org/Help/Developer/html/T_ASCOM_DeviceInterface_ITelescopeV3.htm"
+    ]
+  }
+}
