@@ -192,13 +192,13 @@ class MatterServerSim:
             path = args.get("attribute_path")
             await self._answer(connection, ident, {path: node["attributes"].get(path)})
         elif command == "write_attribute" and node is not None:
-            await self._write(connection, ident, args, node)
+            await self._write_attribute(connection, ident, args, node)
         elif command == "device_command" and node is not None:
             await self._device_command(connection, ident, args, node)
         else:
             await self._answer(connection, ident, error=9, details=f"Invalid command: {command}")
 
-    async def _write(self, connection: Any, ident: Any, args: dict[str, Any], node: dict[str, Any]) -> None:
+    async def _write_attribute(self, connection: Any, ident: Any, args: dict[str, Any], node: dict[str, Any]) -> None:
         path, value = str(args.get("attribute_path")), args.get("value")
         endpoint, cluster, attribute = (int(part) for part in path.split("/"))
         status = 0
