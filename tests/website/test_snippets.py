@@ -23,7 +23,7 @@ from openhal.spec import loads
 from tests.website.shell import ROOT, Session, SnippetError
 
 SOURCES = [
-    *sorted((ROOT / "docs" / "guide").glob("*.md")),
+    *sorted((ROOT / "docs" / "guide").rglob("*.md")),
     *sorted((ROOT / "website" / "src" / "content").rglob("*.md")),
 ]
 NOT_OURS = {ROOT / "docs" / "guide" / "driver-writer.md"}
