@@ -3,21 +3,25 @@
 </script>
 
 <svg class="mark" width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-  <circle cx="3.4" cy="8" r="2.4" class="ink" />
-  <rect x="7.05" y="2" width="2.5" height="12" rx="1.25" class="accent" />
-  <rect x="10.8" y="5.9" width="4.2" height="4.2" rx="1" class="ink" />
+  <line x1="11" y1="2" x2="11" y2="14" />
+  <line x1="2" y1="5" x2="8.5" y2="5" />
+  <line x1="8.5" y1="11" x2="5" y2="11" />
+  <polygon points="1.2,11 5.4,7.8 5.4,14.2" />
 </svg>
 
 <style>
   .mark {
     flex: none;
+    color: var(--accent);
   }
 
-  .ink {
-    fill: var(--text);
+  line {
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
   }
 
-  .accent {
-    fill: var(--accent);
+  polygon {
+    fill: currentColor;
   }
 </style>
