@@ -76,7 +76,8 @@ export const api = {
   status: () => get<Status>("/v1/status"),
   devices: () => get<DeviceSummary[]>("/v1/devices"),
   device: (id: string) => get<DeviceView>(`/v1/devices/${encodeURIComponent(id)}`),
-  write: (device: string, channel: string, value: unknown) => post<Decision>("/v1/write", { device, channel, value }),
+  write: (device: string, channel: string, value: unknown, unit?: string) =>
+    post<Decision>("/v1/write", unit ? { device, channel, value, unit } : { device, channel, value }),
   action: (device: string, action: string, args: Record<string, unknown>) =>
     post<Decision>("/v1/action", { device, action, args }),
   stop: (reason: string) => post<{ reason: string; devices: { device: string; status: string; detail: string }[] }>("/v1/stop", { reason }),

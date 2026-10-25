@@ -4,7 +4,8 @@
   import { href } from "../lib/router.svelte";
   import { confirmTier } from "../lib/status";
   import type { ActionSpec } from "../lib/types";
-  import { formatQuantity, quantityString, unitSymbol } from "../lib/units";
+  import { formatQuantity, quantity, unitSymbol } from "../lib/units";
+  import LimitScale from "./LimitScale.svelte";
   import StatusMark from "./StatusMark.svelte";
 
   let {
@@ -28,11 +29,26 @@
     const argSpec = spec.args[arg]!;
     const raw = values[arg] ?? "";
     if (argSpec.type === "bool") return raw === "true";
-    if (argSpec.unit || argSpec.type === "number" || argSpec.min !== undefined) return quantityString(Number(raw), argSpec.unit);
+    if (numeric(arg)) return quantity(Number(raw), argSpec.unit);
     return raw;
   }
 
-  const ready = $derived(args.every(([arg]) => (values[arg] ?? "").trim() !== ""));
+  function numeric(arg: string): boolean {
+    const argSpec = spec.args[arg]!;
+    return !!argSpec.unit || argSpec.type === "number" || argSpec.min !== undefined;
+  }
+
+  function inRange(arg: string): boolean {
+    const argSpec = spec.args[arg]!;
+    const raw = (values[arg] ?? "").trim();
+    if (raw === "") return false;
+    if (!numeric(arg)) return true;
+    const number = Number(raw);
+    if (!Number.isFinite(number)) return false;
+    return (argSpec.min === undefined || number >= argSpec.min) && (argSpec.max === undefined || number <= argSpec.max);
+  }
+
+  const ready = $derived(args.every(([arg]) => inRange(arg)));
 
   async function run(event: SubmitEvent) {
     event.preventDefault();
@@ -44,7 +60,7 @@
       outcome = describeDecision(decision);
       requestId = decision.request_id;
     } catch (error) {
-      outcome = { tone: "failed", word: "failed", head: "", reason: error instanceof Error ? error.message : "The action failed." };
+      outcome = { tone: "failed", word: "failed", head: "", reason: error instanceof Error ? error.message : "The command failed." };
     }
     busy = false;
     onran?.();
@@ -60,34 +76,51 @@
   {#if args.length}
     <div class="args">
       {#each args as [arg, argSpec] (arg)}
-        <label class="field">
-          <span class="mono">{arg}{argSpec.unit ? ` in ${unitSymbol(argSpec.unit)}` : ""}</span>
+        {@const fieldId = `${ident}-${arg}`}
+        <div class="field arg">
+          <label for={fieldId} class="mono arg-name">{arg}{argSpec.unit ? ` in ${unitSymbol(argSpec.unit)}` : ""}</label>
           {#if argSpec.values?.length}
-            <select bind:value={values[arg]} {disabled}>
+            <select id={fieldId} bind:value={values[arg]} {disabled}>
               <option value="">Choose</option>
               {#each argSpec.values ?? [] as option (option)}<option value={option}>{option}</option>{/each}
             </select>
           {:else if argSpec.type === "bool"}
-            <select bind:value={values[arg]} {disabled}>
+            <select id={fieldId} bind:value={values[arg]} {disabled}>
               <option value="">Choose</option>
               <option value="false">false</option>
               <option value="true">true</option>
             </select>
           {:else}
-            <input
-              type={argSpec.unit || argSpec.type === "number" || argSpec.min !== undefined ? "number" : "text"}
-              inputmode={argSpec.unit || argSpec.type === "number" ? "decimal" : undefined}
-              autocomplete="off"
-              min={argSpec.min}
-              max={argSpec.max}
-              bind:value={values[arg]}
-              {disabled}
-            />
+            {#if numeric(arg) && argSpec.min !== undefined && argSpec.max !== undefined}
+              <LimitScale
+                id="{fieldId}-range"
+                label="{arg} for {name}, slider"
+                min={argSpec.min}
+                max={argSpec.max}
+                unit={argSpec.unit ?? null}
+                value={values[arg] && Number.isFinite(Number(values[arg])) ? Number(values[arg]) : null}
+                {disabled}
+                oninput={(value) => (values[arg] = value)}
+              />
+            {/if}
+            <span class="entry">
+              <input
+                id={fieldId}
+                type={numeric(arg) ? "number" : "text"}
+                inputmode={numeric(arg) ? "decimal" : undefined}
+                autocomplete="off"
+                min={argSpec.min}
+                max={argSpec.max}
+                bind:value={values[arg]}
+                {disabled}
+              />
+              {#if argSpec.unit}<span class="mono muted">{unitSymbol(argSpec.unit)}</span>{/if}
+              {#if argSpec.min !== undefined && argSpec.max !== undefined}
+                <small class="muted mono">limit {formatQuantity(argSpec.min, argSpec.unit)} to {formatQuantity(argSpec.max, argSpec.unit)}</small>
+              {/if}
+            </span>
           {/if}
-          {#if argSpec.min !== undefined && argSpec.max !== undefined}
-            <small class="muted mono">{formatQuantity(argSpec.min, argSpec.unit)} to {formatQuantity(argSpec.max, argSpec.unit)}</small>
-          {/if}
-        </label>
+        </div>
       {/each}
     </div>
   {/if}
@@ -139,14 +172,27 @@
   }
 
   .args {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
     gap: var(--s-3);
   }
 
-  .args input {
-    width: 12ch;
+  .arg-name {
+    font-size: var(--t-ui);
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .entry {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2) var(--s-3);
+  }
+
+  .entry input {
+    width: 10ch;
     font-family: var(--font-mono);
+    text-align: right;
   }
 
   small {
