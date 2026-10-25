@@ -54,7 +54,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - tests/drivers/firmata/test_firmata.py::test_silent_board_times_out can time out under full-suite load on this Mac. It passes alone.
 - Library matching proposals (library report). New `match` keys for Pi boards and HATs, libcamera models, Alpaca servers, MIDI port names and MQTT topics, so the six library files with no identifier can be matched. Discovery that reports more, with scpi sending `*IDN?`, moonraker browsing `_moonraker._tcp`, homeassistant listing entity ids, modbus scanning unit ids, mqtt listening for announce topics and esphome reporting `mdns`.
 - Driver proposals still open. A restore_connection hook, a push path for drivers that receive values, cached-read declarations, per-driver install hints, argument references in action requirements, and YAML 1.1 warnings in openhal file validate.
-- Packaging proposals. Make the writer's `_force_suggested` public for init. Split ESPHome's `ip:port` in the writer instead of init. A `self_describing` flag in DriverInfo. Lazy imports so `openhal mcp` starts faster. Intel Mac installs need `--no-build` while cryptography and zeroconf ship Apple Silicon wheels only.
+- Packaging proposals. A `self_describing` flag in DriverInfo. Lazy imports so `openhal mcp` starts faster. Intel Mac installs need `--no-build` while cryptography and zeroconf ship Apple Silicon wheels only.
 - Verification and handoff, in progress. Lighthouse, axe and the orphan audit, the final critique, and FINAL-REPORT.md.
 - Confirm on GitHub CI that the scpi fix passes on Linux (the owner approved the fix and the push on 2026-10-25).
 
