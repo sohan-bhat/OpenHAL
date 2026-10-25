@@ -1,0 +1,256 @@
+scenario: plant-waterer-e2e
+recorded_with: uv run openhal demo --full --record docs/demo/e2e.yaml
+protocol_version: '2026-10-24'
+device: plant-waterer
+file: plant-waterer.hal.yaml
+person: human:sohan
+agent: agent:claude
+confirmed:
+  by: human:sohan
+  at: '2026-10-25'
+limits:
+  water_duration:
+    min:
+      value: 1
+      unit: s
+    max:
+      value: 30
+      unit: s
+steps:
+- id: discovery
+  actor: human:sohan
+  call: discover
+  args:
+    drivers:
+    - openhal-firmware
+  found:
+    driver: openhal-firmware
+    address: sim:plant-waterer
+    identifiers:
+      firmware.product: plant-waterer
+      firmware.version: 1.0.0
+    label: OpenHAL board plant-waterer
+  board_received:
+  - HELLO
+- id: writer
+  actor: human:sohan
+  call: start_writer
+  args:
+    driver: openhal-firmware
+    params:
+      port: sim:plant-waterer
+    sketch_path: examples/plant-waterer/plant-waterer.ino
+  status: interview
+  sources:
+  - openhal-firmware identity
+  - sketch plant-waterer.ino
+  problems: []
+  draft:
+    device: Plant waterer
+    connect:
+      openhal-firmware: sim:plant-waterer
+    match:
+      firmware:
+        product: plant-waterer
+    read:
+      soil_moisture:
+        unit: percent
+        stream: true
+        range:
+        - 0
+        - 100
+      tank:
+        type: enum
+        values:
+        - empty
+        - ok
+        stream: true
+    write: {}
+    actions:
+      water:
+        args:
+          duration:
+            unit: s
+            min: 1.0
+            max: 30.0
+        suggested: true
+      stop:
+        suggested: true
+    watchdog:
+      heartbeat: 1500 ms
+      on_loss: safe_state
+    provenance:
+      source: self-described
+      tool: openhal driver writer
+  board_received:
+  - HELLO
+  - DESC
+- id: interview
+  actor: human:sohan
+  call: answer
+  answers:
+  - question: device.hazard
+    prompt: What hazard class is this device? low, medium or high.
+    suggested: medium
+    answer: low
+  - question: water.duration.min
+    prompt: What is the lowest safe duration for water?
+    suggested: 1.0
+    answer: 1 s
+  - question: water.duration.max
+    prompt: What is the highest safe duration for water?
+    suggested: 30.0
+    answer: 30 s
+  - question: water.confirm
+    prompt: Should water need a person's approval? none, confirm or confirm-each-time.
+    suggested: confirm
+    answer: none
+  - question: stop.confirm
+    prompt: Should stop need a person's approval? none, confirm or confirm-each-time.
+    suggested: confirm
+    answer: none
+  - question: device.interlocks
+    prompt: 'Any interlocks? One per line as: if <condition> require <condition>. Answer none for none.'
+    suggested: none
+    answer: none
+  status: ready
+  unconfirmed: []
+- id: save
+  actor: human:sohan
+  call: finish
+  args:
+    save_as: plant-waterer
+  saved: plant-waterer.hal.yaml
+  device: plant-waterer
+  writable: true
+  confirmed:
+    by: human:sohan
+    at: '2026-10-25'
+  water:
+    args:
+      duration:
+        unit: s
+        min: 1.0
+        max: 30.0
+    confirm: none
+- id: restart
+  note: The hub restarts and loads plant-waterer.hal.yaml from its devices folder.
+  devices:
+  - id: plant-waterer
+    writable: true
+    connected: true
+    hazard: low
+- id: agent-reads
+  actor: agent:claude
+  via: openhal mcp --no-start
+  tool: read
+  arguments:
+    device: plant-waterer
+    channel: soil_moisture
+  result:
+    value: 31
+    unit: '%'
+- id: agent-drafts
+  actor: agent:claude
+  via: openhal mcp --no-start
+  tool: draft_routine
+  arguments:
+    routine_id: water-when-dry
+    source: |
+      id: water-when-dry
+      description: Water for 20 s when the soil is drier than 40 %.
+      triggers:
+        - when: "plant-waterer.soil_moisture < 40 %"
+      steps:
+        - action: { device: plant-waterer, action: water, args: { duration: { value: 20, unit: s } } }
+  result:
+    id: water-when-dry
+    enabled: false
+    disabled_reason: new routine
+    drafted_by: agent:claude
+    devices:
+    - plant-waterer
+    triggers:
+    - when plant-waterer.soil_moisture < 40 %
+- id: agent-dry-runs
+  actor: agent:claude
+  via: openhal mcp --no-start
+  tool: run_routine_dry
+  arguments:
+    routine_id: water-when-dry
+  result:
+    ok: true
+    decisions:
+    - step: steps[0]
+      status: allowed
+      target: action:water
+    problems: []
+- id: person-enables
+  actor: human:sohan
+  call: enable_routine
+  args:
+    routine_id: water-when-dry
+  result:
+    enabled: true
+    enabled_by: human:sohan
+- id: routine-runs
+  actor: routine:water-when-dry
+  trigger: when plant-waterer.soil_moisture < 40 %
+  status: ok
+  commands:
+  - target: action:water
+    status: done
+  board_received:
+  - ACT water duration 20
+- id: agent-reads-again
+  actor: agent:claude
+  via: openhal mcp --no-start
+  tool: read
+  arguments:
+    device: plant-waterer
+    channel: soil_moisture
+  result:
+    value: 46
+    unit: '%'
+  soil_moisture:
+    before:
+      value: 31
+      unit: '%'
+    after:
+      value: 46
+      unit: '%'
+- id: too-long
+  actor: agent:claude
+  via: openhal mcp --no-start
+  tool: action
+  arguments:
+    device: plant-waterer
+    action: water
+    args:
+      duration:
+        value: 120
+        unit: s
+  result:
+    status: blocked
+    code: above_max
+    error:
+      code: -32010
+      name: LIMIT_EXCEEDED
+      message: water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by human:sohan 2026-10-25)
+      data:
+        name: LIMIT_EXCEEDED
+        kernelCode: above_max
+        kernelMessage: Blocked. The duration limit is 30 s (max). Asked for 120 s.
+        device: plant-waterer
+        action: water
+        argument: duration
+        requested:
+          value: 120
+          unit: s
+        limit:
+          value: 30
+          unit: s
+        file: plant-waterer.hal.yaml
+        confirmedBy: human:sohan
+        confirmedAt: '2026-10-25'
+  board_received: []
