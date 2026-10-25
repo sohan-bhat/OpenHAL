@@ -17,6 +17,7 @@ import ipaddress
 from dataclasses import asdict
 from pathlib import Path
 from typing import Annotated, Any, Literal
+from urllib.parse import urlparse
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
@@ -31,6 +32,8 @@ from openhal.hub.hub import Hub
 from openhal.kernel.checks import Block
 from openhal.kernel.commands import Action, Write
 from openhal.kernel.principals import Principal
+from openhal.protocol import websocket as rpc_transport
+from openhal.protocol.dispatch import Dispatcher
 from openhal.routines.engine import RoutineError
 from openhal.spec.loader import DeviceFileError
 from openhal.writer.engine import NotHumanError, WriterError
@@ -582,6 +585,61 @@ def create_app(hub: Hub) -> FastAPI:
             pass
         finally:
             unsubscribe()
+
+    rpc = Dispatcher.for_hub(hub)
+
+    def socket_allowed(websocket: WebSocket) -> bool:
+        """The REST network guard for WebSockets, plus a loopback Origin so a web page can't connect."""
+        if hub.config.api.allow_lan:
+            return True
+        client = websocket.client.host if websocket.client else None
+        host_header = (websocket.headers.get("host") or "").rsplit(":", 1)[0]
+        if not _is_loopback(client) or (host_header and host_header not in _LOOPBACK_HOSTS | {"testserver"}):
+            return False
+        origin = websocket.headers.get("origin")
+        if origin:
+            name = urlparse(origin).hostname or ""
+            return _is_loopback(name) or name == "testserver"
+        return True
+
+    def socket_principals(websocket: WebSocket) -> tuple[Principal | None, bool, Principal | None]:
+        """The header principal, whether a header token was refused, and the session cookie's principal."""
+        auth = websocket.headers.get("authorization", "")
+        token = auth.removeprefix("Bearer ").strip() if auth.startswith("Bearer ") else None
+        principal = hub.tokens.principal(token) if token else None
+        cookie = websocket.cookies.get(SESSION_COOKIE)
+        fallback = hub.tokens.principal(cookie) if cookie else None
+        return principal, token is not None and principal is None, fallback
+
+    @app.websocket("/rpc")
+    async def rpc_socket(websocket: WebSocket) -> None:
+        if not socket_allowed(websocket):
+            await websocket.close(code=1008)
+            return
+        principal, rejected, fallback = socket_principals(websocket)
+        await rpc_transport.serve_rpc(websocket, rpc, principal=principal, token_rejected=rejected, fallback=fallback)
+
+    @app.get("/v1/rpc/log")
+    async def rpc_log(who: Who, since: int = 0) -> list[dict[str, Any]]:
+        human_only(who)
+        return rpc.log.since(since)
+
+    @app.websocket("/v1/rpc/log/live")
+    async def rpc_log_live(websocket: WebSocket) -> None:
+        if not socket_allowed(websocket):
+            await websocket.close(code=1008)
+            return
+        principal, _, fallback = socket_principals(websocket)
+        token = websocket.query_params.get("token")
+        who = principal or (hub.tokens.principal(token) if token else None) or fallback
+        if who is None or who.kind != "human":
+            await websocket.close(code=1008)
+            return
+        try:
+            since = int(websocket.query_params.get("since", "0"))
+        except ValueError:
+            since = 0
+        await rpc_transport.serve_log(websocket, rpc, since)
 
     if STATIC_DIR.exists():
 
