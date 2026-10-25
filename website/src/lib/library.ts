@@ -1,6 +1,3 @@
-// The device library, generated from library/**/*.hal.yaml at build time. The folder lands at
-// milestone 12. Until then there are no files and the library page shows how to contribute.
-
 import { DeviceFileError, deviceId, effectiveHazard, loadDeviceFile, unconfirmed, type DeviceFile } from "./kernel";
 import { YamlError, parseDeviceYaml } from "./kernel/yaml";
 
@@ -45,7 +42,6 @@ function matchList(file: DeviceFile): string[] {
   return out;
 }
 
-/** Build library entries from file paths (relative to the repository) and their text. */
 export function parseLibrary(files: Record<string, string>): LibraryEntry[] {
   const entries: LibraryEntry[] = [];
   for (const [path, text] of Object.entries(files)) {

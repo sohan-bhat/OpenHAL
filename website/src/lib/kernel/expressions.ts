@@ -1,9 +1,3 @@
-/**
- * The expression language of interlocks, preconditions and watchdog rules, ported from
- * openhal/spec/expressions.py. Three-valued. A reference that can't be read is unknown, and
- * unknown never lets a command pass.
- */
-
 import { formatG, isClose, pyFloatRepr, pyStrRepr } from "./pyformat";
 import { UnitError, convert, parseQuantity, parseUnit } from "./units";
 
@@ -195,7 +189,6 @@ class Parser {
   }
 }
 
-/** Parse an expression. Bare names that are channels become references, others are words. */
 export function parse(text: string, channels: Iterable<string> | null = null): Node {
   if (typeof text !== "string" || !text.trim()) throw new ExpressionError("An expression can't be empty.");
   if (text.length > MAX_LENGTH) throw new ExpressionError(`Expressions may be at most ${MAX_LENGTH} characters.`);
@@ -216,7 +209,6 @@ export function parseCached(text: string, channels: Iterable<string>): Node {
   return node;
 }
 
-/** Every bare word literal and the operand it is compared with. */
 export function words(node: Node): Array<[string, Node | null]> {
   if (node.kind === "lit") return typeof node.value === "string" && !node.quoted ? [[node.value, null]] : [];
   if (node.kind === "ref") return [];
@@ -234,7 +226,6 @@ export function words(node: Node): Array<[string, Node | null]> {
   return node.operands.flatMap(words);
 }
 
-/** Every channel reference in a tree, deduplicated. */
 export function references(node: Node): Ref[] {
   const seen = new Map<string, Ref>();
   const walk = (current: Node) => {
@@ -300,7 +291,6 @@ function evaluateCompare(node: Compare, resolver: Resolver): Tri {
   return compareNumbers(node.op, left.value, rightInLeft);
 }
 
-/** Evaluate a tree. True, false, or null when a needed value is unknown. */
 export function evaluate(node: Node, resolver: Resolver): Tri {
   if (node.kind === "compare") return evaluateCompare(node, resolver);
   if (node.kind === "ref") {
@@ -321,7 +311,6 @@ export function evaluate(node: Node, resolver: Resolver): Tri {
   return results.some((result) => result === null) ? null : false;
 }
 
-/** Check that every numeric literal compared with a quantity channel has a convertible unit. */
 export function checkUnits(node: Node, unitOf: (ref: Ref) => string | null): void {
   if (node.kind === "compare") {
     for (const [side, other] of [

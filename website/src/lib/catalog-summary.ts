@@ -1,5 +1,3 @@
-// One honest sentence about the catalog, for pages that summarize it. No big-number strips.
-
 import { STATUS_ORDER, countBy, type Driver } from "./catalog";
 
 export function catalogSentence(all: Driver[]): string {

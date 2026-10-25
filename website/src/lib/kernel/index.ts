@@ -1,8 +1,3 @@
-/**
- * The in-browser kernel. A demo-only TypeScript port of openhal/kernel and openhal/spec, checked
- * against the Python kernel by tests/website/test_kernel_parity.py and the vitest parity suite.
- */
-
 export * from "./kernel";
 export { effectiveLimits, normalize, checkRate } from "./checks";
 export {

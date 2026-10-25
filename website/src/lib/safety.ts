@@ -1,6 +1,3 @@
-// The safety model's guarantees and checks, read from docs/SAFETY.md at build time so the landing
-// page can't drift from the document the kernel is reviewed against.
-
 import safety from "../../../docs/SAFETY.md?raw";
 
 export interface Guarantee {
@@ -32,8 +29,6 @@ function firstSentence(text: string): string {
   return (match ? match[1] : text).trim();
 }
 
-// The landing page says each guarantee in plain words. Titles come from docs/SAFETY.md, so a new
-// guarantee shows up with its own first sentence until it gets a plain version here.
 const PLAIN: Record<string, string> = {
   "One path": "Every write from every client goes through the same kernel.",
   Deterministic: "Plain code with no model. The same command in the same state gets the same answer.",

@@ -28,7 +28,7 @@ def free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind(("127.0.0.1", 0))
         port = int(sock.getsockname()[1])
-    if port == 4000:  # never used, by the owner's rule
+    if port == 4000:
         return free_port()
     return port
 

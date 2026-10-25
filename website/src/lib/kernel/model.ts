@@ -1,13 +1,3 @@
-/**
- * Device files as the kernel sees them, ported from openhal/spec/models.py.
- *
- * `loadDeviceFile` takes the parsed YAML (integers as bigint, so they stay integers) and expands
- * every shorthand the spec allows, converting limits into the channel unit. Structure is checked
- * by the JSON Schema in the playground. This module checks what the schema can't express, with
- * the same rules as the Python validators. `limitsSha256` reproduces the hash that binds a
- * confirmation to the limits, byte for byte.
- */
-
 import * as expr from "./expressions";
 import { formatG, pyFloatRepr, pyStrRepr } from "./pyformat";
 import { sha256Hex } from "./sha256";
@@ -599,12 +589,6 @@ function build(data: Record<string, Raw>): DeviceFile {
   return file;
 }
 
-/**
- * Expand the shorthands the spec allows into the shape the JSON Schema describes, the way the
- * Python models' `before` validators do. A string `device`, top-level `model` and `manufacturer`,
- * `connect` shorthand and a single safe state mapping all become their full forms. `x-` keys are
- * dropped. Nothing is checked here. The schema and `loadDeviceFile` do that.
- */
 export function expandShorthand(data: Raw): Raw {
   if (!isMapping(data)) return data;
   const raw: Record<string, Raw> = {};
@@ -656,7 +640,6 @@ export function expandShorthand(data: Raw): Raw {
   return raw;
 }
 
-/** Build a device file from parsed YAML. Throws DeviceFileError with the problem and its place. */
 export function loadDeviceFile(data: Raw): DeviceFile {
   if (!isMapping(data)) throw new DeviceFileError(["file: A device file must be a mapping at the top level."]);
   try {
@@ -667,7 +650,6 @@ export function loadDeviceFile(data: Raw): DeviceFile {
   }
 }
 
-/** The file's id, or one derived from the device name. */
 export function deviceId(file: DeviceFile): string {
   if (file.id) return file.id;
   let slug = file.device.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -694,7 +676,6 @@ function hasFileLevelLimits(file: DeviceFile): boolean {
   return Boolean(file.interlocks.length || file.watchdog.max_duration.length || file.safe_state.length || file.hazard !== null);
 }
 
-/** Limits no human has confirmed yet, or that changed after they were confirmed. */
 export function unconfirmed(file: DeviceFile): string[] {
   const bound = file.confirmed?.sha256 ?? null;
   if (bound !== null && bound !== limitsSha256(file)) return ["file (limits changed after they were confirmed)"];
@@ -716,9 +697,7 @@ export function writable(file: DeviceFile): boolean {
   return unconfirmed(file).length === 0;
 }
 
-// ---------------------------------------------------------------- the limits hash
 
-/** A float that Python serializes with repr, such as 100.0. */
 class PyFloat {
   constructor(public value: number) {}
 }
@@ -818,7 +797,6 @@ function jsonString(text: string): string {
   return `${out}"`;
 }
 
-/** `json.dumps(data, sort_keys=True, separators=(",", ":"))`, with ensure_ascii. */
 export function pyJson(value: unknown): string {
   if (value === null || value === undefined) return "null";
   if (value instanceof PyFloat) return pyFloatRepr(value.value);
@@ -833,7 +811,6 @@ export function pyJson(value: unknown): string {
   return `{${keys.map((key) => `${jsonString(key)}:${pyJson(record[key])}`).join(",")}}`;
 }
 
-/** Hash of everything that counts as a limit (spec section 12), as `DeviceFile.limits_sha256`. */
 export function limitsSha256(file: DeviceFile): string {
   return sha256Hex(pyJson(limitsData(file)));
 }

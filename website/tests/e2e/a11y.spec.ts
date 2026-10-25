@@ -1,5 +1,3 @@
-// WCAG AA on every kind of page, in both themes, with axe.
-
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 

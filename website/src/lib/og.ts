@@ -1,6 +1,3 @@
-// Open Graph images, one per page, drawn from the design system at build time. Each shows the page
-// title on the panel, the header plate with the mark, and the hero's real block on its limit line.
-
 import { PRODUCT_NAME } from "../config/brand";
 import { markSvg } from "./brand-mark";
 import { heroFirstDecision } from "./hero";

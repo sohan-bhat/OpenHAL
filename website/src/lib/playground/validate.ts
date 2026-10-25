@@ -1,7 +1,3 @@
-// Live validation for the playground. YAML parsing with the loader's restrictions, the JSON Schema
-// from spec/schema (imported at build time, never copied), then the model checks the schema can't
-// express, such as units, min below max and interlock expressions.
-
 import type { ErrorObject } from "ajv";
 import validateSchema from "virtual:device-schema-validator";
 import { DeviceFileError, expandShorthand, loadDeviceFile, type DeviceFile } from "../kernel/model";
@@ -53,7 +49,6 @@ function message(error: ErrorObject): string {
   }
 }
 
-/** Schema errors, keeping the most specific one per place so anyOf branches don't repeat. */
 function schemaProblems(errors: ErrorObject[]): Problem[] {
   const useful = errors.filter((error) => error.keyword !== "anyOf" && error.keyword !== "if");
   const seen = new Set<string>();

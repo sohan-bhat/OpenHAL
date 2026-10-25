@@ -14,8 +14,6 @@ import json
 from openhal.kernel.commands import BLOCK_CODES
 from tests.website import kernel_parity
 
-# Codes the in-browser port can't produce, because they need a real driver, a busy device or a
-# crash inside the kernel. Everything else must appear in at least one case.
 NOT_PORTED = {"busy", "internal_error", "driver_error", "expired", "rejected"}
 
 

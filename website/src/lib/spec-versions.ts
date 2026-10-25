@@ -1,6 +1,3 @@
-// Spec versions, read from spec/CHANGELOG.md at build time. Each `## X.Y (status, date)` heading is
-// one version. The newest is spec/SPEC.md itself.
-
 import changelog from "../../../spec/CHANGELOG.md?raw";
 import { SPEC_VERSION } from "../config/brand";
 

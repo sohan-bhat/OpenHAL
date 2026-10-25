@@ -1,7 +1,3 @@
-// Build-time PNG rendering for Open Graph images and the favicon set. It draws HTML with the
-// design system's own fonts in headless Chromium, so the images match the site exactly.
-// Only the build uses this. Nothing here ships to the browser.
-
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Browser } from "playwright";
@@ -21,7 +17,6 @@ async function launch(): Promise<Browser> {
 
 function release(): void {
   clearTimeout(idle);
-  // Close Chromium once the build stops asking for images, so the build process can exit.
   idle = setTimeout(async () => {
     const open = browser;
     browser = null;
@@ -35,7 +30,6 @@ function font(file: string): string {
 
 let faces: string | null = null;
 
-/** The three faces as inline @font-face rules. */
 export function fontFaces(): string {
   faces ??= [
     ["Sofia Sans Condensed", "sofia-sans-condensed-latin-wght-normal.woff2", "1 1000"],

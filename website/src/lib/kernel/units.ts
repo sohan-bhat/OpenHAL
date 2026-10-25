@@ -1,12 +1,3 @@
-/**
- * A small unit table that mirrors the pint registry the Python kernel uses (ADR 0005).
- *
- * It covers the units in spec/examples and the common ones near them (SI prefixes on volts,
- * amps, watts, hertz, metres, grams and seconds, temperatures with offsets, percent, angles).
- * Conversions follow pint's arithmetic so results match to the last bit. A unit outside the
- * table is refused as unknown, where the Python hub might accept it. This port is demo-only.
- */
-
 import { formatG, pyFloatRepr, pyStrRepr } from "./pyformat";
 
 export class UnitError extends Error {}
@@ -34,7 +25,6 @@ const OHM: Dims = { mass: 1, length: 2, time: -3, current: -2 };
 const PRESSURE: Dims = { mass: 1, length: -1, time: -2 };
 const FORCE: Dims = { mass: 1, length: 1, time: -2 };
 
-// Root factors follow pint, whose root unit for mass is the gram.
 const BASES: Array<[string[], Base]> = [
   [["dimensionless"], { name: "dimensionless", symbol: "", dims: {}, scale: 1 }],
   [["count"], { name: "count", symbol: "count", dims: {}, scale: 1 }],
@@ -67,7 +57,6 @@ const BASES: Array<[string[], Base]> = [
 ];
 
 const PREFIXES: Array<[string, string, string, number]> = [
-  // symbol, long name, pretty symbol, factor
   ["G", "giga", "G", 1e9],
   ["M", "mega", "M", 1e6],
   ["k", "kilo", "k", 1e3],
@@ -92,7 +81,6 @@ const TABLE = new Map<string, Atom>();
 for (const [aliases, base] of BASES) {
   for (const alias of aliases) TABLE.set(alias, base);
 }
-// pint defines kilowatt_hour on its own, and the prefixed forms below cover the rest.
 for (const [aliases, base] of BASES) {
   if (!base.prefixable) continue;
   const shortForms = aliases.filter((alias) => alias.length <= 3 && alias === base.symbol);
@@ -104,11 +92,9 @@ for (const [aliases, base] of BASES) {
 }
 
 export interface Unit {
-  /** The parts, each an atom and its power. */
   parts: Array<{ atom: Atom; power: number }>;
 }
 
-/** A quantity, as pint keeps it. The magnitude is in `unit`. */
 export interface Quantity {
   magnitude: number;
   unit: Unit;
@@ -116,7 +102,6 @@ export interface Quantity {
 
 const ALIASES: Record<string, string> = { "%": "percent", "%/s": "percent / second" };
 
-/** pint-parsable unit text, mapping `%` to `percent`. */
 export function normalizeUnit(unit: string): string {
   const text = unit.trim();
   if (text in ALIASES) return ALIASES[text];
@@ -171,7 +156,6 @@ function parseUnitExpression(text: string): Unit {
   return unit;
 }
 
-/** Parse a unit name such as `degC`, `percent` or `V`. */
 export function parseUnit(unit: unknown): Unit {
   if (typeof unit !== "string" || !unit.trim()) {
     throw new UnitError("A unit is required, for example degC, percent or V.");
@@ -239,7 +223,6 @@ function prettyUnit(unit: Unit): string {
   return text;
 }
 
-/** pint's `f"{quantity:~P}"`, used in conversion errors. */
 export function prettyQuantity(quantity: Quantity): string {
   const unit = prettyUnit(quantity.unit);
   return unit ? `${prettyNumber(quantity.magnitude)} ${unit}` : prettyNumber(quantity.magnitude);
@@ -255,10 +238,6 @@ function isPlainNumber(value: unknown): value is number | bigint {
   return typeof value === "bigint" || typeof value === "number";
 }
 
-/**
- * Parse `"30 degC"`, `{ value: 30, unit: "degC" }`, or a number with a default unit.
- * A bare number is accepted only when `defaultUnit` is given, as in the Python kernel.
- */
 export function parseQuantity(value: unknown, defaultUnit?: string): Quantity {
   if (typeof value === "boolean") throw new UnitError("Expected a number with a unit, got a boolean.");
   if (isPlainNumber(value)) {
@@ -304,7 +283,6 @@ function convertQuantity(quantity: Quantity, target: Unit): number {
   const srcOffset = offsetAtom(source);
   const dstOffset = offsetAtom(target);
   if ((srcOffset && srcOffset.offset) || (dstOffset && dstOffset.offset)) {
-    // Non-multiplicative units convert through the reference unit, as pint's OffsetConverter does.
     if (!srcOffset || !dstOffset) throw new Error("offset");
     const reference = quantity.magnitude * srcOffset.scale + (srcOffset.offset ?? 0);
     return (reference - (dstOffset.offset ?? 0)) / dstOffset.scale;
@@ -314,7 +292,6 @@ function convertQuantity(quantity: Quantity, target: Unit): number {
   return quantity.magnitude * factor;
 }
 
-/** Convert a quantity to `unit` and return the magnitude, checking it is finite. */
 export function convert(quantity: Quantity, unit: string): number {
   const target = parseUnit(unit);
   let converted: number;
@@ -345,7 +322,6 @@ function perSecond(channelUnit: string): Unit {
   return { parts: [...unit.parts, { atom: TABLE.get("second")!, power: -1 }] };
 }
 
-/** Parse a rate limit and return it in channel units per second. */
 export function parseRate(value: unknown, channelUnit: string): number {
   if (typeof value === "number" || typeof value === "bigint") return finite(Number(value), "Rate");
   let text = value;
@@ -364,7 +340,6 @@ export function parseRate(value: unknown, channelUnit: string): number {
   return convertRate(quantity, channelUnit);
 }
 
-/** Convert a rate quantity into channel units per second, using delta units for temperatures. */
 export function convertRate(quantity: Quantity, channelUnit: string): number {
   const target = perSecond(channelUnit);
   const source = { magnitude: quantity.magnitude, unit: withDeltas(quantity.unit) };
@@ -378,7 +353,6 @@ export function convertRate(quantity: Quantity, channelUnit: string): number {
 
 const COMPACT_DURATION = /^\s*([0-9]*\.?[0-9]+)\s*(ms|s|min|h)\s*$/;
 
-/** Parse a duration (`5 s`, `500ms`, `10min`, `2 h`) and return seconds. */
 export function parseDuration(value: unknown): number {
   let text = value;
   if (typeof value === "string") {
@@ -393,7 +367,6 @@ export function parseDuration(value: unknown): number {
   return seconds;
 }
 
-/** Format a magnitude and unit for messages, for example `100 %` or `29.4444 degC`. */
 export function formatQuantity(magnitude: number, unit: string): string {
   const shown = normalizeUnit(unit) === "percent" ? "%" : unit;
   return `${formatG(magnitude, 6)} ${shown}`;

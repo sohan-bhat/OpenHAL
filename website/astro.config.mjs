@@ -8,8 +8,6 @@ import { rehypeCodeBlocks, rehypeTables, remarkRepoLinks, remarkTitle } from "./
 import { mermaidConfig, mermaidDarkConfig } from "./src/lib/markdown/mermaid.mjs";
 import { deviceSchemaValidator } from "./src/lib/schema-validator-plugin.mjs";
 
-// The site's address. The domain is not bought yet (NEEDS_HUMAN.md item 2), so this is a
-// placeholder. Change it here and nowhere else.
 const SITE_URL = "https://openhal.dev";
 
 export default defineConfig({

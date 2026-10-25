@@ -1,5 +1,3 @@
-// The library collection reads whatever files exist, using a fixture folder in place of library/.
-
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";

@@ -1,6 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// Headless only, against the built site served by `astro preview` on port 4322.
 export default defineConfig({
   testDir: "tests/e2e",
   fullyParallel: true,

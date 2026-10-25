@@ -1,9 +1,3 @@
-/**
- * Parse device file YAML with the same restrictions as openhal/spec/loader.py. One document,
- * no anchors, aliases or custom tags, at most 256 KiB, YAML 1.2 booleans. Integers come back as
- * bigint so the limits hash can tell 100 from 100.0, as Python does.
- */
-
 import { isAlias, isNode, parseDocument, visit } from "yaml";
 
 export const MAX_FILE_BYTES = 256 * 1024;

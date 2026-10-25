@@ -1,6 +1,3 @@
-// Dashboard captures supplied later as PNG and WebM files in website/public/captures/.
-// A capture is used only when its file exists, with its real pixel size so nothing shifts.
-
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -19,7 +16,6 @@ function pngSize(path: string): { width: number; height: number } | null {
   return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
 }
 
-/** The capture at a site path such as /captures/hero.png, with a .webm beside it if there is one. */
 export function capture(src: string | null | undefined): Capture | null {
   if (!src || !src.startsWith("/captures/") || !src.endsWith(".png")) return null;
   const file = join(PUBLIC, src);

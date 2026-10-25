@@ -1,6 +1,3 @@
-// The OpenHAL mark. A dark legend plate with a control track and the limit line, flag up.
-// The header, the favicon set and the Open Graph images all draw it from this one source.
-
 export const MARK_COLORS = {
   bezel: "#2b3035",
   onBezel: "#e7e9e6",
@@ -8,7 +5,6 @@ export const MARK_COLORS = {
   caution: "#f2b705",
 };
 
-/** The mark as SVG markup, in a 32 by 32 box. `title` adds an accessible name. */
 export function markSvg(options: { size?: number; title?: string; className?: string } = {}): string {
   const { size = 32, title, className } = options;
   const { bezel, onBezel, limit, caution } = MARK_COLORS;

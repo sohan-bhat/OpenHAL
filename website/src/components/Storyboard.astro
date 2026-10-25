@@ -1,6 +1,4 @@
 ---
-// The 30-second demo, one frame per step. Frame text comes from the real CLI and MCP tools
-// (tests/website/demo_steps.py). A frame shows its dashboard capture once one exists.
 import steps from "../content/demo/steps.json";
 import { capture } from "../lib/captures";
 
@@ -57,7 +55,6 @@ const frames = steps.map((step, index) => ({ ...step, number: index + 1, media: 
 </div>
 
 <script>
-  // Mark the step whose frame is in the middle of the screen. No motion, only state.
   for (const board of document.querySelectorAll<HTMLElement>("[data-storyboard]")) {
     const links = new Map([...board.querySelectorAll<HTMLElement>("[data-step-link]")].map((item) => [item.dataset.stepLink, item]));
     const observer = new IntersectionObserver(

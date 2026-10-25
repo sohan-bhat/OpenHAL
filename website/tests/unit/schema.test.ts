@@ -1,6 +1,3 @@
-// The playground validates against spec/schema/device-file.schema.json after expanding shorthands,
-// as the Python models do. Every spec example must pass, and broken files must fail with a path.
-
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";

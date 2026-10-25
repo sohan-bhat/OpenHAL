@@ -1,5 +1,4 @@
 ---
-// Supported devices. Built from drivers/catalog.json, with the coverage prose from docs/drivers/COVERAGE.md.
 import Base from "../layouts/Base.astro";
 import PartLabel from "../components/PartLabel.astro";
 import { STATUS_ORDER, TIER_NAMES, drivers } from "../lib/catalog";
@@ -12,7 +11,6 @@ const tiers = [...new Set(all.map((driver) => driver.tier))].sort();
 const hazards = ["low", "medium", "high"].filter((hazard) => all.some((driver) => driver.hazard_default === hazard)).concat(
   [...new Set(all.map((driver) => driver.hazard_default))].filter((hazard) => !["low", "medium", "high"].includes(hazard)),
 );
-// The plan's own words about status values and estimates, before its first table.
 const coverageNotes = coverage
   .split(/\n## /)[0]
   .split(/\n\s*\n/)
@@ -119,7 +117,6 @@ const coverageNotes = coverage
 </Base>
 
 <script>
-  // Filter the list in place. Without JavaScript every driver is shown.
   const form = document.querySelector<HTMLFormElement>("[data-filters]");
   const items = [...document.querySelectorAll<HTMLElement>("[data-driver]")];
   const shown = document.querySelector<HTMLElement>("[data-shown]");

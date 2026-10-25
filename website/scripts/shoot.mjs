@@ -1,7 +1,3 @@
-// Take screenshots of site pages with headless Chromium, for design review.
-// node scripts/shoot.mjs <out-dir> <path>[,<path>...] [widths] [schemes] [--full]
-// Expects the preview server on http://127.0.0.1:4322.
-
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 

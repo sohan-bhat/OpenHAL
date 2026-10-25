@@ -1,6 +1,3 @@
-// The hero instrument in the browser. An agent's writes go through the TypeScript kernel port,
-// the limit line shows where each one landed, and the stop bar stops everything.
-
 import { HERO_CHANNEL, HERO_DEVICE, HERO_START_TEMPERATURE, cliLine, trackPercent } from "../lib/hero-shared";
 import { Kernel, UnitError, agent, convert, effectiveLimits, human, loadDeviceFile, parseQuantity, type Decision } from "../lib/kernel";
 
@@ -96,7 +93,6 @@ function setup(root: HTMLElement): void {
       void line.offsetWidth;
       line.classList.add("pulse");
     }
-    // The marker stays for a second. With reduced motion it stays until the next request.
     if (!reduced()) attemptTimer = window.setTimeout(() => (attempt.hidden = true), 1000);
   }
 
@@ -158,7 +154,6 @@ function setup(root: HTMLElement): void {
     q<HTMLButtonElement>("[data-stop]").focus();
   });
 
-  // The simulated room. The fan cools it toward 24 degC at full speed, as the mock driver's desk fan does.
   window.setInterval(() => {
     const target = HERO_START_TEMPERATURE - (7 * fanValue()) / 100;
     temperature += (target - temperature) * 0.25 + noise();

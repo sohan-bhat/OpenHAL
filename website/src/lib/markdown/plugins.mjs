@@ -1,5 +1,3 @@
-// Markdown plugins for rendering the repository's own documents on the site.
-
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { visit } from "unist-util-visit";
@@ -12,7 +10,6 @@ function textOf(node) {
   return (node.children ?? []).map(textOf).join("");
 }
 
-/** Move the first level one heading into frontmatter as `title`, so the page header shows it once. */
 export function remarkTitle() {
   return (tree, file) => {
     const index = tree.children.findIndex((node) => node.type === "heading" && node.depth === 1);
@@ -25,7 +22,6 @@ export function remarkTitle() {
   };
 }
 
-/** Point links between repository documents at their pages on the site. Unpublished targets become text. */
 export function remarkRepoLinks() {
   return (tree, file) => {
     const source = file.path ? resolve(file.path) : null;
@@ -64,7 +60,6 @@ function classList(node) {
   return Array.isArray(value) ? value.map(String) : value ? String(value).split(" ") : [];
 }
 
-/** Wrap code blocks in a labelled module, mark tested snippets and set shell prompts apart. */
 export function rehypeCodeBlocks() {
   return (tree) => {
     visit(tree, "element", (node, index, parent) => {
@@ -117,7 +112,6 @@ export function rehypeCodeBlocks() {
   };
 }
 
-/** Label every table cell with its column header, so narrow screens can show rows as label and value pairs. */
 export function rehypeTables() {
   return (tree) => {
     visit(tree, "element", (node, index, parent) => {

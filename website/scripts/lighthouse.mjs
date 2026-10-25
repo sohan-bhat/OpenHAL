@@ -1,7 +1,3 @@
-// Run Lighthouse on site pages against the preview server, headless, and print the four scores.
-// node scripts/lighthouse.mjs <lighthouse-bin> <path>[,<path>...] [mobile|desktop]
-// Lighthouse is not a dependency of the site. Point the first argument at an installed copy.
-
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync } from "node:fs";
 import { chromium } from "playwright";

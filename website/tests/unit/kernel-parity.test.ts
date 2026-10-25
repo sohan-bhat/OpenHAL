@@ -1,6 +1,3 @@
-// The TypeScript kernel port against the Python kernel's answers in expected.json.
-// tests/website/test_kernel_parity.py writes and checks that file with the real kernel.
-
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";

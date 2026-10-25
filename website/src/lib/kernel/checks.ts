@@ -1,8 +1,3 @@
-/**
- * Value checks, ported from openhal/kernel/checks.py. Units, types, ranges, steps, enums and the
- * rate of change. Each failure is a Block with the same code and message as the Python kernel.
- */
-
 import type { ArgSpec, WriteChannel } from "./model";
 import { formatF, isClose, pyFloatRepr, pyRound } from "./pyformat";
 import { UnitError, convert, formatQuantity, parseQuantity } from "./units";
@@ -29,7 +24,6 @@ function isWriteChannel(spec: WriteChannel | ArgSpec): spec is WriteChannel {
   return "max_change_per_s" in spec;
 }
 
-/** A channel's file limits combined with session limits, which can only narrow them. */
 export function effectiveLimits(spec: WriteChannel | ArgSpec, tightened?: Tightened | null): Limits {
   let low = spec.min as number;
   let high = spec.max as number;
@@ -47,7 +41,6 @@ function pyRawText(raw: number | bigint): string {
   return Number.isInteger(raw) ? String(raw) : pyFloatRepr(raw);
 }
 
-/** Convert a raw value into the channel's unit and type and check every static limit. */
 export function normalize(
   name: string,
   spec: WriteChannel | ArgSpec,
@@ -127,7 +120,6 @@ function number(name: string, spec: WriteChannel | ArgSpec, raw: unknown, tighte
   return value;
 }
 
-/** Block a change bigger than `rate` times the elapsed time since the reference value. */
 export function checkRate(name: string, unit: string, rate: number | null, next: number, reference: number | null, elapsedS: number): void {
   if (rate === null || reference === null) return;
   const elapsed = Math.min(Math.max(elapsedS, 0), 3600);

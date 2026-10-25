@@ -1,7 +1,3 @@
-// Where each Markdown file from the repository is published on the site. Paths are repository
-// relative. The docs collection, the link rewriter and the docs index all read this one table.
-
-/** @type {Array<{ repo: string, route: string, group: string, optional?: boolean }>} */
 export const FIXED_ROUTES = [
   { repo: "docs/guide/quickstart.md", route: "/docs/quickstart/", group: "Guides" },
   { repo: "docs/guide/concepts.md", route: "/docs/concepts/", group: "Guides" },
@@ -21,14 +17,12 @@ export const FIXED_ROUTES = [
   { repo: "spec/MHS-MAPPING.md", route: "/spec/mhs-mapping/", group: "Spec" },
 ];
 
-/** Glob patterns, relative to the repository root, for the docs collection. */
 export const DOC_PATTERNS = [
   ...FIXED_ROUTES.map((item) => item.repo),
   "docs/drivers/*.md",
   "spec/versions/*/SPEC.md",
 ];
 
-/** The site route for a repository path, or null when the file isn't published. */
 export function routeFor(repoPath) {
   const path = repoPath.replace(/^\.?\//, "");
   const fixed = FIXED_ROUTES.find((item) => item.repo === path);

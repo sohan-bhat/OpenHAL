@@ -1,14 +1,4 @@
-/**
- * Python string formatting, reproduced exactly where the kernel's messages depend on it.
- *
- * The Python kernel formats numbers with `format(x, ".6g")`, `format(x, "g")`, `format(x, ".1f")`
- * and `repr(x)`. Messages must match character for character, so these helpers follow CPython's
- * rules for each format rather than JavaScript's number to string conversion.
- */
-
-/** Digits and exponent of the shortest representation that round-trips, as CPython's repr uses. */
 function shortest(x: number): { digits: string; exp: number } {
-  // JavaScript's ToString also yields the shortest round-trip digits. Only the layout differs.
   const text = Math.abs(x).toExponential();
   const [mantissa, exponent] = text.split("e");
   return { digits: mantissa.replace(".", ""), exp: Number(exponent) };
@@ -30,7 +20,6 @@ function exponentText(exp: number): string {
   return `e${exp < 0 ? "-" : "+"}${magnitude}`;
 }
 
-/** `repr(float)` in CPython. 100.0 is "100.0", 1e-05 is "1e-05", 1e16 is "1e+16". */
 export function pyFloatRepr(x: number): string {
   const odd = special(x);
   if (odd) return odd;
@@ -51,7 +40,6 @@ export function pyFloatRepr(x: number): string {
   return `${sign(x)}${text}`;
 }
 
-/** `str(value)` for the Python values the kernel puts in messages. */
 export function pyStr(value: unknown): string {
   if (typeof value === "boolean") return value ? "True" : "False";
   if (typeof value === "number") return pyFloatRepr(value);
@@ -60,7 +48,6 @@ export function pyStr(value: unknown): string {
   return String(value);
 }
 
-/** `format(x, ".{precision}g")` in CPython, including the `g` default of six significant digits. */
 export function formatG(x: number, precision = 6): string {
   const odd = special(x);
   if (odd) return odd;
@@ -80,15 +67,12 @@ export function formatG(x: number, precision = 6): string {
   return `${sign(x)}${body}`;
 }
 
-/** `format(x, ".{digits}f")` in CPython. */
 export function formatF(x: number, digits: number): string {
   const odd = special(x);
   if (odd) return odd;
-  // CPython keeps the sign of a negative number that rounds to zero, so -0.04 is "-0.0".
   return `${sign(x)}${Math.abs(x).toFixed(digits)}`;
 }
 
-/** `repr(str)` in CPython, for names and units quoted in messages. */
 export function pyStrRepr(text: string): string {
   const quote = text.includes("'") && !text.includes('"') ? '"' : "'";
   let out = "";
@@ -105,7 +89,6 @@ export function pyStrRepr(text: string): string {
   return `${quote}${out}${quote}`;
 }
 
-/** Python's `math.isclose`. */
 export function isClose(a: number, b: number, relTol = 1e-9, absTol = 0): boolean {
   if (a === b) return true;
   if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
@@ -113,7 +96,6 @@ export function isClose(a: number, b: number, relTol = 1e-9, absTol = 0): boolea
   return diff <= Math.max(relTol * Math.max(Math.abs(a), Math.abs(b)), absTol);
 }
 
-/** Python's built-in `round` to the nearest integer, ties to even. */
 export function pyRound(x: number): number {
   const floor = Math.floor(x);
   const diff = x - floor;

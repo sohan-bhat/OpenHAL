@@ -1,6 +1,3 @@
-/* The limit line on a control track (DESIGN.md, Signature element). Shared by the hero demo and
-   the playground. Positions are percentages of the track, set as custom properties. */
-
 .limit-track {
   position: relative;
   height: 76px;
@@ -59,7 +56,6 @@
   }
 }
 
-/* How far the value may move right now under its rate limit, a short bracket with diagonal ends. */
 .limit-track .rate {
   position: absolute;
   top: 30px;
@@ -104,7 +100,6 @@
   border-radius: var(--radius);
 }
 
-/* The attempted value, hollow, beyond the limit line. */
 .limit-track .attempt {
   position: absolute;
   top: 36px;

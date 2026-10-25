@@ -1,12 +1,8 @@
-// The hero's desk fan, from spec/examples, and what the kernel says to the first request.
-// The page renders this at build time, then the browser runs the same kernel port live.
-
 import deskFanText from "../../../spec/examples/desk-fan-confirmed.hal.yaml?raw";
 import { HERO_CHANNEL, HERO_DEVICE, HERO_FIRST_REQUEST, HERO_START_TEMPERATURE } from "./hero-shared";
 import { Kernel, agent, loadDeviceFile, type Decision, type DeviceFile } from "./kernel";
 import { parseDeviceYaml } from "./kernel/yaml";
 
-/** The parsed device file as plain JSON, with integers as numbers, for the browser. */
 export function heroRaw(): unknown {
   return JSON.parse(JSON.stringify(parseDeviceYaml(deskFanText), (_key, value) => (typeof value === "bigint" ? Number(value) : value)));
 }

@@ -1,7 +1,3 @@
-// The copy rules from docs/DESIGN.md, checked on everything this workstream writes. No em or en
-// dashes anywhere, and in running prose no colons, semicolons, exclamation marks or banned words.
-// "unlock" is allowed only as the literal control, in code.
-
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,7 +19,6 @@ function walk(dir: string, suffixes: string[]): string[] {
   });
 }
 
-/** Prose lines of a Markdown file. Code, headings, tables, front matter and list labels are left out. */
 function proseLines(text: string): Array<[number, string]> {
   const out: Array<[number, string]> = [];
   let fence = false;

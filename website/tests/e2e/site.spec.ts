@@ -97,7 +97,6 @@ test.describe("playground", () => {
     await page.getByLabel("Simulated reading for door_closed").fill("true");
     await page.getByLabel("Simulated reading for door_closed").press("Enter");
     await breaker.getByLabel("Channel or action").selectOption("laser_power");
-    // laser_power may move 30 % per second, so give the window a moment to open.
     await page.waitForTimeout(1000);
     await breaker.getByLabel("Value").fill("10 %");
     await breaker.getByRole("button", { name: "Send" }).click();

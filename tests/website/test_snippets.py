@@ -26,7 +26,6 @@ SOURCES = [
     *sorted((ROOT / "docs" / "guide").glob("*.md")),
     *sorted((ROOT / "website" / "src" / "content").rglob("*.md")),
 ]
-# The orchestrator writes this guide. The website renders it but doesn't own its snippets.
 NOT_OURS = {ROOT / "docs" / "guide" / "driver-writer.md"}
 FENCE = re.compile(r"^```([a-z]+)([^\n]*)\n(.*?)^```", re.M | re.S)
 CHECKED_LANGUAGES = {"sh", "bash", "console", "python", "yaml", "json"}

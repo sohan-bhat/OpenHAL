@@ -1,6 +1,3 @@
-// How `openhal write` and `openhal action` turn typed words into a command (openhal/cli), so the
-// playground's request line behaves like the real command line.
-
 import { pyStrRepr } from "../kernel/pyformat";
 import type { DeviceFile } from "../kernel";
 
@@ -13,7 +10,6 @@ export function parseBool(text: string): boolean {
   throw new CliError(`Expected true or false, got ${pyStrRepr(text)}.`);
 }
 
-/** `_write_value` in openhal/cli/control_cmd.py. */
 export function writeValue(file: DeviceFile, channel: string, text: string): unknown {
   const value = text.trim();
   if (!value) throw new CliError("Give a value, with a unit for numbers, for example 60 % or 25 degC.");
@@ -21,7 +17,6 @@ export function writeValue(file: DeviceFile, channel: string, text: string): unk
   return value;
 }
 
-/** `parse_pairs` in openhal/cli/_common.py. Bool arguments become true or false, the rest stays text. */
 export function actionArgs(file: DeviceFile, action: string, pairs: string[]): Record<string, unknown> {
   const spec = file.actions[action];
   const parsed: Record<string, unknown> = {};
@@ -35,7 +30,6 @@ export function actionArgs(file: DeviceFile, action: string, pairs: string[]): R
   return parsed;
 }
 
-/** Split `seconds=2 s axes=all` into pairs, keeping a unit after a space with its number. */
 export function splitPairs(text: string): string[] {
   const pairs: string[] = [];
   for (const word of text.trim().split(/\s+/).filter(Boolean)) {

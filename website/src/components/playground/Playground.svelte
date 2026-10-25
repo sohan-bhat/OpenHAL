@@ -1,7 +1,4 @@
 <script lang="ts">
-  // The device file playground. Edit a .hal.yaml, see it checked against the spec's JSON Schema as
-  // you type, see the controls the dashboard would draw, and send writes to the TypeScript kernel
-  // port to watch its rules block unsafe ones. Everything runs in the browser. Demo only.
   import { onDestroy, onMount } from "svelte";
   import LimitControl from "./LimitControl.svelte";
   import {
@@ -81,15 +78,12 @@
         const key = deviceId(loaded);
         if (!found.has(key) || item.text.includes("confirmed:")) found.set(key, { file: loaded, path: item.path });
       } catch {
-        // Every example is valid. A broken one just isn't offered as a companion.
       }
     }
     return found;
   }
-  // Parsed only when a file names another device, to keep the first load light.
   let library: Map<string, { file: DeviceFile; path: string }> | null = null;
 
-  // Simulated sensors start in the middle of their sanity range, or at zero without one.
   function simulated(device: DeviceFile): Record<string, unknown> {
     const values: Record<string, unknown> = {};
     for (const [name, spec] of Object.entries(device.read)) {
@@ -128,7 +122,6 @@
     version += 1;
   }
 
-  // The text the current kernel was built from. Typing rebuilds it, nothing else does.
   let builtText: string | null = null;
 
   function rebuild(current: string): void {
@@ -152,7 +145,6 @@
       text = chosen.text;
     }
     rebuild(text);
-    // Simulated devices stream their readings, so values stay fresh and rate windows grow.
     clock = setInterval(() => {
       if (!kernel) return;
       for (const [device, runtime] of kernel.devices) {
@@ -913,7 +905,6 @@
     border-top: 1px solid var(--rule);
   }
 
-  /* An agent's request and a person's decision never look alike. */
   .log li.agent {
     border-left: 3px dashed var(--ink-2);
   }

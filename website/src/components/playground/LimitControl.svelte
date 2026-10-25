@@ -1,6 +1,4 @@
 <script lang="ts">
-  // A number control with its limit line, as the dashboard draws one (DESIGN.md). The native
-  // slider spans min to max, so the thumb physically stops at the line.
   import { formatG } from "../../lib/kernel/pyformat";
 
   interface Props {
@@ -90,7 +88,6 @@
     cursor: pointer;
   }
 
-  /* The slider itself is invisible over the drawn track. Focus shows on the track instead. */
   .slider:has(input:focus-visible) {
     outline: 2px solid var(--signal);
     outline-offset: 2px;

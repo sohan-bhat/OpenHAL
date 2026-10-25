@@ -63,8 +63,6 @@ class Session:
         self.hub: EmbeddedHub | None = None
         self.runner = CliRunner()
 
-    # ------------------------------------------------------------------ lifecycle
-
     def close(self) -> None:
         if self.hub is not None:
             self.hub.stop()
@@ -87,8 +85,6 @@ class Session:
                     os.environ.pop(key, None)
                 else:
                     os.environ[key] = value
-
-    # ------------------------------------------------------------------ commands
 
     def expand(self, text: str) -> str:
         return text.replace("~/.openhal", str(self.home)).replace("$OPENHAL_HOME", str(self.home))

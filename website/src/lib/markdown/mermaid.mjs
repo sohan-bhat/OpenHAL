@@ -1,6 +1,3 @@
-// Mermaid diagrams are rendered to SVG at build time, in the design system's colors (docs/DESIGN.md).
-// The neutrals are mixed from ink and panel only, as the tokens are.
-
 const font = '"Atkinson Hyperlegible Next", Verdana, sans-serif';
 
 function theme({ ink, panel, rule, tint, signal }) {

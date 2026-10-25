@@ -1,5 +1,3 @@
-// The favicon set, every size drawn from the same mark as the header (src/lib/brand-mark.ts).
-
 import { markSvg } from "./brand-mark";
 import { renderPng } from "./render-png";
 

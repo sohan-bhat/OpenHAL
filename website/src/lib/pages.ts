@@ -1,6 +1,3 @@
-// Every page on the site with its title, for the Open Graph images. A test checks that every
-// built page's og:image exists, so a page missing from this list fails the build check.
-
 import { getCollection } from "astro:content";
 import { routeFor } from "./markdown/routes.mjs";
 import { libraryEntries } from "./library";
@@ -8,7 +5,6 @@ import { showDrafts } from "./drafts";
 import { docTitle } from "./docs-nav";
 import { specVersions } from "./spec-versions";
 
-/** The home page headline, also its title and Open Graph image. */
 export const HOME_TITLE = "AI agents drive real hardware. People set the limits.";
 
 export interface PageInfo {
@@ -17,7 +13,6 @@ export interface PageInfo {
   kind: string;
 }
 
-/** The Open Graph image for a page path, for example /og/docs/safety.png. */
 export function ogPath(pathname: string): string {
   const slug = pathname.replace(/^\/+|\/+$/g, "");
   return `/og/${slug || "index"}.png`;

@@ -1,6 +1,3 @@
-// The driver catalog, imported from drivers/catalog.json at build time. The file grows as driver
-// workstreams merge, so nothing here names a driver.
-
 import catalog from "../../../drivers/catalog.json";
 
 export interface Estimate {
@@ -35,7 +32,6 @@ export function countBy<T extends string | number>(items: Driver[], key: (driver
   return counts;
 }
 
-/** Which lamp a status gets. Verified and implemented run, the rest don't yet. */
 export function statusLamp(status: string): "ok" | "warning" | "unverified" {
   if (status === "verified" || status === "implemented") return "ok";
   if (status === "in progress" || status === "stub") return "warning";

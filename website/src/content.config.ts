@@ -3,8 +3,6 @@ import { glob } from "astro/loaders";
 import { z } from "astro/zod";
 import { DOC_PATTERNS } from "./lib/markdown/routes.mjs";
 
-// The repository's own Markdown, read at build time so the site can't drift from it.
-// Entry ids are repository paths, for example docs/SAFETY.md.
 const docs = defineCollection({
   loader: glob({ base: "..", pattern: DOC_PATTERNS, generateId: ({ entry }) => entry }),
   schema: z.object({ title: z.string().optional() }).passthrough(),
@@ -21,7 +19,6 @@ const blog = defineCollection({
   }),
 });
 
-// Short Markdown pieces the landing page shows, such as the quickstart. Their code blocks are tested.
 const snippets = defineCollection({
   loader: glob({ base: "./src/content/snippets", pattern: "**/*.md" }),
   schema: z.object({ title: z.string() }),

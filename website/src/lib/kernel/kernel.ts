@@ -1,12 +1,3 @@
-/**
- * A TypeScript port of the safety kernel's decisions, for the website's in-browser demos.
- *
- * It follows openhal/kernel/kernel.py check by check, in the same order, with the same codes and
- * messages, and a parity test runs the same commands through both. Devices here are simulated in
- * memory, like the Python mock driver. This port is demo-only and never protects hardware
- * (ADR 0009). The real kernel runs in the hub.
- */
-
 import { Block, checkRate, effectiveLimits, normalize, type Tightened } from "./checks";
 import * as expr from "./expressions";
 import {
@@ -103,7 +94,6 @@ interface RuleState {
 
 export interface Runtime {
   file: DeviceFile;
-  /** The simulated device's own values, like the Python mock driver keeps. */
   values: Record<string, unknown>;
   connected: boolean;
   connectedAt: number;
@@ -150,7 +140,6 @@ function key(...parts: string[]): string {
 }
 
 function newestOf(samples: Sample[]): Sample {
-  // Python's max() keeps the first of equal elements.
   let best = samples[0];
   for (const sample of samples.slice(1)) if (sample.at > best.at) best = sample;
   return best;
@@ -195,7 +184,6 @@ function asValue(target: Runtime, channel: string, raw: unknown): expr.Value | n
   return null;
 }
 
-/** Other devices a file's interlocks, preconditions and watchdog rules name, by id. */
 export function deviceRefs(file: DeviceFile): string[] {
   return [...new Set(fileRefs(file).map((ref) => ref.device).filter((device): device is string => !!device))].sort();
 }
@@ -247,7 +235,6 @@ function safeValue(file: DeviceFile, channel: string): number | null {
   return null;
 }
 
-/** The values a simulated device starts with, as the Python mock driver's defaults. */
 export function defaultValues(file: DeviceFile, initial: Record<string, unknown> = {}): Record<string, unknown> {
   const values: Record<string, unknown> = {};
   for (const [name, spec] of Object.entries(file.write)) {
@@ -295,7 +282,6 @@ export class Kernel {
     this.confirmTtlS = options.confirmTtlS ?? 300;
   }
 
-  // ------------------------------------------------------------ registration
 
   register(file: DeviceFile, initial: Record<string, unknown> = {}): Runtime {
     const id = deviceId(file);
@@ -356,7 +342,6 @@ export class Kernel {
     return runtime;
   }
 
-  // ------------------------------------------------------------ connection and readings
 
   connect(id: string): void {
     const runtime = this.runtime(id);
@@ -380,7 +365,6 @@ export class Kernel {
     for (const channel of channels) this.noteReading(id, channel, runtime.values[channel], channelUnit(runtime.file, channel));
   }
 
-  /** Record a value read from the device, converted into the channel's unit. */
   noteReading(id: string, channel: string, value: unknown, unit: string | null = null): void {
     const runtime = this.devices.get(id);
     if (!runtime) return;
@@ -407,7 +391,6 @@ export class Kernel {
     runtime.reads.set(channel, { value: current, at: now, commanded: false });
   }
 
-  /** The simulated device answers a read, like `kernel.read` with the mock driver. */
   read(id: string, channel: string): unknown {
     const runtime = this.runtime(id);
     if (!(channel in runtime.file.read) && !(channel in runtime.file.write)) {
@@ -434,7 +417,6 @@ export class Kernel {
     return null;
   }
 
-  // ------------------------------------------------------------ evaluation
 
   evaluate(command: Command, principal: Principal, shadow: Shadow | null = null): Decision {
     return this.decide(command, principal, false, shadow);
@@ -471,7 +453,6 @@ export class Kernel {
 
   private evaluateChecks(command: Command, principal: Principal, approved: boolean, shadow: Shadow | null): Decision {
     const now = this.clock();
-    // 1. Command shape.
     const runtime = this.devices.get(command.device);
     if (!runtime) throw new Block("unknown_target", `Blocked. There is no device ${pyStrRepr(command.device)}. Run openhal devices.`);
     const file = runtime.file;
@@ -498,16 +479,13 @@ export class Kernel {
         throw new Block("bad_request", `Blocked. ${command.action} has ${parts.join(" and ")}.`);
       }
     }
-    // 2. Stop lock.
     if (this.stopped) throw new Block("stopped", "Blocked. The hub is stopped. A human must unlock it before anything can move.");
-    // 3. File state.
     if (!writable(file)) {
       throw new Block(
         "read_only_file",
         `Blocked. ${command.device} is read-only until a human confirms limits for ${unconfirmed(file).join(", ")}. Run the limits interview.`,
       );
     }
-    // 4. Device state, including interlocks that point at devices that aren't registered.
     const dangling = [...this.devices.entries()]
       .filter(([, item]) => item.referenceProblem)
       .map(([id, item]) => `${id} (${item.referenceProblem})`);
@@ -520,7 +498,6 @@ export class Kernel {
     }
     const reason = availability(runtime);
     if (reason) throw new Block("device_unavailable", `Blocked. ${command.device} is ${reason}.`);
-    // 5. Principal scope.
     const hazard = effectiveHazard(file);
     if (principal.kind === "system") throw new Block("not_permitted", "Blocked. The system principal is internal to the kernel.");
     if (principal.kind === "agent" && principal.scope === "read") {
@@ -529,7 +506,6 @@ export class Kernel {
     if (!covers(principal, hazard)) {
       throw new Block("not_permitted", `Blocked. ${command.device} is ${hazard} hazard and this client's ${principal.scope} scope doesn't cover it.`);
     }
-    // 6 to 9. Units, type, range, step.
     let value: unknown;
     let changes: Map<string, unknown>;
     if (command.kind === "write") {
@@ -542,7 +518,6 @@ export class Kernel {
       value = args;
       changes = new Map(actionSpec!.effects.map((effect) => [effect, UNKNOWN]));
     }
-    // 10. Rate of change.
     if (command.kind === "write" && spec!.type === "number") {
       const limits = effectiveLimits(spec!, this.sessionLimits.get(key(label(principal), command.device, command.channel)));
       if (limits.rate !== null) {
@@ -556,7 +531,6 @@ export class Kernel {
         checkRate(command.channel, spec!.unit as string, limits.rate, value as number, reference, elapsed);
       }
     }
-    // 11. Interlocks and action preconditions.
     const resolver = this.resolver(runtime, changes, now, shadow);
     if (command.kind === "action") {
       for (const condition of actionSpec!.require) {
@@ -568,7 +542,6 @@ export class Kernel {
       }
     }
     this.checkInterlocks(command.device, new Set(changes.keys()), resolver, shadow);
-    // 12. Watchdog budgets.
     for (const state of runtime.rules) {
       if (!state.exhausted) continue;
       const mentioned = expr.references(state.tree).filter((ref) => ref.device === null).map((ref) => ref.name);
@@ -576,7 +549,6 @@ export class Kernel {
         throw new Block("duration_exceeded", `Blocked. ${state.rule.when} already ran for its ${seconds(state.rule.for_)} limit. Wait for the budget to reset.`);
       }
     }
-    // 14. Confirmation. (Check 13, serialization, has nothing to wait for in the browser.)
     const fields = { value, unit: spec !== null ? spec.unit : null };
     let tier = spec !== null ? spec.confirm : actionSpec!.confirm;
     if (hazard === "high") tier = "confirm-each-time";
@@ -604,7 +576,6 @@ export class Kernel {
   ): boolean {
     if (principal.kind === "human" || approved) return true;
     if (principal.kind === "routine") {
-      // Routine approvals are HMAC signed by the hub. The browser holds no key, so none is valid here.
       if (effectiveHazard(runtime.file) === "high") return false;
       return tier === "none";
     }
@@ -692,9 +663,7 @@ export class Kernel {
     };
   }
 
-  // ------------------------------------------------------------ execution
 
-  /** Evaluate and, if allowed, run a command on the simulated device. Queues it if it needs a human. */
   execute(command: Command, principal: Principal, request: Request | null = null): Decision {
     const runtime = this.devices.get(command.device);
     if (!runtime) return this.evaluate(command, principal);
@@ -735,7 +704,6 @@ export class Kernel {
     return { ...decision, status: "done", message: `Done. ${command.action} ran.` };
   }
 
-  /** Evaluate commands in order as if each allowed one had run. Nothing is sent anywhere. */
   dryRun(commands: Command[], principal: Principal): Decision[] {
     const shadow: Shadow = { values: new Map(), stamps: new Map(), now: 0 };
     return commands.map((command) => {
@@ -748,7 +716,6 @@ export class Kernel {
     });
   }
 
-  // ------------------------------------------------------------ confirmations
 
   private queueAdd(command: Command, principal: Principal, decision: Decision): Request | string {
     const now = this.clock();
@@ -786,7 +753,6 @@ export class Kernel {
     return [...this.requests.values()].filter((request) => request.status === "pending").sort((a, b) => a.createdAt - b.createdAt);
   }
 
-  /** A human approves a queued request. Every check runs again against the current state. */
   confirm(requestId: string, principal: Principal): Decision {
     const request = this.requests.get(requestId);
     if (principal.kind !== "human") throw new KernelError("permission", "Only a human can approve a request.");
@@ -823,9 +789,7 @@ export class Kernel {
     return request;
   }
 
-  // ------------------------------------------------------------ session limits
 
-  /** Narrow a channel's limits for this principal's session. Widening is refused with cannot_loosen. */
   tighten(principal: Principal, id: string, channel: string, limits: { min?: unknown; max?: unknown; rate?: unknown }): Tightened {
     const runtime = this.devices.get(id);
     if (!runtime) throw new KernelError("lookup", `There is no device '${id}'.`);
@@ -870,9 +834,7 @@ export class Kernel {
     return updated;
   }
 
-  // ------------------------------------------------------------ stop and unlock
 
-  /** Lock writes, cancel pending requests, then put every device in its safe state. */
   stopAll(_principal: Principal, reason = "stop requested"): { reason: string; devices: DeviceStopResult[]; cancelled: number } {
     this.stopped = true;
     this.stopReason = reason;
@@ -923,7 +885,6 @@ export class Kernel {
     return { device: id, status: errors.length >= steps ? "failed" : "partial", detail: errors.join("; ") };
   }
 
-  /** A human lifts the stop lock by typing the unlock phrase. */
   unlock(principal: Principal, phrase: string): void {
     if (principal.kind !== "human") throw new KernelError("permission", "Only a human can unlock after a stop.");
     if (phrase.trim().toLowerCase() !== UNLOCK_PHRASE) throw new KernelError("value", `Type ${UNLOCK_PHRASE} to confirm.`);
@@ -932,9 +893,7 @@ export class Kernel {
     this.approvalWindows.clear();
   }
 
-  // ------------------------------------------------------------ watchdog
 
-  /** Advance max-duration budgets and apply rules whose budget ran out. Returns what fired. */
   tick(): string[] {
     const fired: string[] = [];
     const now = this.clock();
