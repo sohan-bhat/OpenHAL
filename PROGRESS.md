@@ -8,15 +8,10 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- packaging. The init wizard, launchd and systemd services, the Pi install script and install timing (BRIEF-packaging.md).
-- e2e. `openhal demo --full`, the end-to-end run on mocks (BRIEF-e2e.md).
-- consistency. The plant waterer in every remaining page, the docs command check and the consistency test (BRIEF-consistency.md).
+- handoff, resumed. The last hardware test plan fixes and docs/hardware-tests/README.md (BRIEF-handoff.md).
+- quality. Lighthouse, axe, the orphan audit, the plant waterer as the playground default and the library page fixes (BRIEF-quality.md).
 
-Paused for the cap on 2026-10-25, to resume as slots free, in this order.
-
-1. handoff (branch worktree-agent-a8ee9dde6a0972a09, 11 commits, nothing uncommitted). Done are CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, ROADMAP, LAUNCH and fixes to 31 hardware test plans. Left are the per-plan fixes it had started on indi, lerobot and moonraker, and docs/hardware-tests/README.md, the ordered index with the plant waterer first.
-2. quality (branch worktree-agent-a93add9689c8b7b2f, no work yet). Start it fresh from BRIEF-quality.md.
-3. A fresh critic for the final design scores (BRIEF-critic.md), after quality.
+Queued. A fresh critic for the final design scores (BRIEF-critic.md), after quality.
 
 Kernel coverage on the full suite, 2026-10-25. 100 % of lines but two, 99 % of branches. The four branches left are fail-closed guards the public API can't reach (an expression naming a device the reference check already blocked, a bare name in a hub expression, a missing asyncio task, and a safe state value that isn't a number on a rate-limited number channel).
 
@@ -47,6 +42,9 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - Code comments removed from all Python and C++ code.
 - The bambu driver ships, approved by the owner on 2026-10-25.
 - M12. The starter library, 33 unverified device files in library/ across 14 drivers, bundled in the wheel as openhal/library_data, with `openhal library list|show|add`. Discovery no longer matches on a USB class or mDNS type alone.
+- M13. `openhal init` is a wizard in a terminal and takes safe defaults with `--yes`. It adds found and self-describing devices read-only, makes an agent token and prints or saves the MCP setup for Claude Desktop, Claude Code and Cursor. `openhal service` runs the hub under launchd or systemd. scripts/install-pi.sh installs on a Raspberry Pi. Install to the first agent read takes 9.6 s and 8.5 s (docs/verification/install.md), against a 60 s goal.
+- M14 so far. `openhal demo --full` runs discovery, the driver writer on the plant waterer sketch, a scripted limits interview, an agent over MCP drafting a routine a person enables, the routine watering, and a refused 120 s water, all on mocks, recorded in docs/demo/e2e.yaml. The plant waterer is the main example on every page. tests/docs/test_commands.py checks every documented command against the CLI and runs the runnable ones on a mock hub, and tests/docs/test_consistency.py checks method names, error codes, traces, terms and conformance tables against ADR 0015, the schema and the code.
+- Fixes found on the way. scpi notices a LAN instrument that closed its socket (the Linux CI failure). Home Assistant WebSocket connects wait for the first states. Siglent SPD supplies get their own commands. The LPD8 example has the right USB id. The writer confirms by name, gives the hub the saved path and polls self-described channels at their report interval.
 - Unit safety. pint no longer converts between angles and plain numbers (50 % to a degree channel, 1 Hz to rpm). Channels with no read-back stay controllable under a rate limit. A bare number gets UNIT_INVALID in dry runs instead of a hub error.
 - REST reports conformance, simulated drivers, run limits, requirement reasons, the protocol version and the LAN setting.
 
@@ -56,7 +54,9 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - tests/drivers/firmata/test_firmata.py::test_silent_board_times_out can time out under full-suite load on this Mac. It passes alone.
 - Library matching proposals (library report). New `match` keys for Pi boards and HATs, libcamera models, Alpaca servers, MIDI port names and MQTT topics, so the six library files with no identifier can be matched. Discovery that reports more, with scpi sending `*IDN?`, moonraker browsing `_moonraker._tcp`, homeassistant listing entity ids, modbus scanning unit ids, mqtt listening for announce topics and esphome reporting `mdns`.
 - Driver proposals still open. A restore_connection hook, a push path for drivers that receive values, cached-read declarations, per-driver install hints, argument references in action requirements, and YAML 1.1 warnings in openhal file validate.
-- The starter library (M12), packaging (M13), verification and handoff, in progress.
+- Packaging proposals. Make the writer's `_force_suggested` public for init. Split ESPHome's `ip:port` in the writer instead of init. A `self_describing` flag in DriverInfo. Lazy imports so `openhal mcp` starts faster. Revoke the old agent token when init makes a new one. Intel Mac installs need `--no-build` while cryptography and zeroconf ship Apple Silicon wheels only.
+- Writer interview gaps (e2e report). It asks nothing about action requirements, `max_runs` or an action safe state, so a writer-made plant waterer file lacks `tank == ok`, 3 runs per 1 h and `safe_state: {action: stop}`.
+- Verification and handoff, in progress. Lighthouse, axe and the orphan audit, the final critique, and FINAL-REPORT.md.
 - Confirm on GitHub CI that the scpi fix passes on Linux (the owner approved the fix and the push on 2026-10-25).
 
 ## Milestone 2 review
