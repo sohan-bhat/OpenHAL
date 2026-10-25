@@ -1,8 +1,9 @@
-"""A simulated board running the OpenHAL Arduino library's desk fan example.
+"""Simulated boards running the OpenHAL Arduino library's examples.
 
-It speaks the real protocol over an in-memory line transport, enforces its own limits, applies its
-safe state when heartbeats stop, and gives the temperature some physics: the fan cools a warm room.
-Tests, the conformance case and `openhal demo` use it.
+They speak the real protocol over an in-memory line transport, enforce their own limits and apply
+their safe state when heartbeats stop. The desk fan cools a warm room. The plant waterer
+(examples/plant-waterer/) wets the soil while its pump runs and refuses to pump from an empty tank.
+Tests, the conformance case and `openhal demo` use them.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ import asyncio
 import json
 import random
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -36,6 +38,17 @@ class SimChannel:
     every_ms: int = 0
     lo: float | None = None
     hi: float | None = None
+    states: tuple[str, ...] = ()
+    internal: bool = False
+
+
+@dataclass
+class SimAction:
+    """An action the board runs. `run` gets the arguments by name and returns a refusal reason or None."""
+
+    name: str
+    args: tuple[tuple[str, str, float, float], ...]
+    run: Callable[[dict[str, float]], str | None]
 
 
 @dataclass
@@ -48,6 +61,7 @@ class FirmwareSimulator:
     ambient_c: float = 31.0
     seed: int = 7
     channels: dict[str, SimChannel] = field(default_factory=dict)
+    actions: dict[str, SimAction] = field(default_factory=dict)
     to_host: asyncio.Queue[str] = field(default_factory=asyncio.Queue)
     safe_events: int = 0
     corrupt_next: bool = False
@@ -70,6 +84,8 @@ class FirmwareSimulator:
         read = []
         write = []
         for channel in self.channels.values():
+            if channel.internal:
+                continue
             if channel.writable:
                 entry: dict[str, Any] = {
                     "n": channel.name,
@@ -85,8 +101,16 @@ class FirmwareSimulator:
                 item: dict[str, Any] = {"n": channel.name, "u": channel.unit, "e": channel.every_ms}
                 if channel.lo is not None and channel.hi is not None:
                     item["lo"], item["hi"] = channel.lo, channel.hi
+                if channel.states:
+                    item["u"], item["s"] = "enum", list(channel.states)
                 read.append(item)
-        return {"p": self.product, "v": self.version, "hb": self.heartbeat_ms, "r": read, "w": write}
+        described = {"p": self.product, "v": self.version, "hb": self.heartbeat_ms, "r": read, "w": write}
+        if self.actions:
+            described["a"] = [
+                {"n": action.name, "g": [{"n": n, "u": u, "min": lo, "max": hi} for n, u, lo, hi in action.args]}
+                for action in self.actions.values()
+            ]
+        return described
 
     def _step(self) -> None:
         now = time.monotonic()
@@ -141,12 +165,46 @@ class FirmwareSimulator:
         elif verb == "SAFE":
             self._apply_safe("host_request")
             self._send(encode(seq, "OK"))
-        elif verb == "READ" and len(args) == 1 and args[0] in self.channels:
-            self._send(encode(seq, "VAL", args[0], format_number(round(self.channels[args[0]].value, 2))))
-        elif verb == "WRITE" and len(args) == 2 and args[0] in self.channels:
+        elif verb == "READ" and len(args) == 1 and self._visible(args[0]):
+            self._send(encode(seq, "VAL", args[0], self._shown(self.channels[args[0]])))
+        elif verb == "WRITE" and len(args) == 2 and self._visible(args[0]):
             self._set_output(seq, args[0], args[1])
+        elif verb == "ACT" and args and args[0] in self.actions:
+            self._run_action(seq, self.actions[args[0]], args[1:])
         else:
             self._send(encode(seq, "ERR", "unknown", verb))
+
+    def _visible(self, name: str) -> bool:
+        return name in self.channels and not self.channels[name].internal
+
+    @staticmethod
+    def _shown(channel: SimChannel) -> str:
+        if channel.states:
+            return channel.states[int(channel.value)]
+        return format_number(round(channel.value, 2))
+
+    def _run_action(self, seq: int, action: SimAction, words: tuple[str, ...]) -> None:
+        if len(words) != 2 * len(action.args):
+            self._send(encode(seq, "ERR", "format", action.name))
+            return
+        given = dict(zip(words[::2], words[1::2], strict=True))
+        values: dict[str, float] = {}
+        for name, _unit, low, high in action.args:
+            try:
+                value = parse_number(given[name])
+            except (KeyError, ProtocolError):
+                self._send(encode(seq, "ERR", "format", name))
+                return
+            if value < low or value > high:
+                bound, limit = ("max", high) if value > high else ("min", low)
+                self._send(encode(seq, "ERR", "limit", name, bound, format_number(limit)))
+                return
+            values[name] = value
+        refused = action.run(values)
+        if refused:
+            self._send(encode(seq, "ERR", "interlock", refused))
+            return
+        self._send(encode(seq, "OK", action.name))
 
     def _set_output(self, seq: int, name: str, text: str) -> None:
         channel = self.channels[name]
@@ -194,11 +252,106 @@ class SimTransport:
         self.open = False
 
 
+@dataclass
+class PlantWatererSimulator(FirmwareSimulator):
+    """The plant waterer board. Defaults match examples/plant-waterer/plant-waterer.ino.
+
+    `speed` runs the soil and the pump faster than real time, so a 20 s watering can be recorded in
+    half a second. Heartbeats always use real time. Soil moisture rises `wet_per_s` points per second
+    of pumping and nothing dries it, so a run is the same every time.
+    """
+
+    product: str = "plant-waterer"
+    heartbeat_ms: int = 3000
+    moisture: float = 31.0
+    tank_ok: bool = True
+    wet_per_s: float = 0.75
+    max_run_s: float = 30.0
+    speed: float = 1.0
+
+    def __post_init__(self) -> None:
+        if not self.channels:
+            self.channels = {
+                "soil_moisture": SimChannel("soil_moisture", "percent", self.moisture, every_ms=1000, lo=0, hi=100),
+                "tank": SimChannel("tank", "enum", 1.0 if self.tank_ok else 0.0, every_ms=1000, states=("empty", "ok")),
+                "pump": SimChannel("pump", "bool", 0.0, writable=True, maximum=1, internal=True),
+            }
+        if not self.actions:
+            self.actions = {
+                "water": SimAction("water", (("duration", "s", 1.0, 30.0),), self._water),
+                "stop": SimAction("stop", (), self._stop),
+            }
+        self._real_start = time.monotonic()
+        self._pump_until = 0.0
+        self._clock = self.now()
+        super().__post_init__()
+
+    def now(self) -> float:
+        """Board time in seconds, `speed` times faster than real time."""
+        return (time.monotonic() - self._real_start) * self.speed
+
+    @property
+    def pumping(self) -> bool:
+        self._step()
+        return self.channels["pump"].value > 0
+
+    def remaining_s(self) -> float:
+        """Real seconds until the pump stops on its own, 0 when it isn't running."""
+        if not self.pumping:
+            return 0.0
+        return max(0.0, self._pump_until - self.now()) / self.speed + 0.05
+
+    def refill(self) -> None:
+        """Someone fills the tank, so the float switch reads ok."""
+        self._step()
+        self.tank_ok = True
+        self.channels["tank"].value = 1.0
+
+    def drain(self) -> None:
+        """The tank runs dry. A running pump stops at once, as the sketch's loop() does."""
+        self._step()
+        self.tank_ok = False
+        self.channels["tank"].value = 0.0
+        if self.channels["pump"].value > 0:
+            self._apply_safe("tank empty")
+
+    def _water(self, args: dict[str, float]) -> str | None:
+        if not self.tank_ok:
+            return "tank_empty"
+        self.channels["pump"].value = 1.0
+        self._pump_until = self.now() + min(args["duration"], self.max_run_s)
+        return None
+
+    def _stop(self, _args: dict[str, float]) -> str | None:
+        self.channels["pump"].value = 0.0
+        return None
+
+    def _step(self) -> None:
+        super()._step()
+        now = self.now()
+        pump = self.channels["pump"]
+        if pump.value > 0:
+            ran = max(0.0, min(now, self._pump_until) - self._clock)
+            self.moisture = min(100.0, self.moisture + self.wet_per_s * ran)
+            if now >= self._pump_until:
+                pump.value = 0.0
+        self._clock = now
+        self.channels["soil_moisture"].value = self.moisture
+
+
+PROFILES: dict[str, Callable[[], FirmwareSimulator]] = {
+    "desk-fan": FirmwareSimulator,
+    "plant-waterer": PlantWatererSimulator,
+}
+
 SIMULATORS: dict[str, FirmwareSimulator] = {}
 """Simulators by name, so a test or the demo can reach the board behind `port: sim:<name>`."""
 
 
 def simulator_for(name: str) -> FirmwareSimulator:
+    """The simulator behind `port: sim:<name>`. `plant-waterer` gets the plant waterer board."""
     if name not in SIMULATORS:
-        SIMULATORS[name] = FirmwareSimulator(product=name if name != "default" else "desk-fan")
+        profile = PROFILES.get(name)
+        product = name if name != "default" else "desk-fan"
+        SIMULATORS[name] = profile() if profile else FirmwareSimulator(product=product)
     return SIMULATORS[name]

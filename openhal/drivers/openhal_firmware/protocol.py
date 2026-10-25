@@ -10,6 +10,8 @@ from typing import Any, Final
 PROTOCOL_VERSION: Final = 1
 MAX_LINE: Final = 250
 MAX_DESC_LINE: Final = 1500
+MAX_ACTION_ARGS: Final = 3
+MAX_STATES: Final = 8
 NAME: Final = re.compile(r"^[a-z][a-z0-9_]{0,23}$")
 NUMBER: Final = re.compile(r"^[+-]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)$")
 
@@ -96,14 +98,41 @@ def parse_description(text: str) -> dict[str, Any]:
                 for field in ("min", "max", "safe"):
                     if not isinstance(item.get(field), int | float):
                         raise ProtocolError(f"DESC w entry {item['n']} needs a numeric {field}.")
+        if key == "r":
+            for item in items:
+                _check_states(item)
+    actions = data.get("a", [])
+    if not isinstance(actions, list):
+        raise ProtocolError("DESC a must be a list.")
+    for action in actions:
+        if not isinstance(action, dict) or not isinstance(action.get("n"), str) or not NAME.match(action["n"]):
+            raise ProtocolError("DESC a has an action without a valid name.")
+        args = action.get("g", [])
+        if not isinstance(args, list) or len(args) > MAX_ACTION_ARGS:
+            raise ProtocolError(f"DESC action {action['n']} has a bad argument list.")
+        for arg in args:
+            valid = isinstance(arg, dict) and isinstance(arg.get("n"), str) and NAME.match(arg["n"])
+            if not valid or not isinstance(arg.get("u"), str):
+                raise ProtocolError(f"DESC action {action['n']} has an argument without a name and unit.")
+            if not all(isinstance(arg.get(field), int | float) for field in ("min", "max")):
+                raise ProtocolError(f"DESC action {action['n']} argument {arg['n']} needs a numeric min and max.")
     return data
+
+
+def _check_states(item: dict[str, Any]) -> None:
+    states = item.get("s")
+    if states is None:
+        return
+    valid = isinstance(states, list) and 0 < len(states) <= MAX_STATES
+    if not valid or not all(isinstance(state, str) and NAME.match(state) for state in states):
+        raise ProtocolError(f"DESC r entry {item['n']} has bad states.")
 
 
 def description_to_sections(data: dict[str, Any]) -> dict[str, Any]:
     """Turn a DESC document into device file sections. Every limit is marked suggested."""
     read: dict[str, Any] = {}
     for item in data.get("r", []):
-        channel: dict[str, Any] = {"unit": item["u"]}
+        channel: dict[str, Any] = {"type": "enum", "values": list(item["s"])} if item.get("s") else {"unit": item["u"]}
         if item.get("e"):
             channel["stream"] = True
         if isinstance(item.get("lo"), int | float) and isinstance(item.get("hi"), int | float):
@@ -125,7 +154,13 @@ def description_to_sections(data: dict[str, Any]) -> dict[str, Any]:
             safe[name] = item["safe"]
         if isinstance(item.get("t"), int | float) and item["t"] > 0:
             notes.append(f"The board returns {name} to its safe value after {item['t'] / 1000:g} s without a write.")
+    actions: dict[str, Any] = {}
+    for action in data.get("a", []):
+        args = {arg["n"]: {"unit": arg["u"], "min": arg["min"], "max": arg["max"]} for arg in action.get("g", [])}
+        actions[action["n"]] = {"args": args, "suggested": True} if args else {"suggested": True}
     sections: dict[str, Any] = {"match": {"firmware": {"product": data["p"]}}, "read": read, "write": write}
+    if actions:
+        sections["actions"] = actions
     if safe:
         sections["safe_state"] = safe
     if data.get("hb"):

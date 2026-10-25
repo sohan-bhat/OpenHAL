@@ -122,7 +122,7 @@ class _Link:
     def __init__(self, transport: Any, timeout_s: float) -> None:
         self.transport = transport
         self.timeout_s = timeout_s
-        self.events: dict[str, tuple[float, float]] = {}
+        self.events: dict[str, tuple[str, float]] = {}
         self.safe_reports: list[str] = []
         self._seq = itertools.cycle(range(1, 65536))
         self._pending: dict[int, asyncio.Future[Message]] = {}
@@ -151,8 +151,7 @@ class _Link:
 
     def _unsolicited(self, message: Message) -> None:
         if message.verb == "EVT" and len(message.args) == 2:
-            with contextlib.suppress(ProtocolError):
-                self.events[message.args[0]] = (parse_number(message.args[1]), time.time())
+            self.events[message.args[0]] = (message.args[1], time.time())
         elif message.verb == "SAFE":
             self.safe_reports.append(" ".join(message.args))
 
@@ -299,8 +298,17 @@ class OpenHalFirmwareDriver(Driver):
         sections["device"] = {"name": description["p"].replace("-", " ").capitalize()}
         return sections
 
-    def _typed(self, channel: str, value: float) -> float | bool:
+    def _typed(self, channel: str, text: str) -> float | bool | str:
+        """A value the board sent as text, in the channel's type. Enum states come as their names."""
         spec = self.device.read.get(channel) or self.device.write.get(channel)
+        if spec is not None and spec.type == "enum":
+            if text not in spec.values:
+                raise DriverError(f"The board reported {channel} as {text!r}, which the device file doesn't list.")
+            return text
+        try:
+            value = parse_number(text)
+        except ProtocolError as exc:
+            raise DriverError(f"The board sent an unreadable value for {channel}.") from exc
         return value != 0 if spec is not None and spec.type == "bool" else value
 
     async def read(self, channel: str) -> Reading:
@@ -312,11 +320,7 @@ class OpenHalFirmwareDriver(Driver):
         reply = await link.request("READ", channel)
         if len(reply.args) != 2 or reply.args[0] != channel:
             raise DriverError(f"The board answered READ {channel} with {' '.join(reply.args)}.")
-        try:
-            value = parse_number(reply.args[1])
-        except ProtocolError as exc:
-            raise DriverError(f"The board sent an unreadable value for {channel}.") from exc
-        return Reading(channel, self._typed(channel, value), unit)
+        return Reading(channel, self._typed(channel, reply.args[1]), unit)
 
     async def _write(self, channel: str, value: float | bool | str) -> Reading | None:
         if isinstance(value, str):
@@ -324,7 +328,21 @@ class OpenHalFirmwareDriver(Driver):
         reply = await self._require_link().request("WRITE", channel, format_number(float(value)))
         if len(reply.args) != 2 or reply.args[0] != channel:
             raise DriverError(f"The board answered WRITE {channel} with {' '.join(reply.args)}.")
-        return Reading(channel, self._typed(channel, parse_number(reply.args[1])), self.device.channel_unit(channel))
+        return Reading(channel, self._typed(channel, reply.args[1]), self.device.channel_unit(channel))
+
+    async def _action(self, name: str, args: dict[str, Any]) -> Any:
+        words: list[str] = []
+        for arg, value in args.items():
+            if isinstance(value, bool):
+                words += [arg, "1" if value else "0"]
+            elif isinstance(value, int | float):
+                words += [arg, format_number(float(value))]
+            else:
+                raise DriverError("OpenHAL boards take numbers and booleans as action arguments.")
+        reply = await self._require_link().request("ACT", name, *words)
+        if reply.args != (name,):
+            raise DriverError(f"The board answered ACT {name} with {' '.join(reply.args)}.")
+        return {"ran": name}
 
     async def _safe_state(self) -> None:
         await self._require_link().request("SAFE")
