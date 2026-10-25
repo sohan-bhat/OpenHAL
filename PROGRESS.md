@@ -54,7 +54,8 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 
 - REST decision views should carry the hub-built protocol error so MCP reasons always name the confirmation (protocol report, proposal 12).
 - tests/drivers/firmata/test_firmata.py::test_silent_board_times_out can time out under full-suite load on this Mac. It passes alone.
-- Driver proposals still open. Full-level checks in the conformance suite, a restore_connection hook, a push path for drivers that receive values, cached-read declarations, per-driver install hints, argument references in action requirements, and YAML 1.1 warnings in openhal file validate.
+- Library matching proposals (library report). New `match` keys for Pi boards and HATs, libcamera models, Alpaca servers, MIDI port names and MQTT topics, so the six library files with no identifier can be matched. Discovery that reports more, with scpi sending `*IDN?`, moonraker browsing `_moonraker._tcp`, homeassistant listing entity ids, modbus scanning unit ids, mqtt listening for announce topics and esphome reporting `mdns`.
+- Driver proposals still open. A restore_connection hook, a push path for drivers that receive values, cached-read declarations, per-driver install hints, argument references in action requirements, and YAML 1.1 warnings in openhal file validate.
 - The starter library (M12), packaging (M13), verification and handoff, in progress.
 - Confirm on GitHub CI that the scpi fix passes on Linux (the owner approved the fix and the push on 2026-10-25).
 
