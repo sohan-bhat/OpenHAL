@@ -2,11 +2,18 @@
 
 ## Current milestone
 
-Phase C. The protocol theme and hub protocol (ADR 0015), the dated specification, the website as a protocol site, the README flow diagram, then the Inspector (M7).
+Phase D. The starter library (M12), packaging (M13), verification (M14) and handoff (M15).
 
 ## Active subagents
 
-None. Cap is 5 agents at once (owner, latest 2026-10-24). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents.
+Cap is 5 agents at once (owner, latest 2026-10-24). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
+
+- library. The starter library, `openhal library` and library bundling (BRIEF-library.md).
+- packaging. The init wizard, launchd and systemd services, the Pi install script and install timing (BRIEF-packaging.md).
+- handoff. CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, ROADMAP, LAUNCH and the hardware test index (BRIEF-handoff.md).
+- e2e. `openhal demo --full`, the end-to-end run on mocks (BRIEF-e2e.md).
+- consistency. The plant waterer in every remaining page, the docs command check and the consistency test (BRIEF-consistency.md).
+- Queued. Lighthouse, axe and the orphan audit for the website and the Inspector, when a slot frees.
 
 Design round screenshots live in docs/design-rounds/, which is gitignored so they never reach a clone.
 
