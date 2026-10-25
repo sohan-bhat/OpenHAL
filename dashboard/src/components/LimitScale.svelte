@@ -11,6 +11,7 @@
     value,
     current = null,
     disabled = false,
+    interactive = true,
     oninput,
   }: {
     id: string;
@@ -22,7 +23,8 @@
     value: number | null;
     current?: number | null;
     disabled?: boolean;
-    oninput: (value: string) => void;
+    interactive?: boolean;
+    oninput?: (value: string) => void;
   } = $props();
 
   const span = $derived(max - min || 1);
@@ -40,20 +42,24 @@
     {#if current !== null}
       <div class="now-tick" style="left: {pct(clamp(current))}%"></div>
     {/if}
-    <input
-      {id}
-      class="range"
-      type="range"
-      {min}
-      {max}
-      step={step ?? "any"}
-      value={value ?? min}
-      style="left: calc({pct(min)}% - 8px); width: calc({pct(max) - pct(min)}% + 16px)"
-      aria-label={label}
-      aria-valuetext={value !== null ? quantityString(value, unit) : undefined}
-      {disabled}
-      oninput={(event) => oninput((event.currentTarget as HTMLInputElement).value)}
-    />
+    {#if interactive}
+      <input
+        {id}
+        class="range"
+        type="range"
+        {min}
+        {max}
+        step={step ?? "any"}
+        value={value ?? min}
+        style="left: calc({pct(min)}% - 8px); width: calc({pct(max) - pct(min)}% + 16px)"
+        aria-label={label}
+        aria-valuetext={value !== null ? quantityString(value, unit) : undefined}
+        {disabled}
+        oninput={(event) => oninput?.((event.currentTarget as HTMLInputElement).value)}
+      />
+    {:else}
+      <div class="track" style="left: {pct(min)}%; width: {pct(max) - pct(min)}%"></div>
+    {/if}
     <div class="limit" style="left: {pct(min)}%"></div>
     <div class="limit" style="left: {pct(max)}%"></div>
   </div>
@@ -149,6 +155,14 @@
 
   .range:disabled {
     cursor: not-allowed;
+  }
+
+  .track {
+    position: absolute;
+    top: 12px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
   }
 
   .limit {

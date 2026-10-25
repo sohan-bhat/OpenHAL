@@ -103,17 +103,31 @@ test("older messages load on request once the log holds more than a page", async
   await expect.poll(async () => log.locator("li").count()).toBeGreaterThan(shown);
 });
 
-test("a read-only device keeps its controls disabled and says why", async ({ page }) => {
+test("a read-only device shows its limits without live controls and says why", async ({ page }) => {
   await page.goto("/#/devices/bench-lamp");
   await expect(page.getByRole("heading", { name: "Bench lamp", level: 1 })).toBeVisible();
   await expect(page.getByText("error -32015 UNVERIFIED_LIMITS").first()).toBeVisible();
-  for (const button of await page.getByRole("button", { name: /^Set / }).all()) await expect(button).toBeDisabled();
+  const brightness = page.locator("form.write").filter({ hasText: "brightness" });
+  await expect(brightness.getByText("max 80 %")).toBeVisible();
+  await expect(page.getByRole("main").getByRole("slider")).toHaveCount(0);
+  await expect(page.getByRole("main").getByRole("spinbutton")).toHaveCount(0);
+  await expect(page.getByRole("main").getByRole("button", { name: /^Set / })).toHaveCount(0);
+});
+
+test("the stop action reads as the device safe state, not as the global STOP", async ({ page }) => {
+  await page.goto("/#/devices/plant-waterer");
+  const stop = page.locator("form.action").filter({ hasText: "Turn the pump off now." });
+  const run = stop.getByRole("button", { name: "Run stop" });
+  await expect(run).toBeVisible();
+  await expect(run).not.toHaveClass(/primary/);
+  await expect(stop).toContainText("is this device's safe state");
 });
 
 test("a person runs an action that asks for confirmation each time, and a queued answer links to the queue", async ({ page }) => {
   await page.goto("/#/devices/curing-heater");
   const vent = page.locator("form.action").filter({ hasText: "vent" });
-  await vent.getByRole("button", { name: "Run vent" }).click();
+  await expect(vent).toContainText("Your click is that confirmation.");
+  await vent.getByRole("button", { name: "Confirm and run vent" }).click();
   await expect(vent.locator(".result")).toContainText("granted");
   await expect(vent.locator(".result")).toContainText("vent ran");
 
@@ -122,7 +136,7 @@ test("a person runs an action that asks for confirmation each time, and a queued
       json: { status: "needs_confirmation", code: "confirmation_required", message: "Waiting for a human to approve action:vent on curing-heater.", request_id: "queued-by-test" },
     }),
   );
-  await vent.getByRole("button", { name: "Run vent" }).click();
+  await vent.getByRole("button", { name: "Confirm and run vent" }).click();
   const link = vent.getByRole("link", { name: "queued-by-test" });
   await expect(link).toBeVisible();
   await link.click();

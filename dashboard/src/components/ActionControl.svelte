@@ -15,10 +15,23 @@
     name,
     spec,
     disabled = false,
+    readOnly = false,
+    safeState = false,
+    disabledReason = "",
     onran,
-  }: { device: string; name: string; spec: ActionSpec; disabled?: boolean; onran?: () => void } = $props();
+  }: {
+    device: string;
+    name: string;
+    spec: ActionSpec;
+    disabled?: boolean;
+    readOnly?: boolean;
+    safeState?: boolean;
+    disabledReason?: string;
+    onran?: () => void;
+  } = $props();
 
   const tier = $derived(confirmTier(spec.confirm));
+  const confirms = $derived(tier.tone === "confirm");
   const ident = $derived(`${device}-action-${name}`.replace(/[^a-z0-9-]/gi, "-"));
   const args = $derived(Object.entries(spec.args));
 
@@ -118,9 +131,15 @@
                 unit={argSpec.unit ?? null}
                 value={values[arg] && Number.isFinite(Number(values[arg])) ? Number(values[arg]) : null}
                 {disabled}
+                interactive={!readOnly}
                 oninput={(value) => (values[arg] = value)}
               />
             {/if}
+            {#if readOnly}
+              {#if argSpec.min !== undefined && argSpec.max !== undefined}
+                <small class="muted mono nobreak">{formatQuantity(argSpec.min, argSpec.unit)} to {formatQuantity(argSpec.max, argSpec.unit)}</small>
+              {/if}
+            {:else}
             <span class="entry">
               <input
                 id={fieldId}
@@ -136,6 +155,7 @@
                 <small class="muted mono nobreak">{formatQuantity(argSpec.min, argSpec.unit)} to {formatQuantity(argSpec.max, argSpec.unit)}</small>
               {/if}
             </span>
+            {/if}
           {/if}
         </div>
       {/each}
@@ -158,9 +178,21 @@
       {#if spec.effects.length}<div><dt class="label">changes</dt><dd class="mono">{spec.effects.join(", ")}</dd></div>{/if}
     </dl>
   {/if}
-  <div>
-    <button class="button primary" type="submit" disabled={disabled || busy || !ready}>Run {name}</button>
-  </div>
+  {#if !readOnly}
+    <div class="run">
+      <button class="button" class:primary={!safeState} type="submit" disabled={disabled || busy || !ready}>
+        <span>{confirms ? "Confirm and run" : "Run"} <span class="mono">{name}</span></span>
+      </button>
+      {#if confirms}
+        <p class="muted note"><span class="mono">{name}</span> needs a person's confirmation each time. Your click is that confirmation.</p>
+      {:else if safeState}
+        <p class="muted note"><span class="mono">{name}</span> is this device's safe state. STOP in the header puts every device in its safe state.</p>
+      {/if}
+    </div>
+  {/if}
+  {#if disabled && disabledReason && !readOnly}
+    <p class="muted note">{disabledReason}</p>
+  {/if}
   <div aria-live="polite">
     {#if outcome}
       <div class="result appear {outcome.tone}">
@@ -256,6 +288,17 @@
 
   .why {
     color: var(--text-2);
+  }
+
+  .run {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2) var(--s-4);
+  }
+
+  .note {
+    font-size: var(--t-label);
   }
 
   .result {

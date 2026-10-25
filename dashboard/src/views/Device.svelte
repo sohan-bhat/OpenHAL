@@ -146,6 +146,7 @@
               channel={name}
               {spec}
               disabled={!!disabledReason}
+              readOnly={!view.writable}
               {disabledReason}
               onwritten={() => id && void inspector.refreshDevice(id)}
             />
@@ -159,7 +160,16 @@
         <h2 id="actions-title">Actions</h2>
         <div class="controls">
           {#each Object.entries(view.actions) as [name, spec] (name)}
-            <ActionControl device={view.id} {name} {spec} disabled={!!disabledReason} onran={() => void inspector.refreshConfirmations()} />
+            <ActionControl
+              device={view.id}
+              {name}
+              {spec}
+              disabled={!!disabledReason}
+              readOnly={!view.writable}
+              safeState={view.safe_state.some((step) => step.action === name)}
+              {disabledReason}
+              onran={() => void inspector.refreshConfirmations()}
+            />
           {/each}
         </div>
       </section>
