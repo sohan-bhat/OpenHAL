@@ -1,0 +1,28 @@
+openhal: "0.1"
+device: Arduino plant waterer
+id: plant-waterer
+match:
+  firmware: { product: plant-waterer }
+connect: { openhal-firmware: auto, boot_s: 2 }
+read:
+  soil_moisture: { unit: "%", every: 1 s, range: [0, 100] }
+  tank: { type: enum, values: [empty, ok], every: 1 s }
+actions:
+  water:
+    description: Run the pump for a number of seconds.
+    args:
+      duration: { unit: s, min: 1, max: 30 }
+    require:
+      - condition: "tank == ok"
+        message: "pump can't run while tank is empty"
+    max_runs: { count: 3, per: 1 h }
+  stop:
+    description: Turn the pump off now.
+safe_state: { action: stop }
+watchdog: { heartbeat: 1 s, on_loss: safe_state }
+hazard: low
+notes: "The board turns the pump off on its own after 30 s, when the tank runs dry, and when the hub's heartbeats stop for 3 s."
+provenance:
+  source: sketch
+  from: examples/plant-waterer/plant-waterer.ino
+  verification: { status: unverified }

@@ -318,8 +318,9 @@ class PlantWatererSimulator(FirmwareSimulator):
     def _water(self, args: dict[str, float]) -> str | None:
         if not self.tank_ok:
             return "tank_empty"
+        self._step()
         self.channels["pump"].value = 1.0
-        self._pump_until = self.now() + min(args["duration"], self.max_run_s)
+        self._pump_until = self._clock + min(args["duration"], self.max_run_s)
         return None
 
     def _stop(self, _args: dict[str, float]) -> str | None:
