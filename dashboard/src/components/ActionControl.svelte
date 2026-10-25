@@ -87,7 +87,7 @@
 
 <form class="action" onsubmit={run} aria-labelledby="{ident}-name">
   <div class="top">
-    <h4 id="{ident}-name" class="mono">{name}</h4>
+    <h3 id="{ident}-name" class="mono">{name}</h3>
     <StatusMark tone={tier.tone} label={tier.label} />
   </div>
   {#if spec.description}<p>{spec.description}</p>{/if}
@@ -195,7 +195,7 @@
     gap: var(--s-2);
   }
 
-  .top h4 {
+  .top h3 {
     font-size: 16px;
   }
 
