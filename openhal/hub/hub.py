@@ -82,6 +82,7 @@ class Hub:
         self.started_at: float | None = None
         self._locks: dict[str, DeviceLock] = {}
         self._tasks: list[asyncio.Task[None]] = []
+        self._stop_button: Any = None
         self._listeners: list[Listener] = []
         self.audit.subscribe(self._on_audit)
 
@@ -94,6 +95,7 @@ class Hub:
 
     async def start(self, *, load_devices: bool = True) -> None:
         """Load device files, connect devices, and start background loops."""
+        self._watch_stop_button()
         if load_devices:
             self.load_device_files()
         for device_id in list(self.kernel.devices):
@@ -105,7 +107,41 @@ class Hub:
             self._start_device_tasks(device_id)
         self.audit.append("hub_start", SYSTEM.label, status="done", devices=len(self.kernel.devices))
 
+    def _watch_stop_button(self) -> None:
+        """Watch the GPIO stop button config.yaml names. A pressed button stops everything.
+
+        A button the person configured but the hub can't watch is an error, not a warning, so no
+        one relies on a stop that isn't there.
+        """
+        settings = self.config.stop_button
+        if settings.pin is None:
+            return
+        loop = asyncio.get_running_loop()
+
+        async def stop() -> None:
+            await self.kernel.stop_all(SYSTEM, "the GPIO stop button was pressed")
+
+        def pressed() -> None:
+            self._tasks.append(loop.create_task(stop()))
+
+        try:
+            from openhal.drivers.rpi_gpio import watch_stop_button
+
+            self._stop_button = watch_stop_button(settings.pin, pressed, pull_up=settings.pull_up, loop=loop)
+        except Exception as exc:
+            detail = f"{type(exc).__name__}: {exc}"
+            self.audit.append("stop_button", SYSTEM.label, status="failed", pin=settings.pin, detail=detail)
+            raise RuntimeError(
+                f"config.yaml sets stop_button.pin {settings.pin}, but the hub can't watch it ({detail}). "
+                "Install the rpi-gpio extra on the Pi, fix the wiring, or remove stop_button from config.yaml."
+            ) from exc
+        self.audit.append("stop_button", SYSTEM.label, status="done", pin=settings.pin)
+
     async def close(self) -> None:
+        if self._stop_button is not None:
+            with contextlib.suppress(Exception):
+                self._stop_button.close()
+            self._stop_button = None
         await self.routines.close()
         for task in self._tasks:
             task.cancel()
