@@ -1,22 +1,29 @@
 ---
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
+import captures from "../data/inspector-captures.json";
 import DocShell from "../layouts/DocShell.astro";
 
 const SHOTS = [
-  { file: "inspector-overview", alt: "The Inspector with the device list, a device pane and the message log, on mock devices" },
-  { file: "inspector-blocked", alt: "The Inspector message log showing error -32010 LIMIT_EXCEEDED for a command over its limit, on mock devices" },
-  { file: "inspector-stopped", alt: "The Inspector after a stop, with every device in its safe state, on mock devices" },
+  {
+    file: "inspector-device",
+    caption: "The plant waterer",
+    alt: "The Inspector's device pane for the Arduino plant waterer, with soil moisture at 46 %, the tank reading ok, and the water action limited to 1 s to 30 s",
+  },
+  {
+    file: "inspector-log",
+    caption: "The message log",
+    alt: "The Inspector's message log with hal/action requests from bench-agent answered by error -32010 LIMIT_EXCEEDED for a 120 s watering and error -32012 INTERLOCK_BLOCKED while the tank is empty",
+  },
+  {
+    file: "inspector-stopped",
+    caption: "Stopped",
+    alt: "The Inspector after a stop, with a banner saying every command is refused with error -32014 STOPPED and an UNLOCK button in place of STOP",
+  },
 ];
 
-function shot(name: string) {
-  const path = join(process.cwd(), "public", "captures", `${name}.png`);
-  if (!existsSync(path)) return null;
-  const bytes = readFileSync(path);
-  return { src: `/captures/${name}.png`, width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
-}
-
-const shots = SHOTS.map((item) => ({ ...item, image: shot(item.file) })).filter((item) => item.image);
+const present = (name: string) => existsSync(join(process.cwd(), "public", "captures", `${name}.webp`));
+const shots = SHOTS.filter((item) => present(`${item.file}-light`) && present(`${item.file}-dark`));
 const sidebar = [
   {
     name: "",
@@ -30,35 +37,42 @@ const sidebar = [
 ---
 
 <DocShell title="Inspector" description="The OpenHAL Inspector shows every device and every message, and stops everything in one click." sidebar={sidebar} section="Inspector">
-  <p slot="after-title"><span class="status planned">in development</span></p>
   <p>The Inspector is the hub's dashboard. It shows every device and every JSON-RPC message, and stops everything in one click.</p>
 
-  <h2 id="panes">Panes</h2>
+  <h2 id="open">Open it</h2>
+  <p>The hub serves the Inspector at <code>http://127.0.0.1:7420/</code>. Pair a browser with the one-time code that <code>openhal pair</code> prints.</p>
+
+  <h2 id="views">Views</h2>
   <div class="table-wrap">
     <table>
       <thead>
-        <tr><th scope="col">Pane</th><th scope="col">Shows</th></tr>
+        <tr><th scope="col">View</th><th scope="col">Shows</th></tr>
       </thead>
       <tbody>
-        <tr><td>Devices</td><td>Every device with its conformance level and verification</td></tr>
-        <tr><td>Device</td><td>The selected device's channels, limits and live values</td></tr>
+        <tr><td>Devices</td><td>Every device with its connection, conformance level and verification, and the selected device's channels, limits and actions</td></tr>
         <tr><td>Message log</td><td>Every request, response, notification and error, as formatted JSON-RPC</td></tr>
+        <tr><td>Confirmations</td><td>Commands waiting for a person to approve or reject them</td></tr>
+        <tr><td>Audit log</td><td>Every decision, in a hash chain</td></tr>
+        <tr><td>Routines</td><td>Each routine with its source and its dry run</td></tr>
+        <tr><td>Driver writer</td><td>A draft device file for an unknown device, and the limits interview</td></tr>
+        <tr><td>Settings</td><td>Client tokens</td></tr>
         <tr><td>Stop</td><td>Always visible. Any client may stop. Only a person may lift the stop</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h2 id="open">Open it</h2>
-  <p>The hub serves the Inspector at <code>http://127.0.0.1:7420/</code> once its build ships. Pair a browser with the six digit code from <code>openhal pair</code>.</p>
-
   {
     shots.length > 0 && (
       <>
         <h2 id="screenshots">Screenshots</h2>
-        <p class="muted">Demo data, from the Inspector running on mock devices.</p>
+        <p class="muted">Recorded from the Inspector on a hub with the simulated plant waterer and two mock devices.</p>
         {shots.map((item) => (
           <figure class="shot">
-            <img src={item.image!.src} width={item.image!.width} height={item.image!.height} alt={item.alt} loading="lazy" decoding="async" />
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset={`/captures/${item.file}-dark.webp`} type="image/webp" />
+              <img src={`/captures/${item.file}-light.webp`} width={captures.width} height={captures.height} alt={item.alt} loading="lazy" decoding="async" />
+            </picture>
+            <figcaption class="legend">{item.caption}</figcaption>
           </figure>
         ))}
       </>
@@ -68,14 +82,23 @@ const sidebar = [
 
 <style>
   .shot {
-    margin: var(--s-4) 0 0;
+    margin: var(--s-5) 0 0;
+  }
+
+  .shot picture {
+    display: block;
     border: var(--rule);
     border-radius: var(--radius);
     overflow: hidden;
   }
 
   .shot img {
+    display: block;
     width: 100%;
     height: auto;
+  }
+
+  .shot figcaption {
+    margin-top: var(--s-2);
   }
 </style>
