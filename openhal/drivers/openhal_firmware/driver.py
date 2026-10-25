@@ -198,6 +198,7 @@ class OpenHalFirmwareDriver(Driver):
         hazard_default="low",
         summary="Arduino and ESP32 boards running the OpenHAL library. They describe themselves.",
         safe_state_support="native",
+        conformance="full",
     )
     params_model: ClassVar[type[Any] | None] = FirmwareParams
 

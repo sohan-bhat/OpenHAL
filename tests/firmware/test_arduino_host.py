@@ -177,7 +177,25 @@ async def test_the_compiled_sketch_passes_conformance(binaries: dict[str, Path])
     report = await run(case)
     failures = [f"{result.name}: {result.detail}" for result in report.results if not result.ok and not result.skipped]
     assert report.ok, "\n".join(failures)
-    assert not [result.name for result in report.results if result.skipped]
+    skipped = [result.name for result in report.results if result.skipped]
+    assert all(name.startswith(("action", "no action")) for name in skipped), "the desk fan has no actions to skip"
+
+
+async def test_the_compiled_plant_waterer_passes_the_action_checks(binaries: dict[str, Path]) -> None:
+    case = ConformanceCase(
+        name="openhal-firmware (PlantWaterer, host build)",
+        file=plant_waterer(),
+        make=lambda file: driver_for(file, binaries["PlantWaterer"]),
+    )
+    report = await run(case)
+    failures = [f"{result.name}: {result.detail}" for result in report.results if not result.ok and not result.skipped]
+    assert report.ok, "\n".join(failures)
+    ran = {result.name for result in report.results if result.ok}
+    assert {
+        "action inside limits",
+        "action outside limits is blocked before the driver",
+        "no action without a kernel grant",
+    } <= ran
 
 
 @pytest.mark.parametrize("example", ["DeskFan", "LedStrip", "ServoArm", "SoilPump", "PlantWaterer"])

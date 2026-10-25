@@ -372,7 +372,7 @@
           "https://docs.espressif.com/projects/arduino-esp32/en/latest/"
         ]
       },
-      "conformance": "control"
+      "conformance": "full"
     },
     {
       "name": "rpi-camera",
