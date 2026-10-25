@@ -17,6 +17,7 @@ export const DEFAULT_HOST = "127.0.0.1";
 export const DEFAULT_PORT = 7420;
 export const CONFIG_DIR_ENV = "OPENHAL_HOME";
 export const DEFAULT_CONFIG_DIR = "~/.openhal";
+export const DATA_BLOCK_TAG = "device-data";
 
 /** The one-line pitch, used in the hero, the page descriptions and the Open Graph images. */
 export const PITCH = "Let AI agents read and drive real hardware, inside limits a person set.";
