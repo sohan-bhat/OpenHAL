@@ -1,0 +1,23 @@
+{
+  "name": "opcua",
+  "tier": 2,
+  "status": "implemented",
+  "protocols": ["OPC UA binary over TCP (opc.tcp)"],
+  "families": [
+    "PLCs with an OPC UA server (Siemens S7-1500, Beckhoff TwinCAT, B&R, CODESYS runtimes)",
+    "LADS and OPC UA for Devices lab instruments",
+    "process equipment, gateways and SCADA servers that publish OPC UA"
+  ],
+  "hazard_default": "medium",
+  "tests": "asyncua's own OPC UA server running a simulated pump skid",
+  "estimate": {
+    "devices": "thousands of controller and instrument models",
+    "reasoning": "OPC UA is the standard interface of industrial automation. Most current PLC families include an OPC UA server, and the LADS companion specification brings it to laboratory instruments. The driver reads and changes variables and calls methods, which covers any server that exposes its data that way. The count is a model estimate.",
+    "sources": [
+      "https://reference.opcfoundation.org/",
+      "https://reference.opcfoundation.org/LADS/v100/docs/",
+      "https://github.com/FreeOpcUa/opcua-asyncio",
+      "https://unece.org/trade/uncefact/cl-recommendations"
+    ]
+  }
+}
