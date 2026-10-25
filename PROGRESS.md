@@ -6,11 +6,14 @@ Phase C. The protocol theme and hub protocol (ADR 0015), the dated specification
 
 ## Active subagents
 
-Cap is 3 background agents at once (owner, 2026-10-24). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents.
+Cap is 5 agents at once (owner, latest 2026-10-24). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents.
 
 - website (own worktree). Owns website/, docs/guide/, docs/design-rounds/ and tests/website/. Brief in docs/agents/BRIEF-website-2.md (protocol site). Resumed after the crash with 40 commits saved. Round 1 review findings are superseded by the theme change.
 
 - Inspector (worktree agent-ab1476059128896a1). Owns dashboard/, openhal/hub/static/, tests/inspector/ and docs/design-rounds/inspector-*. Brief in docs/agents/BRIEF-inspector.md. Resumed after the crash.
+- red team (own worktree). Owns tests/redteam/ and docs/SAFETY-REPORT.md. Brief in docs/agents/BRIEF-redteam.md. Never changes openhal/ code. Findings come back to the orchestrator to fix.
+- drivers-3 (own worktree). grbl, ros2, opcua, sila2, indi, alpaca, pylabrobot, lerobot. Brief in docs/agents/BRIEF-drivers-3.md.
+- drivers-4 (own worktree). onvif, bambu, can, knx, matter, pi-i2c-spi, upnp, zigbee-zwave. Brief in docs/agents/BRIEF-drivers-4.md. The owner asked for all sixteen planned drivers to be built, Tier 3 included.
 
 ## Done
 
