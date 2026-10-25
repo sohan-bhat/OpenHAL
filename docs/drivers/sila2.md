@@ -35,6 +35,7 @@ Every channel and action names its SiLA feature in a `map`. The client loads eac
 - An observable command waits up to `action_wait` and answers `done` with its responses, or answers `started` and keeps running on the server.
 - Defined execution errors fail the command with their identifier and message, for example `TooHot`. Constraint violations come back as validation errors.
 - The sila2 client is blocking, so every call runs in a worker thread with a deadline. Connecting gets 8 s, since the client compiles each feature definition.
+- sila2 0.14 loads two builds of its framework protos, which protobuf's default implementation refuses once another package, such as the ESPHome driver's aioesphomeapi, has loaded protobuf. The driver registers one build under both names first, so SiLA devices work next to every other driver in one hub.
 
 ## Safe state
 
