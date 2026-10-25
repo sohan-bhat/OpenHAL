@@ -39,14 +39,14 @@ function lineHtml(entry) {
     const reason = reasonLines(entry.reason)
       .map((part) => `<span class="reason">${keepUnits(escapeHtml(part))}</span>`)
       .join(" ");
-    return `<span class="head error-head"><span class="outcome-error">error ${entry.code} ${escapeHtml(entry.name)}</span></span>${reason}`;
+    return `<span class="head error-head"><span class="outcome-error">error ${entry.code} ${escapeHtml(entry.name)}</span></span> ${reason}`;
   }
   const head = entry.kind === "result" ? `<span class="outcome-result">result</span>` : `<span class="method">${escapeHtml(entry.method)}</span>`;
   const payload =
     typeof entry.text === "string"
       ? `<span class="payload summary">${keepUnits(escapeHtml(entry.text))}</span>`
       : `<span class="payload">${payloadHtml(entry.kind === "result" ? entry.result : entry.params)}</span>`;
-  return `<span class="head">${head}${payload}</span>`;
+  return `<span class="head">${head} ${payload}</span>`;
 }
 
 export function traceItemsHtml(entries) {
@@ -54,13 +54,13 @@ export function traceItemsHtml(entries) {
     .map((entry) => {
       if (entry.kind === "note") return noteHtml(entry.text);
       const arrow = arrowSvg(entry.kind === "request" ? "out" : "in", entry.kind === "notification");
-      return `<li>${arrow}<span class="visually-hidden">${directionWord(entry)}</span><div class="line">${lineHtml(entry)}</div></li>`;
+      return `<li>${arrow} <span class="visually-hidden">${directionWord(entry)}</span> <div class="line">${lineHtml(entry)}</div></li>`;
     })
     .join("");
 }
 
 export function noteHtml(text) {
-  return `<li class="note"><span class="note-mark" aria-hidden="true">#</span><span class="visually-hidden">Comment</span><span class="note-text">${escapeHtml(text)}</span></li>`;
+  return `<li class="note"><span class="note-mark" aria-hidden="true">#</span> <span class="note-text"><span class="visually-hidden">Comment </span>${escapeHtml(text)}</span></li>`;
 }
 
 export function traceHtml(entries, { label = "Message trace" } = {}) {

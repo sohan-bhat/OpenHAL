@@ -15,12 +15,14 @@ interface Props {
   type?: "website" | "article";
   noindex?: boolean;
   canonical?: string;
+  search?: boolean;
 }
 
-const { title, description = PITCH, bare = false, type = "website", noindex = false, canonical: canonicalPath } = Astro.props;
+const { title, description = PITCH, bare = false, type = "website", noindex = false, canonical: canonicalPath, search = true } = Astro.props;
 const fullTitle = bare ? title : `${title} | ${PRODUCT_NAME}`;
 const canonical = new URL(canonicalPath ?? Astro.url.pathname, Astro.site);
 const image = new URL(ogPath(Astro.url.pathname), Astro.site);
+const indexed = search && !noindex && canonical.pathname === new URL(Astro.url.pathname, Astro.site).pathname;
 ---
 
 <!doctype html>
@@ -40,6 +42,9 @@ const image = new URL(ogPath(Astro.url.pathname), Astro.site);
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+    <script is:inline>
+      if (/mac|iphone|ipad/i.test(navigator.userAgentData?.platform || navigator.platform || "")) document.documentElement.classList.add("apple");
+    </script>
     <link rel="preload" href={atkinson} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={atkinsonMono} as="font" type="font/woff2" crossorigin />
     <meta property="og:type" content={type} />
@@ -57,7 +62,7 @@ const image = new URL(ogPath(Astro.url.pathname), Astro.site);
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <Header />
-    <main id="main" tabindex="-1">
+    <main id="main" tabindex="-1" data-pagefind-body={indexed ? "" : undefined}>
       <slot />
     </main>
     <Footer />

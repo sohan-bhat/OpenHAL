@@ -30,7 +30,7 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
 
 <Base title={title} description={description} canonical={canonical} noindex={noindex}>
   <div class:list={["wrap", "shell", { wide }]}>
-    <aside class="sidebar" aria-label={section}>
+    <aside class="sidebar" aria-label={section} data-pagefind-ignore="all">
       <nav class="side-desktop" aria-label={`${section} pages`}>
         <slot name="sidebar-top" />
         {
@@ -98,7 +98,7 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
       </header>
       {
         toc.length > 1 && (
-          <details class="outline-mobile">
+          <details class="outline-mobile" data-pagefind-ignore="all">
             <summary>On this page</summary>
             <ul>
               {toc.map((heading) => (
@@ -113,7 +113,7 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
       <div class={wide ? "data" : "prose"}>
         <slot />
       </div>
-      <footer class="page-foot">
+      <footer class="page-foot" data-pagefind-ignore="all">
         {
           (prev || next) && (
             <nav class="pager" aria-label="Previous and next">
@@ -149,7 +149,7 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
 
     {
       toc.length > 1 && (
-        <aside class="outline" aria-label="On this page">
+        <aside class="outline" aria-label="On this page" data-pagefind-ignore="all">
           <p class="legend">On this page</p>
           <ul>
             {toc.map((heading) => (
