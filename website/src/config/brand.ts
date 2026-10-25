@@ -1,0 +1,22 @@
+// Every public name the website shows, mirroring openhal/_brand.py (ADR 0002).
+// tests/website/test_brand.py checks that the two agree. A rename changes this file,
+// openhal/_brand.py and pyproject.toml together.
+
+export const PRODUCT_NAME = "OpenHAL";
+export const PRODUCT_LONG_NAME = "Open Hardware Abstraction Layer";
+export const PACKAGE_NAME = "openhal";
+export const DISTRIBUTION_NAME = "openhal-hub";
+export const CLI_NAME = "openhal";
+export const DAEMON_NAME = "openhald";
+export const ARDUINO_LIBRARY_NAME = "OpenHAL";
+export const DEVICE_FILE_SUFFIX = ".hal.yaml";
+export const ROUTINE_FILE_SUFFIX = ".routine.yaml";
+export const SPEC_VERSION = "0.1";
+export const API_VERSION = "v1";
+export const DEFAULT_HOST = "127.0.0.1";
+export const DEFAULT_PORT = 7420;
+export const CONFIG_DIR_ENV = "OPENHAL_HOME";
+export const DEFAULT_CONFIG_DIR = "~/.openhal";
+
+/** The one-line pitch, used in the hero, the page descriptions and the Open Graph images. */
+export const PITCH = "Let AI agents read and drive real hardware, inside limits a person set.";
