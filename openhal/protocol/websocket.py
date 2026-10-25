@@ -75,18 +75,25 @@ async def serve_log(websocket: WebSocket, dispatcher: Dispatcher, since: int = 0
         with contextlib.suppress(asyncio.QueueFull):
             queue.put_nowait(entry)
 
-    unsubscribe = dispatcher.log.subscribe(push)
-    try:
+    async def send() -> None:
         backlog = dispatcher.log.since(since)
         last = backlog[-1]["seq"] if backlog else since
         for entry in backlog:
             await websocket.send_text(encode(entry))
         while True:
             entry = await queue.get()
-            if entry["seq"] <= last:
-                continue
-            await websocket.send_text(encode(entry))
+            if entry["seq"] > last:
+                await websocket.send_text(encode(entry))
+
+    unsubscribe = dispatcher.log.subscribe(push)
+    sender = asyncio.create_task(send())
+    try:
+        while (await websocket.receive())["type"] != "websocket.disconnect":
+            continue
     except (WebSocketDisconnect, RuntimeError):
         pass
     finally:
         unsubscribe()
+        sender.cancel()
+        with contextlib.suppress(asyncio.CancelledError, Exception):
+            await sender

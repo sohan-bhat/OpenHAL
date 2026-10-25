@@ -109,7 +109,8 @@ async def base_url(hub: Hub) -> AsyncIterator[str]:
     listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     listener.bind(("127.0.0.1", 0))
     port = listener.getsockname()[1]
-    server = uvicorn.Server(uvicorn.Config(create_app(hub), log_level="warning", lifespan="off"))
+    config = uvicorn.Config(create_app(hub), log_level="warning", lifespan="off", timeout_graceful_shutdown=2)
+    server = uvicorn.Server(config)
     task = asyncio.create_task(server.serve(sockets=[listener]))
     while not server.started:  # noqa: ASYNC110
         await asyncio.sleep(0.01)
