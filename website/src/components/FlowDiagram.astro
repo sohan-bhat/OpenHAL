@@ -1,7 +1,8 @@
 ---
-import { FLOW_DEFAULT, FLOW_NODES, readFlow } from "../lib/flow";
+import { FLOW_DEFAULT, flowNodes, readFlow } from "../lib/flow";
 
 const flow = readFlow();
+const nodes = flowNodes(flow?.wide.light ?? null);
 const arts = flow ? [{ name: "wide", art: flow.wide }, ...(flow.narrow ? [{ name: "narrow", art: flow.narrow }] : [])] : [];
 const variants = arts.flatMap(({ name, art }) => [
   { key: `${name}-light`, html: art.light + art.lightFlows, width: art.width, height: art.height },
@@ -49,7 +50,7 @@ const stamp = `(() => {
       <script is:inline set:html={stamp} />
       <figcaption>
         <div class="flow-parts" role="group" aria-label="Parts of the flow">
-          {FLOW_NODES.map((node) => (
+          {nodes.map((node) => (
             <button type="button" data-node={node.key} data-text={node.text} aria-describedby="flow-note">
               {node.label}
             </button>
