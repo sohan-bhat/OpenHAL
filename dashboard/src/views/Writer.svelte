@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Json from "../components/Json.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import { api } from "../lib/api";
   import { diffLines, diffStats } from "../lib/diff";
@@ -154,9 +155,13 @@
     });
   }
 
-  function commandText(command: unknown): string {
-    if (typeof command === "string") return command;
-    return JSON.stringify(command);
+  function detectedText(value: unknown): string {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return Object.entries(value as Record<string, unknown>)
+        .map(([key, item]) => `${key} ${typeof item === "object" ? JSON.stringify(item) : String(item)}`)
+        .join(", ");
+    }
+    return Array.isArray(value) ? value.map((item) => JSON.stringify(item)).join(", ") : String(value);
   }
 </script>
 
@@ -214,7 +219,7 @@
       </div>
       <dl class="facts-grid">
         {#each Object.entries(session.detected) as [key, value] (key)}
-          <div><dt class="label">{key.replace(/_/g, " ")}</dt><dd class="mono">{typeof value === "object" ? JSON.stringify(value) : String(value)}</dd></div>
+          <div><dt class="label">{key.replace(/_/g, " ")}</dt><dd class="mono">{detectedText(value)}</dd></div>
         {/each}
       </dl>
       {#each session.problems as problem, index (index)}<p class="problem">{problem}</p>{/each}
@@ -298,7 +303,11 @@
         <ol class="plan">
           {#each plan.steps as step, index (index)}
             <li>
-              <span class="mono">{commandText(step.command)}</span>
+              {#if typeof step.command === "string"}
+                <code>{step.command}</code>
+              {:else}
+                <Json value={step.command} />
+              {/if}
               <span class="muted">{step.expected}</span>
               {#if step.needs_approval}<StatusMark tone="confirm" label="confirmation required" />{/if}
             </li>

@@ -50,7 +50,8 @@
     <aside class="left" aria-label="Device list">
       <DeviceList />
     </aside>
-    <main id="main" class="main" tabindex="-1">
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+    <main id="main" class="main" tabindex="0" aria-label={titles[view] ?? "Devices"}>
       {#if view === "devices"}
         <Device />
       {:else if view === "confirmations"}
@@ -101,8 +102,8 @@
     padding: var(--s-5) var(--s-6);
   }
 
-  .main:focus {
-    outline: none;
+  .main:focus-visible {
+    outline-offset: -2px;
   }
 
   .bottom {

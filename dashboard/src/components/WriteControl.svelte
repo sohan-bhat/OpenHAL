@@ -347,17 +347,9 @@
   }
 
   .range:focus-visible {
-    outline: none;
-  }
-
-  .range:focus-visible::-webkit-slider-thumb {
     outline: var(--focus);
-    outline-offset: 2px;
-  }
-
-  .range:focus-visible::-moz-range-thumb {
-    outline: var(--focus);
-    outline-offset: 2px;
+    outline-offset: 0;
+    border-radius: var(--radius);
   }
 
   .range:disabled {
