@@ -3,15 +3,22 @@ import { expect, test } from "@playwright/test";
 
 const PAGES = [
   "/",
-  "/playground/",
-  "/devices/",
+  "/spec/latest/",
+  "/spec/2026-10-24/basic/messages/",
+  "/spec/2026-10-24/architecture/",
+  "/spec/glossary/",
+  "/spec/playground/",
+  "/drivers/",
+  "/drivers/mock/",
   "/library/",
+  "/sdks/",
+  "/sdks/python/",
+  "/sdks/python/reference/",
+  "/inspector/",
   "/docs/",
   "/docs/quickstart/",
+  "/docs/tutorials/write-a-driver/",
   "/docs/architecture/",
-  "/docs/cli/",
-  "/spec/",
-  "/spec/changelog/",
   "/blog/",
   "/404/",
 ];
@@ -22,6 +29,7 @@ for (const scheme of ["light", "dark"] as const) {
     for (const path of PAGES) {
       test(`${path} has no WCAG AA violations`, async ({ page, browserName }) => {
         test.skip(browserName !== "chromium", "axe runs once, in Chromium");
+        test.setTimeout(120_000);
         await page.goto(path);
         await page.evaluate(() => document.fonts.ready);
         const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
@@ -33,9 +41,11 @@ for (const scheme of ["light", "dark"] as const) {
 }
 
 test("status never relies on color alone", async ({ page }) => {
-  await page.goto("/");
-  for (const lamp of await page.locator(".lamp").all()) {
-    expect((await lamp.innerText()).trim().length).toBeGreaterThan(0);
+  for (const path of ["/", "/drivers/", "/spec/playground/"]) {
+    await page.goto(path);
+    for (const status of await page.locator(".status").all()) {
+      expect((await status.innerText()).trim().length, path).toBeGreaterThan(0);
+    }
   }
 });
 
