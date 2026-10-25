@@ -39,3 +39,11 @@ def test_driver_catalog_is_current() -> None:
     from openhal.drivers import catalog
 
     assert catalog.TARGET.read_text() == catalog.document(), "Run uv run python -m openhal.drivers.catalog"
+
+
+def test_readme_devices_table_is_current() -> None:
+    from openhal.drivers import catalog
+
+    text = catalog.README.read_text()
+    assert catalog.START in text, "README.md needs the devices table markers"
+    assert text == catalog.readme_with_table(text), "Run uv run python -m openhal.drivers.catalog"

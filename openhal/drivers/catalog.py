@@ -34,8 +34,45 @@ def document() -> str:
     return json.dumps({"drivers": entries()}, indent=2) + "\n"
 
 
+README = ROOT / "README.md"
+START, END = "<!-- devices:start -->", "<!-- devices:end -->"
+STATUS = {
+    "implemented": "tested on simulator",
+    "verified": "verified on hardware",
+    "stub": "stub",
+    "planned": "planned",
+}
+
+
+def readme_table() -> str:
+    """The supported devices table for README.md. Real drivers only, planned ones on one line."""
+    rows = ["| Driver | Devices covered | Status | Hazard default |", "|---|---|---|---|"]
+    planned = []
+    for entry in entries():
+        if entry["tier"] == 0:
+            continue
+        if entry["status"] == "planned":
+            planned.append(f"`{entry['name']}`")
+            continue
+        families = ", ".join(entry["families"][:3])
+        status = STATUS.get(entry["status"], entry["status"])
+        rows.append(f"| `{entry['name']}` | {families} | {status} | {entry['hazard_default']} |")
+    lines = [START, *rows]
+    if planned:
+        lines += ["", "Planned: " + ", ".join(planned) + "."]
+    return "\n".join([*lines, END])
+
+
+def readme_with_table(text: str) -> str:
+    head, _, rest = text.partition(START)
+    _, _, tail = rest.partition(END)
+    return head + readme_table() + tail
+
+
 def main() -> None:
     TARGET.write_text(document())
+    if README.exists() and START in README.read_text():
+        README.write_text(readme_with_table(README.read_text()))
     print(f"Wrote {TARGET} with {len(entries())} drivers")
 
 
