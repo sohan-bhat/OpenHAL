@@ -12,6 +12,9 @@ import contextlib
 import os
 import re
 import shlex
+import subprocess
+import sys
+import time
 import tomllib
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -47,9 +50,16 @@ class SnippetError(AssertionError):
     pass
 
 
+HUB_SETTLE_S = 2.5
+"""After `openhald`, wait as long as a person takes to type the next command, so rate limits
+measured from the hub's first reading behave as they would at a real terminal."""
+
+
 class Session:
     def __init__(self, home: Path) -> None:
         self.home = home
+        self.workdir = home.parent / "work"
+        self.workdir.mkdir(parents=True, exist_ok=True)
         self.hub: EmbeddedHub | None = None
         self.runner = CliRunner()
 
@@ -105,6 +115,8 @@ class Session:
         elif program == "chmod":
             os.chmod(words[2], int(words[1], 8))
             result = Result(line, 0, "")
+        elif words[:3] == ["uv", "run", "pytest"]:
+            result = self.pytest(words[3:])
         elif program in ("uv", "pipx", "pip"):
             result = self.check_install(words)
         elif program == "claude":
@@ -119,7 +131,7 @@ class Session:
 
     def openhal(self, args: list[str]) -> Result:
         phrase = next((value for key, value in PHRASES.items() if tuple(args[: len(key)]) == key), None)
-        with self.environment(), contextlib.ExitStack() as stack:
+        with self.environment(), contextlib.chdir(self.workdir), contextlib.ExitStack() as stack:
             stack.enter_context(mock.patch("getpass.getuser", lambda: "owner"))
             if phrase is not None:
                 stack.enter_context(mock.patch.object(_tty, "interactive", lambda: True))
@@ -133,12 +145,28 @@ class Session:
         if self.hub is None:
             self.hub = EmbeddedHub(self.home)
             self.hub.start()
+            time.sleep(HUB_SETTLE_S)
         return Result("openhald", 0, "")
+
+    def pytest(self, args: list[str]) -> Result:
+        """Run pytest on part of the repository's own suite, as a contributor would."""
+        for arg in args:
+            if not arg.startswith("-") and not (ROOT / arg.split("::")[0]).exists():
+                raise SnippetError(f"pytest target {arg} doesn't exist in the repository.")
+        done = subprocess.run(  # noqa: S603 (fixed program, arguments checked above)
+            [sys.executable, "-m", "pytest", *args, "-p", "no:cacheprovider"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+        )
+        return Result("uv run pytest " + shlex.join(args), done.returncode, done.stdout + done.stderr)
 
     def check_install(self, words: list[str]) -> Result:
         project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
         target = words[-1]
-        match = re.fullmatch(r"(?:([A-Za-z0-9_.-]+)|\.)\[([a-z,]+)\]", target)
+        match = re.fullmatch(r"(?:([A-Za-z][A-Za-z0-9_.-]*)|\.)\[([a-z,]+)\]", target)
         if not match:
             raise SnippetError(f"Can't check the install target {target!r}.")
         name, extras = match.group(1), match.group(2).split(",")
