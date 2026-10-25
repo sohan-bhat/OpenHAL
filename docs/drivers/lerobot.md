@@ -39,7 +39,7 @@ Body joints are in degrees with `use_degrees: true`, LeRobot's default, and from
 - Connecting turns torque on, so the arm holds where it is. Nothing moves.
 - A goal channel reads the joint's present position until a goal is sent, because the servo holds there. The kernel's `max_change_per_s` is then measured from where the joint really is.
 - A goal reads back as the value LeRobot actually wrote, after its own `max_relative_target` clipping.
-- `torque_on` writes every present position as the goal first, so no joint jumps to an old goal.
+- `torque_on` sends every present position as the goal first, so no joint jumps to an old goal.
 - Every LeRobot call blocks on the serial bus, so it runs in a worker thread with a deadline.
 
 ## Safe state
