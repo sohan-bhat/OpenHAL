@@ -1,0 +1,29 @@
+openhal: "0.1"
+device: { name: "Shelly H&T Gen3", model: "H&T Gen3", manufacturer: Shelly }
+id: shelly-ht-gen3
+match:
+  mdns: _shelly._tcp
+connect: { mqtt: homeassistant.local, port: 1883, timeout: 3 s }
+read:
+  temperature:
+    unit: degC
+    stream: true
+    range: [-20, 60]
+    map: { state: "shellyhtg3-aabbccddeeff/status/temperature:0", format: json, json: tC }
+  humidity:
+    unit: percent
+    stream: true
+    range: [0, 100]
+    map: { state: "shellyhtg3-aabbccddeeff/status/humidity:0", format: json, json: rh }
+  battery:
+    unit: percent
+    stream: true
+    range: [0, 100]
+    map: { state: "shellyhtg3-aabbccddeeff/status/devicepower:0", format: json, json: battery.percent }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  Turn on MQTT and status notifications in the Shelly settings, then replace aabbccddeeff in each topic
+  with the device id. Set host to your broker. On battery the sensor sleeps and reports about every two hours
+  or when a reading changes, so a reading can stay unknown until it wakes.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

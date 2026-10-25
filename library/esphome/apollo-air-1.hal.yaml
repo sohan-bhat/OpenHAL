@@ -1,0 +1,25 @@
+openhal: "0.1"
+device: { name: Apollo AIR-1 air quality sensor, model: AIR-1, manufacturer: Apollo Automation }
+id: apollo-air-1
+match:
+  mdns: _esphomelib._tcp
+  esphome: { project_name: ApolloAutomation.AIR-1 }
+connect: { esphome: apollo-air-1.local, port: 6053, timeout: 5 s }
+read:
+  co2: { unit: ppm, every: 60 s, range: [400, 5000], map: { object_id: co2 } }
+  temperature: { unit: degC, every: 30 s, range: [-10, 50], map: { object_id: sen55_temperature } }
+  humidity: { unit: percent, every: 30 s, range: [0, 100], map: { object_id: sen55_humidity } }
+  pressure: { unit: hPa, every: 60 s, range: [870, 1085], map: { object_id: dps310_pressure } }
+  voc_index: { unit: dimensionless, every: 60 s, range: [1, 500], map: { object_id: sen55_voc } }
+  nox_index: { unit: dimensionless, every: 60 s, range: [1, 500], map: { object_id: sen55_nox } }
+write:
+  rgb_light: { type: bool, suggested: true }
+  rgb_light_brightness: { unit: percent, min: 0, max: 50, step: 1, suggested: true }
+safe_state: { rgb_light: false }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  Entity names come from Apollo's ESPHome configuration for the AIR-1. The device adds the end of its MAC
+  address to its name, so set host to the name openhal discover shows, such as apollo-air-1-a1b2c3.local.
+  The SEN55 VOC and NOx readings are indexes from 1 to 500, not concentrations.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

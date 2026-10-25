@@ -1,0 +1,24 @@
+openhal: "0.1"
+device: { name: Apollo MSR-2 multisensor, model: MSR-2, manufacturer: Apollo Automation }
+id: apollo-msr-2
+match:
+  mdns: _esphomelib._tcp
+  esphome: { project_name: ApolloAutomation.MSR-2 }
+connect: { esphome: apollo-msr-2.local, port: 6053, timeout: 5 s }
+read:
+  temperature: { unit: degC, every: 30 s, range: [-10, 50], map: { object_id: dps310_temperature } }
+  pressure: { unit: hPa, every: 60 s, range: [870, 1085], map: { object_id: dps310_pressure } }
+  light: { unit: lux, every: 30 s, map: { object_id: ltr390_light } }
+  uv_index: { unit: dimensionless, every: 60 s, map: { object_id: ltr390_uv_index } }
+  occupied: { type: bool, every: 1 s, map: { object_id: radar_target } }
+write:
+  rgb_light: { type: bool, suggested: true }
+  rgb_light_brightness: { unit: percent, min: 0, max: 50, step: 1, suggested: true }
+safe_state: { rgb_light: false }
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  Entity names come from Apollo's ESPHome configuration for the MSR-2. The device adds the end of its MAC
+  address to its name, so set host to the name openhal discover shows, such as apollo-msr-2-a1b2c3.local.
+  The RGB light is the only thing this file can change.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }
