@@ -22,6 +22,8 @@ export const FLOW_DEFAULT = "Every write passes the Safety Kernel before a Drive
 export interface FlowArt {
   light: string;
   dark: string;
+  lightFlows: string;
+  darkFlows: string;
   width: number;
   height: number;
 }
@@ -48,12 +50,23 @@ function clean(svg: string, prefix: string): string {
     .replace(/aria-labelledby="([^"]+)"/g, (_, ids: string) => `aria-labelledby="${ids.split(/\s+/).map((id) => `${prefix}-${id}`).join(" ")}"`);
 }
 
+function splitFlows(svg: string): [string, string] {
+  const start = svg.indexOf('<g class="oh-flows"');
+  const box = /<svg[^>]*class="[^"]*d2-svg[^"]*"[^>]*viewBox="([^"]+)"/.exec(svg)?.[1];
+  if (start === -1 || !box) return [svg, ""];
+  const end = svg.indexOf("</g>", start) + "</g>".length;
+  const overlay = `<svg class="flow-overlay" viewBox="${box}" preserveAspectRatio="xMinYMin meet" aria-hidden="true" focusable="false">${svg.slice(start, end)}</svg>`;
+  return [svg.slice(0, start) + svg.slice(end), overlay];
+}
+
 function pair(root: string, name: string, prefix: string): FlowArt | null {
   const light = join(root, "docs", "diagrams", `${name}-light.svg`);
   const dark = join(root, "docs", "diagrams", `${name}-dark.svg`);
   if (!existsSync(light) || !existsSync(dark)) return null;
   const lightText = readFileSync(light, "utf8");
-  return { light: clean(lightText, `${prefix}l`), dark: clean(readFileSync(dark, "utf8"), `${prefix}d`), ...size(lightText) };
+  const [lightArt, lightFlows] = splitFlows(clean(lightText, `${prefix}l`));
+  const [darkArt, darkFlows] = splitFlows(clean(readFileSync(dark, "utf8"), `${prefix}d`));
+  return { light: lightArt, dark: darkArt, lightFlows, darkFlows, ...size(lightText) };
 }
 
 export function readFlow(root = join(process.cwd(), "..")): FlowSvg | null {
