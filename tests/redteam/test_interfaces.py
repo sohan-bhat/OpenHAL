@@ -19,8 +19,9 @@ from openhal.mcp import TOOL_NAMES, Tools
 from tests.protocol.conftest import Connect
 from tests.redteam.conftest import CliHub, Rest, Tokens, done_by_clients, run_cli, value, writes
 
-ABOVE = {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"}
-SPIN = {"device": "desk-fan", "action": "spin_test", "args": {"seconds": "2 s"}}
+ABOVE = {"device": "desk-fan", "channel": "fan_speed", "value": 150, "unit": "%"}
+OK30 = {"device": "desk-fan", "channel": "fan_speed", "value": 30, "unit": "%"}
+SPIN = {"device": "desk-fan", "action": "spin_test", "args": {"seconds": {"value": 2, "unit": "s"}}}
 
 
 async def queue_request(hub: Hub) -> str:
@@ -47,7 +48,10 @@ async def test_rest_refuses_all_four(hub: Hub, rest: Rest, tokens: Tokens) -> No
         assert (await client.post(f"/v1/confirmations/{request_id}/reject", json={})).status_code == 403
         assert (await client.post("/v1/stop", json={"reason": "agent stop"})).status_code == 200
         assert (await client.post("/v1/unlock", json={"phrase": "unlock"})).status_code == 403
-        loosen = await client.post("/v1/tighten", json={"device": "desk-fan", "channel": "fan_speed", "max": "150 %"})
+        loosen = await client.post(
+            "/v1/tighten",
+            json={"device": "desk-fan", "channel": "fan_speed", "max": {"value": 150, "unit": "%"}},
+        )
         assert loosen.json()["code"] == "cannot_loosen"
     assert hub.kernel.stopped
     assert hub.kernel.queue.get(request_id).status == "cancelled"
@@ -59,13 +63,13 @@ async def test_rest_without_a_token_gets_nothing(hub: Hub, rest: Rest) -> None:
         assert (await client.post("/v1/write", json=ABOVE)).status_code == 401
         assert (await client.post("/v1/stop", json={})).status_code == 401
     async with rest("ohal_forged-token-that-was-never-issued") as client:
-        assert (await client.post("/v1/write", json={**ABOVE, "value": "30 %"})).status_code == 401
+        assert (await client.post("/v1/write", json=OK30)).status_code == 401
     untouched(hub)
 
 
 async def test_rest_read_only_token_cannot_write(hub: Hub, rest: Rest, tokens: Tokens) -> None:
     async with rest(tokens.reader) as client:
-        decision = (await client.post("/v1/write", json={**ABOVE, "value": "30 %"})).json()
+        decision = (await client.post("/v1/write", json=OK30)).json()
     assert (decision["status"], decision["code"]) == ("blocked", "not_permitted")
     untouched(hub)
 
@@ -75,16 +79,16 @@ async def test_python_client_refuses_all_four(
 ) -> None:
     request_id = await queue_request(hub)
     async with python_client(tokens.agent) as client:
-        decision = await client.write("desk-fan", "fan_speed", "150 %")
+        decision = await client.write("desk-fan", "fan_speed", 150, "%")
         assert (decision.status, decision.code) == ("blocked", "above_max")
         with pytest.raises(OpenHALError):
             await client.approve(request_id)
         await client.stop("agent stop")
         with pytest.raises(OpenHALError):
             await client.unlock("unlock")
-        result = await client.tighten("desk-fan", "fan_speed", max="150 %")
+        result = await client.tighten("desk-fan", "fan_speed", max={"value": 150, "unit": "%"})
         assert (result.ok, result.code) == (False, "cannot_loosen")
-        ramp = await client.write("desk-fan", "fan_speed", "101 %")
+        ramp = await client.write("desk-fan", "fan_speed", 101, "%")
         assert ramp.code == "stopped"
     assert hub.kernel.stopped
     untouched(hub)
@@ -92,13 +96,13 @@ async def test_python_client_refuses_all_four(
 
 async def test_mcp_tools_refuse_all_four(hub: Hub, mcp_tools: Callable[[str], Tools], tokens: Tokens) -> None:
     tools = mcp_tools(tokens.agent)
-    decision = await tools.write("desk-fan", "fan_speed", "150 %")
+    decision = await tools.write("desk-fan", "fan_speed", 150, "%")
     assert (decision.status, decision.code) == ("blocked", "above_max")
     assert decision.error is not None
     assert decision.error.name == "LIMIT_EXCEEDED"
     powers = ("approve", "confirm_", "reject", "unlock", "token", "pair", "answer", "finish", "enable_python")
     assert not [name for name in TOOL_NAMES if name.startswith(powers) or name.endswith(powers)]
-    loosen = await tools.tighten_limits("desk-fan", "fan_speed", max="150 %")
+    loosen = await tools.tighten_limits("desk-fan", "fan_speed", max={"value": 150, "unit": "%"})
     assert (loosen.ok, loosen.code) == (False, "cannot_loosen")
     report = await tools.stop_all("agent stop")
     assert report.by == "agent:claude"
@@ -109,7 +113,7 @@ async def test_mcp_tools_refuse_all_four(hub: Hub, mcp_tools: Callable[[str], To
 async def test_mcp_refuses_to_run_as_a_human(hub: Hub, mcp_tools: Callable[[str], Tools], tokens: Tokens) -> None:
     tools = mcp_tools(tokens.human)
     with pytest.raises(ToolError, match="human token"):
-        await tools.write("desk-fan", "fan_speed", "30 %")
+        await tools.write("desk-fan", "fan_speed", 30, "%")
     untouched(hub)
 
 
@@ -137,7 +141,7 @@ async def test_protocol_token_in_params_cannot_override_a_header(transport: Conn
     async with transport(tokens.reader) as rpc:
         result = await rpc.initialize(tokens.human)
         assert result["principal"]["kind"] == "agent"
-        error = await rpc.error("hal/write", {**ABOVE, "value": "30 %"})
+        error = await rpc.error("hal/write", OK30)
         assert error["data"]["name"] == "SCOPE_DENIED"
     untouched(hub)
 
@@ -149,7 +153,7 @@ async def test_protocol_refused_header_does_not_fall_back(transport: Connect, hu
             {"protocolVersion": "2026-10-24", "clientInfo": {"name": "x", "version": "1"}, "token": tokens.human},
         )
         assert response["error"]["data"]["name"] == "UNAUTHORIZED"
-        error = await rpc.error("hal/write", {**ABOVE, "value": "30 %"})
+        error = await rpc.error("hal/write", OK30)
         assert error["data"]["name"] == "NOT_INITIALIZED"
     untouched(hub)
 
@@ -242,15 +246,14 @@ async def test_inspector_live_log_refuses_an_agent(base_url: str, tokens: Tokens
 async def test_rest_write_with_extra_fields_is_refused(hub: Hub, rest: Rest, tokens: Tokens) -> None:
     async with rest(tokens.agent) as client:
         for body in (
-            {**ABOVE, "value": "30 %", "approved": True},
-            {**ABOVE, "value": "30 %", "principal": {"kind": "human", "name": "sohan"}},
-            {**ABOVE, "value": "30 %", "request": {"status": "approved"}},
+            {**OK30, "approved": True},
+            {**OK30, "principal": {"kind": "human", "name": "sohan"}},
+            {**OK30, "request": {"status": "approved"}},
         ):
             response = await client.post("/v1/write", json=body)
             assert response.status_code == 422
-        laser = await client.post(
-            "/v1/write", json={"device": "laser", "channel": "power", "value": "10 %"}, headers={"X-Principal": "human"}
-        )
+        laser_body = {"device": "laser", "channel": "power", "value": 10, "unit": "%"}
+        laser = await client.post("/v1/write", json=laser_body, headers={"X-Principal": "human"})
         assert laser.json()["status"] == "pending"
     assert writes(hub, "laser") == []
 

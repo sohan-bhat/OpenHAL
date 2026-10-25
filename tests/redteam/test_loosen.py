@@ -87,11 +87,12 @@ async def test_tightening_min_above_max_is_refused(kernel: Kernel, add: AddDevic
 async def test_rest_and_client_cannot_widen_a_file_limit(
     hub: Hub, rest, python_client: Callable[[str], AsyncClient], tokens: Tokens
 ) -> None:
+    big = {"value": 150, "unit": "%"}
     async with rest(tokens.agent) as client:
-        widen = await client.post("/v1/tighten", json={"device": "desk-fan", "channel": "fan_speed", "max": "150 %"})
+        widen = await client.post("/v1/tighten", json={"device": "desk-fan", "channel": "fan_speed", "max": big})
         assert widen.json()["code"] == "cannot_loosen"
     async with python_client(tokens.agent) as client:
-        result = await client.tighten("desk-fan", "fan_speed", max="150 %")
+        result = await client.tighten("desk-fan", "fan_speed", max=big)
         assert (result.ok, result.code) == (False, "cannot_loosen")
     describe = hub.kernel.devices["desk-fan"].file.write["fan_speed"]
     assert describe.max == 100
