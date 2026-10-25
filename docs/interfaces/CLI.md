@@ -256,7 +256,7 @@ openhal driver test NAME
 openhal driver new NAME [--title TEXT] [--root PATH]
 ```
 
-`list` shows every driver with its protocols, hazard default, conformance level and status. `test` runs the conformance suite at the driver's declared level and exits 1 on any failure. `new` scaffolds an experimental `x-NAME` driver with a simulator, conformance case, tests and docs in an OpenHAL checkout, and never overwrites a file. The tutorial is in docs/drivers/WRITING-A-DRIVER.md.
+`list` shows every driver with its protocols, hazard default, conformance level and status. `test` runs the conformance suite at the driver's declared level and exits 1 on any failure. `new` scaffolds an experimental `x-NAME` driver with a simulator, conformance case, tests and docs in an OpenHAL checkout, and never overwrites a file. [The driver guide](../drivers/WRITING-A-DRIVER.md) has the tutorial.
 
 ## Device files
 
