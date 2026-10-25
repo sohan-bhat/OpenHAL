@@ -74,7 +74,13 @@
         <a href={href(item.view)} aria-current={router.route.view === item.view ? "page" : undefined}>
           {item.label}
           {#if item.view === "confirmations" && pending > 0}
-            <span class="count" aria-label="{pending} pending">{pending}</span>
+            <span class="count">
+              <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+                <circle cx="6" cy="6" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5" />
+                <path d="M6 1.25a4.75 4.75 0 0 0 0 9.5z" fill="currentColor" />
+              </svg>
+              {pending}<span class="visually-hidden"> waiting for confirmation</span>
+            </span>
           {/if}
         </a>
       </li>
@@ -205,14 +211,16 @@
   }
 
   .count {
-    min-width: 22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     padding: 0 6px;
     border-radius: var(--radius);
     background: var(--confirm-bg);
     color: var(--confirm);
     font-family: var(--font-mono);
     font-size: var(--t-label);
-    text-align: center;
+    font-variant-numeric: tabular-nums;
   }
 
   .stopped {

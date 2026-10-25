@@ -72,7 +72,13 @@
       <dl class="facts">
         <div><dt class="label">state</dt><dd><StatusMark tone={connection.tone} label={connection.label} /></dd></div>
         {#if unavailableReason(view)}<div><dt class="label">unavailable</dt><dd>{unavailableReason(view)}</dd></div>{/if}
-        <div><dt class="label">verification</dt><dd><StatusMark tone={verification.tone} label={verification.label} /></dd></div>
+        <div>
+          <dt class="label">verification</dt>
+          <dd class="verification">
+            {#if verification.detail}<span>{verification.detail}</span>{/if}
+            <StatusMark tone={verification.tone} label={verification.label} />
+          </dd>
+        </div>
         <div><dt class="label">driver</dt><dd class="mono nobreak">{view.driver}</dd></div>
         <div><dt class="label">conformance</dt><dd>{conformanceFor(view)}</dd></div>
         <div><dt class="label">hazard</dt><dd>{view.hazard}</dd></div>
@@ -240,7 +246,7 @@
     font-size: var(--t-label);
     color: var(--text-2);
     padding: 1px 6px;
-    border: 1px dashed var(--border);
+    background: var(--surface);
     border-radius: var(--radius);
   }
 
@@ -276,11 +282,19 @@
     margin: 0;
   }
 
+  .verification {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-1) var(--s-2);
+  }
+
   .notice {
     display: grid;
+    justify-items: start;
     gap: var(--s-2);
-    padding: var(--s-3);
-    border: 1px dashed var(--unverified);
+    padding: var(--s-3) var(--s-4);
+    background: var(--surface);
     border-radius: var(--radius);
   }
 

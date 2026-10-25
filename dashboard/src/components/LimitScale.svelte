@@ -84,8 +84,8 @@
     position: absolute;
     top: 6px;
     bottom: 6px;
-    border: 1px dashed var(--border);
     border-radius: 2px;
+    border: var(--rule);
     background: var(--surface);
   }
 

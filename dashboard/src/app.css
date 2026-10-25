@@ -155,7 +155,12 @@ pre {
 .button:disabled {
   cursor: not-allowed;
   color: var(--text-2);
-  border-style: dashed;
+  background: var(--surface);
+  border-color: var(--surface);
+}
+
+.button:disabled:hover {
+  border-color: var(--surface);
 }
 
 .button.primary {
@@ -170,7 +175,7 @@ pre {
 
 .button.primary:disabled {
   background: var(--surface);
-  border-color: var(--border);
+  border-color: var(--surface);
   color: var(--text-2);
 }
 
@@ -241,9 +246,9 @@ textarea {
 }
 
 .empty {
-  padding: var(--s-4);
-  border: 1px dashed var(--border);
+  padding: var(--s-3) var(--s-4);
   border-radius: var(--radius);
+  background: var(--surface);
   color: var(--text-2);
 }
 
@@ -267,10 +272,10 @@ textarea {
 }
 
 .data-block {
-  padding: var(--s-3);
-  border: 1px dashed var(--border);
+  padding: var(--s-3) var(--s-4);
+  border: var(--rule);
   border-radius: var(--radius);
-  background: var(--bg);
+  background: var(--surface);
   color: var(--text);
 }
 

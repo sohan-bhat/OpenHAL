@@ -3,11 +3,18 @@ export type Tone = "ok" | "confirm" | "blocked" | "unverified" | "neutral" | "pe
 export interface StatusWord {
   tone: Tone;
   label: string;
+  detail?: string;
+}
+
+const SHAPED: Tone[] = ["ok", "confirm", "blocked", "unverified"];
+
+export function hasShape(tone: Tone): boolean {
+  return SHAPED.includes(tone);
 }
 
 export function verificationStatus(status: string): StatusWord {
   if (status === "verified-on-hardware") return { tone: "ok", label: "verified on hardware" };
-  if (status === "tested-reads") return { tone: "unverified", label: "reads tested, commands unverified" };
+  if (status === "tested-reads") return { tone: "unverified", label: "commands unverified", detail: "reads tested" };
   return { tone: "unverified", label: "unverified" };
 }
 

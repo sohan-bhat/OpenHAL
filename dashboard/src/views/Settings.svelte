@@ -184,7 +184,7 @@
           {#if lan === undefined}
             not reported
           {:else}
-            <StatusMark tone={lan ? "confirm" : "neutral"} label={lan ? "on, other machines can connect" : "off, loopback only"} />
+            <StatusMark tone="neutral" label={lan ? "on, other machines can connect" : "off, loopback only"} />
           {/if}
         </dd>
       </div>
