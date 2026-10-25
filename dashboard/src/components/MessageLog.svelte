@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tick } from "svelte";
+  import { SvelteSet } from "svelte/reactivity";
   import { isValueNotification } from "../lib/logstore";
   import { inspector } from "../lib/state.svelte";
   import {
@@ -9,6 +10,7 @@
     formatTime,
     NO_FILTERS,
     plainTrace,
+    stringifyCompact,
     type TraceFilters,
     type TraceRow,
   } from "../lib/trace";
@@ -28,7 +30,13 @@
   const entries = $derived(showValues ? inspector.log : inspector.log.filter((entry) => !isValueNotification(entry)));
   const rows = $derived(buildTrace(entries));
   const options = $derived(filterOptions(rows));
-  const visible = $derived(filterRows(rows, filters));
+  const PAGE = 400;
+  const SHORT = 240;
+  const expanded = new SvelteSet<number>();
+  let shown = $state(PAGE);
+  const matching = $derived(filterRows(rows, filters));
+  const visible = $derived(matching.length > shown ? matching.slice(matching.length - shown) : matching);
+  const hidden = $derived(matching.length - visible.length);
   const filtered = $derived(Object.values(filters).some(Boolean));
   const host = typeof location === "undefined" ? "127.0.0.1:7420" : location.host;
   const live = $derived(
@@ -56,7 +64,7 @@
   });
 
   $effect(() => {
-    void visible.length;
+    void matching[matching.length - 1]?.seq;
     if (!follow || !scroller) return;
     void tick().then(() => {
       if (scroller) scroller.scrollTop = scroller.scrollHeight;
@@ -70,7 +78,7 @@
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(plainTrace(visible));
+      await navigator.clipboard.writeText(plainTrace(matching));
       copied = true;
       setTimeout(() => (copied = false), 2000);
     } catch {
@@ -88,7 +96,7 @@
     <div class="title">
       <h2 id="log-title">Message log</h2>
       {#if inspector.logAvailable}<StatusMark tone={live.tone} label={live.label} />{/if}
-      <span class="muted count">{visible.length} of {rows.length} messages</span>
+      <span class="muted count">{matching.length} of {rows.length} messages</span>
       {#if ontoggle}
         <button type="button" class="button small toggle" aria-expanded={!collapsed} aria-controls="log-body" onclick={ontoggle}>
           {collapsed ? "Show the log" : "Hide the log"}
@@ -149,13 +157,18 @@
       <p class="empty">
         No messages yet. Clients connect to <code>ws://{host}/rpc</code> and send <code>hal/initialize</code>.
       </p>
-    {:else if !visible.length}
+    {:else if !matching.length}
       <div class="empty">
         <p>No messages match these filters.</p>
         <button type="button" class="button small" onclick={() => (filters = { ...NO_FILTERS })}>Clear filters</button>
       </div>
     {:else}
-      <ol class="trace" aria-label="JSON-RPC messages, oldest first">
+      {#if hidden > 0}
+        <button type="button" class="button small older" onclick={() => (shown += PAGE)}>
+          Show {Math.min(hidden, PAGE)} older messages
+        </button>
+      {/if}
+      <ol class="trace" aria-label="JSON-RPC messages, oldest first" translate="no">
         {#each visible as row (row.seq)}
           <li class="row appear {principalClass(row)}" class:start={row.startsExchange} data-kind={row.kind} data-seq={row.seq}>
             <span class="who">
@@ -172,7 +185,20 @@
               {/if}
             </span>
             <span class="payload">
-              {#if row.hasPayload}<Json value={row.payload} />{/if}
+              {#if row.hasPayload}
+                {@const long = stringifyCompact(row.payload).length > SHORT}
+                <Json value={row.payload} limit={long && !expanded.has(row.seq) ? SHORT : 100000} />
+                {#if long}
+                  <button
+                    type="button"
+                    class="more"
+                    aria-expanded={expanded.has(row.seq)}
+                    onclick={() => (expanded.has(row.seq) ? expanded.delete(row.seq) : expanded.add(row.seq))}
+                  >
+                    {expanded.has(row.seq) ? "Show less" : "Show the whole message"}
+                  </button>
+                {/if}
+              {/if}
               {#if row.tone === "pending"}<StatusMark tone="confirm" label="confirmation required" compact />{/if}
               {#if row.kind === "notification" && row.errorName}
                 <span class="mono inline-error"><span class="code">{row.errorCode}</span> <span class="name">{row.errorName}</span></span>
@@ -278,6 +304,10 @@
     background: var(--bg);
   }
 
+  .older {
+    margin: var(--s-2) 0;
+  }
+
   .trace {
     display: grid;
     grid-template-columns: 12.5ch minmax(8ch, 14ch) 22px minmax(9ch, max-content) minmax(0, 1fr);
@@ -375,6 +405,19 @@
     min-width: 0;
   }
 
+  .more {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-family: var(--font-text);
+    font-size: var(--t-label);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+
   .reason {
     grid-column: 5;
     color: var(--text);
@@ -393,6 +436,7 @@
 
     .row {
       row-gap: 2px;
+      column-gap: var(--s-2);
     }
 
     .who {

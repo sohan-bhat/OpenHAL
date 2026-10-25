@@ -6,8 +6,8 @@
   import { conformanceFor } from "../lib/protocol";
   import { router } from "../lib/router.svelte";
   import { inspector } from "../lib/state.svelte";
-  import { connectionStatus, verificationStatus } from "../lib/status";
-  import { formatQuantity, unitSymbol, valueWidth } from "../lib/units";
+  import { connectionStatus, unavailableReason, verificationStatus } from "../lib/status";
+  import { dataBlock, formatQuantity, unitSymbol, valueWidth } from "../lib/units";
 
   const id = $derived(router.route.id ?? inspector.devices[0]?.id ?? null);
   const view = $derived(id ? inspector.views[id] : undefined);
@@ -71,6 +71,7 @@
       </div>
       <dl class="facts">
         <div><dt class="label">state</dt><dd><StatusMark tone={connection.tone} label={connection.label} /></dd></div>
+        {#if unavailableReason(view)}<div><dt class="label">unavailable</dt><dd>{unavailableReason(view)}</dd></div>{/if}
         <div><dt class="label">verification</dt><dd><StatusMark tone={verification.tone} label={verification.label} /></dd></div>
         <div><dt class="label">driver</dt><dd class="mono">{view.driver}</dd></div>
         <div><dt class="label">conformance</dt><dd>{conformanceFor(view)}</dd></div>
@@ -80,7 +81,7 @@
         {#if view.source}<div><dt class="label">source</dt><dd>{view.source}</dd></div>{/if}
       </dl>
       {#if view.last_error}
-        <div class="problem"><p class="label">Last driver error</p><pre>{view.last_error}</pre></div>
+        <div class="problem"><p class="label">Last driver error, shown as data</p><pre>{dataBlock(view.last_error)?.text}</pre></div>
       {/if}
       {#if !view.writable}
         <div class="notice">
@@ -193,7 +194,7 @@
       <section class="section" aria-labelledby="notes-title">
         <h2 id="notes-title">Notes</h2>
         <p class="muted small">From the Device File, shown as data.</p>
-        <pre class="data-block">{view.notes}</pre>
+        <pre class="data-block">{dataBlock(view.notes)?.text}</pre>
       </section>
     {/if}
   </article>

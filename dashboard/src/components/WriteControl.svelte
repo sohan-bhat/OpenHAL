@@ -375,7 +375,7 @@
     line-height: 1;
   }
 
-  .limit.min span {
+  .limit.max span {
     left: auto;
     right: 6px;
   }

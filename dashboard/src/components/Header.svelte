@@ -50,6 +50,12 @@
   </div>
 </header>
 
+<p class="hub-line">
+  {#if status}{status.product} {status.version}{/if} <span class="mono">{host}</span>
+  <StatusMark tone={connection.tone} label={connection.label} />
+  <span class="muted">protocol</span> <span class="mono">{status?.protocol_version ?? PROTOCOL_VERSION}</span>
+</p>
+
 <nav class="views" aria-label="Views">
   <ul>
     {#each NAV as item (item.view)}
@@ -128,6 +134,10 @@
     background: var(--bg);
   }
 
+  .hub-line {
+    display: none;
+  }
+
   .views ul {
     display: flex;
     flex-wrap: wrap;
@@ -192,12 +202,24 @@
   @media (max-width: 1023px) {
     .top {
       grid-template-columns: minmax(0, 1fr) auto;
-      padding: var(--s-3) var(--s-4);
+      padding: var(--s-2) var(--s-4);
+      position: sticky;
+      top: 0;
+      z-index: 2;
     }
 
     .hub {
-      grid-column: 1 / -1;
-      grid-row: 2;
+      display: none;
+    }
+
+    .hub-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: var(--s-1) var(--s-3);
+      padding: var(--s-2) var(--s-4);
+      border-bottom: var(--rule);
+      font-size: var(--t-label);
     }
 
     .stop-slot {

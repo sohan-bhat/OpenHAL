@@ -11,10 +11,13 @@ export function verificationStatus(status: string): StatusWord {
   return { tone: "unverified", label: "unverified" };
 }
 
-export function connectionStatus(device: { connected: boolean; unavailable: string | null }): StatusWord {
-  if (!device.connected) return { tone: "neutral", label: "not connected" };
-  if (device.unavailable) return { tone: "neutral", label: device.unavailable };
-  return { tone: "ok", label: "connected" };
+export function connectionStatus(device: { connected: boolean }): StatusWord {
+  return device.connected ? { tone: "ok", label: "connected" } : { tone: "neutral", label: "not connected" };
+}
+
+export function unavailableReason(device: { connected: boolean; unavailable: string | null }): string | null {
+  if (!device.unavailable || (!device.connected && device.unavailable === "not connected")) return null;
+  return device.unavailable;
 }
 
 export function confirmTier(tier: string | null | undefined): StatusWord {

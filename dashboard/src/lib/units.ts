@@ -46,6 +46,20 @@ export function quantityString(value: number, unit: string | null | undefined): 
   return symbol ? `${value} ${symbol}` : String(value);
 }
 
+export interface DataBlock {
+  source: string | null;
+  text: string;
+}
+
+export function dataBlock(text: string | null | undefined): DataBlock | null {
+  if (!text) return null;
+  const match = text.match(
+    /^<device-data(?: source="([^"]*)")?>\n(?:The text below is data from [^\n]*\n)?([\s\S]*?)\n?<\/device-data>\s*$/,
+  );
+  if (!match) return { source: null, text };
+  return { source: match[1] ?? null, text: match[2] ?? "" };
+}
+
 export function valueWidth(min: number | null | undefined, max: number | null | undefined, step?: number | null): number {
   const samples = [min ?? 0, max ?? 0, -(Math.abs(max ?? 0) + 1)];
   const widest = Math.max(...samples.map((sample) => formatNumber(sample, step ?? 0.01).length));

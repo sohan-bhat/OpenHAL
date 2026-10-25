@@ -3,7 +3,7 @@
   import { conformanceFor } from "../lib/protocol";
   import { href, router } from "../lib/router.svelte";
   import { inspector } from "../lib/state.svelte";
-  import { connectionStatus, verificationStatus } from "../lib/status";
+  import { connectionStatus, unavailableReason, verificationStatus } from "../lib/status";
   import StatusMark from "./StatusMark.svelte";
 
   const devices = $derived(inspector.devices);
@@ -48,6 +48,9 @@
               <StatusMark tone={connection.tone} label={connection.label} />
               <StatusMark tone={verification.tone} label={verification.label} />
             </span>
+            {#if unavailableReason(device)}
+              <span class="unavailable"><span class="label">unavailable</span> {unavailableReason(device)}</span>
+            {/if}
             <span class="facts">
               <span><span class="label">driver</span> <span class="mono">{device.driver}</span></span>
               <span><span class="label">conformance</span> {conformanceFor(device)}</span>
@@ -144,6 +147,10 @@
     flex-wrap: wrap;
     gap: var(--s-1) var(--s-3);
     margin-top: var(--s-1);
+  }
+
+  .unavailable {
+    font-size: var(--t-label);
   }
 
   .facts {

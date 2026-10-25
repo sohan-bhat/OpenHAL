@@ -62,10 +62,10 @@
       {#each args as [arg, argSpec] (arg)}
         <label class="field">
           <span class="mono">{arg}{argSpec.unit ? ` in ${unitSymbol(argSpec.unit)}` : ""}</span>
-          {#if argSpec.values}
+          {#if argSpec.values?.length}
             <select bind:value={values[arg]} {disabled}>
               <option value="">Choose</option>
-              {#each argSpec.values as option (option)}<option value={option}>{option}</option>{/each}
+              {#each argSpec.values ?? [] as option (option)}<option value={option}>{option}</option>{/each}
             </select>
           {:else if argSpec.type === "bool"}
             <select bind:value={values[arg]} {disabled}>
@@ -75,7 +75,9 @@
             </select>
           {:else}
             <input
-              type={argSpec.unit || argSpec.min !== undefined ? "number" : "text"}
+              type={argSpec.unit || argSpec.type === "number" || argSpec.min !== undefined ? "number" : "text"}
+              inputmode={argSpec.unit || argSpec.type === "number" ? "decimal" : undefined}
+              autocomplete="off"
               min={argSpec.min}
               max={argSpec.max}
               bind:value={values[arg]}

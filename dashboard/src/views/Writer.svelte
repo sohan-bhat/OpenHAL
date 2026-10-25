@@ -6,7 +6,7 @@
   import { href, router } from "../lib/router.svelte";
   import { inspector } from "../lib/state.svelte";
   import type { Question, TestStep, UnknownDevice, WriterSession } from "../lib/types";
-  import { unitSymbol } from "../lib/units";
+  import { dataBlock, unitSymbol } from "../lib/units";
 
   const STEPS: { status: WriterSession["status"]; label: string }[] = [
     { status: "detecting", label: "Detect" },
@@ -226,7 +226,13 @@
       {#if session.sources.length}
         <details>
           <summary>What the device and its sources said, shown as data</summary>
-          {#each session.sources as source, index (index)}{#if source}<pre class="data-block">{source}</pre>{/if}{/each}
+          {#each session.sources as source, index (index)}
+            {@const block = dataBlock(source)}
+            {#if block}
+              <p class="label source-label">{block.source ?? "source"}</p>
+              <pre class="data-block">{block.text}</pre>
+            {/if}
+          {/each}
         </details>
       {/if}
     </section>
