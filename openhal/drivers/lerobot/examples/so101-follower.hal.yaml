@@ -1,0 +1,36 @@
+device: { name: SO-101 follower arm, model: SO-101, manufacturer: The Robot Studio }
+id: so101
+match:
+  usb: ["1a86:55d3"]
+connect:
+  lerobot: so101_follower
+  port: /dev/ttyACM0
+  robot_id: my_follower
+  use_degrees: true
+  max_relative_target: 10
+  timeout: 2 s
+  action_wait: 8 s
+read:
+  shoulder_pan: { unit: deg, every: 500 ms, range: [-110, 110] }
+  shoulder_lift: { unit: deg, every: 500 ms, range: [-110, 110] }
+  elbow_flex: { unit: deg, every: 500 ms, range: [-110, 110] }
+  gripper: { unit: percent, every: 500 ms }
+  torque: { type: bool, every: 2 s }
+write:
+  shoulder_pan_goal: { unit: deg, min: -30, max: 30, max_change_per_s: 20, confirm: confirm-each-time }
+  elbow_flex_goal: { unit: deg, min: 60, max: 100, max_change_per_s: 20, confirm: confirm-each-time }
+  gripper_goal: { unit: percent, min: 0, max: 50, max_change_per_s: 25, confirm: confirm-each-time }
+actions:
+  torque_off: { description: "Turn torque off on every motor. The arm goes limp." }
+  torque_on:
+    description: Turn torque on so the arm holds where it is.
+    confirm: confirm-each-time
+safe_state:
+  - { gripper_goal: 0 }
+safe_state_note: "A stop turns torque off first, so the arm goes limp and falls under gravity. Rest it over a soft surface while testing."
+watchdog:
+  heartbeat: 1 s
+  on_loss: safe_state
+hazard: high
+notes: "An SO-101 follower calibrated with lerobot-calibrate as my_follower. Goal limits start narrow around a rest pose. Widen them one joint at a time."
+provenance: { source: hand-written, by: openhal lerobot driver example, at: 2026-10-24 }

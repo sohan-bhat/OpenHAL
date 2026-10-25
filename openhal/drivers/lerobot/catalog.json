@@ -1,0 +1,22 @@
+{
+  "name": "lerobot",
+  "tier": 2,
+  "status": "implemented",
+  "protocols": ["Hugging Face LeRobot Robot API"],
+  "families": [
+    "SO-100 and SO-101 follower arms",
+    "Koch and OMX follower arms",
+    "other LeRobot robots with joint position actions"
+  ],
+  "hazard_default": "high",
+  "tests": "a faithful fake of LeRobot's SOFollower, with each assumption checked in the hardware test plan",
+  "estimate": {
+    "devices": "a dozen robot types, thousands of hobby and lab arms built from them",
+    "reasoning": "LeRobot registers about a dozen robot types, and the SO-100 and SO-101 kits are among the most built open source arms. The driver reads joint positions and sends joint goals through LeRobot's Robot interface, so it covers robots whose actions are joint positions. Mobile bases and hands with other action types need a map. The count is a model estimate.",
+    "sources": [
+      "https://github.com/huggingface/lerobot",
+      "https://huggingface.co/docs/lerobot/so101",
+      "https://huggingface.co/docs/lerobot/integrate_hardware"
+    ]
+  }
+}
