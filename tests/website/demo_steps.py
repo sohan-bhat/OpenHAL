@@ -114,7 +114,7 @@ def generate() -> list[dict[str, Any]]:
                 else:
                     assert session.hub is not None
                     output = asyncio.run(_call(session.hub.url, agent_token, step["tool"], step["args"]))
-                    call = json.dumps({"tool": step["tool"], "arguments": step["args"]}, ensure_ascii=False)
+                    call = json.dumps({"tool": step["tool"], "arguments": step["args"]}, indent=2, ensure_ascii=False)
                     frame["text"] = f"{call}\n\n{output}"
                 frames.append(frame)
         finally:

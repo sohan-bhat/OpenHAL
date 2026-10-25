@@ -1,0 +1,192 @@
+---
+// How it works, in three steps, with the device file it starts from and the path a command takes.
+import deskFan from "../../../spec/examples/desk-fan.hal.yaml?raw";
+
+const steps = [
+  {
+    title: "Describe the device",
+    text: "One small file lists what can be read, what can be changed and the safe limits. The driver writer drafts it from the device itself, your sketch or its manual. A person confirms every limit.",
+  },
+  {
+    title: "Connect your AI",
+    text: "The hub runs on your laptop or a Raspberry Pi. Any MCP client reaches it through openhal mcp. Scripts use the command line or the Python library.",
+  },
+  {
+    title: "Check every command",
+    text: "The safety kernel checks units, range, step, rate, interlocks and confirmation. Only then does it give the driver a grant for that one write.",
+  },
+];
+
+const path = [
+  { legend: "Client", name: "Claude, Cursor, any MCP client" },
+  { legend: "Bridge", name: "openhal mcp" },
+  { legend: "Hub", name: "Safety kernel", detail: "checks, then one grant" },
+  { legend: "Driver", name: "one per protocol or bridge" },
+  { legend: "Device", name: "your fan, printer or supply" },
+];
+---
+
+<div class="how">
+  <ol class="steps">
+    {
+      steps.map((step, index) => (
+        <li>
+          <p class="mono n" aria-hidden="true">{index + 1}</p>
+          <div>
+            <h3>{step.title}</h3>
+            <p class="muted">{step.text}</p>
+          </div>
+        </li>
+      ))
+    }
+  </ol>
+  <figure class="code-block file">
+    <figcaption class="code-legend legend"><span>spec/examples/desk-fan.hal.yaml</span></figcaption>
+    <pre tabindex="0"><code>{deskFan.trim()}</code></pre>
+  </figure>
+  <figure class="path" aria-label="The path a command takes">
+    <ol>
+      {
+        path.map((stop) => (
+          <li class:list={{ kernel: stop.legend === "Hub" }}>
+            <span class="legend">{stop.legend}</span>
+            <span class="name">{stop.name}</span>
+            {stop.detail && <span class="detail mono">{stop.detail}</span>}
+          </li>
+        ))
+      }
+    </ol>
+    <figcaption class="muted">
+      Every write and action takes this one path, from every client. The kernel runs in the hub, never in the model.
+    </figcaption>
+  </figure>
+</div>
+
+<style>
+  .how {
+    display: grid;
+    gap: var(--s-6);
+  }
+
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s-5);
+  }
+
+  .steps li {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    gap: var(--s-3);
+  }
+
+  .n {
+    font-size: var(--t-3);
+    line-height: var(--lh-3);
+    color: var(--ink-3);
+  }
+
+  h3 {
+    font-size: var(--t-3);
+    line-height: var(--lh-3);
+  }
+
+  h3 + p {
+    margin-top: var(--s-1);
+    max-width: 52ch;
+  }
+
+  .file {
+    margin: 0;
+    align-self: start;
+  }
+
+  .path {
+    margin: 0;
+    grid-column: 1 / -1;
+  }
+
+  .path ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s-3);
+  }
+
+  .path li {
+    position: relative;
+    display: grid;
+    gap: 2px;
+    padding: var(--s-3) var(--s-3);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+  }
+
+  .path li.kernel {
+    border: 2px solid var(--ink);
+  }
+
+  .path .legend {
+    color: var(--ink-2);
+  }
+
+  .name {
+    font-family: var(--font-label);
+    font-weight: 700;
+    font-size: var(--t-2);
+    line-height: var(--lh-1);
+  }
+
+  .detail {
+    font-size: var(--t-0);
+    color: var(--ink-2);
+  }
+
+  .path figcaption {
+    margin-top: var(--s-3);
+    font-size: var(--t-1);
+    line-height: var(--lh-1);
+  }
+
+  /* Arrows between the stops, drawn with rules. Down on phones, right on wide screens. */
+  .path li + li::before {
+    content: "";
+    position: absolute;
+    left: var(--s-5);
+    top: calc(-1 * var(--s-3) - 1px);
+    width: 1px;
+    height: var(--s-3);
+    background: var(--ink);
+  }
+
+  @media (min-width: 1024px) {
+    .how {
+      grid-template-columns: 5fr 7fr;
+      column-gap: var(--s-7);
+    }
+
+    .path ol {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: var(--s-5);
+    }
+
+    .path li + li::before {
+      left: calc(-1 * var(--s-5));
+      top: 50%;
+      width: var(--s-5);
+      height: 1px;
+    }
+
+    .path li + li::after {
+      content: "";
+      position: absolute;
+      left: -6px;
+      top: calc(50% - 4px);
+      border: 4px solid transparent;
+      border-left: 5px solid var(--ink);
+    }
+  }
+</style>

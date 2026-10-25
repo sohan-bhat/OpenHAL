@@ -25,28 +25,28 @@
     "caption": "Give Claude its own token, limited to low hazard devices.",
     "kind": "cli",
     "capture": "",
-    "text": "$ openhal token create --agent --scope control_low --name claude\nCreated agent token 1840cf62ec3e for claude, scope control_low.\nThis is the only time it is shown. Store it in your MCP client config as OPENHAL_TOKEN.\nohal_<agent token, shown once>"
+    "text": "$ openhal token create --agent --scope control_low --name claude\nCreated agent token fce08a96f6bc for claude, scope control_low.\nThis is the only time it is shown. Store it in your MCP client config as OPENHAL_TOKEN.\nohal_<agent token, shown once>"
   },
   {
     "id": "read",
     "caption": "Claude reads the temperature through the MCP server.",
     "kind": "mcp",
     "capture": "",
-    "text": "{\"tool\": \"read\", \"arguments\": {\"device\": \"demo-fan\", \"channel\": \"temperature\"}}\n\n{\n  \"device\": \"demo-fan\",\n  \"channel\": \"temperature\",\n  \"ok\": true,\n  \"value\": 30.92,\n  \"unit\": \"degC\",\n  \"at\": 1792893930.2070642,\n  \"suspect\": false\n}"
+    "text": "{\n  \"tool\": \"read\",\n  \"arguments\": {\n    \"device\": \"demo-fan\",\n    \"channel\": \"temperature\"\n  }\n}\n\n{\n  \"device\": \"demo-fan\",\n  \"channel\": \"temperature\",\n  \"ok\": true,\n  \"value\": 30.92,\n  \"unit\": \"degC\",\n  \"at\": 1792894287.223922,\n  \"suspect\": false\n}"
   },
   {
     "id": "write",
     "caption": "Claude asks for 40 %. The kernel checks the unit, range, step and rate, then the fan moves.",
     "kind": "mcp",
     "capture": "",
-    "text": "{\"tool\": \"write\", \"arguments\": {\"device\": \"demo-fan\", \"channel\": \"fan_speed\", \"value\": \"40 %\"}}\n\n{\n  \"status\": \"done\",\n  \"message\": \"Done. fan_speed is now 40 %.\",\n  \"device\": \"demo-fan\",\n  \"target\": \"write:fan_speed\",\n  \"value\": 40.0,\n  \"unit\": \"percent\"\n}"
+    "text": "{\n  \"tool\": \"write\",\n  \"arguments\": {\n    \"device\": \"demo-fan\",\n    \"channel\": \"fan_speed\",\n    \"value\": \"40 %\"\n  }\n}\n\n{\n  \"status\": \"done\",\n  \"message\": \"Done. fan_speed is now 40 %.\",\n  \"device\": \"demo-fan\",\n  \"target\": \"write:fan_speed\",\n  \"value\": 40.0,\n  \"unit\": \"percent\"\n}"
   },
   {
     "id": "blocked",
     "caption": "Claude tries 150 %. The kernel blocks it before anything reaches the device.",
     "kind": "mcp",
     "capture": "",
-    "text": "{\"tool\": \"write\", \"arguments\": {\"device\": \"demo-fan\", \"channel\": \"fan_speed\", \"value\": \"150 %\"}}\n\n{\n  \"status\": \"blocked\",\n  \"code\": \"above_max\",\n  \"message\": \"Blocked. The fan_speed limit is 100 % (max). Asked for 150 %.\",\n  \"device\": \"demo-fan\",\n  \"target\": \"write:fan_speed\",\n  \"limit\": {\n    \"max\": 100.0,\n    \"unit\": \"percent\"\n  }\n}"
+    "text": "{\n  \"tool\": \"write\",\n  \"arguments\": {\n    \"device\": \"demo-fan\",\n    \"channel\": \"fan_speed\",\n    \"value\": \"150 %\"\n  }\n}\n\n{\n  \"status\": \"blocked\",\n  \"code\": \"above_max\",\n  \"message\": \"Blocked. The fan_speed limit is 100 % (max). Asked for 150 %.\",\n  \"device\": \"demo-fan\",\n  \"target\": \"write:fan_speed\",\n  \"limit\": {\n    \"max\": 100.0,\n    \"unit\": \"percent\"\n  }\n}"
   },
   {
     "id": "stop",
