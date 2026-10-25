@@ -65,3 +65,10 @@ export function valueWidth(min: number | null | undefined, max: number | null | 
   const widest = Math.max(...samples.map((sample) => formatNumber(sample, step ?? 0.01).length));
   return Math.max(4, widest);
 }
+
+export function formatDateTime(epochSeconds: number | null | undefined): string {
+  if (!epochSeconds) return "";
+  const date = new Date(epochSeconds * 1000);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}

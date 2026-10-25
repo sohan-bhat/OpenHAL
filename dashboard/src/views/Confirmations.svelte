@@ -133,7 +133,7 @@
               <div class="buttons">
                 <label class="field reason">
                   <span>Reason to reject, optional</span>
-                  <input type="text" bind:value={reasons[request.id]} maxlength="200" />
+                  <input type="text" bind:value={reasons[request.id]} maxlength="200" autocomplete="off" />
                 </label>
                 <button type="button" class="button" disabled={busy[request.id]} onclick={() => reject(request)}>Reject</button>
               </div>

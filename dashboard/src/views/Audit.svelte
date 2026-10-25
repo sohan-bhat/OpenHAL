@@ -2,6 +2,7 @@
   import Json from "../components/Json.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import { api } from "../lib/api";
+  import { formatDateTime } from "../lib/units";
   import { fromKernelCode } from "../lib/protocol";
   import { inspector } from "../lib/state.svelte";
   import { auditStatus } from "../lib/status";
@@ -44,11 +45,6 @@
     verify = await api.auditVerify();
   }
 
-  function when(at: number): string {
-    const date = new Date(at * 1000);
-    const pad = (value: number) => String(value).padStart(2, "0");
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-  }
 
   function reason(entry: AuditEntry): string | null {
     const message = entry.details.message;
@@ -119,7 +115,7 @@
           {@const more = extra(entry)}
           <li class="entry {who.kind}" class:blocked={entry.status === "blocked" || entry.status === "failed"}>
             <span class="seq mono">{entry.seq}</span>
-            <span class="time mono">{when(entry.at)}</span>
+            <span class="time mono">{formatDateTime(entry.at)}</span>
             <span class="event mono">{entry.event}</span>
             <span class="principal mono">{entry.principal}</span>
             <span class="target mono">{[entry.device, entry.target].filter(Boolean).join(" ")}</span>

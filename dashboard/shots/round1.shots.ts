@@ -33,6 +33,17 @@ async function open(browser: Browser, width: number, theme: "light" | "dark"): P
   return context.newPage();
 }
 
+async function scrollWithin(page: Page, selector: string, container: string, offset: number): Promise<void> {
+  await page.locator(selector).first().evaluate(
+    (element, [box, gap]) => {
+      const scroller = element.closest(box as string) as HTMLElement | null;
+      if (!scroller) return;
+      scroller.scrollTop += element.getBoundingClientRect().top - scroller.getBoundingClientRect().top - (gap as number);
+    },
+    [container, offset],
+  );
+}
+
 async function settle(page: Page): Promise<void> {
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(600);
@@ -53,11 +64,7 @@ for (const theme of THEMES) {
       await expect(page.locator('li[data-kind="error"]').filter({ hasText: "LIMIT_EXCEEDED" }).first()).toBeAttached();
       if (!phone) {
         await page.waitForTimeout(400);
-        await page
-          .locator('li[data-kind="request"]')
-          .filter({ hasText: '"150 %"' })
-          .first()
-          .evaluate((row) => row.scrollIntoView({ block: "start" }));
+        await scrollWithin(page, 'li[data-kind="request"]:has-text("150 %")', ".scroller", 8);
       }
       await shoot(page, "devices", width, theme);
       if (phone) {
@@ -101,8 +108,12 @@ for (const theme of THEMES) {
       for (const button of await page.getByRole("button", { name: /Use the suggested value/ }).all()) await button.click();
       await page.getByRole("button", { name: "Confirm these limits" }).click();
       await expect(page.getByText(/added, \d+ removed since the draft/)).toBeVisible();
-      await page.locator(".line.removed").first().evaluate((line) => line.scrollIntoView({ block: "start" }));
-      await page.evaluate(() => window.scrollBy(0, -80));
+      if (phone) {
+        await page.locator(".line.removed").first().evaluate((line) => line.scrollIntoView({ block: "start" }));
+        await page.evaluate(() => window.scrollBy(0, -80));
+      } else {
+        await scrollWithin(page, ".line.removed", "main", 60);
+      }
       await shoot(page, "writer-review", width, theme);
       await page.context().close();
     });

@@ -328,7 +328,7 @@
         <form onsubmit={save} class="save">
           <label class="field">
             <span>File name</span>
-            <span class="name-input"><input type="text" bind:value={saveAs} spellcheck="false" /><span class="mono muted">.hal.yaml</span></span>
+            <span class="name-input"><input type="text" bind:value={saveAs} spellcheck="false" autocomplete="off" /><span class="mono muted">.hal.yaml</span></span>
           </label>
           <button class="button primary" type="submit" disabled={busy || !saveAs.trim()}>Save the Device File</button>
         </form>

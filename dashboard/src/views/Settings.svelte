@@ -1,6 +1,7 @@
 <script lang="ts">
   import StatusMark from "../components/StatusMark.svelte";
   import { api } from "../lib/api";
+  import { formatDateTime } from "../lib/units";
   import { PROTOCOL_VERSION } from "../lib/protocol";
   import { inspector } from "../lib/state.svelte";
   import type { TokenInfo } from "../lib/types";
@@ -75,9 +76,6 @@
     }
   }
 
-  function when(at: number): string {
-    return new Date(at * 1000).toLocaleString(undefined, { hour12: false });
-  }
 </script>
 
 <div class="view">
@@ -115,7 +113,7 @@
               <td>{token.kind}</td>
               <td class="mono">{token.scope}</td>
               <td class="mono">{token.token_id}</td>
-              <td class="mono">{when(token.created_at)}</td>
+              <td class="mono">{formatDateTime(token.created_at)}</td>
               <td><StatusMark tone={token.revoked ? "neutral" : "ok"} label={token.revoked ? "revoked" : "active"} /></td>
               <td class="end">
                 {#if !token.revoked}
@@ -136,7 +134,7 @@
     <form class="create" onsubmit={create}>
       <h3>Create a token</h3>
       <div class="row">
-        <label class="field"><span>Name</span><input type="text" bind:value={name} maxlength="80" required /></label>
+        <label class="field"><span>Name</span><input type="text" bind:value={name} maxlength="80" required autocomplete="off" /></label>
         <label class="field">
           <span>Kind</span>
           <select bind:value={kind}><option value="agent">agent</option><option value="human">human</option></select>

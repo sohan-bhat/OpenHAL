@@ -1,6 +1,7 @@
 <script lang="ts">
   import StatusMark from "../components/StatusMark.svelte";
   import { api } from "../lib/api";
+  import { formatDateTime } from "../lib/units";
   import { fromKernelCode } from "../lib/protocol";
   import { href, router } from "../lib/router.svelte";
   import { inspector } from "../lib/state.svelte";
@@ -68,10 +69,6 @@
     await Promise.all([loadList(), loadDetail(id)]);
   }
 
-  function when(at: number | null): string {
-    if (!at) return "";
-    return new Date(at * 1000).toLocaleString(undefined, { hour12: false });
-  }
 
   function decisionLine(decision: Record<string, unknown>): { status: string; text: string; code: string | null; step: string } {
     return {
@@ -185,7 +182,7 @@
                     <tr>
                       <td class="mono">{run.run_id}</td>
                       <td class="mono">{run.trigger ?? ""}</td>
-                      <td class="mono">{when(run.started_at)}</td>
+                      <td class="mono">{formatDateTime(run.started_at)}</td>
                       <td><StatusMark tone={mark.tone} label={mark.label} /></td>
                       <td>{run.message}</td>
                     </tr>
