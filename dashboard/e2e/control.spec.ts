@@ -6,14 +6,14 @@ test.beforeEach(async ({ context }) => {
 });
 
 test("STOP puts the hub in the stopped state and UNLOCK needs the typed phrase", async ({ page }) => {
-  await page.goto("/#/devices/desk-fan");
+  await page.goto("/#/devices/plant-waterer");
   await page.getByRole("button", { name: /STOP/ }).click();
   await expect(page.getByRole("status").filter({ hasText: "error -32014 STOPPED" })).toBeVisible();
   const unlock = page.getByRole("button", { name: "UNLOCK" });
   await expect(unlock).toBeVisible();
 
   const agent = await AgentClient.connect("stopped-agent", hubState().agentToken);
-  const refused = await agent.write("desk-fan", "fan_speed", "10 %");
+  const refused = await agent.write("curing-heater", "power", 10, "W");
   agent.close();
   expect(refused.error?.data?.name).toBe("STOPPED");
   await expect(page.locator('li[data-kind="error"]').filter({ hasText: "error -32014 STOPPED" }).last()).toBeVisible();
@@ -33,7 +33,11 @@ test("STOP puts the hub in the stopped state and UNLOCK needs the typed phrase",
 
 async function queueVent(name: string): Promise<string> {
   const agent = await AgentClient.connect(name, hubState().mediumToken);
-  const pending = await agent.call("hal/action", { device: "curing-heater", action: "vent", args: { seconds: "5 s" } });
+  const pending = await agent.call("hal/action", {
+    device: "curing-heater",
+    action: "vent",
+    args: { seconds: { value: 5, unit: "s" } },
+  });
   agent.close();
   expect(pending.result?.status).toBe("pending");
   return String(pending.result?.requestId);

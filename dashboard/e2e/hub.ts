@@ -79,8 +79,8 @@ export class AgentClient {
     this.socket.send(JSON.stringify({ jsonrpc: "2.0", method }));
   }
 
-  write(device: string, channel: string, value: string): Promise<RpcMessage> {
-    return this.call("hal/write", { device, channel, value });
+  write(device: string, channel: string, value: number, unit: string): Promise<RpcMessage> {
+    return this.call("hal/write", { device, channel, value, unit });
   }
 
   close(): void {

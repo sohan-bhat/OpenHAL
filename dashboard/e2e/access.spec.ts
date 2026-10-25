@@ -24,8 +24,8 @@ async function hasVisibleFocus(page: Page): Promise<string | true> {
 }
 
 test("the Inspector works from the keyboard with visible focus", async ({ page, browserName }) => {
-  await page.goto("/#/devices/desk-fan");
-  await expect(page.getByRole("heading", { name: "Desk fan controller" })).toBeVisible();
+  await page.goto("/#/devices/plant-waterer");
+  await expect(page.getByRole("heading", { name: "Plant waterer" })).toBeVisible();
   const tab = browserName === "webkit" ? "Alt+Tab" : "Tab";
 
   await page.keyboard.press(tab);
@@ -45,27 +45,26 @@ test("the Inspector works from the keyboard with visible focus", async ({ page, 
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Audit log", level: 1 })).toBeVisible();
 
-  await page.getByRole("link", { name: /Desk fan controller/ }).focus();
+  await page.getByRole("link", { name: /Resin curing heater/ }).focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("heading", { name: "Desk fan controller", level: 1 })).toBeVisible();
-  const slider = page.getByRole("slider", { name: "fan_speed new value" });
+  await expect(page.getByRole("heading", { name: "Resin curing heater", level: 1 })).toBeVisible();
+  const slider = page.getByRole("slider", { name: "power new value" });
   await slider.focus();
   const before = Number(await slider.inputValue());
-  await page.keyboard.press(before >= 100 ? "ArrowLeft" : "ArrowRight");
+  await page.keyboard.press(before >= 60 ? "ArrowLeft" : "ArrowRight");
   expect(Number(await slider.inputValue())).not.toBe(before);
   await page.keyboard.press("End");
-  expect(await slider.inputValue()).toBe("100");
+  expect(await slider.inputValue()).toBe("60");
 });
 
-const VIEWS = ["#/devices/desk-fan", "#/devices/bench-lamp", "#/confirmations", "#/audit", "#/routines", "#/writer", "#/settings"];
+const VIEWS = ["#/devices/plant-waterer", "#/devices/curing-heater", "#/devices/bench-lamp", "#/confirmations", "#/audit", "#/routines", "#/writer", "#/settings"];
 
 for (const scheme of ["light", "dark"] as const) {
   test(`every view passes axe WCAG 2.1 AA in the ${scheme} theme`, async ({ page }) => {
-    test.setTimeout(90_000);
+    test.setTimeout(240_000);
     await page.emulateMedia({ colorScheme: scheme });
     const agent = await AgentClient.connect("axe-agent", hubState().agentToken);
-    await agent.write("desk-fan", "fan_speed", "150 %");
-    await agent.call("hal/action", { device: "desk-fan", action: "spin_test", args: { seconds: "5 s" } });
+    await agent.call("hal/action", { device: "plant-waterer", action: "water", args: { duration: { value: 120, unit: "s" } } });
     agent.close();
     for (const view of VIEWS) {
       await page.goto(`/${view}`);

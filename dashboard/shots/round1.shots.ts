@@ -12,14 +12,27 @@ test.describe.configure({ mode: "serial" });
 test.beforeAll(async () => {
   mkdirSync(OUT, { recursive: true });
   const agent = await AgentClient.connect("bench-agent", hubState().agentToken);
-  const pending = await agent.call("hal/action", { device: "desk-fan", action: "spin_test", args: { seconds: "5 s" } });
-  expect(pending.result?.status).toBe("pending");
-  await new Promise((resolve) => setTimeout(resolve, 2500));
-  const blocked = await agent.write("desk-fan", "fan_speed", "150 %");
+  const blocked = await agent.call("hal/action", {
+    device: "plant-waterer",
+    action: "water",
+    args: { duration: { value: 120, unit: "s" } },
+  });
   expect(blocked.error?.data?.name).toBe("LIMIT_EXCEEDED");
-  const granted = await agent.write("desk-fan", "fan_speed", "60 %");
+  const granted = await agent.call("hal/action", {
+    device: "plant-waterer",
+    action: "water",
+    args: { duration: { value: 20, unit: "s" } },
+  });
   expect(granted.result?.status).toBe("done");
   agent.close();
+  const script = await AgentClient.connect("lab-script", hubState().mediumToken);
+  const pending = await script.call("hal/action", {
+    device: "curing-heater",
+    action: "vent",
+    args: { seconds: { value: 5, unit: "s" } },
+  });
+  expect(pending.result?.status).toBe("pending");
+  script.close();
 });
 
 async function open(browser: Browser, width: number, theme: "light" | "dark"): Promise<Page> {
@@ -60,15 +73,15 @@ for (const theme of THEMES) {
       const page = await open(browser, width, theme);
       const phone = width < 800;
 
-      await page.goto("/#/devices/desk-fan");
+      await page.goto("/#/devices/plant-waterer");
       await expect(page.locator('li[data-kind="error"]').filter({ hasText: "LIMIT_EXCEEDED" }).first()).toBeAttached();
       if (!phone) {
         await page.waitForTimeout(400);
-        await scrollWithin(page, 'li[data-kind="request"]:has-text("150 %")', ".scroller", 8);
+        await scrollWithin(page, 'li[data-kind="request"]:has-text("\"value\": 120")', ".scroller", 8);
       }
       await shoot(page, "devices", width, theme);
       if (phone) {
-        await page.getByRole("heading", { name: "Write channels" }).scrollIntoViewIfNeeded();
+        await page.getByRole("heading", { name: "Actions" }).scrollIntoViewIfNeeded();
         await page.evaluate(() => window.scrollBy(0, -90));
         await shoot(page, "devices-controls", width, theme);
         await page.getByRole("heading", { name: "Message log" }).scrollIntoViewIfNeeded();
@@ -89,7 +102,7 @@ for (const theme of THEMES) {
       await expect(page.locator("li.entry").first()).toBeVisible();
       await shoot(page, "audit", width, theme);
 
-      await page.goto("/#/routines/keep-cool");
+      await page.goto("/#/routines/water-when-dry");
       await page.getByRole("button", { name: "Dry run" }).click();
       await expect(page.getByRole("heading", { name: "Dry run" })).toBeVisible();
       await shoot(page, "routines", width, theme);
@@ -124,7 +137,7 @@ test("the stopped state and UNLOCK", async ({ browser }) => {
   for (const theme of THEMES) {
     for (const width of WIDTHS) {
       const page = await open(browser, width, theme);
-      await page.goto("/#/devices/desk-fan");
+      await page.goto("/#/devices/plant-waterer");
       await page.getByRole("button", { name: /STOP/ }).click();
       await expect(page.getByRole("button", { name: "UNLOCK" })).toBeVisible();
       await shoot(page, "stopped", width, theme);

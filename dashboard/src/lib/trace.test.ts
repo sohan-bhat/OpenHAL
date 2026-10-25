@@ -19,24 +19,26 @@ describe("buildTrace", () => {
   const rows = buildTrace(entries);
 
   it("draws a request as a right arrow with its method", () => {
-    const write = rows.find((row) => row.seq === 4)!;
-    expect(write.arrow).toBe("right");
-    expect(write.kind).toBe("request");
-    expect(write.head).toBe("hal/write");
-    expect(write.tone).toBe("method");
-    expect(stringifyCompact(write.payload)).toBe('{ "device": "desk-fan", "channel": "fan_speed", "value": "150 %" }');
+    const request = rows.find((row) => row.seq === 4)!;
+    expect(request.arrow).toBe("right");
+    expect(request.kind).toBe("request");
+    expect(request.head).toBe("hal/action");
+    expect(request.tone).toBe("method");
+    expect(stringifyCompact(request.payload)).toBe(
+      '{ "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 120, "unit": "s" } } }',
+    );
   });
 
-  it("names a blocked write with the registry code and name and its reason", () => {
+  it("names a blocked command with the registry code and name and its reason", () => {
     const error = rows.find((row) => row.seq === 5)!;
     expect(error.arrow).toBe("left");
     expect(error.head).toBe("error -32010 LIMIT_EXCEEDED");
     expect(error.errorName).toBe("LIMIT_EXCEEDED");
     expect(error.reason).toBe(
-      "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+      "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
     );
-    expect(error.method).toBe("hal/write");
-    expect(error.devices).toEqual(["desk-fan"]);
+    expect(error.method).toBe("hal/action");
+    expect(error.devices).toEqual(["plant-waterer"]);
     expect(error.hasPayload).toBe(false);
   });
 
@@ -44,7 +46,7 @@ describe("buildTrace", () => {
     expect(rows.find((row) => row.seq === 4)!.outcome).toBe("error");
     expect(rows.find((row) => row.seq === 7)!.outcome).toBe("granted");
     expect(rows.find((row) => row.seq === 9)!.outcome).toBe("pending");
-    expect(rows.find((row) => row.seq === 8)!.method).toBe("hal/write");
+    expect(rows.find((row) => row.seq === 8)!.method).toBe("hal/action");
   });
 
   it("marks a pending result as needing confirmation, not as granted", () => {
@@ -62,7 +64,7 @@ describe("buildTrace", () => {
     const blocked = rows.find((row) => row.seq === 6)!;
     expect(blocked.outcome).toBe("error");
     expect(blocked.errorName).toBe("LIMIT_EXCEEDED");
-    expect(blocked.summary).toEqual({ device: "desk-fan", target: "write:fan_speed" });
+    expect(blocked.summary).toEqual({ device: "plant-waterer", target: "action:water" });
   });
 
   it("keeps text that is not JSON-RPC as an invalid row", () => {
@@ -111,15 +113,15 @@ describe("filters", () => {
     expect(filterRows(rows, NO_FILTERS)).toHaveLength(rows.length);
     expect(filterRows(rows, { ...NO_FILTERS, client: "lab-script" }).map((row) => row.seq)).toEqual([12]);
     expect(filterRows(rows, { ...NO_FILTERS, device: "curing-heater" }).map((row) => row.seq)).toEqual([9, 10]);
-    expect(filterRows(rows, { ...NO_FILTERS, method: "hal/write" }).map((row) => row.seq)).toEqual([4, 5, 7, 8]);
+    expect(filterRows(rows, { ...NO_FILTERS, method: "hal/action" }).map((row) => row.seq)).toEqual([4, 5, 7, 8, 9, 10]);
     expect(filterRows(rows, { ...NO_FILTERS, outcome: "error" }).map((row) => row.seq)).toEqual([4, 5, 6, 12]);
   });
 
   it("lists the options found in the log", () => {
     const options = filterOptions(rows);
     expect(options.clients).toEqual(["bench-agent", "inspector", "lab-script"]);
-    expect(options.devices).toEqual(["curing-heater", "desk-fan"]);
-    expect(options.methods).toContain("hal/write");
+    expect(options.devices).toEqual(["curing-heater", "plant-waterer"]);
+    expect(options.methods).toContain("hal/action");
     expect(options.methods).toContain("hal/blocked");
   });
 });
@@ -129,12 +131,12 @@ describe("formatting", () => {
     const rows = buildTrace(entries).filter((row) => [4, 5, 7, 8].includes(row.seq));
     expect(plainTrace(rows)).toBe(
       [
-        '-> hal/write    { "device": "desk-fan", "channel": "fan_speed", "value": "150 %" }',
+        '-> hal/action   { "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 120, "unit": "s" } } }',
         "<- error -32010 LIMIT_EXCEEDED",
-        "               fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+        "               water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
         "",
-        '-> hal/write    { "device": "desk-fan", "channel": "fan_speed", "value": "60 %" }',
-        '<- result       { "status": "done", "device": "desk-fan", "channel": "fan_speed", "value": 60, "unit": "%" }',
+        '-> hal/action   { "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 20, "unit": "s" } } }',
+        '<- result       { "status": "done", "result": { "ran": "water" } }',
       ].join("\n"),
     );
   });
