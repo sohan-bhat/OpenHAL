@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { AgentClient, hubState, signIn, tank } from "../e2e/hub";
 
 const ROUND = process.env.INSPECTOR_ROUND ?? "2";
-const OUT = fileURLToPath(new URL(`../../docs/design-rounds/inspector-round-${ROUND}/`, import.meta.url));
+const OUT = process.env.INSPECTOR_SHOTS ?? fileURLToPath(new URL(`../../docs/design-rounds/inspector-round-${ROUND}/`, import.meta.url));
 const SCENARIO = readFileSync(fileURLToPath(new URL("../../docs/demo/scenario.yaml", import.meta.url)), "utf-8");
 const WIDTHS = [1440, 390] as const;
 const THEMES = ["light", "dark"] as const;
