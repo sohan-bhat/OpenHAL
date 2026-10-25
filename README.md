@@ -9,7 +9,7 @@ An open layer between AI agents and real hardware, with a safety kernel that che
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/demo-dark.gif">
-  <img alt="Demo with a simulated fan. An agent asks to set fan_speed to 150 percent. The limit line shows the request past the 100 percent maximum and the kernel answers Blocked, the fan_speed limit is 100 percent. The agent then asks for 60 percent, the kernel answers Done, the fan speed reads 60 percent and the room temperature falls from 30.1 to 26.9 degrees Celsius." src="docs/assets/demo-light.gif" width="880">
+  <img alt="Demo with a simulated fan. An agent asks to set fan_speed to 150 percent. The limit line shows the request past the 100 percent maximum and the kernel answers Blocked, the fan_speed limit is 100 percent. The agent then asks for 60 percent, the kernel answers Done, the fan speed reads 60 percent and the room temperature falls from 30.1 to 26.9 degrees Celsius." src="docs/assets/demo-light.gif" width="800">
 </picture>
 
 v0.1, in development. Drivers are tested on simulators, and hardware verification is in progress.

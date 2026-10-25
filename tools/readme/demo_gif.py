@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ASSETS = ROOT / "docs" / "assets"
 FONTS = ROOT / "design" / "fonts"
 W, H, SCALE = 880, 304, 2
+LEFT, RIGHT = 40, 40
 FPS = 10
 
 THEMES = {
@@ -118,7 +119,9 @@ class Frame:
         self.draw.ellipse(self.s(cx - r, cy - r, cx + r, cy + r), fill=fill, outline=outline, width=2 * SCALE)
 
     def final(self) -> Image.Image:
-        return self.image.resize((W, H), Image.LANCZOS)
+        # Crop the side margins so the content lines up with the README's text column.
+        cropped = self.image.crop((LEFT * SCALE, 0, (W - RIGHT) * SCALE, H * SCALE))
+        return cropped.resize((W - LEFT - RIGHT, H), Image.LANCZOS)
 
 
 TRACK_X, TRACK_W, TRACK_Y = 40, 560, 150
