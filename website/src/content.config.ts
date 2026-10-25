@@ -21,4 +21,10 @@ const blog = defineCollection({
   }),
 });
 
-export const collections = { docs, blog };
+// Short Markdown pieces the landing page shows, such as the quickstart. Their code blocks are tested.
+const snippets = defineCollection({
+  loader: glob({ base: "./src/content/snippets", pattern: "**/*.md" }),
+  schema: z.object({ title: z.string() }),
+});
+
+export const collections = { docs, blog, snippets };

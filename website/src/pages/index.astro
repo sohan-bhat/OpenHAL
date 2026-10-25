@@ -1,7 +1,18 @@
 ---
+import { getEntry, render } from "astro:content";
 import Base from "../layouts/Base.astro";
+import DeviceSummary from "../components/DeviceSummary.astro";
 import HeroDemo from "../components/HeroDemo.astro";
+import HowItWorks from "../components/HowItWorks.astro";
+import Mhs from "../components/Mhs.astro";
+import SafetyModel from "../components/SafetyModel.astro";
+import Storyboard from "../components/Storyboard.astro";
 import { PITCH, PRODUCT_NAME } from "../config/brand";
+import { capture } from "../lib/captures";
+
+const quickstart = await getEntry("snippets", "quickstart");
+const { Content: Quickstart } = await render(quickstart!);
+const dashboard = capture("/captures/hero.png");
 ---
 
 <Base title={`${PRODUCT_NAME}. Real hardware for AI agents, inside limits people set`} description={PITCH} bare>
@@ -10,8 +21,7 @@ import { PITCH, PRODUCT_NAME } from "../config/brand";
       <div class="hero-copy">
         <h1 id="hero-title">Real hardware for AI agents. Limits set by people.</h1>
         <p class="lede">
-          An open hub between any MCP client and your devices. It checks every command against the device's limits before
-          anything moves.
+          An open hub between any MCP client and your devices. It checks every command against the device's limits before anything moves.
         </p>
         <div class="ctas">
           <a class="button" href="/docs/quickstart/">Start the quickstart</a>
@@ -20,6 +30,67 @@ import { PITCH, PRODUCT_NAME } from "../config/brand";
       </div>
       <div class="hero-demo" data-capture-slot="hero">
         <HeroDemo />
+        {
+          dashboard && (
+            <figure class="module capture">
+              <figcaption class="module-legend legend">
+                <span>Dashboard</span>
+              </figcaption>
+              {dashboard.video ? (
+                <video controls muted playsinline preload="none" poster={dashboard.src} width={dashboard.width} height={dashboard.height}>
+                  <source src={dashboard.video} type="video/webm" />
+                </video>
+              ) : (
+                <img src={dashboard.src} width={dashboard.width} height={dashboard.height} alt="The OpenHAL dashboard blocking an unsafe write" />
+              )}
+            </figure>
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="demo-title">
+    <div class="wrap">
+      <h2 id="demo-title" class="band-title">Thirty seconds, from install to a blocked command</h2>
+      <Storyboard />
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="how-title">
+    <div class="wrap">
+      <h2 id="how-title" class="band-title">How it works</h2>
+      <HowItWorks />
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="safety-title">
+    <div class="wrap">
+      <h2 id="safety-title" class="band-title">The safety model, in plain language</h2>
+      <SafetyModel />
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="devices-title">
+    <div class="wrap">
+      <h2 id="devices-title" class="band-title">Supported devices</h2>
+      <DeviceSummary />
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="mhs-title">
+    <div class="wrap">
+      <h2 id="mhs-title" class="band-title">OpenHAL and MHS</h2>
+      <Mhs />
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="start-title">
+    <div class="wrap start">
+      <h2 id="start-title" class="band-title">Quickstart</h2>
+      <div class="prose quickstart">
+        <Quickstart />
+        <p><a href="/docs/quickstart/">The full quickstart</a> goes on to reads, dry runs and routines.</p>
       </div>
     </div>
   </section>
@@ -56,6 +127,42 @@ import { PITCH, PRODUCT_NAME } from "../config/brand";
     margin-top: var(--s-6);
   }
 
+  .hero-demo {
+    display: grid;
+    gap: var(--s-6);
+    min-width: 0;
+  }
+
+  .capture {
+    margin: 0;
+  }
+
+  .capture img,
+  .capture video {
+    width: 100%;
+    height: auto;
+  }
+
+  .band {
+    padding: var(--s-8) 0 0;
+  }
+
+  .band > .wrap {
+    border-top: 1px solid var(--ink);
+    padding-top: var(--s-5);
+  }
+
+  .band-title {
+    font-size: var(--t-4);
+    line-height: var(--lh-4);
+    margin-bottom: var(--s-6);
+    max-width: 24ch;
+  }
+
+  .quickstart {
+    max-width: 80ch;
+  }
+
   @media (min-width: 1024px) {
     .hero {
       padding-top: var(--s-8);
@@ -70,6 +177,16 @@ import { PITCH, PRODUCT_NAME } from "../config/brand";
       position: sticky;
       top: var(--s-6);
       padding-top: var(--s-5);
+    }
+
+    .band {
+      padding-top: var(--s-9);
+    }
+
+    .start {
+      display: grid;
+      grid-template-columns: 4fr 8fr;
+      gap: var(--s-7);
     }
   }
 </style>
