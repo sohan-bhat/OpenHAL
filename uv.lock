@@ -2173,7 +2173,7 @@ requires-dist = [
     { name = "xknx", marker = "extra == 'knx'", specifier = ">=4.0.0" },
     { name = "zeroconf", specifier = ">=0.136" },
 ]
-provides-extras = ["hub", "serial", "firmata", "marlin", "scpi", "moonraker", "octoprint", "homeassistant", "esphome", "openhal-firmware", "rpi-gpio", "mqtt", "modbus", "ble", "midi", "hid", "uvc", "http", "onvif", "bambu", "can", "knx", "matter", "pi-i2c-spi", "upnp", "zigbee-zwave", "grbl", "ros2", "opcua", "sila2", "alpaca", "pylabrobot"]
+provides-extras = ["hub", "serial", "firmata", "marlin", "scpi", "moonraker", "octoprint", "homeassistant", "esphome", "openhal-firmware", "rpi-gpio", "rpi-camera", "mqtt", "modbus", "ble", "midi", "hid", "uvc", "http", "onvif", "bambu", "can", "knx", "matter", "pi-i2c-spi", "upnp", "zigbee-zwave", "grbl", "ros2", "opcua", "sila2", "alpaca", "pylabrobot"]
 
 [package.metadata.requires-dev]
 dev = [

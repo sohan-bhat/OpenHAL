@@ -267,3 +267,50 @@ openhal library add NAME
 ```
 
 `list` shows every starter device file in the library with its driver, hazard class and what it can change. `show` prints what a file matches, every limit it suggests and the file itself, and `--json` gives the limits in the shape `hal/devices/describe` uses. `add` copies a file into the devices folder as it is. It never adds a confirmation, and it refuses to overwrite a file or to add a second file for a device id the folder already has. A name is the file name without `.hal.yaml`, such as `rigol-dp832`. When `discover` matches a library file, it prints the `add` command to run. How matching and confirmation work is in docs/guide/library.md.
+
+## Install and background service
+
+### openhal init, the wizard
+
+```
+openhal init [--yes] [--discover | --no-discover] [--driver NAME ...] [--device DRIVER=ADDRESS ...]
+             [--agent-scope read|control_low|control_medium] [--client NAME ...] [--service | --no-service]
+             [--new-token] [--no-sample]
+```
+
+In an interactive terminal, `init` sets up the config folder, the human token and the sample as above, then asks whether to look for devices, which found devices to add, the scope of a token for your AI client, which client config to write and whether to install the background service. With `--yes` it takes the safe defaults without asking. A run that can't ask and has no `--yes`, such as a script, stops after the sample.
+
+| Step | Asked in a terminal | With `--yes` |
+|---|---|---|
+| Look for devices | yes, default yes | yes, unless `--no-discover` |
+| Add each device found | yes, default yes | yes |
+| Agent token in `agent.token` | scope, default `read` | `read`, or `--agent-scope` |
+| Print the MCP client setup | always, once there is an agent token | always |
+| Write a client config | which one, default none | only `--client` |
+| Install the background service | yes or no, default no | only `--service` |
+
+Found devices are saved as read-only device files. A library match is copied with the address discovery found. An `openhal-firmware` board or an ESPHome node describes itself with read-only commands. Every limit is marked `suggested: true` and every confirmation is dropped, so a person confirms the file before anything can be written. A device that already has a file is left out. `--driver` limits discovery to some drivers, and `--device` adds a self-describing device at a known address, such as `openhal-firmware=/dev/ttyACM0`.
+
+The agent token is kept while it works and has the scope asked for. The client setup for Claude Desktop, Claude Code and Cursor starts `openhal mcp --token-file ~/.openhal/agent.token` with the full path to `openhal`. `--client claude-desktop`, `claude-code` or `cursor` writes that client's config file. An existing file is copied to `NAME.openhal-backup-DATE` first and keeps every other entry and its mode. A file that isn't valid JSON is left as it is. `init` exits 1 if a step you asked for failed.
+
+### openhal service
+
+```
+openhal service install [--dry-run]
+openhal service uninstall [--dry-run]
+openhal service restart [--dry-run]
+openhal service status
+openhal service print [--platform macos|linux]
+```
+
+Runs the hub in the background as you, never as root, with the Python and config folder of this install. The hub keeps its rule of listening on loopback only.
+
+| | macOS | Linux |
+|---|---|---|
+| File | `~/Library/LaunchAgents/org.openhal.hub.plist` | `~/.config/systemd/user/openhald.service` |
+| Install | `launchctl bootstrap gui/UID` | `systemctl --user enable` and `restart` |
+| Restart | `launchctl kickstart -k` | `systemctl --user restart` |
+| Uninstall | `launchctl bootout` | `systemctl --user disable --now` |
+| Logs | `~/.openhal/openhald.log` | `journalctl --user -u openhald` |
+
+The hub restarts after a crash, not after a clean stop. On Linux, `install` says when lingering is off, because a user unit stops at logout without it. `status` exits 1 when the service isn't running. `--dry-run` prints every file and command and changes nothing. `print` shows the plist or unit, for this machine or the one `--platform` names.

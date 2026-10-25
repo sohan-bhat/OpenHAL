@@ -24,6 +24,7 @@ from openhal.cli import (
     mcp_cmd,
     routine_cmd,
     rpc_cmd,
+    service_cmd,
     token_cmd,
     writer_cmd,
 )
@@ -43,6 +44,7 @@ app.add_typer(writer_cmd.app, name="writer")
 app.add_typer(token_cmd.app, name="token")
 app.add_typer(driver_cmd.app, name="driver")
 app.add_typer(library_cmd.app, name="library")
+app.add_typer(service_cmd.app, name="service")
 init_cmd.register(app)
 hub_cmd.register(app)
 control_cmd.register(app)
