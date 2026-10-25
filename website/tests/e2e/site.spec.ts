@@ -1,6 +1,11 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
+import { SCENARIO_PATH, scenarioFrom } from "../../src/lib/scenario-data.mjs";
 
-const REASON_150 = "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)";
+const scenarioFile = process.env.OPENHAL_SCENARIO ?? fileURLToPath(new URL(`../../../${SCENARIO_PATH}`, import.meta.url));
+const recorded = scenarioFrom(readFileSync(scenarioFile, "utf8"));
+const firstError = recorded.messages.find((message: any) => message.error)?.error as { code: number; message: string; data: { name: string } };
 
 function noErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -17,8 +22,8 @@ test.describe("overview", () => {
     await page.goto("/");
     await expect(page.locator("h1")).toHaveText("An open-source protocol for AI agents to control hardware.");
     const trace = page.locator(".trace").first();
-    await expect(trace).toContainText("error -32010 LIMIT_EXCEEDED");
-    await expect(trace).toContainText(REASON_150);
+    await expect(trace).toContainText(`error ${firstError.code} ${firstError.data.name}`);
+    await expect(trace).toContainText(firstError.message);
     expect(errors).toEqual([]);
   });
 
