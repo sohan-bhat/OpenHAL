@@ -9,8 +9,6 @@ from __future__ import annotations
 
 import time
 
-import pytest
-
 from openhal.kernel import Kernel, Write, agent
 from tests.redteam.conftest import AddDevice
 
@@ -105,7 +103,6 @@ async def test_malformed_units_fail_closed(kernel: Kernel, add: AddDevice) -> No
 RT01 = "RT-01: unit parsing has no time budget or length cap, so a long unit name stalls the kernel"
 
 
-@pytest.mark.xfail(reason=RT01, strict=True)
 async def test_rt01_long_unit_name_does_not_stall_the_kernel(kernel: Kernel, add: AddDevice) -> None:
     await add(UNITS)
     value = "1 " + "Q" * 5000

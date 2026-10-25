@@ -95,6 +95,25 @@ def _force_suggested(data: dict[str, Any]) -> dict[str, Any]:
     return cleaned
 
 
+OWN_KEYS: Final = frozenset({"driver", "source", "kind", "type", "unit", "status"})
+"""Detected fields OpenHAL sets itself. Every other string came from a device, sketch or manual."""
+
+
+def _as_data(value: Any, source: str, key: str | None = None) -> Any:
+    """Detected facts with every string a device, sketch or manual produced wrapped as data (red team RT-02)."""
+    from openhal.hub.views import data_block
+
+    if isinstance(value, str):
+        return (
+            value if key in OWN_KEYS else data_block(f"{source} {key or 'value'}", value, "a sketch, manual or device")
+        )
+    if isinstance(value, dict):
+        return {name: _as_data(item, source, str(name)) for name, item in value.items()}
+    if isinstance(value, list):
+        return [_as_data(item, source, key) for item in value]
+    return value
+
+
 class WriterEngine:
     def __init__(self, hub: Hub) -> None:
         self.hub = hub
@@ -112,7 +131,7 @@ class WriterEngine:
         return {
             "id": session.id,
             "status": session.status,
-            "detected": session.detected,
+            "detected": _as_data(session.detected, "driver writer findings"),
             "sources": [data_block(label, text, "a sketch, manual or device") for label, text in session.sources],
             "draft_yaml": _dump(draft) if draft is not None else None,
             "problems": session.problems,

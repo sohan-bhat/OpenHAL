@@ -17,6 +17,9 @@ Quantity = ureg.Quantity
 
 _COMPACT_DURATION: Final = re.compile(r"^\s*([0-9]*\.?[0-9]+)\s*(ms|s|min|h)\s*$")
 _UNIT_ALIASES: Final = {"%": "percent", "%/s": "percent / second"}
+MAX_UNIT_LENGTH: Final = 40
+"""The longest unit name the hub parses. pint's parser slows down sharply on long names (red team RT-01)."""
+MAX_QUANTITY_LENGTH: Final = 80
 
 
 class UnitError(ValueError):
@@ -35,6 +38,8 @@ def parse_unit(unit: str) -> pint.Unit:
     """Parse a unit name such as `degC`, `percent` or `V`."""
     if not isinstance(unit, str) or not unit.strip():
         raise UnitError("A unit is required, for example degC, percent or V.")
+    if len(unit) > MAX_UNIT_LENGTH:
+        raise UnitError(f"A unit may be at most {MAX_UNIT_LENGTH} characters.")
     try:
         parsed = ureg.parse_units(normalize_unit(unit))
     except (pint.errors.UndefinedUnitError, pint.errors.DefinitionSyntaxError, ValueError) as exc:
@@ -69,6 +74,8 @@ def parse_quantity(value: Any, *, default_unit: str | None = None) -> pint.Quant
         return Quantity(_finite(float(raw), "Value"), parse_unit(value["unit"]))
     if isinstance(value, str):
         text = value.strip()
+        if len(text) > MAX_QUANTITY_LENGTH:
+            raise UnitError(f"A quantity may be at most {MAX_QUANTITY_LENGTH} characters, such as 30 degC.")
         match = re.match(r"^([+-]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][+-]?[0-9]+)?)\s*(.*)$", text)
         if not match:
             raise UnitError(f"Could not read {value!r} as a number with a unit.")

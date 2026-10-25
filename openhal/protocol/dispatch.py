@@ -69,6 +69,24 @@ def failure(request_id: Any, error: RpcError) -> dict[str, Any]:
 _DISPATCHERS: weakref.WeakKeyDictionary[Hub, Dispatcher] = weakref.WeakKeyDictionary()
 
 
+MAX_DEPTH: Final = 32
+"""Frames nested deeper than this are answered with PARSE_ERROR, so nothing downstream recurses on them (RT-03)."""
+
+
+def _depth(message: Any) -> int:
+    """How deeply a parsed frame nests, found without recursion."""
+    deepest = 0
+    stack: list[tuple[Any, int]] = [(message, 1)]
+    while stack:
+        item, level = stack.pop()
+        if isinstance(item, dict | list):
+            deepest = max(deepest, level)
+            if deepest > MAX_DEPTH:
+                return deepest
+            stack.extend((child, level + 1) for child in (item.values() if isinstance(item, dict) else item))
+    return deepest
+
+
 class Dispatcher:
     """Answers protocol messages for one hub and fans the hub's events out as notifications."""
 
@@ -123,7 +141,9 @@ class Dispatcher:
         """Decode one frame. Invalid JSON is answered with PARSE_ERROR here and returns None."""
         try:
             message = json.loads(text)
-        except (ValueError, UnicodeDecodeError):
+            if _depth(message) > MAX_DEPTH:
+                raise ValueError("too deeply nested")
+        except (ValueError, UnicodeDecodeError, RecursionError):
             raw = text.decode("utf-8", "replace") if isinstance(text, bytes) else text
             self.log.record("in", session.client, session.label, raw)
             session.send(failure(None, RpcError("PARSE_ERROR")))

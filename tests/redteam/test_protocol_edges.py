@@ -7,8 +7,6 @@ token, and a malformed frame must come back as an error, not crash the connectio
 
 from __future__ import annotations
 
-import pytest
-
 from openhal.hub.hub import Hub
 from openhal.protocol.dispatch import Dispatcher
 from tests.protocol.conftest import VERSION, Connect
@@ -100,7 +98,6 @@ async def test_a_token_in_params_is_redacted_from_the_message_log(
 RT04 = "RT-04: the message log stores the client name verbatim, so a token in clientInfo.name is not redacted"
 
 
-@pytest.mark.xfail(reason=RT04, strict=True)
 async def test_rt04_a_token_in_the_client_name_does_not_leak(
     transport: Connect, hub: Hub, rest, tokens: Tokens
 ) -> None:
@@ -118,7 +115,6 @@ async def test_rt04_a_token_in_the_client_name_does_not_leak(
 RT03 = "RT-03: a deeply nested JSON frame raises RecursionError in parse instead of answering PARSE_ERROR"
 
 
-@pytest.mark.xfail(reason=RT03, strict=True)
 async def test_rt03_deeply_nested_json_frame_is_a_parse_error(hub: Hub) -> None:
     disp = Dispatcher(hub)
     session = disp.open()

@@ -9,8 +9,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-import pytest
-
 from openhal.hub.hub import Hub
 from openhal.mcp import Tools
 from openhal.spec import loads
@@ -81,7 +79,6 @@ async def test_reading_device_text_never_changes_a_limit(hub: Hub, mcp_tools: Ca
 RT02 = "RT-02: the driver writer returns manual and sketch facts in session.detected outside a data block"
 
 
-@pytest.mark.xfail(reason=RT02, strict=True)
 async def test_rt02_writer_detected_facts_are_wrapped_as_data(
     hub: Hub, mcp_tools: Callable[[str], Tools], tokens
 ) -> None:

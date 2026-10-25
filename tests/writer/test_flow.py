@@ -68,7 +68,9 @@ async def test_unknown_board_to_confirmed_file(client: httpx.AsyncClient, hub: H
     assert started.status_code == 200, session
     assert session["status"] == "interview"
     assert session["detected"]["source"] == "self-described"
-    assert session["detected"]["identity"]["product"] == "writer"
+    product = session["detected"]["identity"]["product"]
+    assert product.startswith("<device-data"), "a product name the device reported is data, not a fact"
+    assert "\nwriter\n" in product
     draft = parse_yaml(session["draft_yaml"])
     assert draft["write"]["fan_speed"]["suggested"] is True
     assert "confirmed" not in draft

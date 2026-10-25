@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import time
 
-import pytest
-
 from openhal.hub.hub import Hub
 from openhal.kernel import agent, human
 from openhal.routines.engine import RoutineError
@@ -140,7 +138,6 @@ steps:
 RT01 = "RT-01: a routine value with a long unit name reaches the unbounded unit parser through the dry run"
 
 
-@pytest.mark.xfail(reason=RT01, strict=True)
 async def test_rt01_a_routine_dry_run_with_a_long_unit_stalls(hub: Hub) -> None:
     source = 'id: stall\nsteps:\n  - write: {{ device: desk-fan, channel: fan_speed, value: "1 {units}" }}\n'
     hub.routines.create(agent("claude", "control_low"), "stall", "yaml", source.format(units="Z" * 5000))

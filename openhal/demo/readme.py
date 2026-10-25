@@ -10,6 +10,7 @@ tests/docs/test_scenario_docs.py fails when a page differs from what this would 
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Final
 
@@ -30,8 +31,15 @@ def blocks(record: dict[str, Any]) -> dict[str, str]:
 def synced(text: str, record: dict[str, Any]) -> str:
     for name, body in blocks(record).items():
         pattern = re.compile(rf"(<!-- {name}:start -->\n)(?:.*?\n)?(<!-- {name}:end -->)", re.DOTALL)
-        text = pattern.sub(lambda match, body=body: match.group(1) + body + "\n" + match.group(2), text)
+        text = pattern.sub(_filler(body), text)
     return text
+
+
+def _filler(body: str) -> Callable[[re.Match[str]], str]:
+    def fill(match: re.Match[str]) -> str:
+        return match.group(1) + body + "\n" + match.group(2)
+
+    return fill
 
 
 def main() -> None:

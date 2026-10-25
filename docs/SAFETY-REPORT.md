@@ -7,6 +7,8 @@ proposed fix. Every attempt used mocks and simulators. No code under openhal/ wa
 
 The suite is 100 tests. 94 pass and 6 are strict xfails, for four findings (RT-01 has two proofs).
 
+All four findings are fixed on main, and their proofs now run as ordinary tests that pass. RT-01 caps unit names at 40 characters and quantity text at 80 before pint parses them, on every path including routines. RT-02 wraps every string the driver writer detected as data, except the fields OpenHAL sets itself. RT-03 answers frames nested deeper than 32 levels, and any JSON the parser can't finish, with PARSE_ERROR. RT-04 scrubs tokens from the client and principal fields of the message log.
+
 ## How to read it
 
 - One module per attack family in tests/redteam/.

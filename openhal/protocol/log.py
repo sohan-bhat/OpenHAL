@@ -62,8 +62,8 @@ class MessageLog:
             "seq": self._seq,
             "at": time.time(),
             "direction": direction,
-            "client": client,
-            "principal": principal,
+            "client": _scrub(client),
+            "principal": _scrub(principal),
             "message": redact(message),
         }
         self._entries.append(entry)
