@@ -94,16 +94,20 @@ class Command:
         return f"{self.page.relative_to(ROOT)}:{self.line}"
 
     @property
+    def head(self) -> str:
+        """The command before any pipe or output redirect, which is the part the CLI parses."""
+        return re.split(r" \| | > ", self.text.removeprefix("uv run "), maxsplit=1)[0]
+
+    @property
     def words(self) -> list[str]:
-        text = self.text.removeprefix("uv run ")
-        return shlex.split(PLACEHOLDER.sub("x", text.split(" | ")[0]))
+        return shlex.split(PLACEHOLDER.sub("x", self.head))
 
     @property
     def synopsis(self) -> bool:
         """A usage line such as `openhal read DEVICE.CHANNEL [--json]`, not a command to type."""
-        if "[" in self.text or "..." in self.text:
+        if "[" in self.head or "..." in self.head:
             return True
-        return any(UPPER_WORD.match(word.strip("[]")) for word in self.text.split())
+        return any(UPPER_WORD.match(word.strip("[]")) for word in self.head.split())
 
     @property
     def skip_reason(self) -> str | None:
