@@ -11,7 +11,10 @@
       "method": "hal/initialize",
       "params": {
         "protocolVersion": "2026-10-24",
-        "clientInfo": { "name": "bench-agent", "version": "1.4.0" },
+        "clientInfo": {
+          "name": "bench-agent",
+          "version": "1.4.0"
+        },
         "token": "[redacted]"
       }
     }
@@ -27,10 +30,23 @@
       "id": 1,
       "result": {
         "protocolVersion": "2026-10-24",
-        "hubInfo": { "name": "openhal", "version": "0.1.0" },
+        "hubInfo": {
+          "name": "openhal",
+          "version": "0.1.0"
+        },
         "conformance": "full",
-        "principal": { "kind": "agent", "name": "bench-agent", "scope": "control_low" },
-        "capabilities": { "notifications": ["hal/value", "hal/blocked", "hal/stopped"] }
+        "principal": {
+          "kind": "agent",
+          "name": "bench-agent",
+          "scope": "control_low"
+        },
+        "capabilities": {
+          "notifications": [
+            "hal/value",
+            "hal/blocked",
+            "hal/stopped"
+          ]
+        }
       }
     }
   },
@@ -40,7 +56,10 @@
     "direction": "in",
     "client": "bench-agent",
     "principal": "agent:bench-agent",
-    "message": { "jsonrpc": "2.0", "method": "hal/initialized" }
+    "message": {
+      "jsonrpc": "2.0",
+      "method": "hal/initialized"
+    }
   },
   {
     "seq": 4,
@@ -52,7 +71,16 @@
       "jsonrpc": "2.0",
       "id": 6,
       "method": "hal/action",
-      "params": { "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 120, "unit": "s" } } }
+      "params": {
+        "device": "plant-waterer",
+        "action": "water",
+        "args": {
+          "duration": {
+            "value": 120,
+            "unit": "s"
+          }
+        }
+      }
     }
   },
   {
@@ -74,8 +102,14 @@
           "device": "plant-waterer",
           "action": "water",
           "argument": "duration",
-          "requested": { "value": 120, "unit": "s" },
-          "limit": { "value": 30, "unit": "s" },
+          "requested": {
+            "value": 120,
+            "unit": "s"
+          },
+          "limit": {
+            "value": 30,
+            "unit": "s"
+          },
           "file": "plant-waterer.hal.yaml",
           "confirmedBy": "sohan",
           "confirmedAt": "2026-10-24"
@@ -99,63 +133,150 @@
           "code": -32010,
           "name": "LIMIT_EXCEEDED",
           "message": "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
-          "data": { "name": "LIMIT_EXCEEDED", "kernelCode": "above_max", "device": "plant-waterer", "action": "water" }
+          "data": {
+            "name": "LIMIT_EXCEEDED",
+            "kernelCode": "above_max",
+            "device": "plant-waterer",
+            "action": "water"
+          }
         }
       }
     }
   },
   {
     "seq": 7,
+    "at": 1792900922.0,
+    "direction": "in",
+    "client": "bench-agent",
+    "principal": "agent:bench-agent",
+    "message": {
+      "jsonrpc": "2.0",
+      "id": 7,
+      "method": "hal/action",
+      "params": {
+        "device": "plant-waterer",
+        "action": "water",
+        "args": {
+          "duration": {
+            "value": 20,
+            "unit": "s"
+          }
+        }
+      }
+    }
+  },
+  {
+    "seq": 8,
+    "at": 1792900922.002,
+    "direction": "out",
+    "client": "bench-agent",
+    "principal": "agent:bench-agent",
+    "message": {
+      "jsonrpc": "2.0",
+      "id": 7,
+      "error": {
+        "code": -32012,
+        "message": "pump can't run while tank is empty",
+        "data": {
+          "name": "INTERLOCK_BLOCKED",
+          "kernelCode": "interlock",
+          "kernelMessage": "Blocked. Pump can't run while tank is empty. water needs tank == ok, which doesn't hold right now.",
+          "device": "plant-waterer",
+          "action": "water",
+          "interlock": "pump can't run while tank is empty",
+          "file": "plant-waterer.hal.yaml",
+          "confirmedBy": "sohan",
+          "confirmedAt": "2026-10-24"
+        }
+      }
+    }
+  },
+  {
+    "seq": 9,
     "at": 1792900923.0,
     "direction": "in",
     "client": "bench-agent",
     "principal": "agent:bench-agent",
     "message": {
       "jsonrpc": "2.0",
-      "id": 7,
+      "id": 8,
       "method": "hal/action",
-      "params": { "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 20, "unit": "s" } } }
+      "params": {
+        "device": "plant-waterer",
+        "action": "water",
+        "args": {
+          "duration": {
+            "value": 20,
+            "unit": "s"
+          }
+        }
+      }
     }
   },
   {
-    "seq": 8,
+    "seq": 10,
     "at": 1792900923.012,
     "direction": "out",
     "client": "bench-agent",
     "principal": "agent:bench-agent",
     "message": {
       "jsonrpc": "2.0",
-      "id": 7,
-      "result": { "status": "done", "result": { "ran": "water" } }
+      "id": 8,
+      "result": {
+        "status": "done",
+        "result": {
+          "device": "plant-waterer",
+          "action": "water",
+          "args": {
+            "duration": {
+              "value": 20,
+              "unit": "s"
+            }
+          }
+        }
+      }
     }
   },
   {
-    "seq": 9,
+    "seq": 11,
     "at": 1792900924.0,
     "direction": "in",
     "client": "bench-agent",
     "principal": "agent:bench-agent",
     "message": {
       "jsonrpc": "2.0",
-      "id": 8,
+      "id": 9,
       "method": "hal/action",
-      "params": { "device": "curing-heater", "action": "vent", "args": { "seconds": { "value": 5, "unit": "s" } } }
+      "params": {
+        "device": "curing-heater",
+        "action": "vent",
+        "args": {
+          "seconds": {
+            "value": 5,
+            "unit": "s"
+          }
+        }
+      }
     }
   },
   {
-    "seq": 10,
+    "seq": 12,
     "at": 1792900924.002,
     "direction": "out",
     "client": "bench-agent",
     "principal": "agent:bench-agent",
     "message": {
       "jsonrpc": "2.0",
-      "id": 8,
-      "result": { "status": "pending", "requestId": "9f2c41d07a3b6e15", "expiresInS": 300 }
+      "id": 9,
+      "result": {
+        "status": "pending",
+        "requestId": "9f2c41d07a3b6e15",
+        "expiresInS": 300
+      }
     }
   },
   {
-    "seq": 11,
+    "seq": 13,
     "at": 1792900925.0,
     "direction": "out",
     "client": "bench-agent",
@@ -163,11 +284,18 @@
     "message": {
       "jsonrpc": "2.0",
       "method": "hal/value",
-      "params": { "device": "plant-waterer", "channel": "soil_moisture", "value": 31, "unit": "%", "at": "2026-10-24T14:02:05Z", "suspect": false }
+      "params": {
+        "device": "plant-waterer",
+        "channel": "soil_moisture",
+        "value": 46,
+        "unit": "%",
+        "at": "2026-10-24T14:02:05Z",
+        "suspect": false
+      }
     }
   },
   {
-    "seq": 12,
+    "seq": 14,
     "at": 1792900926.0,
     "direction": "in",
     "client": "lab-script",

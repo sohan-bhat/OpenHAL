@@ -44,13 +44,16 @@ describe("buildTrace", () => {
 
   it("pairs responses with requests to give the request its outcome", () => {
     expect(rows.find((row) => row.seq === 4)!.outcome).toBe("error");
-    expect(rows.find((row) => row.seq === 7)!.outcome).toBe("granted");
-    expect(rows.find((row) => row.seq === 9)!.outcome).toBe("pending");
-    expect(rows.find((row) => row.seq === 8)!.method).toBe("hal/action");
+    expect(rows.find((row) => row.seq === 7)!.outcome).toBe("error");
+    expect(rows.find((row) => row.seq === 9)!.outcome).toBe("granted");
+    expect(rows.find((row) => row.seq === 11)!.outcome).toBe("pending");
+    expect(rows.find((row) => row.seq === 10)!.method).toBe("hal/action");
+    expect(rows.find((row) => row.seq === 8)!.head).toBe("error -32012 INTERLOCK_BLOCKED");
+    expect(rows.find((row) => row.seq === 8)!.reason).toBe("pump can't run while tank is empty");
   });
 
   it("marks a pending result as needing confirmation, not as granted", () => {
-    const pending = rows.find((row) => row.seq === 10)!;
+    const pending = rows.find((row) => row.seq === 12)!;
     expect(pending.head).toBe("result");
     expect(pending.tone).toBe("pending");
     expect(pending.devices).toEqual(["curing-heater"]);
@@ -58,7 +61,7 @@ describe("buildTrace", () => {
 
   it("draws notifications with dashed arrows", () => {
     expect(rows.find((row) => row.seq === 3)!.arrow).toBe("right-dashed");
-    const value = rows.find((row) => row.seq === 11)!;
+    const value = rows.find((row) => row.seq === 13)!;
     expect(value.arrow).toBe("left-dashed");
     expect(value.kind).toBe("notification");
     const blocked = rows.find((row) => row.seq === 6)!;
@@ -68,7 +71,7 @@ describe("buildTrace", () => {
   });
 
   it("keeps text that is not JSON-RPC as an invalid row", () => {
-    const invalid = rows.find((row) => row.seq === 12)!;
+    const invalid = rows.find((row) => row.seq === 14)!;
     expect(invalid.kind).toBe("invalid");
     expect(invalid.payload).toBe("{not json");
   });
@@ -111,10 +114,10 @@ describe("filters", () => {
 
   it("filters by client, device, method and outcome", () => {
     expect(filterRows(rows, NO_FILTERS)).toHaveLength(rows.length);
-    expect(filterRows(rows, { ...NO_FILTERS, client: "lab-script" }).map((row) => row.seq)).toEqual([12]);
-    expect(filterRows(rows, { ...NO_FILTERS, device: "curing-heater" }).map((row) => row.seq)).toEqual([9, 10]);
-    expect(filterRows(rows, { ...NO_FILTERS, method: "hal/action" }).map((row) => row.seq)).toEqual([4, 5, 7, 8, 9, 10]);
-    expect(filterRows(rows, { ...NO_FILTERS, outcome: "error" }).map((row) => row.seq)).toEqual([4, 5, 6, 12]);
+    expect(filterRows(rows, { ...NO_FILTERS, client: "lab-script" }).map((row) => row.seq)).toEqual([14]);
+    expect(filterRows(rows, { ...NO_FILTERS, device: "curing-heater" }).map((row) => row.seq)).toEqual([11, 12]);
+    expect(filterRows(rows, { ...NO_FILTERS, method: "hal/action" }).map((row) => row.seq)).toEqual([4, 5, 7, 8, 9, 10, 11, 12]);
+    expect(filterRows(rows, { ...NO_FILTERS, outcome: "error" }).map((row) => row.seq)).toEqual([4, 5, 6, 7, 8, 14]);
   });
 
   it("lists the options found in the log", () => {
@@ -128,7 +131,7 @@ describe("filters", () => {
 
 describe("formatting", () => {
   it("renders the plain text trace from the design document", () => {
-    const rows = buildTrace(entries).filter((row) => [4, 5, 7, 8].includes(row.seq));
+    const rows = buildTrace(entries).filter((row) => [4, 5, 7, 8, 9, 10].includes(row.seq));
     expect(plainTrace(rows)).toBe(
       [
         '-> hal/action   { "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 120, "unit": "s" } } }',
@@ -136,7 +139,11 @@ describe("formatting", () => {
         "               water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
         "",
         '-> hal/action   { "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 20, "unit": "s" } } }',
-        '<- result       { "status": "done", "result": { "ran": "water" } }',
+        "<- error -32012 INTERLOCK_BLOCKED",
+        "               pump can't run while tank is empty",
+        "",
+        '-> hal/action   { "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 20, "unit": "s" } } }',
+        '<- result       { "status": "done", "result": { "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 20, "unit": "s" } } } }',
       ].join("\n"),
     );
   });
