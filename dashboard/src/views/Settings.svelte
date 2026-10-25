@@ -2,7 +2,6 @@
   import StatusMark from "../components/StatusMark.svelte";
   import { api } from "../lib/api";
   import { formatDateTime } from "../lib/units";
-  import { PROTOCOL_VERSION } from "../lib/protocol";
   import { inspector } from "../lib/state.svelte";
   import type { TokenInfo } from "../lib/types";
 
@@ -21,6 +20,7 @@
   const shown = $derived(showRevoked ? tokens : tokens.filter((token) => !token.revoked));
   const host = typeof location === "undefined" ? "" : location.host;
   const loopback = /^(127\.|localhost|\[::1\])/.test(host);
+  const lan = $derived(inspector.status?.allow_lan);
 
   $effect(() => {
     void load();
@@ -84,7 +84,8 @@
     <dl class="facts">
       <div><dt class="label">you are</dt><dd class="mono">{inspector.you ? `${inspector.you.kind}:${inspector.you.name}` : ""}</dd></div>
       <div><dt class="label">scope</dt><dd class="mono">{inspector.you?.scope ?? ""}</dd></div>
-      <div><dt class="label">protocol</dt><dd class="mono">{PROTOCOL_VERSION}</dd></div>
+      <div><dt class="label">protocol</dt><dd class="mono">{inspector.status?.protocol_version ?? ""}</dd></div>
+      <div><dt class="label">conformance</dt><dd>{inspector.status?.conformance ?? ""}</dd></div>
       <div><dt class="label">hub</dt><dd class="mono">{inspector.status ? `${inspector.status.product} ${inspector.status.version}` : ""}</dd></div>
     </dl>
   </header>
@@ -171,13 +172,22 @@
     <h2 id="lan-title">LAN access</h2>
     <dl class="facts">
       <div><dt class="label">this page</dt><dd class="mono">{host}</dd></div>
+      <div>
+        <dt class="label">LAN access</dt>
+        <dd>
+          {#if lan === undefined}
+            not reported
+          {:else}
+            <StatusMark tone={lan ? "confirm" : "neutral"} label={lan ? "on, other machines can connect" : "off, loopback only"} />
+          {/if}
+        </dd>
+      </div>
       <div><dt class="label">reached over</dt><dd>{loopback ? "loopback" : "the network"}</dd></div>
       <div><dt class="label">setting</dt><dd class="mono">api.allow_lan</dd></div>
     </dl>
     <p class="muted">
-      The hub API does not report or change LAN access, so this page shows it read-only. Set
-      <code>api.allow_lan</code> in <code>~/.openhal/config.yaml</code> and restart <code>openhald</code>. It is off unless
-      you turn it on.
+      The Inspector shows LAN access read-only. To change it, set <code>api.allow_lan</code> in
+      <code>~/.openhal/config.yaml</code> and restart <code>openhald</code>. It is off unless you turn it on.
     </p>
   </section>
 </div>

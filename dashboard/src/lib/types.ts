@@ -12,6 +12,8 @@ export interface Status {
   version: string;
   spec: string;
   protocol_version?: string;
+  conformance?: string;
+  allow_lan?: boolean;
   stopped: boolean;
   stop_reason: string | null;
   devices: number;
@@ -36,6 +38,7 @@ export interface DeviceSummary {
   verification: string;
   source: string | null;
   conformance?: string;
+  simulated?: boolean;
 }
 
 export interface LiveValue {
@@ -74,10 +77,17 @@ export interface ArgSpec {
   default?: unknown;
 }
 
+export interface Requirement {
+  condition: string;
+  message: string | null;
+}
+
 export interface ActionSpec {
   description: string | null;
   args: Record<string, ArgSpec>;
   require: string[];
+  requirements?: Requirement[];
+  max_runs?: { count: number; per_s: number } | null;
   effects: string[];
   confirm: ConfirmTier | null;
 }

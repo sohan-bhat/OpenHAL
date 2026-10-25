@@ -56,6 +56,6 @@ export function describeDecision(decision: Decision): DecisionSummary {
   return { tone: "blocked", word: "blocked", head, reason: decision.message };
 }
 
-export function isSimulated(device: { driver: string }): boolean {
-  return device.driver === "mock";
+export function isSimulated(device: { simulated?: boolean }): boolean {
+  return device.simulated === true;
 }

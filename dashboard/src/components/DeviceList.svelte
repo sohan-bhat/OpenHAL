@@ -22,7 +22,7 @@
   {#if simulated > 0}
     <p class="demo">
       <span class="label">Demo data</span>
-      {simulated} of {devices.length} run on the mock driver.
+      {simulated} of {devices.length} {devices.length === 1 ? "device is" : "devices are"} simulated.
     </p>
   {/if}
   {#if !inspector.devicesLoaded}
@@ -43,7 +43,10 @@
             aria-current={selected === device.id ? "page" : undefined}
           >
             <span class="name">{device.name}</span>
-            <span class="id mono">{device.id}</span>
+            <span class="id-line">
+              <span class="id mono nobreak">{device.id}</span>
+              {#if isSimulated(device)}<span class="sim">simulated</span>{/if}
+            </span>
             <span class="states">
               <StatusMark tone={connection.tone} label={connection.label} />
               <StatusMark tone={verification.tone} label={verification.label} />
@@ -52,7 +55,7 @@
               <span class="unavailable"><span class="label">unavailable</span> {unavailableReason(device)}</span>
             {/if}
             <span class="facts">
-              <span><span class="label">driver</span> <span class="mono">{device.driver}</span></span>
+              <span><span class="label">driver</span> <span class="mono nobreak">{device.driver}</span></span>
               <span><span class="label">conformance</span> {conformanceFor(device)}</span>
               <span><span class="label">hazard</span> {device.hazard}</span>
               {#if !device.writable}<span class="read-only">read-only</span>{/if}
@@ -142,8 +145,23 @@
     font-size: 16px;
   }
 
+  .id-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--s-1) var(--s-2);
+  }
+
   .id {
     color: var(--accent);
+  }
+
+  .sim {
+    font-size: var(--t-label);
+    color: var(--text-2);
+    padding: 0 6px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
   }
 
   .states {

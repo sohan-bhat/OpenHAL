@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { PROTOCOL_VERSION } from "../lib/protocol";
   import { NAV, href, router } from "../lib/router.svelte";
   import { inspector } from "../lib/state.svelte";
   import type { StatusWord } from "../lib/status";
@@ -49,7 +48,11 @@
     </div>
     <div>
       <dt class="label">Protocol</dt>
-      <dd class="mono">{status?.protocol_version ?? PROTOCOL_VERSION}</dd>
+      <dd class="mono">{#if status?.protocol_version}{status.protocol_version}{:else}&emsp;{/if}</dd>
+    </div>
+    <div>
+      <dt class="label">Conformance</dt>
+      <dd>{#if status?.conformance}{status.conformance}{:else}&emsp;{/if}</dd>
     </div>
   </dl>
   <div class="stop-slot">
@@ -60,7 +63,8 @@
 <p class="hub-line">
   {#if status}{status.product} {status.version}{/if} <span class="mono">{host}</span>
   <StatusMark tone={connection.tone} label={connection.label} />
-  <span class="muted">protocol</span> <span class="mono">{status?.protocol_version ?? PROTOCOL_VERSION}</span>
+  {#if status?.protocol_version}<span class="muted">protocol</span> <span class="mono">{status.protocol_version}</span>{/if}
+  {#if status?.conformance}<span class="muted">conformance</span> {status.conformance}{/if}
 </p>
 
 <nav class="views" aria-label="Views">

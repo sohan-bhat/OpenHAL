@@ -94,6 +94,33 @@ export function valueWidth(min: number | null | undefined, max: number | null | 
   return Math.max(4, widest);
 }
 
+export function formatDuration(seconds: number): string {
+  if (seconds >= 86400 && seconds % 86400 === 0) return `${seconds / 86400} d`;
+  if (seconds >= 3600 && seconds % 3600 === 0) return `${seconds / 3600} h`;
+  if (seconds >= 60 && seconds % 60 === 0) return `${seconds / 60} min`;
+  return `${formatNumber(seconds)} s`;
+}
+
+export interface Segment {
+  text: string;
+  keep: boolean;
+}
+
+const UNBREAKABLE = /[A-Za-z0-9_]+(?:[-.:/][A-Za-z0-9_]+)+/g;
+
+export function keepTogether(text: string): Segment[] {
+  const segments: Segment[] = [];
+  let last = 0;
+  for (const match of text.matchAll(UNBREAKABLE)) {
+    const start = match.index ?? 0;
+    if (start > last) segments.push({ text: text.slice(last, start), keep: false });
+    segments.push({ text: match[0], keep: true });
+    last = start + match[0].length;
+  }
+  if (last < text.length) segments.push({ text: text.slice(last), keep: false });
+  return segments;
+}
+
 export function formatDateTime(epochSeconds: number | null | undefined): string {
   if (!epochSeconds) return "";
   const date = new Date(epochSeconds * 1000);

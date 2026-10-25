@@ -92,12 +92,6 @@ export const NOTIFICATIONS = [
   "hal/confirmationRequested",
 ] as const;
 
-export type Conformance = "core" | "control" | "full";
-
-const CORE_DRIVERS = new Set(["uvc", "rpi-camera"]);
-
-export function conformanceFor(device: { conformance?: string | null; driver: string }): Conformance {
-  const given = device.conformance;
-  if (given === "core" || given === "control" || given === "full") return given;
-  return CORE_DRIVERS.has(device.driver) ? "core" : "control";
+export function conformanceFor(device: { conformance?: string | null }): string {
+  return device.conformance || "not reported";
 }
