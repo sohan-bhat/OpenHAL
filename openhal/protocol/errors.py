@@ -326,4 +326,4 @@ class RpcError(Exception):
 def from_kernel(kernel_code: str | None, data: Data | None = None) -> RpcError:
     """An error for a kernel block code, with `kernelCode` set."""
     spec = spec_for_kernel_code(kernel_code)
-    return RpcError(spec.name, {**(data or {}), "kernelCode": kernel_code})
+    return RpcError(spec.name, {"kernelCode": kernel_code, **(data or {})})

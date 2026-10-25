@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Annotated, Any, Final, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, SerializerFunctionWrapHandler, model_serializer
 from pydantic.alias_generators import to_camel
 
 Conformance = Literal["core", "control", "full"]
@@ -62,6 +62,12 @@ class ErrorData(Message):
     confirmed_by: str | None = Field(default=None, description="Who confirmed the limit.")
     confirmed_at: str | None = Field(default=None, description="When the limit was confirmed.")
     request_id: str | None = None
+
+    @model_serializer(mode="wrap")
+    def _present_only(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        """Data carries only the fields that apply, so absent ones are left out, not null."""
+        data: dict[str, Any] = handler(self)
+        return {key: value for key, value in data.items() if value is not None}
 
 
 class ErrorObject(Message):
