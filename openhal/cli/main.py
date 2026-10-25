@@ -12,6 +12,7 @@ from openhal.cli import (
     _common,
     confirm_cmd,
     control_cmd,
+    demo_cmd,
     doctor_cmd,
     driver_cmd,
     file_cmd,
@@ -48,6 +49,7 @@ token_cmd.register(app)
 mcp_cmd.register(app)
 rpc_cmd.register(app)
 doctor_cmd.register(app)
+demo_cmd.register(app)
 
 
 def _version(value: bool) -> None:

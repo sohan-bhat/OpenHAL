@@ -1,0 +1,102 @@
+scenario: plant-waterer
+recorded_with: uv run openhal demo --record docs/demo/scenario.yaml
+protocol_version: '2026-10-24'
+device: plant-waterer
+file: plant-waterer.hal.yaml
+confirmed:
+  by: sohan
+  at: '2026-10-24'
+limits:
+  water_duration:
+    min:
+      value: 1
+      unit: s
+    max:
+      value: 30
+      unit: s
+  water_runs:
+    count: 3
+    per:
+      value: 1
+      unit: h
+exchanges:
+- id: too-long
+  request:
+    method: hal/action
+    params:
+      device: plant-waterer
+      action: water
+      args:
+        duration:
+          value: 120
+          unit: s
+  error:
+    code: -32010
+    message: water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)
+    data:
+      name: LIMIT_EXCEEDED
+      kernelCode: above_max
+      kernelMessage: Blocked. The duration limit is 30 s (max). Asked for 120 s.
+      device: plant-waterer
+      action: water
+      argument: duration
+      requested:
+        value: 120
+        unit: s
+      limit:
+        value: 30
+        unit: s
+      file: plant-waterer.hal.yaml
+      confirmedBy: sohan
+      confirmedAt: '2026-10-24'
+- id: tank-empty
+  before: tank is empty
+  request:
+    method: hal/action
+    params:
+      device: plant-waterer
+      action: water
+      args:
+        duration:
+          value: 20
+          unit: s
+  error:
+    code: -32012
+    message: pump can't run while tank is empty
+    data:
+      name: INTERLOCK_BLOCKED
+      kernelCode: interlock
+      kernelMessage: Blocked. Pump can't run while tank is empty. water needs tank == ok, which doesn't hold right now.
+      device: plant-waterer
+      action: water
+      interlock: pump can't run while tank is empty
+      file: plant-waterer.hal.yaml
+      confirmedBy: sohan
+      confirmedAt: '2026-10-24'
+- id: watered
+  before: tank refilled
+  request:
+    method: hal/action
+    params:
+      device: plant-waterer
+      action: water
+      args:
+        duration:
+          value: 20
+          unit: s
+  result:
+    status: done
+    result:
+      device: plant-waterer
+      action: water
+      args:
+        duration:
+          value: 20
+          unit: s
+  soil_moisture:
+    before:
+      value: 31
+      unit: '%'
+    after:
+      value: 46
+      unit: '%'
