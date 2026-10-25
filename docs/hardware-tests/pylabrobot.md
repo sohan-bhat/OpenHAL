@@ -1,12 +1,12 @@
 # Hardware test plan for the pylabrobot driver
 
-This plan checks the PyLabRobot driver on a real liquid handler. It starts with checks that move nothing and ends with the smallest safe motions, with water only. Close the cover, keep the instrument's own stop within reach, and watch every motion. Stop at the first step that fails and send back the report below.
+This plan checks the PyLabRobot driver on a real liquid handler. It starts with checks that move nothing and ends with the smallest safe motions, with water only. Close the cover, keep the instrument's own stop within reach, and watch every motion. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
 - A Hamilton STAR or STARlet, a Tecan EVO or an Opentrons OT-2 that PyLabRobot already drives on this computer. Run one PyLabRobot example from its documentation first.
 - One full tip rack and one empty 96 well plate, placed where the layout says, and water in well A1 of the plate.
-- OpenHAL installed with `uv pip install 'openhal-hub[pylabrobot]'`.
+- A checkout of this repository with the pylabrobot extra, `uv sync --extra pylabrobot`.
 
 ## The probe
 
@@ -38,7 +38,7 @@ asyncio.run(main(sys.argv[1]))
 
 ```
 cp openhal/drivers/pylabrobot/examples/starlet.hal.yaml ./lh.hal.yaml
-openhal file validate ./lh.hal.yaml
+uv run openhal file validate ./lh.hal.yaml
 ```
 
 Set `backend` and `deck` for your instrument, and make the layout match the physical deck. Expected. `valid ./lh.hal.yaml (starlet, high hazard, read-only)`.
@@ -46,7 +46,7 @@ Set `backend` and `deck` for your instrument, and make the layout match the phys
 ## Step 2. Connect and read (no motion)
 
 ```
-python probe.py ./lh.hal.yaml
+uv run python probe.py ./lh.hal.yaml
 ```
 
 Expected.
@@ -68,15 +68,15 @@ Add `- { name: extra, resource: no_such_rack, rails: 20 }` to the layout and run
 
 ## Step 4. Start the hub
 
-Confirm the limits by adding `confirmed: { by: <your name>, at: <today> }`, then load the file into a fresh hub.
+Read every limit in the file. Then confirm them yourself with `uv run openhal file confirm ./lh.hal.yaml`. It lists each limit and asks you to type `confirm`. Then load the file into a fresh hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
-openhal init
+uv run openhal init --no-sample
 cp ./lh.hal.yaml "$OPENHAL_HOME/devices/"
-openhald &
-openhal devices
-openhal read starlet.initialized
+uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+uv run openhal devices
+uv run openhal read starlet.initialized
 ```
 
 Expected. `starlet` is connected, high hazard, and reads `False`.
@@ -84,8 +84,8 @@ Expected. `starlet` is connected, high hazard, and reads `False`.
 ## Step 5. A blocked action never reaches the instrument (no motion)
 
 ```
-openhal action starlet.aspirate well="plate:A1" volume="500 uL"
-openhal action starlet.pick_up_tips tips="plate:A1"
+uv run openhal action starlet.aspirate well="plate:A1" volume="500 uL"
+uv run openhal action starlet.pick_up_tips tips="plate:A1"
 ```
 
 Expected. The first is blocked with `above_max`, the second with `bad_value`, because `plate:A1` doesn't match the tips pattern. Nothing moves.
@@ -93,8 +93,8 @@ Expected. The first is blocked with `above_max`, the second with `bad_value`, be
 ## Step 6. Initialize
 
 ```
-openhal action starlet.initialize
-openhal read starlet.initialized
+uv run openhal action starlet.initialize
+uv run openhal read starlet.initialized
 ```
 
 Expected. The instrument initializes and homes its channels, the same way PyLabRobot's setup does. The read says `True`.
@@ -104,32 +104,45 @@ Expected. The instrument initializes and homes its channels, the same way PyLabR
 PyLabRobot tracks volumes and starts every well empty. The example tells it about the water with `volumes: { "plate:A1": 200 uL }` in `connect`, so put at least 200 uL in A1 or lower that number before you confirm the file.
 
 ```
-openhal action starlet.pick_up_tips tips="tips:A1"
-openhal read starlet.tips_mounted
-openhal action starlet.aspirate well="plate:A1" volume="10 uL"
-openhal action starlet.dispense well="plate:A2" volume="10 uL"
-openhal action starlet.drop_tips tips="tips:A1"
+uv run openhal action starlet.pick_up_tips tips="tips:A1"
+uv run openhal read starlet.tips_mounted
+uv run openhal action starlet.aspirate well="plate:A1" volume="10 uL"
+uv run openhal action starlet.dispense well="plate:A2" volume="10 uL"
+uv run openhal action starlet.drop_tips tips="tips:A1"
 ```
 
 Expected. Channel 1 picks up the tip at A1, aspirates 10 uL from A1, dispenses it into A2 and puts the tip back. `tips_mounted` reads `1` while the tip is on.
 
 ## Step 8. Stop during an action
 
+Open a second terminal in the checkout and run `export OPENHAL_HOME="$PWD/openhal-test"` there, so the stop can go in while the channels move. In the first terminal, start picking up seven tips.
+
 ```
-openhal action starlet.pick_up_tips tips="tips:B1:H1"
-openhal stop
-openhal read starlet.tips_mounted
-openhal unlock
-openhal action starlet.initialize
+uv run openhal action starlet.pick_up_tips tips="tips:B1:H1"
 ```
 
-Run `openhal stop` while the channels are moving. Expected. The instrument finishes the move it is in and then stops. `tips_mounted` may be marked suspect, because the model may not match the deck. Initializing again clears that. Stop the hub with `kill %1` when done.
+In the second terminal, while the channels are moving, stop it.
+
+```
+uv run openhal stop
+uv run openhal read starlet.tips_mounted
+uv run openhal unlock
+uv run openhal action starlet.initialize
+```
+
+Expected. The stop reports `starlet  safe`. The instrument finishes the move it is in and then stops. `tips_mounted` may be marked suspect, because the model may not match the deck. Initializing again clears that. Stop the hub with `kill %1` when done.
+
+## If something fails
+
+Send what [README.md](README.md#if-a-step-fails) lists, plus the PyLabRobot version (`uv run python -c "from importlib.metadata import version; print(version('pylabrobot'))"`), the deck layout from the file, and a photo of the deck. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
 
 ## Report template
 
 ```
-Driver: pylabrobot
-OpenHAL version:
+Plan: docs/hardware-tests/pylabrobot.md
+Tested by and date:
+OpenHAL: (uv run openhal --version, and git rev-parse --short HEAD)
+Device file: (path, and the sha256 in its confirmed line)
 Instrument and PyLabRobot backend:
 Deck layout used (paste it):
 Step 1 file valid:                pass / fail
@@ -140,8 +153,9 @@ Step 5 blocked actions:           pass / fail
 Step 6 initialize:                pass / fail
 Step 7 one tip and 10 uL:         pass / fail
 Step 8 stop during an action:     pass / fail
+Audit chain: (the line uv run openhal log --verify prints)
 Anything unexpected (paste exact output):
-Result: verified-on-hardware / failed at step N
+Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-A passing report lets the device file set `provenance.verification.status: verified-on-hardware` with `report:` pointing at the saved report.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.

@@ -1,12 +1,12 @@
 # Hardware test plan for the ros2 driver
 
-This plan checks the ROS 2 driver on a real robot. It starts with read-only checks and ends with the smallest safe motion. Lift the wheels off the floor, or clear a 2 by 2 m space, before any step that moves the robot, and keep its physical stop within reach. Stop at the first step that fails and send back the report below.
+This plan checks the ROS 2 driver on a real robot. It starts with read-only checks and ends with the smallest safe motion. Lift the wheels off the floor, or clear a 2 by 2 m space, before any step that moves the robot, and keep its physical stop within reach. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
 - A ROS 2 robot with rosbridge running, for example `ros2 launch rosbridge_server rosbridge_websocket_launch.xml`. Note the ROS distribution.
 - The names and types of a battery topic, an odometry topic and the velocity command topic, from `ros2 topic list -t`.
-- OpenHAL installed with `uv pip install 'openhal-hub[ros2]'`, on a machine that can reach the robot on port 9090.
+- A checkout of this repository with the ros2 extra, `uv sync --extra ros2`, on a machine that can reach the robot on port 9090.
 
 ## The read-only probe
 
@@ -43,7 +43,7 @@ Connecting subscribes to the read topics and advertises the publish topics. Adve
 ## Step 1. rosbridge answers (read-only)
 
 ```
-python -m websockets ws://<robot>:9090
+uv run python -m websockets ws://<robot>:9090
 ```
 
 Expected. `Connected to ws://<robot>:9090.` Close it with Ctrl-D. If it fails, check that rosbridge is running and the port is open.
@@ -52,7 +52,7 @@ Expected. `Connected to ws://<robot>:9090.` Close it with Ctrl-D. If it fails, c
 
 ```
 cp openhal/drivers/ros2/examples/turtlebot4.hal.yaml ./robot.hal.yaml
-openhal file validate ./robot.hal.yaml
+uv run openhal file validate ./robot.hal.yaml
 ```
 
 Set the host, and change the topics and types to your robot's. Keep the velocity limits at 0.1 m/s. Expected. `valid ./robot.hal.yaml (turtlebot, high hazard, read-only)`.
@@ -60,7 +60,7 @@ Set the host, and change the topics and types to your robot's. Keep the velocity
 ## Step 3. Identify and read (read-only)
 
 ```
-python probe.py ./robot.hal.yaml
+uv run python probe.py ./robot.hal.yaml
 ```
 
 Expected.
@@ -80,22 +80,22 @@ describe {"device": {"name": "ROS 2 robot"}, "read": {...
 ## Step 4. Network loss during reads (read-only)
 
 ```
-while true; do python probe.py ./robot.hal.yaml | grep battery; sleep 2; done
+while true; do uv run python probe.py ./robot.hal.yaml | grep battery; sleep 2; done
 ```
 
 Stop rosbridge for ten seconds, then start it again. Expected. Runs during the outage fail with `Could not reach rosbridge`. Later runs succeed. Stop with Ctrl-C.
 
 ## Step 5. Start the hub
 
-Confirm the limits by adding `confirmed: { by: <your name>, at: <today> }`, then load the file into a fresh hub.
+Read every limit in the file. Then confirm them yourself with `uv run openhal file confirm ./robot.hal.yaml`. It lists each limit and asks you to type `confirm`. Then load the file into a fresh hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
-openhal init
+uv run openhal init --no-sample
 cp ./robot.hal.yaml "$OPENHAL_HOME/devices/"
-openhald &
-openhal devices
-openhal read turtlebot.battery
+uv run openhald --verbose > "$OPENHAL_HOME/hub.log" 2>&1 &
+uv run openhal devices
+uv run openhal read turtlebot.battery
 ```
 
 Expected. `turtlebot` is connected, high hazard and its limits are confirmed.
@@ -104,7 +104,7 @@ Expected. `turtlebot` is connected, high hazard and its limits are confirmed.
 
 ```
 ros2 topic echo /cmd_vel &
-openhal write turtlebot.cmd_vel_linear "0.5 m/s"
+uv run openhal write turtlebot.cmd_vel_linear "0.5 m/s"
 ```
 
 Expected. Blocked with code `above_max`. `ros2 topic echo` prints nothing.
@@ -114,32 +114,43 @@ Expected. Blocked with code `above_max`. `ros2 topic echo` prints nothing.
 With the wheels lifted or the space clear.
 
 ```
-openhal write turtlebot.cmd_vel_linear "0.05 m/s"
-openhal stop
-openhal read turtlebot.cmd_vel_linear
-openhal unlock
+uv run openhal write turtlebot.cmd_vel_linear "0.05 m/s"
+uv run openhal stop
+uv run openhal read turtlebot.cmd_vel_linear
+uv run openhal unlock
 ```
 
 Expected. `ros2 topic echo` prints one Twist with `linear.x: 0.05`, then one with `linear.x: 0.0` after the stop. The wheels turn slowly, then stop. Some bases stop by themselves within a second because `cmd_vel` went quiet. Note whether yours does. `openhal unlock` asks you to type `unlock`.
 
 ## Step 8. An action goal and a stop that cancels it (optional)
 
-Use an action the robot offers, such as `undock` on a TurtleBot 4 sitting on its dock.
+Use an action the robot offers, such as `undock` on a TurtleBot 4 sitting on its dock. Open a second terminal in the checkout and run `export OPENHAL_HOME="$PWD/openhal-test"` there, so the stop can go in while the robot moves. In the first terminal, send the goal.
 
 ```
-openhal action turtlebot.undock
-openhal stop
+uv run openhal action turtlebot.undock
+```
+
+In the second terminal, while the robot is still moving, stop it.
+
+```
+uv run openhal stop
 ros2 action list -t
-openhal unlock
+uv run openhal unlock
 ```
 
-Run `openhal stop` while the robot is still moving. Expected. The action answers `started`, the stop cancels the goal and the robot halts. Stop the hub with `kill %1` and the echo with `kill %2` when done.
+Expected. The action answers `started`, the stop cancels the goal and the robot halts. Stop the hub with `kill %1` and the echo with `kill %2` when done.
+
+## If something fails
+
+Send what [README.md](README.md#if-a-step-fails) lists, plus the output of `ros2 topic list -t`, the `ros2 topic echo` output from the same minutes, the rosbridge launch output, and the ROS distribution. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
 
 ## Report template
 
 ```
-Driver: ros2
-OpenHAL version:
+Plan: docs/hardware-tests/ros2.md
+Tested by and date:
+OpenHAL: (uv run openhal --version, and git rev-parse --short HEAD)
+Device file: (path, and the sha256 in its confirmed line)
 Robot, ROS 2 distribution and rosbridge version:
 Host OS and network:
 Step 1 rosbridge answers:         pass / fail
@@ -150,8 +161,9 @@ Step 5 hub lists the device:      pass / fail
 Step 6 blocked velocity:          pass / fail
 Step 7 smallest motion and stop:  pass / fail   (does the base stop on its own when cmd_vel goes quiet)
 Step 8 goal and cancel:           pass / fail / skipped
+Audit chain: (the line uv run openhal log --verify prints)
 Anything unexpected (paste exact output):
-Result: verified-on-hardware / failed at step N
+Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-A passing report lets the device file set `provenance.verification.status: verified-on-hardware` with `report:` pointing at the saved report.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
