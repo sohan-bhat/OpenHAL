@@ -6,6 +6,8 @@
   import StatusMark from "./StatusMark.svelte";
   import StopControl from "./StopControl.svelte";
 
+  let { onshowlog }: { onshowlog?: () => void } = $props();
+
   const status = $derived(inspector.status);
   const connection = $derived<StatusWord>(
     inspector.live === "open"
@@ -18,28 +20,21 @@
   const host = typeof location === "undefined" ? "" : location.host;
 
   function showLog() {
-    const log = document.getElementById("message-log");
-    if (!log) return;
-    log.scrollIntoView({ block: "start" });
-    document.getElementById("log-title")?.focus();
+    onshowlog?.();
+    requestAnimationFrame(() => {
+      document.getElementById("message-log")?.scrollIntoView({ block: "start" });
+      document.getElementById("log-title")?.focus();
+    });
   }
 </script>
 
-<header class="top">
-  <a class="brand" href={href("devices")} aria-label="OpenHAL Inspector, devices">
-    <Mark size={22} />
-    <span class="wordmark">OpenHAL</span>
-    <span class="product">Inspector</span>
-  </a>
-  <dl class="hub">
-    <div>
+{#snippet facts(where: string)}
+  <dl class="hub {where}">
+    <div class="hub-name">
       <dt class="label">Hub</dt>
       <dd>
-        {#if status}
-          {status.product} {status.version} <span class="muted">at</span> <span class="mono">{host}</span>
-        {:else}
-          <span class="mono">{host}</span>
-        {/if}
+        {#if status}{status.product} {status.version} <span class="muted">at</span>{/if}
+        <span class="mono nobreak">{host}</span>
       </dd>
     </div>
     <div>
@@ -55,17 +50,21 @@
       <dd>{#if status?.conformance}{status.conformance}{:else}&emsp;{/if}</dd>
     </div>
   </dl>
+{/snippet}
+
+<header class="top">
+  <a class="brand" href={href("devices")} aria-label="OpenHAL Inspector, devices">
+    <Mark size={22} />
+    <span class="wordmark">OpenHAL</span>
+    <span class="product">Inspector</span>
+  </a>
+  {@render facts("wide")}
   <div class="stop-slot">
     <StopControl />
   </div>
 </header>
 
-<p class="hub-line">
-  {#if status}{status.product} {status.version}{/if} <span class="mono">{host}</span>
-  <span class="connection"><StatusMark tone={connection.tone} label={connection.label} /></span>
-  {#if status?.protocol_version}<span class="muted">protocol</span> <span class="mono">{status.protocol_version}</span>{/if}
-  {#if status?.conformance}<span class="muted">conformance</span> {status.conformance}{/if}
-</p>
+{@render facts("narrow")}
 
 <nav class="views" aria-label="Views">
   <ul>
@@ -86,7 +85,13 @@
       </li>
     {/each}
     <li class="jump">
-      <button type="button" onclick={showLog}>Message log</button>
+      <button type="button" onclick={showLog}>
+        <svg width="12" height="14" viewBox="0 0 12 14" aria-hidden="true" focusable="false">
+          <path d="M6 1v7.5" stroke="currentColor" stroke-width="1.5" />
+          <path d="M6 13 2.5 7h7z" fill="currentColor" />
+        </svg>
+        Message log
+      </button>
     </li>
   </ul>
 </nav>
@@ -140,6 +145,7 @@
 
   .hub div {
     display: grid;
+    align-content: start;
     gap: 2px;
   }
 
@@ -147,6 +153,10 @@
     margin: 0;
     min-height: 20px;
     font-size: var(--t-ui);
+  }
+
+  .hub.narrow {
+    display: none;
   }
 
   .connection {
@@ -159,10 +169,6 @@
     background: var(--bg);
   }
 
-  .hub-line {
-    display: none;
-  }
-
   .views ul {
     display: flex;
     flex-wrap: wrap;
@@ -172,22 +178,28 @@
     list-style: none;
   }
 
-  .views a {
+  .views a,
+  .jump button {
     display: inline-flex;
     align-items: center;
     gap: var(--s-2);
     min-height: 40px;
     padding: 0 var(--s-2);
     color: var(--text-2);
-    text-decoration: none;
+    font: inherit;
     font-weight: 700;
+    text-decoration: none;
+    text-underline-offset: 4px;
+  }
+
+  .views a {
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
   }
 
   .views a:hover,
   .jump button:hover {
-    color: var(--text);
+    text-decoration: underline;
   }
 
   .jump {
@@ -195,13 +207,8 @@
   }
 
   .jump button {
-    min-height: 40px;
-    padding: 0 var(--s-2);
     border: 0;
     background: none;
-    color: var(--text-2);
-    font: inherit;
-    font-weight: 700;
     cursor: pointer;
   }
 
@@ -251,18 +258,16 @@
       z-index: 2;
     }
 
-    .hub {
+    .hub.wide {
       display: none;
     }
 
-    .hub-line {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: var(--s-1) var(--s-3);
-      padding: var(--s-2) var(--s-4);
+    .hub.narrow {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--s-2) var(--s-4);
+      padding: var(--s-3) var(--s-4);
       border-bottom: var(--rule);
-      font-size: var(--t-label);
     }
 
     .stop-slot {
@@ -271,7 +276,13 @@
     }
 
     .views ul {
+      gap: 0;
       padding: 0 var(--s-2);
+    }
+
+    .views a,
+    .jump button {
+      padding: 0 6px;
     }
   }
 </style>

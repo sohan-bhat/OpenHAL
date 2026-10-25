@@ -101,7 +101,7 @@
   <a class="skip-link" href="#main">Skip to content</a>
   <div class="app" class:log-closed={!logOpen} class:settling={hidden} data-view={view} style="--chrome-height: {chromeHeight}px">
     <div class="chrome" {@attach measure}>
-      <Header />
+      <Header onshowlog={() => (logOpen = true)} />
     </div>
     <aside class="left" aria-label="Device list">
       <DeviceList />

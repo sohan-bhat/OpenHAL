@@ -37,6 +37,19 @@ test("Message log in the header moves focus to the log, and the log hides and sh
   await expect(page.locator("#log-body")).toBeHidden();
   await page.getByRole("button", { name: "Show the log" }).click();
   await expect(page.locator("#log-body")).toBeVisible();
+  await page.getByRole("button", { name: "Hide the log" }).click();
+  await page.getByRole("navigation", { name: "Views" }).getByRole("button", { name: "Message log" }).click();
+  await expect(page.locator("#log-body")).toBeVisible();
+  await expect(page.locator("#log-title")).toBeFocused();
+});
+
+test("the phone header labels the hub, connection, protocol and conformance", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/#/devices/plant-waterer");
+  const facts = page.locator("dl.hub.narrow");
+  await expect(facts).toBeVisible();
+  for (const label of ["Hub", "Connection", "Protocol", "Conformance"]) await expect(facts.locator("dt", { hasText: label })).toBeVisible();
+  await expect(page.locator("dl.hub.wide")).toBeHidden();
 });
 
 test("the log shows readings on request, expands long messages and copies the trace", async ({ page, browserName, context }) => {
