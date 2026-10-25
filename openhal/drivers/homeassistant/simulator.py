@@ -86,6 +86,7 @@ class HomeAssistantSim:
         self.fail_http = False
         self.fail_next = 0
         self.malformed = False
+        self.send_states = True
         self.port: int | None = None
         self._server: Any = None
         self._connections: set[Any] = set()
@@ -250,6 +251,8 @@ class HomeAssistantSim:
             wanted = set(message.get("entity_ids") or self.entities)
             self._subscribers.append((connection, ident, wanted))
             await self._result(connection, ident, None)
+            if not self.send_states:
+                return
             added = {
                 entity_id: {"s": self.entities[entity_id]["state"], "a": self.entities[entity_id]["attributes"]}
                 for entity_id in wanted
