@@ -1,15 +1,19 @@
-"""Pydantic models for every protocol message (ADR 0015).
+"""Pydantic models for every protocol message (ADR 0015, spec/2026-10-24/basic/messages.md).
 
 Field names are snake_case in Python and camelCase on the wire. Params models refuse unknown fields,
-so a typo is INVALID_PARAMS instead of being ignored. `METHODS` and `NOTIFICATIONS` list every method
-and notification with its models and conformance level. The schema reference in spec/2026-10-24/ is
-generated from this module by `python -m openhal.protocol.schema`.
+so a typo is INVALID_PARAMS instead of being ignored. Fields marked optional in the spec, such as
+`Decision.error`, are left out when they don't apply, never sent as null. Times are RFC 3339 strings
+in UTC.
+
+`METHODS` and `NOTIFICATIONS` list every method and notification with its models and conformance
+level. The schema reference in spec/2026-10-24/ is generated from this module by
+`python -m openhal.protocol.schema`.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Annotated, Any, Final, Literal
+from typing import Annotated, Any, ClassVar, Final, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, SerializerFunctionWrapHandler, model_serializer
 from pydantic.alias_generators import to_camel
@@ -25,8 +29,9 @@ Value = str | bool | int | float
 
 DeviceId = Annotated[str, Field(min_length=1, max_length=48, description="A device id, for example desk-fan.")]
 ChannelName = Annotated[str, Field(min_length=1, max_length=48, description="A channel, for example fan_speed.")]
-ActionName = Annotated[str, Field(min_length=1, max_length=48, description="An action, for example home.")]
+ActionName = Annotated[str, Field(min_length=1, max_length=48, description="An action, for example spin_test.")]
 RequestId = Annotated[str, Field(min_length=1, max_length=64, description="A confirmation request id.")]
+Timestamp = Annotated[str, Field(description="An RFC 3339 time in UTC, for example 2026-10-24T14:02:00Z.")]
 
 LEVELS: Final[dict[Conformance, int]] = {"core": 0, "control": 1, "full": 2}
 
@@ -35,6 +40,17 @@ class Message(BaseModel):
     """Base for every protocol model. camelCase on the wire, unknown fields refused."""
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="forbid")
+
+    omit_when_absent: ClassVar[frozenset[str]] = frozenset()
+    """Optional fields that are left out, not sent as null, when they don't apply."""
+
+    @model_serializer(mode="wrap")
+    def _leave_out_absent(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        data: dict[str, Any] = handler(self)
+        if not self.omit_when_absent:
+            return data
+        names = self.omit_when_absent | {to_camel(name) for name in self.omit_when_absent}
+        return {key: value for key, value in data.items() if not (value is None and key in names)}
 
     def wire(self) -> dict[str, Any]:
         """The model as it travels, with camelCase names."""
@@ -46,28 +62,39 @@ class Empty(Message):
 
 
 class ErrorData(Message):
-    """`error.data`. `name` is the registry name clients branch on."""
+    """`error.data`. `name` is the registry name clients branch on. Fields that don't apply are left out."""
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="allow")
+    omit_when_absent: ClassVar[frozenset[str]] = frozenset(
+        {
+            "kernel_code",
+            "kernel_message",
+            "device",
+            "channel",
+            "action",
+            "limit",
+            "requested",
+            "file",
+            "confirmed_by",
+            "confirmed_at",
+            "request_id",
+            "tightened_by",
+        }
+    )
 
     name: str = Field(description="The registry name, for example LIMIT_EXCEEDED.")
-    kernel_code: str | None = Field(default=None, description="The kernel's block code, for example above_max.")
-    kernel_message: str | None = Field(default=None, description="The kernel's own message.")
+    kernel_code: str | None = Field(default=None, description="The Safety Kernel's code, for example above_max.")
+    kernel_message: str | None = Field(default=None, description="The Safety Kernel's own message.")
     device: str | None = None
     channel: str | None = None
     action: str | None = None
-    limit: dict[str, Any] | None = Field(default=None, description='The limit that applied, as {"max": "100 %"}.')
-    requested: str | None = Field(default=None, description="The requested value in the channel unit.")
-    file: str | None = Field(default=None, description="The device file name, for example desk-fan.hal.yaml.")
+    limit: str | None = Field(default=None, description='The limit that applied, as a quantity such as "100 %".')
+    requested: str | None = Field(default=None, description='The requested value in the channel unit, as "150 %".')
+    file: str | None = Field(default=None, description="The Device File, for example desk-fan.hal.yaml.")
     confirmed_by: str | None = Field(default=None, description="Who confirmed the limit.")
-    confirmed_at: str | None = Field(default=None, description="When the limit was confirmed.")
+    confirmed_at: str | None = Field(default=None, description="When the limit was confirmed, as 2026-10-24.")
     request_id: str | None = None
-
-    @model_serializer(mode="wrap")
-    def _present_only(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
-        """Data carries only the fields that apply, so absent ones are left out, not null."""
-        data: dict[str, Any] = handler(self)
-        return {key: value for key, value in data.items() if value is not None}
+    tightened_by: str | None = Field(default=None, description="Who tightened the session limit that applied.")
 
 
 class ErrorObject(Message):
@@ -147,11 +174,8 @@ class DeviceSummary(Message):
     hazard: Hazard
     writable: bool = Field(description="False until a person confirms every limit.")
     connected: bool
-    unavailable: str | None = Field(default=None, description="Why the device can't take commands, if it can't.")
-    last_error: str | None = Field(default=None, description="The driver's last error, inside a device-data block.")
-    verification: str
-    source: str
     conformance: Conformance = Field(description="The driver's declared conformance level.")
+    verification: str = Field(description="unverified, verified-on-simulator or verified-on-hardware.")
 
 
 class DevicesListResult(Message):
@@ -163,19 +187,13 @@ class DescribeParams(Message):
 
 
 class Confirmed(Message):
+    """A human confirmation of limits."""
+
     by: str
-    at: str
+    at: str = Field(description="The date or time of the confirmation, as 2026-10-24.")
 
 
-class Current(Message):
-    """The latest known value of a channel."""
-
-    value: Any = None
-    known: bool
-    age_s: float | None = None
-
-
-class ReadChannelInfo(Current):
+class ReadChannelInfo(Message):
     type: str
     unit: str | None = None
     every_s: float | None = None
@@ -184,7 +202,7 @@ class ReadChannelInfo(Current):
     values: list[str] | None = None
 
 
-class WriteChannelInfo(Current):
+class WriteChannelInfo(Message):
     type: str
     unit: str | None = None
     min: float | None = None
@@ -194,8 +212,8 @@ class WriteChannelInfo(Current):
     values: list[str] | None = None
     max_length: int | None = None
     pattern: str | None = None
-    confirm: str
-    suggested: bool
+    confirm: str = Field(description="none, confirm or confirm-each-time.")
+    suggested: bool = Field(description="True while the limits are a suggestion no person has confirmed.")
     confirmed: Confirmed | None = Field(default=None, description="Who confirmed this channel's limits.")
 
 
@@ -228,29 +246,19 @@ class WatchdogInfo(Message):
     max_duration: list[MaxDurationInfo]
 
 
-class LimitsProvenance(Message):
-    """Where the limits come from and who confirmed them."""
-
-    file: str | None = Field(description="The device file name, for example desk-fan.hal.yaml.")
-    confirmed: Confirmed | None = Field(description="The file-level confirmation.")
-    bound: bool = Field(description="True when the confirmation is bound to a hash of the limits.")
-    unconfirmed: list[str] = Field(description="Limits no person has confirmed yet.")
-    source: str
-    by: str | None = None
-    at: str | None = None
-
-
 class DeviceDescription(DeviceSummary):
+    """A DeviceSummary plus channels, actions, safe state, interlocks, watchdog rules and limits provenance."""
+
     read: dict[str, ReadChannelInfo]
     write: dict[str, WriteChannelInfo]
     actions: dict[str, ActionInfo]
+    safe_state: list[dict[str, Any]]
     interlocks: list[InterlockInfo]
     watchdog: WatchdogInfo
-    safe_state: list[dict[str, Any]]
-    safe_state_support: str
-    notes: str | None = Field(default=None, description="Device file notes, inside a device-data block.")
-    warnings: list[str]
-    limits_provenance: LimitsProvenance
+    confirmed: Confirmed | None = Field(description="The file-level confirmation of the limits.")
+    unconfirmed: list[str] = Field(description="Limits no person has confirmed yet.")
+    file: str | None = Field(description="The Device File, for example desk-fan.hal.yaml.")
+    notes: str | None = Field(default=None, description="Device File notes, inside a device-data block.")
 
 
 class DescribeResult(Message):
@@ -265,10 +273,10 @@ class ReadParams(Message):
 class Reading(Message):
     device: str
     channel: str
-    value: Any = Field(description="The value in `unit`. Text is inside a device-data block.")
+    value: Any = Field(description="A number in `unit`, a bool or text. Text is inside a device-data block.")
     unit: str | None = None
-    at: float = Field(description="Unix time of the reading.")
-    suspect: bool = False
+    at: Timestamp
+    suspect: bool = Field(default=False, description="True when the reading lies outside the channel's range.")
 
 
 class ReadFailure(Message):
@@ -305,40 +313,41 @@ class Pending(Message):
     expires_in_s: float
 
 
-class WriteCommand(Message):
+class Write(Message):
     kind: Literal["write"] = "write"
     device: DeviceId
     channel: ChannelName
     value: Value
 
 
-class ActionCommand(Message):
+class Action(Message):
     kind: Literal["action"] = "action"
     device: DeviceId
     action: ActionName
-    args: dict[str, Value] = {}
+    args: dict[str, Value] = Field(default={}, description="Arguments by name. Numbers are quantity strings.")
 
 
-class WaitStep(Message):
+class Wait(Message):
     kind: Literal["wait"] = "wait"
-    wait: str = Field(max_length=40, description='A duration with a unit, for example "2 s". At most 1 h.')
+    duration: str = Field(max_length=40, description='A quantity of time such as "2 s", at most 1 h.')
 
 
-Command = Annotated[WriteCommand | ActionCommand, Field(discriminator="kind")]
-Step = Annotated[WriteCommand | ActionCommand | WaitStep, Field(discriminator="kind")]
+Command = Annotated[Write | Action, Field(discriminator="kind")]
+Step = Annotated[Write | Action | Wait, Field(discriminator="kind")]
 
 
 class Decision(Message):
-    """The kernel's answer to one command. A blocked decision carries the registry error."""
+    """The Safety Kernel's answer to one command. A blocked one carries its registry error."""
+
+    omit_when_absent: ClassVar[frozenset[str]] = frozenset({"error", "request_id"})
 
     status: DecisionStatus
     device: str
-    target: str = Field(description="write:<channel> or action:<action>.")
+    target: str = Field(description="write:<channel> or action:<name>.")
     value: Any = None
     unit: str | None = None
-    request_id: str | None = None
-    step: str | None = Field(default=None, description="Where the command sits in a plan or routine.")
     error: ErrorObject | None = None
+    request_id: str | None = None
 
 
 class DryRunParams(Message):
@@ -354,7 +363,7 @@ class PlanCheckParams(Message):
 
 
 class PlanResult(Message):
-    ok: bool = Field(description="True when every step would run now without a person.")
+    ok: bool = Field(description="True only when every Decision is allowed and problems is empty.")
     decisions: list[Decision]
     problems: list[str]
 
@@ -365,7 +374,7 @@ class StopParams(Message):
 
 class StopDevice(Message):
     device: str
-    status: str = Field(description="safe, partial, failed, pending or no_safe_state.")
+    status: str = Field(description="safe, partial, failed, no_safe_state or pending.")
     detail: str
 
 
@@ -391,18 +400,19 @@ class ActionDone(Message):
 
 
 class ConfirmationRequest(Message):
+    omit_when_absent: ClassVar[frozenset[str]] = frozenset({"decided_by"})
+
     request_id: str
     status: RequestStatus
     command: Command
     requested_by: str
-    expires_in_s: float
-    dry_run: Decision
+    created_at: Timestamp
+    expires_at: Timestamp
     decided_by: str | None = None
-    result: Decision | None = None
 
 
 class ConfirmationsListParams(Message):
-    status: RequestStatus | None = None
+    status: RequestStatus | None = Field(default=None, description="Leave out to list pending requests.")
 
 
 class ConfirmationsListResult(Message):
@@ -427,17 +437,16 @@ class UnlockResult(Message):
 
 
 class RoutineSummary(Message):
+    omit_when_absent: ClassVar[frozenset[str]] = frozenset({"disabled_reason"})
+
     id: str
     kind: str
     enabled: bool
     sha256: str
     devices: list[str]
     max_hazard: str | None = None
-    triggers: list[Any]
-    drafted_by: str | None = None
-    enabled_by: str | None = None
+    triggers: list[str]
     disabled_reason: str | None = None
-    last_run: dict[str, Any] | None = None
 
 
 class RoutinesListResult(Message):
@@ -453,19 +462,21 @@ class AuditQueryParams(Message):
     status: str | None = Field(default=None, max_length=40)
     event: str | None = Field(default=None, max_length=40)
     since: int = Field(default=0, ge=0, description="Only entries after this sequence number.")
-    limit: int = Field(default=50, ge=1, le=500)
+    limit: int = Field(default=200, ge=1, le=5000)
 
 
 class AuditEntry(Message):
+    omit_when_absent: ClassVar[frozenset[str]] = frozenset({"device", "target", "status", "code"})
+
     seq: int
-    at: float
+    at: Timestamp
     event: str
     principal: str
     device: str | None = None
     target: str | None = None
     status: str | None = None
     code: str | None = None
-    details: dict[str, Any]
+    body: dict[str, Any] = Field(description="The entry's details. Text that quotes a device is a data block.")
     hash: str
 
 
@@ -533,13 +544,13 @@ METHODS: Final[dict[str, MethodSpec]] = {
     "hal/dryRun": MethodSpec(params=DryRunParams, result=DryRunResult, level="control"),
     "hal/planCheck": MethodSpec(params=PlanCheckParams, result=PlanResult, level="control"),
     "hal/stop": MethodSpec(params=StopParams, result=StopResult, level="control"),
+    "hal/unlock": MethodSpec(params=UnlockParams, result=UnlockResult, level="control", human_only=True),
     "hal/action": MethodSpec(params=ActionParams, result=ActionDone | Pending, level="full"),
     "hal/confirmations/list": MethodSpec(params=ConfirmationsListParams, result=ConfirmationsListResult, level="full"),
     "hal/confirmations/approve": MethodSpec(params=ApproveParams, result=Decision, level="full", human_only=True),
     "hal/confirmations/reject": MethodSpec(
         params=RejectParams, result=ConfirmationRequest, level="full", human_only=True
     ),
-    "hal/unlock": MethodSpec(params=UnlockParams, result=UnlockResult, level="control", human_only=True),
     "hal/routines/list": MethodSpec(params=Empty, result=RoutinesListResult, level="full"),
     "hal/routines/dryRun": MethodSpec(params=RoutineDryRunParams, result=PlanResult, level="full"),
     "hal/audit/query": MethodSpec(params=AuditQueryParams, result=AuditQueryResult, level="full"),

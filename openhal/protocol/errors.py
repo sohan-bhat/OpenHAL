@@ -31,7 +31,7 @@ class ErrorSpec:
 
 
 def _subject(data: Data) -> str:
-    """What the error is about, for example `fan_speed 150 %` or `home on laser`."""
+    """What the error is about, for example `fan_speed 150 %` or `spin_test on desk-fan`."""
     if data.get("channel"):
         return " ".join(str(part) for part in (data["channel"], data.get("requested")) if part is not None)
     if data.get("action"):
@@ -40,7 +40,7 @@ def _subject(data: Data) -> str:
 
 
 def _provenance(data: Data) -> str:
-    """The device file and who confirmed its limits, as `(desk-fan.hal.yaml, confirmed by sohan 2026-11-02)`."""
+    """The device file and who confirmed its limits, as `(desk-fan.hal.yaml, confirmed by sohan 2026-10-24)`."""
     parts = []
     if data.get("file"):
         parts.append(str(data["file"]))
@@ -52,33 +52,37 @@ def _provenance(data: Data) -> str:
     return f" ({', '.join(parts)})" if parts else ""
 
 
+def _session(data: Data) -> str:
+    return f" (tightened by {data['tightenedBy']})"
+
+
 def _limit_exceeded(data: Data) -> str:
-    limit = data.get("limit") or {}
-    if "max" in limit:
-        text = f"{_subject(data)} exceeds the limit of {limit['max']}"
-    elif "min" in limit:
-        text = f"{_subject(data)} is below the limit of {limit['min']}"
-    else:
-        text = f"{_subject(data)} is outside its confirmed limits"
-    return text + _provenance(data)
+    """The normative LIMIT_EXCEEDED templates (spec/2026-10-24/safety.md, Reason messages).
+
+    A session limit a principal tightened names that principal and never cites the file's confirmation.
+    """
+    limit = data.get("limit")
+    if not limit:
+        return f"{_subject(data)} is outside its confirmed limits{_provenance(data)}"
+    session = bool(data.get("tightenedBy"))
+    kind = "session limit" if session else "limit"
+    verb = "is below" if data.get("kernelCode") == "below_min" else "exceeds"
+    text = f"{_subject(data)} {verb} the {kind} of {limit}"
+    return text + (_session(data) if session else _provenance(data))
 
 
 def _rate_limited(data: Data) -> str:
-    limit = data.get("limit") or {}
-    text = f"{_subject(data)} changes faster than allowed right now"
-    if "ratePerS" in limit:
-        text = f"{_subject(data)} changes faster than {limit['ratePerS']} allows right now"
-    if "from" in limit and "to" in limit:
-        text += f". It can go from {limit['from']} to {limit['to']}"
-    return text + _provenance(data)
+    limit = data.get("limit")
+    if not limit:
+        return f"{_subject(data)} changes faster than allowed right now{_provenance(data)}"
+    if data.get("tightenedBy"):
+        return f"{_subject(data)} changes faster than the session limit of {limit} allows right now{_session(data)}"
+    return f"{_subject(data)} changes faster than {limit} allows right now{_provenance(data)}"
 
 
 def _invalid_value(data: Data) -> str:
-    limit = data.get("limit") or {}
-    if "step" in limit:
-        return f"{_subject(data)} is not a step of {limit['step']}{_provenance(data)}"
-    if "values" in limit:
-        return f"{_subject(data)} is not one of {', '.join(str(value) for value in limit['values'])}{_provenance(data)}"
+    if data.get("kernelCode") == "bad_step" and data.get("limit"):
+        return f"{_subject(data)} is not a step of {data['limit']}{_provenance(data)}"
     return f"{_subject(data)} is not a value it accepts{_provenance(data)}"
 
 
@@ -166,6 +170,8 @@ REGISTRY: Final[tuple[ErrorSpec, ...]] = (
         lambda data: (
             f"This token's scope doesn't cover {data['device']}"
             if data.get("device")
+            else f"Only a human can call {data['method']}"
+            if data.get("method")
             else "This token's scope doesn't cover this method"
         ),
     ),

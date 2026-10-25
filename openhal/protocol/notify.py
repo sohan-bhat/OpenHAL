@@ -71,7 +71,7 @@ class Notifier:
                 channel=event["channel"],
                 value=event.get("value"),
                 unit=event.get("unit"),
-                at=event.get("at") or 0.0,
+                at=convert.timestamp(float(event.get("at") or 0.0)),
                 suspect=bool(event.get("suspect")),
             ),
         )
@@ -113,6 +113,7 @@ class Notifier:
             kernel_message=details.get("message"),
             raw_value=details.get("requested"),
             request_id=details.get("request_id"),
+            principal=entry.principal,
         )
         params = m.BlockedParams(
             device=entry.device or "",

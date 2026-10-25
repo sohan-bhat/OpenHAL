@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Any, Final
 from pydantic import ValidationError
 
 from openhal import __version__
-from openhal._brand import PRODUCT_NAME
+from openhal._brand import PACKAGE_NAME
 from openhal.drivers.base import DriverError
 from openhal.hub import views
 from openhal.kernel.commands import Action, Decision, Write
@@ -203,7 +203,7 @@ class Dispatcher:
         session.state = "initialized"
         return m.InitializeResult(
             protocol_version=session.protocol_version,
-            hub_info=m.Info(name=PRODUCT_NAME, version=__version__),
+            hub_info=m.Info(name=PACKAGE_NAME, version=__version__),
             conformance=self.level,
             principal=m.PrincipalInfo(kind=principal.kind, name=principal.name, scope=principal.scope),
             capabilities=m.Capabilities(notifications=m.notifications_for(self.level)),
@@ -262,7 +262,7 @@ class Dispatcher:
             return m.WriteDone(device=decision.device, channel=params.channel, value=decision.value, unit=decision.unit)
         if decision.status == "pending" and decision.request_id:
             return m.Pending(request_id=decision.request_id, expires_in_s=self._expires_in(decision.request_id))
-        raise convert.decision_error(self.hub, decision, command)
+        raise convert.decision_error(self.hub, decision, command, self._who(session).label)
 
     async def _action(self, session: Session, params: m.ActionParams) -> m.ActionDone | m.Pending:
         command = Action(device=params.device, action=params.action, args=dict(params.args))
@@ -272,29 +272,33 @@ class Dispatcher:
             return m.ActionDone(result=m.ActionOutcome(device=decision.device, action=params.action, args=args))
         if decision.status == "pending" and decision.request_id:
             return m.Pending(request_id=decision.request_id, expires_in_s=self._expires_in(decision.request_id))
-        raise convert.decision_error(self.hub, decision, command)
+        raise convert.decision_error(self.hub, decision, command, self._who(session).label)
 
     async def _dry_run(self, session: Session, params: m.DryRunParams) -> m.DryRunResult:
         commands = [convert.kernel_command(item) for item in params.commands]
-        decisions = self.hub.kernel.dry_run(commands, self._who(session))
+        who = self._who(session)
+        decisions = self.hub.kernel.dry_run(commands, who)
         return m.DryRunResult(
             decisions=[
-                convert.decision(self.hub, decision, command)
+                convert.decision(self.hub, decision, command, principal=who.label)
                 for decision, command in zip(decisions, commands, strict=True)
             ]
         )
 
     async def _plan_check(self, session: Session, params: m.PlanCheckParams) -> m.PlanResult:
-        """Evaluate a plan in order. Waits advance simulated time, so rate limits are judged as in a real run."""
+        """Evaluate a plan in order. Waits advance simulated time, so rate limits are judged as in a real run.
+
+        A plan can't hold a pending request, so a step that needs a person carries CONFIRMATION_REQUIRED.
+        """
         shadow = Shadow()
         decisions: list[m.Decision] = []
         problems: list[str] = []
         who = self._who(session)
         for index, step in enumerate(params.steps):
             path = f"steps[{index}]"
-            if isinstance(step, m.WaitStep):
+            if isinstance(step, m.Wait):
                 try:
-                    seconds = parse_duration(step.wait)
+                    seconds = parse_duration(step.duration)
                 except UnitError as exc:
                     problems.append(f"{path} wait {exc}")
                     continue
@@ -305,7 +309,7 @@ class Dispatcher:
                 continue
             command = convert.kernel_command(step)
             decision = self.hub.kernel.evaluate(command, who, shadow=shadow)
-            decisions.append(convert.decision(self.hub, decision, command, step=path))
+            decisions.append(convert.decision(self.hub, decision, command, principal=who.label, cannot_wait=True))
             if decision.status in ("allowed", "needs_confirmation") and isinstance(command, Write):
                 shadow.record(command.device, command.channel, decision.value)
         ok = not problems and all(item.status == "allowed" for item in decisions)
@@ -341,16 +345,18 @@ class Dispatcher:
     ) -> m.ConfirmationsListResult:
         kernel = self.hub.kernel
         kernel.queue.expire(kernel.clock())
-        requests = [item for item in kernel.queue.recent(100) if self._visible(session, item.principal)]
-        if params.status is not None:
-            requests = [item for item in requests if item.status == params.status]
+        wanted = params.status or "pending"
+        requests = [
+            item
+            for item in kernel.queue.recent(100)
+            if item.status == wanted and self._visible(session, item.principal)
+        ]
         return m.ConfirmationsListResult(requests=[convert.request(self.hub, item) for item in requests])
 
     def _closed(self, request_id: str, exc: Exception) -> RpcError:
+        """REQUEST_CLOSED for a request that is unknown or no longer pending."""
         request = self.hub.kernel.queue.get(request_id)
-        if request is None:
-            return from_kernel("unknown_target", {"requestId": request_id, "kernelMessage": str(exc)})
-        code = "rejected" if request.status == "rejected" else "expired"
+        code = "rejected" if request is not None and request.status == "rejected" else "expired"
         return from_kernel(code, {"requestId": request_id, "kernelMessage": str(exc)})
 
     async def _approve(self, session: Session, params: m.ApproveParams) -> m.Decision:
@@ -361,7 +367,9 @@ class Dispatcher:
             raise from_kernel("not_permitted", {"kernelMessage": str(exc)}) from None
         except LookupError as exc:
             raise self._closed(params.request_id, exc) from None
-        return convert.decision(self.hub, decision, request.command if request is not None else None)
+        command = request.command if request is not None else None
+        requester = request.principal.label if request is not None else None
+        return convert.decision(self.hub, decision, command, principal=requester)
 
     async def _reject(self, session: Session, params: m.RejectParams) -> m.ConfirmationRequest:
         try:
@@ -375,7 +383,7 @@ class Dispatcher:
     async def _routines_list(self, session: Session, params: m.Empty) -> m.RoutinesListResult:
         routines = self.hub.routines
         return m.RoutinesListResult(
-            routines=[m.RoutineSummary.model_validate(routines.summary(item)) for item in routines.records.values()]
+            routines=[convert.routine_summary(routines.summary(item)) for item in routines.records.values()]
         )
 
     async def _routines_dry_run(self, session: Session, params: m.RoutineDryRunParams) -> m.PlanResult:
@@ -387,7 +395,7 @@ class Dispatcher:
         decisions = []
         for item in result["decisions"]:
             kernel = Decision.model_validate({key: value for key, value in item.items() if key != "step"})
-            decisions.append(convert.decision(self.hub, kernel, step=item.get("step")))
+            decisions.append(convert.decision(self.hub, kernel, cannot_wait=True))
         return m.PlanResult(ok=result["ok"], decisions=decisions, problems=list(result["problems"]))
 
     async def _audit_query(self, session: Session, params: m.AuditQueryParams) -> m.AuditQueryResult:
