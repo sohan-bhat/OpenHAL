@@ -1,0 +1,279 @@
+#!/usr/bin/env python3
+"""Time a fresh install of OpenHAL up to the first read an agent makes through MCP.
+
+Each step is timed.
+
+1. build       uv build makes a wheel from this checkout.
+2. install     uv tool install (or pipx install) puts it in a fresh temporary tool folder.
+3. init        openhal init --yes, in a temporary HOME, adds a simulated self-describing board
+               as a read-only device file, the agent token and the MCP client setup.
+4. hub         openhald starts on a free loopback port and answers.
+5. first read  openhal mcp starts the way an AI client starts it, and the agent lists the
+               devices and reads one channel.
+
+Init runs with --no-discover so nothing probes this machine's ports or network. The simulated
+board stands in for a board discovery would find on a serial port. Nothing touches hardware or
+your own config, and everything lives in one temporary folder that is removed unless --keep.
+
+Usage: scripts/time-first-read [--installer uv|pipx] [--cold] [--keep]
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import queue
+import shutil
+import socket
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+BOARD = "desk-fan"
+CHANNEL = "temperature"
+GOAL_S = 60.0
+WAIT_S = 60.0
+
+
+class StepFailed(RuntimeError):
+    pass
+
+
+def free_port() -> int:
+    while True:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+            listener.bind(("127.0.0.1", 0))
+            port = listener.getsockname()[1]
+        if port != 4000:
+            return port
+
+
+def run(words: list[str], env: dict[str, str], cwd: Path | None = None) -> str:
+    done = subprocess.run(words, env=env, cwd=cwd, capture_output=True, text=True, timeout=600, check=False)
+    if done.returncode != 0:
+        raise StepFailed(f"{' '.join(words)} exited {done.returncode}.\n{done.stdout}{done.stderr}")
+    return done.stdout
+
+
+class Steps:
+    def __init__(self) -> None:
+        self.times: dict[str, float] = {}
+
+    def time(self, name: str, step, *args):
+        started = time.perf_counter()
+        detail = step(*args)
+        elapsed = time.perf_counter() - started
+        self.times[name] = elapsed
+        print(f"{name:<11} {elapsed:6.2f} s  {detail}", flush=True)
+        return detail
+
+
+def build(work: Path, env: dict[str, str]) -> str:
+    dist = work / "dist"
+    run(["uv", "build", "--wheel", "--quiet", "--out-dir", str(dist), str(ROOT)], env)
+    wheels = sorted(dist.glob("*.whl"))
+    if not wheels:
+        raise StepFailed(f"uv build made no wheel in {dist}.")
+    return wheels[-1].name
+
+
+def install(work: Path, env: dict[str, str], installer: str, cold: bool) -> str:
+    wheel = sorted((work / "dist").glob("*.whl"))[-1]
+    if installer == "pipx":
+        run(["uvx", "pipx", "install", "--quiet", str(wheel)], env)
+    else:
+        run(["uv", "tool", "install", "--compile-bytecode", "--quiet", str(wheel)], env)
+    found = work / "bin" / "openhal"
+    if not found.exists():
+        raise StepFailed(f"{installer} didn't put openhal in {found.parent}.")
+    return f"{installer} {'tool ' if installer == 'uv' else ''}install, {'empty' if cold else 'warm'} cache"
+
+
+def init(work: Path, env: dict[str, str]) -> str:
+    openhal = str(work / "bin" / "openhal")
+    words = [openhal, "init", "--yes", "--no-discover", "--device", f"openhal-firmware=sim:{BOARD}"]
+    out = run(words, env)
+    device = work / "home" / ".openhal" / "devices" / f"{BOARD}.hal.yaml"
+    token = work / "home" / ".openhal" / "agent.token"
+    if not device.exists() or not token.exists():
+        raise StepFailed(f"openhal init didn't add {device.name} and the agent token.\n{out}")
+    return f"{BOARD} added read-only, agent token, client setup printed"
+
+
+def answers(url: str) -> bool:
+    try:
+        with urllib.request.urlopen(f"{url}/v1/status", timeout=0.5):
+            return True
+    except urllib.error.HTTPError:
+        return True
+    except (urllib.error.URLError, OSError):
+        return False
+
+
+def hub(work: Path, env: dict[str, str], port: int, processes: list[subprocess.Popen]) -> str:
+    with (work / "openhald.log").open("ab") as log:
+        process = subprocess.Popen(
+            [str(work / "bin" / "openhald"), "--port", str(port)],
+            env=env,
+            stdin=subprocess.DEVNULL,
+            stdout=log,
+            stderr=log,
+            start_new_session=True,
+        )
+    processes.append(process)
+    url = f"http://127.0.0.1:{port}"
+    deadline = time.monotonic() + WAIT_S
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise StepFailed(f"openhald exited {process.returncode}. See {work / 'openhald.log'}.")
+        if answers(url):
+            return f"openhald answers at {url}, pid {process.pid}"
+        time.sleep(0.05)
+    raise StepFailed(f"openhald didn't answer at {url} within {WAIT_S:g} s.")
+
+
+class McpClient:
+    """Just enough of an MCP client over stdio to call tools, the way an AI client does."""
+
+    def __init__(self, words: list[str], env: dict[str, str]) -> None:
+        self.process = subprocess.Popen(
+            words, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        self.lines: queue.Queue[str] = queue.Queue()
+        self.ids = 0
+        threading.Thread(target=self._read, daemon=True).start()
+
+    def _read(self) -> None:
+        assert self.process.stdout is not None
+        for line in self.process.stdout:
+            self.lines.put(line)
+
+    def send(self, message: dict) -> None:
+        assert self.process.stdin is not None
+        self.process.stdin.write(json.dumps(message) + "\n")
+        self.process.stdin.flush()
+
+    def call(self, method: str, params: dict) -> dict:
+        self.ids += 1
+        self.send({"jsonrpc": "2.0", "id": self.ids, "method": method, "params": params})
+        deadline = time.monotonic() + WAIT_S
+        while time.monotonic() < deadline:
+            try:
+                message = json.loads(self.lines.get(timeout=max(0.1, deadline - time.monotonic())))
+            except queue.Empty:
+                break
+            if message.get("id") == self.ids:
+                if "error" in message:
+                    raise StepFailed(f"{method} failed. {message['error']}")
+                return message["result"]
+        stderr = self.process.stderr.read() if self.process.poll() is not None and self.process.stderr else ""
+        raise StepFailed(f"openhal mcp didn't answer {method} within {WAIT_S:g} s. {stderr}")
+
+    def tool(self, name: str, arguments: dict) -> object:
+        result = self.call("tools/call", {"name": name, "arguments": arguments})
+        if result.get("isError"):
+            raise StepFailed(f"{name} returned an error. {result.get('content')}")
+        structured = result.get("structuredContent")
+        if structured is not None:
+            return structured.get("result", structured) if isinstance(structured, dict) else structured
+        return json.loads(result["content"][0]["text"])
+
+    def close(self) -> None:
+        if self.process.stdin is not None:
+            self.process.stdin.close()
+        try:
+            self.process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            self.process.kill()
+            self.process.wait()
+
+
+def first_read(work: Path, env: dict[str, str]) -> str:
+    token = work / "home" / ".openhal" / "agent.token"
+    client = McpClient([str(work / "bin" / "openhal"), "mcp", "--token-file", str(token), "--no-start"], env)
+    try:
+        hello = {"name": "time-first-read", "version": "1"}
+        client.call("initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": hello})
+        client.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+        listed = client.tool("list_devices", {})
+        ids = [item.get("id") for item in listed] if isinstance(listed, list) else []
+        if BOARD not in ids:
+            raise StepFailed(f"list_devices didn't list {BOARD}. It listed {ids}.")
+        reading = client.tool("read", {"device": BOARD, "channel": CHANNEL})
+    finally:
+        client.close()
+    if not isinstance(reading, dict) or not reading.get("ok"):
+        raise StepFailed(f"The read failed. {reading}")
+    return f"list_devices, then read {BOARD}.{CHANNEL} = {reading.get('value')} {reading.get('unit')}"
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(prog="time-first-read", description=__doc__.splitlines()[0])
+    parser.add_argument("--installer", choices=("uv", "pipx"), default="uv")
+    parser.add_argument("--cold", action="store_true", help="Install with an empty package cache.")
+    parser.add_argument("--keep", action="store_true", help="Keep the temporary folder.")
+    args = parser.parse_args()
+    if shutil.which("uv") is None:
+        print("time-first-read needs uv. Install it from https://docs.astral.sh/uv/", file=sys.stderr)
+        return 1
+
+    work = Path(tempfile.mkdtemp(prefix="openhal-first-read-")).resolve()
+    (work / "home").mkdir()
+    env = {key: value for key, value in os.environ.items() if not key.startswith("OPENHAL_")}
+    env.update(
+        HOME=str(work / "home"),
+        UV_TOOL_DIR=str(work / "tools"),
+        UV_TOOL_BIN_DIR=str(work / "bin"),
+        PIPX_HOME=str(work / "pipx"),
+        PIPX_BIN_DIR=str(work / "bin"),
+        PIPX_MAN_DIR=str(work / "man"),
+        PATH=f"{work / 'bin'}{os.pathsep}{os.environ.get('PATH', '')}",
+    )
+    for name, command in (("UV_CACHE_DIR", "cache"), ("UV_PYTHON_INSTALL_DIR", "python")):
+        env[name] = os.environ.get(name) or run(["uv", command, "dir"], dict(os.environ)).strip()
+    if args.installer == "pipx":
+        run(["uvx", "pipx", "--version"], env)
+    port = free_port()
+    agent_env = {**env, "OPENHAL_URL": f"http://127.0.0.1:{port}"}
+    processes: list[subprocess.Popen] = []
+    steps = Steps()
+    print(f"work folder {work}\n")
+    print(f"{'step':<11} {'time':>8}  detail")
+    try:
+        steps.time("build", build, work, env)
+        install_env = {**env, "UV_CACHE_DIR": str(work / "cache")} if args.cold else env
+        steps.time("install", install, work, install_env, args.installer, args.cold)
+        steps.time("init", init, work, env)
+        steps.time("hub", hub, work, env, port, processes)
+        steps.time("first read", first_read, work, agent_env)
+    except StepFailed as exc:
+        print(f"\nfailed  {exc}", file=sys.stderr)
+        return 1
+    finally:
+        for process in processes:
+            process.terminate()
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+        if args.keep:
+            print(f"\nkept {work}")
+        else:
+            shutil.rmtree(work, ignore_errors=True)
+    person = sum(steps.times[name] for name in ("install", "init", "hub", "first read"))
+    total = sum(steps.times.values())
+    verdict = "under" if person < GOAL_S else "over"
+    print(f"{'total':<11} {total:6.2f} s  install to first read {person:.2f} s, {verdict} the {GOAL_S:g} s goal")
+    return 0 if person < GOAL_S else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
