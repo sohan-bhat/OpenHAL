@@ -1,0 +1,219 @@
+---
+// One device file from the library, as a datasheet.
+import Base from "../../layouts/Base.astro";
+import VerificationBadge from "../../components/VerificationBadge.astro";
+import { formatG } from "../../lib/kernel/pyformat";
+import { libraryEntries, type LibraryEntry } from "../../lib/library";
+
+export function getStaticPaths() {
+  return libraryEntries().map((entry) => ({ params: { slug: entry.slug }, props: { entry } }));
+}
+
+interface Props {
+  entry: LibraryEntry;
+}
+
+const { entry } = Astro.props;
+const file = entry.file;
+const unit = (value: string | null) => (value === "percent" ? "%" : (value ?? ""));
+const num = (value: number | null) => (value === null ? "" : formatG(value));
+---
+
+<Base title={entry.title} description={`OpenHAL device file for ${entry.title}. ${entry.verification.replaceAll("-", " ")}.`}>
+  <div class="wrap page">
+    <p class="crumb"><a href="/library/">Device library</a></p>
+    <header class="head">
+      <h1 class="page-title">{entry.title}</h1>
+      <div class="meta">
+        <VerificationBadge status={entry.verification} />
+        <code>{entry.path}</code>
+      </div>
+    </header>
+
+    {
+      entry.problems.length > 0 && (
+        <div class="module problems">
+          <p class="module-legend legend">
+            <span>Problems</span>
+          </p>
+          <ul>
+            {entry.problems.map((problem) => (
+              <li>{problem}</li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+
+    {
+      file && (
+        <div class="sheet">
+          <dl class="ident">
+            <div><dt class="legend">Id</dt><dd class="mono">{entry.deviceId}</dd></div>
+            <div><dt class="legend">Manufacturer</dt><dd>{entry.manufacturer ?? "not set"}</dd></div>
+            <div><dt class="legend">Model</dt><dd>{entry.model ?? "not set"}</dd></div>
+            <div><dt class="legend">Driver</dt><dd class="mono">{entry.driver}</dd></div>
+            <div><dt class="legend">Hazard</dt><dd class="mono">{entry.hazard}</dd></div>
+            <div><dt class="legend">Source</dt><dd>{entry.source}</dd></div>
+            <div><dt class="legend">Limits</dt><dd>{entry.confirmed ? <span class="lamp ok">Confirmed</span> : <span class="lamp unverified">Unconfirmed</span>}</dd></div>
+            {entry.report && <div><dt class="legend">Report</dt><dd class="mono">{entry.report}</dd></div>}
+          </dl>
+
+          {Object.keys(file.write).length > 0 && (
+            <section>
+              <h2 class="section-title">Write channels</h2>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th scope="col">Parameter</th><th class="num" scope="col">Min</th><th class="num" scope="col">Max</th><th class="num" scope="col">Step</th><th class="num" scope="col">Rate per s</th><th scope="col">Unit</th><th scope="col">Confirm</th></tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(file.write).map(([name, spec]) => (
+                      <tr>
+                        <td class="mono">{name}{spec.type !== "number" && <span class="muted"> ({spec.type}{spec.values.length ? `: ${spec.values.join(", ")}` : ""})</span>}</td>
+                        <td class="num">{num(spec.min)}</td>
+                        <td class="num">{num(spec.max)}</td>
+                        <td class="num">{num(spec.step)}</td>
+                        <td class="num">{num(spec.max_change_per_s)}</td>
+                        <td>{unit(spec.unit)}</td>
+                        <td>{spec.confirm}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {Object.keys(file.read).length > 0 && (
+            <section>
+              <h2 class="section-title">Read channels</h2>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th scope="col">Parameter</th><th scope="col">Type</th><th scope="col">Unit</th><th class="num" scope="col">Every</th><th scope="col">Range</th></tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(file.read).map(([name, spec]) => (
+                      <tr>
+                        <td class="mono">{name}</td>
+                        <td>{spec.type}</td>
+                        <td>{unit(spec.unit)}</td>
+                        <td class="num">{spec.every === null ? (spec.stream ? "stream" : "on request") : `${formatG(spec.every)} s`}</td>
+                        <td>{spec.range ? `${formatG(spec.range[0])} to ${formatG(spec.range[1])}` : ""}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {(file.interlocks.length > 0 || Object.keys(file.actions).length > 0) && (
+            <section>
+              <h2 class="section-title">Actions and interlocks</h2>
+              <ul class="plain">
+                {Object.entries(file.actions).map(([name, action]) => (
+                  <li><code>{name}</code> {Object.keys(action.args).join(", ")} {action.require.length > 0 && <span class="muted">needs {action.require.join(" and ")}</span>}</li>
+                ))}
+                {file.interlocks.map((item) => (
+                  <li><span class="muted">If</span> <code>{item.if_}</code> <span class="muted">then</span> <code>{item.require}</code></li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {entry.match.length > 0 && (
+            <section>
+              <h2 class="section-title">Matched by</h2>
+              <ul class="plain">{entry.match.map((item) => <li><code>{item}</code></li>)}</ul>
+            </section>
+          )}
+        </div>
+      )
+    }
+
+    <figure class="code-block">
+      <figcaption class="code-legend legend"><span>{entry.path}</span></figcaption>
+      <pre tabindex="0"><code>{entry.text}</code></pre>
+    </figure>
+  </div>
+</Base>
+
+<style>
+  .page {
+    padding-top: var(--s-6);
+  }
+
+  .crumb {
+    font-size: var(--t-1);
+  }
+
+  .head {
+    margin-top: var(--s-3);
+    padding-bottom: var(--s-4);
+    margin-bottom: var(--s-6);
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-3);
+    align-items: center;
+    margin-top: var(--s-3);
+  }
+
+  .meta code {
+    font-size: var(--t-0);
+    color: var(--ink-2);
+  }
+
+  .sheet {
+    display: grid;
+    gap: var(--s-6);
+  }
+
+  .ident {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    border: 1px solid var(--ink);
+    border-radius: var(--radius);
+  }
+
+  .ident > div {
+    padding: var(--s-2) var(--s-3);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .ident dt {
+    color: var(--ink-2);
+  }
+
+  .ident dd {
+    margin: 0;
+    font-size: var(--t-1);
+  }
+
+  .section-title {
+    margin-bottom: var(--s-3);
+  }
+
+  .plain {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .plain li {
+    padding: var(--s-2) 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .problems ul {
+    margin: 0;
+    padding-left: var(--s-4);
+    color: var(--blocked);
+  }
+</style>

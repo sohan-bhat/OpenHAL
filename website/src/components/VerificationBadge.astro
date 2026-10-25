@@ -1,0 +1,31 @@
+---
+// A verification badge for a device file, as a small part label. Color, shape and word together.
+import type { Verification } from "../lib/library";
+
+interface Props {
+  status: Verification;
+}
+
+const { status } = Astro.props;
+const look = {
+  "verified-on-hardware": { lamp: "ok", word: "Verified on hardware" },
+  "tested-reads": { lamp: "warning", word: "Reads tested" },
+  unverified: { lamp: "unverified", word: "Unverified" },
+}[status];
+---
+
+<span class={`badge ${status}`}><span class={`lamp ${look.lamp}`}>{look.word}</span></span>
+
+<style>
+  .badge {
+    display: inline-flex;
+    padding: 2px var(--s-2);
+    border: 1px solid var(--ink);
+    border-radius: var(--radius);
+  }
+
+  .badge.unverified {
+    border-style: dashed;
+    border-color: var(--ink-3);
+  }
+</style>
