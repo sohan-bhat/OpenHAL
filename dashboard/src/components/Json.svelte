@@ -6,13 +6,22 @@
   const tokens = $derived(tokenizeJson(value, limit));
 </script>
 
-<code class="json">{#each tokens as token, index (index)}<span class="t-{token.type}">{token.text}</span>{/each}</code>
+<code class="json">{#each tokens as token, index (index)}<span class="t-{token.type}" class:long={token.text.length > 40}>{token.text}</span>{/each}</code>
 
 <style>
   .json {
     font-family: var(--font-mono);
     font-size: var(--t-mono);
     color: var(--syn-string);
+    white-space: pre-wrap;
+  }
+
+  .t-string,
+  .t-key {
+    white-space: nowrap;
+  }
+
+  .t-string.long {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }

@@ -66,18 +66,18 @@
     <header class="section head">
       <div class="title">
         <h1 id="device-title">{view.name}</h1>
-        <span class="mono id">{view.id}</span>
-        {#if isSimulated(view)}<span class="sim">simulated, mock driver</span>{/if}
+        <span class="mono id nobreak">{view.id}</span>
+        {#if isSimulated(view)}<span class="sim">simulated</span>{/if}
       </div>
       <dl class="facts">
         <div><dt class="label">state</dt><dd><StatusMark tone={connection.tone} label={connection.label} /></dd></div>
         {#if unavailableReason(view)}<div><dt class="label">unavailable</dt><dd>{unavailableReason(view)}</dd></div>{/if}
         <div><dt class="label">verification</dt><dd><StatusMark tone={verification.tone} label={verification.label} /></dd></div>
-        <div><dt class="label">driver</dt><dd class="mono">{view.driver}</dd></div>
+        <div><dt class="label">driver</dt><dd class="mono nobreak">{view.driver}</dd></div>
         <div><dt class="label">conformance</dt><dd>{conformanceFor(view)}</dd></div>
         <div><dt class="label">hazard</dt><dd>{view.hazard}</dd></div>
         <div><dt class="label">mode</dt><dd>{view.writable ? "takes commands" : "read-only"}</dd></div>
-        {#if fileName}<div><dt class="label">device file</dt><dd class="mono">{fileName}</dd></div>{/if}
+        {#if fileName}<div class="wide"><dt class="label">device file</dt><dd class="mono nobreak">{fileName}</dd></div>{/if}
         {#if view.source}<div><dt class="label">source</dt><dd>{view.source}</dd></div>{/if}
       </dl>
       {#if view.last_error}
@@ -100,7 +100,9 @@
     {#if Object.keys(view.read).length}
       <section class="section" aria-labelledby="read-title">
         <h2 id="read-title">Read channels</h2>
-        <table class="grid">
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Read channels table">
+          <table class="grid">
           <thead>
             <tr><th scope="col">Channel</th><th scope="col" class="num">Value</th><th scope="col">Range</th><th scope="col">Every</th></tr>
           </thead>
@@ -120,7 +122,8 @@
               </tr>
             {/each}
           </tbody>
-        </table>
+          </table>
+        </div>
       </section>
     {/if}
 
@@ -263,6 +266,10 @@
   .facts div {
     display: grid;
     gap: 2px;
+  }
+
+  .facts .wide {
+    grid-column: span 2;
   }
 
   dd {

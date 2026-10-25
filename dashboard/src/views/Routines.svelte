@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Prose from "../components/Prose.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import { api } from "../lib/api";
   import { formatDateTime } from "../lib/units";
@@ -156,7 +157,7 @@
                     {#if registry && decision.status !== "allowed"}
                       <span class="mono code {mark.tone}">{registry.code} {registry.name}</span>
                     {/if}
-                    <span class="mono">{decision.text}</span>
+                    <span class="mono"><Prose text={decision.text} /></span>
                   </li>
                 {/each}
               </ol>
@@ -174,7 +175,9 @@
             {#if !detail.history.length}
               <p class="empty">This routine has not run yet.</p>
             {:else}
-              <table class="grid">
+              <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+              <div class="table-scroll" tabindex="0" role="region" aria-label="Run history table">
+                <table class="grid">
                 <thead><tr><th scope="col">Run</th><th scope="col">Trigger</th><th scope="col">Started</th><th scope="col">Status</th><th scope="col">Message</th></tr></thead>
                 <tbody>
                   {#each detail.history as run (run.run_id)}
@@ -188,7 +191,8 @@
                     </tr>
                   {/each}
                 </tbody>
-              </table>
+                </table>
+              </div>
             {/if}
           </section>
         </article>

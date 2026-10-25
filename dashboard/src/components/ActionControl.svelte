@@ -1,11 +1,13 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { api } from "../lib/api";
   import { describeDecision, type DecisionSummary } from "../lib/devices";
   import { href } from "../lib/router.svelte";
   import { confirmTier } from "../lib/status";
   import type { ActionSpec } from "../lib/types";
-  import { formatQuantity, quantity, unitSymbol } from "../lib/units";
+  import { formatDuration, formatQuantity, quantity, unitSymbol } from "../lib/units";
   import LimitScale from "./LimitScale.svelte";
+  import Prose from "./Prose.svelte";
   import StatusMark from "./StatusMark.svelte";
 
   let {
@@ -20,7 +22,23 @@
   const ident = $derived(`${device}-action-${name}`.replace(/[^a-z0-9-]/gi, "-"));
   const args = $derived(Object.entries(spec.args));
 
-  let values = $state<Record<string, string>>({});
+  let values = $state<Record<string, string>>(
+    untrack(() =>
+      Object.fromEntries(
+        Object.entries(spec.args)
+          .filter(([, argSpec]) => argSpec.min !== undefined)
+          .map(([arg, argSpec]) => [arg, String(argSpec.min)]),
+      ),
+    ),
+  );
+  const requirements = $derived(
+    spec.requirements ?? spec.require.map((condition) => ({ condition, message: null as string | null })),
+  );
+  const runs = $derived(
+    spec.max_runs
+      ? `at most ${spec.max_runs.count} ${spec.max_runs.count === 1 ? "run" : "runs"} per ${formatDuration(spec.max_runs.per_s)}`
+      : null,
+  );
   let busy = $state(false);
   let outcome = $state<DecisionSummary | null>(null);
   let requestId = $state<string | null>(null);
@@ -114,9 +132,8 @@
                 bind:value={values[arg]}
                 {disabled}
               />
-              {#if argSpec.unit}<span class="mono muted">{unitSymbol(argSpec.unit)}</span>{/if}
               {#if argSpec.min !== undefined && argSpec.max !== undefined}
-                <small class="muted mono">limit {formatQuantity(argSpec.min, argSpec.unit)} to {formatQuantity(argSpec.max, argSpec.unit)}</small>
+                <small class="muted mono nobreak">{formatQuantity(argSpec.min, argSpec.unit)} to {formatQuantity(argSpec.max, argSpec.unit)}</small>
               {/if}
             </span>
           {/if}
@@ -124,9 +141,20 @@
       {/each}
     </div>
   {/if}
-  {#if spec.require.length || spec.effects.length}
+  {#if requirements.length || runs || spec.effects.length}
     <dl class="meta">
-      {#if spec.require.length}<div><dt class="label">requires</dt><dd class="mono">{spec.require.join(", ")}</dd></div>{/if}
+      {#if runs}<div><dt class="label">run limit</dt><dd>{runs}</dd></div>{/if}
+      {#if requirements.length}
+        <div class="requirements">
+          <dt class="label">requires</dt>
+          {#each requirements as requirement (requirement.condition)}
+            <dd>
+              <code class="condition">{requirement.condition}</code>
+              {#if requirement.message}<span class="why"><Prose text={requirement.message} /></span>{/if}
+            </dd>
+          {/each}
+        </div>
+      {/if}
       {#if spec.effects.length}<div><dt class="label">changes</dt><dd class="mono">{spec.effects.join(", ")}</dd></div>{/if}
     </dl>
   {/if}
@@ -141,7 +169,7 @@
           label={outcome.word}
         />
         {#if outcome.head && outcome.tone !== "granted"}<span class="mono head {outcome.tone}">{outcome.head}</span>{/if}
-        <p class="mono reason">{outcome.reason}</p>
+        <p class="mono reason"><Prose text={outcome.reason} /></p>
         {#if requestId}
           <p class="reason">Request <a class="mono" href={href("confirmations")}>{requestId}</a> waits in the confirmation queue.</p>
         {/if}
@@ -213,6 +241,21 @@
 
   .meta dd {
     margin: 0;
+  }
+
+  .requirements dd {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--s-1) var(--s-3);
+  }
+
+  .condition {
+    white-space: nowrap;
+  }
+
+  .why {
+    color: var(--text-2);
   }
 
   .result {

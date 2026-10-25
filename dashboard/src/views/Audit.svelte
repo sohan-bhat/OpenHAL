@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Prose from "../components/Prose.svelte";
   import Json from "../components/Json.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import { api } from "../lib/api";
@@ -117,8 +118,8 @@
             <span class="seq mono">{entry.seq}</span>
             <span class="time mono">{formatDateTime(entry.at)}</span>
             <span class="event mono">{entry.event}</span>
-            <span class="principal mono">{entry.principal}</span>
-            <span class="target mono">{[entry.device, entry.target].filter(Boolean).join(" ")}</span>
+            <span class="principal mono nobreak">{entry.principal}</span>
+            <span class="target mono"><Prose text={[entry.device, entry.target].filter(Boolean).join(" ")} /></span>
             <span class="status">
               {#if entry.status}<StatusMark tone={mark.tone} label={mark.label} />{/if}
               {#if registry}
@@ -127,7 +128,7 @@
                 <span class="mono">{entry.code}</span>
               {/if}
             </span>
-            {#if text}<span class="reason mono">{text}</span>{/if}
+            {#if text}<span class="reason mono"><Prose text={text} /></span>{/if}
             {#if more}<span class="details"><Json value={more} limit={600} /></span>{/if}
           </li>
         {/each}
@@ -193,10 +194,6 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .principal,
-  .target {
-    overflow-wrap: anywhere;
-  }
 
   .status {
     display: flex;

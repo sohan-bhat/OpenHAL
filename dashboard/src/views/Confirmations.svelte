@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Prose from "../components/Prose.svelte";
   import { onDestroy } from "svelte";
   import Json from "../components/Json.svelte";
   import StatusMark from "../components/StatusMark.svelte";
@@ -102,7 +103,7 @@
               <p class="who">
                 <span class="label">requested by</span>
                 <span class="mono client">{request.requested_by}</span>
-                <span class="mono muted">request {request.id}</span>
+                <span class="mono muted">request <span class="nobreak">{request.id}</span></span>
               </p>
               <p id="req-{request.id}" class="trace">
                 <TraceArrow arrow="right" />
@@ -116,7 +117,7 @@
                   label={dry.word}
                 />
                 {#if dry.head && dry.tone !== "granted"}<span class="mono code {dry.tone}">{dry.head}</span>{/if}
-                <span class="mono">{request.dry_run.message}</span>
+                <span class="mono"><Prose text={request.dry_run.message} /></span>
               </div>
               <p class="expires">
                 <span class="label">expires in</span>
@@ -171,7 +172,9 @@
     {#if !decided.length}
       <p class="empty">No decided requests yet.</p>
     {:else}
-      <table class="grid">
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Decided requests table">
+        <table class="grid">
         <thead>
           <tr><th scope="col">Request</th><th scope="col">Command</th><th scope="col">Requested by</th><th scope="col">Status</th><th scope="col">Decided by</th></tr>
         </thead>
@@ -187,7 +190,8 @@
             </tr>
           {/each}
         </tbody>
-      </table>
+        </table>
+      </div>
     {/if}
   </section>
 </div>

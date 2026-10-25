@@ -105,6 +105,10 @@ test("an action argument stops at its limit", async ({ page }) => {
   const slider = action.getByRole("slider", { name: "duration for water, slider" });
   await expect(slider).toHaveAttribute("max", "30");
   await expect(action.getByText("max 30 s")).toBeVisible();
+  await expect(action.getByRole("spinbutton", { name: "duration in s" })).toHaveValue("1");
+  await expect(action.getByText("at most 3 runs per 1 h")).toBeVisible();
+  await expect(action.getByText("pump can't run while tank is empty")).toBeVisible();
+  await expect(page.getByText("3 of 3 devices are simulated.")).toBeVisible();
   await slider.fill("30");
   await expect(action.getByRole("spinbutton", { name: "duration in s" })).toHaveValue("30");
 });

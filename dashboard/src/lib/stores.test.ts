@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyReading, describeDecision, sortDevices } from "./devices";
+import { applyReading, describeDecision, isSimulated, sortDevices } from "./devices";
 import { diffLines, diffStats } from "./diff";
 import { isValueNotification, lastSeq, mergeEntries, parseLiveFrame } from "./logstore";
 import { conformanceFor, fromKernelCode, REGISTRY } from "./protocol";
@@ -8,9 +8,11 @@ import type { DeviceView } from "./types";
 import {
   dataBlock,
   formatDateTime,
+  formatDuration,
   formatQuantity,
   formatValue,
   isQuantity,
+  keepTogether,
   quantity,
   quantityString,
   unitSymbol,
@@ -152,10 +154,32 @@ describe("the registry and units", () => {
     expect(fromKernelCode("bad_unit")!.code).toBe(-32023);
   });
 
-  it("reads conformance from the device or the driver default", () => {
-    expect(conformanceFor({ driver: "mock" })).toBe("control");
-    expect(conformanceFor({ driver: "uvc" })).toBe("core");
-    expect(conformanceFor({ driver: "mock", conformance: "full" })).toBe("full");
+  it("reads conformance as the hub reports it", () => {
+    expect(conformanceFor({ conformance: "core" })).toBe("core");
+    expect(conformanceFor({})).toBe("not reported");
+  });
+
+  it("counts a device as simulated only when the hub says so", () => {
+    expect(isSimulated({ simulated: true })).toBe(true);
+    expect(isSimulated({ simulated: false })).toBe(false);
+    expect(isSimulated({})).toBe(false);
+  });
+
+  it("keeps file names, ids and dates together in reasons", () => {
+    const segments = keepTogether("water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)");
+    expect(segments.filter((segment) => segment.keep).map((segment) => segment.text)).toEqual([
+      "plant-waterer.hal.yaml",
+      "2026-10-24",
+    ]);
+    expect(segments.map((segment) => segment.text).join("")).toContain("exceeds the limit of 30 s (");
+    expect(keepTogether("pump can't run")).toEqual([{ text: "pump can't run", keep: false }]);
+  });
+
+  it("names run windows in the largest whole unit", () => {
+    expect(formatDuration(3600)).toBe("1 h");
+    expect(formatDuration(1800)).toBe("30 min");
+    expect(formatDuration(45)).toBe("45 s");
+    expect(formatDuration(86400)).toBe("1 d");
   });
 
   it("formats quantities with their unit", () => {

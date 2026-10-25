@@ -78,3 +78,15 @@ for (const scheme of ["light", "dark"] as const) {
     }
   });
 }
+
+test("no view scrolls sideways on a 390 px phone", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const view of VIEWS) {
+    await page.goto(`/${view}`);
+    await expect(page.locator("main h1, main h2").first()).toBeVisible();
+    await page.waitForTimeout(300);
+    const width = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(width, view).toBeLessThanOrEqual(390);
+  }
+});
