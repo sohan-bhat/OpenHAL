@@ -15,7 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Annotated, Any, ClassVar, Final, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, SerializerFunctionWrapHandler, model_serializer
+from pydantic import BaseModel, ConfigDict, Field, SerializerFunctionWrapHandler, field_validator, model_serializer
 from pydantic.alias_generators import to_camel
 
 Conformance = Literal["core", "control", "full"]
@@ -25,7 +25,7 @@ Scope = Literal["read", "control_low", "control_medium"]
 DecisionStatus = Literal["allowed", "blocked", "needs_confirmation", "done", "pending", "failed"]
 RequestStatus = Literal["pending", "approved", "rejected", "expired", "cancelled", "blocked", "done", "failed"]
 Value = str | bool | int | float
-"""A command value. Numbers need a unit, so they travel as quantity strings such as `"60 %"`."""
+"""A channel value. A number travels with its unit in a separate `unit` field (ADR 0016)."""
 
 DeviceId = Annotated[str, Field(min_length=1, max_length=48, description="A device id, for example desk-fan.")]
 ChannelName = Annotated[str, Field(min_length=1, max_length=48, description="A channel, for example fan_speed.")]
@@ -57,6 +57,24 @@ class Message(BaseModel):
         return self.model_dump(mode="json", by_alias=True)
 
 
+class Quantity(Message):
+    """A number and its unit (ADR 0016), for example `{"value": 20, "unit": "s"}`."""
+
+    value: int | float = Field(allow_inf_nan=False)
+    unit: str = Field(min_length=1, max_length=40)
+
+    @field_validator("value", mode="before")
+    @classmethod
+    def _a_number(cls, value: Any) -> Any:
+        if isinstance(value, bool) or not isinstance(value, int | float):
+            raise ValueError("value must be a number. Put the unit in unit")
+        return value
+
+
+Argument = Quantity | bool | str
+"""An action argument. Numbers are Quantity objects."""
+
+
 class Empty(Message):
     """Params for methods that take none."""
 
@@ -72,8 +90,13 @@ class ErrorData(Message):
             "device",
             "channel",
             "action",
+            "argument",
             "limit",
             "requested",
+            "runs",
+            "per",
+            "interlock",
+            "expected",
             "file",
             "confirmed_by",
             "confirmed_at",
@@ -88,8 +111,15 @@ class ErrorData(Message):
     device: str | None = None
     channel: str | None = None
     action: str | None = None
-    limit: str | None = Field(default=None, description='The limit that applied, as a quantity such as "100 %".')
-    requested: str | None = Field(default=None, description='The requested value in the channel unit, as "150 %".')
+    argument: str | None = Field(default=None, description="The action argument the error is about.")
+    limit: Quantity | None = Field(default=None, description="The limit that applied, such as 100 % or 20 %/s.")
+    requested: Quantity | bool | str | None = Field(
+        default=None, description="What was asked for. A number is a Quantity in the limit's unit."
+    )
+    runs: int | None = Field(default=None, description="How many runs an action's max_runs allows per window.")
+    per: Quantity | None = Field(default=None, description="The window of an action's max_runs.")
+    interlock: str | None = Field(default=None, description="The reason the device file gives for an interlock.")
+    expected: Quantity | None = Field(default=None, description="The shape a number sent as one string should take.")
     file: str | None = Field(default=None, description="The Device File, for example desk-fan.hal.yaml.")
     confirmed_by: str | None = Field(default=None, description="Who confirmed the limit.")
     confirmed_at: str | None = Field(default=None, description="When the limit was confirmed, as 2026-10-24.")
@@ -299,7 +329,8 @@ class ReadManyResult(Message):
 class WriteParams(Message):
     device: DeviceId
     channel: ChannelName
-    value: Value = Field(description='A quantity string like "60 %", a bool, or an enum value.')
+    value: Value = Field(description="A number, a bool, an enum value or text.")
+    unit: str | None = Field(default=None, max_length=40, description="The unit of a number, such as %.")
 
 
 class WriteDone(Message):
@@ -321,18 +352,19 @@ class Write(Message):
     device: DeviceId
     channel: ChannelName
     value: Value
+    unit: str | None = Field(default=None, max_length=40)
 
 
 class Action(Message):
     kind: Literal["action"] = "action"
     device: DeviceId
     action: ActionName
-    args: dict[str, Value] = Field(default={}, description="Arguments by name. Numbers are quantity strings.")
+    args: dict[str, Argument] = Field(default={}, description="Arguments by name. Numbers are Quantity objects.")
 
 
 class Wait(Message):
     kind: Literal["wait"] = "wait"
-    duration: str = Field(max_length=40, description='A quantity of time such as "2 s", at most 1 h.')
+    duration: Quantity = Field(description="A time such as 2 s, at most 1 h.")
 
 
 Command = Annotated[Write | Action, Field(discriminator="kind")]
@@ -388,13 +420,13 @@ class StopResult(Message):
 class ActionParams(Message):
     device: DeviceId
     action: ActionName
-    args: dict[str, Value] = {}
+    args: dict[str, Argument] = {}
 
 
 class ActionOutcome(Message):
     device: str
     action: str
-    args: dict[str, Any]
+    args: dict[str, Argument] = Field(description="The arguments it ran with. Numbers are Quantity objects.")
 
 
 class ActionDone(Message):

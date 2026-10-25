@@ -22,8 +22,8 @@ EXPECTED_ERROR = {
             "kernelMessage": "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %.",
             "device": "desk-fan",
             "channel": "fan_speed",
-            "requested": "150 %",
-            "limit": "100 %",
+            "requested": {"value": 150, "unit": "%"},
+            "limit": {"value": 100, "unit": "%"},
             "file": "desk-fan.hal.yaml",
             "confirmedBy": "sohan",
             "confirmedAt": "2026-10-24",
@@ -68,7 +68,7 @@ async def test_the_limit_exceeded_trace(transport: Connect, tokens: dict[str, st
                     "jsonrpc": "2.0",
                     "id": 3,
                     "method": "hal/write",
-                    "params": {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"},
+                    "params": {"device": "desk-fan", "channel": "fan_speed", "value": 150, "unit": "%"},
                 }
             )
         )
@@ -86,7 +86,7 @@ async def test_the_limit_exceeded_trace(transport: Connect, tokens: dict[str, st
                     "jsonrpc": "2.0",
                     "id": 4,
                     "method": "hal/write",
-                    "params": {"device": "desk-fan", "channel": "fan_speed", "value": "60 %"},
+                    "params": {"device": "desk-fan", "channel": "fan_speed", "value": 60, "unit": "%"},
                 }
             )
         )

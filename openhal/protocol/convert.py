@@ -20,7 +20,7 @@ from openhal.kernel.confirmations import Request
 from openhal.protocol import messages as m
 from openhal.protocol.errors import RpcError, from_kernel
 from openhal.spec.models import Confirmation, DeviceFile
-from openhal.spec.units import UnitError, convert, format_quantity, parse_quantity
+from openhal.spec.units import UnitError, convert, parse_quantity
 
 if TYPE_CHECKING:
     from openhal.audit.log import Entry
@@ -75,13 +75,21 @@ def confirmation(file: DeviceFile, channel: str | None = None, action: str | Non
     return found if found is not None else file.confirmed
 
 
-def limit_text(kernel_code: str | None, limit: dict[str, Any] | None) -> str | None:
-    """The limit that applied as a quantity string, `100 %` for a max or `20 %/s` for a rate."""
+def window(seconds: float) -> dict[str, Any]:
+    """A max_runs window in the largest unit that keeps it whole, `{"value": 1, "unit": "h"}` for 3600 s."""
+    for unit, size in (("d", 86400.0), ("h", 3600.0), ("min", 60.0)):
+        if seconds >= size and (seconds / size).is_integer():
+            return views.quantity(seconds / size, unit)
+    return views.quantity(seconds, "s")
+
+
+def limit_quantity(kernel_code: str | None, limit: dict[str, Any] | None) -> dict[str, Any] | None:
+    """The limit that applied, `{"value": 100, "unit": "%"}` for a max or `{"value": 20, "unit": "%/s"}` for a rate."""
     key = _LIMIT_KEYS.get(kernel_code or "")
     if key is None or not limit or not isinstance(limit.get(key), int | float) or not limit.get("unit"):
         return None
-    text = format_quantity(float(limit[key]), str(limit["unit"]))
-    return f"{text}/s" if key == "rate_per_s" else text
+    unit = str(limit["unit"])
+    return views.quantity(float(limit[key]), f"{unit}/s" if key == "rate_per_s" else unit)
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,18 +108,18 @@ class Facts:
     limits: dict[str, float] = field(default_factory=dict)
 
 
-def requested(facts: Facts | None, raw: Any) -> str | None:
-    """The requested value in the channel's unit, as `150 %`, or as sent when it can't be converted."""
+def requested(raw: Any, unit: str | None, *, number: bool) -> Any:
+    """The requested value. A number becomes a Quantity in `unit`, anything else is returned as sent."""
     if raw is None:
         return None
-    if facts is not None and facts.number and facts.unit and isinstance(raw, str | dict):
+    if number and unit and isinstance(raw, str | dict | int | float) and not isinstance(raw, bool):
         try:
-            return format_quantity(convert(parse_quantity(raw), facts.unit), facts.unit)
+            return views.quantity(convert(parse_quantity(raw), unit), unit)
         except UnitError:
-            return str(raw)
-    if isinstance(raw, bool):
-        return str(raw).lower()
-    return str(raw)
+            return raw if isinstance(raw, str) else None
+    if isinstance(raw, str | bool | int | float):
+        return raw
+    return None
 
 
 def _is_session_limit(facts: Facts, limit: dict[str, Any] | None) -> bool:
@@ -159,15 +167,24 @@ def build_error(
     key = _LIMIT_KEYS.get(kernel_code or "")
     if limit is None and facts is not None and key in ("max", "min") and key in facts.limits:
         limit = {key: facts.limits[key], "unit": facts.unit}
+    argument = (limit or {}).get("argument")
     data: dict[str, Any] = {
         "kernelMessage": kernel_message,
         "device": device,
         "channel": channel,
         "action": action,
-        "requested": requested(facts, raw_value) if channel is not None else None,
-        "limit": limit_text(kernel_code, limit),
+        "argument": argument,
+        "requested": _requested(kernel_code, facts, raw_value, limit, about=channel or argument),
+        "limit": limit_quantity(kernel_code, limit),
         "requestId": request_id,
     }
+    if limit and "runs" in limit and isinstance(limit.get("per_s"), int | float):
+        data["runs"] = limit["runs"]
+        data["per"] = window(float(limit["per_s"]))
+    if limit and limit.get("interlock"):
+        data["interlock"] = str(limit["interlock"])
+    if limit and isinstance(limit.get("expected"), dict):
+        data["expected"] = limit["expected"]
     if facts is not None and from_kernel(kernel_code).name in PROVENANCE_NAMES:
         if _is_session_limit(facts, limit):
             data["tightenedBy"] = principal_name(principal) or "this client"
@@ -176,6 +193,19 @@ def build_error(
             data["confirmedBy"] = facts.confirmed_by
             data["confirmedAt"] = facts.confirmed_at
     return from_kernel(kernel_code, data)
+
+
+def _requested(
+    kernel_code: str | None, facts: Facts | None, raw: Any, limit: dict[str, Any] | None, *, about: str | None
+) -> Any:
+    """The requested value for an error about one channel or argument. A refused shape is shown as sent."""
+    if about is None or raw is None:
+        return None
+    if kernel_code == "bad_unit":
+        return raw if isinstance(raw, str | bool | int | float) else None
+    unit = (limit or {}).get("unit") or (facts.unit if facts is not None else None)
+    number = bool((limit or {}).get("unit")) or (facts is not None and facts.number)
+    return requested(raw, unit, number=number)
 
 
 def facts_for(hub: Hub, device: str | None, target: str | None) -> Facts | None:
@@ -229,10 +259,21 @@ def kernel_error(
     )
 
 
-def raw_value(command: Command | None) -> Any:
-    if isinstance(command, Write):
-        return command.value
+def body_value(body: dict[str, Any] | None, limit: dict[str, Any] | None = None) -> Any:
+    """What a command body asked for on its channel, or on the action argument a limit names, with its unit."""
+    if not body:
+        return None
+    if body.get("kind", "write") == "write":
+        value, unit = body.get("value"), body.get("unit")
+        return value if unit is None else {"value": value, "unit": unit}
+    if limit and limit.get("argument"):
+        return (body.get("args") or {}).get(str(limit["argument"]))
     return None
+
+
+def raw_value(command: Command | None, limit: dict[str, Any] | None = None) -> Any:
+    """What a kernel command asked for, as `body_value` reads it."""
+    return body_value(command.model_dump() if command is not None else None, limit)
 
 
 def decision_error(
@@ -245,7 +286,7 @@ def decision_error(
         device=decision.device,
         target=decision.target,
         kernel_message=decision.message,
-        raw_value=raw_value(command),
+        raw_value=raw_value(command, decision.limit),
         limit=decision.limit,
         request_id=decision.request_id,
         principal=principal,
@@ -273,37 +314,62 @@ def decision(
     runtime = hub.kernel.devices.get(kernel.device)
     if unit is None and channel is not None and runtime is not None and channel in runtime.file.write:
         unit = runtime.file.write[channel].unit
+    _, action = target_parts(kernel.target)
+    value = kernel.value
+    if action is not None:
+        value = action_args(hub, kernel.device, action, value) if value is not None else None
     return m.Decision(
         status=kernel.status,
         device=kernel.device,
         target=kernel.target,
-        value=kernel.value,
+        value=value,
         unit=unit,
         error=error,
         request_id=kernel.request_id,
     )
 
 
-def wire_value(value: Any) -> m.Value:
-    """A command value as the protocol sends it. A REST quantity mapping becomes a quantity string."""
-    if isinstance(value, dict):
-        return f"{value.get('value')} {value.get('unit')}"
+def wire_value(value: Any, unit: str | None = None) -> tuple[m.Value, str | None]:
+    """A kernel command value as the protocol sends it, a number and its unit apart."""
+    if isinstance(value, dict) and "value" in value:
+        return wire_value(value["value"], str(value.get("unit") or "") or None)
     if isinstance(value, str | bool | int | float):
+        return value, unit
+    return str(value), None
+
+
+def wire_argument(value: Any) -> m.Argument:
+    """An action argument as the protocol sends it. Numbers become Quantity objects."""
+    if isinstance(value, dict) and "value" in value and value.get("unit"):
+        return m.Quantity(value=value["value"], unit=str(value["unit"]))
+    if isinstance(value, str | bool):
         return value
     return str(value)
 
 
 def command(kernel: Command) -> m.Write | m.Action:
     if isinstance(kernel, Write):
-        return m.Write(device=kernel.device, channel=kernel.channel, value=wire_value(kernel.value))
-    args = {name: wire_value(value) for name, value in kernel.args.items()}
+        value, unit = wire_value(kernel.value, kernel.unit)
+        return m.Write(device=kernel.device, channel=kernel.channel, value=value, unit=unit)
+    args = {name: wire_argument(value) for name, value in kernel.args.items()}
     return m.Action(device=kernel.device, action=kernel.action, args=args)
+
+
+def kernel_args(args: dict[str, m.Argument]) -> dict[str, Any]:
+    """Protocol action arguments as the kernel takes them. Quantity objects become `{value, unit}` mappings."""
+    return {name: value.model_dump() if isinstance(value, m.Quantity) else value for name, value in args.items()}
 
 
 def kernel_command(message: m.Write | m.Action) -> Command:
     if isinstance(message, m.Write):
-        return Write(device=message.device, channel=message.channel, value=message.value)
-    return Action(device=message.device, action=message.action, args=dict(message.args))
+        return Write(device=message.device, channel=message.channel, value=message.value, unit=message.unit)
+    return Action(device=message.device, action=message.action, args=kernel_args(message.args))
+
+
+def action_args(hub: Hub, device: str, action: str, args: Any) -> dict[str, Any]:
+    """The arguments an action ran with, numbers as Quantity objects in the argument's unit."""
+    runtime = hub.kernel.devices.get(device)
+    return views.action_args(runtime.file if runtime is not None else None, action, args)
 
 
 def request(hub: Hub, item: Request) -> m.ConfirmationRequest:

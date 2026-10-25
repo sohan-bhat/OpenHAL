@@ -11,6 +11,7 @@ code the kernel can emit.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Final
@@ -30,10 +31,26 @@ class ErrorSpec:
     template: Template = field(repr=False)
 
 
+def shown(value: Any) -> str:
+    """A value as reasons show it. A Quantity object `{"value": 150, "unit": "%"}` reads `150 %`."""
+    if isinstance(value, dict) and "value" in value and value.get("unit"):
+        unit = str(value["unit"])
+        return f"{float(value['value']):.6g} {'%' if unit == 'percent' else unit}"
+    if isinstance(value, bool):
+        return str(value).lower()
+    return str(value)
+
+
+def _requested(data: Data) -> str | None:
+    return shown(data["requested"]) if data.get("requested") is not None else None
+
+
 def _subject(data: Data) -> str:
-    """What the error is about, for example `fan_speed 150 %` or `spin_test on desk-fan`."""
+    """What the error is about, `fan_speed 150 %`, `water duration 120 s` or `spin_test on desk-fan`."""
     if data.get("channel"):
-        return " ".join(str(part) for part in (data["channel"], data.get("requested")) if part is not None)
+        return " ".join(part for part in (str(data["channel"]), _requested(data)) if part is not None)
+    if data.get("action") and data.get("argument"):
+        return " ".join(part for part in (str(data["action"]), str(data["argument"]), _requested(data)) if part)
     if data.get("action"):
         return f"{data['action']} on {data['device']}" if data.get("device") else str(data["action"])
     return str(data.get("device") or "The command")
@@ -67,12 +84,15 @@ def _limit_exceeded(data: Data) -> str:
     session = bool(data.get("tightenedBy"))
     kind = "session limit" if session else "limit"
     verb = "is below" if data.get("kernelCode") == "below_min" else "exceeds"
-    text = f"{_subject(data)} {verb} the {kind} of {limit}"
+    text = f"{_subject(data)} {verb} the {kind} of {shown(limit)}"
     return text + (_session(data) if session else _provenance(data))
 
 
 def _rate_limited(data: Data) -> str:
-    limit = data.get("limit")
+    if data.get("runs") and data.get("per"):
+        action = data.get("action") or "The action"
+        return f"{action} may run at most {data['runs']} times per {shown(data['per'])}{_provenance(data)}"
+    limit = shown(data["limit"]) if data.get("limit") else None
     if not limit:
         return f"{_subject(data)} changes faster than allowed right now{_provenance(data)}"
     if data.get("tightenedBy"):
@@ -80,9 +100,18 @@ def _rate_limited(data: Data) -> str:
     return f"{_subject(data)} changes faster than {limit} allows right now{_provenance(data)}"
 
 
+def _unit_invalid(data: Data) -> str:
+    """A number sent as one string shows the shape it needs (ADR 0016)."""
+    if data.get("expected"):
+        name = data.get("argument") or data.get("channel") or "The value"
+        sent = f", not {json.dumps(data['requested'])}" if isinstance(data.get("requested"), str) else ""
+        return f"{name} needs its number and unit apart, as {json.dumps(data['expected'])}{sent}"
+    return f"{_subject(data)} needs a finite number with a unit it can convert" + _provenance(data)
+
+
 def _invalid_value(data: Data) -> str:
     if data.get("kernelCode") == "bad_step" and data.get("limit"):
-        return f"{_subject(data)} is not a step of {data['limit']}{_provenance(data)}"
+        return f"{_subject(data)} is not a step of {shown(data['limit'])}{_provenance(data)}"
     return f"{_subject(data)} is not a value it accepts{_provenance(data)}"
 
 
@@ -199,7 +228,9 @@ REGISTRY: Final[tuple[ErrorSpec, ...]] = (
         ("interlock",),
         "An interlock or action requirement doesn't hold, or a value it needs is unknown",
         lambda data: (
-            f"{_subject(data)} is held back by an interlock or requirement that doesn't hold" + _provenance(data)
+            str(data["interlock"])
+            if data.get("interlock")
+            else f"{_subject(data)} is held back by an interlock or requirement that doesn't hold" + _provenance(data)
         ),
     ),
     ErrorSpec(
@@ -288,7 +319,7 @@ REGISTRY: Final[tuple[ErrorSpec, ...]] = (
         "UNIT_INVALID",
         ("bad_unit",),
         "A missing, unknown or incompatible unit, or a value that isn't finite",
-        lambda data: f"{_subject(data)} needs a finite number with a unit it can convert" + _provenance(data),
+        _unit_invalid,
     ),
 )
 

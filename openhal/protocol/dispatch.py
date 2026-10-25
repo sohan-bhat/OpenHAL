@@ -36,7 +36,8 @@ from openhal.protocol.log import MessageLog
 from openhal.protocol.notify import Notifier
 from openhal.protocol.session import Session
 from openhal.protocol.version import is_version, negotiate
-from openhal.spec.units import UnitError, parse_duration
+from openhal.spec.units import UnitError, parse_quantity
+from openhal.spec.units import convert as convert_units
 
 if TYPE_CHECKING:
     from openhal.hub.hub import Hub
@@ -256,8 +257,8 @@ class Dispatcher:
         return round(max(0.0, request.expires_at - self.hub.kernel.clock()), 1)
 
     async def _write(self, session: Session, params: m.WriteParams) -> m.WriteDone | m.Pending:
-        command = Write(device=params.device, channel=params.channel, value=params.value)
-        decision = await self.hub.kernel.execute(command, self._who(session))
+        command = Write(device=params.device, channel=params.channel, value=params.value, unit=params.unit)
+        decision = await self.hub.kernel.execute(command, self._who(session), wire=True)
         if decision.status == "done":
             return m.WriteDone(device=decision.device, channel=params.channel, value=decision.value, unit=decision.unit)
         if decision.status == "pending" and decision.request_id:
@@ -265,10 +266,10 @@ class Dispatcher:
         raise convert.decision_error(self.hub, decision, command, self._who(session).label)
 
     async def _action(self, session: Session, params: m.ActionParams) -> m.ActionDone | m.Pending:
-        command = Action(device=params.device, action=params.action, args=dict(params.args))
-        decision = await self.hub.kernel.execute(command, self._who(session))
+        command = Action(device=params.device, action=params.action, args=convert.kernel_args(params.args))
+        decision = await self.hub.kernel.execute(command, self._who(session), wire=True)
         if decision.status == "done":
-            args = decision.value if isinstance(decision.value, dict) else {}
+            args = convert.action_args(self.hub, decision.device, params.action, decision.value)
             return m.ActionDone(result=m.ActionOutcome(device=decision.device, action=params.action, args=args))
         if decision.status == "pending" and decision.request_id:
             return m.Pending(request_id=decision.request_id, expires_in_s=self._expires_in(decision.request_id))
@@ -277,7 +278,7 @@ class Dispatcher:
     async def _dry_run(self, session: Session, params: m.DryRunParams) -> m.DryRunResult:
         commands = [convert.kernel_command(item) for item in params.commands]
         who = self._who(session)
-        decisions = self.hub.kernel.dry_run(commands, who)
+        decisions = self.hub.kernel.dry_run(commands, who, wire=True)
         return m.DryRunResult(
             decisions=[
                 convert.decision(self.hub, decision, command, principal=who.label)
@@ -298,7 +299,7 @@ class Dispatcher:
             path = f"steps[{index}]"
             if isinstance(step, m.Wait):
                 try:
-                    seconds = parse_duration(step.duration)
+                    seconds = convert_units(parse_quantity(step.duration.model_dump()), "s")
                 except UnitError as exc:
                     problems.append(f"{path} wait {exc}")
                     continue
@@ -308,7 +309,7 @@ class Dispatcher:
                 shadow.now += seconds
                 continue
             command = convert.kernel_command(step)
-            decision = self.hub.kernel.evaluate(command, who, shadow=shadow)
+            decision = self.hub.kernel.evaluate(command, who, shadow=shadow, wire=True)
             decisions.append(convert.decision(self.hub, decision, command, principal=who.label, cannot_wait=True))
             if decision.status in ("allowed", "needs_confirmation"):
                 if isinstance(command, Write):

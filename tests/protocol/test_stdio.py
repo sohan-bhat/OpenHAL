@@ -52,7 +52,7 @@ async def test_openhal_rpc_bridges_stdio(base_url: str, tokens: dict[str, str], 
             "jsonrpc": "2.0",
             "id": 2,
             "method": "hal/write",
-            "params": {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"},
+            "params": {"device": "desk-fan", "channel": "fan_speed", "value": 150, "unit": "%"},
         },
     ]
     payload = "".join(json.dumps(line) + "\n" for line in lines) + "{broken\n"

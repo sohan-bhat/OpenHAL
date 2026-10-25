@@ -107,51 +107,69 @@ async def test_write_errors(transport: Connect, tokens: dict[str, str], hub: Hub
     async with transport(tokens["agent"]) as rpc:
         await rpc.initialize()
 
-        async def write(device: str, channel: str, value: object) -> dict[str, object]:
-            return await rpc.error("hal/write", {"device": device, "channel": channel, "value": value})
+        async def write(device: str, channel: str, value: object, unit: str | None = None) -> dict[str, object]:
+            params = {"device": device, "channel": channel, "value": value}
+            return await rpc.error("hal/write", params if unit is None else params | {"unit": unit})
 
         unit = await write("desk-fan", "fan_speed", "60")
         assert (unit["code"], unit["data"]["name"], unit["data"]["kernelCode"]) == (-32023, "UNIT_INVALID", "bad_unit")
         assert (await write("desk-fan", "fan_speed", 60))["data"]["name"] == "UNIT_INVALID"
-        step = await write("desk-fan", "fan_speed", "20.5 %")
-        assert (step["code"], step["data"]["name"], step["data"]["limit"]) == (-32016, "INVALID_VALUE", "1 %")
+        text = await write("desk-fan", "fan_speed", "150 %")
+        assert (text["data"]["name"], text["data"]["expected"]) == ("UNIT_INVALID", {"value": 150, "unit": "%"})
+        assert (
+            text["message"] == 'fan_speed needs its number and unit apart, as {"value": 150, "unit": "%"}, not "150 %"'
+        )
+        assert (await write("heater", "mode", 3, "%"))["data"]["name"] == "UNIT_INVALID"
+        step = await write("desk-fan", "fan_speed", 20.5, "%")
+        assert (step["code"], step["data"]["name"], step["data"]["limit"]) == (
+            -32016,
+            "INVALID_VALUE",
+            {"value": 1, "unit": "%"},
+        )
         assert step["message"] == (
             "fan_speed 20.5 % is not a step of 1 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)"
         )
         enum = await write("heater", "mode", "turbo")
         assert (enum["data"]["name"], enum["data"]["kernelCode"]) == ("INVALID_VALUE", "bad_value")
-        low = await write("desk-fan", "fan_speed", "-5 %")
+        low = await write("desk-fan", "fan_speed", -5, "%")
         assert (
             low["message"]
             == "fan_speed -5 % is below the limit of 0 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)"
         )
-        assert (low["data"]["limit"], low["data"]["requested"]) == ("0 %", "-5 %")
-        interlock = await write("heater", "power", "10 W")
+        assert (low["data"]["limit"], low["data"]["requested"]) == (
+            {"value": 0, "unit": "%"},
+            {"value": -5, "unit": "%"},
+        )
+        interlock = await write("heater", "power", 10, "W")
         assert (interlock["code"], interlock["data"]["name"]) == (-32012, "INTERLOCK_BLOCKED")
-        assert await rpc.call("hal/write", FAN_SPEED | {"value": "40 %"})
-        rate = await write("desk-fan", "fan_speed", "100 %")
-        assert (rate["code"], rate["data"]["name"], rate["data"]["limit"]) == (-32011, "RATE_LIMITED", "20 %/s")
-        unknown = await write("desk-fan", "wobble", "1 %")
+        assert await rpc.call("hal/write", FAN_SPEED | {"value": 40, "unit": "%"})
+        rate = await write("desk-fan", "fan_speed", 100, "%")
+        assert (rate["code"], rate["data"]["name"], rate["data"]["limit"]) == (
+            -32011,
+            "RATE_LIMITED",
+            {"value": 20, "unit": "%/s"},
+        )
+        unknown = await write("desk-fan", "wobble", 1, "%")
         assert (unknown["data"]["name"], unknown["message"]) == ("UNKNOWN_TARGET", "desk-fan has no channel wobble")
-        draft = await write("draft-lamp", "brightness", "10 %")
+        draft = await write("draft-lamp", "brightness", 10, "%")
         assert (draft["code"], draft["data"]["name"]) == (-32015, "UNVERIFIED_LIMITS")
         heater = hub.kernel.devices["heater"]
         heater.rules[0].exhausted = True
-        watchdog = await write("heater", "power", "50 W")
+        watchdog = await write("heater", "power", 50, "W")
         assert (watchdog["code"], watchdog["data"]["name"]) == (-32017, "WATCHDOG_TRIPPED")
         heater.rules[0].exhausted = False
         heater.connected = False
-        assert (await write("heater", "power", "5 W"))["data"]["name"] == "DEVICE_UNAVAILABLE"
+        assert (await write("heater", "power", 5, "W"))["data"]["name"] == "DEVICE_UNAVAILABLE"
         heater.connected = True
         clock.advance(5)
         driver = hub.kernel.devices["desk-fan"].driver
         driver.settings.fail_writes = True  # type: ignore[attr-defined]
-        failed = await write("desk-fan", "fan_speed", "50 %")
+        failed = await write("desk-fan", "fan_speed", 50, "%")
         assert (failed["code"], failed["data"]["name"]) == (-32020, "DRIVER_ERROR")
         driver.settings.fail_writes = False  # type: ignore[attr-defined]
     async with transport(tokens["reader"]) as rpc:
         await rpc.initialize()
-        denied = await rpc.error("hal/write", FAN_SPEED | {"value": "10 %"})
+        denied = await rpc.error("hal/write", FAN_SPEED | {"value": 10, "unit": "%"})
         assert (denied["code"], denied["data"]["name"], denied["data"]["kernelCode"]) == (
             -32003,
             "SCOPE_DENIED",
@@ -166,7 +184,7 @@ async def test_a_session_limit_never_cites_the_file(
     clock.advance(10)
     async with transport(tokens["agent"]) as rpc:
         await rpc.initialize()
-        error = await rpc.error("hal/write", FAN_SPEED | {"value": "80 %"})
+        error = await rpc.error("hal/write", FAN_SPEED | {"value": 80, "unit": "%"})
     assert error["message"] == "fan_speed 80 % exceeds the session limit of 70 % (tightened by claude)"
     assert error["data"]["tightenedBy"] == "claude"
     assert "file" not in error["data"]
@@ -182,16 +200,16 @@ async def test_busy_queue_full_and_misconfigured(transport: Connect, tokens: dic
             runtime = hub.kernel.devices["desk-fan"]
             await runtime.lock.acquire()
             try:
-                busy = await rpc.error("hal/write", FAN_SPEED | {"value": "30 %"})
+                busy = await rpc.error("hal/write", FAN_SPEED | {"value": 30, "unit": "%"})
             finally:
                 runtime.lock.release()
             assert (busy["code"], busy["data"]["name"]) == (-32018, "BUSY")
             patch.setattr(hub.kernel.queue, "per_principal", 0)
-            spin = {"device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}}
+            spin = {"device": "desk-fan", "action": "spin_test", "args": {"seconds": {"value": 5, "unit": "s"}}}
             full = await rpc.error("hal/action", spin)
             assert (full["code"], full["data"]["name"]) == (-32019, "QUEUE_FULL")
             hub.add_device(loads(GHOST))
-            wrong = await rpc.error("hal/write", FAN_SPEED | {"value": "30 %"})
+            wrong = await rpc.error("hal/write", FAN_SPEED | {"value": 30, "unit": "%"})
             assert (wrong["code"], wrong["data"]["name"]) == (-32021, "MISCONFIGURED")
             hub.kernel.unregister("ghost-relay")
     finally:
@@ -202,15 +220,20 @@ async def test_dry_run_and_plan_check(transport: Connect, tokens: dict[str, str]
     async with transport(tokens["agent"]) as rpc:
         await rpc.initialize()
         commands = [
-            {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": "150 %"},
-            {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": "60 %"},
-            {"kind": "action", "device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}},
+            {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": 150, "unit": "%"},
+            {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": 60, "unit": "%"},
+            {
+                "kind": "action",
+                "device": "desk-fan",
+                "action": "spin_test",
+                "args": {"seconds": {"value": 5, "unit": "s"}},
+            },
         ]
         blocked, allowed, waiting = (await rpc.call("hal/dryRun", {"commands": commands}))["decisions"]
         assert blocked["status"] == "blocked"
         assert (blocked["value"], blocked["unit"]) == (None, "%")
         assert blocked["error"]["data"]["name"] == "LIMIT_EXCEEDED"
-        assert blocked["error"]["data"]["limit"] == "100 %"
+        assert blocked["error"]["data"]["limit"] == {"value": 100, "unit": "%"}
         assert allowed == {
             "status": "allowed",
             "device": "desk-fan",
@@ -222,17 +245,19 @@ async def test_dry_run_and_plan_check(transport: Connect, tokens: dict[str, str]
         assert "error" not in waiting
         assert (await rpc.call("hal/read", FAN_SPEED))["value"] == 20.0
         clock.advance(5)
-        fast = [commands[1], {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": "100 %"}]
+        fast = [commands[1], {"kind": "write", "device": "desk-fan", "channel": "fan_speed", "value": 100, "unit": "%"}]
         result = await rpc.call("hal/planCheck", {"steps": fast})
         assert result["ok"] is False
         assert result["decisions"][1]["error"]["data"]["name"] == "RATE_LIMITED"
-        paced = await rpc.call("hal/planCheck", {"steps": [fast[0], {"kind": "wait", "duration": "2 s"}, fast[1]]})
+        paced = await rpc.call(
+            "hal/planCheck", {"steps": [fast[0], {"kind": "wait", "duration": {"value": 2, "unit": "s"}}, fast[1]]}
+        )
         assert (paced["ok"], paced["problems"], len(paced["decisions"])) == (True, [], 2), paced
         queued = await rpc.call("hal/planCheck", {"steps": [commands[2]]})
         assert queued["ok"] is False
         assert queued["decisions"][0]["status"] == "needs_confirmation"
         assert queued["decisions"][0]["error"]["data"]["name"] == "CONFIRMATION_REQUIRED"
-        bad = await rpc.call("hal/planCheck", {"steps": [{"kind": "wait", "duration": "2 h"}]})
+        bad = await rpc.call("hal/planCheck", {"steps": [{"kind": "wait", "duration": {"value": 2, "unit": "h"}}]})
         assert bad["problems"] == ["steps[0] wait may be at most 1 h"]
         invalid = await rpc.error("hal/planCheck", {"steps": [{"kind": "wait", "wait": "2 s"}]})
         assert invalid["data"]["name"] == "INVALID_PARAMS"
@@ -258,7 +283,7 @@ async def test_stop_and_unlock(transport: Connect, tokens: dict[str, str]) -> No
                 {"device": "heater", "status": "safe"},
             ],
         }
-        blocked = await rpc.error("hal/write", FAN_SPEED | {"value": "10 %"})
+        blocked = await rpc.error("hal/write", FAN_SPEED | {"value": 10, "unit": "%"})
         assert (blocked["code"], blocked["data"]["name"]) == (-32014, "STOPPED")
         denied = await rpc.error("hal/unlock", {"phrase": "unlock"})
         assert (denied["code"], denied["data"]["name"], denied["data"]["kernelCode"]) == (
@@ -274,14 +299,14 @@ async def test_stop_and_unlock(transport: Connect, tokens: dict[str, str]) -> No
 
 
 async def test_action_and_confirmations(transport: Connect, tokens: dict[str, str], clock: FakeClock) -> None:
-    spin = {"device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}}
+    spin = {"device": "desk-fan", "action": "spin_test", "args": {"seconds": {"value": 5, "unit": "s"}}}
     async with transport(tokens["agent"]) as bench, transport(tokens["human"]) as person:
         await bench.initialize()
         await person.initialize()
         done = await person.call("hal/action", spin)
         assert done == {
             "status": "done",
-            "result": {"device": "desk-fan", "action": "spin_test", "args": {"seconds": 5.0}},
+            "result": {"device": "desk-fan", "action": "spin_test", "args": {"seconds": {"value": 5, "unit": "s"}}},
         }
         missing = await bench.error("hal/action", {"device": "desk-fan", "action": "spin_test", "args": {}})
         assert missing["data"]["name"] == "INVALID_PARAMS"
@@ -310,7 +335,7 @@ async def test_action_and_confirmations(transport: Connect, tokens: dict[str, st
             "status": "done",
             "device": "desk-fan",
             "target": "action:spin_test",
-            "value": {"seconds": 5.0},
+            "value": {"seconds": {"value": 5, "unit": "s"}},
             "unit": None,
         }
         again = await person.error("hal/confirmations/approve", {"requestId": request_id})
@@ -320,7 +345,7 @@ async def test_action_and_confirmations(transport: Connect, tokens: dict[str, st
             request_id,
         )
         clock.advance(1)
-        second = (await bench.call("hal/action", spin | {"args": {"seconds": "6 s"}}))["requestId"]
+        second = (await bench.call("hal/action", spin | {"args": {"seconds": {"value": 6, "unit": "s"}}}))["requestId"]
         rejected = await person.call("hal/confirmations/reject", {"requestId": second, "reason": "not while it dries"})
         assert (rejected["status"], rejected["decidedBy"]) == ("rejected", "human:sohan")
         closed = await person.error("hal/confirmations/approve", {"requestId": second})
@@ -364,14 +389,14 @@ async def test_routines_and_audit(transport: Connect, tokens: dict[str, str], hu
         assert (second["error"]["code"], second["error"]["data"]["name"]) == (-32013, "CONFIRMATION_REQUIRED")
         missing = await rpc.error("hal/routines/dryRun", {"routineId": "nope"})
         assert (missing["data"]["name"], missing["message"]) == ("UNKNOWN_TARGET", "There is no routine nope")
-        await rpc.error("hal/write", FAN_SPEED | {"value": "150 %"})
+        await rpc.error("hal/write", FAN_SPEED | {"value": 150, "unit": "%"})
         entries = (await rpc.call("hal/audit/query", {"device": "desk-fan", "status": "blocked", "limit": 1}))[
             "entries"
         ]
         assert len(entries) == 1
         entry = entries[0]
         assert (entry["event"], entry["code"], entry["principal"]) == ("write", "above_max", "agent:claude")
-        assert entry["body"]["requested"] == "150 %"
+        assert entry["body"]["requested"] == {"value": 150, "unit": "%"}
         assert RFC3339.match(entry["at"])
         assert (await rpc.call("hal/audit/query", {"since": entry["seq"] + 10_000}))["entries"] == []
         assert await rpc.error("hal/audit/query", {"limit": 6000})

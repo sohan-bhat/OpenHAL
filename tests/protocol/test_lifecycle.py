@@ -39,12 +39,12 @@ async def test_no_notification_before_initialized(transport: Connect, tokens: di
             "hal/initialize",
             {"protocolVersion": VERSION, "clientInfo": {"name": "pytest", "version": "1"}, "token": tokens["agent"]},
         )
-        await rpc.error("hal/write", {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"})
+        await rpc.error("hal/write", {"device": "desk-fan", "channel": "fan_speed", "value": 150, "unit": "%"})
         await asyncio.sleep(0.3)
         await rpc.call("hal/devices/list")
         assert rpc.notes == []
         await rpc.notify("hal/initialized")
-        await rpc.error("hal/write", {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"})
+        await rpc.error("hal/write", {"device": "desk-fan", "channel": "fan_speed", "value": 150, "unit": "%"})
         blocked = await rpc.note("hal/blocked", device="desk-fan")
         assert blocked["params"]["error"]["data"]["name"] == "LIMIT_EXCEEDED"
 

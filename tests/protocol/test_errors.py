@@ -62,8 +62,8 @@ def test_limit_exceeded_reason_reads_like_the_adr() -> None:
         {
             "device": "desk-fan",
             "channel": "fan_speed",
-            "requested": "150 %",
-            "limit": "100 %",
+            "requested": {"value": 150, "unit": "%"},
+            "limit": {"value": 100, "unit": "%"},
             "file": "desk-fan.hal.yaml",
             "confirmedBy": "sohan",
             "confirmedAt": "2026-10-24",

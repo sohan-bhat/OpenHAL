@@ -18,22 +18,24 @@ REASON = "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirm
 
 async def test_mcp_and_protocol_errors_match(base_url: str, tokens: dict[str, str]) -> None:
     tools = Tools(AsyncClient(base_url, tokens["agent"], use_human_token_file=False))
-    blocked = await tools.write("desk-fan", "fan_speed", "150 %")
+    blocked = await tools.write("desk-fan", "fan_speed", 150, "%")
     assert (blocked.status, blocked.code) == ("blocked", "above_max")
     assert blocked.error is not None
     assert (blocked.error.code, blocked.error.name, blocked.error.message) == (-32010, "LIMIT_EXCEEDED", REASON)
     async with websocket_client(base_url, tokens["agent"]) as rpc:
         await rpc.initialize()
-        protocol = await rpc.error("hal/write", {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"})
+        protocol = await rpc.error(
+            "hal/write", {"device": "desk-fan", "channel": "fan_speed", "value": 150, "unit": "%"}
+        )
     assert blocked.error.data == protocol["data"]
     assert blocked.error.message == protocol["message"]
-    dry = await tools.dry_run("desk-fan", channel="fan_speed", value="150 %")
+    dry = await tools.dry_run("desk-fan", channel="fan_speed", value=150, unit="%")
     assert dry.error is not None
     assert dry.error.message == REASON
     plan = await tools.plan_check(
         [
-            Step(device="desk-fan", channel="fan_speed", value="40 %"),
-            Step(device="desk-fan", channel="fan_speed", value="150 %"),
+            Step(device="desk-fan", channel="fan_speed", value=40, unit="%"),
+            Step(device="desk-fan", channel="fan_speed", value=150, unit="%"),
         ]
     )
     assert [(block.step, block.name) for block in plan.blocked] == [(1, "LIMIT_EXCEEDED")]
@@ -42,9 +44,9 @@ async def test_mcp_and_protocol_errors_match(base_url: str, tokens: dict[str, st
 
 async def test_mcp_names_session_limits(base_url: str, tokens: dict[str, str], clock: FakeClock) -> None:
     tools = Tools(AsyncClient(base_url, tokens["agent"], use_human_token_file=False))
-    assert (await tools.tighten_limits("desk-fan", "fan_speed", max="70 %")).ok
+    assert (await tools.tighten_limits("desk-fan", "fan_speed", max={"value": 70, "unit": "%"})).ok
     clock.advance(10)
-    blocked = await tools.write("desk-fan", "fan_speed", "80 %")
+    blocked = await tools.write("desk-fan", "fan_speed", 80, "%")
     assert blocked.error is not None
     assert blocked.error.message == "fan_speed 80 % exceeds the session limit of 70 % (tightened by claude)"
 
@@ -55,11 +57,11 @@ async def test_mcp_in_process_falls_back_to_the_rest_view(hub: Hub, tokens: dict
         AsyncClient("http://127.0.0.1:7420", tokens["agent"], transport=transport, use_human_token_file=False)
     )
     assert tools.errors.use_socket is False
-    blocked = await tools.write("desk-fan", "fan_speed", "150 %")
+    blocked = await tools.write("desk-fan", "fan_speed", 150, "%")
     assert blocked.error is not None
     assert blocked.error.name == "LIMIT_EXCEEDED"
     assert blocked.error.message == "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml)"
-    done = await tools.write("desk-fan", "fan_speed", "60 %")
+    done = await tools.write("desk-fan", "fan_speed", 60, "%")
     assert (done.status, done.error) == ("done", None)
 
 

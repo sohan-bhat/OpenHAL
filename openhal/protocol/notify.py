@@ -111,7 +111,11 @@ class Notifier:
             device=entry.device,
             target=entry.target,
             kernel_message=details.get("message"),
-            raw_value=details.get("requested"),
+            raw_value=convert.body_value(
+                {"kind": entry.event, "value": details.get("requested"), "args": details.get("args")},
+                details.get("limit"),
+            ),
+            limit=details.get("limit"),
             request_id=details.get("request_id"),
             principal=entry.principal,
         )

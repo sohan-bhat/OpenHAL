@@ -50,7 +50,7 @@ async def test_blocks_from_rest_reach_protocol_clients(
         async with httpx.AsyncClient(base_url=base_url) as rest:
             response = await rest.post(
                 "/v1/write",
-                json={"device": "desk-fan", "channel": "fan_speed", "value": "150 %"},
+                json={"device": "desk-fan", "channel": "fan_speed", "value": 150, "unit": "%"},
                 headers={"Authorization": f"Bearer {tokens['agent']}"},
             )
         assert response.json()["code"] == "above_max"
@@ -63,7 +63,7 @@ async def test_blocks_from_rest_reach_protocol_clients(
 async def test_confirmation_requests_reach_people_and_the_requester_only(
     transport: Connect, tokens: dict[str, str]
 ) -> None:
-    spin = {"device": "desk-fan", "action": "spin_test", "args": {"seconds": "5 s"}}
+    spin = {"device": "desk-fan", "action": "spin_test", "args": {"seconds": {"value": 5, "unit": "s"}}}
     async with transport(tokens["agent"]) as bench, transport(tokens["other"]) as other:
         await bench.initialize()
         await other.initialize()
@@ -103,7 +103,7 @@ async def test_the_message_log_is_for_people_and_never_holds_tokens(
 ) -> None:
     async with websocket_client(base_url, None) as rpc:
         await rpc.initialize(tokens["agent"])
-        await rpc.error("hal/write", {"device": "desk-fan", "channel": "fan_speed", "value": "150 %"})
+        await rpc.error("hal/write", {"device": "desk-fan", "channel": "fan_speed", "value": 150, "unit": "%"})
     async with httpx.AsyncClient(base_url=base_url) as rest:
         refused = await rest.get("/v1/rpc/log", headers={"Authorization": f"Bearer {tokens['agent']}"})
         assert refused.status_code == 403
