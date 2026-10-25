@@ -7,7 +7,7 @@ Items that only the owner can do, in the order they should be done. Each has exa
 The owner approved the push on 2026-10-25, and the local permission settings still block `git push` for the agent.
 
 1. Run `git -C ~/code/openhal push origin main`.
-2. Open https://github.com/sohan-bhat/OpenHAL/actions and check that the CI run passes on Ubuntu and macOS. It is the first Linux run of the scpi disconnect fix.
+2. Open https://github.com/sohan-bhat/OpenHAL/actions and check that the CI run passes. CI runs on Ubuntu, so it is the first Linux run of the scpi disconnect fix.
 
 ## 2. Turn on private vulnerability reporting
 
