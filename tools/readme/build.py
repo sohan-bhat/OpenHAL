@@ -1,11 +1,9 @@
-"""Build the README's images in the protocol theme, in light and dark variants.
+"""Build the OpenHAL wordmark in the protocol theme, in light and dark variants.
 
     uv run --with fonttools --with brotli python tools/readme/build.py
 
-Writes docs/assets/{wordmark,trace,sequence}-{light,dark}.svg. The trace is the signature from
-docs/DESIGN.md: a hal/write of 150 % answered with -32010 LIMIT_EXCEEDED, then a granted one. The
-sequence diagram follows the same two writes from Client to Device. Names and codes match
-docs/adr/0015-openhal-hub-protocol.md.
+Writes docs/assets/wordmark-{light,dark}.svg with the text converted to paths, since GitHub loads no
+web fonts. Diagrams are built separately by scripts/build-diagrams.
 """
 
 from __future__ import annotations
@@ -39,10 +37,6 @@ THEMES = {
         "blocked": "#F07068",
     },
 }
-
-# The example exchange. LIMIT_EXCEEDED's reason follows the ADR 0015 template.
-DEVICE, CHANNEL = "desk-fan", "fan_speed"
-REASON = ("fan_speed 150 % exceeds the limit of 100 %", "(desk-fan.hal.yaml, confirmed by sohan 2026-10-24)")
 
 
 class Canvas:
@@ -131,124 +125,11 @@ def wordmark(t: dict[str, str]) -> str:
     return c.svg()
 
 
-def direction(c: Canvas, y: float, outgoing: bool, color: str) -> None:
-    if outgoing:
-        c.arrow(20, y, 38, color)
-    else:
-        c.arrow(38, y, 20, color)
-
-
-def blocked_shape(c: Canvas, x: float, y: float, color: str) -> None:
-    c.add(f'<circle cx="{x}" cy="{y}" r="6" fill="none" stroke="{color}" stroke-width="1.5"/>')
-    c.add(f'<line x1="{x - 4.2}" y1="{y - 4.2}" x2="{x + 4.2}" y2="{y + 4.2}" stroke="{color}" stroke-width="1.5"/>')
-
-
-def ok_shape(c: Canvas, x: float, y: float, color: str, ground: str) -> None:
-    c.add(f'<circle cx="{x}" cy="{y}" r="6" fill="{color}"/>')
-    c.add(
-        f'<polyline points="{x - 3},{y} {x - 0.8},{y + 2.3} {x + 3.2},{y - 2.7}" fill="none" stroke="{ground}" '
-        'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'
-    )
-
-
-def trace(t: dict[str, str]) -> str:
-    c = Canvas(
-        880,
-        212,
-        "Two hal/write exchanges",
-        "A client sends hal/write for desk-fan fan_speed 150 percent. The hub answers error -32010 "
-        "LIMIT_EXCEEDED, fan_speed 150 percent exceeds the limit of 100 percent, from desk-fan.hal.yaml "
-        "confirmed by sohan on 2026-10-24. The client sends hal/write for 60 percent, and the hub answers "
-        "with a result of status done, value 60, unit percent.",
-    )
-    c.rect(0.5, 0.5, 879, 211, t["surface"], t["border"])
-    size, method_x, payload_x = 13.5, 52, 200
-    y_req1, y_err, y_reason1, y_reason2, y_req2, y_ok = 36, 64, 88, 110, 150, 178
-
-    direction(c, y_req1 - 4.5, True, t["text"])
-    c.text("hal/write", method_x, y_req1, face="mono", size=size, weight=700, fill=t["accent"])
-    draw_runs(c, json_runs(t, [("device", DEVICE), ("channel", CHANNEL), ("value", "150 %")]), payload_x, y_req1, size)
-
-    direction(c, y_err - 4.5, False, t["text"])
-    blocked_shape(c, method_x + 6, y_err - 4.5, t["blocked"])
-    c.text("error -32010", method_x + 20, y_err, face="mono", size=size, weight=700, fill=t["blocked"])
-    c.text("LIMIT_EXCEEDED", payload_x, y_err, face="mono", size=size, weight=700, fill=t["blocked"])
-    c.text(REASON[0], payload_x, y_reason1, face="mono", size=size, fill=t["text"])
-    c.text(REASON[1], payload_x, y_reason2, face="mono", size=size, fill=t["text2"])
-
-    direction(c, y_req2 - 4.5, True, t["text"])
-    c.text("hal/write", method_x, y_req2, face="mono", size=size, weight=700, fill=t["accent"])
-    draw_runs(c, json_runs(t, [("device", DEVICE), ("channel", CHANNEL), ("value", "60 %")]), payload_x, y_req2, size)
-
-    direction(c, y_ok - 4.5, False, t["text"])
-    ok_shape(c, method_x + 6, y_ok - 4.5, t["ok"], t["surface"])
-    c.text("result", method_x + 20, y_ok, face="mono", size=size, weight=700, fill=t["ok"])
-    draw_runs(c, json_runs(t, [("status", "done"), ("value", 60), ("unit", "%")]), payload_x, y_ok, size)
-    return c.svg()
-
-
-PARTICIPANTS = ["Client", "Hub", "Safety Kernel", "Driver", "Device"]
-STEPS: list[tuple[int, int, str, str, bool]] = [
-    (0, 1, "hal/write  150 %", "text2", False),
-    (1, 2, "check limits", "text2", False),
-    (2, 1, "blocked  above_max", "blocked", False),
-    (1, 0, "error -32010 LIMIT_EXCEEDED", "blocked", False),
-    (0, 1, "hal/write  60 %", "text2", False),
-    (1, 2, "check limits", "text2", False),
-    (2, 1, "granted  single-use grant", "ok", False),
-    (1, 3, "write 60 %  with grant", "text2", False),
-    (3, 4, "set 60 %", "text2", False),
-    (4, 3, "reads 60 %", "text2", False),
-    (1, 0, "result  done", "ok", False),
-    (1, 0, "hal/value  60 %", "text2", True),
-]
-
-
-def sequence(t: dict[str, str]) -> str:
-    c = Canvas(
-        880,
-        500,
-        "Sequence of the two hal/write requests",
-        "The Client sends hal/write 150 percent to the Hub. The Hub asks the Safety Kernel to check it against "
-        "desk-fan.hal.yaml, the kernel blocks it as above the maximum, and the Hub answers error -32010 "
-        "LIMIT_EXCEEDED. The Client sends hal/write 60 percent. The kernel grants it with a single-use grant, "
-        "the Hub passes the write and the grant to the Driver, the Driver sets the Device to 60 percent and "
-        "reads back 60 percent, the Hub answers result done and sends a hal/value notification.",
-    )
-    xs = [80, 260, 440, 620, 800]
-    box_w, box_h, top = 140, 36, 8
-    for x, name in zip(xs, PARTICIPANTS, strict=True):
-        c.rect(x - box_w / 2, top, box_w, box_h, t["surface"], t["border"])
-        c.text(name, x, top + 23, face="text", size=14, weight=700, fill=t["text"], anchor="middle")
-        c.vline(x, top + box_h, 492, t["border"])
-    y = 80.0
-    for index, (a, b, label, color, dashed) in enumerate(STEPS):
-        if index == 4:
-            y += 14
-        fill = t[color]
-        c.arrow(xs[a], y, xs[b], fill, dashed)
-        outcome = color != "text2"
-        c.text(
-            label,
-            (xs[a] + xs[b]) / 2,
-            y - 8,
-            face="mono",
-            size=12,
-            fill=fill if outcome else t["text"],
-            anchor="middle",
-            weight=700 if outcome else 400,
-        )
-        y += 33
-    return c.svg()
-
-
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     for name, theme in THEMES.items():
         (OUT / f"wordmark-{name}.svg").write_text(wordmark(theme))
-        (OUT / f"trace-{name}.svg").write_text(trace(theme))
-        (OUT / f"sequence-{name}.svg").write_text(sequence(theme))
-    print(f"Wrote wordmark, trace and sequence SVGs to {OUT}")
+    print(f"Wrote the wordmark SVGs to {OUT}")
 
 
 if __name__ == "__main__":

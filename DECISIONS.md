@@ -12,3 +12,6 @@ Small decisions, one line each. Architectural decisions live in docs/adr/.
 - 2026-10-24 Human principals count as confirmers for their own commands. Routines can't satisfy a confirmation except through a signed approval on a high hazard device. Agents need control_medium to request high hazard commands, which always queue.
 - 2026-10-24 zeroconf (LGPL-2.1-or-later) is used unmodified as a dependency for mDNS discovery.
 - 2026-10-24 While subagents share the working tree, commits stage explicit paths only, never git add -A.
+- 2026-10-24: The README flow diagram uses D2 grid layout plus a post-processing script (scripts/build-diagrams). ELK and dagre could not keep the main path on one line, and draw.io Desktop is not installed.
+- 2026-10-24: The flow diagram has a vertical variant for screens under 600 px, chosen by <picture> media queries, so the diagram stays readable on phones.
+- 2026-10-24: The CI badge is hidden until CI passes on main.

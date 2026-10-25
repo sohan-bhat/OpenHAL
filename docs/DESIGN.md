@@ -41,7 +41,7 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
 ← result      { "status": "done", "value": 60, "unit": "%" }
 ```
 
-- **Direction column.** An arrow pointing right for client to hub, left for hub to client, and a dashed left arrow for notifications, in the text color. Atkinson Hyperlegible Mono has no arrow glyphs, so the arrows are drawn as small inline SVGs in the house diagram style (1.5 px stroke, 6 px filled head), never typed characters. Plain text renditions such as CLI output use `->` and `<-`.
+- **Direction column.** An arrow pointing right for client to hub, left for hub to client, and a dashed left arrow for notifications, in the text color. Atkinson Hyperlegible Mono has no arrow glyphs, so the arrows are drawn as small inline SVGs in the house diagram style (1.5 px stroke, 6 px filled head), never typed characters. Plain text renditions in a font that has arrows, such as the README code block, use `→` and `←`. CLI output uses `->` and `<-`.
 - **Method or outcome column.** The method name in the accent color. `error` plus the numeric code and the registry name in the blocked red. `result` in the granted green. Each is paired with its word, never color alone.
 - **Payload.** JSON in the mono face with the house syntax theme. Reasons as plain mono text on their own line.
 - Method names, codes and names match ADR 0015 and the generated schema exactly, everywhere.
