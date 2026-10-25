@@ -33,10 +33,15 @@ connect: { mock: fan, initial: { fan_speed: 20 } }
 read:
   temperature: { unit: degC, every: 1 s }
 write:
-  fan_speed: { unit: percent, min: 0, max: 100, step: 1, max_change_per_s: 20 }
+  fan_speed: { unit: "%", min: 0, max: 100, step: 1, max_change_per_s: 20 }
+actions:
+  spin_test:
+    args:
+      seconds: { unit: s, min: 1, max: 30 }
+    confirm: confirm
 safe_state: { fan_speed: 0 }
 hazard: low
-confirmed: { by: sohan, at: 2026-11-02 }
+confirmed: { by: sohan, at: 2026-10-24 }
 """
 
 HEATER = """
@@ -65,7 +70,7 @@ watchdog:
     - when: "power > 40 W"
       for: 60 s
 hazard: medium
-confirmed: { by: sohan, at: 2026-11-02 }
+confirmed: { by: sohan, at: 2026-10-24 }
 """
 
 DRAFT = """

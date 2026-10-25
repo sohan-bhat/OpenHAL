@@ -15,7 +15,7 @@ EXPECTED_ERROR = {
     "id": 3,
     "error": {
         "code": -32010,
-        "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-11-02)",
+        "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
         "data": {
             "name": "LIMIT_EXCEEDED",
             "kernelCode": "above_max",
@@ -23,10 +23,10 @@ EXPECTED_ERROR = {
             "device": "desk-fan",
             "channel": "fan_speed",
             "requested": "150 %",
-            "limit": {"max": "100 %"},
+            "limit": "100 %",
             "file": "desk-fan.hal.yaml",
             "confirmedBy": "sohan",
-            "confirmedAt": "2026-11-02",
+            "confirmedAt": "2026-10-24",
         },
     },
 }
@@ -61,7 +61,7 @@ async def test_the_limit_exceeded_trace(transport: Connect, tokens: dict[str, st
             )
         )
         current = (await rpc.response(2))["result"]
-        assert (current["value"], current["unit"]) == (20.0, "percent")
+        assert (current["value"], current["unit"]) == (20.0, "%")
         await rpc.send_text(
             json.dumps(
                 {
@@ -98,6 +98,6 @@ async def test_the_limit_exceeded_trace(transport: Connect, tokens: dict[str, st
                 "device": "desk-fan",
                 "channel": "fan_speed",
                 "value": 60.0,
-                "unit": "percent",
+                "unit": "%",
             },
         }

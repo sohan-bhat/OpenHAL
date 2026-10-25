@@ -20,7 +20,7 @@ async def test_initialize_answers_the_hub_and_principal(transport: Connect, toke
         "principal": {"kind": "agent", "name": "claude", "scope": "control_medium"},
         "capabilities": {"notifications": list(m.NOTIFICATIONS)},
     }
-    assert result["hubInfo"]["name"] == "OpenHAL"
+    assert result["hubInfo"]["name"] == "openhal"
 
 
 async def test_methods_before_initialize_are_not_initialized(transport: Connect, tokens: dict[str, str]) -> None:
