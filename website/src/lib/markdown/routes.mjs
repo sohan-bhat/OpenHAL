@@ -22,6 +22,10 @@ export const FIXED_ROUTES = [
   { repo: "firmware/arduino/OpenHAL/README.md", route: "/docs/arduino-library/", group: "Firmware" },
   { repo: "docs/interfaces/PYTHON.md", route: "/sdks/python/", group: "SDKs" },
   { repo: "docs/drivers/COVERAGE.md", route: "/drivers/coverage/", group: "Drivers" },
+  { repo: "spec/VERSIONING.md", route: "/spec/versioning/", group: "Specification" },
+  { repo: "spec/ERRORS.md", route: "/spec/errors/", group: "Specification" },
+  { repo: "spec/CONFORMANCE.md", route: "/spec/conformance/", group: "Specification" },
+  { repo: "spec/GLOSSARY.md", route: "/spec/glossary/", group: "Specification" },
 ];
 
 export const DOC_PATTERNS = [...FIXED_ROUTES.map((item) => item.repo), "docs/drivers/*.md"];
@@ -51,10 +55,6 @@ const SPEC_POINTERS = {
   "spec/versions.json": "",
   "spec/SPEC.md": "device-files/",
   "spec/CHANGELOG.md": "changelog/",
-  "spec/GLOSSARY.md": "#terminology",
-  "spec/ERRORS.md": "safety/#error-registry",
-  "spec/CONFORMANCE.md": "drivers/#conformance-levels",
-  "spec/VERSIONING.md": "#versions",
 };
 
 export function linkFor(repoPath) {

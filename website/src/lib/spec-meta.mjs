@@ -138,12 +138,13 @@ export function glossaryHref(term, root = REPO_ROOT) {
   const { latest } = readVersions(root);
   if (!latest) return null;
   const files = specFiles(latest, root);
+  const anchor = termAnchor(term);
+  const defines = (path) => [...readFileSync(path, "utf8").matchAll(/^\|\s*([^|]+?)\s*\|/gm)].some((row) => termAnchor(row[1]) === anchor);
   const glossary = files.find((path) => /glossary/i.test(path));
-  if (glossary) return `/spec/${latest}/${slugOf(glossary)}/#${termAnchor(term)}`;
+  if (glossary) return `/spec/${latest}/${slugOf(glossary)}/#${anchor}`;
+  const shared = join(root, "spec", "GLOSSARY.md");
+  if (existsSync(shared) && defines(shared)) return `/spec/glossary/#${anchor}`;
   const index = files.find((path) => slugOf(path) === "");
   if (!index) return null;
-  const text = readFileSync(join(root, "spec", latest, index), "utf8");
-  const anchor = termAnchor(term);
-  const defined = [...text.matchAll(/^\|\s*([^|]+?)\s*\|/gm)].some((row) => termAnchor(row[1]) === anchor);
-  return defined ? `/spec/${latest}/#${anchor}` : null;
+  return defines(join(root, "spec", latest, index)) ? `/spec/${latest}/#${anchor}` : null;
 }

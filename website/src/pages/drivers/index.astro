@@ -4,9 +4,12 @@ import { STATUS_ORDER, TIER_NAMES, conformanceOf, drivers, statusClass, statusWo
 
 const all = drivers();
 const groups = [
-  { name: "Tested on simulator", rows: all.filter((driver) => driver.status !== "planned") },
+  { name: "Verified on hardware", rows: all.filter((driver) => driver.status === "verified") },
+  { name: "Tested on simulator", rows: all.filter((driver) => driver.status !== "planned" && driver.status !== "verified") },
   { name: "Planned", rows: all.filter((driver) => driver.status === "planned") },
-];
+].filter((group) => group.rows.length > 0);
+const tested = all.filter((driver) => driver.status !== "planned" && driver.status !== "verified").length;
+const planned = all.filter((driver) => driver.status === "planned").length;
 const statuses = STATUS_ORDER.filter((status) => all.some((driver) => driver.status === status));
 const tiers = [...new Set(all.map((driver) => driver.tier))].sort();
 const hazards = ["low", "medium", "high"].filter((hazard) => all.some((driver) => driver.hazard_default === hazard));
@@ -61,14 +64,15 @@ const verified = all.filter((driver) => driver.status === "verified").length;
         </select>
       </label>
     </form>
+    <p class="summary">
+      <span class="status unverified">{tested} tested on simulator</span>
+      <span class={`status ${verified ? "ok" : "unverified"}`}>{verified ? `${verified} verified on hardware` : "None verified on hardware yet"}</span>
+      <span class="status planned">{planned} planned</span>
+    </p>
     <p class="shown muted" aria-live="polite" data-shown>{all.length} drivers.</p>
 
     <div class="table-wrap">
-      <table class="drivers">
-        <caption>
-          <span class={`status ${verified ? "ok" : "unverified"}`}>{verified ? `${verified} verified on hardware` : "unverified on hardware"}</span>
-          <span class="muted">{verified ? "" : "No driver has been verified on hardware yet."}</span>
-        </caption>
+      <table class="drivers" aria-label="Drivers">
         <thead>
           <tr>
             <th scope="col">Driver</th>
@@ -104,7 +108,12 @@ const verified = all.filter((driver) => driver.status === "verified").length;
                     <span class={`status ${statusClass(driver.status)}`}>{statusWord(driver.status)}</span>
                   </td>
                   <td data-label="Tier">{TIER_NAMES[driver.tier] ?? driver.tier}</td>
-                  {conformances.length > 0 && <td data-label="Conformance">{conformanceOf(driver) ?? ""}</td>}
+                  {conformances.length > 0 && (
+                    <td data-label="Conformance">
+                      {conformanceOf(driver) ?? ""}
+                      {driver.status === "planned" && conformanceOf(driver) && <span class="muted"> target</span>}
+                    </td>
+                  )}
                   <td data-label="Protocol">{driver.protocols.join(", ")}</td>
                   <td data-label="Covers">{driver.families.join(", ")}</td>
                   <td data-label="Hazard" class="mono">{driver.hazard_default}</td>
@@ -181,18 +190,17 @@ const verified = all.filter((driver) => driver.status === "verified").length;
     width: 100%;
   }
 
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-5);
+    margin: var(--s-5) 0 0;
+  }
+
   .shown {
     margin: var(--s-3) 0;
   }
 
-  caption {
-    text-align: left;
-    padding-bottom: var(--s-3);
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-2) var(--s-3);
-    align-items: center;
-  }
 
   .group-row th {
     padding-top: var(--s-5);
@@ -219,9 +227,6 @@ const verified = all.filter((driver) => driver.status === "verified").length;
     tbody,
     tr,
     td,
-    caption {
-      display: block;
-    }
 
     thead {
       position: absolute;
