@@ -45,6 +45,7 @@ export function numberPages(paths: string[]): Map<string, { number: string; dept
 export async function specPages(version?: string): Promise<SpecPage[]> {
   const { versions } = readVersions();
   const wanted = version ? [version] : versions.map((item) => item.version);
+  if (!wanted.length) return [];
   const entries = await getCollection("spec");
   const pages: SpecPage[] = [];
   for (const ver of wanted) {

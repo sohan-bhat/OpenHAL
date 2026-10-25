@@ -1,9 +1,9 @@
 ---
-import "../styles/limit-track.css";
-import Playground from "../components/playground/Playground.svelte";
-import Base from "../layouts/Base.astro";
+import "../../styles/trace.css";
+import Playground from "../../components/playground/Playground.svelte";
+import Base from "../../layouts/Base.astro";
 
-const files = import.meta.glob<string>("../../../spec/examples/*.hal.yaml", { query: "?raw", import: "default", eager: true });
+const files = import.meta.glob<string>("../../../../spec/examples/*.hal.yaml", { query: "?raw", import: "default", eager: true });
 const examples = Object.entries(files)
   .map(([path, text]) => {
     const name = path.split("/").pop()!.replace(/\.hal\.yaml$/, "");
@@ -12,18 +12,13 @@ const examples = Object.entries(files)
   .sort((a, b) => a.name.localeCompare(b.name));
 ---
 
-<Base
-  title="Device file playground"
-  description="Edit an OpenHAL device file, check it against the spec as you type, and watch the kernel's rules block unsafe writes. Runs in your browser."
->
+<Base title="Playground" description="Edit an OpenHAL device file, validate it as you type, and see the hub's JSON-RPC answer to each request. Runs in your browser.">
   <div class="wrap page">
     <header class="head">
-      <h1 class="page-title">Device file playground</h1>
-      <p class="lede">Edit a device file. It is checked against the spec as you type, its controls appear with their limit lines, and you can try to break them.</p>
-      <p class="demo-note">
-        <span class="lamp unverified">In-browser demo</span>
-        <span class="muted">The kernel port runs in your browser, with the hub's codes and messages. Devices are simulated.</span>
-      </p>
+      <p class="legend"><a href="/spec/latest/">Specification</a></p>
+      <h1>Playground</h1>
+      <p class="lede">Edit a device file, then send requests to a simulated hub. Each answer is the JSON-RPC message the hub sends.</p>
+      <p class="note"><span class="status unverified">in-browser demo</span> <span class="muted">A TypeScript port of the safety kernel. It never talks to hardware.</span></p>
     </header>
     <Playground client:idle examples={examples} initial="desk-fan-confirmed" />
   </div>
@@ -31,27 +26,25 @@ const examples = Object.entries(files)
 
 <style>
   .page {
-    padding-top: var(--s-7);
+    padding-top: var(--s-6);
   }
 
   .head {
-    padding-bottom: var(--s-5);
-    margin-bottom: var(--s-7);
-    border-bottom: 1px solid var(--ink);
+    display: grid;
+    gap: var(--s-2);
+    padding-bottom: var(--s-4);
+    margin-bottom: var(--s-5);
+    border-bottom: var(--rule);
   }
 
   .lede {
-    margin-top: var(--s-3);
-    max-width: 70ch;
+    max-width: var(--measure);
   }
 
-  .demo-note {
-    margin-top: var(--s-4);
+  .note {
     display: flex;
     flex-wrap: wrap;
     gap: var(--s-2) var(--s-3);
-    align-items: baseline;
-    font-size: var(--t-2);
-    line-height: var(--lh-2);
+    align-items: center;
   }
 </style>

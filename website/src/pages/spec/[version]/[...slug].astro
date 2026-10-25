@@ -1,0 +1,63 @@
+---
+import { render } from "astro:content";
+import VersionSwitcher from "../../../components/VersionSwitcher.astro";
+import DocShell from "../../../layouts/DocShell.astro";
+import { type SpecPage, latestVersion, specPages } from "../../../lib/spec";
+import { specSidebar } from "../../../lib/spec-nav";
+
+export async function getStaticPaths() {
+  const pages = await specPages();
+  const latest = latestVersion();
+  const routes = pages.map((page) => ({ params: { version: page.version, slug: page.slug || undefined }, props: { page, alias: false } }));
+  if (latest) {
+    for (const page of pages.filter((item) => item.version === latest)) {
+      routes.push({ params: { version: "latest", slug: page.slug || undefined }, props: { page, alias: true } });
+    }
+  }
+  const roots = new Set(routes.map((route) => `${route.params.version}/${route.params.slug ?? ""}`));
+  for (const version of [...new Set(pages.map((page) => page.version)), ...(latest ? ["latest"] : [])]) {
+    if (roots.has(`${version}/`)) continue;
+    const first = pages.find((page) => page.version === (version === "latest" ? latest : version));
+    if (first) routes.push({ params: { version, slug: undefined }, props: { page: first, alias: version === "latest" } });
+  }
+  if (!latest) routes.push({ params: { version: "latest", slug: undefined }, props: { page: null as unknown as SpecPage, alias: true } });
+  return routes;
+}
+
+const { page, alias } = Astro.props as { page: SpecPage | null; alias: boolean };
+const all = page ? await specPages(page.version) : [];
+const available: Record<string, string[]> = {};
+for (const item of await specPages()) (available[item.version] ??= []).push(item.slug);
+const rendered = page ? await render(page.entry) : null;
+const title = page ? String(rendered?.remarkPluginFrontmatter.title ?? page.title) : "Specification";
+const base = alias ? "/spec/latest/" : page ? `/spec/${page.version}/` : "/spec/latest/";
+const sidebar = specSidebar(all, (item) => (item.slug ? `${base}${item.slug}/` : base));
+const Content = rendered?.Content;
+---
+
+{
+  page && Content ? (
+    <DocShell
+      title={title}
+      repo={page.repo}
+      headings={rendered!.headings}
+      sidebar={sidebar}
+      section="Specification"
+      canonical={page.href}
+    >
+      <VersionSwitcher slot="sidebar-top" current={page.version} slug={page.slug} available={available} />
+      <VersionSwitcher slot="sidebar-top-mobile" current={page.version} slug={page.slug} available={available} />
+      <p slot="before-title" class="legend">
+        Specification {page.version} {page.number && <span>· Section {page.number}</span>}
+      </p>
+      <Content />
+    </DocShell>
+  ) : (
+    <DocShell title="Specification" sidebar={specSidebar([])} section="Specification">
+      <p>
+        The first dated version, 2026-10-24, is being written. Until it is published, the <a href="/docs/device-file-format/">device file format draft</a> describes
+        device files.
+      </p>
+    </DocShell>
+  )
+}
