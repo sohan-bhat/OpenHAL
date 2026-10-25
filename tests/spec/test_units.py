@@ -9,6 +9,7 @@ import pytest
 from openhal.spec.units import (
     UnitError,
     convert,
+    convert_rate,
     format_quantity,
     parse_duration,
     parse_quantity,
@@ -96,3 +97,31 @@ def test_rates_use_delta_units_for_temperature() -> None:
 def test_format_quantity() -> None:
     assert format_quantity(100.0, "percent") == "100 %"
     assert format_quantity(29.444444, "degC") == "29.4444 degC"
+
+
+@pytest.mark.parametrize(
+    ("text", "unit"),
+    [("50 %", "deg"), ("0.5 dimensionless", "deg"), ("30 deg", "percent"), ("1 Hz", "rpm"), ("10 rpm", "Hz")],
+)
+def test_an_angle_never_converts_to_a_plain_number(text: str, unit: str) -> None:
+    with pytest.raises(UnitError, match="only one of them is an angle"):
+        convert(parse_quantity(text), unit)
+
+
+@pytest.mark.parametrize(
+    ("text", "unit", "expected"),
+    [
+        ("90 deg", "rad", 1.5707963),
+        ("1 turn", "deg", 360.0),
+        ("60 rpm", "deg/s", 360.0),
+        ("2 rad/s", "rpm", 19.0985931),
+    ],
+)
+def test_angles_still_convert_to_angles(text: str, unit: str, expected: float) -> None:
+    assert convert(parse_quantity(text), unit) == pytest.approx(expected)
+
+
+def test_an_angle_rate_needs_an_angle() -> None:
+    assert convert_rate(parse_quantity("10 deg/s"), "deg") == pytest.approx(10.0)
+    with pytest.raises(UnitError, match="only one of them is an angle"):
+        convert_rate(parse_quantity("10 percent / second"), "deg")

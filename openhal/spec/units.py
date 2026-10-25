@@ -91,11 +91,30 @@ def parse_quantity(value: Any, *, default_unit: str | None = None) -> pint.Quant
 def convert(quantity: pint.Quantity, unit: str) -> float:
     """Convert a quantity to `unit` and return the magnitude, checking it is finite."""
     target = parse_unit(unit)
+    _same_angle(quantity.units, target, unit)
     try:
         converted = quantity.to(target)
     except (pint.errors.DimensionalityError, pint.errors.OffsetUnitCalculusError) as exc:
         raise UnitError(f"{quantity:~P} can't be converted to {unit}.") from exc
     return _finite(float(converted.magnitude), "Converted value")
+
+
+def _angle_power(unit: pint.Unit) -> float:
+    """How many angles a unit carries, 1 for degree, rad/s or rpm and 0 for percent or Hz."""
+    _factor, root = ureg.get_root_units(unit)
+    power = dict(root._units).get("radian", 0)  # noqa: SLF001
+    return float(str(power))
+
+
+def _same_angle(source: pint.Unit, target: pint.Unit, shown: str) -> None:
+    """Refuse a conversion that adds or drops an angle.
+
+    pint treats angles as plain numbers, so it would turn 50 % into 28.6 degrees and 1 Hz into
+    9.55 rpm. Both sides of a conversion must carry the same angle (drivers batch 3, proposal 1).
+    """
+    if _angle_power(source) != _angle_power(target):
+        name = f"{source:~P}" or "A plain number"
+        raise UnitError(f"{name} can't be converted to {shown}, because only one of them is an angle.")
 
 
 def rate_unit(unit: str) -> str:
@@ -130,6 +149,7 @@ def convert_rate(quantity: pint.Quantity, channel_unit: str) -> float:
         if absolute in unit_text and delta not in unit_text:
             quantity = Quantity(quantity.magnitude, unit_text.replace(absolute, delta))
             break
+    _same_angle(quantity.units, parse_unit(target), target)
     try:
         return _finite(float(quantity.to(target).magnitude), "Rate")
     except pint.errors.DimensionalityError as exc:

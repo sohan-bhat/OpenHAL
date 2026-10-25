@@ -51,8 +51,8 @@ async def test_percent_versus_fraction_cannot_widen_a_limit(kernel: Kernel, add:
     assert block(kernel, "duty", "60 %") == ("blocked", "above_max")
     assert block(kernel, "duty", "40 %") == ("allowed", None)
     assert block(kernel, "speed", "0.6") == ("blocked", "bad_unit")
-    assert block(kernel, "speed", "2 radian") == ("blocked", "above_max")
-    assert block(kernel, "speed", "0.5 radian") == ("allowed", None)
+    assert block(kernel, "speed", "2 radian") == ("blocked", "bad_unit")
+    assert block(kernel, "speed", "0.5 radian") == ("blocked", "bad_unit")
 
 
 async def test_bare_numbers_and_wrong_types_are_refused(kernel: Kernel, add: AddDevice) -> None:
