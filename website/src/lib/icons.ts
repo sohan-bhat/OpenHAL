@@ -1,4 +1,4 @@
-import { markSvg } from "./brand-mark";
+import { MARK_ACCENT, markSvg } from "./brand-mark";
 import { renderPng } from "./render-png";
 
 export const ICON_SIZES: Record<string, number> = {
@@ -9,6 +9,7 @@ export const ICON_SIZES: Record<string, number> = {
 };
 
 export async function iconPng(size: number): Promise<Uint8Array> {
-  const html = `<!doctype html><html><head><style>*{margin:0}body{width:${size}px;height:${size}px}svg{display:block}</style></head><body>${markSvg({ size })}</body></html>`;
+  const pad = Math.round(size * 0.12);
+  const html = `<!doctype html><html><head><style>*{margin:0}body{width:${size}px;height:${size}px;background:#fcfcfd;display:grid;place-items:center;border-radius:${Math.round(size * 0.18)}px}svg{display:block}</style></head><body>${markSvg({ size: size - 2 * pad, color: MARK_ACCENT.light })}</body></html>`;
   return renderPng(html, size, size, true);
 }

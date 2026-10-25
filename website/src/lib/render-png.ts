@@ -32,9 +32,8 @@ let faces: string | null = null;
 
 export function fontFaces(): string {
   faces ??= [
-    ["Sofia Sans Condensed", "sofia-sans-condensed-latin-wght-normal.woff2", "1 1000"],
+    ["Atkinson Hyperlegible Mono", "atkinson-hyperlegible-mono-latin-wght-normal.woff2", "200 800"],
     ["Atkinson Hyperlegible Next", "atkinson-hyperlegible-next-latin-wght-normal.woff2", "200 800"],
-    ["Martian Mono", "martian-mono-latin-wght-normal.woff2", "100 800"],
   ]
     .map(([family, file, weight]) => `@font-face{font-family:"${family}";font-weight:${weight};src:url(data:font/woff2;base64,${font(file)}) format("woff2");}`)
     .join("");

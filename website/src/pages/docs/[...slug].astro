@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
-import Doc from "../../layouts/Doc.astro";
+import DocShell from "../../layouts/DocShell.astro";
+import { docTitle, docsSidebar } from "../../lib/docs-nav";
 import { routeFor } from "../../lib/markdown/routes.mjs";
 
 export async function getStaticPaths() {
@@ -13,9 +14,10 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content, headings, remarkPluginFrontmatter } = await render(entry);
-const title = String(remarkPluginFrontmatter.title ?? entry.data.title ?? entry.id);
+const title = String(remarkPluginFrontmatter.title ?? docTitle(entry));
+const sidebar = await docsSidebar();
 ---
 
-<Doc title={title} repo={entry.id} headings={headings}>
+<DocShell title={title} repo={entry.id} headings={headings} sidebar={sidebar} section="Documentation">
   <Content />
-</Doc>
+</DocShell>

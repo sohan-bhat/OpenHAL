@@ -9,21 +9,19 @@ const posts = (await getCollection("blog"))
 const day = (date: Date) => date.toISOString().slice(0, 10);
 ---
 
-<Base title="Blog" description="Notes from the people building OpenHAL.">
+<Base title="Blog" description="Posts from the people building OpenHAL.">
   <div class="wrap page">
-    <header class="head">
-      <h1 class="page-title">Blog</h1>
-    </header>
+    <h1>Blog</h1>
     {
       posts.length ? (
         <ol class="posts">
           {posts.map((post) => (
             <li>
-              <p class="mono date">
-                <time datetime={day(post.data.date)}>{day(post.data.date)}</time>
-                {post.data.draft && <span class="lamp warning">Draft</span>}
+              <p class="meta">
+                <time class="mono" datetime={day(post.data.date)}>{day(post.data.date)}</time>
+                {post.data.draft && <span class="status planned">draft</span>}
               </p>
-              <h2 class="section-title">
+              <h2>
                 <a href={`/blog/${post.id}/`}>{post.data.title}</a>
               </h2>
               <p class="muted">{post.data.description}</p>
@@ -31,7 +29,7 @@ const day = (date: Date) => date.toISOString().slice(0, 10);
           ))}
         </ol>
       ) : (
-        <p class="muted empty">No posts yet. The first one goes out with the launch.</p>
+        <p class="muted">No posts are published yet.</p>
       )
     }
   </div>
@@ -39,38 +37,37 @@ const day = (date: Date) => date.toISOString().slice(0, 10);
 
 <style>
   .page {
+    max-width: 880px;
     padding-top: var(--s-7);
-  }
-
-  .head {
-    padding-bottom: var(--s-5);
-    margin-bottom: var(--s-6);
-    border-bottom: 1px solid var(--ink);
+    display: grid;
+    gap: var(--s-5);
   }
 
   .posts {
     list-style: none;
     margin: 0;
     padding: 0;
-    max-width: 72ch;
   }
 
   .posts li {
-    padding: var(--s-5) 0;
-    border-bottom: 1px solid var(--rule);
+    padding: var(--s-4) 0;
+    border-bottom: var(--rule);
     display: grid;
     gap: var(--s-2);
   }
 
-  .date {
+  .meta {
     display: flex;
     gap: var(--s-3);
     align-items: center;
-    font-size: var(--t-0);
-    color: var(--ink-2);
+    color: var(--text-2);
+  }
+
+  h2 {
+    font-size: var(--t-h3);
   }
 
   h2 a {
-    color: var(--ink);
+    color: var(--text);
   }
 </style>

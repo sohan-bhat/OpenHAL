@@ -2,6 +2,7 @@
 import { getCollection, render } from "astro:content";
 import Base from "../../layouts/Base.astro";
 import { showDrafts } from "../../lib/drafts";
+import "../../styles/prose.css";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
@@ -15,13 +16,13 @@ const day = post.data.date.toISOString().slice(0, 10);
 
 <Base title={post.data.title} description={post.data.description} type="article" noindex={post.data.draft}>
   <article class="wrap page">
-    <p class="crumb"><a href="/blog/">Blog</a></p>
+    <p class="legend"><a href="/blog/">Blog</a></p>
     <header class="head">
-      <h1 class="page-title">{post.data.title}</h1>
-      <p class="byline mono">
-        <time datetime={day}>{day}</time>
+      <h1>{post.data.title}</h1>
+      <p class="byline">
+        <time class="mono" datetime={day}>{day}</time>
         <span>{post.data.author}</span>
-        {post.data.draft && <span class="lamp warning">Draft, not published</span>}
+        {post.data.draft && <span class="status planned">draft, not published</span>}
       </p>
     </header>
     <div class="prose">
@@ -32,18 +33,14 @@ const day = post.data.date.toISOString().slice(0, 10);
 
 <style>
   .page {
+    max-width: 880px;
     padding-top: var(--s-6);
   }
 
-  .crumb {
-    font-size: var(--t-2);
-  }
-
   .head {
-    margin: var(--s-3) 0 var(--s-6);
+    margin: var(--s-2) 0 var(--s-6);
     padding-bottom: var(--s-4);
-    border-bottom: 1px solid var(--ink);
-    max-width: 74ch;
+    border-bottom: var(--rule);
   }
 
   .byline {
@@ -52,7 +49,6 @@ const day = post.data.date.toISOString().slice(0, 10);
     gap: var(--s-3);
     align-items: center;
     margin-top: var(--s-3);
-    font-size: var(--t-0);
-    color: var(--ink-2);
+    color: var(--text-2);
   }
 </style>

@@ -1,42 +1,51 @@
 ---
+import MessageTrace from "../components/MessageTrace.astro";
 import Base from "../layouts/Base.astro";
+import { registryByName } from "../lib/protocol";
+
+const unknown = registryByName("UNKNOWN_TARGET");
+const entries = [
+  { kind: "request" as const, method: "GET", params: { path: "/no-such-page/" } },
+  { kind: "error" as const, code: unknown.code, name: unknown.name, reason: "There is no page at this address." },
+];
 ---
 
-<Base title="Page not found" description="This page does not exist.">
+<Base title="Page not found" description="There is no page at this address.">
   <div class="wrap page">
-    <p class="lamp blocked">Blocked</p>
-    <h1 class="page-title">Page not found</h1>
-    <p class="mono reason">unknown_target  There is no page at this address. It may have moved when the docs were rebuilt from the repository.</p>
-    <ul>
-      <li><a href="/">Home</a></li>
+    <h1>Page not found</h1>
+    <div data-not-found>
+      <MessageTrace entries={entries} label="What happened" />
+    </div>
+    <ul class="links">
+      <li><a href="/">Overview</a></li>
+      <li><a href="/spec/latest/">Specification</a></li>
       <li><a href="/docs/">Documentation</a></li>
-      <li><a href="/spec/">Spec</a></li>
-      <li><a href="/playground/">Playground</a></li>
     </ul>
   </div>
 </Base>
 
+<script>
+  const payload = document.querySelector("[data-not-found] .payload");
+  if (payload && location.pathname !== "/404/" && location.pathname !== "/404.html") {
+    const string = payload.querySelector(".syn-str");
+    if (string) string.textContent = JSON.stringify(location.pathname);
+  }
+</script>
+
 <style>
   .page {
-    padding-top: var(--s-8);
+    max-width: 880px;
+    padding-top: var(--s-7);
     display: grid;
-    gap: var(--s-4);
-    justify-items: start;
+    gap: var(--s-5);
   }
 
-  .reason {
-    font-size: var(--t-2);
-    line-height: var(--lh-2);
-    color: var(--ink-2);
-    max-width: 70ch;
-  }
-
-  ul {
+  .links {
     display: flex;
     flex-wrap: wrap;
     gap: var(--s-4);
     list-style: none;
-    margin: var(--s-4) 0 0;
+    margin: 0;
     padding: 0;
   }
 </style>

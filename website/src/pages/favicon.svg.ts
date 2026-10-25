@@ -1,4 +1,4 @@
 import type { APIRoute } from "astro";
-import { markSvg } from "../lib/brand-mark";
+import { faviconSvg } from "../lib/brand-mark";
 
-export const GET: APIRoute = () => new Response(markSvg({ size: 32 }), { headers: { "Content-Type": "image/svg+xml" } });
+export const GET: APIRoute = () => new Response(faviconSvg(), { headers: { "Content-Type": "image/svg+xml" } });
