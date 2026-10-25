@@ -27,7 +27,10 @@ from openhal.hub.hub import Hub
 from openhal.mcp import Tools
 from openhal.spec import loads
 from tests.interfaces.conftest import BridgeTransport, LoopThread
+from tests.kernel.conftest import AddDevice as AddDevice
 from tests.kernel.conftest import FakeClock
+from tests.kernel.conftest import add as add
+from tests.kernel.conftest import kernel as kernel
 from tests.protocol.conftest import base_url, transport  # noqa: F401
 
 BASE_URL = "http://127.0.0.1:7420"
