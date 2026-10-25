@@ -76,15 +76,19 @@ export function reasonFor(name: string, decision: Decision, requested: number | 
 
 export function toJsonRpcError(decision: Decision, requested: number | null, source: Provenance): JsonRpcError {
   const entry = registryFor(decision.code ?? "internal_error");
-  const limit = decision.limit as Record<string, unknown> | null;
+  const limit = decision.limit as Record<string, number | string> | null;
   const data: Record<string, unknown> = {
     name: entry.name,
     kernelCode: decision.code,
     device: decision.device,
   };
   if (decision.target.startsWith("write:")) data.channel = decision.target.slice(6);
-  if (limit) data.limit = limit;
-  if (requested !== null) data.requested = requested;
+  const unit = typeof limit?.unit === "string" ? limit.unit : null;
+  const bound = typeof limit?.max === "number" ? limit.max : typeof limit?.min === "number" ? limit.min : null;
+  if (entry.name === "LIMIT_EXCEEDED" && unit !== null && bound !== null) {
+    data.limit = formatQuantity(bound, unit);
+    if (requested !== null) data.requested = formatQuantity(requested, unit);
+  }
   data.file = source.file;
   if (source.confirmedBy) data.confirmedBy = source.confirmedBy;
   if (source.confirmedAt) data.confirmedAt = source.confirmedAt;
