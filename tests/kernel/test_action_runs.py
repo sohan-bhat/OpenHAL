@@ -69,7 +69,7 @@ async def test_requirement_message_names_the_reason(add: AddDevice, kernel: Kern
     blocked = await kernel.execute(water(20), PERSON)
     assert blocked.code == "interlock"
     assert blocked.limit == {"interlock": "pump can't run while tank is empty"}
-    assert "pump can't run while tank is empty" in blocked.message
+    assert "Pump can't run while tank is empty." in blocked.message
 
 
 async def test_argument_limit_names_the_argument(add: AddDevice, kernel: Kernel) -> None:
@@ -108,3 +108,13 @@ async def test_a_restart_does_not_reset_the_window(clock: FakeClock) -> None:
 def test_max_runs_window_is_bounded() -> None:
     with pytest.raises(ValueError, match="between 1 s and 7 days"):
         loads(WATERER.replace("per: 1 h", "per: 30 days"))
+
+
+async def test_an_unknown_requirement_never_claims_the_tank_is_empty(
+    add: AddDevice, kernel: Kernel, clock: FakeClock
+) -> None:
+    await add(WATERER)
+    clock.advance(3600)
+    blocked = await kernel.execute(water(20), PERSON)
+    assert blocked.code == "interlock"
+    assert blocked.limit == {"interlock": "water needs tank == ok, which is unknown"}

@@ -502,11 +502,12 @@ class Kernel:
                 result = expressions.evaluate(expressions.parse_cached(condition, file.channel_names()), resolver)
                 if result is not True:
                     held = "is unknown" if result is None else "doesn't hold"
-                    detail = f"{message}. " if message else ""
+                    detail = f"{message[:1].upper()}{message[1:]}. " if message else ""
+                    reason = message if result is False else f"{command.action} needs {condition}, which is unknown"
                     raise Block(
                         "interlock",
                         f"Blocked. {detail}{command.action} needs {condition}, which {held} right now.",
-                        {"interlock": message} if message else None,
+                        {"interlock": reason} if reason else None,
                     )
         self._check_interlocks(command.device, set(changes), resolver, shadow)
         # 12. Watchdog budgets.
@@ -682,10 +683,11 @@ class Kernel:
                     detail = interlock.message or f"When {interlock.if_}, {interlock.require} must hold."
                     state = "is unknown" if satisfied is None else "doesn't hold"
                     where = owner_id if owner is not None else f"{owner_id} (not registered right now)"
+                    reason = interlock.message if satisfied is False else f"{interlock.require} is unknown right now"
                     raise Block(
                         "interlock",
                         f"Blocked by an interlock on {where}. {detail} Right now {interlock.require} {state}.",
-                        {"interlock": interlock.message} if interlock.message else None,
+                        {"interlock": reason} if reason else None,
                     )
 
     def _foreign_resolver(
