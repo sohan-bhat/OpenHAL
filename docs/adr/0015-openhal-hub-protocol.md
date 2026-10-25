@@ -51,14 +51,14 @@ OpenHAL is presented and specified as an open protocol, the way MCP is. Until no
 
 Notifications from the hub, after `hal/initialized`:
 
-| Notification | Params |
-|---|---|
-| `hal/value` | `{ device, channel, value, unit, at, suspect }` |
-| `hal/blocked` | `{ device, target, error: { code, name, message, data } }` |
-| `hal/stopped` | `{ reason, by, devices: [{ device, status }] }` |
-| `hal/deviceAdded` | `{ device: DeviceSummary }` |
-| `hal/deviceRemoved` | `{ device }` |
-| `hal/confirmationRequested` | `{ request: ConfirmationRequest }` |
+| Notification | Params | Level |
+|---|---|---|
+| `hal/value` | `{ device, channel, value, unit, at, suspect }` | Core |
+| `hal/blocked` | `{ device, target, error: { code, name, message, data } }` | Control |
+| `hal/stopped` | `{ reason, by, devices: [{ device, status }] }` | Control |
+| `hal/deviceAdded` | `{ device: DeviceSummary }` | Core |
+| `hal/deviceRemoved` | `{ device }` | Core |
+| `hal/confirmationRequested` | `{ request: ConfirmationRequest }` | Full |
 
 Clients subscribe to all notifications by default. A later version may add filters.
 
@@ -95,7 +95,9 @@ A blocked or failed command is a JSON-RPC error. `error.code` is the number, `er
 
 Every kernel code maps to exactly one name. A test enforces this.
 
-Reason messages are formed from `data`, one template per name. LIMIT_EXCEEDED reads `fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-11-02)`. The kernel's own message stays available as `data.kernelMessage`.
+Pending versus CONFIRMATION_REQUIRED. `hal/write` and `hal/action` answer a command that needs a person with the result `{ status: "pending", requestId, expiresInS }`, and the hub sends `hal/confirmationRequested`. The error CONFIRMATION_REQUIRED is for callers that cannot hold a pending request, such as a routine step or a command inside `hal/planCheck`, and carries `data.requestId` when a request was queued.
+
+Reason messages are formed from `data`, one template per name. LIMIT_EXCEEDED reads `fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)`. The kernel's own message stays available as `data.kernelMessage`. When the limit that blocked the write is one a principal tightened for its session, the reason names that instead and never cites the file's confirmation, for example `fan_speed 80 % exceeds the session limit of 70 % (tightened by claude)`. Below the minimum reads `fan_speed -5 % is below the limit of 0 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)`.
 
 ### Conformance levels
 
@@ -112,10 +114,12 @@ Hubs declare their level in `hal/initialize`. Drivers declare theirs in `DriverI
 | `hub_status` | `hal/initialize` result |
 | `list_devices` | `hal/devices/list` |
 | `describe_device` | `hal/devices/describe` |
-| `read`, `read_many` | `hal/read` |
+| `read` | `hal/read` |
+| `read_many` | `hal/readMany` |
 | `write` | `hal/write` |
 | `action` | `hal/action` |
-| `dry_run`, `plan_check` | `hal/dryRun` |
+| `dry_run` | `hal/dryRun` |
+| `plan_check` | `hal/planCheck` |
 | `stop_all` | `hal/stop` |
 | `get_confirmation_status` | `hal/confirmations/list` |
 | `list_routines` | `hal/routines/list` |
