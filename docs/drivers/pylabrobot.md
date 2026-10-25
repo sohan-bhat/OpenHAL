@@ -71,7 +71,7 @@ A stop cancels running operations. The instrument finishes the firmware command 
 |---|---|---|
 | `backend` | required | `star` (Hamilton STAR and STARlet), `evo` (Tecan EVO), `opentrons` (OT-2) or `chatterbox` (simulation) |
 | `deck` | by backend | `starlet`, `star`, `ot2` or `evo150` |
-| `deck_file` | none | A PyLabRobot deck JSON file, instead of `layout` |
+| `deck_env` | none | An environment variable that holds the path of a PyLabRobot deck JSON file, instead of `layout`. A device file never names the path itself |
 | `layout` | empty | Resources and where they go |
 | `num_channels` | 8 | Channels of the chatterbox simulation |
 | `host`, `port` | none, 31950 | The OT-2's address |
