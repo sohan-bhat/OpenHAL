@@ -8,9 +8,12 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- quality. Lighthouse, axe, the orphan audit, the plant waterer as the playground default and the library page fixes (BRIEF-quality.md).
+- website-3. The owner's list (quirks removed, trace narration as comments, Playground in the nav, diagram chips, one page container, no sideways scrolling, site search with Cmd K) and the reference driver out of the counts (BRIEF-website-3.md).
+- inspector-4. The final critique's Inspector findings (BRIEF-inspector-4.md).
 
-Queued. A fresh critic for the final design scores (BRIEF-critic.md), after quality.
+Queued. website-4, the final critique's website findings (BRIEF-website-4.md), after website-3 merges.
+
+The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
 Kernel coverage on the full suite, 2026-10-25. 100 % of lines but two, 99 % of branches. The four branches left are fail-closed guards the public API can't reach (an expression naming a device the reference check already blocked, a bare name in a hub expression, a missing asyncio task, and a safe state value that isn't a number on a rate-limited number channel).
 
