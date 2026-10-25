@@ -60,8 +60,25 @@ def normalize(
     raw: Any,
     *,
     tightened: dict[str, float] | None = None,
+    argument: bool = False,
 ) -> float | bool | str:
-    """Convert a raw value into the channel's unit and type and check it against every static limit."""
+    """Convert a raw value into the channel's unit and type and check it against every static limit.
+
+    With `argument`, `name` is an action argument, and limit blocks say so in their details.
+    """
+    try:
+        return _normalize(name, spec, raw, tightened)
+    except Block as block:
+        if argument and block.limit is not None:
+            raise Block(block.code, block.message, {**block.limit, "argument": name}) from None
+        if argument:
+            raise Block(block.code, block.message, {"argument": name}) from None
+        raise
+
+
+def _normalize(
+    name: str, spec: WriteChannel | ArgSpec, raw: Any, tightened: dict[str, float] | None
+) -> float | bool | str:
     if spec.type == "bool":
         if not isinstance(raw, bool):
             raise Block("bad_value", f"{name} needs true or false.")

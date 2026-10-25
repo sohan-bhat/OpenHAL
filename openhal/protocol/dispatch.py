@@ -310,8 +310,11 @@ class Dispatcher:
             command = convert.kernel_command(step)
             decision = self.hub.kernel.evaluate(command, who, shadow=shadow)
             decisions.append(convert.decision(self.hub, decision, command, principal=who.label, cannot_wait=True))
-            if decision.status in ("allowed", "needs_confirmation") and isinstance(command, Write):
-                shadow.record(command.device, command.channel, decision.value)
+            if decision.status in ("allowed", "needs_confirmation"):
+                if isinstance(command, Write):
+                    shadow.record(command.device, command.channel, decision.value)
+                else:
+                    shadow.record_run(command.device, command.action)
         ok = not problems and all(item.status == "allowed" for item in decisions)
         return m.PlanResult(ok=ok, decisions=decisions, problems=problems)
 

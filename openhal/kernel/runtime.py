@@ -55,6 +55,7 @@ class DeviceRuntime:
     inflight: set[str] = field(default_factory=set)
     inflight_task: asyncio.Task[Any] | None = None
     rules: list[RuleState] = field(default_factory=list)
+    runs: dict[str, list[float]] = field(default_factory=dict)
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
     @property

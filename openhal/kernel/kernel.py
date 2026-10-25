@@ -76,13 +76,18 @@ class Shadow:
     values: dict[tuple[str, str], Any] = field(default_factory=dict)
     stamps: dict[tuple[str, str], float] = field(default_factory=dict)
     now: float = 0.0
+    runs: dict[tuple[str, str], list[float]] = field(default_factory=dict)
 
     def record(self, device: str, channel: str, value: Any) -> None:
         self.values[(device, channel)] = value
         self.stamps[(device, channel)] = self.now
 
+    def record_run(self, device: str, action: str) -> None:
+        self.runs.setdefault((device, action), []).append(self.now)
+
     def copy(self) -> Shadow:
-        return Shadow(dict(self.values), dict(self.stamps), self.now)
+        runs = {key: list(times) for key, times in self.runs.items()}
+        return Shadow(dict(self.values), dict(self.stamps), self.now, runs)
 
 
 _Shadow = Shadow
@@ -140,6 +145,7 @@ class Kernel:
             for rule in file.watchdog.max_duration
         ]
         runtime = DeviceRuntime(file=file, driver=driver, rules=rules)
+        self._seed_runs(runtime)
         self.devices[device_id] = runtime
         self._orphans.pop(device_id, None)
         self.audit.append(
@@ -152,6 +158,41 @@ class Kernel:
         )
         self.check_references()
         return runtime
+
+    def _seed_runs(self, runtime: DeviceRuntime) -> None:
+        """Restore recent action runs from the audit log, so a restart doesn't reset a max_runs window."""
+        limited = {name: spec.max_runs for name, spec in runtime.file.actions.items() if spec.max_runs is not None}
+        if not limited:
+            return
+        wall, now = time.time(), self.clock()
+        for entry in self.audit.entries(device=runtime.device_id, event="action", limit=5000):
+            name = (entry.target or "").removeprefix("action:")
+            rule = limited.get(name)
+            if rule is None or entry.status not in ("done", "failed"):
+                continue
+            age = wall - entry.at
+            if 0 <= age < rule.per:
+                runtime.runs.setdefault(name, []).append(now - age)
+
+    def _check_runs(
+        self, runtime: DeviceRuntime, action: str, spec: ActionSpec, now: float, shadow: Shadow | None
+    ) -> None:
+        rule = spec.max_runs
+        if rule is None:
+            return
+        at = now + (shadow.now if shadow is not None else 0.0)
+        times = list(runtime.runs.get(action, []))
+        if shadow is not None:
+            times += [now + offset for offset in shadow.runs.get((runtime.device_id, action), [])]
+        recent = [moment for moment in times if 0 <= at - moment < rule.per]
+        if len(recent) >= rule.count:
+            wait = max(0.0, min(recent) + rule.per - at)
+            raise Block(
+                "rate_limited",
+                f"Blocked. {action} may run at most {rule.count} times per {_seconds(rule.per)}. "
+                f"It ran {len(recent)} times in that window. Try again in {_seconds(wait)}.",
+                {"runs": rule.count, "per_s": rule.per},
+            )
 
     def unregister(self, device_id: str) -> None:
         """Remove a device. Its interlocks that name other devices keep protecting them."""
@@ -419,10 +460,13 @@ class Kernel:
             changes: dict[str, Any] = {command.channel: value}
         else:
             assert action_spec is not None
-            args = {name: normalize(name, action_spec.args[name], raw) for name, raw in command.args.items()}
+            args = {
+                name: normalize(name, action_spec.args[name], raw, argument=True) for name, raw in command.args.items()
+            }
             value = args
             digest_value = args
             changes = dict.fromkeys(action_spec.effects, _UNKNOWN)
+            self._check_runs(runtime, command.action, action_spec, now, shadow)
         # 10. Rate of change.
         if isinstance(command, Write) and spec is not None and spec.type == "number":
             assert spec.unit is not None
@@ -441,11 +485,16 @@ class Kernel:
         # 11. Interlocks and action preconditions.
         resolver = self._resolver(runtime, changes, now, shadow)
         if isinstance(command, Action) and action_spec is not None:
-            for condition in action_spec.require:
+            for condition, message in action_spec.conditions:
                 result = expressions.evaluate(expressions.parse_cached(condition, file.channel_names()), resolver)
                 if result is not True:
                     held = "is unknown" if result is None else "doesn't hold"
-                    raise Block("interlock", f"Blocked. {command.action} needs {condition}, which {held} right now.")
+                    detail = f"{message}. " if message else ""
+                    raise Block(
+                        "interlock",
+                        f"Blocked. {detail}{command.action} needs {condition}, which {held} right now.",
+                        {"interlock": message} if message else None,
+                    )
         self._check_interlocks(command.device, set(changes), resolver, shadow)
         # 12. Watchdog budgets.
         for state in runtime.rules:
@@ -623,6 +672,7 @@ class Kernel:
                     raise Block(
                         "interlock",
                         f"Blocked by an interlock on {where}. {detail} Right now {interlock.require} {state}.",
+                        {"interlock": interlock.message} if interlock.message else None,
                     )
 
     def _foreign_resolver(
@@ -720,8 +770,10 @@ class Kernel:
         else:
             spec = runtime.file.actions[command.action]
             channels = list(spec.effects)
-            value = {name: normalize(name, spec.args[name], raw) for name, raw in command.args.items()}
+            value = {name: normalize(name, spec.args[name], raw, argument=True) for name, raw in command.args.items()}
         grant = self.grants.issue(runtime.device_id, command.target, value)
+        if isinstance(command, Action):
+            runtime.runs.setdefault(command.action, []).append(self.clock())
         runtime.inflight.update(channels)
         runtime.inflight_task = asyncio.current_task()
         sent = False
@@ -870,8 +922,11 @@ class Kernel:
         for command in commands:
             decision = self.evaluate(command, principal, shadow=shadow)
             decisions.append(decision)
-            if decision.status in ("allowed", "needs_confirmation") and isinstance(command, Write):
-                shadow.record(command.device, command.channel, decision.value)
+            if decision.status in ("allowed", "needs_confirmation"):
+                if isinstance(command, Write):
+                    shadow.record(command.device, command.channel, decision.value)
+                else:
+                    shadow.record_run(command.device, command.action)
         return decisions
 
     # ------------------------------------------------------------------ confirmations
@@ -1357,7 +1412,7 @@ def _driver_error(message: str) -> Exception:
 def _file_refs(file: DeviceFile) -> set[expressions.Ref]:
     channels = file.channel_names()
     texts = [item.if_ for item in file.interlocks] + [item.require for item in file.interlocks]
-    texts += [condition for action in file.actions.values() for condition in action.require]
+    texts += [condition for action in file.actions.values() for condition, _message in action.conditions]
     texts += [rule.when for rule in file.watchdog.max_duration]
     found: set[expressions.Ref] = set()
     for text in texts:

@@ -482,8 +482,11 @@ class RoutineEngine:
             command = found[0][1]
             decision = self.kernel.evaluate(command, who, shadow=shadow)
             decisions.append({"step": path, **decision.model_dump()})
-            if decision.status in ("allowed", "needs_confirmation") and isinstance(command, Write):
-                shadow.record(command.device, command.channel, decision.value)
+            if decision.status in ("allowed", "needs_confirmation"):
+                if isinstance(command, Write):
+                    shadow.record(command.device, command.channel, decision.value)
+                else:
+                    shadow.record_run(command.device, command.action)
 
     # ------------------------------------------------------------------ running
 
