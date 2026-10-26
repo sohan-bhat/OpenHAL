@@ -9,6 +9,7 @@ interface Props {
 
 const { current, slug, available } = Astro.props;
 const { versions, latest } = readVersions();
+const noteOf = (item: { latest?: boolean; status?: string | null }) => [item.latest ? "latest" : "", item.status ?? ""].filter(Boolean).join(", ");
 const target = (version: string) => {
   const slugs = available[version] ?? [];
   return slugs.includes(slug) ? (slug ? `/spec/${version}/${slug}/` : `/spec/${version}/`) : `/spec/${version}/`;
@@ -17,9 +18,9 @@ const target = (version: string) => {
 
 <details class="switcher">
   <summary>
-    <span class="legend">Version</span>
+    <span class="label">Version</span>
     <span class="mono">{current}</span>
-    {current === latest && <span class="tag">latest</span>}
+    {current === latest && <span class="muted">latest</span>}
   </summary>
   <ul>
     {
@@ -27,8 +28,7 @@ const target = (version: string) => {
         <li>
           <a href={target(item.version)} aria-current={item.version === current ? "page" : undefined}>
             <span class="mono">{item.version}</span>
-            {item.latest && <span class="tag">latest</span>}
-            {item.status && <span class="muted">{item.status}</span>}
+            {noteOf(item) && <span class="muted">{noteOf(item)}</span>}
           </a>
         </li>
       ))
@@ -50,7 +50,9 @@ const target = (version: string) => {
     min-height: 40px;
     padding: 0 var(--s-3);
     cursor: pointer;
+    font-size: var(--t-small);
     font-weight: 700;
+    white-space: nowrap;
   }
 
   ul {
@@ -75,13 +77,12 @@ const target = (version: string) => {
     font-weight: 700;
   }
 
-  .tag {
-    font-size: var(--t-legend);
-    font-weight: 700;
-    color: var(--accent);
-    border: 1px solid currentColor;
-    border-radius: 4px;
-    padding: 0 var(--s-1);
-    line-height: 1.5;
+  .label {
+    color: var(--text-2);
+    font-weight: 600;
+  }
+
+  summary .muted {
+    font-weight: 400;
   }
 </style>

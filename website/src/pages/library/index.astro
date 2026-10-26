@@ -1,7 +1,8 @@
 ---
 import VerificationBadge from "../../components/VerificationBadge.astro";
-import Base from "../../layouts/Base.astro";
+import DocShell from "../../layouts/DocShell.astro";
 import { libraryEntries } from "../../lib/library";
+import { librarySidebar } from "../../lib/library-nav";
 
 const entries = libraryEntries();
 const channels = (entry: { reads: number; writes: number; actions: number }) =>
@@ -14,25 +15,30 @@ const channels = (entry: { reads: number; writes: number; actions: number }) =>
     .join(", ") || "none";
 ---
 
-<Base title="Device Library" description="Shared OpenHAL device files, one per device model, each with its verification status.">
-  <div class="wrap page">
-    <header class="head">
-      <h1>Device Library</h1>
-      <p class="lede">Device files for specific models, shared under CC0. A hub that finds a known device starts from its file here.</p>
-      <p class="lede">A library file loads read-only until a person confirms its limits. <a href="/docs/library/">How the library works</a></p>
-    </header>
+<DocShell
+  title="Device Library"
+  description="Shared OpenHAL device files, one per device model, each with its verification status."
+  sidebar={librarySidebar()}
+  section="Device Library"
+  wide
+  pager={false}
+>
+  <div slot="after-title" class="ledes">
+    <p>Device files for specific models, shared under CC0. A hub that finds a known device starts from its file here.</p>
+    <p>A library file loads read-only until a person confirms its limits. <a href="/docs/library/">How the library works</a></p>
+  </div>
 
     {
       entries.length > 0 ? (
         <>
           <form class="filters" role="search" aria-label="Filter device files" data-filters>
             <label class="field">
-              <span class="legend">Search</span>
+              <span class="legend">Filter</span>
               <input type="search" name="q" placeholder="Model, manufacturer or driver" autocomplete="off" />
             </label>
           </form>
           <p class="shown muted" aria-live="polite" data-shown>{entries.length} device files.</p>
-          <div class="table-wrap">
+          <div class="table-wrap stack">
             <table>
               <thead>
                 <tr>
@@ -68,8 +74,7 @@ const channels = (entry: { reads: number; writes: number; actions: number }) =>
         </p>
       )
     }
-  </div>
-</Base>
+</DocShell>
 
 <script>
   const form = document.querySelector<HTMLFormElement>("[data-filters]");
@@ -90,19 +95,10 @@ const channels = (entry: { reads: number; writes: number; actions: number }) =>
 </script>
 
 <style>
-  .page {
-    padding-top: var(--s-6);
-  }
-
-  .head {
+  .ledes {
     display: grid;
     gap: var(--s-2);
-    padding-bottom: var(--s-4);
-    margin-bottom: var(--s-5);
-    border-bottom: var(--rule);
-  }
-
-  .lede {
+    margin-top: var(--s-3);
     max-width: var(--measure);
   }
 

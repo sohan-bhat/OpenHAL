@@ -72,7 +72,7 @@ const sidebar = [
               <source media="(prefers-color-scheme: dark)" srcset={`/captures/${item.file}-dark.webp`} type="image/webp" />
               <img src={`/captures/${item.file}-light.webp`} width={captures.width} height={captures.height} alt={item.alt} loading="lazy" decoding="async" />
             </picture>
-            <figcaption class="legend">{item.caption}</figcaption>
+            <figcaption class="muted">{item.caption}</figcaption>
           </figure>
         ))}
       </>
@@ -100,5 +100,6 @@ const sidebar = [
 
   .shot figcaption {
     margin-top: var(--s-2);
+    font-size: var(--t-small);
   }
 </style>

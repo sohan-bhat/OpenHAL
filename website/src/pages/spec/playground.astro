@@ -39,10 +39,9 @@ const initial = examples.find((item) => scenario.file && item.path.endsWith(`/${
 <Base title="Playground" description="Edit an OpenHAL device file, validate it as you type, and see the hub's JSON-RPC answer to each request. Runs in your browser.">
   <div class="wrap page">
     <header class="head">
-      <p class="legend"><a href="/spec/latest/">Specification</a></p>
       <h1>Playground</h1>
       <p class="lede">Edit a device file, then send requests to a simulated hub. Each answer is the JSON-RPC message the hub sends.</p>
-      <p class="note"><span class="status unverified">in-browser demo</span> <span class="muted">A TypeScript port of the safety kernel. It never talks to hardware.</span></p>
+      <p class="lede muted">An in-browser demo. A TypeScript port of the safety kernel runs here and never talks to hardware.</p>
     </header>
     <Playground client:interact examples={examples} initial={initial} suggestion={suggestion} />
   </div>
@@ -63,12 +62,5 @@ const initial = examples.find((item) => scenario.file && item.path.endsWith(`/${
 
   .lede {
     max-width: var(--measure);
-  }
-
-  .note {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-2) var(--s-3);
-    align-items: center;
   }
 </style>

@@ -49,9 +49,10 @@ const stamp = `(() => {
       </div>
       <script is:inline set:html={stamp} />
       <figcaption>
-        <div class="flow-parts" role="group" aria-label="Parts of the flow">
+        <p id="flow-hint" class="flow-hint">Click a step</p>
+        <div class="flow-parts" role="group" aria-labelledby="flow-hint">
           {nodes.map((node) => (
-            <button type="button" data-node={node.key} data-text={node.text} aria-describedby="flow-note">
+            <button type="button" data-node={node.key} data-text={node.text} aria-describedby="flow-note" aria-pressed="false">
               {node.label}
             </button>
           ))}
@@ -99,8 +100,13 @@ const stamp = `(() => {
     const buttons = [...figure.querySelectorAll<HTMLButtonElement>("[data-node]")];
     const show = (key: string | null) => {
       figure.classList.toggle("focused", key !== null);
+      if (key === null) delete figure.dataset.active;
+      else figure.dataset.active = key;
       for (const { group, tokens } of groups) group.classList.toggle("flow-active", key !== null && tokens.includes(key));
-      for (const button of buttons) button.classList.toggle("active", button.dataset.node === key);
+      for (const button of buttons) {
+        button.classList.toggle("active", button.dataset.node === key);
+        button.setAttribute("aria-pressed", String(button.dataset.node === key));
+      }
       const button = buttons.find((item) => item.dataset.node === key);
       note.textContent = button?.dataset.text ?? note.dataset.default ?? "";
     };
@@ -168,11 +174,26 @@ const stamp = `(() => {
     opacity: 0.3;
   }
 
+  .flow-art :global(svg.d2-svg > g.flow-active > rect.shape) {
+    stroke: var(--accent);
+    stroke-width: 2.5px !important;
+  }
+
+  .flow[data-active="blocked"] .flow-art :global(svg.d2-svg > g.flow-active > rect.shape) {
+    stroke: var(--blocked);
+  }
+
+  .flow-hint {
+    margin-top: var(--s-4);
+    font-size: var(--t-small);
+    color: var(--text-2);
+  }
+
   .flow-parts {
     display: flex;
     flex-wrap: wrap;
     gap: var(--s-1);
-    margin-top: var(--s-4);
+    margin-top: var(--s-2);
   }
 
   .flow-parts button {
@@ -187,10 +208,21 @@ const stamp = `(() => {
     cursor: pointer;
   }
 
-  .flow-parts button:hover,
-  .flow-parts button.active {
+  .flow-parts button:hover {
     background: var(--surface);
     border-color: var(--text-2);
+  }
+
+  .flow-parts button.active {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  }
+
+  .flow-parts button[data-node="blocked"].active {
+    color: var(--blocked);
+    border-color: var(--blocked);
+    background: color-mix(in srgb, var(--blocked) 8%, var(--bg));
   }
 
   .flow-note {

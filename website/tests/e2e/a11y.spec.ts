@@ -53,12 +53,12 @@ for (const scheme of ["light", "dark"] as const) {
       problems.push(...(await violations(page)).map((item) => `playground trace ${item}`));
 
       await page.goto("/drivers/");
-      await page.getByLabel("Search").fill("no such driver");
+      await page.getByLabel("Filter", { exact: true }).fill("no such driver");
       await expect(page.locator("[data-empty]")).toBeVisible();
       problems.push(...(await violations(page)).map((item) => `drivers empty ${item}`));
 
       await page.goto("/library/");
-      await page.getByLabel("Search").fill("no such device");
+      await page.getByLabel("Filter", { exact: true }).fill("no such device");
       await expect(page.locator("[data-empty]")).toBeVisible();
       problems.push(...(await violations(page)).map((item) => `library empty ${item}`));
 
@@ -66,8 +66,27 @@ for (const scheme of ["light", "dark"] as const) {
       await page.getByRole("button", { name: "Safety kernel" }).focus();
       problems.push(...(await violations(page)).map((item) => `flow focus ${item}`));
 
+      await page.goto("/");
+      await page.getByRole("button", { name: "Search", exact: true }).click();
+      await page.locator("#site-search-input").fill("plant waterer");
+      await expect(page.locator("a.search-result").first()).toBeVisible();
+      problems.push(...(await violations(page)).map((item) => `search ${item}`));
+
       expect(problems).toEqual([]);
     });
+  });
+}
+
+for (const scheme of ["light", "dark"] as const) {
+  test(`the open search dialog has no WCAG AA violations on a desktop in the ${scheme} theme`, async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "axe runs once, in Chromium");
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/spec/2026-10-24/basic/messages/");
+    await page.keyboard.press("Control+k");
+    await page.locator("#site-search-input").fill("LIMIT_EXCEEDED");
+    await expect(page.locator("a.search-result").first()).toBeVisible();
+    expect(await violations(page)).toEqual([]);
   });
 }
 

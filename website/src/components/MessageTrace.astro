@@ -6,10 +6,9 @@ import { traceHtml } from "../lib/trace-html.mjs";
 interface Props {
   entries: TraceEntry[];
   label?: string;
-  note?: string;
 }
 
-const { entries, label = "Message trace", note } = Astro.props;
+const { entries, label = "Message trace" } = Astro.props;
 ---
 
-<Fragment set:html={traceHtml(entries, { label, note })} />
+<Fragment set:html={traceHtml(entries, { label })} />

@@ -1,32 +1,37 @@
 ---
-import Base from "../../layouts/Base.astro";
-import { STATUS_ORDER, TIER_NAMES, conformanceOf, drivers, statusClass, statusWord } from "../../lib/catalog";
+import DocShell from "../../layouts/DocShell.astro";
+import { STATUS_ORDER, TIER_NAMES, conformanceOf, deviceDrivers, driverCounts, referenceDrivers, statusClass, statusWord } from "../../lib/catalog";
+import { driversSidebar } from "../../lib/drivers-nav";
 
-const all = drivers();
+const all = deviceDrivers();
+const references = referenceDrivers();
 const groups = [
-  { name: "Verified on hardware", rows: all.filter((driver) => driver.status === "verified") },
-  { name: "Tested on simulator", rows: all.filter((driver) => driver.status !== "planned" && driver.status !== "verified") },
-  { name: "Planned", rows: all.filter((driver) => driver.status === "planned") },
+  { name: "Verified on hardware", rows: all.filter((driver) => driver.status === "verified"), reference: false },
+  { name: "Tested on simulator", rows: all.filter((driver) => driver.status !== "planned" && driver.status !== "verified"), reference: false },
+  { name: "Planned", rows: all.filter((driver) => driver.status === "planned"), reference: false },
+  { name: "Reference driver", rows: references, reference: true },
 ].filter((group) => group.rows.length > 0);
-const tested = all.filter((driver) => driver.status !== "planned" && driver.status !== "verified").length;
-const planned = all.filter((driver) => driver.status === "planned").length;
+const { total } = driverCounts();
+const listed = [...all, ...references];
 const statuses = STATUS_ORDER.filter((status) => all.some((driver) => driver.status === status));
 const tiers = [...new Set(all.map((driver) => driver.tier))].sort();
-const hazards = ["low", "medium", "high"].filter((hazard) => all.some((driver) => driver.hazard_default === hazard));
-const conformances = [...new Set(all.map(conformanceOf).filter((value): value is string => !!value))];
-const verified = all.filter((driver) => driver.status === "verified").length;
+const hazards = ["low", "medium", "high"].filter((hazard) => listed.some((driver) => driver.hazard_default === hazard));
+const conformances = [...new Set(listed.map(conformanceOf).filter((value): value is string => !!value))];
 ---
 
-<Base title="Drivers" description="Every OpenHAL driver from drivers/catalog.json, with tier, status, conformance level and hazard default.">
-  <div class="wrap page">
-    <header class="head">
-      <h1>Drivers</h1>
-      <p class="lede">A driver speaks one protocol. Statuses come from <code>drivers/catalog.json</code>.</p>
-    </header>
+<DocShell
+  title="Drivers"
+  description="Every OpenHAL driver from drivers/catalog.json, with tier, status, conformance level and hazard default."
+  sidebar={driversSidebar()}
+  section="Drivers"
+  wide
+  pager={false}
+>
+  <p slot="after-title" class="lede">A driver speaks one protocol. Statuses come from <code>drivers/catalog.json</code>.</p>
 
     <form class="filters" role="search" aria-label="Filter drivers" data-filters>
       <label class="field grow">
-        <span class="legend">Search</span>
+        <span class="legend">Filter</span>
         <input type="search" name="q" placeholder="Name, protocol or device family" autocomplete="off" />
       </label>
       {
@@ -76,14 +81,9 @@ const verified = all.filter((driver) => driver.status === "verified").length;
         )
       }
     </form>
-    <p class="summary">
-      <span class="status unverified">{tested} tested on simulator</span>
-      {verified > 0 && <span class="status ok">{verified} verified on hardware</span>}
-      {planned > 0 && <span class="status planned">{planned} planned</span>}
-    </p>
-    <p class="shown muted" aria-live="polite" data-shown>{all.length} drivers.</p>
+    <p class="shown muted" aria-live="polite" data-shown>{total} drivers.</p>
 
-    <div class="table-wrap">
+    <div class="driver-list"><div class="table-wrap">
       <table class="drivers" aria-label="Drivers">
         <thead>
           <tr>
@@ -106,7 +106,8 @@ const verified = all.filter((driver) => driver.status === "verified").length;
               </tr>
               {group.rows.map((driver) => (
                 <tr
-                  data-driver
+                  data-driver={group.reference ? undefined : ""}
+                  data-reference={group.reference ? "" : undefined}
                   data-tier={String(driver.tier)}
                   data-status={driver.status}
                   data-hazard={driver.hazard_default}
@@ -117,7 +118,7 @@ const verified = all.filter((driver) => driver.status === "verified").length;
                     <a class="mono" href={`/drivers/${driver.name}/`}>{driver.name}</a>
                   </td>
                   <td data-label="Status">
-                    <span class={`status ${statusClass(driver.status)}`}>{statusWord(driver.status)}</span>
+                    {group.reference ? <span class="muted">reference</span> : <span class={`status ${statusClass(driver.status)}`}>{statusWord(driver.status)}</span>}
                   </td>
                   <td data-label="Tier">{TIER_NAMES[driver.tier] ?? driver.tier}</td>
                   {conformances.length > 0 && (
@@ -135,15 +136,29 @@ const verified = all.filter((driver) => driver.status === "verified").length;
           ))
         }
       </table>
-    </div>
+    </div></div>
     <p class="empty muted" data-empty hidden>No driver matches. Clear a filter to see more.</p>
+    {
+      references.length > 0 && (
+        <p class="more">
+          {references.map((driver, index) => (
+            <>
+              {index > 0 && ", "}
+              <a class="mono" href={`/drivers/${driver.name}/`}>{driver.name}</a>
+            </>
+          ))}{" "}
+          {references.length === 1 ? "is the reference driver" : "are the reference drivers"}. A reference driver runs device files in memory for
+          tests and demos, so the driver counts leave it out.
+        </p>
+      )
+    }
     <p class="more">The <a href="/library/">Device Library</a> holds device files that run on these drivers.</p>
-  </div>
-</Base>
+</DocShell>
 
 <script>
   const form = document.querySelector<HTMLFormElement>("[data-filters]");
   const items = [...document.querySelectorAll<HTMLElement>("[data-driver]")];
+  const references = [...document.querySelectorAll<HTMLElement>("[data-reference]")];
   const groups = [...document.querySelectorAll<HTMLElement>("[data-group]")];
   const shown = document.querySelector<HTMLElement>("[data-shown]");
   const empty = document.querySelector<HTMLElement>("[data-empty]");
@@ -151,36 +166,30 @@ const verified = all.filter((driver) => driver.status === "verified").length;
     if (!form) return;
     const data = new FormData(form);
     const words = String(data.get("q") ?? "").toLowerCase().split(/\s+/).filter(Boolean);
+    const matches = (item: HTMLElement) =>
+      words.every((word) => (item.dataset.text ?? "").includes(word)) &&
+      (!data.get("tier") || item.dataset.tier === data.get("tier")) &&
+      (!data.get("status") || (item.dataset.driver !== undefined && item.dataset.status === data.get("status"))) &&
+      (!data.get("conformance") || item.dataset.conformance === data.get("conformance")) &&
+      (!data.get("hazard") || item.dataset.hazard === data.get("hazard"));
     let count = 0;
     for (const item of items) {
-      const match =
-        words.every((word) => (item.dataset.text ?? "").includes(word)) &&
-        (!data.get("tier") || item.dataset.tier === data.get("tier")) &&
-        (!data.get("status") || item.dataset.status === data.get("status")) &&
-        (!data.get("conformance") || item.dataset.conformance === data.get("conformance")) &&
-        (!data.get("hazard") || item.dataset.hazard === data.get("hazard"));
-      item.hidden = !match;
-      if (match) count += 1;
+      item.hidden = !matches(item);
+      if (!item.hidden) count += 1;
     }
-    for (const group of groups) group.hidden = !group.querySelector("[data-driver]:not([hidden])");
+    for (const item of references) item.hidden = !matches(item);
+    for (const group of groups) group.hidden = !group.querySelector("[data-driver]:not([hidden]), [data-reference]:not([hidden])");
     if (shown) shown.textContent = `${count} of ${items.length} drivers.`;
-    if (empty) empty.hidden = count > 0;
+    if (empty) empty.hidden = count > 0 || references.some((item) => !item.hidden);
   }
   form?.addEventListener("input", apply);
   form?.addEventListener("submit", (event) => event.preventDefault());
 </script>
 
 <style>
-  .page {
-    padding-top: var(--s-6);
-  }
-
-  .head {
-    display: grid;
-    gap: var(--s-2);
-    padding-bottom: var(--s-4);
-    margin-bottom: var(--s-5);
-    border-bottom: var(--rule);
+  .lede {
+    margin-top: var(--s-3);
+    max-width: var(--measure);
   }
 
   .lede code {
@@ -202,17 +211,9 @@ const verified = all.filter((driver) => driver.status === "verified").length;
     width: 100%;
   }
 
-  .summary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-2) var(--s-5);
-    margin: var(--s-5) 0 0;
-  }
-
   .shown {
-    margin: var(--s-3) 0;
+    margin: var(--s-4) 0 var(--s-3);
   }
-
 
   .group-row th {
     padding-top: var(--s-5);
@@ -228,17 +229,22 @@ const verified = all.filter((driver) => driver.status === "verified").length;
     margin-top: var(--s-5);
   }
 
+  .driver-list {
+    container-type: inline-size;
+  }
+
   @media (min-width: 768px) {
     .filters {
       grid-template-columns: 2fr repeat(4, minmax(0, 1fr));
     }
   }
 
-  @media (max-width: 767px) {
+  @container (max-width: 939px) {
     table,
     tbody,
-    tr,
-    td,
+    tr {
+      display: block;
+    }
 
     thead {
       position: absolute;
@@ -248,22 +254,19 @@ const verified = all.filter((driver) => driver.status === "verified").length;
       clip: rect(0 0 0 0);
     }
 
-    .group-row {
-      display: block;
-    }
-
     .group-row th {
       display: block;
     }
 
-    tr[data-driver] {
+    tr[data-driver],
+    tr[data-reference] {
       padding: var(--s-3) 0;
       border-bottom: var(--rule);
     }
 
     td {
       display: grid;
-      grid-template-columns: 7em minmax(0, 1fr);
+      grid-template-columns: 7.5em minmax(0, 1fr);
       gap: var(--s-2);
       border: 0;
       padding: 2px 0;
@@ -271,10 +274,9 @@ const verified = all.filter((driver) => driver.status === "verified").length;
 
     td::before {
       content: attr(data-label);
-      font-size: var(--t-legend);
+      font-family: var(--font-text);
+      font-size: var(--t-small);
       font-weight: 700;
-      font-variant-caps: all-small-caps;
-      letter-spacing: 0.04em;
       color: var(--text-2);
     }
 

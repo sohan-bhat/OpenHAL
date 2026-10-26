@@ -54,7 +54,7 @@ test.describe("specification", () => {
   test("/spec/ goes to the latest dated version, which has a version switcher", async ({ page }) => {
     await page.goto("/spec/");
     await expect(page).toHaveURL(/\/spec\/latest\/$/);
-    await expect(page.locator(".legend").filter({ hasText: /^Specification \d{4}-\d{2}-\d{2}/ }).first()).toBeVisible();
+    await expect(page.locator(".switcher summary:visible").first()).toHaveText(/^\s*Version\s+\d{4}-\d{2}-\d{2}\s+latest\s*$/);
     await page.getByRole("link", { name: "Changelog" }).first().click();
     await expect(page.locator("h1")).toHaveText("Changelog");
   });
@@ -150,6 +150,35 @@ test.describe("catalog pages", () => {
     await expect(page.locator("[data-shown]")).toHaveText(`${shown} of ${all} drivers.`);
   });
 
+  test("the driver counts leave the tier 0 reference driver out", async ({ page }) => {
+    const catalog = JSON.parse(readFileSync(fileURLToPath(new URL("../../../drivers/catalog.json", import.meta.url)), "utf8")) as {
+      drivers: Array<{ name: string; tier: number; status: string }>;
+    };
+    const devices = catalog.drivers.filter((driver) => driver.tier >= 1);
+    const tested = devices.filter((driver) => driver.status === "implemented").length;
+    await page.goto("/");
+    await expect(page.locator("p.summary")).toContainText(`${tested} drivers tested on simulator`);
+    await expect(page.locator(".groups")).not.toContainText("mock");
+    await page.goto("/drivers/");
+    await expect(page.locator("[data-shown]")).toHaveText(`${devices.length} drivers.`);
+    await expect(page.locator("[data-driver]")).toHaveCount(devices.length);
+    for (const driver of catalog.drivers.filter((item) => item.tier === 0)) {
+      await expect(page.locator("[data-reference]").filter({ hasText: driver.name })).toContainText("reference");
+    }
+  });
+
+  test("drivers and the library sit in the same page container as the specification", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const left = async (path: string) => {
+      await page.goto(path);
+      return page.locator("main h1").evaluate((heading) => Math.round(heading.getBoundingClientRect().left));
+    };
+    const spec = await left("/spec/2026-10-24/basic/messages/");
+    for (const path of ["/drivers/", "/drivers/mock/", "/library/", "/library/scpi-rigol-dp832/", "/docs/quickstart/"]) {
+      expect(await left(path), path).toBe(spec);
+    }
+  });
+
   test("each driver has its own page", async ({ page }) => {
     await page.goto("/drivers/mock/");
     await expect(page.locator("h1")).toContainText("mock");
@@ -161,11 +190,11 @@ test.describe("catalog pages", () => {
     const all = await rows.count();
     expect(all).toBeGreaterThan(30);
     await expect(page.locator("[data-shown]")).toHaveText(`${all} device files.`);
-    await page.getByLabel("Search").fill("rigol");
+    await page.getByLabel("Filter", { exact: true }).fill("rigol");
     await expect(page.locator("[data-shown]")).toHaveText(`2 of ${all} device files.`);
-    await page.getByLabel("Search").fill("no such device");
+    await page.getByLabel("Filter", { exact: true }).fill("no such device");
     await expect(page.locator("[data-empty]")).toBeVisible();
-    await expect(page.getByRole("link", { name: "How the library works" })).toHaveAttribute("href", "/docs/library/");
+    await expect(page.getByRole("article").getByRole("link", { name: "How the library works" })).toHaveAttribute("href", "/docs/library/");
     await page.goto("/library/scpi-keysight-34461a/");
     await expect(page.locator(".facts")).toContainText("unconfirmed");
     await expect(page.locator(".facts")).toContainText("This file only reads.");
@@ -217,6 +246,35 @@ test.describe("site", () => {
     expect(response?.status()).toBe(404);
     await expect(page.locator("h1")).toHaveText("Page not found");
     await expect(page.locator(".trace")).toContainText("error -32004 UNKNOWN_TARGET");
+  });
+
+  test("nothing scrolls sideways at 1280 px", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    for (const path of ["/sdks/", "/sdks/python/", "/sdks/python/reference/", "/spec/playground/", "/spec/2026-10-24/basic/messages/", "/library/scpi-rigol-dp832/"]) {
+      await page.goto(path);
+      const wide = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>("pre, textarea, .table-wrap, .trace")]
+          .filter((element) => element.getClientRects().length && element.scrollWidth > element.clientWidth + 1)
+          .map((element) => `${element.tagName} ${element.scrollWidth}>${element.clientWidth}`),
+      );
+      expect(wide, path).toEqual([]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth), path).toBeLessThanOrEqual(1280);
+    }
+  });
+
+  test("the playground's As picker shows its whole label", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/spec/playground/");
+    const fits = await page.locator(".request select").first().evaluate((select: HTMLSelectElement) => {
+      const probe = document.createElement("span");
+      probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font:${getComputedStyle(select).font}`;
+      probe.textContent = select.selectedOptions[0].textContent;
+      document.body.append(probe);
+      const width = probe.getBoundingClientRect().width;
+      probe.remove();
+      return width + 40 <= select.clientWidth;
+    });
+    expect(fits).toBe(true);
   });
 
   test("keyboard users can skip to the content and see focus", async ({ page, browserName }) => {

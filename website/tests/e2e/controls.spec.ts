@@ -7,7 +7,7 @@ test.describe("site chrome", () => {
     const links = await nav.getByRole("link").evaluateAll((items) =>
       items.map((item) => ({ label: item.textContent!.trim(), href: item.getAttribute("href")! })),
     );
-    expect(links.map((link) => link.label)).toEqual(["Overview", "Specification", "Drivers", "Device Library", "SDKs", "Inspector", "GitHub"]);
+    expect(links.map((link) => link.label)).toEqual(["Overview", "Specification", "Playground", "Drivers", "Device Library", "SDKs", "Inspector", "GitHub"]);
     for (const link of links) {
       if (link.href.startsWith("http")) {
         expect(link.href).toBe("https://github.com/sohan-bhat/OpenHAL");
@@ -16,7 +16,15 @@ test.describe("site chrome", () => {
       await page.goto("/404.html");
       await page.locator(".desktop-nav").getByRole("link", { name: link.label, exact: true }).click();
       await expect(page.locator(".desktop-nav").getByRole("link", { name: link.label, exact: true })).toHaveAttribute("aria-current", "page");
+      await expect(page.locator(".desktop-nav [aria-current]")).toHaveCount(1);
     }
+  });
+
+  test("the overview trace leads to the playground", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: "Try it in your browser" }).click();
+    await expect(page).toHaveURL(/\/spec\/playground\/$/);
+    await expect(page.locator("h1")).toHaveText("Playground");
   });
 
   test("the wordmark goes to the overview", async ({ page }) => {
@@ -118,6 +126,24 @@ test.describe("overview", () => {
   });
 });
 
+test.describe("flow highlight", () => {
+  test("the active step and its node share one highlight", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("group", { name: "Click a step" })).toBeVisible();
+    const chip = page.getByRole("button", { name: "Safety kernel" });
+    await chip.click();
+    await expect(chip).toHaveAttribute("aria-pressed", "true");
+    const colors = await page.evaluate(() => {
+      const chipColor = getComputedStyle(document.querySelector(".flow-parts button.active")!).borderTopColor;
+      const node = document.querySelector(".flow svg.d2-svg > g.flow-active > rect.shape")!;
+      return { chip: chipColor, node: getComputedStyle(node).stroke, width: getComputedStyle(node).strokeWidth };
+    });
+    expect(colors.node).toBe(colors.chip);
+    expect(colors.width).toBe("2.5px");
+    await expect(page.locator(".flow-parts button[aria-pressed='true']")).toHaveCount(1);
+  });
+});
+
 test.describe("catalog filters", () => {
   test("each driver filter narrows the table and an impossible search says so", async ({ page }) => {
     await page.goto("/drivers/");
@@ -130,9 +156,9 @@ test.describe("catalog filters", () => {
       expect(shown, label).toBeLessThan(all);
       await select.selectOption("");
     }
-    await page.getByLabel("Search").fill("scpi");
+    await page.getByLabel("Filter", { exact: true }).fill("scpi");
     await expect(page.locator("[data-driver]:visible")).toHaveCount(1);
-    await page.getByLabel("Search").fill("no such driver");
+    await page.getByLabel("Filter", { exact: true }).fill("no such driver");
     await expect(page.locator("[data-empty]")).toBeVisible();
     await expect(page.locator("[data-shown]")).toHaveText(`0 of ${all} drivers.`);
   });
@@ -197,5 +223,58 @@ test.describe("playground controls", () => {
     const device = page.locator(".request select").nth(1);
     await expect(device).toHaveValue("plant-waterer");
     expect(await device.locator("option").count()).toBeGreaterThan(0);
+  });
+});
+
+test.describe("site search", () => {
+  test("Ctrl K opens the search, which finds an error code and opens it from the keyboard", async ({ page }) => {
+    await page.goto("/drivers/");
+    await page.keyboard.press("Control+k");
+    const dialog = page.getByRole("dialog", { name: "Search the site" });
+    await expect(dialog).toBeVisible();
+    await expect(page.locator("#site-search-input")).toBeFocused();
+    await page.locator("#site-search-input").fill("LIMIT_EXCEEDED");
+    const results = dialog.locator("a.search-result");
+    await expect(results.first()).toBeVisible();
+    expect(await results.evaluateAll((items) => items.map((item) => item.getAttribute("href")))).toContain("/spec/errors/");
+    await expect(dialog.locator("[data-search-status]")).toHaveText(/pages? match/);
+    await page.keyboard.press("ArrowDown");
+    await expect(results.first()).toBeFocused();
+    const target = (await results.first().getAttribute("href"))!;
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(new RegExp(`${target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
+  });
+
+  test("the header field opens the search, Escape closes it and focus comes back", async ({ page }) => {
+    await page.goto("/");
+    const field = page.locator(".search-field");
+    await expect(field).toContainText("Search...");
+    await expect(field.locator(".search-key span:visible")).toHaveCount(1);
+    await field.click();
+    const dialog = page.getByRole("dialog", { name: "Search the site" });
+    await expect(dialog).toBeVisible();
+    await page.locator("#site-search-input").fill("plant waterer");
+    await expect(dialog.locator("a.search-result").first()).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(field).toBeFocused();
+  });
+
+  test("a search with no match says so", async ({ page }) => {
+    await page.goto("/");
+    await page.keyboard.press("Control+k");
+    await page.locator("#site-search-input").fill("zqxjvw");
+    await expect(page.locator("[data-search-status]")).toHaveText("No page matches “zqxjvw”.");
+    await expect(page.locator("a.search-result")).toHaveCount(0);
+  });
+
+  test("on a phone the field is an icon button that opens the same dialog", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await expect(page.locator(".search-field")).toBeHidden();
+    await page.getByRole("button", { name: "Search", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Search the site" })).toBeVisible();
+    await page.locator("#site-search-input").fill("plant waterer");
+    await expect(page.locator("a.search-result").first()).toBeVisible();
   });
 });

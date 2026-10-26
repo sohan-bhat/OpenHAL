@@ -403,8 +403,7 @@
   <div class="side">
     <section class="panel" aria-labelledby="pg-device-title">
       <div class="panel-head">
-        <h2 id="pg-device-title">Device</h2>
-        <span class="legend">Simulated</span>
+        <h2 id="pg-device-title">Simulated device</h2>
       </div>
       {#if file && kernel}
         <dl class="facts">
@@ -414,7 +413,7 @@
           <div><dt class="legend">Limits</dt><dd>{#if missing.length}<span class="status unverified">unconfirmed</span>{:else}<span class="status ok">confirmed</span>{/if}</dd></div>
         </dl>
         {#if Object.keys(file.write).length}
-          <div class="table-wrap">
+          <div class="table-wrap stack">
             <table>
               <caption class="legend">Channels it can change</caption>
               <thead>
@@ -423,12 +422,12 @@
               <tbody>
                 {#each Object.entries(file.write) as [name, spec] (name)}
                   <tr>
-                    <td class="mono">{name}</td>
-                    <td class="mono">{show(valueOf(id, name))}{#if spec.unit}&nbsp;{displayUnit(spec.unit)}{/if}</td>
-                    <td class="mono">{spec.min === null ? (spec.type === "enum" ? spec.values.join(", ") : spec.type) : formatG(spec.min)}</td>
-                    <td class="mono">{spec.max === null ? "" : formatG(spec.max)}</td>
-                    <td class="mono">{spec.max_change_per_s === null ? "" : formatG(spec.max_change_per_s)}</td>
-                    <td>{tierWord(spec.confirm, effectiveHazard(file) === "high")}</td>
+                    <td data-label="Channel" class="mono">{name}</td>
+                    <td data-label="Value" class="mono">{show(valueOf(id, name))}{#if spec.unit}&nbsp;{displayUnit(spec.unit)}{/if}</td>
+                    <td data-label="Min" class="mono">{spec.min === null ? (spec.type === "enum" ? spec.values.join(", ") : spec.type) : formatG(spec.min)}</td>
+                    <td data-label="Max" class="mono">{spec.max === null ? "" : formatG(spec.max)}</td>
+                    <td data-label="Rate per s" class="mono">{spec.max_change_per_s === null ? "" : formatG(spec.max_change_per_s)}</td>
+                    <td data-label="Confirm">{tierWord(spec.confirm, effectiveHazard(file) === "high")}</td>
                   </tr>
                 {/each}
               </tbody>
@@ -436,7 +435,7 @@
           </div>
         {/if}
         {#if Object.keys(file.read).length}
-          <div class="table-wrap">
+          <div class="table-wrap stack">
             <table>
               <caption class="legend">Read channels</caption>
               <thead>
@@ -445,9 +444,9 @@
               <tbody>
                 {#each Object.entries(file.read) as [name, spec] (name)}
                   <tr>
-                    <td class="mono">{name}</td>
-                    <td class="mono">{spec.type === "image" ? "frames" : show(valueOf(id, name))}{#if spec.unit}&nbsp;{displayUnit(spec.unit)}{/if}</td>
-                    <td>
+                    <td data-label="Channel" class="mono">{name}</td>
+                    <td data-label="Value" class="mono">{spec.type === "image" ? "frames" : show(valueOf(id, name))}{#if spec.unit}&nbsp;{displayUnit(spec.unit)}{/if}</td>
+                    <td data-label="Simulate">
                       {#if spec.type !== "image"}
                         <form class="sim" onsubmit={(event) => { event.preventDefault(); setReading(id, name); }}>
                           <label class="visually-hidden" for={`pg-read-${name}`}>Simulated reading for {name}</label>
@@ -476,7 +475,6 @@
     <section class="panel" aria-labelledby="pg-request-title">
       <div class="panel-head">
         <h2 id="pg-request-title">Send a request</h2>
-        <span class="legend">In-browser demo</span>
       </div>
       {#if kernel}
         <form class="request" onsubmit={(event) => { event.preventDefault(); send(); }}>
@@ -555,7 +553,7 @@
     <section class="panel" aria-labelledby="pg-log-title">
       <div class="panel-head">
         <h2 id="pg-log-title">Message log</h2>
-        <span class="legend">JSON-RPC, newest first</span>
+        <p class="muted">JSON-RPC, newest first</p>
       </div>
       <TraceList {exchanges} />
     </section>
@@ -589,15 +587,19 @@
     font-size: var(--t-h3);
   }
 
+  .editor .panel-head {
+    display: grid;
+    justify-content: stretch;
+  }
+
   .example {
-    display: flex;
-    align-items: center;
-    gap: var(--s-2);
+    display: grid;
+    gap: var(--s-1);
     min-width: 0;
   }
 
   .example select {
-    max-width: 100%;
+    width: 100%;
     min-width: 0;
   }
 
@@ -612,8 +614,10 @@
     line-height: 1.6;
     resize: vertical;
     tab-size: 2;
-    white-space: pre;
-    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .problems {
@@ -792,11 +796,13 @@
 
   @media (min-width: 600px) {
     .fields {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
     }
 
     .facts {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(4, auto);
+      justify-content: start;
+      column-gap: var(--s-6);
     }
   }
 

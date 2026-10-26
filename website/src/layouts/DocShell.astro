@@ -15,20 +15,22 @@ interface Props {
   section: string;
   canonical?: string;
   noindex?: boolean;
+  wide?: boolean;
+  pager?: boolean;
 }
 
-const { title, description, repo, headings = [], sidebar, section, canonical, noindex } = Astro.props;
+const { title, description, repo, headings = [], sidebar, section, canonical, noindex, wide = false, pager = true } = Astro.props;
 const path = Astro.url.pathname;
 const flat = sidebar.flatMap((group) => group.items).filter((item) => item.href);
 const index = flat.findIndex((item) => item.href === path);
-const prev = index > 0 ? flat[index - 1] : null;
-const next = index !== -1 && index < flat.length - 1 ? flat[index + 1] : null;
-const toc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+const prev = pager && index > 0 ? flat[index - 1] : null;
+const next = pager && index !== -1 && index < flat.length - 1 ? flat[index + 1] : null;
+const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 ---
 
 <Base title={title} description={description} canonical={canonical} noindex={noindex}>
-  <div class="wrap shell">
-    <aside class="sidebar" aria-label={section}>
+  <div class:list={["wrap", "shell", { wide }]}>
+    <aside class="sidebar" aria-label={section} data-pagefind-ignore="all">
       <nav class="side-desktop" aria-label={`${section} pages`}>
         <slot name="sidebar-top" />
         {
@@ -96,7 +98,7 @@ const toc = headings.filter((heading) => heading.depth === 2 || heading.depth ==
       </header>
       {
         toc.length > 1 && (
-          <details class="outline-mobile">
+          <details class="outline-mobile" data-pagefind-ignore="all">
             <summary>On this page</summary>
             <ul>
               {toc.map((heading) => (
@@ -108,10 +110,10 @@ const toc = headings.filter((heading) => heading.depth === 2 || heading.depth ==
           </details>
         )
       }
-      <div class="prose">
+      <div class={wide ? "data" : "prose"}>
         <slot />
       </div>
-      <footer class="page-foot">
+      <footer class="page-foot" data-pagefind-ignore="all">
         {
           (prev || next) && (
             <nav class="pager" aria-label="Previous and next">
@@ -147,7 +149,7 @@ const toc = headings.filter((heading) => heading.depth === 2 || heading.depth ==
 
     {
       toc.length > 1 && (
-        <aside class="outline" aria-label="On this page">
+        <aside class="outline" aria-label="On this page" data-pagefind-ignore="all">
           <p class="legend">On this page</p>
           <ul>
             {toc.map((heading) => (
@@ -208,6 +210,12 @@ const toc = headings.filter((heading) => heading.depth === 2 || heading.depth ==
 
   .group .legend {
     margin-bottom: var(--s-1);
+    padding: 0 var(--s-2);
+    color: var(--text);
+  }
+
+  .pager .legend {
+    font-weight: 400;
   }
 
   .sidebar a {
@@ -252,7 +260,8 @@ const toc = headings.filter((heading) => heading.depth === 2 || heading.depth ==
     color: var(--text-2);
   }
 
-  .content {
+  .content,
+  .data {
     min-width: 0;
   }
 
@@ -379,6 +388,10 @@ const toc = headings.filter((heading) => heading.depth === 2 || heading.depth ==
   @media (min-width: 1280px) {
     .shell {
       grid-template-columns: 240px minmax(0, 1fr) 220px;
+    }
+
+    .shell.wide {
+      grid-template-columns: 240px minmax(0, 1fr);
     }
 
     .outline {

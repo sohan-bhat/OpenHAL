@@ -6,7 +6,6 @@
     { "name": "Home and building", "drivers": ["homeassistant", "mqtt", "matter", "zigbee-zwave", "knx"] },
     { "name": "Industrial buses", "drivers": ["modbus", "opcua", "can"] },
     { "name": "Robotics and astronomy", "drivers": ["ros2", "lerobot", "alpaca", "indi"] },
-    { "name": "Cameras, media and input", "drivers": ["uvc", "rpi-camera", "onvif", "upnp", "hid", "midi"] },
-    { "name": "Simulation", "drivers": ["mock"] }
+    { "name": "Cameras, media and input", "drivers": ["uvc", "rpi-camera", "onvif", "upnp", "hid", "midi"] }
   ]
 }

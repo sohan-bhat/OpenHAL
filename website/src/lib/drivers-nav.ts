@@ -1,10 +1,10 @@
-import { drivers, statusWord } from "./catalog";
+import { type Driver, deviceDrivers, referenceDrivers } from "./catalog";
 import type { SideGroup } from "./nav-types";
 
+const link = (driver: Driver) => ({ title: driver.name, href: `/drivers/${driver.name}/` });
+
 export function driversSidebar(): SideGroup[] {
-  const all = drivers();
-  const running = all.filter((driver) => driver.status !== "planned");
-  const planned = all.filter((driver) => driver.status === "planned");
+  const devices = deviceDrivers();
   return [
     {
       name: "",
@@ -14,7 +14,9 @@ export function driversSidebar(): SideGroup[] {
         { title: "Build a driver", href: "/docs/tutorials/build-a-driver/" },
       ],
     },
-    { name: statusWord("implemented"), items: running.map((driver) => ({ title: driver.name, href: `/drivers/${driver.name}/` })) },
-    { name: "Planned", items: planned.map((driver) => ({ title: driver.name, href: `/drivers/${driver.name}/` })) },
+    { name: "Verified on hardware", items: devices.filter((driver) => driver.status === "verified").map(link) },
+    { name: "Tested on simulator", items: devices.filter((driver) => driver.status !== "planned" && driver.status !== "verified").map(link) },
+    { name: "Planned", items: devices.filter((driver) => driver.status === "planned").map(link) },
+    { name: "Reference driver", items: referenceDrivers().map(link) },
   ].filter((group) => group.items.length > 0);
 }

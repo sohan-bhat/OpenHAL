@@ -1,6 +1,7 @@
 .prose {
   max-width: var(--measure);
   min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .prose > * + * {
@@ -51,7 +52,7 @@
   background: var(--surface);
   border: var(--rule);
   border-radius: 4px;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .prose blockquote {
@@ -140,13 +141,18 @@
     border: 0;
   }
 
+  .prose tbody th[scope="row"] {
+    display: block;
+    width: auto;
+    padding: var(--s-1) 0 0;
+    border: 0;
+  }
+
   .prose td::before {
     content: attr(data-label);
     display: block;
-    font-size: var(--t-legend);
+    font-size: var(--t-small);
     font-weight: 700;
-    font-variant-caps: all-small-caps;
-    letter-spacing: 0.04em;
     color: var(--text-2);
   }
 
