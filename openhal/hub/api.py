@@ -251,7 +251,7 @@ def create_app(hub: Hub) -> FastAPI:
             error = views.device_text(f"{body.device}.{body.channel} driver error", str(exc)) or "timed out"
             return {"device": body.device, "channel": body.channel, "ok": False, "error": error}
         file = hub.kernel.devices[body.device].file
-        value = views.device_value(file, body.device, body.channel, reading.value)
+        value = views.device_value(file, body.device, body.channel, reading.value, image_data=True)
         return {
             "device": body.device,
             "channel": body.channel,

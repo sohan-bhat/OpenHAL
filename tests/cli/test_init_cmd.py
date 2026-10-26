@@ -19,7 +19,7 @@ from typer.testing import CliRunner
 
 from openhal.cli import _tty
 from openhal.cli.main import app
-from openhal.demo.scenario import example_file
+from openhal.demo.plant import example_file
 from openhal.drivers.openhal_firmware.simulator import SIMULATORS, FirmwareSimulator
 from openhal.hub import discovery
 from openhal.hub.tokens import TokenStore

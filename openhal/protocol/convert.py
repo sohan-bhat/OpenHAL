@@ -484,7 +484,7 @@ def reading(hub: Hub, device_id: str, item: DriverReading) -> m.Reading:
     return m.Reading(
         device=device_id,
         channel=item.channel,
-        value=views.device_value(file, device_id, item.channel, item.value),
+        value=views.device_value(file, device_id, item.channel, item.value, image_data=True),
         unit=wire_unit(item.unit),
         at=timestamp(item.at),
         suspect=item.suspect,

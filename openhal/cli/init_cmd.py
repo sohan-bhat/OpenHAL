@@ -52,7 +52,7 @@ def sample_device() -> str:
     The file shipped with OpenHAL was confirmed by the person who wrote it. Your copy is yours to
     confirm, so it loads read-only until you run openhal file confirm.
     """
-    from openhal.demo.scenario import example_file
+    from openhal.demo.plant import example_file
 
     lines = example_file().read_text(encoding="utf-8").splitlines()
     return "\n".join(line for line in lines if not line.startswith("confirmed:")) + "\n"

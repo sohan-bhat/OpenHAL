@@ -16,7 +16,7 @@ from typing import Any
 
 from fastapi import FastAPI
 
-from openhal.demo.scenario import example_file
+from openhal.demo.plant import example_file
 from openhal.drivers.openhal_firmware.simulator import SIMULATORS, PlantWatererSimulator
 from openhal.hub.api import create_app
 from openhal.hub.config import HubConfig

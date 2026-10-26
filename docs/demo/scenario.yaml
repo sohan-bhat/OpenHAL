@@ -1,102 +1,168 @@
-scenario: plant-waterer
+scenario: print-babysitter
 recorded_with: uv run openhal demo --record docs/demo/scenario.yaml
 protocol_version: '2026-10-24'
-device: plant-waterer
-file: plant-waterer.hal.yaml
-confirmed:
-  by: owner
-  at: '2026-10-24'
-limits:
-  water_duration:
-    min:
-      value: 1
-      unit: s
-    max:
-      value: 30
-      unit: s
-  water_runs:
-    count: 3
-    per:
-      value: 1
-      unit: h
+devices:
+- id: printer
+  name: Klipper 3D printer
+  driver: moonraker
+  hazard: medium
+  file: printer.hal.yaml
+  confirmed:
+    by: owner
+    at: '2026-10-24'
+  read:
+  - state
+  - extruder_temp
+  - bed_temp
+  - progress
+  limits:
+    extruder_target:
+      min:
+        value: 0.0
+        unit: degC
+      max:
+        value: 260.0
+        unit: degC
+      max_change_per_s:
+        value: 50.0
+        unit: degC/s
+    bed_target:
+      min:
+        value: 0.0
+        unit: degC
+      max:
+        value: 110.0
+        unit: degC
+      max_change_per_s:
+        value: 20.0
+        unit: degC/s
+  actions:
+    pause:
+      confirm: none
+    resume:
+      confirm: none
+    cancel:
+      confirm: confirm
+- id: printer-cam
+  name: Printer camera
+  driver: http
+  hazard: low
+  file: printer-cam.hal.yaml
+  confirmed:
+    by: owner
+    at: '2026-10-24'
+  read:
+  - frame
+  limits: {}
+  actions: {}
 exchanges:
-- id: too-long
+- id: first-layer
+  before: the agent checks the first layer
+  frame: examples/print-babysitter/frames/first-layer.jpg
   request:
-    method: hal/action
+    method: hal/read
     params:
-      device: plant-waterer
-      action: water
-      args:
-        duration:
-          value: 120
-          unit: s
+      device: printer-cam
+      channel: frame
+  result:
+    device: printer-cam
+    channel: frame
+    value:
+      mimeType: image/jpeg
+      bytes: 19409
+      width: 640
+      height: 480
+    unit: null
+    suspect: false
+- id: bed-warmer
+  before: a corner of the first layer is lifting
+  bed_target:
+    before:
+      value: 60.0
+      unit: degC
+    after:
+      value: 70.0
+      unit: degC
+  request:
+    method: hal/write
+    params:
+      device: printer
+      channel: bed_target
+      value: 70
+      unit: degC
+  result:
+    status: done
+    device: printer
+    channel: bed_target
+    value: 70.0
+    unit: degC
+- id: nozzle-too-hot
+  request:
+    method: hal/write
+    params:
+      device: printer
+      channel: extruder_target
+      value: 300
+      unit: degC
   error:
     code: -32010
-    message: water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)
+    message: extruder_target 300 degC exceeds the limit of 260 degC (printer.hal.yaml, confirmed by owner 2026-10-24)
     data:
       name: LIMIT_EXCEEDED
       kernelCode: above_max
-      kernelMessage: Blocked. The duration limit is 30 s (max). Asked for 120 s.
-      device: plant-waterer
-      action: water
-      argument: duration
+      kernelMessage: Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.
+      device: printer
+      channel: extruder_target
       requested:
-        value: 120
-        unit: s
+        value: 300
+        unit: degC
       limit:
-        value: 30
-        unit: s
-      file: plant-waterer.hal.yaml
+        value: 260
+        unit: degC
+      file: printer.hal.yaml
       confirmedBy: owner
       confirmedAt: '2026-10-24'
-- id: tank-empty
-  before: tank is empty
+- id: come-loose
+  before: later
+  frame: examples/print-babysitter/frames/come-loose.jpg
+  request:
+    method: hal/read
+    params:
+      device: printer-cam
+      channel: frame
+  result:
+    device: printer-cam
+    channel: frame
+    value:
+      mimeType: image/jpeg
+      bytes: 23567
+      width: 640
+      height: 480
+    unit: null
+    suspect: false
+- id: paused
+  before: the print has come loose
   request:
     method: hal/action
     params:
-      device: plant-waterer
-      action: water
-      args:
-        duration:
-          value: 20
-          unit: s
-  error:
-    code: -32012
-    message: pump can't run while tank is empty
-    data:
-      name: INTERLOCK_BLOCKED
-      kernelCode: interlock
-      kernelMessage: Blocked. Pump can't run while tank is empty. water needs tank == ok, which doesn't hold right now.
-      device: plant-waterer
-      action: water
-      interlock: pump can't run while tank is empty
-      file: plant-waterer.hal.yaml
-      confirmedBy: owner
-      confirmedAt: '2026-10-24'
-- id: watered
-  before: tank refilled
-  request:
-    method: hal/action
-    params:
-      device: plant-waterer
-      action: water
-      args:
-        duration:
-          value: 20
-          unit: s
+      device: printer
+      action: pause
   result:
     status: done
     result:
-      device: plant-waterer
-      action: water
-      args:
-        duration:
-          value: 20
-          unit: s
-  soil_moisture:
-    before:
-      value: 31
-      unit: '%'
-    after:
-      value: 46
-      unit: '%'
+      device: printer
+      action: pause
+      args: {}
+- id: cancel-waits
+  before: cancelling can't be undone
+  request:
+    method: hal/action
+    params:
+      device: printer
+      action: cancel
+  result:
+    status: pending
+    requestId: REQUEST_ID
+    expiresInS: 300.0
+  masked:
+  - requestId

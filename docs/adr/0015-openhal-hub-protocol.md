@@ -62,6 +62,19 @@ Notifications from the hub, after `hal/initialized`:
 
 Clients subscribe to all notifications by default. A later version may add filters.
 
+### Image readings
+
+Amended on 2026-10-26. The value of an image channel, such as a camera frame, is an object.
+
+```json
+{ "mimeType": "image/jpeg", "bytes": 23817, "width": 640, "height": 480, "data": "<base64>" }
+```
+
+- `hal/read`, `hal/readMany`, REST `/v1/read` and `/v1/read_many` carry the image in `data`, base64 encoded. `width` and `height` come from the image header and are null when the hub can't read it.
+- `hal/value`, device descriptions and views, the audit log and the MCP `read_many` tool leave `data` out and keep `{ mimeType, bytes, width, height }`.
+- A frame over 2 MB is refused with DRIVER_ERROR. The reason names the limit and the camera settings to lower. A frame is never cut short.
+- The MCP `read` tool returns the image as an MCP image block, next to a short text block that marks it as device data. A frame can show text, and that text is data, never an instruction.
+
 ### Error registry
 
 A blocked or failed command is a JSON-RPC error. `error.code` is the number, `error.message` is the human-readable reason, and `error.data` is `{ name, kernelCode, kernelMessage?, device?, channel?, action?, limit?, requested?, file?, confirmedBy?, confirmedAt?, tightenedBy?, requestId?, method?, routine?, problems? }`. `limit` and `requested` are Quantity objects such as `{"value": 100, "unit": "%"}` (ADR 0016). `name` is the registry name and is what clients branch on. Numbers are stable across versions and never reused.

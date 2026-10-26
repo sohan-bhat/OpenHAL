@@ -22,6 +22,7 @@ from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
 from typing import Any, Final
 
+from openhal import images
 from openhal.audit.log import AuditLog
 from openhal.drivers.base import Driver, Reading
 from openhal.kernel.checks import Block, check_rate, effective_limits, normalize
@@ -346,6 +347,21 @@ class Kernel:
                 detail=f"{type(exc).__name__}: {exc}",
             )
             raise
+        oversized = None
+        if isinstance(reading.value, bytes):
+            oversized = images.too_large(reading.value, f"{device_id}.{channel}")
+        if oversized:
+            self.audit.append(
+                "read",
+                principal.label,
+                device=device_id,
+                target=target,
+                status="failed",
+                code="driver_error",
+                detail=oversized,
+                value=_jsonable(reading.value),
+            )
+            raise _driver_error(oversized)
         self.note_reading(device_id, reading)
         self.audit.append(
             "read",
@@ -1438,7 +1454,7 @@ def _as_value(target: DeviceRuntime, channel: str, raw: Any) -> expressions.Valu
 
 def _jsonable(value: Any) -> Any:
     if isinstance(value, bytes):
-        return f"<{len(value)} bytes>"
+        return images.describe(value) if images.is_image(value) else f"<{len(value)} bytes>"
     if isinstance(value, dict):
         return {str(key): _jsonable(item) for key, item in value.items()}
     if isinstance(value, list | tuple):
