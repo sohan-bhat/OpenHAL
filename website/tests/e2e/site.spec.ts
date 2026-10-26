@@ -6,6 +6,7 @@ import { SCENARIO_PATH, scenarioFrom } from "../../src/lib/scenario-data.mjs";
 const scenarioFile = process.env.OPENHAL_SCENARIO ?? fileURLToPath(new URL(`../../../${SCENARIO_PATH}`, import.meta.url));
 const recorded = scenarioFrom(readFileSync(scenarioFile, "utf8"));
 const firstError = recorded.record.exchanges.find((exchange: any) => exchange.error)?.error as { code: number; message: string; data: { name: string } };
+const bed = recorded.record.exchanges.find((exchange: any) => exchange.request.method === "hal/write" && exchange.result) as any;
 
 function noErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -31,7 +32,7 @@ test.describe("overview", () => {
     await page.goto("/");
     const story = page.locator(".story-list");
     await expect(story).toContainText(firstError.data.name);
-    await expect(story).toContainText(firstError.message.slice(0, firstError.message.indexOf(" (")).replace(/(\d) /g, "$1 "));
+    await expect(story).toContainText(firstError.message.slice(0, firstError.message.indexOf(" (")).replace(/(\d) degC\b/g, "$1 °C").replace(/(\d) /g, "$1\u00a0"));
     await expect(page.locator("main .trace")).toHaveCount(0);
   });
 
@@ -104,10 +105,14 @@ test.describe("playground", () => {
     await send.click();
     const latest = page.locator(".exchanges > li").first();
     await expect(latest).toContainText(`error ${firstError.code} ${firstError.data.name}`);
-    await page.getByLabel("Simulated reading for tank").fill("ok");
-    await page.getByLabel("Simulated reading for tank").press("Enter");
-    await page.getByLabel("Value").fill("duration=20 s");
+    await page.getByLabel("Channel or action").selectOption(bed.request.params.channel);
+    await page.waitForTimeout(1000);
+    await page.getByLabel("Value").fill(`${bed.request.params.value} ${bed.request.params.unit}`);
     await send.click();
+    await expect(page.locator(".exchanges > li").first()).toContainText('"status": "done"');
+    await page.getByLabel("Channel or action").selectOption("pause");
+    await page.getByLabel("Value").fill("");
+    await page.getByRole("button", { name: "Send hal/action" }).click();
     await expect(page.locator(".exchanges > li").first()).toContainText('"status": "done"');
   });
 

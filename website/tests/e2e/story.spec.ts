@@ -11,7 +11,7 @@ const bed = writes.find((exchange) => exchange.result);
 const nozzle = writes.find((exchange) => exchange.error);
 const cancel = exchanges.find((exchange) => exchange.result?.status === "pending");
 const degrees = (exchange: any) => `${exchange.request.params.value} °C`;
-const nb = (text: string) => text.replace(/(\d) /g, "$1 ");
+const nb = (text: string) => text.replace(/(\d) /g, "$1\u00a0");
 const people = (text: string) => text.replace(/(\d) degC\b/g, "$1 °C");
 
 async function storyTime(page: Page, t: number): Promise<void> {

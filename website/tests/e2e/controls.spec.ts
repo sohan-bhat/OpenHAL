@@ -144,10 +144,10 @@ test.describe("catalog filters", () => {
 });
 
 test.describe("playground controls", () => {
-  test("the example picker loads the desk fan as the secondary example", async ({ page }) => {
+  test("the example picker opens on the printer and loads the desk fan too", async ({ page }) => {
     await page.goto("/spec/playground/");
     const picker = page.locator(".example select");
-    await expect(picker).toHaveValue(/plant-waterer/);
+    await expect(picker).toHaveValue(/printer/);
     await picker.selectOption({ label: "spec/examples/desk-fan-confirmed.hal.yaml" });
     await expect(page.getByLabel("Device file YAML")).toHaveValue(/fan_speed/);
     await expect(page.getByRole("button", { name: "Send hal/write" })).toBeEnabled();
@@ -160,7 +160,7 @@ test.describe("playground controls", () => {
     expect(options.length).toBeGreaterThan(1);
     const reader = options.find((option) => /read/i.test(option))!;
     await as.selectOption({ label: reader });
-    await page.getByLabel("Value").fill("duration=20 s");
+    await page.getByLabel("Value").fill("240 degC");
     await page.getByRole("button", { name: /^Send hal\// }).click();
     await expect(page.locator(".exchanges > li").first()).toContainText("error");
   });
@@ -193,7 +193,7 @@ test.describe("playground controls", () => {
   test("the device picker lists the devices in the file", async ({ page }) => {
     await page.goto("/spec/playground/");
     const device = page.locator(".request select").nth(1);
-    await expect(device).toHaveValue("plant-waterer");
+    await expect(device).toHaveValue("printer");
     expect(await device.locator("option").count()).toBeGreaterThan(0);
   });
 });
@@ -225,7 +225,7 @@ test.describe("site search", () => {
     await field.click();
     const dialog = page.getByRole("dialog", { name: "Search the site" });
     await expect(dialog).toBeVisible();
-    await page.locator("#site-search-input").fill("plant waterer");
+    await page.locator("#site-search-input").fill("print babysitter");
     await expect(dialog.locator("a.search-result").first()).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
@@ -246,7 +246,7 @@ test.describe("site search", () => {
     await expect(page.locator(".search-field")).toBeHidden();
     await page.getByRole("button", { name: "Search", exact: true }).click();
     await expect(page.getByRole("dialog", { name: "Search the site" })).toBeVisible();
-    await page.locator("#site-search-input").fill("plant waterer");
+    await page.locator("#site-search-input").fill("print babysitter");
     await expect(page.locator("a.search-result").first()).toBeVisible();
   });
 });
