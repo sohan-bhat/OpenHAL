@@ -34,7 +34,7 @@ def step(record: dict[str, Any], step_id: str) -> dict[str, Any]:
 
 def test_discovery_finds_the_simulated_board_as_an_openhal_firmware_device(record: dict[str, Any]) -> None:
     found = step(record, "discovery")
-    assert found["actor"] == "human:sohan"
+    assert found["actor"] == "human:owner"
     assert found["found"]["driver"] == "openhal-firmware"
     assert found["found"]["address"] == "sim:plant-waterer"
     assert found["found"]["identifiers"]["firmware.product"] == "plant-waterer"
@@ -64,7 +64,7 @@ def test_the_scripted_person_answers_every_question_and_confirms(record: dict[st
     saved = step(record, "save")
     assert saved["saved"] == "plant-waterer.hal.yaml"
     assert saved["writable"] is True
-    assert saved["confirmed"]["by"] == "sohan"
+    assert saved["confirmed"]["by"] == "owner"
     assert record["confirmed"] == saved["confirmed"]
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", saved["confirmed"]["at"])
 
@@ -93,8 +93,8 @@ def test_the_agent_reads_soil_moisture_and_drafts_a_disabled_routine(record: dic
 
 def test_the_person_enables_the_routine_and_it_waters_the_plant(record: dict[str, Any]) -> None:
     enabled = step(record, "person-enables")
-    assert enabled["actor"] == "human:sohan"
-    assert enabled["result"] == {"enabled": True, "enabled_by": "human:sohan"}
+    assert enabled["actor"] == "human:owner"
+    assert enabled["result"] == {"enabled": True, "enabled_by": "human:owner"}
     ran = step(record, "routine-runs")
     assert ran["status"] == "ok"
     assert ran["trigger"] == "when plant-waterer.soil_moisture < 40 %"
@@ -112,7 +112,7 @@ def test_a_watering_over_the_limit_never_reaches_the_board(record: dict[str, Any
     assert refused["result"]["code"] == "above_max"
     error = refused["result"]["error"]
     assert (error["code"], error["name"]) == (-32010, "LIMIT_EXCEEDED")
-    assert error["data"]["confirmedBy"] == "sohan"
+    assert error["data"]["confirmedBy"] == "owner"
     assert refused["board_received"] == []
 
 

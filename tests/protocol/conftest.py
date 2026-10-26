@@ -41,7 +41,7 @@ actions:
     confirm: confirm
 safe_state: { fan_speed: 0 }
 hazard: low
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }
 """
 
 HEATER = """
@@ -70,7 +70,7 @@ watchdog:
     - when: "power > 40 W"
       for: 60 s
 hazard: medium
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }
 """
 
 DRAFT = """
@@ -123,7 +123,7 @@ async def base_url(hub: Hub) -> AsyncIterator[str]:
 @pytest.fixture
 def tokens(hub: Hub) -> dict[str, str]:
     return {
-        "human": hub.tokens.create("sohan", "human")[0],
+        "human": hub.tokens.create("owner", "human")[0],
         "agent": hub.tokens.create("claude", "agent", "control_medium")[0],
         "reader": hub.tokens.create("viewer", "agent", "read")[0],
         "other": hub.tokens.create("other", "agent", "control_medium")[0],

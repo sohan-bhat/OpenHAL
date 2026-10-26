@@ -24,7 +24,7 @@ The reference Hub also serves a REST API under `/v1` for its dashboard and scrip
 
 ## One blocked and one granted action
 
-The Device File for `plant-waterer` limits one watering to 30 s. A human named sohan confirmed that limit on 2026-10-24. The tank is full. An agent Client asks to water for 120 s and then for 20 s.
+The Device File for `plant-waterer` limits one watering to 30 s. A human named owner confirmed that limit on 2026-10-24. The tank is full. An agent Client asks to water for 120 s and then for 20 s.
 
 ```mermaid
 sequenceDiagram
@@ -38,7 +38,7 @@ sequenceDiagram
     H->>K: evaluate Action(plant-waterer, water, duration 120 s)
     K-->>H: blocked, above_max
     H-->>C: error -32010 LIMIT_EXCEEDED
-    Note over C,H: water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)
+    Note over C,H: water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)
 
     C->>H: hal/action { device: plant-waterer, action: water, args: { duration: { value: 20, unit: s } } }
     H->>K: evaluate Action(plant-waterer, water, duration 20 s)

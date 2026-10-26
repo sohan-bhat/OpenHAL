@@ -169,7 +169,7 @@ describe("the registry and units", () => {
   });
 
   it("keeps file names, ids and dates together in reasons", () => {
-    const segments = keepTogether("water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)");
+    const segments = keepTogether("water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)");
     expect(segments.filter((segment) => segment.keep).map((segment) => segment.text)).toEqual([
       "plant-waterer.hal.yaml",
       "2026-10-24",

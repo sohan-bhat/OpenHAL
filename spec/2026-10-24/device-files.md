@@ -24,7 +24,7 @@ hazard: low
 notes: "The board turns the pump off on its own after 30 s."
 ```
 
-It loads read-only, because no human has confirmed its limits yet ([section 12](#12-limits-provenance)). Adding `confirmed: { by: sohan, at: 2026-10-24 }` lets it take commands. The full file for the real board is [examples/plant-waterer/plant-waterer.hal.yaml](../../examples/plant-waterer/plant-waterer.hal.yaml).
+It loads read-only, because no human has confirmed its limits yet ([section 12](#12-limits-provenance)). Adding `confirmed: { by: owner, at: 2026-10-24 }` lets it take commands. The full file for the real board is [examples/plant-waterer/plant-waterer.hal.yaml](../../examples/plant-waterer/plant-waterer.hal.yaml).
 
 ## 0. File format
 
@@ -255,7 +255,7 @@ hazard: high
 approvals:
   - routine: engrave-logo
     sha256: 9f2c...
-    by: sohan
+    by: owner
     at: 2026-10-24T14:02:00Z
     signature: 4b1d...
 ```
@@ -275,7 +275,7 @@ approvals:
 ```yaml
 provenance:
   source: sketch
-  by: openhal writer 0.1.0 with sohan
+  by: openhal writer 0.1.0 with owner
   at: 2026-10-24
   from: examples/plant-waterer/plant-waterer.ino
   verification:
@@ -290,7 +290,7 @@ provenance:
 ## 12. Limits provenance
 
 ```yaml
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }
 ```
 
 1. Every limit (min, max, step, rate, values, interlocks, watchdog rules, safe state, hazard) MUST be confirmed by a human before the Device takes commands.

@@ -21,7 +21,7 @@ from openhal.spec import loads
 from tests.kernel.conftest import AddDevice, FakeClock
 from tests.kernel.test_action_runs import WATERER, water
 
-PERSON = human("sohan")
+PERSON = human("owner")
 KEY = b"test-approval-key-32-bytes-long!"
 
 
@@ -89,7 +89,7 @@ safe_state:
   - action: halt
   - { speed: 10 }
 hazard: low
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }
 """
 
 

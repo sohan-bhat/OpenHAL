@@ -68,7 +68,7 @@ def test_file_confirm_binds_the_limits(isolated_env: Path, terminal: list[str]) 
     run("init")
     sample = isolated_env / "devices" / "plant-waterer.hal.yaml"
     terminal.append("confirm")
-    code, out = run("file", "confirm", str(sample), "--by", "sohan")
+    code, out = run("file", "confirm", str(sample), "--by", "owner")
     assert code == 0, out
     confirmed = load(sample)
     assert confirmed.writable

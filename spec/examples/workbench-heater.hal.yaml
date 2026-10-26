@@ -16,4 +16,4 @@ watchdog:
     - when: "power > 40 W"
       for: 15 min
 hazard: medium
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }

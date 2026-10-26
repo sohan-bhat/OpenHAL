@@ -57,7 +57,7 @@ def _subject(data: Data) -> str:
 
 
 def _provenance(data: Data) -> str:
-    """The device file and who confirmed its limits, as `(plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)`."""
+    """The device file and who confirmed its limits, as `(plant-waterer.hal.yaml, confirmed by owner 2026-10-24)`."""
     parts = []
     if data.get("file"):
         parts.append(str(data["file"]))

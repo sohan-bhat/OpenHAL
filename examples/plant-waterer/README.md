@@ -48,7 +48,7 @@ The pump's power goes through the relay contacts, never through the Arduino.
 |---|---|
 | `plant-waterer.ino` | The sketch. It is also the library's `PlantWaterer` example |
 | `plant-waterer.hal.yaml` | The device file for a real board. It loads read-only until you confirm it |
-| `mock/plant-waterer.hal.yaml` | The same device on the simulated board, confirmed by sohan on 2026-10-24. `openhal demo` and the tests use it |
+| `mock/plant-waterer.hal.yaml` | The same device on the simulated board, confirmed by owner on 2026-10-24. `openhal demo` and the tests use it |
 | `TEST-PLAN.md` | The hardware test, read-only steps first |
 
 ## Try it without hardware

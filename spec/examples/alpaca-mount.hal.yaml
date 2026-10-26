@@ -16,4 +16,4 @@ actions:
   park: {}
 safe_state: { action: park }
 hazard: medium
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }

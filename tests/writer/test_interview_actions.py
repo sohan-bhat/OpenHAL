@@ -43,7 +43,7 @@ def test_the_interview_gives_the_plant_waterer_its_hand_written_limits() -> None
                 "water.max_runs": "3 per 1 h",
             }
         ),
-        by="sohan",
+        by="owner",
     )
     file = from_data(confirmed)
     assert file.writable
@@ -66,13 +66,13 @@ def test_plain_requirements_and_none_clear_them() -> None:
     assert asked["water.max_runs"].suggested == "2 per 10 min"
     given = {question.id: str(question.suggested) for question in interview.questions(draft)}
     given.update({"device.hazard": "low", "water.require": "none", "water.max_runs": "none"})
-    confirmed = interview.apply(draft, given, by="sohan")
+    confirmed = interview.apply(draft, given, by="owner")
     assert "require" not in confirmed["actions"]["water"]
     assert "max_runs" not in confirmed["actions"]["water"]
 
 
 def test_no_safe_action_leaves_no_safe_state() -> None:
-    confirmed = interview.apply(waterer(), answers(**{"device.safe_action": "none"}), by="sohan")
+    confirmed = interview.apply(waterer(), answers(**{"device.safe_action": "none"}), by="owner")
     assert "safe_state" not in confirmed
 
 
@@ -88,4 +88,4 @@ def test_no_safe_action_leaves_no_safe_state() -> None:
 )
 def test_bad_action_answers_are_refused(question: str, answer: str, message: str) -> None:
     with pytest.raises(interview.AnswerError, match=message):
-        interview.apply(waterer(), answers(**{question: answer}), by="sohan")
+        interview.apply(waterer(), answers(**{question: answer}), by="owner")

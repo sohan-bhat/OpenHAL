@@ -24,7 +24,7 @@ write:
 interlocks:
   - if: "on == true"
     require: "nowhere.door == true"
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }
 """
 
 
@@ -50,11 +50,11 @@ async def test_devices_list_and_describe(transport: Connect, tokens: dict[str, s
         fan_speed = described["write"]["fan_speed"]
         assert (fan_speed["unit"], fan_speed["min"], fan_speed["max"], fan_speed["maxChangePerS"]) == ("%", 0, 100, 20)
         assert fan_speed["confirm"] == "none"
-        assert fan_speed["confirmed"] == {"by": "sohan", "at": "2026-10-24"}
+        assert fan_speed["confirmed"] == {"by": "owner", "at": "2026-10-24"}
         assert described["read"]["temperature"]["unit"] == "degC"
         assert described["actions"]["spin_test"]["confirm"] == "confirm"
         assert described["safeState"] == [{"fan_speed": 0}]
-        assert described["confirmed"] == {"by": "sohan", "at": "2026-10-24"}
+        assert described["confirmed"] == {"by": "owner", "at": "2026-10-24"}
         assert (described["unconfirmed"], described["file"]) == ([], "desk-fan.hal.yaml")
         heater = (await rpc.call("hal/devices/describe", {"device": "heater"}))["device"]
         assert heater["interlocks"][0]["if"] == "power > 0 W"
@@ -130,14 +130,14 @@ async def test_write_errors(transport: Connect, tokens: dict[str, str], hub: Hub
             {"value": 1, "unit": "%"},
         )
         assert step["message"] == (
-            "fan_speed 20.5 % is not a step of 1 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)"
+            "fan_speed 20.5 % is not a step of 1 % (desk-fan.hal.yaml, confirmed by owner 2026-10-24)"
         )
         enum = await write("heater", "mode", "turbo")
         assert (enum["data"]["name"], enum["data"]["kernelCode"]) == ("INVALID_VALUE", "bad_value")
         low = await write("desk-fan", "fan_speed", -5, "%")
         assert (
             low["message"]
-            == "fan_speed -5 % is below the limit of 0 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)"
+            == "fan_speed -5 % is below the limit of 0 % (desk-fan.hal.yaml, confirmed by owner 2026-10-24)"
         )
         assert (low["data"]["limit"], low["data"]["requested"]) == (
             {"value": 0, "unit": "%"},
@@ -351,7 +351,7 @@ async def test_action_and_confirmations(transport: Connect, tokens: dict[str, st
         clock.advance(1)
         second = (await bench.call("hal/action", spin | {"args": {"seconds": {"value": 6, "unit": "s"}}}))["requestId"]
         rejected = await person.call("hal/confirmations/reject", {"requestId": second, "reason": "not while it dries"})
-        assert (rejected["status"], rejected["decidedBy"]) == ("rejected", "human:sohan")
+        assert (rejected["status"], rejected["decidedBy"]) == ("rejected", "human:owner")
         closed = await person.error("hal/confirmations/approve", {"requestId": second})
         assert (closed["data"]["name"], closed["data"]["kernelCode"]) == ("REQUEST_CLOSED", "rejected")
         unknown = await person.error("hal/confirmations/reject", {"requestId": "feedface"})
@@ -366,7 +366,7 @@ async def test_action_and_confirmations(transport: Connect, tokens: dict[str, st
 
 async def test_routines_and_audit(transport: Connect, tokens: dict[str, str], hub: Hub) -> None:
     hub.routines.create(
-        human("sohan"),
+        human("owner"),
         "keep-cool",
         "yaml",
         "id: keep-cool\ntriggers:\n  - every: 30 s\nsteps:\n"

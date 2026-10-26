@@ -20,7 +20,7 @@ test("a blocked command shows LIMIT_EXCEEDED in the message log", async ({ page 
   const error = page.locator('li[data-kind="error"]').filter({ hasText: "LIMIT_EXCEEDED" }).last();
   await expect(error).toBeVisible();
   await expect(error).toContainText("error -32010 LIMIT_EXCEEDED");
-  await expect(error).toContainText("water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan");
+  await expect(error).toContainText("water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner");
   await expect(error).toContainText("bench-agent");
   const request = page.locator('li[data-kind="request"]').filter({ hasText: '"value": 120' }).last();
   await expect(request).toContainText("hal/action");

@@ -53,7 +53,7 @@ actions:
 safe_state: { fan_speed: 0 }
 hazard: low
 notes: Mounted on the desk.
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }
 """
 
 HEATER = """
@@ -83,7 +83,7 @@ interlocks:
     require: "desk-fan.fan_speed >= 30 %"
     message: "The heater needs the fan at 30 % or more."
 hazard: medium
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }
 """
 
 LASER = """
@@ -101,7 +101,7 @@ interlocks:
   - if: "power > 0 %"
     require: "door_closed == true"
 hazard: high
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }
 """
 
 DRAFT = """
@@ -150,7 +150,7 @@ async def fresh(hub: Hub) -> None:
 @pytest.fixture
 def tokens(hub: Hub) -> Tokens:
     return Tokens(
-        human=hub.tokens.create("sohan", "human")[0],
+        human=hub.tokens.create("owner", "human")[0],
         agent=hub.tokens.create("claude", "agent", "control_medium")[0],
         low=hub.tokens.create("helper", "agent", "control_low")[0],
         reader=hub.tokens.create("viewer", "agent", "read")[0],
@@ -232,7 +232,7 @@ def cli(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[CliHub]:
 
     hub = loop.run(build())
     issued = Tokens(
-        human=hub.tokens.create("sohan", "human")[0],
+        human=hub.tokens.create("owner", "human")[0],
         agent=hub.tokens.create("claude", "agent", "control_medium")[0],
         low=hub.tokens.create("helper", "agent", "control_low")[0],
         reader=hub.tokens.create("viewer", "agent", "read")[0],

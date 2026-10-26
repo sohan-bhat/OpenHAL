@@ -65,12 +65,12 @@ def test_limit_exceeded_reason_reads_like_the_adr() -> None:
             "requested": {"value": 150, "unit": "%"},
             "limit": {"value": 100, "unit": "%"},
             "file": "desk-fan.hal.yaml",
-            "confirmedBy": "sohan",
+            "confirmedBy": "owner",
             "confirmedAt": "2026-10-24",
         },
     )
     assert error.reason == (
-        "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)"
+        "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by owner 2026-10-24)"
     )
     body = error.to_object()
     assert body["code"] == -32010

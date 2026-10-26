@@ -99,7 +99,7 @@ async def test_two_humans_approving_one_request_run_it_once(kernel: Kernel, add:
     driver = await add(FAN)
     request_id = await queue(kernel)
     first, second = await asyncio.gather(
-        kernel.confirm(request_id, human("sohan")),
+        kernel.confirm(request_id, human("owner")),
         kernel.confirm(request_id, human("sam")),
         return_exceptions=True,
     )

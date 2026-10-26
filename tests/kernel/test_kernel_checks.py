@@ -319,7 +319,7 @@ async def test_routine_on_high_hazard_needs_signed_approval(kernel: Kernel, add:
     assert (await run(kernel, Write(device="laser", channel="power", value="5 %"), worker)).code == "needs_confirmation"
     with pytest.raises(PermissionError):
         kernel.approve_routine(CLAUDE, "laser", "engrave", sha)
-    approval = kernel.approve_routine(human("sohan"), "laser", "engrave", sha)
+    approval = kernel.approve_routine(human("owner"), "laser", "engrave", sha)
     runtime = kernel.devices["laser"]
     data = runtime.file.model_dump(by_alias=True, exclude={"extensions"})
     data["approvals"] = [approval.model_dump()]

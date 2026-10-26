@@ -43,7 +43,7 @@ describe("buildTrace", () => {
     expect(error.head).toBe("error -32010 LIMIT_EXCEEDED");
     expect(error.errorName).toBe("LIMIT_EXCEEDED");
     expect(error.reason).toBe(
-      "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
+      "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)",
     );
     expect(error.method).toBe("hal/action");
     expect(error.devices).toEqual(["plant-waterer"]);
@@ -144,7 +144,7 @@ describe("formatting", () => {
       [
         '-> hal/action   { "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 120, "unit": "s" } } }',
         "<- error -32010 LIMIT_EXCEEDED",
-        "               water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
+        "               water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)",
         "",
         '-> hal/action   { "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 20, "unit": "s" } } }',
         "<- error -32012 INTERLOCK_BLOCKED",
@@ -173,7 +173,7 @@ describe("formatting", () => {
 
   it("reads principals as labels or objects", () => {
     expect(principalInfo("agent:bench-agent")).toEqual({ kind: "agent", name: "bench-agent", label: "agent:bench-agent" });
-    expect(principalInfo({ kind: "human", name: "sohan" }).label).toBe("human:sohan");
+    expect(principalInfo({ kind: "human", name: "owner" }).label).toBe("human:owner");
     expect(principalInfo(null).kind).toBe("unknown");
   });
 

@@ -23,7 +23,7 @@ id: desk-lamp
 connect: { mock: lamp }
 write:
   on: { type: bool }
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }
 """
 
 
@@ -56,7 +56,7 @@ async def test_blocks_from_rest_reach_protocol_clients(
         assert response.json()["code"] == "above_max"
         blocked = await rpc.note("hal/blocked", device="desk-fan")
         assert blocked["params"]["error"]["message"] == (
-            "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)"
+            "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by owner 2026-10-24)"
         )
 
 
@@ -166,7 +166,7 @@ def test_the_ring_buffer_keeps_the_last_2000() -> None:
 
 async def test_a_cookie_session_can_initialize(hub: Hub) -> None:
     dispatcher = Dispatcher(hub)
-    session = dispatcher.open(fallback=human("sohan"))
+    session = dispatcher.open(fallback=human("owner"))
     params = {"protocolVersion": "2026-10-24", "clientInfo": {"name": "inspector", "version": "1"}}
     response = await dispatcher.handle(
         session, {"jsonrpc": "2.0", "id": 1, "method": "hal/initialize", "params": params}

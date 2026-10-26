@@ -22,8 +22,8 @@ hazard: low
 notes: "Fan is next to the plant. The firmware also falls to 0 % if the hub stops sending heartbeats."
 provenance:
   source: sketch
-  by: openhal writer with sohan
+  by: openhal writer with owner
   at: 2026-10-24
   from: firmware/arduino/OpenHAL/examples/DeskFan/DeskFan.ino
   verification: { status: unverified }
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }

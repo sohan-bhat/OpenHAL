@@ -15,7 +15,7 @@ EXPECTED_ERROR = {
     "id": 3,
     "error": {
         "code": -32010,
-        "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+        "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by owner 2026-10-24)",
         "data": {
             "name": "LIMIT_EXCEEDED",
             "kernelCode": "above_max",
@@ -25,7 +25,7 @@ EXPECTED_ERROR = {
             "requested": {"value": 150, "unit": "%"},
             "limit": {"value": 100, "unit": "%"},
             "file": "desk-fan.hal.yaml",
-            "confirmedBy": "sohan",
+            "confirmedBy": "owner",
             "confirmedAt": "2026-10-24",
         },
     },

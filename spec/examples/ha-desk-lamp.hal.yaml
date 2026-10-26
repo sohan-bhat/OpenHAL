@@ -10,4 +10,4 @@ write:
 safe_state: { power: false }
 hazard: low
 provenance: { source: bridge, by: openhal homeassistant describe, at: 2026-10-24 }
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }

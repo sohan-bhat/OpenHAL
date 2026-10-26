@@ -30,4 +30,4 @@ provenance:
   source: driver-describe
   by: openhal scpi describe
   at: 2026-10-24
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }

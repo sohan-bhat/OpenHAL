@@ -31,8 +31,8 @@ hazard: high
 approvals:
   - routine: engrave-logo
     sha256: 9f2c3a4b5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f701
-    by: sohan
+    by: owner
     at: 2026-10-24T14:02:00Z
     signature: 4b1d2c3e4f5061728394a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8f90
 notes: "Wear the supplied goggles. Never leave the laser running unattended."
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }

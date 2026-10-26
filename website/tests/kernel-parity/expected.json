@@ -31,7 +31,7 @@
           "unit": "%",
           "error": {
             "code": -32010,
-            "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "above_max",
@@ -47,7 +47,7 @@
                 "unit": "%"
               },
               "file": "desk-fan.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -69,7 +69,7 @@
           "unit": "%",
           "error": {
             "code": -32010,
-            "message": "fan_speed -5 % is below the limit of 0 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "fan_speed -5 % is below the limit of 0 % (desk-fan.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "below_min",
@@ -85,7 +85,7 @@
                 "unit": "%"
               },
               "file": "desk-fan.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -107,7 +107,7 @@
           "unit": "%",
           "error": {
             "code": -32016,
-            "message": "fan_speed 20.5 % is not a step of 1 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "fan_speed 20.5 % is not a step of 1 % (desk-fan.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "INVALID_VALUE",
               "kernelCode": "bad_step",
@@ -123,7 +123,7 @@
                 "unit": "%"
               },
               "file": "desk-fan.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -145,7 +145,7 @@
           "unit": "%",
           "error": {
             "code": -32023,
-            "message": "fan_speed 40 needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "fan_speed 40 needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "UNIT_INVALID",
               "kernelCode": "bad_unit",
@@ -154,7 +154,7 @@
               "channel": "fan_speed",
               "requested": 40,
               "file": "desk-fan.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -176,7 +176,7 @@
           "unit": "%",
           "error": {
             "code": -32023,
-            "message": "fan_speed needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "fan_speed needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "UNIT_INVALID",
               "kernelCode": "bad_unit",
@@ -184,7 +184,7 @@
               "device": "desk-fan",
               "channel": "fan_speed",
               "file": "desk-fan.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -206,7 +206,7 @@
           "unit": "%",
           "error": {
             "code": -32023,
-            "message": "fan_speed needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "fan_speed needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "UNIT_INVALID",
               "kernelCode": "bad_unit",
@@ -214,7 +214,7 @@
               "device": "desk-fan",
               "channel": "fan_speed",
               "file": "desk-fan.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -249,7 +249,7 @@
                 "unit": "%"
               },
               "file": "desk-fan.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -271,7 +271,7 @@
           "unit": "%",
           "error": {
             "code": -32023,
-            "message": "fan_speed true needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "fan_speed true needs a finite number with a unit it can convert (desk-fan.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "UNIT_INVALID",
               "kernelCode": "bad_unit",
@@ -280,7 +280,7 @@
               "channel": "fan_speed",
               "requested": true,
               "file": "desk-fan.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -302,7 +302,7 @@
           "unit": "%",
           "error": {
             "code": -32011,
-            "message": "fan_speed 60 % changes faster than 20 %/s allows right now (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "fan_speed 60 % changes faster than 20 %/s allows right now (desk-fan.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "RATE_LIMITED",
               "kernelCode": "rate_limited",
@@ -318,7 +318,7 @@
                 "unit": "%"
               },
               "file": "desk-fan.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -353,7 +353,7 @@
           "unit": "%",
           "error": {
             "code": -32011,
-            "message": "fan_speed 40 % changes faster than 20 %/s allows right now (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "fan_speed 40 % changes faster than 20 %/s allows right now (desk-fan.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "RATE_LIMITED",
               "kernelCode": "rate_limited",
@@ -369,7 +369,7 @@
                 "unit": "%"
               },
               "file": "desk-fan.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -391,7 +391,7 @@
           "unit": "%",
           "error": {
             "code": -32011,
-            "message": "fan_speed 10 % changes faster than allowed right now (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "fan_speed 10 % changes faster than allowed right now (desk-fan.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "RATE_LIMITED",
               "kernelCode": "rate_limited",
@@ -403,7 +403,7 @@
                 "unit": "%"
               },
               "file": "desk-fan.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -893,7 +893,7 @@
               },
               "interlock": "The heater needs the desk fan at 30 % or more.",
               "file": "curing-heater.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -1006,7 +1006,7 @@
               },
               "interlock": "The heater needs the desk fan at 30 % or more.",
               "file": "desk-fan.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -1041,7 +1041,7 @@
               },
               "interlock": "The heater needs the desk fan at 30 % or more.",
               "file": "desk-fan.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -1158,7 +1158,7 @@
           "unit": "W",
           "error": {
             "code": -32017,
-            "message": "A watchdog budget on curing-heater is used up until it resets (curing-heater.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "A watchdog budget on curing-heater is used up until it resets (curing-heater.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "WATCHDOG_TRIPPED",
               "kernelCode": "duration_exceeded",
@@ -1170,7 +1170,7 @@
                 "unit": "W"
               },
               "file": "curing-heater.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -1218,7 +1218,7 @@
               "requested": true,
               "interlock": "ch1_current <= 1 A is unknown right now",
               "file": "bench-psu.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -1250,7 +1250,7 @@
               "requested": true,
               "interlock": "Channel 1 is limited to 1 A on this bench.",
               "file": "bench-psu.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -1272,7 +1272,7 @@
           "unit": null,
           "error": {
             "code": -32016,
-            "message": "ch1_output on is not a value it accepts (bench-psu.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "ch1_output on is not a value it accepts (bench-psu.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "INVALID_VALUE",
               "kernelCode": "bad_value",
@@ -1281,7 +1281,7 @@
               "channel": "ch1_output",
               "requested": "on",
               "file": "bench-psu.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -1357,7 +1357,7 @@
           "unit": null,
           "error": {
             "code": -32016,
-            "message": "set_ch1 volts 5.005 V is not a step of 0.01 V (bench-psu.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "set_ch1 volts 5.005 V is not a step of 0.01 V (bench-psu.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "INVALID_VALUE",
               "kernelCode": "bad_step",
@@ -1374,7 +1374,7 @@
                 "unit": "V"
               },
               "file": "bench-psu.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -1853,7 +1853,7 @@
               },
               "interlock": "The enclosure door must be closed before the laser fires.",
               "file": "laser.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -1922,7 +1922,7 @@
           "unit": "%",
           "error": {
             "code": -32010,
-            "message": "laser_power 45 % exceeds the limit of 30 % (laser.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "laser_power 45 % exceeds the limit of 30 % (laser.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "above_max",
@@ -1938,7 +1938,7 @@
                 "unit": "%"
               },
               "file": "laser.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -1960,7 +1960,7 @@
           "unit": null,
           "error": {
             "code": -32016,
-            "message": "run_job file ../etc/passwd is not a value it accepts (laser.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "run_job file ../etc/passwd is not a value it accepts (laser.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "INVALID_VALUE",
               "kernelCode": "bad_value",
@@ -1970,7 +1970,7 @@
               "argument": "file",
               "requested": "../etc/passwd",
               "file": "laser.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -1992,7 +1992,7 @@
           "unit": null,
           "error": {
             "code": -32016,
-            "message": "run_job file aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.nc is not a value it accepts (laser.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "run_job file aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.nc is not a value it accepts (laser.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "INVALID_VALUE",
               "kernelCode": "bad_value",
@@ -2002,7 +2002,7 @@
               "argument": "file",
               "requested": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.nc",
               "file": "laser.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2024,7 +2024,7 @@
           "unit": null,
           "error": {
             "code": -32012,
-            "message": "run_job on laser is held back by an interlock or requirement that doesn't hold (laser.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "run_job on laser is held back by an interlock or requirement that doesn't hold (laser.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "INTERLOCK_BLOCKED",
               "kernelCode": "interlock",
@@ -2032,7 +2032,7 @@
               "device": "laser",
               "action": "run_job",
               "file": "laser.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2063,7 +2063,7 @@
               "action": "run_job",
               "interlock": "run_job needs state == Idle, which is unknown",
               "file": "laser.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2112,7 +2112,7 @@
           "unit": null,
           "error": {
             "code": -32016,
-            "message": "home axes w is not a value it accepts (voron.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "home axes w is not a value it accepts (voron.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "INVALID_VALUE",
               "kernelCode": "bad_value",
@@ -2122,7 +2122,7 @@
               "argument": "axes",
               "requested": "w",
               "file": "voron.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2217,7 +2217,7 @@
           "unit": "degC",
           "error": {
             "code": -32010,
-            "message": "extruder_target 315.556 degC exceeds the limit of 260 degC (voron.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "extruder_target 315.556 degC exceeds the limit of 260 degC (voron.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "above_max",
@@ -2233,7 +2233,7 @@
                 "unit": "degC"
               },
               "file": "voron.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2268,7 +2268,7 @@
               },
               "interlock": "Clear the printer error before heating.",
               "file": "voron.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2290,7 +2290,7 @@
           "unit": "degC",
           "error": {
             "code": -32011,
-            "message": "bed_target 100 degC changes faster than 20 degC/s allows right now (voron.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "bed_target 100 degC changes faster than 20 degC/s allows right now (voron.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "RATE_LIMITED",
               "kernelCode": "rate_limited",
@@ -2306,7 +2306,7 @@
                 "unit": "degC"
               },
               "file": "voron.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2328,7 +2328,7 @@
           "unit": null,
           "error": {
             "code": -32012,
-            "message": "pause on voron is held back by an interlock or requirement that doesn't hold (voron.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "pause on voron is held back by an interlock or requirement that doesn't hold (voron.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "INTERLOCK_BLOCKED",
               "kernelCode": "interlock",
@@ -2336,7 +2336,7 @@
               "device": "voron",
               "action": "pause",
               "file": "voron.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2358,7 +2358,7 @@
           "unit": null,
           "error": {
             "code": -32010,
-            "message": "slew_to ra 25 hour exceeds the limit of 24 hour (mount.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "slew_to ra 25 hour exceeds the limit of 24 hour (mount.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "above_max",
@@ -2375,7 +2375,7 @@
                 "unit": "hour"
               },
               "file": "mount.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2450,7 +2450,7 @@
           "unit": null,
           "error": {
             "code": -32016,
-            "message": "pump true is not a value it accepts (plant.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "pump true is not a value it accepts (plant.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "INVALID_VALUE",
               "kernelCode": "bad_value",
@@ -2459,7 +2459,7 @@
               "channel": "pump",
               "requested": "true",
               "file": "plant.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2520,7 +2520,7 @@
           "unit": null,
           "error": {
             "code": -32017,
-            "message": "A watchdog budget on plant is used up until it resets (plant.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "A watchdog budget on plant is used up until it resets (plant.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "WATCHDOG_TRIPPED",
               "kernelCode": "duration_exceeded",
@@ -2529,7 +2529,7 @@
               "channel": "pump",
               "requested": true,
               "file": "plant.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2551,7 +2551,7 @@
           "unit": "%",
           "error": {
             "code": -32016,
-            "message": "brightness 50.5 % is not a step of 1 % (desk-lamp.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "brightness 50.5 % is not a step of 1 % (desk-lamp.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "INVALID_VALUE",
               "kernelCode": "bad_step",
@@ -2567,7 +2567,7 @@
                 "unit": "%"
               },
               "file": "desk-lamp.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2589,7 +2589,7 @@
           "unit": "%",
           "error": {
             "code": -32010,
-            "message": "brightness 0 % is below the limit of 1 % (desk-lamp.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "brightness 0 % is below the limit of 1 % (desk-lamp.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "below_min",
@@ -2605,7 +2605,7 @@
                 "unit": "%"
               },
               "file": "desk-lamp.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2754,7 +2754,7 @@
           "unit": "%",
           "error": {
             "code": -32012,
-            "message": "fan_speed 60 % is held back by an interlock or requirement that doesn't hold (hot-fan.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "fan_speed 60 % is held back by an interlock or requirement that doesn't hold (hot-fan.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "INTERLOCK_BLOCKED",
               "kernelCode": "interlock",
@@ -2766,7 +2766,7 @@
                 "unit": "%"
               },
               "file": "hot-fan.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2804,7 +2804,7 @@
           "unit": null,
           "error": {
             "code": -32010,
-            "message": "water duration 120 s exceeds the limit of 30 s (parity-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "water duration 120 s exceeds the limit of 30 s (parity-waterer.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "above_max",
@@ -2821,7 +2821,7 @@
                 "unit": "s"
               },
               "file": "parity-waterer.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2843,7 +2843,7 @@
           "unit": null,
           "error": {
             "code": -32010,
-            "message": "water duration 0.5 s is below the limit of 1 s (parity-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "water duration 0.5 s is below the limit of 1 s (parity-waterer.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "below_min",
@@ -2860,7 +2860,7 @@
                 "unit": "s"
               },
               "file": "parity-waterer.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2891,7 +2891,7 @@
               "action": "water",
               "interlock": "pump can't run while tank is empty",
               "file": "parity-waterer.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -2922,7 +2922,7 @@
               "action": "water",
               "interlock": "water needs tank == ok, which is unknown",
               "file": "parity-waterer.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -3017,7 +3017,7 @@
           "unit": null,
           "error": {
             "code": -32011,
-            "message": "water may run at most 3 times per 1 h (parity-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "water may run at most 3 times per 1 h (parity-waterer.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "RATE_LIMITED",
               "kernelCode": "rate_limited",
@@ -3030,7 +3030,7 @@
                 "unit": "h"
               },
               "file": "parity-waterer.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -3139,7 +3139,7 @@
                 "unit": "s"
               },
               "file": "parity-waterer.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -3161,7 +3161,7 @@
           "unit": null,
           "error": {
             "code": -32023,
-            "message": "water duration needs a finite number with a unit it can convert (parity-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "water duration needs a finite number with a unit it can convert (parity-waterer.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "UNIT_INVALID",
               "kernelCode": "bad_unit",
@@ -3170,7 +3170,7 @@
               "action": "water",
               "argument": "duration",
               "file": "parity-waterer.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -3192,7 +3192,7 @@
           "unit": null,
           "error": {
             "code": -32010,
-            "message": "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
+            "message": "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)",
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "above_max",
@@ -3209,7 +3209,7 @@
                 "unit": "s"
               },
               "file": "plant-waterer.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -3240,7 +3240,7 @@
               "action": "water",
               "interlock": "pump can't run while tank is empty",
               "file": "plant-waterer.hal.yaml",
-              "confirmedBy": "sohan",
+              "confirmedBy": "owner",
               "confirmedAt": "2026-10-24"
             }
           }
@@ -3298,7 +3298,7 @@
       "                \"args\": { \"duration\": { \"value\": 120, \"unit\": \"s\" } } }",
       "← error -32010 LIMIT_EXCEEDED",
       "  water duration 120 s exceeds the limit of 30 s",
-      "  (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
+      "  (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)",
       "",
       "# tank is empty",
       "→ hal/action  { \"device\": \"plant-waterer\", \"action\": \"water\",",
