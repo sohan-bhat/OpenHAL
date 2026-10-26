@@ -2,6 +2,7 @@
 import { getCollection, render } from "astro:content";
 import DocShell from "../../layouts/DocShell.astro";
 import { type Driver, TIER_NAMES, conformanceOf, drivers, isReference, statusClass, statusWord } from "../../lib/catalog";
+import { DEFAULT_BRANCH, REPOSITORY_URL } from "../../config/site";
 import { driversSidebar } from "../../lib/drivers-nav";
 
 export async function getStaticPaths() {
@@ -15,6 +16,8 @@ export async function getStaticPaths() {
 const { driver, entry } = Astro.props as { driver: Driver; entry: Awaited<ReturnType<typeof getCollection<"docs">>>[number] | null };
 const rendered = entry ? await render(entry) : null;
 const Content = rendered?.Content;
+const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+const newDocUrl = `${REPOSITORY_URL}/new/${DEFAULT_BRANCH}/docs/drivers?filename=${driver.name}.md`;
 const rows: Array<[string, string]> = [
   ["Tier", TIER_NAMES[driver.tier] ?? String(driver.tier)],
   ["Protocol", driver.protocols.join(", ")],
@@ -59,11 +62,20 @@ const rows: Array<[string, string]> = [
   {
     driver.estimate && (
       <p class="muted">
-        <strong>Estimated reach.</strong> {driver.estimate.devices}. {driver.estimate.reasoning}
+        <strong>Estimated reach.</strong> {sentence(driver.estimate.devices)}. {driver.estimate.reasoning}
       </p>
     )
   }
-  {Content ? <Content /> : <p class="muted">This driver has no documentation page yet.</p>}
+  {
+    Content ? (
+      <Content />
+    ) : (
+      <p class="muted">
+        This driver has no documentation page yet. <a href={newDocUrl} rel="noopener">Add <code>docs/drivers/{driver.name}.md</code></a> as the{" "}
+        <a href="/docs/writing-a-driver/#docs-page">driver contract</a> describes.
+      </p>
+    )
+  }
 </DocShell>
 
 <style>
