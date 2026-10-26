@@ -22,9 +22,9 @@ Because one Hub sees every command, rate limits, interlocks across Devices and w
 
 The reference Hub also serves a REST API under `/v1` for its dashboard and scripts. It calls the same Hub functions as the protocol, so behavior is identical. The REST API is not part of this specification.
 
-## One blocked and one granted action
+## One blocked and one granted command
 
-The Device File for `plant-waterer` limits one watering to 30 s. A human named owner confirmed that limit on 2026-10-24. The tank is full. An agent Client asks to water for 120 s and then for 20 s.
+The Device File for `printer` limits `extruder_target` to 260 degC and `bed_target` to 110 degC. A human named owner confirmed those limits on 2026-10-24. A print is running with the bed at 60 degC. An agent Client asks for a 300 degC nozzle and then for a 70 degC bed.
 
 ```mermaid
 sequenceDiagram
@@ -34,23 +34,22 @@ sequenceDiagram
     participant D as Driver
     participant V as Device
 
-    C->>H: hal/action { device: plant-waterer, action: water, args: { duration: { value: 120, unit: s } } }
-    H->>K: evaluate Action(plant-waterer, water, duration 120 s)
+    C->>H: hal/write { device: printer, channel: extruder_target, value: 300, unit: degC }
+    H->>K: evaluate Write(printer, extruder_target, 300 degC)
     K-->>H: blocked, above_max
     H-->>C: error -32010 LIMIT_EXCEEDED
-    Note over C,H: water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)
+    Note over C,H: extruder_target 300 degC exceeds the limit of 260 degC (printer.hal.yaml, confirmed by owner 2026-10-24)
 
-    C->>H: hal/action { device: plant-waterer, action: water, args: { duration: { value: 20, unit: s } } }
-    H->>K: evaluate Action(plant-waterer, water, duration 20 s)
+    C->>H: hal/write { device: printer, channel: bed_target, value: 70, unit: degC }
+    H->>K: evaluate Write(printer, bed_target, 70 degC)
     K->>K: every check passes, issue a single-use Grant
-    K->>D: action(water, duration 20 s, Grant)
+    K->>D: write(bed_target, 70 degC, Grant)
     D->>D: consume the Grant
-    D->>V: run the pump for 20 s
+    D->>V: set the bed heater to 70 degC
     V-->>D: ok
     D-->>K: done
     K-->>H: done
-    H-->>C: result { status: done, result: { device: plant-waterer, action: water, args: { duration: { value: 20, unit: s } } } }
-    H--)C: notification hal/value { device: plant-waterer, channel: soil_moisture, value: 46, unit: "%" }
+    H-->>C: result { status: done, device: printer, channel: bed_target, value: 70, unit: degC }
 ```
 
 The blocked command never reaches the Driver. The granted command reaches it exactly once, and the Grant cannot be used again.

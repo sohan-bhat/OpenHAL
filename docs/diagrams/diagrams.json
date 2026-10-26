@@ -10,7 +10,7 @@
     "name": "architecture-command",
     "source": "docs/ARCHITECTURE.md",
     "index": 1,
-    "mermaid": "0743a2000e62f450",
+    "mermaid": "3bd0d542aa9a07fa",
     "title": "The life of a command"
   },
   {
@@ -52,7 +52,7 @@
     "name": "spec-exchange",
     "source": "spec/2026-10-24/architecture.md",
     "index": 0,
-    "mermaid": "6147a51065a066cb",
-    "title": "One blocked and one granted action"
+    "mermaid": "7544133dc68eba4c",
+    "title": "One blocked and one granted command"
   }
 ]

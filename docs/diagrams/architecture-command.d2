@@ -11,7 +11,7 @@ q: "Confirmation\nqueue" {class: actor}
 d: "Driver" {class: actor}
 l: "Audit log" {class: actor}
 
-a -> m: "action water\n20 s" {class: msg}
+a -> m: "action pause" {class: msg}
 m -> h: "POST /v1/action\nagent token" {class: msg}
 h -> k: "evaluate" {class: msg}
 k -> k: "units, state,\nrange, step,\nenum" {class: msg}
