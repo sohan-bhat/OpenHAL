@@ -56,9 +56,15 @@ for (const scheme of ["light", "dark"] as const) {
       for (const view of VIEWS) {
         await page.goto(`/${view}`);
         await expect(page.locator("main h1, main h2").first()).toBeVisible();
-        if (view === "#/devices/printer-cam" || view === "#/confirmations") await expect(page.getByRole("main").getByRole("img", { name: /^Latest frame/ }).first()).toBeVisible();
+        if (view === "#/devices/printer-cam") await expect(page.getByRole("main").getByRole("img", { name: /^Demo frame/ })).toBeVisible();
         problems.push(...(await violations(page, view)));
       }
+
+      await page.goto("/#/confirmations");
+      const cancel = page.getByRole("main").getByRole("listitem").filter({ hasText: "asks to run cancel" }).first();
+      await cancel.getByRole("combobox", { name: "Show a camera" }).selectOption("printer-cam/frame");
+      await expect(cancel.getByRole("img", { name: /^Demo frame from Printer camera/ })).toBeVisible();
+      problems.push(...(await violations(page, "cancel with its camera")));
 
       await page.goto("/#/devices/printer");
       await page.locator('li[data-kind="result"]').filter({ hasText: "printer-cam" }).last().getByRole("button", { name: "Show the whole message" }).click();

@@ -50,10 +50,15 @@ test("the cancel request says what the agent asked and why it waits, with the ca
   await expect(request).toContainText("Cancel the print. It can't be resumed afterwards.");
   await expect(request).toContainText("printer.hal.yaml asks a person to confirm cancel each time.");
   await expect(request).toContainText(/Expires in\s+\d+ s/);
-  const frame = request.getByRole("img", { name: /^Latest frame from Printer camera, frame/ });
+  await expect(request.getByRole("img")).toHaveCount(0);
+  await expect(request).toContainText("Pick the camera that watches Klipper 3D printer.");
+  await request.getByRole("combobox", { name: "Show a camera" }).selectOption("printer-cam/frame");
+  const frame = request.getByRole("img", { name: /^Demo frame from Printer camera, frame/ });
   await expect(frame).toBeVisible();
-  await expect(request).toContainText("23567 bytes");
+  await expect(request).toContainText("24 KB");
   await expect(request.locator("a img")).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("main").getByRole("listitem").filter({ hasText: requestId }).getByRole("img", { name: /^Demo frame from Printer camera/ })).toBeVisible();
   await expect(request.getByRole("button", { name: "Approve and run cancel" })).toBeVisible();
   await expect(request.getByRole("button", { name: "Reject" })).toBeVisible();
 });

@@ -7,7 +7,7 @@
   import TraceArrow from "../components/TraceArrow.svelte";
   import { api } from "../lib/api";
   import { askedAgo, askOf } from "../lib/asks";
-  import { camerasFor, describeDecision, type Camera } from "../lib/devices";
+  import { camerasFor, describeDecision, isSimulated, type Camera } from "../lib/devices";
   import { latestImage } from "../lib/frames.svelte";
   import { inspector } from "../lib/state.svelte";
   import { decisionStatus } from "../lib/status";
@@ -52,9 +52,31 @@
     if (pending.length && inspector.devices.length) void inspector.loadViews();
   });
 
-  function cameraFor(request: ConfirmationRequest, cameras: Camera[]): Camera | undefined {
-    const key = chosen[request.id];
-    return cameras.find((camera) => `${camera.device}/${camera.channel}` === key) ?? cameras[0];
+  const STORE = "openhal.inspector.camera.";
+  const cameraKey = (camera: Camera) => `${camera.device}/${camera.channel}`;
+
+  function stored(device: string): string | null {
+    try {
+      return localStorage.getItem(STORE + device);
+    } catch {
+      return null;
+    }
+  }
+
+  function keep(device: string, key: string): void {
+    chosen = { ...chosen, [device]: key };
+    try {
+      if (key) localStorage.setItem(STORE + device, key);
+      else localStorage.removeItem(STORE + device);
+    } catch {
+      return;
+    }
+  }
+
+  function cameraFor(device: string, cameras: Camera[]): Camera | undefined {
+    const picked = device in chosen ? chosen[device] : stored(device);
+    if (picked !== null && picked !== undefined) return cameras.find((camera) => cameraKey(camera) === picked);
+    return cameras.find((camera) => camera.device === device);
   }
 
   function latestOf(camera: Camera) {
@@ -122,9 +144,11 @@
         {#each pending as request (request.id)}
           {@const dry = describeDecision(request.dry_run)}
           {@const ask = askOf(request, inspector.views[request.command.device])}
-          {@const cameras = camerasFor(request.command.device, inspector.views)}
-          {@const camera = cameraFor(request, cameras)}
-          <li class="request appear" class:with-camera={!!camera} aria-labelledby="req-{request.id}">
+          {@const device = request.command.device}
+          {@const cameras = camerasFor(device, inspector.views)}
+          {@const camera = cameraFor(device, cameras)}
+          {@const pickable = cameras.length > 1 || !cameras.some((option) => option.device === device)}
+          <li class="request appear" class:with-camera={cameras.length > 0} aria-labelledby="req-{request.id}">
             <div class="asked agent-rule">
               <h3 id="req-{request.id}" class="ask">
                 {ask.actor} <span class="mono nobreak">{ask.name}</span> asks to {ask.verb} <span class="mono nobreak">{ask.target}</span>{#if ask.value}{ask.verb === "set" ? " to " : " with "}<span class="mono nobreak">{ask.value}</span>{/if} on {ask.device}.
@@ -162,35 +186,43 @@
                 {/if}
               </dl>
             </div>
-            {#if camera}
+            {#snippet picker()}
+              <label class="field pick">
+                <span>{camera ? "Camera" : "Show a camera"}</span>
+                <select value={camera ? cameraKey(camera) : ""} onchange={(event) => keep(device, event.currentTarget.value)}>
+                  <option value="">None</option>
+                  {#each cameras as option (cameraKey(option))}
+                    <option value={cameraKey(option)}>{option.name}, {option.channel}</option>
+                  {/each}
+                </select>
+              </label>
+            {/snippet}
+            {#if cameras.length}
               <div class="camera">
-                <CameraFrame
-                  device={camera.device}
-                  channel={camera.channel}
-                  label="{camera.name}, {camera.channel}"
-                  latest={latestOf(camera)}
-                  width={480}
-                >
-                  {#snippet heading()}
-                    <p class="camera-name">
-                      <span class="label">camera</span>
-                      <span>{camera.name}</span>
-                      <span class="mono muted nobreak">{camera.device}.{camera.channel}</span>
-                    </p>
-                  {/snippet}
-                </CameraFrame>
-                {#if cameras.length > 1}
-                  <label class="field pick">
-                    <span>Camera</span>
-                    <select
-                      value="{camera.device}/{camera.channel}"
-                      onchange={(event) => (chosen = { ...chosen, [request.id]: event.currentTarget.value })}
-                    >
-                      {#each cameras as option ("{option.device}/{option.channel}")}
-                        <option value="{option.device}/{option.channel}">{option.name}, {option.channel}</option>
-                      {/each}
-                    </select>
-                  </label>
+                {#if camera}
+                  <CameraFrame
+                    device={camera.device}
+                    channel={camera.channel}
+                    label="{camera.name}, {camera.channel}"
+                    latest={latestOf(camera)}
+                    width={480}
+                    demo={isSimulated(inspector.views[camera.device] ?? {})}
+                  >
+                    {#snippet heading()}
+                      {#if pickable}
+                        {@render picker()}
+                      {:else}
+                        <p class="camera-name">
+                          <span class="label">camera</span>
+                          <span>{camera.name}</span>
+                          <span class="mono muted nobreak">{camera.device}.{camera.channel}</span>
+                        </p>
+                      {/if}
+                    {/snippet}
+                  </CameraFrame>
+                {:else}
+                  {@render picker()}
+                  <p class="muted small">Pick the camera that watches {ask.device}. This browser keeps the choice.</p>
                 {/if}
               </div>
             {/if}
@@ -354,7 +386,11 @@
   }
 
   .pick {
-    max-width: 320px;
+    width: min(100%, 320px);
+  }
+
+  .pick select {
+    width: 100%;
   }
 
   .who,
