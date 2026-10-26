@@ -35,7 +35,7 @@ const span = (arrive: number, out = NEVER): Span => ({ at: arrive, out });
 const look = at("watch", -6);
 const bed = at("warm", -4);
 const nozzle = at("hot", -4);
-const second = from("loose", 2);
+const second = from("loose", 10);
 const pause = from("pause", 2);
 const cancel = at("cancel", -4);
 
@@ -46,7 +46,7 @@ export const CLIENT = {
     span(from("look", 50), bed),
     span(from("heat", 36), nozzle),
     span(at("hot", 32), second),
-    span(at("loose", 24), pause),
+    span(at("loose", 26), pause),
     span(at("pause", 44), cancel),
     span(from("wake", 4)),
   ],
@@ -80,7 +80,7 @@ export const DRIVER = {
   pause: span(paused, paused + 24),
   sent: [span(granted + 6, granted + 24), span(paused + 4, paused + 24)],
   moonraker: [span(granted, granted + 24), span(paused, paused + 24)],
-  http: [span(from("look", 20), from("look", 38)), span(from("loose", 20), at("loose", 12))],
+  http: [span(from("look", 20), from("look", 38)), span(from("loose", 30), at("loose", 14))],
 };
 
 export const PRINTER = {
@@ -95,7 +95,7 @@ export const CAMERA = {
   lifting: span(ALWAYS, swapped),
   loose: span(swapped),
   corner: span(at("look", 4), swapped - 2),
-  off: span(at("loose", 6)),
+  off: span(at("loose", 8)),
 };
 
 const fill = (wire: Fill["wire"], lane: Lane, arrive: number, d: number, out = NEVER): Fill => ({ wire, lane, at: arrive, d, out });
@@ -117,7 +117,7 @@ export const FILLS: Fill[] = [
   fill(2, "blocked", KERNEL.nozzle.verdict.at + 2, 6, second),
   fill(1, "blocked", KERNEL.nozzle.verdict.at + 8, 6, second),
   ...read(second + 2, pause),
-  ...back("read", at("loose", 8), pause + 8),
+  ...back("read", at("loose", 10), pause + 8),
   fill(1, "send", pause + 2, 6, cancel),
   fill(2, "send", pause + 8, 6, cancel),
   fill(3, "send", paused - 6, 6, cancel),
@@ -154,7 +154,7 @@ export const SNAP_AT: Record<Exclude<ShotId, "wide" | "end">, number> = {
   heat: at("heat", 28),
   hot: at("hot", 32),
   reply: at("reply", 16),
-  loose: at("loose", 22),
+  loose: at("loose", 28),
   pause: at("pause", 34),
   cancel: at("cancel", 34),
   wake: at("wake", 26),

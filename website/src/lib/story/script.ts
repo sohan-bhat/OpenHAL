@@ -30,7 +30,7 @@ export const SHOTS: readonly Shot[] = [
   { id: "heat", target: ["kernel", "driver", "printer"], glide: 22, dwell: 30, pad: 16, max: 1.1, min: 0.8 },
   { id: "hot", target: ["client", "hub", "kernel"], glide: 26, dwell: 34, pad: 16, max: 1.1, min: 0.8 },
   { id: "reply", target: ["client"], glide: 18, dwell: 18, pad: 16, max: 1.5, min: 1 },
-  { id: "loose", target: ["camera"], glide: 30, dwell: 24, pad: 16, max: 1.6, min: 1 },
+  { id: "loose", target: ["camera"], glide: 30, dwell: 30, pad: 16, max: 1.6, min: 1 },
   { id: "pause", target: ["kernel", "driver", "printer"], glide: 24, dwell: 36, pad: 16, max: 1.1, min: 0.8 },
   { id: "cancel", target: ["client", "hub", "kernel"], glide: 26, dwell: 36, pad: 16, max: 1.1, min: 0.8 },
   { id: "wake", target: ["hub", "kernel", "driver", "printer", "camera"], column: ["hub"], glide: 26, dwell: 28, pad: 16, max: 1, min: 0.6 },
