@@ -93,6 +93,8 @@ const indexed = search && !noindex && canonical.pathname === new URL(Astro.url.p
       }
 
       function tableName(wrap: HTMLElement): string {
+        const figure = wrap.closest("figure[aria-label]")?.getAttribute("aria-label");
+        if (figure?.trim()) return figure.trim();
         const table = wrap.querySelector("table");
         const named = table?.getAttribute("aria-label") ?? table?.querySelector("caption")?.textContent;
         if (named?.trim()) return named.trim();
@@ -115,7 +117,7 @@ const indexed = search && !noindex && canonical.pathname === new URL(Astro.url.p
           }
         }
       });
-      for (const wrap of document.querySelectorAll<HTMLElement>(".table-wrap")) scrolling.observe(wrap);
+      for (const wrap of document.querySelectorAll<HTMLElement>(".table-wrap, .diagram-scroll")) scrolling.observe(wrap);
     </script>
   </body>
 </html>
