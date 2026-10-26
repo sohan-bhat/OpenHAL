@@ -262,7 +262,11 @@ test("the driver writer looks for devices, opens the raw data, takes answers and
   await page.reload();
   await page.getByRole("button", { name: "Start the driver writer" }).click();
   await expect(page.getByRole("heading", { name: "Limits interview" })).toBeVisible({ timeout: 20_000 });
-  const raw = page.locator("details").filter({ hasText: "shown as data" });
+  await expect(page.getByText("Reported by the device, shown as data")).toBeVisible();
+  await expect(page.locator(".data-table")).toContainText("firmware.product herb-waterer");
+  await expect(page.locator(".question .q-id").first()).toBeVisible();
+  expect(await page.locator(".question .q-id").allTextContents()).not.toContain("fan_speed.max");
+  const raw = page.locator("details").filter({ hasText: "Everything the device" });
   await raw.locator("summary").click();
   await expect(raw).toHaveAttribute("open", "");
   const first = page.getByRole("button", { name: /^Use suggested value for / }).first();
