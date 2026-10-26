@@ -1,0 +1,159 @@
+---
+import { run } from "../../../lib/story/script";
+import { FILLS, type Fill } from "../../../lib/story/timeline";
+
+interface Props {
+  wire: Fill["wire"];
+  label: string;
+}
+
+const { wire, label } = Astro.props;
+const mine = FILLS.filter((fill) => fill.wire === wire);
+const send = mine.filter((fill) => fill.lane === "send");
+const back = mine.filter((fill) => fill.lane !== "send");
+---
+
+<div class="wire" data-wire={wire}>
+  <span class="mono label">{label}</span>
+  <span class="lane send">{send.map((fill) => <span class="fill" style={run(fill.at, fill.d, fill.out)} />)}</span>
+  <span class="lane back">{back.map((fill) => <span class:list={["fill", fill.lane]} style={run(fill.at, fill.d, fill.out)} />)}</span>
+</div>
+
+<style>
+  .wire {
+    position: relative;
+    flex: none;
+    height: 72px;
+  }
+
+  .label {
+    position: absolute;
+    left: calc(50% + 22px);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-2);
+    font-size: var(--t-legend);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .lane {
+    position: absolute;
+    width: 2px;
+    background: var(--node);
+  }
+
+  .lane::after {
+    content: "";
+    position: absolute;
+    left: -3px;
+    width: 8px;
+    height: 8px;
+    background: var(--node);
+  }
+
+  .send {
+    left: calc(50% - 9px);
+    top: 10px;
+    bottom: 16px;
+  }
+
+  .back {
+    left: calc(50% + 7px);
+    top: 16px;
+    bottom: 10px;
+  }
+
+  .send::after {
+    bottom: -7px;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+
+  .back::after {
+    top: -7px;
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+
+  .fill {
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    opacity: min(0.999, calc(1 - var(--gone)));
+    transform-origin: center top;
+    transform: scaleY(var(--p));
+  }
+
+  .back .fill {
+    transform-origin: center bottom;
+  }
+
+  .fill.blocked {
+    background: var(--blocked);
+  }
+
+  .fill.reading {
+    background: var(--text-2);
+  }
+
+  .fill.done {
+    background: var(--ok);
+  }
+
+  @media (orientation: landscape) and (min-width: 900px) {
+    .wire {
+      align-self: stretch;
+      width: 112px;
+      height: auto;
+    }
+
+    .label {
+      left: 50%;
+      top: calc(50% - 30px);
+      transform: translateX(-50%);
+    }
+
+    .lane {
+      width: auto;
+      height: 2px;
+    }
+
+    .lane::after {
+      top: -3px;
+    }
+
+    .send {
+      top: calc(50% - 9px);
+      bottom: auto;
+      left: 10px;
+      right: 16px;
+    }
+
+    .back {
+      top: calc(50% + 7px);
+      bottom: auto;
+      left: 16px;
+      right: 10px;
+    }
+
+    .send::after {
+      left: auto;
+      right: -7px;
+      bottom: auto;
+      clip-path: polygon(0 0, 100% 50%, 0 100%);
+    }
+
+    .back::after {
+      left: -7px;
+      clip-path: polygon(100% 0, 0 50%, 100% 100%);
+    }
+
+    .fill {
+      transform-origin: left center;
+      transform: scaleX(var(--p));
+    }
+
+    .back .fill {
+      transform-origin: right center;
+    }
+  }
+</style>
