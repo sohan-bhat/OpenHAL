@@ -3,30 +3,9 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import captures from "../data/inspector-captures.json";
 import DocShell from "../layouts/DocShell.astro";
-import { storyFacts } from "../lib/story/facts";
+import { inspectorShots } from "../lib/inspector-shots";
 
-const facts = storyFacts();
-const SHOTS = [
-  {
-    file: "inspector-device",
-    caption: "The printer",
-    crop: { x: 316, y: 128, w: 984, h: 772 },
-    alt: `The Inspector's device pane for the ${facts.printer.name}, with its readings, the latest frame from its webcam, bed_target limited to ${facts.bed.max} and extruder_target limited to ${facts.nozzle.max}`,
-  },
-  {
-    file: "inspector-log",
-    caption: "The message log",
-    crop: { x: 316, y: 126, w: 1100, h: 774 },
-    alt: `The Inspector's message log with the agent's requests to the printer, a ${facts.nozzle.value} nozzle answered by error ${facts.nozzle.refusal.code} ${facts.nozzle.refusal.name}, and the cancel answered ${facts.cancel.status} until a person decides`,
-  },
-  {
-    file: "inspector-stopped",
-    caption: "Stopped",
-    crop: { x: 0, y: 119, w: 1040, h: 48 },
-    alt: "The Inspector's stop banner, saying every command is refused with error -32014 STOPPED until a person lifts the stop with UNLOCK",
-  },
-];
-
+const SHOTS = inspectorShots();
 const present = (name: string) => existsSync(join(process.cwd(), "public", "captures", `${name}.webp`));
 const shots = SHOTS.filter((item) => present(`${item.file}-light`) && present(`${item.file}-dark`));
 const sidebar = [
