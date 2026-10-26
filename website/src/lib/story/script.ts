@@ -4,9 +4,9 @@
  * each shot's targets, so the two can't drift apart. Scrolling back plays it in reverse.
  */
 
-export type ShotId = "wide" | "ask" | "check" | "reply" | "dry" | "hold" | "refill" | "water" | "soil" | "done" | "end";
+export type ShotId = "wide" | "watch" | "look" | "warm" | "heat" | "hot" | "reply" | "loose" | "pause" | "cancel" | "wake" | "end";
 
-export type Station = "client" | "hub" | "kernel" | "driver" | "device";
+export type Station = "client" | "hub" | "kernel" | "driver" | "printer" | "camera";
 
 export interface Shot {
   id: ShotId;
@@ -23,17 +23,18 @@ export interface Shot {
 export const CAMERA = "(prefers-reduced-motion: no-preference) and (min-height: 500px)";
 
 export const SHOTS: readonly Shot[] = [
-  { id: "wide", target: "scene", glide: 0, dwell: 14, pad: 24, top: true },
-  { id: "ask", target: ["client"], glide: 22, dwell: 22, pad: 16, max: 1.5, min: 1 },
-  { id: "check", target: ["hub", "kernel"], glide: 30, dwell: 34, pad: 16, max: 1.3, min: 0.95 },
-  { id: "reply", target: ["client", "hub", "kernel"], column: ["client"], glide: 24, dwell: 22, pad: 16, max: 1.1, min: 0.8 },
-  { id: "dry", target: ["device"], glide: 34, dwell: 20, pad: 16, max: 1.5, min: 1 },
-  { id: "hold", target: ["kernel", "driver", "device"], glide: 22, dwell: 34, pad: 16, max: 1.1, min: 0.8 },
-  { id: "refill", target: ["device"], glide: 20, dwell: 20, pad: 16, max: 1.5, min: 1 },
-  { id: "water", target: ["kernel", "driver", "device"], glide: 20, dwell: 34, pad: 16, max: 1.1, min: 0.8 },
-  { id: "soil", target: ["device"], glide: 20, dwell: 34, pad: 16, max: 1.5, min: 1 },
-  { id: "done", target: ["client"], glide: 30, dwell: 22, pad: 16, max: 1.5, min: 1 },
-  { id: "end", target: "scene", glide: 24, dwell: 18, pad: 24 },
+  { id: "wide", target: "scene", glide: 0, dwell: 14, pad: 24 },
+  { id: "watch", target: ["client"], glide: 22, dwell: 22, pad: 16, max: 1.5, min: 1 },
+  { id: "look", target: ["camera"], glide: 30, dwell: 24, pad: 16, max: 1.6, min: 1 },
+  { id: "warm", target: ["client", "hub", "kernel"], glide: 30, dwell: 36, pad: 16, max: 1.1, min: 0.8 },
+  { id: "heat", target: ["kernel", "driver", "printer"], glide: 22, dwell: 30, pad: 16, max: 1.1, min: 0.8 },
+  { id: "hot", target: ["client", "hub", "kernel"], glide: 26, dwell: 34, pad: 16, max: 1.1, min: 0.8 },
+  { id: "reply", target: ["client"], glide: 18, dwell: 18, pad: 16, max: 1.5, min: 1 },
+  { id: "loose", target: ["camera"], glide: 30, dwell: 24, pad: 16, max: 1.6, min: 1 },
+  { id: "pause", target: ["kernel", "driver", "printer"], glide: 24, dwell: 36, pad: 16, max: 1.1, min: 0.8 },
+  { id: "cancel", target: ["client", "hub", "kernel"], glide: 26, dwell: 36, pad: 16, max: 1.1, min: 0.8 },
+  { id: "wake", target: ["hub", "kernel", "driver", "printer", "camera"], column: ["hub"], glide: 26, dwell: 28, pad: 16, max: 1, min: 0.6 },
+  { id: "end", target: "scene", glide: 22, dwell: 16, pad: 24 },
 ];
 
 export interface Placed extends Shot {
