@@ -101,52 +101,70 @@ def draw_runs(c: Canvas, runs: list[Run], x: float, y: float, size: float) -> No
         x += c.text(value, x, y, face="mono", size=size, fill=color, weight=weight)
 
 
-MARK_LINES = ((11, 2, 11, 14), (2, 5, 8.5, 5), (8.5, 11, 5, 11))
-MARK_ARROW = ((1.2, 11), (5.4, 7.8), (5.4, 14.2))
-"""The mark on its 16 unit grid. A request stroke meets a stop bar, a return stroke points back."""
+WORD = "OpenHAL"
+INITIALS = "OH"
+WEIGHT = 800
+TRACKING = -0.06
+INITIALS_TRACKING = -0.1
+"""The brand is the name set tight in the text face at its heaviest weight. There is no logo shape."""
 
 
-def mark_parts(x: float, y: float, scale: float, color: str) -> list[str]:
-    parts = [
-        f'<line x1="{x + u0 * scale}" y1="{y + v0 * scale}" x2="{x + u1 * scale}" y2="{y + v1 * scale}" '
-        f'stroke="{color}" stroke-width="{2 * scale}" stroke-linecap="round"/>'
-        for u0, v0, u1, v1 in MARK_LINES
-    ]
-    points = " ".join(f"{x + u * scale:.2f},{y + v * scale:.2f}" for u, v in MARK_ARROW)
-    return [*parts, f'<polygon points="{points}" fill="{color}"/>']
+def fitted(text: str, box: float, size: float, tracking: float = TRACKING) -> float:
+    """The largest size up to `size` at which `text` fits in `box` wide."""
+    return min(size, box / width(text, "text", 1, WEIGHT, tracking))
 
 
-def mark_markup(x: float, y: float, scale: float, color: str) -> str:
-    return "".join(mark_parts(x, y, scale, color))
-
-
-def mark(c: Canvas, x: float, y: float, scale: float, t: dict[str, str]) -> None:
-    for part in mark_parts(x, y, scale, t["accent"]):
-        c.add(part)
+def initials(c: Canvas, side: float, color: str) -> None:
+    size = fitted(INITIALS, side * 0.94, side * 0.9, INITIALS_TRACKING)
+    baseline = side / 2 + size * 0.35
+    c.add(
+        path(
+            INITIALS,
+            side / 2,
+            baseline,
+            face="text",
+            size=size,
+            weight=WEIGHT,
+            fill=color,
+            anchor="middle",
+            tracking=INITIALS_TRACKING,
+        )
+    )
 
 
 def mark_svg(t: dict[str, str]) -> str:
-    c = Canvas(64, 64, "OpenHAL", "The OpenHAL mark. A request stroke meets a stop bar, and a return stroke points back.")
-    c.add(mark_markup(0, 0, 4, t["accent"]))
+    c = Canvas(64, 64, "OpenHAL", "The OpenHAL initials, OH, set tight in the brand face.")
+    initials(c, 64, t["text"])
     return c.svg().replace('viewBox="0 0 64 64"', 'viewBox="0 0 64 64" shape-rendering="geometricPrecision"')
 
 
 def favicon() -> str:
     """One file for browsers, with the dark variant under prefers-color-scheme."""
     light, dark = THEMES["light"], THEMES["dark"]
-    style = f"g{{color:{light['accent']}}}@media (prefers-color-scheme: dark){{g{{color:{dark['accent']}}}}}"
+    size = fitted(INITIALS, 16, 15, INITIALS_TRACKING)
+    shape = path(
+        INITIALS,
+        8,
+        8 + size * 0.35,
+        face="text",
+        size=size,
+        weight=WEIGHT,
+        fill="currentColor",
+        anchor="middle",
+        tracking=INITIALS_TRACKING,
+    )
+    style = f"g{{color:{light['text']}}}@media (prefers-color-scheme: dark){{g{{color:{dark['text']}}}}}"
     return (
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">'
-        f"<title>OpenHAL</title><style>{style}</style><g>{mark_markup(0, 0, 1, 'currentColor')}</g></svg>\n"
+        f"<title>OpenHAL</title><style>{style}</style><g>{shape}</g></svg>\n"
     )
 
 
 def wordmark(t: dict[str, str]) -> str:
-    size = 34
-    text_w = width("OpenHAL", "text", size, 700)
-    c = Canvas(round(48 + text_w + 2), 44, "OpenHAL", "The OpenHAL mark and wordmark.")
-    mark(c, 0, 4, 2.25, t)
-    c.text("OpenHAL", 48, 34, face="text", size=size, weight=700, fill=t["text"])
+    size = 38
+    text_w = width(WORD, "text", size, WEIGHT, TRACKING)
+    c = Canvas(round(text_w + 4), 44, "OpenHAL", "The OpenHAL wordmark.")
+    c.add(path(WORD, 2, 34, face="text", size=size, weight=WEIGHT, fill=t["text"], tracking=TRACKING))
     return c.svg()
 
 

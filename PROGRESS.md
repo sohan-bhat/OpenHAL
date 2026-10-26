@@ -8,10 +8,9 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- website-3. The owner's list (quirks removed, trace narration as comments, Playground in the nav, diagram chips, one page container, no sideways scrolling, site search with Cmd K) and the reference driver out of the counts (BRIEF-website-3.md).
-- inspector-4. The final critique's Inspector findings (BRIEF-inspector-4.md).
+- website-4. The final critique's website findings and the green dot removal (BRIEF-website-4.md).
 
-Queued. website-4, the final critique's website findings (BRIEF-website-4.md), after website-3 merges.
+Queued. website-5, the consumer first landing page with an Apple style scroll story (BRIEF-website-5.md), after website-4 merges.
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 

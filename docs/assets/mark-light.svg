@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="geometricPrecision" role="img" aria-labelledby="t d">
 <title id="t">OpenHAL</title>
-<desc id="d">The OpenHAL mark. A request stroke meets a stop bar, and a return stroke points back.</desc>
-<line x1="44" y1="8" x2="44" y2="56" stroke="#1D5FB4" stroke-width="8" stroke-linecap="round"/><line x1="8" y1="20" x2="34.0" y2="20" stroke="#1D5FB4" stroke-width="8" stroke-linecap="round"/><line x1="34.0" y1="44" x2="20" y2="44" stroke="#1D5FB4" stroke-width="8" stroke-linecap="round"/><polygon points="4.80,44.00 21.60,31.20 21.60,56.80" fill="#1D5FB4"/>
+<desc id="d">The OpenHAL initials, OH, set tight in the brand face.</desc>
+<path fill="#15181C" d="M18.58 47.95Q14.04 47.95 10.56 46.06Q7.08 44.16 5.12 40.75Q3.15 37.33 3.15 32.71Q3.15 28.08 5.12 24.66Q7.08 21.25 10.56 19.35Q14.04 17.46 18.58 17.46Q23.12 17.46 26.6 19.35Q30.08 21.25 32.04 24.66Q34.01 28.08 34.01 32.71Q34.01 37.33 32.04 40.75Q30.08 44.16 26.6 46.06Q23.12 47.95 18.58 47.95ZM18.58 41.78Q20.61 41.78 22.28 40.77Q23.96 39.76 24.97 37.73Q25.98 35.7 25.98 32.71Q25.98 29.71 24.97 27.68Q23.96 25.65 22.28 24.64Q20.61 23.63 18.58 23.63Q16.55 23.63 14.88 24.64Q13.2 25.65 12.19 27.68Q11.18 29.71 11.18 32.71Q11.18 35.7 12.19 37.73Q13.2 39.76 14.88 40.77Q16.55 41.78 18.58 41.78ZM33.21 47.43V17.98H40.7V29H52.21V17.98H59.7V47.43H52.21V35.61H40.7V47.43Z"/>
 </svg>

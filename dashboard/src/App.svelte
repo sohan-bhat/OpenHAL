@@ -3,7 +3,6 @@
   import DeviceList from "./components/DeviceList.svelte";
   import Header from "./components/Header.svelte";
   import MessageLog from "./components/MessageLog.svelte";
-  import Mark from "./components/Mark.svelte";
   import StopUnavailable from "./components/StopUnavailable.svelte";
   import { router, type View } from "./lib/router.svelte";
   import { inspector } from "./lib/state.svelte";
@@ -92,7 +91,7 @@
   {#if Pair}<Pair onpaired={() => void inspector.boot()} />{/if}
 {:else if inspector.auth === "offline"}
   <header class="bar">
-    <div class="brand"><Mark size={24} /><strong>OpenHAL</strong> <span class="muted">Inspector</span></div>
+    <div class="brand"><strong class="wordmark">OpenHAL</strong> <span class="muted">Inspector</span></div>
     <StopUnavailable why="offline" host={location.host} />
   </header>
   <main class="offline" id="main">
@@ -216,7 +215,12 @@
     display: flex;
     align-items: center;
     gap: var(--s-2);
-    font-size: 19px;
+    font-size: 20px;
+  }
+
+  .bar .wordmark {
+    font-weight: 800;
+    letter-spacing: -0.06em;
   }
 
   @media (max-width: 1023px) {

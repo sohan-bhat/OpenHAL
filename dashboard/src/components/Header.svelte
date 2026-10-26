@@ -2,7 +2,6 @@
   import { NAV, href, router } from "../lib/router.svelte";
   import { inspector } from "../lib/state.svelte";
   import type { StatusWord } from "../lib/status";
-  import Mark from "./Mark.svelte";
   import StatusMark from "./StatusMark.svelte";
   import StopControl from "./StopControl.svelte";
 
@@ -54,7 +53,6 @@
 
 <header class="top">
   <a class="brand" href={href("devices")} aria-label="OpenHAL Inspector, devices">
-    <Mark size={22} />
     <span class="wordmark">OpenHAL</span>
     <span class="product">Inspector</span>
   </a>
@@ -127,13 +125,15 @@
   }
 
   .wordmark {
-    font-weight: 700;
-    font-size: 19px;
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.06em;
   }
 
   .product {
-    font-size: 19px;
+    font-size: 20px;
     color: var(--text-2);
+    letter-spacing: -0.02em;
   }
 
   .hub {
