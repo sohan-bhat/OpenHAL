@@ -246,6 +246,8 @@ test.describe("site", () => {
     expect(response?.status()).toBe(404);
     await expect(page.locator("h1")).toHaveText("Page not found");
     await expect(page.locator(".trace")).toContainText("error -32004 UNKNOWN_TARGET");
+    await expect(page.locator(".trace .method")).toHaveText("hal/devices/describe");
+    await expect(page.locator(".trace .payload")).toHaveText('{ "device": "/no-such-page/" }');
   });
 
   test("nothing scrolls sideways at 1280 px", async ({ page }) => {

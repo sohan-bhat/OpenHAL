@@ -43,9 +43,19 @@ describe("the recorded scenario", () => {
     const shownLines = traceText(entries).split("\n").map((line) => line.trim()).filter(Boolean);
     for (const line of expected.scenario.lines as string[]) {
       const bare = line.replace(/^[\u2192\u2190]\s*/, "").trim();
-      if (!bare || bare.startsWith("{") || bare.startsWith('"args"') || /^hal\/action/.test(bare) || /^result/.test(bare)) continue;
+      if (!bare || bare.startsWith("{") || bare.startsWith('"args"') || /^hal\/(action|value)/.test(bare) || /^result/.test(bare)) continue;
       expect(shownLines.some((shownLine) => shownLine.replace(/^(->|<-)\s*/, "").replace(/\s+/g, " ").includes(bare.replace(/\s+/g, " ")))).toBe(true);
     }
+  });
+
+  it("sends hal/value with the params ADR 0015 names and the recorded value", () => {
+    const watered = scenario.record.exchanges.find((exchange) => exchange.soil_moisture);
+    const notification = scenarioTrace(scenario).find((entry) => entry.kind === "notification");
+    expect(notification).toEqual({
+      kind: "notification",
+      method: "hal/value",
+      params: { device: watered!.request.params.device, channel: "soil_moisture", value: watered!.soil_moisture!.after.value, unit: watered!.soil_moisture!.after.unit },
+    });
   });
 
   it("writes narration as comments, the same way openhal.demo.trace does", () => {

@@ -49,9 +49,7 @@
 }
 
 .trace .head {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: var(--s-4);
+  display: grid;
   row-gap: 2px;
 }
 
@@ -116,7 +114,8 @@
   }
 
   .trace .head {
-    flex-wrap: nowrap;
+    display: flex;
+    column-gap: var(--s-4);
   }
 
   .trace .error-head {

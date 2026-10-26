@@ -57,7 +57,7 @@ export function exchangeEntries(exchange) {
   }
   const soil = exchange.soil_moisture;
   if (isObject(soil) && soil.before && soil.after) {
-    out.push({ kind: "notification", method: "hal/value", params: {}, text: `soil_moisture rises from ${shown(soil.before)} to ${shown(soil.after)}` });
+    out.push({ kind: "notification", method: "hal/value", params: { device: exchange.request.params?.device ?? null, channel: "soil_moisture", value: soil.after.value, unit: soil.after.unit } });
   }
   return out;
 }
