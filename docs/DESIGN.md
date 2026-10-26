@@ -52,7 +52,20 @@ The website's home page tells the canonical scenario as one pinned scene. A came
 
 ## Canonical demo scenario
 
-Every example value in the README, website, Inspector screenshots, docs and social images comes from one file, `docs/demo/scenario.yaml`, written by `uv run openhal demo --record docs/demo/scenario.yaml` from a real run of the hub against the plant waterer mock (examples/plant-waterer/). The device is an Arduino plant waterer with `soil_moisture` and `tank` readings and one action, `water(duration)`, limited to 30 s, 3 runs per hour and never while the tank is empty. The trace has three exchanges. Watering for 120 s gets `LIMIT_EXCEEDED`. Watering for 20 s with the tank empty gets `INTERLOCK_BLOCKED`. After a refill, watering for 20 s is done and soil moisture rises from 31 % to 46 %. Tests check that the file is still what the hub answers and that every surface matches it. The desk fan stays only as a secondary example in spec/examples/. Demo values are labeled as demo data where shown.
+The main example is a task only an agent can do. A timer or an IoT rule can water a plant. Only an agent can watch a print on a camera, judge what is going wrong and act, so the main example is the 3D print babysitter (examples/print-babysitter/). The owner chose it on 2026-10-26.
+
+Every example value in the README, website, Inspector screenshots, docs and social images comes from one file, `docs/demo/scenario.yaml`, written by `uv run openhal demo --record docs/demo/scenario.yaml` from a real run of the hub against simulated devices. There are two. `printer` is a Klipper 3D printer reached through Moonraker, with `state`, `extruder_temp`, `bed_temp` and `progress` readings, `extruder_target` limited to 260 °C and `bed_target` limited to 110 °C, both rate limited, and the actions `pause`, `resume` and `cancel`, where cancel waits for a person. `printer-cam` is a USB camera watching the bed. The limits were confirmed by owner on 2026-10-24.
+
+The story. Someone starts a long print and asks an agent to keep an eye on it.
+1. The agent reads a camera frame and sees a corner of the first layer lifting.
+2. It raises `bed_target` from 60 °C to 70 °C. That is inside the limit, so it is done.
+3. It also asks for a 300 °C nozzle. The kernel answers `LIMIT_EXCEEDED`, because the limit is 260 °C.
+4. Later the camera shows the print has come loose. The agent pauses the print, which is done straight away.
+5. It asks to cancel. Cancelling can't be undone, so the hub queues it and answers pending until a person decides.
+
+Tests check that the file is still what the hub answers and that every surface matches it. Demo values are labeled as demo data where shown.
+
+The Arduino plant waterer (examples/plant-waterer/) stays as the Arduino example. It runs the end-to-end demo (`openhal demo --full`, docs/demo/e2e.yaml), the driver writer tutorial and the first hardware test, since it is the lowest hazard. The desk fan stays only as a secondary example in spec/examples/.
 
 ## Theme mapping
 
