@@ -19,11 +19,6 @@ export function hubState(): HubState {
   return JSON.parse(readFileSync(STATE_PATH, "utf-8")) as HubState;
 }
 
-export async function tank(action: "drain" | "refill"): Promise<void> {
-  const response = await fetch(`${hubState().url}/_harness/plant-waterer/${action}`, { method: "POST" });
-  if (!response.ok) throw new Error(`The harness could not ${action} the tank.`);
-}
-
 async function harness(path: string, what: string): Promise<void> {
   const response = await fetch(`${hubState().url}/_harness/${path}`, { method: "POST" });
   if (!response.ok) throw new Error(`The harness could not ${what}.`);

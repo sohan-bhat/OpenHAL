@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { AgentClient, hubState, signIn, tank } from "./hub";
+import { AgentClient, hubState, signIn } from "./hub";
 
 test.beforeEach(async ({ context }) => {
   await signIn(context);
@@ -30,7 +30,7 @@ test("the wordmark and every view link open their view", async ({ page }) => {
 });
 
 test("Message log in the header moves focus to the log, and the log hides and shows", async ({ page }) => {
-  await page.goto("/#/devices/plant-waterer");
+  await page.goto("/#/devices/printer");
   await page.getByRole("navigation", { name: "Views" }).getByRole("button", { name: "Message log" }).click();
   await expect(page.locator("#log-title")).toBeFocused();
   await page.getByRole("button", { name: "Hide the log" }).click();
@@ -45,7 +45,7 @@ test("Message log in the header moves focus to the log, and the log hides and sh
 
 test("the phone header labels the hub, connection, protocol and conformance", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/#/devices/plant-waterer");
+  await page.goto("/#/devices/printer");
   const facts = page.locator("dl.hub.narrow");
   await expect(facts).toBeVisible();
   for (const label of ["Hub", "Connection", "Protocol", "Conformance"]) await expect(facts.locator("dt", { hasText: label })).toBeVisible();
@@ -53,13 +53,10 @@ test("the phone header labels the hub, connection, protocol and conformance", as
 });
 
 test("the log shows readings on request, expands long messages and copies the trace", async ({ page, browserName, context }) => {
-  await page.goto("/#/devices/plant-waterer");
-  const agent = await AgentClient.connect("chrome-agent", hubState().agentToken);
-  await agent.call("hal/action", { device: "plant-waterer", action: "water", args: { duration: { value: 120, unit: "s" } } });
-  await tank("drain");
-  await page.waitForTimeout(1500);
-  await tank("refill");
-  await page.waitForTimeout(1500);
+  await page.goto("/#/devices/printer");
+  const agent = await AgentClient.connect("chrome-agent", hubState().printToken);
+  await agent.write("printer", "extruder_target", 300, "degC");
+  await page.waitForTimeout(2500);
   agent.close();
   const log = await messages(page);
   await expect(log.locator("li").filter({ hasText: "chrome-agent" }).first()).toBeVisible();
@@ -77,7 +74,7 @@ test("the log shows readings on request, expands long messages and copies the tr
   if (browserName === "chromium") {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await page.getByRole("button", { name: "Copy as text" }).click();
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("-> hal/action");
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("-> hal/write");
   }
 
   await page.getByRole("combobox", { name: "Client", exact: true }).selectOption("chrome-agent");
@@ -92,9 +89,9 @@ test("the log shows readings on request, expands long messages and copies the tr
 test("older messages load on request once the log holds more than a page", async ({ page }) => {
   test.setTimeout(90_000);
   const agent = await AgentClient.connect("busy-agent", hubState().agentToken);
-  for (let index = 0; index < 210; index++) await agent.call("hal/read", { device: "plant-waterer", channel: "tank" });
+  for (let index = 0; index < 210; index++) await agent.call("hal/read", { device: "printer", channel: "state" });
   agent.close();
-  await page.goto("/#/devices/plant-waterer");
+  await page.goto("/#/devices/printer");
   const older = page.getByRole("button", { name: /^Show \d+ older messages$/ });
   await expect(older).toBeVisible();
   const log = await messages(page);
@@ -144,7 +141,7 @@ test("a person runs an action that asks for confirmation each time, and a queued
 });
 
 test("Keep stopped closes the UNLOCK dialog and the hub stays stopped", async ({ page }) => {
-  await page.goto("/#/devices/plant-waterer");
+  await page.goto("/#/devices/printer");
   await page.getByRole("button", { name: /STOP/ }).click();
   await page.getByRole("button", { name: "UNLOCK" }).click();
   const dialog = page.getByRole("dialog", { name: "Lift the stop" });
@@ -172,8 +169,8 @@ test("the audit log filters, and verifies its hash chain", async ({ page }) => {
 });
 
 test("the audit log labels values on a phone and an agent stays dashed when blocked", async ({ page }) => {
-  const agent = await AgentClient.connect("audit-agent", hubState().agentToken);
-  await agent.call("hal/action", { device: "plant-waterer", action: "water", args: { duration: { value: 120, unit: "s" } } });
+  const agent = await AgentClient.connect("audit-agent", hubState().printToken);
+  await agent.write("printer", "extruder_target", 300, "degC");
   agent.close();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/#/audit");
