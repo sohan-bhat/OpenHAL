@@ -14,8 +14,9 @@ import pytest
 import uvicorn
 
 from openhal.hub.api import STATIC_DIR
+from openhal.kernel.principals import human
 from openhal.protocol.client import ProtocolClient, ProtocolError
-from tests.inspector.harness import Harness, start
+from tests.inspector.harness import SIMULATED_BOARD, Harness, start
 
 
 @pytest.fixture
@@ -100,6 +101,22 @@ async def test_the_demo_scenario_reaches_the_message_log(base_url: str, harness:
     errors = [entry for entry in log if entry["direction"] == "out" and "error" in entry["message"]]
     assert [entry["message"]["error"]["data"]["name"] for entry in errors] == ["LIMIT_EXCEEDED", "INTERLOCK_BLOCKED"]
     assert all(harness.agent_token not in json.dumps(entry) for entry in log)
+
+
+async def test_the_unknown_board_drafts_as_a_waterer_no_library_file_matches(harness: Harness) -> None:
+    session = await harness.hub.writer.start(human("sohan"), unknown_id=SIMULATED_BOARD.id)
+    draft = session.draft or {}
+    registered = set(harness.hub.kernel.devices)
+    assert SIMULATED_BOARD.identifiers["firmware.product"] == "herb-waterer"
+    assert session.status == "interview"
+    assert draft["device"] == "Herb waterer"
+    assert set(draft["read"]) == {"soil_moisture", "tank"}
+    assert draft["actions"]["water"]["args"]["duration"]["max"] == 30
+    assert "fan_speed" not in str(draft)
+    assert "herb-waterer" not in registered
+    assert all(
+        harness.hub.kernel.devices[device].file.match.firmware.get("product") != "herb-waterer" for device in registered
+    )
 
 
 async def test_the_hub_serves_the_built_inspector(base_url: str) -> None:

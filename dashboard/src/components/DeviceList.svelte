@@ -49,6 +49,7 @@
             </span>
             <span class="states">
               <StatusMark tone={connection.tone} label={connection.label} />
+              {#if verification.detail}<span class="detail">{verification.detail}</span>{/if}
               <StatusMark tone={verification.tone} label={verification.label} />
             </span>
             {#if unavailableReason(device)}
@@ -106,7 +107,7 @@
     font-size: var(--t-label);
     color: var(--text-2);
     padding: var(--s-2) var(--s-3);
-    border: 1px dashed var(--border);
+    background: var(--surface);
     border-radius: var(--radius);
   }
 
@@ -160,15 +161,25 @@
     font-size: var(--t-label);
     color: var(--text-2);
     padding: 0 6px;
-    border: 1px dashed var(--border);
+    background: var(--surface);
     border-radius: var(--radius);
+  }
+
+  .device[aria-current="page"] .sim {
+    background: var(--bg);
   }
 
   .states {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: var(--s-1) var(--s-3);
     margin-top: var(--s-1);
+  }
+
+  .detail {
+    font-size: var(--t-label);
+    color: var(--text-2);
   }
 
   .unavailable {

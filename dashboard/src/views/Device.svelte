@@ -1,5 +1,6 @@
 <script lang="ts">
   import ActionControl from "../components/ActionControl.svelte";
+  import Prose from "../components/Prose.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import WriteControl from "../components/WriteControl.svelte";
   import { isSimulated } from "../lib/devices";
@@ -72,7 +73,13 @@
       <dl class="facts">
         <div><dt class="label">state</dt><dd><StatusMark tone={connection.tone} label={connection.label} /></dd></div>
         {#if unavailableReason(view)}<div><dt class="label">unavailable</dt><dd>{unavailableReason(view)}</dd></div>{/if}
-        <div><dt class="label">verification</dt><dd><StatusMark tone={verification.tone} label={verification.label} /></dd></div>
+        <div>
+          <dt class="label">verification</dt>
+          <dd class="verification">
+            {#if verification.detail}<span>{verification.detail}</span>{/if}
+            <StatusMark tone={verification.tone} label={verification.label} />
+          </dd>
+        </div>
         <div><dt class="label">driver</dt><dd class="mono nobreak">{view.driver}</dd></div>
         <div><dt class="label">conformance</dt><dd>{conformanceFor(view)}</dd></div>
         <div><dt class="label">hazard</dt><dd>{view.hazard}</dd></div>
@@ -88,7 +95,7 @@
           <StatusMark tone="unverified" label="limits not confirmed" />
           <p>
             Commands get <code>error -32015 UNVERIFIED_LIMITS</code> until a person confirms the limits with
-            <code>openhal file confirm {fileName ?? view.id}</code> or the limits interview.
+            <code><Prose text="openhal file confirm {fileName ?? view.id}" /></code> or the limits interview.
           </p>
           {#if view.unconfirmed.length}
             <p class="muted">Unconfirmed <span class="mono">{view.unconfirmed.join(", ")}</span></p>
@@ -140,6 +147,7 @@
               channel={name}
               {spec}
               disabled={!!disabledReason}
+              readOnly={!view.writable}
               {disabledReason}
               onwritten={() => id && void inspector.refreshDevice(id)}
             />
@@ -153,7 +161,16 @@
         <h2 id="actions-title">Actions</h2>
         <div class="controls">
           {#each Object.entries(view.actions) as [name, spec] (name)}
-            <ActionControl device={view.id} {name} {spec} disabled={!!disabledReason} onran={() => void inspector.refreshConfirmations()} />
+            <ActionControl
+              device={view.id}
+              {name}
+              {spec}
+              disabled={!!disabledReason}
+              readOnly={!view.writable}
+              safeState={view.safe_state.some((step) => step.action === name)}
+              {disabledReason}
+              onran={() => void inspector.refreshConfirmations()}
+            />
           {/each}
         </div>
       </section>
@@ -240,7 +257,7 @@
     font-size: var(--t-label);
     color: var(--text-2);
     padding: 1px 6px;
-    border: 1px dashed var(--border);
+    background: var(--surface);
     border-radius: var(--radius);
   }
 
@@ -276,11 +293,19 @@
     margin: 0;
   }
 
+  .verification {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-1) var(--s-2);
+  }
+
   .notice {
     display: grid;
+    justify-items: start;
     gap: var(--s-2);
-    padding: var(--s-3);
-    border: 1px dashed var(--unverified);
+    padding: var(--s-3) var(--s-4);
+    background: var(--surface);
     border-radius: var(--radius);
   }
 

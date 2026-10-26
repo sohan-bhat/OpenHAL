@@ -101,6 +101,10 @@ export function formatDuration(seconds: number): string {
   return `${formatNumber(seconds)} s`;
 }
 
+export function formatTrigger(trigger: string): string {
+  return trigger.replace(/\bevery (\d+(?:\.\d+)?) s\b/g, (_match, seconds: string) => `every ${formatDuration(Number(seconds))}`);
+}
+
 export interface Segment {
   text: string;
   keep: boolean;
@@ -118,6 +122,57 @@ export function keepTogether(text: string): Segment[] {
     last = start + match[0].length;
   }
   if (last < text.length) segments.push({ text: text.slice(last), keep: false });
+  return segments;
+}
+
+export interface ReasonSegment {
+  text: string;
+  kind: "plain" | "keep" | "code";
+}
+
+const CONDITION = /[A-Za-z_][\w.-]*\s?(?:==|!=|<=|>=|<|>)\s?(?:-?\d+(?:\.\d+)?(?:\s?(?:%|°C|[A-Za-z]{1,4})(?![\w]))?|[A-Za-z_][\w.-]*)/g;
+
+function escape(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function identifiersOf(...names: (string | null | undefined)[]): string[] {
+  const found = new Set<string>();
+  for (const name of names) {
+    if (!name) continue;
+    found.add(name);
+    const tail = name.includes(":") ? name.slice(name.indexOf(":") + 1) : null;
+    if (tail) found.add(tail);
+  }
+  return [...found].sort((a, b) => b.length - a.length);
+}
+
+export function reasonSegments(text: string, identifiers: string[] = []): ReasonSegment[] {
+  const marks: { start: number; end: number }[] = [];
+  for (const match of text.matchAll(CONDITION)) {
+    marks.push({ start: match.index ?? 0, end: (match.index ?? 0) + match[0].length });
+  }
+  if (identifiers.length) {
+    const words = new RegExp(`(?<![\\w:.-])(?:${identifiers.map(escape).join("|")})(?![\\w:-]|\\.\\w)`, "g");
+    for (const match of text.matchAll(words)) {
+      const start = match.index ?? 0;
+      const end = start + match[0].length;
+      if (!marks.some((mark) => start < mark.end && end > mark.start)) marks.push({ start, end });
+    }
+  }
+  marks.sort((a, b) => a.start - b.start);
+  const segments: ReasonSegment[] = [];
+  let last = 0;
+  const plain = (part: string) => {
+    for (const piece of keepTogether(part)) segments.push({ text: piece.text, kind: piece.keep ? "keep" : "plain" });
+  };
+  for (const mark of marks) {
+    if (mark.start < last) continue;
+    if (mark.start > last) plain(text.slice(last, mark.start));
+    segments.push({ text: text.slice(mark.start, mark.end), kind: "code" });
+    last = mark.end;
+  }
+  if (last < text.length) plain(text.slice(last));
   return segments;
 }
 

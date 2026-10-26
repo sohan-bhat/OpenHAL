@@ -37,6 +37,19 @@ test("Message log in the header moves focus to the log, and the log hides and sh
   await expect(page.locator("#log-body")).toBeHidden();
   await page.getByRole("button", { name: "Show the log" }).click();
   await expect(page.locator("#log-body")).toBeVisible();
+  await page.getByRole("button", { name: "Hide the log" }).click();
+  await page.getByRole("navigation", { name: "Views" }).getByRole("button", { name: "Message log" }).click();
+  await expect(page.locator("#log-body")).toBeVisible();
+  await expect(page.locator("#log-title")).toBeFocused();
+});
+
+test("the phone header labels the hub, connection, protocol and conformance", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/#/devices/plant-waterer");
+  const facts = page.locator("dl.hub.narrow");
+  await expect(facts).toBeVisible();
+  for (const label of ["Hub", "Connection", "Protocol", "Conformance"]) await expect(facts.locator("dt", { hasText: label })).toBeVisible();
+  await expect(page.locator("dl.hub.wide")).toBeHidden();
 });
 
 test("the log shows readings on request, expands long messages and copies the trace", async ({ page, browserName, context }) => {
@@ -90,17 +103,31 @@ test("older messages load on request once the log holds more than a page", async
   await expect.poll(async () => log.locator("li").count()).toBeGreaterThan(shown);
 });
 
-test("a read-only device keeps its controls disabled and says why", async ({ page }) => {
+test("a read-only device shows its limits without live controls and says why", async ({ page }) => {
   await page.goto("/#/devices/bench-lamp");
   await expect(page.getByRole("heading", { name: "Bench lamp", level: 1 })).toBeVisible();
   await expect(page.getByText("error -32015 UNVERIFIED_LIMITS").first()).toBeVisible();
-  for (const button of await page.getByRole("button", { name: /^Set / }).all()) await expect(button).toBeDisabled();
+  const brightness = page.locator("form.write").filter({ hasText: "brightness" });
+  await expect(brightness.getByText("max 80 %")).toBeVisible();
+  await expect(page.getByRole("main").getByRole("slider")).toHaveCount(0);
+  await expect(page.getByRole("main").getByRole("spinbutton")).toHaveCount(0);
+  await expect(page.getByRole("main").getByRole("button", { name: /^Set / })).toHaveCount(0);
+});
+
+test("the stop action reads as the device safe state, not as the global STOP", async ({ page }) => {
+  await page.goto("/#/devices/plant-waterer");
+  const stop = page.locator("form.action").filter({ hasText: "Turn the pump off now." });
+  const run = stop.getByRole("button", { name: "Run stop" });
+  await expect(run).toBeVisible();
+  await expect(run).not.toHaveClass(/primary/);
+  await expect(stop).toContainText("is this device's safe state");
 });
 
 test("a person runs an action that asks for confirmation each time, and a queued answer links to the queue", async ({ page }) => {
   await page.goto("/#/devices/curing-heater");
   const vent = page.locator("form.action").filter({ hasText: "vent" });
-  await vent.getByRole("button", { name: "Run vent" }).click();
+  await expect(vent).toContainText("Your click is that confirmation.");
+  await vent.getByRole("button", { name: "Confirm and run vent" }).click();
   await expect(vent.locator(".result")).toContainText("granted");
   await expect(vent.locator(".result")).toContainText("vent ran");
 
@@ -109,7 +136,7 @@ test("a person runs an action that asks for confirmation each time, and a queued
       json: { status: "needs_confirmation", code: "confirmation_required", message: "Waiting for a human to approve action:vent on curing-heater.", request_id: "queued-by-test" },
     }),
   );
-  await vent.getByRole("button", { name: "Run vent" }).click();
+  await vent.getByRole("button", { name: "Confirm and run vent" }).click();
   const link = vent.getByRole("link", { name: "queued-by-test" });
   await expect(link).toBeVisible();
   await link.click();
@@ -144,11 +171,27 @@ test("the audit log filters, and verifies its hash chain", async ({ page }) => {
   }
 });
 
+test("the audit log labels values on a phone and an agent stays dashed when blocked", async ({ page }) => {
+  const agent = await AgentClient.connect("audit-agent", hubState().agentToken);
+  await agent.call("hal/action", { device: "plant-waterer", action: "water", args: { duration: { value: 120, unit: "s" } } });
+  agent.close();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/#/audit");
+  const blocked = page.locator("li.entry.agent.blocked").first();
+  await expect(blocked).toBeVisible();
+  for (const label of ["event", "by", "target", "status"]) await expect(blocked.locator(".cell .key", { hasText: label })).toBeVisible();
+  expect(await blocked.evaluate((row) => getComputedStyle(row).borderLeftStyle)).toBe("dashed");
+  await expect(blocked.locator(".code")).toHaveCSS("white-space", "nowrap");
+});
+
 test("a routine is selected, dry run, enabled, disabled and run from its buttons", async ({ page }) => {
   await page.goto("/#/routines");
   await page.getByRole("link", { name: /cure-cycle/ }).click();
   await expect(page.getByRole("heading", { name: "cure-cycle" })).toBeVisible();
   await page.getByRole("link", { name: /water-when-dry/ }).click();
+  await expect(page.locator("dl.facts")).toContainText("every 30 min");
+  const drafted = page.getByRole("link", { name: /cure-cycle/ }).locator(".drafted .nobreak");
+  await expect(drafted).toHaveText("agent:bench-agent");
   await page.getByRole("button", { name: "Dry run" }).click();
   await expect(page.getByRole("heading", { name: "Dry run" })).toBeVisible();
   await page.getByRole("button", { name: "Enable" }).click();
@@ -192,6 +235,7 @@ test("a pairing code from Settings pairs a new browser", async ({ page, browser 
   const stranger = await browser.newContext();
   const other = await stranger.newPage();
   await other.goto(hubState().url + "/");
+  await expect(other.getByRole("complementary", { name: "STOP needs a paired browser" })).toContainText("openhal stop");
   await other.getByLabel("Pairing code").fill(code);
   await other.getByRole("button", { name: "Pair" }).click();
   await expect(other.getByRole("button", { name: /STOP/ })).toBeVisible();
@@ -202,7 +246,9 @@ test("the offline page tries the hub again on its own", async ({ page }) => {
   let refuse = true;
   await page.route("**/v1/whoami", (route) => (refuse ? route.abort() : route.continue()));
   await page.goto("/");
-  await expect(page.getByText("does not answer")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The hub does not answer" })).toBeVisible();
+  const stop = page.getByRole("complementary", { name: "STOP can't reach the hub" });
+  await expect(stop).toContainText("hardware e-stop");
   refuse = false;
   await expect(page.getByRole("button", { name: /STOP/ })).toBeVisible({ timeout: 8_000 });
 });
@@ -219,7 +265,11 @@ test("the driver writer looks for devices, opens the raw data, takes answers and
   await page.reload();
   await page.getByRole("button", { name: "Start the driver writer" }).click();
   await expect(page.getByRole("heading", { name: "Limits interview" })).toBeVisible({ timeout: 20_000 });
-  const raw = page.locator("details").filter({ hasText: "shown as data" });
+  await expect(page.getByText("Reported by the device, shown as data")).toBeVisible();
+  await expect(page.locator(".data-table")).toContainText("firmware.product herb-waterer");
+  await expect(page.locator(".question .q-id").first()).toBeVisible();
+  expect(await page.locator(".question .q-id").allTextContents()).not.toContain("fan_speed.max");
+  const raw = page.locator("details").filter({ hasText: "Everything the device" });
   await raw.locator("summary").click();
   await expect(raw).toHaveAttribute("open", "");
   const first = page.getByRole("button", { name: /^Use suggested value for / }).first();

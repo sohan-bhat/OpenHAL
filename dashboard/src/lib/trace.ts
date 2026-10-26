@@ -130,6 +130,7 @@ interface RequestInfo {
   method: string;
   devices: string[];
   outcome: Outcome;
+  principal?: LogEntry["principal"];
 }
 
 function resultOutcome(result: unknown): Outcome {
@@ -154,8 +155,16 @@ export function buildTrace(entries: LogEntry[]): TraceRow[] {
     const request = requests.get(idKey(clientOf(entry), message.id));
     if (!request) continue;
     request.outcome = "error" in message ? "error" : resultOutcome(message.result);
+    if (entry.principal) request.principal = entry.principal;
   }
   return sorted.map((entry) => toRow(entry, requests));
+}
+
+function principalFor(entry: LogEntry, client: string, requests: Map<string, RequestInfo>): PrincipalInfo {
+  const own = principalInfo(entry.principal);
+  if (own.kind !== "unknown" || !isObject(entry.message) || !("id" in entry.message)) return own;
+  const answered = requests.get(idKey(client, entry.message.id))?.principal;
+  return answered ? principalInfo(answered) : own;
 }
 
 function toRow(entry: LogEntry, requests: Map<string, RequestInfo>): TraceRow {
@@ -164,7 +173,7 @@ function toRow(entry: LogEntry, requests: Map<string, RequestInfo>): TraceRow {
     seq: entry.seq,
     at: parseTime(entry.at),
     client,
-    principal: principalInfo(entry.principal),
+    principal: principalFor(entry, client, requests),
     direction: entry.direction,
   };
   const message = entry.message;

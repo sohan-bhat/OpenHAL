@@ -1,9 +1,10 @@
 <script lang="ts">
-  import Prose from "../components/Prose.svelte";
   import Json from "../components/Json.svelte";
+  import Prose from "../components/Prose.svelte";
+  import Reason from "../components/Reason.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import { api } from "../lib/api";
-  import { formatDateTime } from "../lib/units";
+  import { formatDateTime, identifiersOf } from "../lib/units";
   import { fromKernelCode } from "../lib/protocol";
   import { inspector } from "../lib/state.svelte";
   import { auditStatus } from "../lib/status";
@@ -109,6 +110,9 @@
     {:else if loaded && !entries.length}
       <p class="empty">No entries match these filters.</p>
     {:else}
+      <div class="columns" aria-hidden="true">
+        <span>Seq</span><span>Time</span><span>Event</span><span>By</span><span>Target</span><span>Status</span>
+      </div>
       <ol class="entries">
         {#each entries as entry (entry.seq)}
           {@const who = principalInfo(entry.principal)}
@@ -116,21 +120,25 @@
           {@const registry = fromKernelCode(entry.code)}
           {@const text = reason(entry)}
           {@const more = extra(entry)}
-          <li class="entry {who.kind}" class:blocked={entry.status === "blocked" || entry.status === "failed"}>
-            <span class="seq mono">{entry.seq}</span>
-            <span class="time mono">{formatDateTime(entry.at)}</span>
-            <span class="event mono">{entry.event}</span>
-            <span class="principal mono nobreak">{entry.principal}</span>
-            <span class="target mono"><Prose text={[entry.device, entry.target].filter(Boolean).join(" ")} /></span>
-            <span class="status">
-              {#if entry.status}<StatusMark tone={mark.tone} label={mark.label} />{/if}
-              {#if registry}
-                <span class="mono code" class:error={entry.status === "blocked" || entry.status === "failed"}>{registry.code} {registry.name}</span>
-              {:else if entry.code}
-                <span class="mono">{entry.code}</span>
-              {/if}
+          {@const target = [entry.device, entry.target].filter(Boolean).join(" ")}
+          <li class="entry {who.kind} tone-{mark.tone}" class:blocked={mark.tone === "blocked"}>
+            <span class="seq mono"><span class="key">seq</span> {entry.seq}</span>
+            <span class="time mono"><span class="key">time</span> {formatDateTime(entry.at)}</span>
+            <span class="cell event"><span class="key">event</span> <span class="mono">{entry.event}</span></span>
+            <span class="cell principal"><span class="key">by</span> <span class="mono nobreak">{entry.principal}</span></span>
+            <span class="cell target" class:none={!target}><span class="key">target</span> <span class="mono"><Prose text={target} /></span></span>
+            <span class="cell status" class:none={!entry.status && !entry.code}>
+              <span class="key">status</span>
+              <span class="marks">
+                {#if entry.status}<StatusMark tone={mark.tone} label={mark.label} />{/if}
+                {#if registry}
+                  <span class="mono code">{registry.code} {registry.name}</span>
+                {:else if entry.code}
+                  <span class="mono code">{entry.code}</span>
+                {/if}
+              </span>
             </span>
-            {#if text}<span class="reason mono"><Prose text={text} /></span>{/if}
+            {#if text}<p class="reason"><Reason {text} code={identifiersOf(entry.device, entry.target)} /></p>{/if}
             {#if more}<span class="details"><Json value={more} limit={600} /></span>{/if}
           </li>
         {/each}
@@ -158,6 +166,20 @@
     gap: var(--s-3);
   }
 
+  .columns,
+  .entry {
+    display: grid;
+    grid-template-columns: 5ch 19ch 15ch minmax(14ch, 20ch) minmax(22ch, 1fr) minmax(24ch, 30ch);
+    column-gap: var(--s-3);
+  }
+
+  .columns {
+    padding: 0 var(--s-3) var(--s-2) calc(var(--s-3) + 2px);
+    font-size: var(--t-label);
+    font-weight: 700;
+    color: var(--text-2);
+  }
+
   .entries {
     margin: 0;
     padding: 0;
@@ -167,9 +189,6 @@
   }
 
   .entry {
-    display: grid;
-    grid-template-columns: 5ch 19ch 15ch minmax(14ch, 20ch) minmax(22ch, 1fr) minmax(20ch, 28ch);
-    column-gap: var(--s-3);
     row-gap: 2px;
     align-items: baseline;
     padding: var(--s-2) var(--s-3);
@@ -186,8 +205,22 @@
     background: var(--surface);
   }
 
-  .entry.blocked {
-    border-left: 3px solid var(--blocked);
+  .entry.agent.blocked {
+    border-left-color: var(--blocked);
+  }
+
+  .entry.human.blocked {
+    border-left-color: var(--blocked);
+  }
+
+  .key {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
 
   .seq,
@@ -196,17 +229,25 @@
     font-variant-numeric: tabular-nums;
   }
 
-
-  .status {
+  .marks {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
     gap: var(--s-1) var(--s-2);
   }
 
-  .code.error {
-    color: var(--blocked);
+  .code {
     font-weight: 700;
+    white-space: nowrap;
+    color: var(--text-2);
+  }
+
+  .tone-blocked .code {
+    color: var(--blocked);
+  }
+
+  .tone-confirm .code {
+    color: var(--confirm);
   }
 
   .reason,
@@ -214,21 +255,59 @@
     grid-column: 3 / -1;
   }
 
-  .entry.blocked .reason {
-    font-weight: 700;
+  .reason {
+    font-size: var(--t-ui);
   }
 
   @media (max-width: 1023px) {
-    .entry {
-      grid-template-columns: 6ch minmax(0, 1fr);
+    .columns {
+      display: none;
     }
 
-    .entry > :nth-child(n + 3) {
-      grid-column: 1 / -1;
+    .entry {
+      grid-template-columns: minmax(0, 1fr) auto;
+      row-gap: var(--s-1);
+    }
+
+    .seq {
+      color: var(--text);
+      font-weight: 700;
     }
 
     .time {
-      grid-column: 2;
+      text-align: right;
+    }
+
+    .cell {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 7ch minmax(0, 1fr);
+      column-gap: var(--s-3);
+      align-items: baseline;
+    }
+
+    .cell.none {
+      display: none;
+    }
+
+    .cell .key {
+      position: static;
+      width: auto;
+      height: auto;
+      margin: 0;
+      overflow: visible;
+      clip: auto;
+      font-family: var(--font-text);
+      font-size: var(--t-label);
+      font-weight: 700;
+      font-variant-caps: all-small-caps;
+      letter-spacing: 0.04em;
+      color: var(--text-2);
+    }
+
+    .reason,
+    .details {
+      grid-column: 1 / -1;
     }
   }
 </style>

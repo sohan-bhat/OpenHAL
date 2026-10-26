@@ -7,6 +7,17 @@
   --pane-left: 300px;
   --focus: 2px solid var(--accent);
   --row-gap: var(--s-3);
+  --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2 5 8.6l4.6-5.2' fill='none' stroke='%23fcfcfd' stroke-width='1.8'/%3E%3C/svg%3E");
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2 5 8.6l4.6-5.2' fill='none' stroke='%230d0f12' stroke-width='1.8'/%3E%3C/svg%3E");
+  }
+}
+
+:root[data-theme="dark"] {
+  --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2 5 8.6l4.6-5.2' fill='none' stroke='%230d0f12' stroke-width='1.8'/%3E%3C/svg%3E");
 }
 
 *,
@@ -155,7 +166,12 @@ pre {
 .button:disabled {
   cursor: not-allowed;
   color: var(--text-2);
-  border-style: dashed;
+  background: var(--surface);
+  border-color: var(--surface);
+}
+
+.button:disabled:hover {
+  border-color: var(--surface);
 }
 
 .button.primary {
@@ -170,7 +186,7 @@ pre {
 
 .button.primary:disabled {
   background: var(--surface);
-  border-color: var(--border);
+  border-color: var(--surface);
   color: var(--text-2);
 }
 
@@ -207,10 +223,80 @@ textarea {
   font-size: var(--t-ui);
 }
 
-input:hover,
-select:hover,
-textarea:hover {
+select {
+  appearance: none;
+  padding-right: 32px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-2) 50%),
+    linear-gradient(135deg, var(--text-2) 50%, transparent 50%);
+  background-position:
+    calc(100% - 17px) 50%,
+    calc(100% - 12px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  appearance: none;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1.5px solid var(--text-2);
+  background: var(--bg) center / 12px 12px no-repeat;
+  cursor: pointer;
+}
+
+input[type="checkbox"] {
+  border-radius: 4px;
+}
+
+input[type="radio"] {
+  border-radius: 50%;
+}
+
+input[type="checkbox"]:checked {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  background-image: var(--check-mark);
+}
+
+input[type="radio"]:checked {
+  border-color: var(--accent);
+  background-image: radial-gradient(circle, var(--accent) 0 4px, transparent 4.5px);
+  background-size: 100% 100%;
+}
+
+input:not([type="range"]):disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+  color: var(--text-2);
+  background-color: var(--surface);
+  border-color: var(--surface);
+}
+
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled {
+  border-color: var(--border);
+}
+
+input:not(:disabled):hover,
+select:not(:disabled):hover,
+textarea:not(:disabled):hover {
   border-color: var(--text-2);
+}
+
+input[type="checkbox"]:not(:disabled):hover,
+input[type="radio"]:not(:disabled):hover {
+  border-color: var(--text);
+}
+
+input[type="checkbox"]:checked:not(:disabled):hover,
+input[type="radio"]:checked:not(:disabled):hover {
+  border-color: var(--accent);
 }
 
 textarea {
@@ -241,9 +327,9 @@ textarea {
 }
 
 .empty {
-  padding: var(--s-4);
-  border: 1px dashed var(--border);
+  padding: var(--s-3) var(--s-4);
   border-radius: var(--radius);
+  background: var(--surface);
   color: var(--text-2);
 }
 
@@ -267,10 +353,10 @@ textarea {
 }
 
 .data-block {
-  padding: var(--s-3);
-  border: 1px dashed var(--border);
+  padding: var(--s-3) var(--s-4);
+  border: var(--rule);
   border-radius: var(--radius);
-  background: var(--bg);
+  background: var(--surface);
   color: var(--text);
 }
 

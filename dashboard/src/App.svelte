@@ -4,6 +4,7 @@
   import Header from "./components/Header.svelte";
   import MessageLog from "./components/MessageLog.svelte";
   import Mark from "./components/Mark.svelte";
+  import StopUnavailable from "./components/StopUnavailable.svelte";
   import { router, type View } from "./lib/router.svelte";
   import { inspector } from "./lib/state.svelte";
   import Device from "./views/Device.svelte";
@@ -90,9 +91,13 @@
 {#if inspector.auth === "unpaired"}
   {#if Pair}<Pair onpaired={() => void inspector.boot()} />{/if}
 {:else if inspector.auth === "offline"}
-  <main class="offline" id="main">
+  <header class="bar">
     <div class="brand"><Mark size={24} /><strong>OpenHAL</strong> <span class="muted">Inspector</span></div>
-    <p>The hub at <code>{location.host}</code> does not answer. Start it with <code>openhald</code>.</p>
+    <StopUnavailable why="offline" host={location.host} />
+  </header>
+  <main class="offline" id="main">
+    <h1>The hub does not answer</h1>
+    <p>Nothing answers at <code>{location.host}</code>. Start the hub with <code>openhald</code>.</p>
     <p class="muted">Trying again every 3 s.</p>
   </main>
 {:else if !shell}
@@ -101,7 +106,7 @@
   <a class="skip-link" href="#main">Skip to content</a>
   <div class="app" class:log-closed={!logOpen} class:settling={hidden} data-view={view} style="--chrome-height: {chromeHeight}px">
     <div class="chrome" {@attach measure}>
-      <Header />
+      <Header onshowlog={() => (logOpen = true)} />
     </div>
     <aside class="left" aria-label="Device list">
       <DeviceList />
@@ -197,10 +202,21 @@
     padding: var(--s-7) var(--s-4);
   }
 
-  .offline .brand {
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-4) var(--s-6);
+    padding: var(--s-3) var(--s-5);
+    border-bottom: var(--rule);
+  }
+
+  .bar .brand {
     display: flex;
     align-items: center;
     gap: var(--s-2);
+    font-size: 19px;
   }
 
   @media (max-width: 1023px) {

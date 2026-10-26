@@ -10,11 +10,14 @@ import {
   formatDateTime,
   formatDuration,
   formatQuantity,
+  formatTrigger,
   formatValue,
+  identifiersOf,
   isQuantity,
   keepTogether,
   quantity,
   quantityString,
+  reasonSegments,
   unitSymbol,
 } from "./units";
 
@@ -173,6 +176,34 @@ describe("the registry and units", () => {
     ]);
     expect(segments.map((segment) => segment.text).join("")).toContain("exceeds the limit of 30 s (");
     expect(keepTogether("pump can't run")).toEqual([{ text: "pump can't run", keep: false }]);
+  });
+
+  it("sets identifiers and conditions in reasons as code", () => {
+    const code = (text: string, ids: string[]) =>
+      reasonSegments(text, ids).filter((segment) => segment.kind === "code").map((segment) => segment.text);
+    const water = identifiersOf("plant-waterer", "action:water");
+    expect(code("Done. water ran.", water)).toEqual(["water"]);
+    expect(code("Blocked. Pump can't run while tank is empty. water needs tank == ok, which doesn't hold right now.", water)).toEqual([
+      "water",
+      "tank == ok",
+    ]);
+    expect(code("Waiting for a human to approve action:vent on curing-heater.", identifiersOf("curing-heater", "action:vent"))).toEqual([
+      "action:vent",
+      "curing-heater",
+    ]);
+    expect(code("if power > 0 W, require temperature < 70 degC", [])).toEqual(["power > 0 W", "temperature < 70 degC"]);
+    expect(code("The duration limit is 30 s (max). Asked for 120 s.", water)).toEqual([]);
+    expect(code("water duration 120 s exceeds the limit (plant-waterer.hal.yaml)", water)).toEqual(["water"]);
+    const text = "Done. water ran.";
+    expect(reasonSegments(text, water).map((segment) => segment.text).join("")).toBe(text);
+  });
+
+  it("writes routine triggers in the unit their source uses", () => {
+    expect(formatTrigger("every 1800 s")).toBe("every 30 min");
+    expect(formatTrigger("every 3600 s")).toBe("every 1 h");
+    expect(formatTrigger("every 45 s")).toBe("every 45 s");
+    expect(formatTrigger("at 07:30")).toBe("at 07:30");
+    expect(formatTrigger("when plant-waterer.soil_moisture < 30 %")).toBe("when plant-waterer.soil_moisture < 30 %");
   });
 
   it("names run windows in the largest whole unit", () => {

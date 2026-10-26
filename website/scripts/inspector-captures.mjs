@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,7 +8,8 @@ import { chromium } from "playwright";
 
 const repo = fileURLToPath(new URL("../../", import.meta.url));
 const site = fileURLToPath(new URL("../", import.meta.url));
-const port = Number(process.env.INSPECTOR_PORT ?? 7433);
+const DEFAULT_PORT = 7420;
+const port = Number(process.env.INSPECTOR_PORT ?? DEFAULT_PORT);
 const python = process.env.OPENHAL_PYTHON ?? join(repo, ".venv", "bin", "python");
 const statePath = join(process.env.TMPDIR ?? tmpdir(), `openhal-inspector-${port}.json`);
 const out = join(site, "public", "captures");
@@ -17,6 +19,21 @@ const WIDTH = 1440;
 const HEIGHT = 900;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function free(wanted) {
+  return new Promise((resolve) => {
+    const probe = createServer();
+    probe.once("error", () => resolve(false));
+    probe.listen(wanted, "127.0.0.1", () => probe.close(() => resolve(true)));
+  });
+}
+
+async function checkPort() {
+  if (port === 4000) throw new Error("Port 4000 is reserved. Choose another port.");
+  if (await free(port)) return;
+  const fix = port === DEFAULT_PORT ? "Stop the hub that listens there, then run this again." : "Choose a free INSPECTOR_PORT.";
+  throw new Error(`Port ${port} is busy. The captures show the hub at 127.0.0.1:${DEFAULT_PORT}, its default address. ${fix}`);
+}
 
 async function waitFor(check, what, tries = 200, gap = 100) {
   for (let attempt = 0; attempt < tries; attempt++) {
@@ -80,6 +97,7 @@ async function scenario(state) {
   await waitFor(async () => (await reading(state, "tank")) === "ok", "a refilled tank");
   const watered = await agent.call("hal/action", water(20));
   if (watered.result?.status !== "done") throw new Error("The 20 s watering did not run.");
+  await waitFor(async () => (await reading(state, "soil_moisture")) === 46, "soil moisture to reach 46 %");
   agent.close();
 }
 
@@ -104,12 +122,14 @@ async function capture(browser, state, theme) {
   await context.addCookies([{ name: "openhal_session", value: state.humanToken, url: state.url, httpOnly: true, sameSite: "Strict" }]);
   const page = await context.newPage();
   const settle = async () => {
+    await page.mouse.move(1, 1);
     await page.evaluate(() => document.fonts.ready);
     await sleep(600);
   };
   const shots = {};
   await page.goto(`${state.url}/#/devices/plant-waterer`);
   await page.getByRole("heading", { name: "Arduino plant waterer", level: 1 }).waitFor();
+  await page.locator("dl.hub.wide").getByText(`127.0.0.1:${port}`).waitFor();
   await settle();
   shots.device = await page.screenshot();
   await page.getByRole("button", { name: "Message log", exact: true }).click();
@@ -122,6 +142,7 @@ async function capture(browser, state, theme) {
   await settle();
   shots.log = await page.screenshot();
   await page.goto(`${state.url}/#/devices/plant-waterer`);
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.getByRole("button", { name: /STOP/ }).click();
   await page.getByRole("button", { name: "UNLOCK" }).waitFor();
   await settle();
@@ -135,6 +156,8 @@ async function capture(browser, state, theme) {
 }
 
 async function main() {
+  await checkPort();
+  if (port !== DEFAULT_PORT) console.warn(`The captures will show the hub at 127.0.0.1:${port}, not its default address.`);
   rmSync(statePath, { force: true });
   const server = spawn(python, ["-m", "tests.inspector.serve", "--port", String(port), "--state", statePath], { cwd: repo, stdio: ["ignore", "ignore", "inherit"] });
   try {

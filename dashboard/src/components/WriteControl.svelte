@@ -1,10 +1,10 @@
 <script lang="ts">
-  import Prose from "./Prose.svelte";
+  import Reason from "./Reason.svelte";
   import { api } from "../lib/api";
   import { describeDecision, type DecisionSummary } from "../lib/devices";
   import { confirmTier } from "../lib/status";
   import type { WriteSpec } from "../lib/types";
-  import { formatNumber, formatQuantity, quantityString, unitSymbol, valueWidth } from "../lib/units";
+  import { formatNumber, formatQuantity, identifiersOf, quantityString, unitSymbol, valueWidth } from "../lib/units";
   import LimitScale from "./LimitScale.svelte";
   import StatusMark from "./StatusMark.svelte";
 
@@ -13,6 +13,7 @@
     channel,
     spec,
     disabled = false,
+    readOnly = false,
     disabledReason = "",
     onwritten,
   }: {
@@ -20,6 +21,7 @@
     channel: string;
     spec: WriteSpec;
     disabled?: boolean;
+    readOnly?: boolean;
     disabledReason?: string;
     onwritten?: () => void;
   } = $props();
@@ -29,6 +31,7 @@
   const symbol = $derived(unitSymbol(spec.unit));
   const width = $derived(valueWidth(spec.min, spec.max, spec.step));
   const tier = $derived(confirmTier(spec.confirm));
+  const confirms = $derived(tier.tone === "confirm");
   const ident = $derived(`${device}-${channel}`.replace(/[^a-z0-9-]/gi, "-"));
 
   const lo = $derived(spec.min ?? 0);
@@ -111,54 +114,62 @@
       value={Number.isFinite(numericDraft) ? numericDraft : null}
       current={spec.known && typeof spec.value === "number" ? spec.value : null}
       {disabled}
+      interactive={!readOnly}
       oninput={setDraft}
     />
   {/if}
 
-  <div class="entry">
-    {#if isNumber}
-      <label class="number">
-        <span class="visually-hidden">{channel} value in {symbol || "its unit"}</span>
-        <input
-          id="{ident}-input"
-          type="number"
-          inputmode="decimal"
-          min={spec.min ?? undefined}
-          max={spec.max ?? undefined}
-          step={spec.step ?? "any"}
-          value={draft}
-          {disabled}
-          oninput={(event) => setDraft((event.currentTarget as HTMLInputElement).value)}
-          style="width: {width + 4}ch"
-        />
-        {#if symbol}<span class="unit mono">{symbol}</span>{/if}
-      </label>
-    {:else if spec.type === "bool"}
-      <div class="choices" role="radiogroup" aria-label="{channel} new value">
-        {#each ["false", "true"] as option (option)}
-          <label class="choice">
-            <input type="radio" name="{ident}-bool" value={option} checked={draft === option} {disabled} onchange={() => setDraft(option)} />
-            <span class="mono">{option}</span>
-          </label>
-        {/each}
-      </div>
-    {:else if spec.type === "enum" && spec.values}
-      <div class="choices" role="radiogroup" aria-label="{channel} new value">
-        {#each spec.values as option (option)}
-          <label class="choice">
-            <input type="radio" name="{ident}-enum" value={option} checked={draft === option} {disabled} onchange={() => setDraft(option)} />
-            <span class="mono">{option}</span>
-          </label>
-        {/each}
-      </div>
-    {:else}
-      <label class="number">
-        <span class="visually-hidden">{channel} new value</span>
-        <input id="{ident}-input" type="text" value={draft} {disabled} oninput={(event) => setDraft((event.currentTarget as HTMLInputElement).value)} />
-      </label>
+  {#if !readOnly}
+    <div class="entry">
+      {#if isNumber}
+        <label class="number">
+          <span class="visually-hidden">{channel} value in {symbol || "its unit"}</span>
+          <input
+            id="{ident}-input"
+            type="number"
+            inputmode="decimal"
+            min={spec.min ?? undefined}
+            max={spec.max ?? undefined}
+            step={spec.step ?? "any"}
+            value={draft}
+            {disabled}
+            oninput={(event) => setDraft((event.currentTarget as HTMLInputElement).value)}
+            style="width: {width + 4}ch"
+          />
+          {#if symbol}<span class="unit mono">{symbol}</span>{/if}
+        </label>
+      {:else if spec.type === "bool"}
+        <div class="choices" role="radiogroup" aria-label="{channel} new value">
+          {#each ["false", "true"] as option (option)}
+            <label class="choice">
+              <input type="radio" name="{ident}-bool" value={option} checked={draft === option} {disabled} onchange={() => setDraft(option)} />
+              <span class="mono">{option}</span>
+            </label>
+          {/each}
+        </div>
+      {:else if spec.type === "enum" && spec.values}
+        <div class="choices" role="radiogroup" aria-label="{channel} new value">
+          {#each spec.values as option (option)}
+            <label class="choice">
+              <input type="radio" name="{ident}-enum" value={option} checked={draft === option} {disabled} onchange={() => setDraft(option)} />
+              <span class="mono">{option}</span>
+            </label>
+          {/each}
+        </div>
+      {:else}
+        <label class="number">
+          <span class="visually-hidden">{channel} new value</span>
+          <input id="{ident}-input" type="text" value={draft} {disabled} oninput={(event) => setDraft((event.currentTarget as HTMLInputElement).value)} />
+        </label>
+      {/if}
+      <button class="button primary" type="submit" disabled={disabled || busy || !draftValid}>
+        <span>{confirms ? "Confirm and set" : "Set"} <span class="mono">{channel}</span></span>
+      </button>
+    </div>
+    {#if confirms}
+      <p class="muted reason-line">Changes to this channel need a person's confirmation. Your click is that confirmation.</p>
     {/if}
-    <button class="button primary" type="submit" disabled={disabled || busy || !draftValid}>Set {channel}</button>
-  </div>
+  {/if}
 
   <dl class="meta">
     {#if bounded}
@@ -173,7 +184,7 @@
     {#if spec.suggested}<div><dt class="label">limits</dt><dd><StatusMark tone="unverified" label="suggested, not confirmed" /></dd></div>{/if}
   </dl>
 
-  {#if disabled && disabledReason}
+  {#if disabled && disabledReason && !readOnly}
     <p class="muted reason-line">{disabledReason}</p>
   {/if}
 
@@ -189,7 +200,7 @@
             class:pending={outcome.tone === "pending"}>{outcome.head}</span
           >
         {/if}
-        <p class="mono reason"><Prose text={outcome.reason} /></p>
+        <p class="reason"><Reason text={outcome.reason} code={identifiersOf(device, `write:${channel}`)} /></p>
       </div>
     {/if}
   </div>

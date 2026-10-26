@@ -18,6 +18,14 @@ const entries = fixture as LogEntry[];
 describe("buildTrace", () => {
   const rows = buildTrace(entries);
 
+  it("gives hal/initialize the principal its answer names, so agents keep their dashed rule", () => {
+    const hello = rows.find((row) => row.seq === 1)!;
+    expect(hello.head).toBe("hal/initialize");
+    expect(hello.client).toBe("bench-agent");
+    expect(hello.principal.kind).toBe("agent");
+    expect(hello.principal.label).toBe("agent:bench-agent");
+  });
+
   it("draws a request as a right arrow with its method", () => {
     const request = rows.find((row) => row.seq === 4)!;
     expect(request.arrow).toBe("right");

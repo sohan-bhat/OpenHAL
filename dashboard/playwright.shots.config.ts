@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 
 const repo = fileURLToPath(new URL("..", import.meta.url));
-const port = 7432;
+const port = Number(process.env.INSPECTOR_PORT ?? 7432);
 const state = fileURLToPath(new URL("./test-results/shots-hub.json", import.meta.url));
 process.env.INSPECTOR_PORT = String(port);
 process.env.INSPECTOR_STATE = state;

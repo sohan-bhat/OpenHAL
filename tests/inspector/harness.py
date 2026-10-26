@@ -3,7 +3,9 @@
 Every device runs on the mock driver or a firmware simulator. Nothing reaches hardware. The plant
 waterer is the canonical demo device, examples/plant-waterer/mock/plant-waterer.hal.yaml on the
 simulated board behind `sim:plant-waterer`. The harness adds two routes for tests, under /_harness,
-that refill and drain its tank.
+that refill and drain its tank. The last discovery holds one unknown board for the driver writer, a
+herb waterer at `sim:herb-waterer` that runs the plant waterer's firmware under its own product name,
+so no library file matches it and the writer screens stay on the canonical example.
 """
 
 from __future__ import annotations
@@ -97,11 +99,13 @@ steps:
 DEVICE_FILES = {"curing-heater": CURING_HEATER, "bench-lamp": BENCH_LAMP}
 SPEED = 20.0
 
+UNKNOWN_PRODUCT = "herb-waterer"
+
 SIMULATED_BOARD = Unknown(
-    id="sim-bench-board",
-    address="sim:bench-board",
+    id=f"sim-{UNKNOWN_PRODUCT}",
+    address=f"sim:{UNKNOWN_PRODUCT}",
     driver="openhal-firmware",
-    identifiers={"firmware.product": "desk-fan", "firmware.version": "1.0.0"},
+    identifiers={"firmware.product": UNKNOWN_PRODUCT, "firmware.version": "1.0.0"},
     label="Simulated OpenHAL firmware board",
 )
 
@@ -142,6 +146,7 @@ async def start(home: Path) -> Harness:
     (home / "routines").mkdir(parents=True, exist_ok=True)
     board = PlantWatererSimulator(speed=SPEED)
     SIMULATORS["plant-waterer"] = board
+    SIMULATORS[UNKNOWN_PRODUCT] = PlantWatererSimulator(product=UNKNOWN_PRODUCT, speed=SPEED)
     hub = Hub(HubConfig(home=home), in_memory=True)
     await hub.start()
     hub.routines.create(human("sohan"), "water-when-dry", "yaml", WATER_WHEN_DRY)

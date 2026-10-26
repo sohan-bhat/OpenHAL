@@ -1,5 +1,6 @@
 <script lang="ts">
   import Json from "../components/Json.svelte";
+  import Prose from "../components/Prose.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import { api } from "../lib/api";
   import { diffLines, diffStats } from "../lib/diff";
@@ -23,6 +24,7 @@
   let answers = $state<Record<string, string>>({});
   let baseline = $state<string | null>(null);
   let plan = $state<{ steps: TestStep[]; problems: string[] } | null>(null);
+  let planError = $state<string | null>(null);
   let proposal = $state("");
   let saveAs = $state("");
   let saved = $state<{ path: string; device_id: string; writable: boolean } | null>(null);
@@ -34,6 +36,7 @@
   const stepIndex = $derived(session ? STEPS.findIndex((step) => step.status === session!.status) : -1);
   const diff = $derived(baseline && session?.draft_yaml && session.status !== "interview" ? diffLines(baseline, session.draft_yaml) : null);
   const stats = $derived(diff ? diffStats(diff) : null);
+  const facts = $derived(session ? detected(session.detected) : []);
   const allAnswered = $derived(questions.length > 0 && questions.every((question) => (answers[question.id] ?? "").trim() !== ""));
 
   $effect(() => {
@@ -44,6 +47,7 @@
     const id = sessionId;
     saved = null;
     plan = null;
+    planError = null;
     error = null;
     if (id) void loadSession(id);
     else session = null;
@@ -81,15 +85,14 @@
     } else {
       questions = [];
     }
-    if (!saveAs) {
-      const match = session.draft_yaml?.match(/^id:\s*([a-z0-9][a-z0-9_-]*)/m);
-      saveAs = match?.[1] ?? "bench-board";
-    }
+    if (!saveAs) saveAs = suggestedName(session);
     if (session.status === "ready" || session.status === "interview") {
       try {
         plan = await api.writerTestPlan(session.id);
-      } catch {
+        planError = null;
+      } catch (failure) {
         plan = null;
+        planError = failure instanceof Error ? failure.message : "The hub did not answer.";
       }
     }
   }
@@ -161,28 +164,41 @@
     });
   }
 
+  function suggestedName(current: WriterSession): string {
+    const id = current.draft_yaml?.match(/^id:\s*([a-z0-9][a-z0-9_-]*)/m)?.[1];
+    if (id) return id;
+    const name = current.draft_yaml?.match(/^device:\s*(.+)$/m)?.[1] ?? "";
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    return slug || "new-device";
+  }
+
   interface Detected {
-    text: string;
+    key: string;
+    lines: string[];
     data: boolean;
   }
 
-  function detected(value: unknown): Detected {
+  function flatten(value: unknown): { lines: string[]; data: boolean } {
     if (typeof value === "string") {
       const block = dataBlock(value);
-      return { text: block?.text ?? value, data: !!block?.source };
+      return { lines: [block?.text ?? value], data: !!block?.source };
     }
     if (Array.isArray(value)) {
-      const parts = value.map(detected);
-      return { text: parts.map((part) => part.text).join(", "), data: parts.some((part) => part.data) };
+      const parts = value.map(flatten);
+      return { lines: [parts.flatMap((part) => part.lines).join(", ")], data: parts.some((part) => part.data) };
     }
     if (value && typeof value === "object") {
       const parts = Object.entries(value as Record<string, unknown>).map(([key, item]) => {
-        const inner = detected(item);
-        return { text: `${key} ${inner.text}`, data: inner.data };
+        const inner = flatten(item);
+        return { lines: [`${key} ${inner.lines.join(", ")}`], data: inner.data };
       });
-      return { text: parts.map((part) => part.text).join(", "), data: parts.some((part) => part.data) };
+      return { lines: parts.flatMap((part) => part.lines), data: parts.some((part) => part.data) };
     }
-    return { text: String(value), data: false };
+    return { lines: [String(value)], data: false };
+  }
+
+  function detected(values: Record<string, unknown>): Detected[] {
+    return Object.entries(values).map(([key, value]) => ({ key: key.replace(/_/g, " "), ...flatten(value) }));
   }
 </script>
 
@@ -209,11 +225,11 @@
         <ul class="unknown">
           {#each unknown as device (device.id)}
             <li>
-              <div class="facts">
+              <div class="unknown-facts">
                 <span class="name">{device.label ?? device.address}</span>
                 <span class="mono muted">{device.driver} at {device.address}</span>
                 <span class="mono small">
-                  {Object.entries(device.identifiers).map(([key, value]) => `${key} ${value}`).join(", ")}
+                  <Prose text={Object.entries(device.identifiers).map(([key, value]) => `${key} ${value}`).join(", ")} />
                 </span>
               </div>
               <button class="button primary" type="button" disabled={busy} onclick={() => start(device)}>
@@ -238,19 +254,26 @@
         <h2 id="detected-title">Session <span class="mono">{session.id}</span></h2>
         <a href={href("writer")}>All unknown devices</a>
       </div>
-      <dl class="facts-grid">
-        {#each Object.entries(session.detected) as [key, value] (key)}
-          {@const fact = detected(value)}
-          <div>
-            <dt class="label">{key.replace(/_/g, " ")}{fact.data ? ", shown as data" : ""}</dt>
-            <dd class="mono" class:data={fact.data}>{fact.text}</dd>
-          </div>
+      <dl class="facts">
+        {#each facts.filter((fact) => !fact.data) as fact (fact.key)}
+          <div><dt class="label">{fact.key}</dt><dd class="mono">{fact.lines.join(", ")}</dd></div>
         {/each}
       </dl>
+      {#if facts.some((fact) => fact.data)}
+        <div class="reported">
+          <p class="label">Reported by the device, shown as data</p>
+          <dl class="data-table">
+            {#each facts.filter((fact) => fact.data) as fact (fact.key)}
+              <dt>{fact.key}</dt>
+              <dd class="mono">{#each fact.lines as line, index (index)}<span class="value-line"><Prose text={line} /></span>{/each}</dd>
+            {/each}
+          </dl>
+        </div>
+      {/if}
       {#each session.problems as problem, index (index)}<p class="problem">{problem}</p>{/each}
       {#if session.sources.length}
         <details>
-          <summary>What the device and its sources said, shown as data</summary>
+          <summary>Everything the device and its sources said</summary>
           {#each session.sources as source, index (index)}
             {@const block = dataBlock(source)}
             {#if block}
@@ -316,13 +339,20 @@
               <li class="line {line.kind}">
                 <span class="sign" aria-hidden="true">{line.kind === "added" ? "+" : line.kind === "removed" ? "-" : " "}</span>
                 <span class="visually-hidden">{line.kind === "same" ? "" : line.kind}</span>
-                <code>{line.text || " "}</code>
+                <code><Prose text={line.text || " "} /></code>
               </li>
             {/each}
           </ol>
         {:else}
-          <pre class="file"><code>{session.draft_yaml}</code></pre>
+          <pre class="file"><code><Prose text={session.draft_yaml} /></code></pre>
         {/if}
+      </section>
+    {/if}
+
+    {#if planError && !plan}
+      <section class="section" aria-labelledby="plan-title">
+        <h2 id="plan-title">Staged test plan</h2>
+        <p class="problem">The hub could not build the staged test plan. {planError}</p>
       </section>
     {/if}
 
@@ -405,7 +435,7 @@
     border-radius: var(--radius);
   }
 
-  .facts {
+  .unknown-facts {
     display: grid;
     gap: 2px;
   }
@@ -457,23 +487,43 @@
     border: 2px solid var(--accent);
   }
 
-  .facts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: var(--s-3);
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-3) var(--s-6);
     margin: 0;
   }
 
-  .facts-grid div {
+  .facts div {
     display: grid;
-    align-content: start;
     gap: 2px;
   }
 
-  .facts-grid dd.data {
-    padding: var(--s-1) var(--s-2);
-    border: 1px dashed var(--border);
+  .reported {
+    display: grid;
+    gap: var(--s-2);
+    padding: var(--s-3) var(--s-4);
+    border: var(--rule);
     border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .data-table {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--s-2) var(--s-5);
+    margin: 0;
+  }
+
+  .data-table dt {
+    font-size: var(--t-label);
+    font-weight: 700;
+    color: var(--text-2);
+  }
+
+  .data-table dd {
+    display: grid;
+    gap: 2px;
   }
 
   dd {
@@ -554,8 +604,12 @@
   }
 
   .line.added .sign {
-    color: var(--ok);
+    color: var(--text);
     font-weight: 700;
+  }
+
+  .line code {
+    overflow-wrap: anywhere;
   }
 
   .line.removed {
@@ -587,10 +641,13 @@
     gap: var(--s-3);
   }
 
-  .name-input {
+  .field > .name-input {
     display: inline-flex;
     align-items: center;
     gap: var(--s-1);
+    font-size: var(--t-ui);
+    font-weight: 400;
+    color: var(--text);
   }
 
   .saved {

@@ -88,6 +88,8 @@ test("a change from the Inspector stops at the limit and is decided by the kerne
   const number = control.getByRole("spinbutton");
   await expect(slider).toHaveAttribute("max", "60");
   await expect(control.getByText("max 60 W")).toBeVisible();
+  await expect(control.getByText("min 0 W")).toBeVisible();
+  await expect(control.locator(".ticks .tick")).toHaveText("30 W");
   await slider.fill("60");
   await expect(number).toHaveValue("60");
 
@@ -105,6 +107,8 @@ test("an action argument stops at its limit", async ({ page }) => {
   const slider = action.getByRole("slider", { name: "duration for water, slider" });
   await expect(slider).toHaveAttribute("max", "30");
   await expect(action.getByText("max 30 s")).toBeVisible();
+  await expect(action.getByText("min 1 s")).toBeVisible();
+  await expect(action.locator(".ticks .tick")).toHaveText("16 s");
   await expect(action.getByRole("spinbutton", { name: "duration in s" })).toHaveValue("1");
   await expect(action.getByText("at most 3 runs per 1 h")).toBeVisible();
   await expect(action.getByText("pump can't run while tank is empty")).toBeVisible();

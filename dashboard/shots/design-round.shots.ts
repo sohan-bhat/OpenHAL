@@ -91,6 +91,7 @@ async function settle(page: Page): Promise<void> {
 }
 
 async function shoot(page: Page, name: string, width: number, theme: string): Promise<void> {
+  await page.mouse.move(1, 1);
   await settle(page);
   await page.screenshot({ path: `${OUT}${name}-${width}-${theme}.png` });
 }
@@ -189,7 +190,7 @@ test("pairing and offline", async ({ browser }) => {
       const page = await open(browser, width, theme);
       await page.route("**/v1/whoami", (route) => route.abort());
       await page.goto("/");
-      await expect(page.getByText("does not answer")).toBeVisible();
+      await expect(page.getByRole("heading", { name: "The hub does not answer" })).toBeVisible();
       await shoot(page, "offline", width, theme);
       await page.context().close();
     }

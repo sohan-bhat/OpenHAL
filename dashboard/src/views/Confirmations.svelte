@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Prose from "../components/Prose.svelte";
+  import Reason from "../components/Reason.svelte";
   import { onDestroy } from "svelte";
   import Json from "../components/Json.svelte";
   import StatusMark from "../components/StatusMark.svelte";
@@ -8,6 +8,7 @@
   import { describeDecision } from "../lib/devices";
   import { inspector } from "../lib/state.svelte";
   import { decisionStatus } from "../lib/status";
+  import { identifiersOf } from "../lib/units";
   import type { Command, ConfirmationRequest, Decision } from "../lib/types";
 
   let recent = $state<ConfirmationRequest[]>([]);
@@ -117,7 +118,7 @@
                   label={dry.word}
                 />
                 {#if dry.head && dry.tone !== "granted"}<span class="mono code {dry.tone}">{dry.head}</span>{/if}
-                <span class="mono"><Prose text={request.dry_run.message} /></span>
+                <span><Reason text={request.dry_run.message} code={identifiersOf(request.dry_run.device, request.dry_run.target)} /></span>
               </div>
               <p class="expires">
                 <span class="label">expires in</span>
@@ -159,7 +160,7 @@
               <span class="label">result</span>
               <StatusMark tone={result.tone === "granted" ? "ok" : "blocked"} label={result.word} />
               {#if result.head && result.tone !== "granted"}<span class="mono code blocked">{result.head}</span>{/if}
-              <span class="mono">{outcome.decision?.message}</span>
+              {#if outcome.decision}<span><Reason text={outcome.decision.message} code={identifiersOf(outcome.decision.device, outcome.decision.target)} /></span>{/if}
             {/if}
           </li>
         {/each}

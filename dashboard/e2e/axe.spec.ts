@@ -91,7 +91,7 @@ for (const scheme of ["light", "dark"] as const) {
       const offline = await lost.newPage();
       await offline.route("**/v1/whoami", (route) => route.abort());
       await offline.goto("/");
-      await expect(offline.getByText("does not answer")).toBeVisible();
+      await expect(offline.getByRole("heading", { name: "The hub does not answer" })).toBeVisible();
       problems.push(...(await violations(offline, "offline")));
       await lost.close();
 
