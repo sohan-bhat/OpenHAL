@@ -1,9 +1,11 @@
-"""Every page tells the plant waterer story with the numbers docs/demo/scenario.yaml records.
+"""Every page tells the print babysitter story with the numbers docs/demo/scenario.yaml records.
 
-The README and the docs quickstart show the recorded trace exactly. Every page that names a demo
-value (the 30 s and 1 s limits, the 120 s and 20 s requests, 3 runs per 1 h, soil moisture from
-31 % to 46 %, the reasons and the confirmation) names the recorded one. The desk fan stays in
-spec/examples/, and user-facing copy says command or change instead of write or layer.
+The README and the docs quickstart show the recorded trace exactly. Every page that names a printer
+value (the 260 degC and 110 degC limits, their rates, the 300 degC nozzle, the bed from 60 degC to
+70 degC, the reason and the confirmation) names the recorded one. Pages about the Arduino plant
+waterer name the values of its mock device file and of docs/demo/e2e.yaml, which `openhal demo
+--full` records. The desk fan stays in spec/examples/, and user-facing copy says command or change
+instead of write or layer.
 """
 
 from __future__ import annotations
@@ -16,12 +18,18 @@ import pytest
 from typer.testing import CliRunner
 
 from openhal.cli.main import app
-from openhal.demo import readme, scenario
+from openhal.demo import e2e, plant, readme, scenario
+from openhal.spec import load
 
 ROOT = Path(__file__).resolve().parents[2]
 README = ROOT / "README.md"
 DESCRIPTION = "An open-source protocol for AI agents to control hardware."
-COPY = [README, ROOT / "docs" / "QUICKSTART.md", ROOT / "examples" / "plant-waterer" / "README.md"]
+COPY = [
+    README,
+    ROOT / "docs" / "QUICKSTART.md",
+    ROOT / "examples" / "plant-waterer" / "README.md",
+    ROOT / "examples" / "print-babysitter" / "README.md",
+]
 REFERENCE_COPY = [
     ROOT / "docs" / "ARCHITECTURE.md",
     ROOT / "docs" / "interfaces" / "CLI.md",
@@ -40,11 +48,15 @@ REFERENCE_COPY = [
 device file's `write` section and the product name driver writer, and say command or change
 everywhere else."""
 
+RECORD = scenario.read()
+FULL = e2e.read()
+MOCK = load(plant.example_file())
+
 
 @pytest.mark.parametrize("page", readme.PAGES, ids=lambda page: page.name)
 def test_pages_match_the_recorded_scenario(page: Path) -> None:
     text = page.read_text(encoding="utf-8")
-    assert readme.synced(text, scenario.read()) == text, "Run uv run python -m openhal.demo.readme"
+    assert readme.synced(text, RECORD) == text, "Run uv run python -m openhal.demo.readme"
     assert "<!-- trace:start -->\n```" in text
 
 
@@ -96,68 +108,108 @@ def test_reference_copy_says_command_or_change(page: Path) -> None:
     assert not words, f"{page.name} uses {sorted(set(words))}"
 
 
-def test_the_readme_uses_the_plant_waterer() -> None:
+def test_the_readme_and_the_flow_diagram_use_the_printer() -> None:
     text = README.read_text(encoding="utf-8")
     assert "desk-fan" not in text
     assert "desk fan" not in text.lower()
+    assert "examples/print-babysitter/" in text
+    refused = scenario.exchange(RECORD, "nozzle-too-hot")["error"]
+    nozzle = f"{refused['data']['requested']['value']:g} °C"
     source = (ROOT / "docs" / "diagrams" / "flow.d2").read_text(encoding="utf-8")
-    assert 'device: "Arduino\\nplant waterer"' in source
-    assert '"INTERLOCK_BLOCKED:\\ntank empty"' in source
+    assert 'client: "Agent" {' in source
+    assert 'device: "3D printer" {' in source
+    assert f'"{refused["data"]["name"]}:\\nnozzle {nozzle}"' in source
     for name in ("flow-light", "flow-dark", "flow-narrow-light", "flow-narrow-dark"):
         built = (ROOT / "docs" / "diagrams" / f"{name}.svg").read_text(encoding="utf-8")
-        assert "Arduino plant waterer" in built
-        assert "INTERLOCK_BLOCKED" in built
-
-
-RECORD = scenario.read()
+        assert "3D printer" in built
+        assert "LIMIT_EXCEEDED" in built
+        assert f"A {nozzle} nozzle is blocked" in built
 
 
 def demo_pages() -> list[Path]:
-    """Every page that can show the demo's numbers."""
+    """Every page that can show the demo's numbers. Verification records keep what was true then."""
     found = [README]
     for folder in ("docs", "spec"):
         found.extend(sorted((ROOT / folder).rglob("*.md")))
-    found += sorted((ROOT / "examples" / "plant-waterer").glob("*.md"))
+    for example in ("plant-waterer", "print-babysitter"):
+        found += sorted((ROOT / "examples" / example).glob("*.md"))
     found.append(ROOT / "firmware" / "arduino" / "OpenHAL" / "README.md")
-    skipped = ("docs/agents/", "docs/research/")
+    skipped = ("docs/agents/", "docs/research/", "docs/verification/")
     return [path for path in found if path.is_file() and not any(part in path.as_posix() for part in skipped)]
 
 
-def facts() -> dict[str, tuple[str, ...]]:
-    """What each demo value pattern must say, from docs/demo/scenario.yaml."""
-    limits = RECORD["limits"]
-    too_long, empty, watered = RECORD["exchanges"]
-    longest = str(limits["water_duration"]["max"]["value"])
-    shortest = str(limits["water_duration"]["min"]["value"])
-    runs = limits["water_runs"]
-    window = f"{runs['per']['value']} {runs['per']['unit']}"
-    before = str(watered["soil_moisture"]["before"]["value"])
-    after = str(watered["soil_moisture"]["after"]["value"])
-    asked = str(too_long["request"]["params"]["args"]["duration"]["value"])
-    ran = str(watered["request"]["params"]["args"]["duration"]["value"])
-    confirmed = RECORD["confirmed"]
+def shown(value: float) -> str:
+    return f"{float(value):g}"
+
+
+DEGREES = r" ?(?:°C|degC)"
+
+
+def printer_facts() -> dict[str, tuple[str, ...]]:
+    """What each printer value pattern must say, from docs/demo/scenario.yaml."""
+    printer = next(device for device in RECORD["devices"] if device["id"] == scenario.DEVICE)
+    nozzle, bed = printer["limits"]["extruder_target"], printer["limits"]["bed_target"]
+    hottest, warmest = shown(nozzle["max"]["value"]), shown(bed["max"]["value"])
+    rates = (shown(nozzle["max_change_per_s"]["value"]), shown(bed["max_change_per_s"]["value"]))
+    refused = scenario.exchange(RECORD, "nozzle-too-hot")["error"]["data"]
+    asked = shown(refused["requested"]["value"])
+    warmer = scenario.exchange(RECORD, "bed-warmer")["bed_target"]
+    citation = rf"\({re.escape(printer['file'])}, confirmed by (\S+) (\d{{4}}-\d{{2}}-\d{{2}})\)"
+    d = DEGREES
+    return {
+        r"extruder_target (\d+) degC exceeds the limit of (\d+) degC": (asked, shown(refused["limit"]["value"])),
+        citation: (printer["confirmed"]["by"], printer["confirmed"]["at"]),
+        rf"(?:bed|`?bed_target`?) from (\d+){d} to (\d+){d}": (
+            shown(warmer["before"]["value"]),
+            shown(warmer["after"]["value"]),
+        ),
+        rf"\b(\d+){d} nozzle": (asked,),
+        rf"at the (\d+){d} limit": (hottest,),
+        rf"since the limit is (\d+){d}": (hottest,),
+        rf"`?extruder_target`? (?:is )?limited to (\d+){d}": (hottest,),
+        rf"`?bed_target`? (?:is )?limited to (\d+){d}": (warmest,),
+        rf"`extruder_target` takes 0 to (\d+){d} and `bed_target` takes 0 to (\d+){d}": (hottest, warmest),
+        rf"nozzle target stays at or below (\d+){d} and the bed target at or below (\d+){d}": (hottest, warmest),
+        rf"changing by at most (\d+) and (\d+){d} per second": rates,
+        rf"nozzle target changes by at most (\d+){d} per second, and the bed target by at most (\d+){d}": rates,
+    }
+
+
+def plant_facts() -> dict[str, tuple[str, ...]]:
+    """What each plant waterer value pattern must say, from its mock file and docs/demo/e2e.yaml."""
+    water = MOCK.actions["water"]
+    duration = water.args["duration"]
+    assert duration.min is not None
+    assert duration.max is not None
+    assert water.max_runs is not None
+    assert MOCK.confirmed is not None
+    longest, shortest = shown(duration.max), shown(duration.min)
+    runs = str(water.max_runs.count)
+    window = f"{shown(water.max_runs.per / 3600)} h"
+    tank = next(item.message for item in water.require if not isinstance(item, str))
+    soil = e2e.step(FULL, "agent-reads-again")["soil_moisture"]
+    before, after = shown(soil["before"]["value"]), shown(soil["after"]["value"])
+    asked = shown(e2e.step(FULL, "too-long")["arguments"]["args"]["duration"]["value"])
+    citation = rf"\({re.escape(plant.FILE_NAME)}, confirmed by (\S+) (\d{{4}}-\d{{2}}-\d{{2}})\)"
     return {
         r"water duration \d+ s exceeds the limit of (\d+) s": (longest,),
         r"water duration \d+ s is below the limit of (\d+) s": (shortest,),
         r"The duration limit is (\d+) s \(max\)": (longest,),
         r"ERR limit duration max (\d+)": (longest,),
-        r"duration`? from (\d+) s to (\d+) s": (shortest, longest),
         r"[Ww]atering runs at most (\d+) s": (longest,),
-        r"water may run at most (\d+) times per (\d+ \w+)": (str(runs["count"]), window),
-        r"(?:pump|water|watering)[^.\n]*?\b(\d+) (?:runs|times) (?:per|an|each) (?:hour|1 h)\b": (str(runs["count"]),),
-        r"\b(\d+) runs per 1 h\b": (str(runs["count"]),),
-        r"(?i)(pump can.?t run while[^.\"\n]*?empty)": (empty["error"]["message"],),
+        r"water may run at most (\d+) times per (\d+ \w+)": (runs, window),
+        r"(?:pump|water|watering)[^.\n]*?\b(\d+) (?:runs|times) (?:per|an|each) (?:hour|1 h)\b": (runs,),
+        r"(?i)(pump can.?t run while[^.\"\n]*?empty)": (tank or "",),
         r"rises from (\d+) ?% to (\d+) ?%": (before, after),
-        r"soil reads (\d+) ?%": (before,),
         r"VAL soil_moisture (\d+)": (before,),
         r"EVT soil_moisture (\d+)": (after,),
-        r"refuse a (\d+) s watering": (asked,),
-        r"water for (\d+) s as soil moisture": (ran,),
-        rf"\({re.escape(RECORD['file'])}, confirmed by (\S+) (\d{{4}}-\d{{2}}-\d{{2}})\)": (
-            confirmed["by"],
-            confirmed["at"],
-        ),
+        r"agent's (\d+) s request": (asked,),
+        citation: (MOCK.confirmed.by, str(MOCK.confirmed.at)),
     }
+
+
+def facts() -> dict[str, tuple[str, ...]]:
+    return {**printer_facts(), **plant_facts()}
 
 
 def demo_values(text: str) -> dict[str, list[tuple[str, ...]]]:
@@ -166,30 +218,35 @@ def demo_values(text: str) -> dict[str, list[tuple[str, ...]]]:
 
 
 def disagreements(text: str) -> list[str]:
-    """Every demo value in the text that differs from the recorded scenario."""
+    """Every demo value in the text that differs from the recorded values."""
     wrong = []
+    expected_by_pattern = facts()
     for pattern, found in demo_values(text).items():
-        expected = facts()[pattern]
+        expected = expected_by_pattern[pattern]
         for groups in found:
             said = tuple(group[:1].lower() + group[1:] for group in groups)
             if said != tuple(value[:1].lower() + value[1:] for value in expected):
-                wrong.append(f"{groups} where docs/demo/scenario.yaml gives {expected} ({pattern})")
+                wrong.append(f"{groups} where the record gives {expected} ({pattern})")
     return wrong
 
 
 def test_the_value_check_catches_drifted_numbers() -> None:
     text = (
         "water duration 120 s exceeds the limit of 25 s. Soil moisture rises from 31 % to 50 %. "
-        "Pump can't run while the tank is empty. The pump runs at most 4 times per hour."
+        "Pump can't run while the tank is empty. The pump runs at most 4 times per hour. "
+        "extruder_target 300 degC exceeds the limit of 250 degC. It warms the bed from 60 °C to 75 °C."
     )
-    assert len(disagreements(text)) == 4
-    assert not disagreements("water duration 120 s exceeds the limit of 30 s. Pump can't run while tank is empty.")
+    assert len(disagreements(text)) == 6
+    assert not disagreements(
+        "water duration 120 s exceeds the limit of 30 s. Pump can't run while tank is empty. "
+        "extruder_target 300 degC exceeds the limit of 260 degC. It warms the bed from 60 °C to 70 °C."
+    )
 
 
 @pytest.mark.parametrize("page", demo_pages(), ids=lambda page: str(page.relative_to(ROOT)))
 def test_demo_values_match_the_recorded_scenario(page: Path) -> None:
     wrong = disagreements(page.read_text(encoding="utf-8"))
-    assert not wrong, f"{page.relative_to(ROOT)} disagrees with the scenario:\n" + "\n".join(wrong)
+    assert not wrong, f"{page.relative_to(ROOT)} disagrees with the records:\n" + "\n".join(wrong)
 
 
 def test_every_demo_value_check_finds_something() -> None:
@@ -200,23 +257,14 @@ def test_every_demo_value_check_finds_something() -> None:
     assert all(seen.values()), [pattern for pattern, count in seen.items() if not count]
 
 
-def test_the_scenario_limits_are_the_mock_files_limits() -> None:
-    from openhal.demo.scenario import example_file
-    from openhal.spec import load
-
-    water = load(example_file()).actions["water"]
-    limits = RECORD["limits"]
-    duration = water.args["duration"]
-    assert (duration.min, duration.max) == (
-        limits["water_duration"]["min"]["value"],
-        limits["water_duration"]["max"]["value"],
-    )
-    assert water.max_runs is not None
-    assert water.max_runs.count == limits["water_runs"]["count"]
-    assert water.max_runs.per == limits["water_runs"]["per"]["value"] * 3600
-    assert [item.message for item in water.require if not isinstance(item, str)] == [
-        RECORD["exchanges"][1]["error"]["message"]
-    ]
+def test_the_recorded_limits_are_the_printer_files_limits() -> None:
+    file = load(scenario.example(scenario.FOLDER, scenario.FILES[scenario.DEVICE]))
+    printer = next(device for device in RECORD["devices"] if device["id"] == scenario.DEVICE)
+    for name, limits in printer["limits"].items():
+        channel = file.write[name]
+        assert (limits["max"]["value"], limits["max_change_per_s"]["value"]) == (channel.max, channel.max_change_per_s)
+    assert file.confirmed is not None
+    assert printer["confirmed"] == {"by": file.confirmed.by, "at": str(file.confirmed.at)}
 
 
 DESK_FAN = re.compile(r"(?i)\bdesk[- _]fan\b")
@@ -232,7 +280,7 @@ def test_the_desk_fan_stays_in_spec_examples() -> None:
     assert not found, f"These pages still show the desk fan: {found}"
 
 
-def test_the_package_explains_itself_with_the_plant_waterer() -> None:
+def test_the_package_never_explains_itself_with_the_desk_fan() -> None:
     """Docstrings, help text and tool descriptions. Driver fixtures and simulators keep the desk fan."""
     package = ROOT / "openhal"
     found = [
