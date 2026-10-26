@@ -3,8 +3,8 @@
     from openhal.client import connect
 
     with connect() as hub:
-        print(hub.read("plant-waterer", "soil_moisture").value)
-        decision = hub.action("plant-waterer", "water", duration={"value": 20, "unit": "s"})
+        print(hub.read("printer", "bed_temp").value)
+        decision = hub.write("printer", "bed_target", 70, "degC")
         print(decision.status, decision.message)
 
 The client makes no safety decisions. The hub's kernel decides every command, and a blocked

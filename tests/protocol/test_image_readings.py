@@ -125,3 +125,11 @@ async def test_rest_read_sends_the_same_shape(
     assert body["value"] == images.value(frame)
     assert body["bytes"] == len(frame)
     assert view["read"]["frame"]["value"] == images.describe(frame), "device views never carry the pixels"
+
+
+def test_the_cli_shows_an_image_as_one_line() -> None:
+    from openhal.cli._common import show
+    from openhal.client import Image
+
+    small = png(8, 6)
+    assert show(Image.model_validate(images.value(small))) == f"image/png, 8 x 6, {len(small)} bytes"
