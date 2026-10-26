@@ -22,13 +22,13 @@ Drafts only. Nothing on this page has been posted, and only the owner posts. Eve
 
 > OpenHAL is an open protocol and a local hub that sit between an AI agent and real devices. Every command goes through a safety kernel that checks it against limits a person confirmed. Only then does the driver get a single-use grant to act.
 >
-> The demo runs against a simulated Arduino plant waterer and needs only git and uv.
+> The demo is an agent keeping an eye on a long 3D print, against a simulated Klipper printer and its camera. It needs only git and uv.
 >
 >     git clone https://github.com/sohan-bhat/OpenHAL
 >     cd OpenHAL
 >     uv run openhal demo
 >
-> You'll see the hub refuse a 120 s watering, hold the pump while the tank is empty, then water for 20 s.
+> You'll see the agent read camera frames and warm the bed from 60 °C to 70 °C. The hub refuses its 300 °C nozzle at the 260 °C limit, and when the print comes loose the agent pauses it and asks to cancel, which waits for a person.
 >
 > How it works.
 >
@@ -46,7 +46,7 @@ Drafts only. Nothing on this page has been posted, and only the owner posts. Eve
 
 ## The HAL 9000 jokes
 
-The demo opens with the hub refusing a command, so someone will post "I'm sorry Dave, I'm afraid I can't do that" in the first ten minutes. The plan is to take it well and turn it toward the design.
+The demo shows the hub refusing a command, so someone will post "I'm sorry Dave, I'm afraid I can't do that" in the first ten minutes. The plan is to take it well and turn it toward the design.
 
 1. Never make the joke first. Not in a title, a post, the README, the site or an image. DESIGN.md bans 2001 references in the design.
 2. Answer it once per thread, briefly, then answer the next technical question.

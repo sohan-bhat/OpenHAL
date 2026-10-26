@@ -1,6 +1,6 @@
 # Arduino plant waterer
 
-The canonical OpenHAL example. An Arduino Uno reads a soil moisture sensor and a tank float switch, and runs a small pump through a relay. An agent can ask it to water. The hub's safety kernel decides every request, and the board checks again on its own.
+The Arduino OpenHAL example. An Arduino Uno reads a soil moisture sensor and a tank float switch, and runs a small pump through a relay. An agent can ask it to water. The hub's safety kernel decides every request, and the board checks again on its own.
 
 ## What the hub sees
 
@@ -54,8 +54,10 @@ The pump's power goes through the relay contacts, never through the Arduino.
 ## Try it without hardware
 
 ```
-uv run openhal demo
+uv run openhal demo --full
 ```
+
+The full demo discovers the simulated board, drafts its device file from the board and its sketch, and lets an agent draft a routine that a person enables.
 
 ## Use a real board
 
