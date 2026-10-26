@@ -404,3 +404,20 @@ def test_kernel_package_attribute_error() -> None:
 
     with pytest.raises(AttributeError):
         package.nothing_here  # noqa: B018
+
+
+async def test_mock_enum_reads_start_at_their_first_value_without_any_write_channel(kernel: Kernel) -> None:
+    file = loads(
+        """
+device: Tank sensor
+id: tank-sensor
+connect: { mock: tank }
+read:
+  tank: { type: enum, values: [empty, ok] }
+hazard: low
+"""
+    )
+    driver = MockDriver(file)
+    kernel.register(file, driver)
+    await kernel.connect("tank-sensor")
+    assert (await driver.read("tank")).value == "empty"

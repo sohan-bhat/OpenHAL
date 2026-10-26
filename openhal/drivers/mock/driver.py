@@ -93,7 +93,7 @@ class MockDriver(Driver):
             elif read_spec.type == "bool":
                 self.values[name] = False
             elif read_spec.type == "enum":
-                self.values[name] = spec.values[0]
+                self.values[name] = read_spec.values[0]
             elif read_spec.type == "image":
                 self.values[name] = b""
             else:
