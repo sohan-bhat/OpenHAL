@@ -64,13 +64,9 @@ export function amount(value: unknown, unit: unknown): string {
 /** Message text as a person reads it, with every `degC` written as `°C`. */
 export const humane = (text: string): string => text.replace(/(\d) (degC|degF|percent)\b/g, (_, digit: string, unit: string) => `${digit} ${unitText(unit)}`);
 
-const EXAMPLE = join(REPO_ROOT, "examples", "print-babysitter");
-
-export function readDeviceFile(path = join(EXAMPLE, "printer.hal.yaml")): DeviceFile {
+export function readDeviceFile(path = join(REPO_ROOT, "examples", "print-babysitter", "printer.hal.yaml")): DeviceFile {
   return parse(readFileSync(path, "utf8")) as DeviceFile;
 }
-
-export const readCameraFile = (path = join(EXAMPLE, "printer-cam.hal.yaml")): DeviceFile => readDeviceFile(path);
 
 function need<T>(found: T | undefined, what: string): T {
   if (found === undefined) throw new Error(`docs/demo/scenario.yaml has no ${what}, which the landing story shows.`);
@@ -92,10 +88,11 @@ function imageText(exchange: Exchange): string {
   return value?.width && value?.height ? `${kind} ${value.width} × ${value.height}` : kind;
 }
 
-/** Every word and number the landing story shows, from docs/demo/scenario.yaml and the device files of the printer and its webcam. */
-export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile = readDeviceFile(), webcam: DeviceFile = readCameraFile()): StoryFacts {
-  const record = scenario.record as Scenario["record"] & { confirmed: { by: string; at: string } };
+/** Every word and number the landing story shows, from docs/demo/scenario.yaml and the printer's device file. */
+export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile = readDeviceFile()): StoryFacts {
+  const record = scenario.record;
   const exchanges = record.exchanges;
+  const described = (id: string) => need(record.devices?.find((item) => item.id === id), `description of ${id}`);
   const reads = exchanges.filter((exchange) => exchange.request.method === "hal/read");
   const look = need(reads[0], "camera read");
   const writes = exchanges.filter((exchange) => exchange.request.method === "hal/write");
@@ -107,17 +104,19 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
   const bedChannel = String(params(bed).channel);
   const nozzleChannel = String(params(nozzle).channel);
   const limit = (channel: string) => amount(file.write[channel]?.max, file.write[channel]?.unit);
-  const heated = reading(bed, "bed_temp") ?? { before: Number(params(bed).value), after: Number(params(bed).value), unit: String(params(bed).unit) };
+  const heated = need(reading(bed, bedChannel) ?? undefined, `${bedChannel} before and after`);
+  const printer = described(String(params(bed).device));
+  const webcamDevice = described(String(params(look).device));
   const nozzleNow = reading(nozzle, "extruder_temp");
   const error = nozzle.error!;
   const name = typeof file.device === "string" ? file.device : file.device.name;
   const write = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: String(params(exchange).channel), value: amount(params(exchange).value, params(exchange).unit) });
   const act = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: String(params(exchange).action), value: "" });
   return {
-    printer: { id: file.id, name, driver: Object.keys(file.connect)[0] },
-    camera: { id: String(params(look).device), channel: String(params(look).channel), driver: Object.keys(webcam.connect)[0], image: imageText(look) },
-    file: scenario.file ?? "",
-    confirmed: `confirmed by ${record.confirmed.by} ${record.confirmed.at}`,
+    printer: { id: printer.id, name, driver: printer.driver },
+    camera: { id: webcamDevice.id, channel: String(params(look).channel), driver: webcamDevice.driver, image: imageText(look) },
+    file: printer.file,
+    confirmed: `confirmed by ${printer.confirmed.by} ${printer.confirmed.at}`,
     look: { method: look.request.method, target: `${params(look).device} ${params(look).channel}`, value: "" },
     bed: { ...write(bed), channel: bedChannel, max: limit(bedChannel), ...heated, status: statusOf(bed) },
     nozzle: {

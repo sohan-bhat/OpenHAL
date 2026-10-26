@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { amount, humane, nb, readCameraFile, readDeviceFile, storyFacts, storyLines } from "../../src/lib/story/facts";
+import { amount, humane, nb, readDeviceFile, storyFacts, storyLines } from "../../src/lib/story/facts";
 import { ALWAYS, NEVER, TOTAL } from "../../src/lib/story/script";
 import { CAMERA, CLIENT, DRIVER, FILLS, HUB, KERNEL, NOTE_AT, PRINTER, SNAP_AT, TITLE_OUT, type Span } from "../../src/lib/story/timeline";
 import type { Exchange, Scenario } from "../../src/lib/scenario";
@@ -99,15 +99,26 @@ describe("the story's words and numbers", () => {
     expect(facts.pause.status).toBe(pause.result!.status);
     expect(facts.cancel.target).toBe(cancel.request.params.action);
     expect(facts.cancel.status).toBe("pending");
-    expect(facts.confirmed).toBe(`confirmed by ${(fresh().record as any).confirmed.by} ${(fresh().record as any).confirmed.at}`);
+    const described = fresh().record.devices!.find((item) => item.id === bed.request.params.device)!;
+    expect(facts.file).toBe(described.file);
+    expect(facts.printer.driver).toBe(described.driver);
+    expect(facts.camera.driver).toBe(fresh().record.devices!.find((item) => item.id === look.request.params.device)!.driver);
+    expect(facts.confirmed).toBe(`confirmed by ${described.confirmed.by} ${described.confirmed.at}`);
+    expect([facts.bed.before, facts.bed.after]).toEqual([(bed as any)[facts.bed.channel].before.value, (bed as any)[facts.bed.channel].after.value]);
+    expect(facts.camera.image).toBe(`${look.result!.value.mimeType} ${look.result!.value.width} × ${look.result!.value.height}`);
   });
 
-  it("take the limits and drivers from the device files", () => {
+  it("take the limits from printer.hal.yaml, which match what the hub described", () => {
+    const limits = fresh().record.devices!.find((item) => item.id === printer.id)!.limits;
+    for (const channel of [facts.nozzle.channel, facts.bed.channel]) {
+      expect(limits[channel].max.value).toBe(printer.write[channel].max);
+      expect(limits[channel].max.unit).toBe(printer.write[channel].unit);
+    }
     expect(facts.printer.id).toBe(printer.id);
     expect(facts.nozzle.max).toBe(amount(printer.write[facts.nozzle.channel].max, printer.write[facts.nozzle.channel].unit));
     expect(facts.bed.max).toBe(amount(printer.write[facts.bed.channel].max, printer.write[facts.bed.channel].unit));
     expect(facts.printer.driver).toBe("moonraker");
-    expect(facts.camera.driver).toBe(Object.keys(readCameraFile().connect)[0]);
+    expect(facts.camera.driver).toBe("http");
     expect(printer.actions[facts.cancel.target]).toMatchObject({ confirm: expect.any(String) });
   });
 
@@ -116,9 +127,8 @@ describe("the story's words and numbers", () => {
     const moved = exchangesOf(changed);
     moved.nozzle.request.params.value = 290;
     moved.bed.request.params.value = 75;
-    const heated = (moved.bed as Record<string, any>).bed_temp;
-    if (heated) heated.after.value = 75;
-    const other = storyFacts(changed, readDeviceFile(), readCameraFile());
+    (moved.bed as Record<string, any>)[moved.bed.request.params.channel].after.value = 75;
+    const other = storyFacts(changed, readDeviceFile());
     expect(other.nozzle.value).toBe("290 °C");
     expect(storyLines(other).hot).toContain(nb("290 °C"));
     expect(other.bed.value).toBe("75 °C");
@@ -128,7 +138,7 @@ describe("the story's words and numbers", () => {
   it("follow the device file when a person changes a limit", () => {
     const tighter = readDeviceFile();
     tighter.write[facts.nozzle.channel].max = 250;
-    expect(storyLines(storyFacts(fresh(), tighter, readCameraFile())).hot).toContain(nb("250 °C"));
+    expect(storyLines(storyFacts(fresh(), tighter)).hot).toContain(nb("250 °C"));
   });
 
   it("read as short plain sentences that follow the copy rules", () => {
