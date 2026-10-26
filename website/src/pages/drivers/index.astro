@@ -83,7 +83,7 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
     </form>
     <p class="shown muted" aria-live="polite" data-shown>{total} drivers.</p>
 
-    <div class="table-wrap">
+    <div class="driver-list"><div class="table-wrap">
       <table class="drivers" aria-label="Drivers">
         <thead>
           <tr>
@@ -136,7 +136,7 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
           ))
         }
       </table>
-    </div>
+    </div></div>
     <p class="empty muted" data-empty hidden>No driver matches. Clear a filter to see more.</p>
     {
       references.length > 0 && (
@@ -229,13 +229,17 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
     margin-top: var(--s-5);
   }
 
+  .driver-list {
+    container-type: inline-size;
+  }
+
   @media (min-width: 768px) {
     .filters {
       grid-template-columns: 2fr repeat(4, minmax(0, 1fr));
     }
   }
 
-  @media (max-width: 767px) {
+  @container (max-width: 939px) {
     table,
     tbody,
     tr {
@@ -270,6 +274,7 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
 
     td::before {
       content: attr(data-label);
+      font-family: var(--font-text);
       font-size: var(--t-small);
       font-weight: 700;
       color: var(--text-2);

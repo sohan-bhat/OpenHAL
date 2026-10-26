@@ -93,7 +93,8 @@ const sections = specItems
             {sections.map((page) => (
               <li>
                 <a href={page.href}>
-                  <span class="mono num">{page.number}</span> {page.title}
+                  <span class="mono num">{page.number}</span>
+                  <span class="title">{page.title}</span>
                 </a>
               </li>
             ))}
@@ -232,9 +233,24 @@ const sections = specItems
     gap: var(--s-1);
   }
 
+  .spec-links a {
+    display: inline-flex;
+    gap: var(--s-2);
+    text-decoration: none;
+  }
+
+  .spec-links .title {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+
+  .spec-links a:hover .title {
+    text-decoration-thickness: 2px;
+  }
+
   .num {
-    display: inline-block;
-    min-width: 2em;
+    min-width: 1.6em;
     color: var(--text-2);
   }
 

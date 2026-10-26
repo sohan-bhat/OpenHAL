@@ -413,7 +413,7 @@
           <div><dt class="legend">Limits</dt><dd>{#if missing.length}<span class="status unverified">unconfirmed</span>{:else}<span class="status ok">confirmed</span>{/if}</dd></div>
         </dl>
         {#if Object.keys(file.write).length}
-          <div class="table-wrap">
+          <div class="table-wrap stack">
             <table>
               <caption class="legend">Channels it can change</caption>
               <thead>
@@ -422,12 +422,12 @@
               <tbody>
                 {#each Object.entries(file.write) as [name, spec] (name)}
                   <tr>
-                    <td class="mono">{name}</td>
-                    <td class="mono">{show(valueOf(id, name))}{#if spec.unit}&nbsp;{displayUnit(spec.unit)}{/if}</td>
-                    <td class="mono">{spec.min === null ? (spec.type === "enum" ? spec.values.join(", ") : spec.type) : formatG(spec.min)}</td>
-                    <td class="mono">{spec.max === null ? "" : formatG(spec.max)}</td>
-                    <td class="mono">{spec.max_change_per_s === null ? "" : formatG(spec.max_change_per_s)}</td>
-                    <td>{tierWord(spec.confirm, effectiveHazard(file) === "high")}</td>
+                    <td data-label="Channel" class="mono">{name}</td>
+                    <td data-label="Value" class="mono">{show(valueOf(id, name))}{#if spec.unit}&nbsp;{displayUnit(spec.unit)}{/if}</td>
+                    <td data-label="Min" class="mono">{spec.min === null ? (spec.type === "enum" ? spec.values.join(", ") : spec.type) : formatG(spec.min)}</td>
+                    <td data-label="Max" class="mono">{spec.max === null ? "" : formatG(spec.max)}</td>
+                    <td data-label="Rate per s" class="mono">{spec.max_change_per_s === null ? "" : formatG(spec.max_change_per_s)}</td>
+                    <td data-label="Confirm">{tierWord(spec.confirm, effectiveHazard(file) === "high")}</td>
                   </tr>
                 {/each}
               </tbody>
@@ -435,7 +435,7 @@
           </div>
         {/if}
         {#if Object.keys(file.read).length}
-          <div class="table-wrap">
+          <div class="table-wrap stack">
             <table>
               <caption class="legend">Read channels</caption>
               <thead>
@@ -444,9 +444,9 @@
               <tbody>
                 {#each Object.entries(file.read) as [name, spec] (name)}
                   <tr>
-                    <td class="mono">{name}</td>
-                    <td class="mono">{spec.type === "image" ? "frames" : show(valueOf(id, name))}{#if spec.unit}&nbsp;{displayUnit(spec.unit)}{/if}</td>
-                    <td>
+                    <td data-label="Channel" class="mono">{name}</td>
+                    <td data-label="Value" class="mono">{spec.type === "image" ? "frames" : show(valueOf(id, name))}{#if spec.unit}&nbsp;{displayUnit(spec.unit)}{/if}</td>
+                    <td data-label="Simulate">
                       {#if spec.type !== "image"}
                         <form class="sim" onsubmit={(event) => { event.preventDefault(); setReading(id, name); }}>
                           <label class="visually-hidden" for={`pg-read-${name}`}>Simulated reading for {name}</label>

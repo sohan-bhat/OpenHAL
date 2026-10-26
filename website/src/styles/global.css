@@ -262,6 +262,53 @@ textarea::placeholder {
   overflow-x: auto;
 }
 
+.stack {
+  container-type: inline-size;
+}
+
+@container (max-width: 600px) {
+  .stack table,
+  .stack tbody,
+  .stack tr,
+  .stack td,
+  .stack caption {
+    display: block;
+  }
+
+  .stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .stack tbody tr {
+    padding: var(--s-2) 0;
+    border-bottom: var(--rule);
+  }
+
+  .stack td {
+    display: grid;
+    grid-template-columns: 8em minmax(0, 1fr);
+    gap: var(--s-2);
+    padding: 2px 0;
+    border: 0;
+  }
+
+  .stack td:empty {
+    display: none;
+  }
+
+  .stack td::before {
+    content: attr(data-label);
+    font-family: var(--font-text);
+    font-size: var(--t-small);
+    font-weight: 700;
+    color: var(--text-2);
+  }
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

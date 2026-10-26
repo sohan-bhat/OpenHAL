@@ -77,7 +77,7 @@ function argText(name: string, spec: ArgSpec): string {
           </table>
 
           {Object.keys(file.write).length > 0 && (
-            <div class="table-wrap">
+            <div class="table-wrap stack">
               <table>
                 <caption class="legend">Control channels</caption>
                 <thead>
@@ -86,14 +86,14 @@ function argText(name: string, spec: ArgSpec): string {
                 <tbody>
                   {Object.entries(file.write).map(([name, spec]) => (
                     <tr>
-                      <td class="mono">{name}</td>
-                      <td class="mono">{num(spec.min)}</td>
-                      <td class="mono">{num(spec.max)}</td>
-                      <td class="mono">{num(spec.step)}</td>
-                      <td class="mono">{num(spec.max_change_per_s)}</td>
-                      <td>{displayUnit(spec.unit) ?? spec.type}</td>
-                      <td>{spec.confirm}</td>
-                      <td>{limitWord(spec)}</td>
+                      <td data-label="Channel" class="mono">{name}</td>
+                      <td data-label="Min" class="mono">{num(spec.min)}</td>
+                      <td data-label="Max" class="mono">{num(spec.max)}</td>
+                      <td data-label="Step" class="mono">{num(spec.step)}</td>
+                      <td data-label="Rate per s" class="mono">{num(spec.max_change_per_s)}</td>
+                      <td data-label="Unit">{displayUnit(spec.unit) ?? spec.type}</td>
+                      <td data-label="Confirm">{spec.confirm}</td>
+                      <td data-label="Limit">{limitWord(spec)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -102,7 +102,7 @@ function argText(name: string, spec: ArgSpec): string {
           )}
 
           {Object.keys(file.actions).length > 0 && (
-            <div class="table-wrap">
+            <div class="table-wrap stack">
               <table>
                 <caption class="legend">Actions</caption>
                 <thead>
@@ -111,8 +111,8 @@ function argText(name: string, spec: ArgSpec): string {
                 <tbody>
                   {Object.entries(file.actions).map(([name, spec]) => (
                     <tr>
-                      <td class="mono">{name}</td>
-                      <td>
+                      <td data-label="Action" class="mono">{name}</td>
+                      <td data-label="Arguments">
                         {Object.keys(spec.args).length === 0 ? (
                           <span class="muted">none</span>
                         ) : (
@@ -123,8 +123,8 @@ function argText(name: string, spec: ArgSpec): string {
                           </ul>
                         )}
                       </td>
-                      <td>{spec.confirm}</td>
-                      <td>{limitWord(spec)}</td>
+                      <td data-label="Confirm">{spec.confirm}</td>
+                      <td data-label="Limit">{limitWord(spec)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -133,7 +133,7 @@ function argText(name: string, spec: ArgSpec): string {
           )}
 
           {Object.keys(file.read).length > 0 && (
-            <div class="table-wrap">
+            <div class="table-wrap stack">
               <table>
                 <caption class="legend">Read channels</caption>
                 <thead>
@@ -142,10 +142,10 @@ function argText(name: string, spec: ArgSpec): string {
                 <tbody>
                   {Object.entries(file.read).map(([name, spec]) => (
                     <tr>
-                      <td class="mono">{name}</td>
-                      <td>{spec.type}</td>
-                      <td>{displayUnit(spec.unit) ?? ""}</td>
-                      <td class="mono">{spec.every === null ? (spec.stream ? "stream" : "on request") : `${formatG(spec.every)} s`}</td>
+                      <td data-label="Channel" class="mono">{name}</td>
+                      <td data-label="Type">{spec.type}</td>
+                      <td data-label="Unit">{displayUnit(spec.unit) ?? ""}</td>
+                      <td data-label="Every" class="mono">{spec.every === null ? (spec.stream ? "stream" : "on request") : `${formatG(spec.every)} s`}</td>
                     </tr>
                   ))}
                 </tbody>
