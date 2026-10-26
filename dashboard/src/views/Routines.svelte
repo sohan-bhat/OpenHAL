@@ -174,7 +174,7 @@
 
           <section class="block" aria-labelledby="source-title">
             <h3 id="source-title">Source</h3>
-            <pre class="source"><code>{detail.source_raw}</code></pre>
+            <pre class="source"><code><Prose text={detail.source_raw} /></code></pre>
           </section>
 
           <section class="block" aria-labelledby="history-title">

@@ -335,12 +335,12 @@
               <li class="line {line.kind}">
                 <span class="sign" aria-hidden="true">{line.kind === "added" ? "+" : line.kind === "removed" ? "-" : " "}</span>
                 <span class="visually-hidden">{line.kind === "same" ? "" : line.kind}</span>
-                <code>{line.text || " "}</code>
+                <code><Prose text={line.text || " "} /></code>
               </li>
             {/each}
           </ol>
         {:else}
-          <pre class="file"><code>{session.draft_yaml}</code></pre>
+          <pre class="file"><code><Prose text={session.draft_yaml} /></code></pre>
         {/if}
       </section>
     {/if}
