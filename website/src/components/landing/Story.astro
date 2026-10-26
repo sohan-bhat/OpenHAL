@@ -1,0 +1,71 @@
+---
+import { nb, storyFacts, storyLines } from "../../lib/story/facts";
+import { CAMERA, NEVER, TOTAL, cue } from "../../lib/story/script";
+import { NOTE_AT, SNAP_AT, TITLE_OUT } from "../../lib/story/timeline";
+import "../../styles/story.css";
+import Client from "./scene/Client.astro";
+import Device from "./scene/Device.astro";
+import Kernel from "./scene/Kernel.astro";
+import Scene from "./scene/Scene.astro";
+
+const facts = storyFacts();
+const lines = storyLines(facts);
+const noted = Object.keys(NOTE_AT) as Array<keyof typeof NOTE_AT>;
+const notes = noted.map((id, index) => ({ text: lines[id], style: cue(NOTE_AT[id], NOTE_AT[noted[index + 1]] ?? NEVER, 3) }));
+const steps: Array<{ id: keyof typeof SNAP_AT; station: typeof Client; code: string[] }> = [
+  { id: "ask", station: Client, code: [`${facts.method} ${facts.action} ${facts.asked}`] },
+  { id: "check", station: Kernel, code: [facts.tooLong.name] },
+  { id: "reply", station: Client, code: [facts.tooLong.reason] },
+  { id: "dry", station: Device, code: [`tank ${facts.tank.low}`] },
+  { id: "hold", station: Kernel, code: [facts.empty.name, facts.empty.reason] },
+  { id: "refill", station: Device, code: [`tank ${facts.tank.ok}`] },
+  { id: "water", station: Kernel, code: ["granted"] },
+  { id: "soil", station: Device, code: [facts.soil.text] },
+  { id: "done", station: Client, code: [facts.status, facts.soil.text] },
+];
+const camera = `(() => {
+  const story = document.currentScript.previousElementSibling;
+  if (matchMedia(${JSON.stringify(CAMERA)}).matches) story.setAttribute("data-camera", "");
+})();`;
+---
+
+<section class="story-section" aria-labelledby="story-title">
+  <div class="story" data-story style={`--runway: ${TOTAL}`}>
+    <div class="story-stage">
+      <div class="story-band">
+        <div class="wrap column story-heads">
+          <h2 id="story-title" class="story-title" style={`--out: ${TITLE_OUT}; --f: 3`}>{lines.wide}</h2>
+          <div class="story-notes" aria-hidden="true">
+            {notes.map((note) => <p class="story-note cue" style={note.style}>{note.text}</p>)}
+          </div>
+        </div>
+      </div>
+      <Scene facts={facts} />
+    </div>
+    <ol class="wrap column story-list" role="list">
+      {
+        steps.map((step) => (
+          <li class="story-step">
+            <div class="step-words">
+              <p class="step-line">{lines[step.id]}</p>
+              {step.code.map((code) => <p class="visually-hidden">{nb(code)}</p>)}
+            </div>
+            <div class="story-snap" style={`--t: ${SNAP_AT[step.id]}`} aria-hidden="true">
+              <step.station facts={facts} />
+            </div>
+          </li>
+        ))
+      }
+      <li class="story-step story-last">
+        <p class="step-line">{lines.end}</p>
+      </li>
+    </ol>
+  </div>
+  <script is:inline set:html={camera} />
+</section>
+
+<script>
+  import { story } from "./story-runtime";
+
+  for (const root of document.querySelectorAll<HTMLElement>("[data-story]")) story(root);
+</script>
