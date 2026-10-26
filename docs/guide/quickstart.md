@@ -1,6 +1,6 @@
 # Quickstart
 
-This guide runs the demo, then a [Hub](glossary:hub) you control with a simulated plant waterer. Nothing in it touches real hardware.
+This guide runs the demo, an agent keeping an eye on a simulated 3D print, then a [Hub](glossary:hub) you control with the simulated Arduino plant waterer. Nothing in it touches real hardware.
 
 You need Python 3.12 or newer and [uv](https://docs.astral.sh/uv/).
 
@@ -12,7 +12,7 @@ $ cd OpenHAL
 $ uv run openhal demo
 ```
 
-The demo starts a hub, connects as an agent and sends three commands. This is the trace it prints.
+The demo starts a hub with a simulated Klipper printer and its camera, connects as an agent and watches a print. It reads camera frames, warms the bed, is refused a nozzle over the limit, pauses the print when it comes loose and asks to cancel, which waits for a person. This is the trace it prints.
 
 ```scenario
 ```
@@ -25,7 +25,7 @@ $ uv run openhal demo --full
 <- error -32010 LIMIT_EXCEEDED
 ```
 
-`--full` starts a hub with no devices. It discovers the simulated board, the driver writer drafts its [Device File](glossary:device-file) from the board and its sketch, and a script answers the limits interview as a person would. An agent then connects through `openhal mcp` and drafts a routine, which a person enables. The routine waters the plant, and the agent's 120 s request never reaches the board. [e2e.yaml](../demo/e2e.yaml) records every step.
+`--full` runs the whole system with the Arduino plant waterer. It starts a hub with no devices and discovers the simulated board. The driver writer drafts its [Device File](glossary:device-file) from the board and its sketch, and a script answers the limits interview as a person would. An agent then connects through `openhal mcp` and drafts a routine, which a person enables. The routine waters the plant, and the agent's 120 s request never reaches the board. [e2e.yaml](../demo/e2e.yaml) records every step.
 
 ## Run the hub yourself
 
@@ -67,5 +67,5 @@ $ uv run openhal unlock
 ## Next
 
 - [Concepts](concepts.md) defines the hub, device files, the kernel and the error codes.
-- [Connect Claude](tutorials/connect-claude.md) gives an AI client its own token.
+- [Connect Claude](tutorials/connect-claude.md) gives an agent its own token.
 - [Add a device](tutorials/add-a-device.md) describes your own hardware.

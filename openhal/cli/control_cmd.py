@@ -74,7 +74,7 @@ def register(app: typer.Typer) -> None:
     @app.command()
     @handled
     def read(
-        targets: list[str] = typer.Argument(..., help="One or more device.channel, such as plant-waterer.tank."),  # noqa: B008
+        targets: list[str] = typer.Argument(..., help="One or more device.channel, such as printer.bed_temp."),  # noqa: B008
         as_json: bool = typer.Option(False, "--json", help="Print JSON."),
     ) -> None:
         """Read channels now."""
@@ -149,9 +149,7 @@ def register(app: typer.Typer) -> None:
             elif target:
                 commands = [_command(client, target, rest or [])]
             else:
-                raise ValueError(
-                    "Give a target such as plant-waterer.water duration=20s, or --file with a list of commands."
-                )
+                raise ValueError("Give a target such as printer.pause, or --file with a list of commands.")
             decisions = client.dry_run(commands)
         if as_json:
             print_json(decisions)

@@ -20,7 +20,16 @@ OUTPUT = ROOT / "website" / "src" / "content" / "generated" / "python-api.json"
 GROUPS = {
     "Connect": ["connect", "aconnect", "Client", "AsyncClient"],
     "Commands": ["Write", "Action"],
-    "Results": ["Decision", "Reading", "HubStatus", "DeviceSummary", "DeviceView", "StopReport", "ConfirmationRequest"],
+    "Results": [
+        "Decision",
+        "Reading",
+        "Image",
+        "HubStatus",
+        "DeviceSummary",
+        "DeviceView",
+        "StopReport",
+        "ConfirmationRequest",
+    ],
     "Routines and audit": ["RoutineSummary", "Routine", "AuditEntry", "WriterSession"],
     "Errors": [
         "OpenHALError",

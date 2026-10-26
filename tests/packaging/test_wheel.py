@@ -43,6 +43,8 @@ def test_the_wheel_has_the_setup_code_and_the_sample(wheel: zipfile.ZipFile) -> 
     for module in ("background", "clients", "devices", "runner"):
         assert f"openhal/service/{module}.py" in names
     assert "openhal/examples/plant-waterer/mock/plant-waterer.hal.yaml" in names
+    for name in ("printer.hal.yaml", "printer-cam.hal.yaml", "frames/first-layer.jpg", "frames/come-loose.jpg"):
+        assert f"openhal/examples/print-babysitter/{name}" in names, "openhal demo needs the print babysitter files"
 
 
 def test_the_timing_script_compiles_and_explains_itself() -> None:

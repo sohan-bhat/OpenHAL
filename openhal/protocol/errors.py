@@ -46,7 +46,7 @@ def _requested(data: Data) -> str | None:
 
 
 def _subject(data: Data) -> str:
-    """What the error is about, `brightness 150 %`, `water duration 120 s` or `water on plant-waterer`."""
+    """What the error is about, `extruder_target 300 degC`, `water duration 120 s` or `cancel on printer`."""
     if data.get("channel"):
         return " ".join(part for part in (str(data["channel"]), _requested(data)) if part is not None)
     if data.get("action") and data.get("argument"):
@@ -57,7 +57,7 @@ def _subject(data: Data) -> str:
 
 
 def _provenance(data: Data) -> str:
-    """The device file and who confirmed its limits, as `(plant-waterer.hal.yaml, confirmed by owner 2026-10-24)`."""
+    """The device file and who confirmed its limits, as `(printer.hal.yaml, confirmed by owner 2026-10-24)`."""
     parts = []
     if data.get("file"):
         parts.append(str(data["file"]))

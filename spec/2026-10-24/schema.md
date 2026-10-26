@@ -74,8 +74,8 @@ The JSON Schema is [schema.json](schema.json). Field names are as they travel on
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `kind` | `"action"` | no |  |
-| `device` | string | yes | A device id, for example plant-waterer. |
-| `action` | string | yes | An action, for example water. |
+| `device` | string | yes | A device id, for example printer. |
+| `action` | string | yes | An action, for example pause. |
 | `args` | map of [Quantity](#quantity) or boolean or string | no | Arguments by name. Numbers are Quantity objects. |
 
 ### ActionDone
@@ -109,8 +109,8 @@ The JSON Schema is [schema.json](schema.json). Field names are as they travel on
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `device` | string | yes | A device id, for example plant-waterer. |
-| `action` | string | yes | An action, for example water. |
+| `device` | string | yes | A device id, for example printer. |
+| `action` | string | yes | An action, for example pause. |
 | `args` | map of [Quantity](#quantity) or boolean or string | no |  |
 
 ### ApproveParams
@@ -221,7 +221,7 @@ The Safety Kernel's answer to one command. A blocked one carries its registry er
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `device` | string | yes | A device id, for example plant-waterer. |
+| `device` | string | yes | A device id, for example printer. |
 
 ### DescribeResult
 
@@ -260,7 +260,7 @@ A DeviceSummary plus channels, actions, safe state, interlocks, watchdog rules a
 | `watchdog` | [WatchdogInfo](#watchdoginfo) | yes |  |
 | `confirmed` | [Confirmed](#confirmed) or null | yes | The file-level confirmation of the limits. |
 | `unconfirmed` | list of string | yes | Limits no person has confirmed yet. |
-| `file` | string or null | yes | The Device File, for example plant-waterer.hal.yaml. |
+| `file` | string or null | yes | The Device File, for example printer.hal.yaml. |
 | `notes` | string or null | no | Device File notes, inside a device-data block. |
 
 ### DeviceRemovedParams
@@ -328,7 +328,7 @@ No fields.
 | `per` | [Quantity](#quantity) or null | no | The window of an action's max_runs. |
 | `interlock` | string or null | no | The reason the device file gives for an interlock. |
 | `expected` | [Quantity](#quantity) or null | no | The shape a number sent as one string should take. |
-| `file` | string or null | no | The Device File, for example plant-waterer.hal.yaml. |
+| `file` | string or null | no | The Device File, for example printer.hal.yaml. |
 | `confirmedBy` | string or null | no | Who confirmed the limit. |
 | `confirmedAt` | string or null | no | When the limit was confirmed, as 2026-10-24. |
 | `requestId` | string or null | no |  |
@@ -495,8 +495,8 @@ A number and its unit (ADR 0016), for example `{"value": 20, "unit": "s"}`.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `device` | string | yes | A device id, for example plant-waterer. |
-| `channel` | string | yes | A channel, for example soil_moisture. |
+| `device` | string | yes | A device id, for example printer. |
+| `channel` | string | yes | A channel, for example bed_target. |
 
 ### Reading
 
@@ -627,8 +627,8 @@ A JSON-RPC request. It has an id and expects a response.
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `kind` | `"write"` | no |  |
-| `device` | string | yes | A device id, for example plant-waterer. |
-| `channel` | string | yes | A channel, for example soil_moisture. |
+| `device` | string | yes | A device id, for example printer. |
+| `channel` | string | yes | A channel, for example bed_target. |
 | `value` | string or boolean or integer or number | yes |  |
 | `unit` | string or null | no |  |
 
@@ -663,7 +663,7 @@ A JSON-RPC request. It has an id and expects a response.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `device` | string | yes | A device id, for example plant-waterer. |
-| `channel` | string | yes | A channel, for example soil_moisture. |
+| `device` | string | yes | A device id, for example printer. |
+| `channel` | string | yes | A channel, for example bed_target. |
 | `value` | string or boolean or integer or number | yes | A number, a bool, an enum value or text. |
 | `unit` | string or null | no | The unit of a number, such as %. |

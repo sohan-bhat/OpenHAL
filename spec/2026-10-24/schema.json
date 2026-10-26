@@ -438,14 +438,14 @@
           "type": "string"
         },
         "device": {
-          "description": "A device id, for example plant-waterer.",
+          "description": "A device id, for example printer.",
           "maxLength": 48,
           "minLength": 1,
           "title": "Device",
           "type": "string"
         },
         "action": {
-          "description": "An action, for example water.",
+          "description": "An action, for example pause.",
           "maxLength": 48,
           "minLength": 1,
           "title": "Action",
@@ -606,14 +606,14 @@
       "additionalProperties": false,
       "properties": {
         "device": {
-          "description": "A device id, for example plant-waterer.",
+          "description": "A device id, for example printer.",
           "maxLength": 48,
           "minLength": 1,
           "title": "Device",
           "type": "string"
         },
         "action": {
-          "description": "An action, for example water.",
+          "description": "An action, for example pause.",
           "maxLength": 48,
           "minLength": 1,
           "title": "Action",
@@ -1105,7 +1105,7 @@
       "additionalProperties": false,
       "properties": {
         "device": {
-          "description": "A device id, for example plant-waterer.",
+          "description": "A device id, for example printer.",
           "maxLength": 48,
           "minLength": 1,
           "title": "Device",
@@ -1297,7 +1297,7 @@
               "type": "null"
             }
           ],
-          "description": "The Device File, for example plant-waterer.hal.yaml.",
+          "description": "The Device File, for example printer.hal.yaml.",
           "title": "File"
         },
         "notes": {
@@ -1703,7 +1703,7 @@
             }
           ],
           "default": null,
-          "description": "The Device File, for example plant-waterer.hal.yaml.",
+          "description": "The Device File, for example printer.hal.yaml.",
           "title": "File"
         },
         "confirmedBy": {
@@ -2380,14 +2380,14 @@
       "additionalProperties": false,
       "properties": {
         "device": {
-          "description": "A device id, for example plant-waterer.",
+          "description": "A device id, for example printer.",
           "maxLength": 48,
           "minLength": 1,
           "title": "Device",
           "type": "string"
         },
         "channel": {
-          "description": "A channel, for example soil_moisture.",
+          "description": "A channel, for example bed_target.",
           "maxLength": 48,
           "minLength": 1,
           "title": "Channel",
@@ -2862,14 +2862,14 @@
           "type": "string"
         },
         "device": {
-          "description": "A device id, for example plant-waterer.",
+          "description": "A device id, for example printer.",
           "maxLength": 48,
           "minLength": 1,
           "title": "Device",
           "type": "string"
         },
         "channel": {
-          "description": "A channel, for example soil_moisture.",
+          "description": "A channel, for example bed_target.",
           "maxLength": 48,
           "minLength": 1,
           "title": "Channel",
@@ -3096,14 +3096,14 @@
       "additionalProperties": false,
       "properties": {
         "device": {
-          "description": "A device id, for example plant-waterer.",
+          "description": "A device id, for example printer.",
           "maxLength": 48,
           "minLength": 1,
           "title": "Device",
           "type": "string"
         },
         "channel": {
-          "description": "A channel, for example soil_moisture.",
+          "description": "A channel, for example bed_target.",
           "maxLength": 48,
           "minLength": 1,
           "title": "Channel",

@@ -181,8 +181,8 @@ def test_every_kernel_code_maps_to_exactly_one_name(registry_of: Callable[[], Re
 def test_the_limit_exceeded_reason_is_quoted_exactly() -> None:
     from openhal.demo import scenario
 
-    reason = scenario.read()["exchanges"][0]["error"]["message"]
-    assert reason.startswith("water duration 120 s exceeds the limit of 30 s")
+    reason = scenario.exchange(scenario.read(), "nozzle-too-hot")["error"]["message"]
+    assert reason.startswith("extruder_target 300 degC exceeds the limit of 260 degC")
     for name in ("architecture.md", "safety.md", "basic/messages.md"):
         assert reason in (VERSION / name).read_text(encoding="utf-8"), name
 

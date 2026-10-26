@@ -15,7 +15,7 @@ from openhal.client import connect
 
 with connect() as hub:
     print(hub.status().devices, "devices")
-    reading = hub.read("plant-waterer", "soil_moisture")
+    reading = hub.read("printer", "bed_temp")
     print(reading.value, reading.unit)
 ```
 
@@ -30,7 +30,7 @@ from openhal.client import aconnect
 async def main() -> None:
     hub = await aconnect()
     async with hub:
-        decision = await hub.action("plant-waterer", "water", duration={"value": 20, "unit": "s"})
+        decision = await hub.write("printer", "bed_target", 70, "degC")
         print(decision.status, decision.message)
 
 asyncio.run(main())
@@ -76,14 +76,27 @@ All derive from `openhal.client.OpenHALError`, which has `message`, `status_code
 `decision.ok` is true for done and allowed. `decision.pending` is true when it waits for a person.
 
 ```python
-decision = hub.action("plant-waterer", "water", duration={"value": 120, "unit": "s"})
+decision = hub.write("printer", "extruder_target", 300, "degC")
 if decision.status == "blocked":
     print(decision.code, decision.limit)
 elif decision.pending:
     print("approve with openhal confirm approve", decision.request_id)
 ```
 
-The 120 s watering prints `above_max {'max': 30.0, 'unit': 's', 'argument': 'duration'}`.
+The 300 degC nozzle prints `above_max {'max': 260.0, 'unit': 'degC'}`. A `cancel` of the print is pending, since a person approves each one.
+
+## Images
+
+An image channel, such as a camera frame, reads as an `Image` with `mime_type`, `bytes`, `width` and `height`. `content()` gives the image itself.
+
+```python
+frame = hub.read("printer-cam", "frame").value
+print(frame.mime_type, frame.width, frame.height)
+with open("frame.jpg", "wb") as out:
+    out.write(frame.content())
+```
+
+Device views carry the same object without the pixels, so `content()` is empty there.
 
 ## Methods
 
