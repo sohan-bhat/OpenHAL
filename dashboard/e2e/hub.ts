@@ -12,6 +12,7 @@ export interface HubState {
   humanToken: string;
   agentToken: string;
   mediumToken: string;
+  printToken: string;
 }
 
 export function hubState(): HubState {
@@ -22,6 +23,15 @@ export async function tank(action: "drain" | "refill"): Promise<void> {
   const response = await fetch(`${hubState().url}/_harness/plant-waterer/${action}`, { method: "POST" });
   if (!response.ok) throw new Error(`The harness could not ${action} the tank.`);
 }
+
+async function harness(path: string, what: string): Promise<void> {
+  const response = await fetch(`${hubState().url}/_harness/${path}`, { method: "POST" });
+  if (!response.ok) throw new Error(`The harness could not ${what}.`);
+}
+
+export const showFrame = (name: "first-layer" | "come-loose") => harness(`printer-cam/show/${name}`, `show the ${name} frame`);
+export const printAgain = () => harness("printer/print", "start the print again");
+export const printerError = () => harness("printer/error", "put the printer in its error state");
 
 export async function signIn(context: BrowserContext): Promise<HubState> {
   const state = hubState();
