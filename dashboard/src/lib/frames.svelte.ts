@@ -40,7 +40,12 @@ class Frames {
     try {
       const result = await api.read(device, channel);
       if (!result.ok) {
-        next = { ...before, reading: false, problem: "Reading the frame failed.", detail: dataBlock(result.error)?.text ?? null };
+        next = {
+          ...before,
+          reading: false,
+          problem: "The hub could not read the frame.",
+          detail: dataBlock(result.error)?.text ?? null,
+        };
       } else if (!isImageReading(result.value)) {
         next = { ...before, reading: false, problem: `${channel} did not answer with an image.`, detail: null };
       } else {

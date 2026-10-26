@@ -10,23 +10,24 @@ test("the camera's latest frame shows in the device view, and Read frame reads i
   await page.goto("/#/devices/printer-cam");
   await expect(page.getByRole("heading", { name: "Printer camera", level: 1 })).toBeVisible();
   await expect(page.getByRole("heading", { name: /^Latest frame/, level: 2 })).toBeVisible();
-  const frame = page.getByRole("main").getByRole("img", { name: /^Latest frame from Printer camera, frame, read at \d\d:\d\d:\d\d$/ });
+  const frame = page.getByRole("main").getByRole("img", { name: /^Demo frame from Printer camera, frame, read at \d\d:\d\d:\d\d$/ });
   await expect(frame).toBeVisible();
   expect(await frame.evaluate((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])).toEqual([640, 480]);
   expect((await frame.boundingBox())!.width).toBeGreaterThanOrEqual(320);
   const caption = page.getByRole("main").locator("figcaption");
   await expect(caption).toContainText("image/jpeg");
   await expect(caption).toContainText("640 × 480");
-  await expect(caption).toContainText("19409 bytes");
+  await expect(caption).toContainText("19 KB");
+  await expect(caption).toContainText("demo frame");
   await expect(page.getByRole("main").locator("a img")).toHaveCount(0);
   expect(await frame.getAttribute("src")).toMatch(/^data:image\/jpeg;base64,\/9j\//);
-  await expect(page.locator("main tr").filter({ hasText: "frame" })).toContainText("image/jpeg 640 × 480");
+  await expect(page.locator("main tr").filter({ hasText: "frame" })).toContainText("image/jpeg, 640 × 480, 19 KB");
   await expect(page.getByRole("main").locator("dl.facts")).toContainText("reads only");
 
   await showFrame("come-loose");
   await page.getByRole("button", { name: "Read frame" }).click();
-  await expect(caption).toContainText("23567 bytes");
-  await expect(page.locator("main tr").filter({ hasText: "frame" })).toContainText("image/jpeg 640 × 480");
+  await expect(caption).toContainText("24 KB");
+  await expect(page.locator("main tr").filter({ hasText: "frame" })).toContainText("image/jpeg, 640 × 480, 24 KB");
 });
 
 test("the message log shows a frame read as its description, never its base64", async ({ page, browserName, context }) => {

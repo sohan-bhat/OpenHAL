@@ -29,11 +29,17 @@ export function imageSize(image: ImageReading): { width: number; height: number 
   return width && height ? { width, height } : null;
 }
 
+export function formatBytes(bytes: number): string {
+  if (bytes < 1000) return `${bytes} bytes`;
+  if (bytes < 1_000_000) return `${Math.round(bytes / 1000)} KB`;
+  return `${(bytes / 1_000_000).toFixed(1)} MB`;
+}
+
 export function imageFacts(image: ImageReading): string[] {
   const size = imageSize(image);
   const facts = [image.mimeType];
   if (size) facts.push(`${size.width} × ${size.height}`);
-  facts.push(`${image.bytes} bytes`);
+  facts.push(formatBytes(image.bytes));
   return facts;
 }
 

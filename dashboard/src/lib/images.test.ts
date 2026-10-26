@@ -33,7 +33,9 @@ describe("camera frames", () => {
   });
 
   it("describes a frame by its format, size and bytes", () => {
-    expect(describeImage({ mimeType: "image/jpeg", bytes: 19409, width: 640, height: 480 })).toBe("image/jpeg, 640 × 480, 19409 bytes");
+    expect(describeImage({ mimeType: "image/jpeg", bytes: 19409, width: 640, height: 480 })).toBe("image/jpeg, 640 × 480, 19 KB");
+    expect(describeImage({ mimeType: "image/jpeg", bytes: 23567, width: 640, height: 480 })).toBe("image/jpeg, 640 × 480, 24 KB");
+    expect(describeImage({ mimeType: "image/png", bytes: 2_400_000, width: 1920, height: 1080 })).toBe("image/png, 1920 × 1080, 2.4 MB");
     expect(describeImage({ mimeType: "image/jpeg", bytes: 10, width: null, height: null })).toBe("image/jpeg, 10 bytes");
     expect(imageSize({ mimeType: "image/jpeg", bytes: 10, width: -1, height: 480 })).toBeNull();
     expect(withoutData(jpeg(30))).toEqual({ mimeType: "image/jpeg", bytes: 30, width: 640, height: 480 });

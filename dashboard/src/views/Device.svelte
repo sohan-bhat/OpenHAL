@@ -6,7 +6,7 @@
   import WriteControl from "../components/WriteControl.svelte";
   import { imageChannels, isSimulated } from "../lib/devices";
   import { latestImage } from "../lib/frames.svelte";
-  import { imageFacts, isImageReading } from "../lib/images";
+  import { describeImage, isImageReading } from "../lib/images";
   import { conformanceFor } from "../lib/protocol";
   import { router } from "../lib/router.svelte";
   import { inspector } from "../lib/state.svelte";
@@ -114,7 +114,13 @@
         {#if cameraChannels.length > 1}<h2 id="frames-title">Latest frames</h2>{/if}
         {#each cameraChannels as name (name)}
           {@const spec = view.read[name]!}
-          <CameraFrame device={view.id} channel={name} label="{view.name}, {name}" latest={latestImage(spec.value, spec.known)}>
+          <CameraFrame
+            device={view.id}
+            channel={name}
+            label="{view.name}, {name}"
+            latest={latestImage(spec.value, spec.known)}
+            demo={isSimulated(view)}
+          >
             {#snippet heading()}
               {#if cameraChannels.length > 1}
                 <h3 class="mono">{name}</h3>
@@ -143,7 +149,7 @@
                 <td class="num">
                   {#if spec.type === "image"}
                     <output class="value mono image" class:unknown={!spec.known}>
-                      {spec.known && isImageReading(spec.value) ? imageFacts(spec.value).slice(0, 2).join(" ") : "not read yet"}
+                      {spec.known && isImageReading(spec.value) ? describeImage(spec.value) : "not read yet"}
                     </output>
                   {:else}
                     <output class="value mono" style="min-width: {valueWidth(spec.range?.[0], spec.range?.[1]) + 3}ch" class:unknown={!spec.known}>

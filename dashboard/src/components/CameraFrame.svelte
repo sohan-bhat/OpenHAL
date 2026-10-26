@@ -10,6 +10,7 @@
     label,
     latest = null,
     width = 640,
+    demo = false,
     heading,
   }: {
     device: string;
@@ -17,6 +18,7 @@
     label: string;
     latest?: ImageReading | null;
     width?: number;
+    demo?: boolean;
     heading?: Snippet;
   } = $props();
 
@@ -44,7 +46,7 @@
       {#if frame?.src}
         <img
           src={frame.src}
-          alt="Latest frame from {label}{time ? `, read at ${time}` : ''}"
+          alt="{demo ? 'Demo frame' : 'Latest frame'} from {label}{time ? `, read at ${time}` : ''}"
           width={size?.width}
           height={size?.height}
           decoding="async"
@@ -58,6 +60,7 @@
     </div>
     <figcaption>
       <span class="facts mono">
+        {#if demo}<span class="demo">demo frame</span>{/if}
         {#if image}{#each imageFacts(image) as fact (fact)}<span>{fact}</span>{/each}{:else}<span>no frame read yet</span>{/if}
       </span>
       <span class="when" aria-live="polite">
@@ -68,7 +71,7 @@
   {#if frame?.problem}
     <div class="problem" role="alert">
       <p>{frame.problem}{frame.src ? " The frame above is the last one read." : ""}</p>
-      {#if frame.detail}<p class="label">From the device, shown as data</p><pre>{frame.detail}</pre>{/if}
+      {#if frame.detail}<p class="label">Reason, shown as data</p><p class="detail">{frame.detail}</p>{/if}
     </div>
   {/if}
 </div>
@@ -84,7 +87,7 @@
   .head {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: end;
     justify-content: space-between;
     gap: var(--s-2) var(--s-3);
     min-height: 30px;
@@ -148,7 +151,19 @@
     font-size: var(--t-label);
   }
 
-  .problem pre {
-    margin-top: var(--s-1);
+  .demo {
+    padding: 0 6px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-family: var(--font-text);
+    color: var(--text-2);
+  }
+
+  .problem .label {
+    margin-top: var(--s-2);
+  }
+
+  .detail {
+    overflow-wrap: anywhere;
   }
 </style>
