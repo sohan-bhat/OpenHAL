@@ -11,7 +11,7 @@ Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5
 - scenario-printer. The 3D print babysitter becomes the canonical scenario, with the plant waterer kept as the Arduino example (BRIEF-scenario-printer.md).
 - website-6. The landing story and site for the 3D print babysitter (BRIEF-website-6.md), merged with scenario-printer before either reaches main.
 
-Queued. inspector-5, the Inspector's demo data and captures for the printer, once the scenario record lands.
+- inspector-5. Camera frames, the pending cancel, demo data and captures for the print babysitter (BRIEF-inspector-5.md).
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
