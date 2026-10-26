@@ -206,6 +206,9 @@ test.describe("catalog pages", () => {
   test("the Python reference is generated from docstrings", async ({ page }) => {
     await page.goto("/sdks/python/reference/");
     await expect(page.getByRole("heading", { name: /connect/ }).first()).toBeVisible();
+    await expect(page.locator("#client-reading-and-control")).toHaveText("Reading and control");
+    await expect(page.locator("#client-write")).toContainText("POST /v1/write");
+    expect(await page.locator("main").innerText()).not.toContain("`");
   });
 });
 
