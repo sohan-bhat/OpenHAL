@@ -15,8 +15,9 @@ import yaml
 from typer.testing import CliRunner
 
 from openhal.cli.main import app
-from openhal.demo import e2e, e2e_trace, scenario
+from openhal.demo import e2e, e2e_trace, plant
 from openhal.routines.engine import parse
+from openhal.spec import load
 
 ROOT = Path(__file__).resolve().parents[2]
 ROUTINES_SPEC = ROOT / "spec" / "2026-10-24" / "routines.md"
@@ -116,30 +117,21 @@ def test_a_watering_over_the_limit_never_reaches_the_board(record: dict[str, Any
     assert refused["board_received"] == []
 
 
-def test_the_record_agrees_with_the_three_exchange_scenario(record: dict[str, Any]) -> None:
-    recorded = scenario.read()
-    too_long = recorded["exchanges"][0]
-    assert record["file"] == recorded["file"] == "plant-waterer.hal.yaml"
-    assert record["device"] == recorded["device"]
-    assert record["protocol_version"] == recorded["protocol_version"]
-    assert record["limits"]["water_duration"] == recorded["limits"]["water_duration"]
-    refused = step(record, "too-long")
-    assert refused["arguments"] == too_long["request"]["params"]
-    ours, theirs = refused["result"]["error"], too_long["error"]
-    assert ours["code"] == theirs["code"]
-    citation = "confirmed by {by} {at}"
-    expected = theirs["message"].replace(
-        citation.format(**recorded["confirmed"]), citation.format(**record["confirmed"])
-    )
-    assert ours["message"] == expected
-    who = {"confirmedBy", "confirmedAt"}
-    assert {key: value for key, value in ours["data"].items() if key not in who} == {
-        key: value for key, value in theirs["data"].items() if key not in who
+def test_the_record_agrees_with_the_plant_waterer_mock_file(record: dict[str, Any]) -> None:
+    mock = load(plant.example_file())
+    duration = mock.actions["water"].args["duration"]
+    assert record["file"] == plant.FILE_NAME
+    assert record["device"] == mock.device_id == plant.DEVICE
+    assert record["limits"]["water_duration"] == {
+        "min": {"value": duration.min, "unit": "s"},
+        "max": {"value": duration.max, "unit": "s"},
     }
-    assert (ours["data"]["confirmedBy"], ours["data"]["confirmedAt"]) == (
-        record["confirmed"]["by"],
-        record["confirmed"]["at"],
+    error = step(record, "too-long")["result"]["error"]
+    assert error["message"] == (
+        f"water duration 120 s exceeds the limit of {duration.max:g} s "
+        f"({plant.FILE_NAME}, confirmed by {record['confirmed']['by']} {record['confirmed']['at']})"
     )
+    assert error["data"]["limit"] == {"value": duration.max, "unit": "s"}
 
 
 def test_the_committed_record_matches_a_fresh_run(record: dict[str, Any]) -> None:

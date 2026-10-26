@@ -70,7 +70,7 @@ flowchart LR
 
 ## The life of a command
 
-Every command from every source takes this path, here the plant waterer's `water` action from an agent. There is no other path to a driver's `_write` or `_action`.
+Every command from every source takes this path, here the printer's `pause` action from an agent. There is no other path to a driver's `_write` or `_action`.
 
 ```mermaid
 sequenceDiagram
@@ -81,7 +81,7 @@ sequenceDiagram
   participant Q as Confirmation queue
   participant D as Driver
   participant L as Audit log
-  A->>M: action plant-waterer.water, duration 20 s
+  A->>M: action printer.pause
   M->>H: POST /v1/action (agent token)
   H->>K: evaluate(command, principal)
   K->>K: parse unit, convert to device unit, finite check

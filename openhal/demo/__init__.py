@@ -1,1 +1,1 @@
-"""The canonical demo: a real hub, the plant waterer mock and an agent speaking the protocol."""
+"""The demos. A real hub, simulated devices and an agent speaking the protocol, the print babysitter first."""

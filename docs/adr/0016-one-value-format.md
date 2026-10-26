@@ -13,7 +13,7 @@ Protocol messages carried numeric values two ways. Requests used quantity string
 
 Option 2.
 
-- **Channel messages carry `value` and `unit` side by side.** This covers `hal/write` params, `hal/read` and `hal/readMany` results, `hal/value` notifications, write results and decisions. `{ "device": "plant-waterer", "channel": "soil_moisture", "value": 31, "unit": "%" }`.
+- **Channel messages carry `value` and `unit` side by side.** This covers `hal/write` params, `hal/read` and `hal/readMany` results, `hal/value` notifications, write results and decisions. `{ "device": "printer", "channel": "bed_temp", "value": 60, "unit": "degC" }`.
 - **Nested places carry a Quantity object `{ "value": <number>, "unit": "<unit>" }`.** This covers action arguments (`"args": { "duration": { "value": 20, "unit": "s" } }`), `error.data.limit` and `error.data.requested`, and the `duration` of a plan wait.
 - **Booleans, enum values and text** are plain JSON values with no `unit`.
 - **A numeric value without a unit, or sent as one string such as `"150 %"`, gets UNIT_INVALID** with a reason that shows the right shape.

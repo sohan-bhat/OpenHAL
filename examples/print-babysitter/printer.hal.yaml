@@ -22,7 +22,7 @@ actions:
     require: ["state == paused"]
   cancel:
     description: Cancel the print. It can't be resumed afterwards.
-    confirm: confirm
+    confirm: confirm-each-time
 safe_state:
   - { extruder_target: 0, bed_target: 0 }
 interlocks:
@@ -33,4 +33,4 @@ watchdog: { heartbeat: 5 s, on_loss: hold }
 hazard: medium
 notes: "A print keeps running if the hub goes away, so the watchdog holds instead of stopping it. Klipper's own heater checks stay on either way."
 provenance: { source: hand-written, by: openhal print babysitter example, at: 2026-10-24 }
-confirmed: { by: owner, at: 2026-10-24, sha256: b7f25a100fe6a820e1ec45956bbf6a7cc079f3defdf620801821ec329f6b000a }
+confirmed: { by: owner, at: 2026-10-24, sha256: 43396b8f02a70481b9653275f22cc58f96b060ad2e31f4d80214acb26e51af1a }

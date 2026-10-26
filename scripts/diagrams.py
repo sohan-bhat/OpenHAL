@@ -78,7 +78,7 @@ REDRAWS = {
         "docs/ARCHITECTURE.md",
         1,
         "The life of a command",
-        "An agent asks openhal mcp to water the plant. The hub API passes it to the safety kernel, which runs its "
+        "An agent asks openhal mcp to pause the print. The hub API passes it to the safety kernel, which runs its "
         "checks in order. A blocked command is logged and answered with the reason. A command that needs a person "
         "is queued with an expiry. An allowed command gets a single-use grant, the driver verifies and consumes it, "
         "acts, and the kernel logs the result.",
@@ -127,20 +127,19 @@ REDRAWS = {
     "spec-exchange": Redraw(
         "spec/2026-10-24/architecture.md",
         0,
-        "One blocked and one granted action",
-        "A client asks the hub to water for 120 s. The safety kernel blocks it as above the maximum and the hub "
-        "answers error -32010 LIMIT_EXCEEDED. The client asks for 20 s. Every check passes, the kernel issues a "
-        "single-use grant, the driver consumes it and runs the pump, and the hub answers with a result and then a "
-        "hal/value notification of the new soil moisture.",
+        "One blocked and one granted command",
+        "A client asks the hub for a 300 °C nozzle. The safety kernel blocks it as above the 260 °C maximum and the "
+        "hub answers error -32010 LIMIT_EXCEEDED. The client asks for a 70 °C bed. Every check passes, the kernel "
+        "issues a single-use grant, the driver consumes it and sets the bed heater, and the hub answers with a "
+        "result.",
     ),
 }
 
 FLOW_TITLE = "OpenHAL flow"
 FLOW_DESC = (
-    "OpenHAL flow. An AI client sends hal/action to the hub. The safety kernel checks it against the device "
-    "file's limits. An allowed command gets a grant and goes through the driver to the Arduino plant waterer, "
-    "and the reading comes back to the client. A command that fails a check is blocked with INTERLOCK_BLOCKED "
-    "because the tank is empty."
+    "OpenHAL flow. An agent sends hal/write to the hub. The safety kernel checks it against the device file's "
+    "limits. An allowed command gets a grant and goes through the driver to the 3D printer, and the reading comes "
+    "back to the agent. A 300 °C nozzle is blocked with LIMIT_EXCEEDED because the limit is 260 °C."
 )
 FLOW_ORDER = ["hal/action", "check", "grant", "command", "reading"]
 TOP_ROOM = 40

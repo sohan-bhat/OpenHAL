@@ -1,6 +1,6 @@
 # MCP server
 
-`openhal mcp` is a stdio MCP server. An AI client starts it as a subprocess, and it forwards every tool call to the hub's local API with an agent token. It makes no safety decisions. The hub's kernel checks every write and action, and the tool returns the kernel's answer as is.
+`openhal mcp` is a stdio MCP server. An agent's MCP client starts it as a subprocess, and it forwards every tool call to the hub's local API with an agent token. It makes no safety decisions. The hub's kernel checks every write and action, and the tool returns the kernel's answer as is.
 
 ## Before you start
 
