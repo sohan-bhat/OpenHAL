@@ -33,7 +33,7 @@ function tracks(stage: HTMLElement): Track[] {
     const arrive = read(el, "--at", NEVER);
     const leave = read(el, "--out", NEVER);
     if (Math.abs(arrive) < NEVER) points.push([arrive - 1, arrive + Math.max(fade, length) + 1]);
-    if (Math.abs(leave) < NEVER) points.push([leave - 1, leave + fade + 1]);
+    if (Math.abs(leave) < NEVER) points.push([leave - fade - 1, leave + 1]);
     const spans: Array<[number, number]> = [];
     for (const point of points.sort((a, b) => a[0] - b[0])) {
       const last = spans[spans.length - 1];
@@ -56,8 +56,9 @@ function held(spans: Array<[number, number]>, t: number): number {
 /**
  * Pins the stage under the header and lets the scroll position pick a point in the shot list. The
  * camera is written as one transform on the scene, and the point as --t on each piece that changes
- * then. story.css turns --t into opacity against a piece's --at and --out, each over --f, and into
- * a fill's length against --at over --d. Targets are measured only on load, on resize and when fonts
+ * then. story.css turns --t into opacity against a piece's --at and --out, arriving over --f after
+ * --at and gone by --out, so a piece and the one that replaces it never overlap, and into a fill's
+ * length against --at over --d. Targets are measured only on load, on resize and when fonts
  * arrive, so a scroll frame reads nothing but the scroll position. Without this script, or with
  * reduced motion, the story is the list of steps under the stage.
  */

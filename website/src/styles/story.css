@@ -29,14 +29,14 @@
 
 .story .cue {
   --in: clamp(0, (var(--t) - var(--at)) / var(--f), 1);
-  --gone: clamp(0, (var(--t) - var(--out)) / var(--f), 1);
+  --gone: clamp(0, (var(--t) - var(--out) + var(--f)) / var(--f), 1);
   opacity: min(0.999, calc(var(--in) - var(--gone)));
 }
 
 .story .fill,
 .story .meter-fill {
   --p: clamp(0, (var(--t) - var(--at)) / var(--d), 1);
-  --gone: clamp(0, (var(--t) - var(--out)) / var(--f), 1);
+  --gone: clamp(0, (var(--t) - var(--out) + var(--f)) / var(--f), 1);
 }
 
 .story-list {
@@ -118,7 +118,7 @@
   }
 
   .story[data-camera] .story-title {
-    --gone: clamp(0, (var(--t) - var(--out)) / var(--f), 1);
+    --gone: clamp(0, (var(--t) - var(--out) + var(--f)) / var(--f), 1);
     opacity: min(0.999, calc(1 - var(--gone)));
   }
 
