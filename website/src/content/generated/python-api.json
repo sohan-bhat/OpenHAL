@@ -1,6 +1,6 @@
 {
   "module": "openhal.client",
-  "doc": "The Python client of the OpenHAL hub's local API.\n\n    from openhal.client import connect\n\n    with connect() as hub:\n        print(hub.read(\"plant-waterer\", \"soil_moisture\").value)\n        decision = hub.action(\"plant-waterer\", \"water\", duration={\"value\": 20, \"unit\": \"s\"})\n        print(decision.status, decision.message)\n\nThe client makes no safety decisions. The hub's kernel decides every command, and a blocked\ncommand comes back as a `Decision`, not an exception. See docs/interfaces/PYTHON.md.",
+  "doc": "The Python client of the OpenHAL hub's local API.\n\n    from openhal.client import connect\n\n    with connect() as hub:\n        print(hub.read(\"printer\", \"bed_temp\").value)\n        decision = hub.write(\"printer\", \"bed_target\", 70, \"degC\")\n        print(decision.status, decision.message)\n\nThe client makes no safety decisions. The hub's kernel decides every command, and a blocked\ncommand comes back as a `Decision`, not an exception. See docs/interfaces/PYTHON.md.",
   "groups": [
     {
       "name": "Connect",
@@ -26,7 +26,7 @@
             {
               "name": "action",
               "signature": "action(device: str, action: str, args: Mapping[str, Any] | None = None, **kwargs: Any) -> Decision",
-              "doc": "Ask the kernel to run an action, with its arguments in `args` or as keywords.\n\nA number goes with its unit, as `action(\"plant-waterer\", \"water\", duration={\"value\": 20, \"unit\": \"s\"})`."
+              "doc": "Ask the kernel to run an action, with its arguments in `args` or as keywords.\n\n`action(\"printer\", \"pause\")` takes none. A number argument goes with its unit, as\n`duration={\"value\": 20, \"unit\": \"s\"}`."
             },
             {
               "name": "answer",
@@ -151,7 +151,7 @@
             {
               "name": "read",
               "signature": "read(device: str, channel: str | None = None) -> Reading",
-              "doc": "Read one channel. `read(\"plant-waterer\", \"soil_moisture\")` or `read(\"plant-waterer.soil_moisture\")`."
+              "doc": "Read one channel. `read(\"printer\", \"bed_temp\")` or `read(\"printer.bed_temp\")`."
             },
             {
               "name": "read_many",
@@ -241,7 +241,7 @@
             {
               "name": "write",
               "signature": "write(device: str, channel: str, value: Value, unit: str | None = None) -> Decision",
-              "doc": "Ask the kernel to set a channel. A number needs its unit, as `write(\"led-strip\", \"brightness\", 60, \"%\")`."
+              "doc": "Ask the kernel to set a channel. A number needs its unit, as `write(\"printer\", \"bed_target\", 70, \"degC\")`."
             },
             {
               "name": "writer_session",
@@ -264,7 +264,7 @@
             {
               "name": "action",
               "signature": "async action(device: str, action: str, args: Mapping[str, Any] | None = None, **kwargs: Any) -> Decision",
-              "doc": "Ask the kernel to run an action, with its arguments in `args` or as keywords.\n\nA number goes with its unit, as `action(\"plant-waterer\", \"water\", duration={\"value\": 20, \"unit\": \"s\"})`."
+              "doc": "Ask the kernel to run an action, with its arguments in `args` or as keywords.\n\n`action(\"printer\", \"pause\")` takes none. A number argument goes with its unit, as\n`duration={\"value\": 20, \"unit\": \"s\"}`."
             },
             {
               "name": "answer",
@@ -389,7 +389,7 @@
             {
               "name": "read",
               "signature": "async read(device: str, channel: str | None = None) -> Reading",
-              "doc": "Read one channel. `read(\"plant-waterer\", \"soil_moisture\")` or `read(\"plant-waterer.soil_moisture\")`."
+              "doc": "Read one channel. `read(\"printer\", \"bed_temp\")` or `read(\"printer.bed_temp\")`."
             },
             {
               "name": "read_many",
@@ -479,7 +479,7 @@
             {
               "name": "write",
               "signature": "async write(device: str, channel: str, value: Value, unit: str | None = None) -> Decision",
-              "doc": "Ask the kernel to set a channel. A number needs its unit, as `write(\"led-strip\", \"brightness\", 60, \"%\")`."
+              "doc": "Ask the kernel to set a channel. A number needs its unit, as `write(\"printer\", \"bed_target\", 70, \"degC\")`."
             },
             {
               "name": "writer_session",
