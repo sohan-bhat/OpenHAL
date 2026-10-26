@@ -88,12 +88,12 @@ Cool neutrals with one accent. Status colors only for meaning.
 
 | Status | Light | Dark | Shape and word |
 |---|---|---|---|
-| ok, granted | `#1E7A44` | `#5BC58A` | filled circle, "granted" or "ok" |
+| ok, granted | `#1E7A44` | `#5BC58A` | the word alone in green, "granted", "ok" or "connected". No dot |
 | confirmation required | `#8A5A00` text on `#FFF3CC` | `#E8B341` | half circle, "confirmation required" |
 | blocked, stopped | `#B42318` | `#F07068` | circle with bar, "blocked" or "stopped" |
 | unverified | `#636A75` | `#8B93A0` | dashed outline, "unverified" |
 
-Every pair passes WCAG AA for its text size. Status never appears as color alone. These four shapes are the only status shapes. Neutral states (disabled, started, running, connecting, no confirmation) show their word without a shape. Dashed outlines mean unverified or an agent and nothing else. Simulated devices, demo data, data blocks and empty states sit on a surface fill, and disabled controls are flat surface gray.
+Every pair passes WCAG AA for its text size. Status never appears as color alone. These three shapes are the only status shapes, and ok has none. Neutral states (disabled, started, running, connecting, no confirmation) show their word without a shape. Dashed outlines mean unverified or an agent and nothing else. Simulated devices, demo data, data blocks and empty states sit on a surface fill, and disabled controls are flat surface gray.
 
 ### Syntax theme
 
@@ -121,7 +121,7 @@ Scale, mobile then desktop. 13/13 legend, 15/15 secondary, 16/17 body with line 
 ## Logo
 
 - **Wordmark.** "OpenHAL" in Atkinson Hyperlegible Next at weight 700, in `--text`.
-- **Mark.** A request stroke ending at a vertical stop bar, above a return stroke pointing back. It reads as a request and an answer with a limit in between. It sits on a 16 px grid with 2 px strokes in `--accent`, and stays legible at 16 px. Built by tools/readme/build.py into docs/assets/mark-{light,dark}.svg, docs/assets/favicon.svg and the wordmarks, which the website reads, and drawn the same way in the Inspector header (dashboard/src/components/Mark.svelte).
+- **Wordmark, no logo.** The brand is the name, OpenHAL, set in Atkinson Hyperlegible Next at weight 800 with tracking at -0.06 em, in `--text`. There is no logo shape. Where a square is needed (favicon, app icons) the initials OH are set the same way. Built by tools/readme/build.py into docs/assets/wordmark-{light,dark}.svg, mark-{light,dark}.svg (the initials) and favicon.svg, which the README and the website read. The Inspector sets the same wordmark in its header.
 - Original. It never imitates MCP's, Anthropic's or any other logo.
 
 ## Diagrams
