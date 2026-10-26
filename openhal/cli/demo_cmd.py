@@ -41,13 +41,11 @@ def register(app: typer.Typer) -> None:
             False, "--full", help="Run the whole system with the plant waterer, from discovery to an MCP agent."
         ),
     ) -> None:
-        """Watch an agent babysit a 3D print. The hub runs a simulated Klipper printer and its camera.
+        """Watch an agent babysit a 3D print on a simulated Klipper printer and its camera.
 
-        The agent reads camera frames, warms the bed, is refused a nozzle over the limit, pauses the
-        print when it comes loose and asks to cancel, which waits for a person.
+        The agent warms the bed, is refused a nozzle over the limit, then pauses the print and asks to cancel.
 
-        With --full the hub starts empty and runs the whole system with the Arduino plant waterer,
-        from discovery to an MCP agent and a routine.
+        With --full the hub starts empty and runs the whole system with the Arduino plant waterer.
 
         Nothing touches hardware. The kernel decides every command.
         """
