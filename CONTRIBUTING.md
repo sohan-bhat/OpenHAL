@@ -52,6 +52,7 @@ pnpm --dir dashboard test
 - Method names, error codes and terms match [ADR 0015](docs/adr/0015-openhal-hub-protocol.md) exactly.
 - Numbers travel as a number and a unit apart ([ADR 0016](docs/adr/0016-one-value-format.md)).
 - Docs follow the copy voice in [docs/DESIGN.md](docs/DESIGN.md). Short declarative sentences, no em dashes and none of the banned words.
+- A changed Mermaid block in the docs or the spec needs its D2 redraw updated too. [docs/TOOLING.md](docs/TOOLING.md) says how.
 
 ## Contribute a driver
 

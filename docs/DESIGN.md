@@ -23,10 +23,11 @@ Two elements carry the identity.
 
 A clean flowchart of one command, left to right. AI client, then OpenHAL hub (with the Device files that feed the kernel), then Safety kernel, then Driver, then Arduino plant waterer. A branch from the kernel goes down to a Blocked node, `INTERLOCK_BLOCKED: tank empty`. Connector labels in the mono face read `hal/action`, `check`, `grant` and `command`, and a thin return line reads `reading`.
 
-- Rounded rectangles with 1.5 px strokes, equal heights and consistent widths on a grid. Orthogonal connectors with right-angle turns only, one arrowhead style, no crossings.
+- Rounded rectangles with 1.5 px strokes and 6 px corners, every node 112 by 88 on a grid, with every wire level. Orthogonal connectors with right-angle turns only, one arrowhead style, no crossings.
+- The Safety kernel and Driver nodes each say what they do in a short line, and the blocked code sits under the Blocked node.
 - One neutral for nodes and wires, the accent for the active path, red only for the Blocked node and its connector.
 - Only the wires move. A dash flows along each connector in the direction data travels, 2 to 3 s per loop, staggered from client to device. The blocked branch flows to Blocked, then pauses. `prefers-reduced-motion` stops all of it.
-- Source `docs/diagrams/flow.d2`, built with `scripts/build-diagrams` into `docs/diagrams/flow-light.svg` and `flow-dark.svg`. The README hero and the website home hero use these files.
+- Source `docs/diagrams/flow.d2`, built with `scripts/build-diagrams` into `docs/diagrams/flow-light.svg` and `flow-dark.svg`, plus narrow variants for phones. The page picks the narrow one by the figure's width, not the viewport. The README hero and the website use these files.
 
 ### The message trace
 
@@ -113,14 +114,14 @@ Scale, mobile then desktop. 13/13 legend, 15/15 secondary, 16/17 body with line 
 ## Layout
 
 - Documentation-first. Left sidebar navigation, a centered reading column, and an "On this page" outline on the right at 1280 px and wider.
+- One left edge. Every template starts its content at the documentation column, 344 px from the left at 1440 px and 304 px from 1024 to 1360 px.
 - Breakpoints 390, 768, 1024, 1280. At 390 the sidebar becomes a menu and the outline moves above the content.
 - Spacing scale 4, 8, 12, 16, 24, 32, 48, 64.
 - Borders are 1 px `--border`, radius at most 6 px, no shadows.
 - Every spec page has anchor links on headings, copy buttons on code, previous and next links, "Edit on GitHub", and the spec version in the URL.
 
-## Logo
+## Wordmark
 
-- **Wordmark.** "OpenHAL" in Atkinson Hyperlegible Next at weight 700, in `--text`.
 - **Wordmark, no logo.** The brand is the name, OpenHAL, set in Atkinson Hyperlegible Next at weight 800 with tracking at -0.06 em, in `--text`. There is no logo shape. Where a square is needed (favicon, app icons) the initials OH are set the same way. Built by tools/readme/build.py into docs/assets/wordmark-{light,dark}.svg, mark-{light,dark}.svg (the initials) and favicon.svg, which the README and the website read. The Inspector sets the same wordmark in its header.
 - Original. It never imitates MCP's, Anthropic's or any other logo.
 
@@ -133,6 +134,9 @@ One house style for sequence and architecture diagrams.
 - Participants as plain bordered boxes with sentence-case names.
 - Light and dark variants, transparent backgrounds.
 - Status colors only on arrows that carry a granted or blocked outcome.
+- A dashed line means a notification, such as `hal/value`. Every other line is solid, lifelines included.
+- Diagrams show at their natural size. One wider than the reading column scrolls sideways in its own frame.
+- The Mermaid blocks in docs/ARCHITECTURE.md and the spec stay the source on GitHub. The website shows the D2 redraw of each from docs/diagrams, matched through docs/diagrams/diagrams.json. If a block's text changes, the site falls back to Mermaid and a test fails until the redraw is updated.
 
 ## The Inspector
 

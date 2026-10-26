@@ -28,7 +28,9 @@ Tools used to build, check and document OpenHAL. None of them is a runtime depen
 | Playwright Chromium headless shell | 1248 | Apache-2.0 | Existing Playwright browser cache | Rendering the README in GitHub's light and dark modes |
 | github-markdown-css | 5.8.1 | MIT | Downloaded for local previews only | The README preview |
 
-`scripts/build-diagrams` builds `docs/diagrams/flow-{light,dark}.svg` and the narrow variants for phones from `docs/diagrams/flow.d2`. D2 places the nodes on a grid. The script then applies the house style: our fonts, 1.5 px strokes, labels above their lines, the return line routed with right angles only, a transparent background, title and description, and the flowing dash animation with a `prefers-reduced-motion` rule.
+`scripts/build-diagrams` builds every diagram in docs/diagrams in light and dark. That is the flow diagram from `flow.d2` with narrow variants for phones, the seven architecture diagrams (`architecture-*.d2`) and the spec's exchange (`spec-exchange.d2`), which share `house.d2`. D2 places the nodes on a grid. The script then applies the house style: our fonts, 1.5 px strokes, labels above their lines, the return line routed with right angles only, a transparent background, title and description, and the flowing dash animation with a `prefers-reduced-motion` rule.
+
+The architecture and spec diagrams redraw Mermaid blocks in docs/ARCHITECTURE.md and the spec. When you edit one of those blocks, update its `.d2` file, run `scripts/build-diagrams`, and let it refresh `docs/diagrams/diagrams.json`, which records the Mermaid text each redraw belongs to. Until then the website shows the plain Mermaid and `website/tests/unit/diagrams.test.ts` fails.
 
 ## Not used
 
