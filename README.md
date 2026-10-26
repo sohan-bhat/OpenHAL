@@ -48,7 +48,8 @@ You'll see the hub refuse a 120 s watering, hold the pump while the tank is empt
 → hal/action  { "device": "plant-waterer", "action": "water",
                 "args": { "duration": { "value": 20, "unit": "s" } } }
 ← result      { "status": "done" }
-← hal/value   soil_moisture rises from 31 % to 46 %
+← hal/value   { "device": "plant-waterer", "channel": "soil_moisture",
+                "value": 46, "unit": "%" }
 ```
 <!-- trace:end -->
 

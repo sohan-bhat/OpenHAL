@@ -34,7 +34,8 @@ def test_the_trace_shows_three_exchanges() -> None:
     assert sum(line.startswith("→ hal/action") for line in lines) == 3
     assert "← error -32010 LIMIT_EXCEEDED" in lines
     assert "← error -32012 INTERLOCK_BLOCKED" in lines
-    assert "← hal/value   soil_moisture rises from 31 % to 46 %" in lines
+    assert '← hal/value   { "device": "plant-waterer", "channel": "soil_moisture",' in lines
+    assert '                "value": 46, "unit": "%" }' in lines
 
 
 def test_openhal_demo_prints_the_trace_and_can_record_it(tmp_path: Path) -> None:

@@ -45,6 +45,13 @@ def _request(method: str, params: dict[str, Any], out: str) -> list[str]:
     return [head + body[:-2] + ",", " " * LABEL + "  " + f'"args": {compact(params["args"])}' + " }"]
 
 
+def _notification(method: str, params: dict[str, Any], back: str) -> list[str]:
+    head = f"{back} {method}".ljust(LABEL)
+    where = compact({key: params[key] for key in ("device", "channel")})
+    what = compact({key: value for key, value in params.items() if key not in ("device", "channel")})
+    return [head + where[:-2] + ",", " " * LABEL + "  " + what[2:]]
+
+
 def _reason(message: str) -> list[str]:
     cut = message.find(" (")
     if cut > 0 and message.endswith(")"):
@@ -68,8 +75,8 @@ def exchange(entry: dict[str, Any], arrows: tuple[str, str] = ARROWS) -> list[st
         out.append(f"{back} result".ljust(LABEL) + compact({"status": result.get("status")}))
     soil = entry.get("soil_moisture")
     if soil:
-        before, after = shown(soil["before"]), shown(soil["after"])
-        out.append(f"{back} hal/value".ljust(LABEL) + f"soil_moisture rises from {before} to {after}")
+        device = entry["request"]["params"].get("device")
+        out += _notification("hal/value", {"device": device, "channel": "soil_moisture", **soil["after"]}, back)
     return out
 
 

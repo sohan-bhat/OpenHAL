@@ -32,7 +32,8 @@ The demo starts a hub with the simulated [plant waterer](../examples/plant-water
 → hal/action  { "device": "plant-waterer", "action": "water",
                 "args": { "duration": { "value": 20, "unit": "s" } } }
 ← result      { "status": "done" }
-← hal/value   soil_moisture rises from 31 % to 46 %
+← hal/value   { "device": "plant-waterer", "channel": "soil_moisture",
+                "value": 46, "unit": "%" }
 ```
 <!-- trace:end -->
 
