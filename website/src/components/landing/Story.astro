@@ -1,27 +1,30 @@
 ---
-import { nb, storyFacts, storyLines } from "../../lib/story/facts";
+import { humane, nb, storyFacts, storyLines } from "../../lib/story/facts";
 import { CAMERA, NEVER, TOTAL, cue } from "../../lib/story/script";
 import { NOTE_AT, SNAP_AT, TITLE_OUT } from "../../lib/story/timeline";
 import "../../styles/story.css";
 import Client from "./scene/Client.astro";
-import Device from "./scene/Device.astro";
+import Hub from "./scene/Hub.astro";
 import Kernel from "./scene/Kernel.astro";
+import Printer from "./scene/Printer.astro";
 import Scene from "./scene/Scene.astro";
 
 const facts = storyFacts();
 const lines = storyLines(facts);
 const noted = Object.keys(NOTE_AT) as Array<keyof typeof NOTE_AT>;
 const notes = noted.map((id, index) => ({ text: lines[id], style: cue(NOTE_AT[id], NOTE_AT[noted[index + 1]] ?? NEVER, 3) }));
+const ask = (item: { method: string; target: string; value: string }) => [item.method, item.target, item.value].filter(Boolean).join(" ");
 const steps: Array<{ id: keyof typeof SNAP_AT; station: typeof Client; code: string[] }> = [
-  { id: "ask", station: Client, code: [`${facts.method} ${facts.action} ${facts.asked}`] },
-  { id: "check", station: Kernel, code: [facts.tooLong.name] },
-  { id: "reply", station: Client, code: [facts.tooLong.reason] },
-  { id: "dry", station: Device, code: [`tank ${facts.tank.low}`] },
-  { id: "hold", station: Kernel, code: [facts.empty.name, facts.empty.reason] },
-  { id: "refill", station: Device, code: [`tank ${facts.tank.ok}`] },
-  { id: "water", station: Kernel, code: ["granted"] },
-  { id: "soil", station: Device, code: [facts.soil.text] },
-  { id: "done", station: Client, code: [facts.status, facts.soil.text] },
+  { id: "watch", station: Client, code: [ask(facts.look), facts.camera.image] },
+  { id: "look", station: Printer, code: ["corner lifting"] },
+  { id: "warm", station: Kernel, code: [ask(facts.bed), "granted"] },
+  { id: "heat", station: Printer, code: [facts.bed.status, `bed ${facts.bed.value}`] },
+  { id: "hot", station: Kernel, code: [ask(facts.nozzle), facts.nozzle.refusal.name] },
+  { id: "reply", station: Client, code: [facts.nozzle.refusal.name, humane(facts.nozzle.refusal.reason)] },
+  { id: "loose", station: Printer, code: ["print loose"] },
+  { id: "pause", station: Printer, code: [ask(facts.pause), facts.pause.status, "paused"] },
+  { id: "cancel", station: Kernel, code: [ask(facts.cancel), "confirmation required"] },
+  { id: "wake", station: Hub, code: [facts.cancel.status, `${facts.cancel.target} confirmation required`] },
 ];
 const camera = `(() => {
   const story = document.currentScript.previousElementSibling;

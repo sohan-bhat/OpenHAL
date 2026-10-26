@@ -1,0 +1,81 @@
+---
+import type { StoryFacts } from "../../../lib/story/facts";
+import { amount, nb } from "../../../lib/story/facts";
+import { ALWAYS, NEVER, cue } from "../../../lib/story/script";
+import { PRINTER, type Span } from "../../../lib/story/timeline";
+import Camera from "./Camera.astro";
+
+interface Props {
+  facts: StoryFacts;
+}
+
+const { facts } = Astro.props;
+const shown = (span: Span) => cue(span.at, span.out);
+const { bed } = PRINTER;
+const rise = facts.bed.after - facts.bed.before;
+const steps = Math.max(1, Math.round(Math.abs(rise)));
+const times = Array.from({ length: steps + 1 }, (_, index) => (index === 0 ? ALWAYS : bed.at + (bed.d * index) / steps));
+const readings = times.map((time, index) => ({
+  text: nb(amount(Math.round(facts.bed.before + (rise * index) / steps), facts.bed.unit)),
+  style: cue(time, times[index + 1] ?? NEVER, 0.4),
+}));
+const states = [
+  { span: PRINTER.printing, text: "printing" },
+  { span: PRINTER.paused, text: "paused" },
+];
+---
+
+<div class="station" data-cam="printer">
+  <div class="station-head">
+    <p class="station-name">3D printer</p>
+    <p class="station-note">{facts.printer.name}, simulated</p>
+  </div>
+  <div class="readings">
+    <div class="reading">
+      <p class="reading-name">Bed</p>
+      <p class="swap figure value">
+        {readings.map((reading) => <span class="cue" style={reading.style}>{reading.text}</span>)}
+      </p>
+    </div>
+    {
+      facts.nozzle.now && (
+        <div class="reading">
+          <p class="reading-name">Nozzle</p>
+          <p class="value word">{nb(facts.nozzle.now)}</p>
+        </div>
+      )
+    }
+    <div class="reading">
+      <p class="reading-name">State</p>
+      <p class="swap value word">{states.map((state) => <span class="cue" style={shown(state.span)}>{state.text}</span>)}</p>
+    </div>
+  </div>
+  <Camera facts={facts} />
+</div>
+
+<style>
+  .readings {
+    display: grid;
+    gap: 14px;
+  }
+
+  .reading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 6px var(--s-3);
+  }
+
+  .reading-name {
+    color: var(--text-2);
+  }
+
+  .value {
+    justify-items: end;
+  }
+
+  .word {
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+</style>

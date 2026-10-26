@@ -1,0 +1,162 @@
+---
+import type { StoryFacts } from "../../../lib/story/facts";
+import { cue } from "../../../lib/story/script";
+import { CAMERA, type Span } from "../../../lib/story/timeline";
+
+interface Props {
+  facts: StoryFacts;
+}
+
+const { facts } = Astro.props;
+const shown = (span: Span) => cue(span.at, span.out);
+const layers = Array.from({ length: 9 }, (_, index) => 133 + index * 7);
+const lifted = (y: number) => (y < 180 ? 100 : 100 + ((y - 180) * 52) / 16);
+const resting = layers.map((y) => `M100 ${y} H220`).join(" ");
+const warped = layers.map((y) => `M${lifted(y).toFixed(1)} ${y} H220`).join(" ");
+const head = (x: number) => `M${x - 9} 98 H${x + 9} V114 H${x - 9} Z M${x - 6} 114 H${x + 6} L${x} 126 Z`;
+const nest = "M136 126 c-6 8 -16 10 -12 20 c3 8 16 4 18 -4 c2 -8 -10 -10 -14 -2 c-6 11 4 20 14 16 c10 -4 8 -16 -2 -14 c-13 2 -20 14 -12 22 c7 7 22 2 22 -8 c0 -8 -12 -8 -14 0 c-2 9 8 14 16 10";
+---
+
+<div class="webcam" data-cam="camera">
+  <p class="webcam-head"><span class="webcam-name">Webcam</span> <span class="mono">{facts.camera.id}</span></p>
+  <div class="frame swap">
+    <svg class="cue" style={shown(CAMERA.lifting)} viewBox="0 0 320 240" aria-hidden="true" focusable="false">
+      <rect class="rig" x="-2" y="70" width="324" height="10" />
+      <rect class="rig solid" x="14" y="196" width="292" height="10" rx="1" />
+      <path class="rig" d="M40 206 V222 M280 206 V222 M28 222 H292" />
+      <path class="part" d="M100 126 H220 V196 H152 L100 180 Z" />
+      <path class="layers" d={warped} />
+      <rect class="rig solid" x="150" y="64" width="44" height="34" rx="3" />
+      <path class="rig solid" d={head(172)} />
+      <rect class="mark cue" style={shown(CAMERA.corner)} x="88" y="168" width="76" height="38" rx="4" />
+    </svg>
+    <svg class="cue" style={shown(CAMERA.loose)} viewBox="0 0 320 240" aria-hidden="true" focusable="false">
+      <rect class="rig" x="-2" y="70" width="324" height="10" />
+      <rect class="rig solid" x="14" y="196" width="292" height="10" rx="1" />
+      <path class="rig" d="M40 206 V222 M280 206 V222 M28 222 H292" />
+      <g transform="translate(64 0) rotate(7 220 196)">
+        <path class="part" d="M100 126 H220 V196 H100 Z" />
+        <path class="layers" d={resting} />
+      </g>
+      <path class="filament" d={nest} />
+      <rect class="rig solid" x="114" y="64" width="44" height="34" rx="3" />
+      <path class="rig solid" d={head(136)} />
+      <rect class="mark cue" style={shown(CAMERA.off)} x="160" y="102" width="132" height="104" rx="4" />
+    </svg>
+  </div>
+  <div class="under">
+    <p class="swap seen">
+      <span class="cue" style={shown(CAMERA.corner)}><span class="key"></span>corner lifting</span>
+      <span class="cue" style={shown(CAMERA.off)}><span class="key"></span>print loose</span>
+    </p>
+    <p class="demo">Demo frame</p>
+  </div>
+</div>
+
+<style>
+  .webcam {
+    position: relative;
+    display: grid;
+    gap: 10px;
+    padding-top: var(--s-4);
+    border-top: 1px solid var(--border);
+  }
+
+  .webcam-head {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s-3);
+    color: var(--text-2);
+  }
+
+  .webcam-name {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .frame {
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--bg);
+    border: 1px solid var(--node);
+    border-radius: 4px;
+  }
+
+  .frame svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .rig,
+  .part,
+  .layers,
+  .filament,
+  .mark {
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+
+  .rig {
+    stroke: var(--text-2);
+  }
+
+  .solid {
+    fill: var(--bg);
+  }
+
+  .part {
+    fill: var(--surface);
+    stroke: var(--text);
+  }
+
+  .layers {
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+
+  .filament {
+    stroke: var(--text);
+  }
+
+  .mark {
+    stroke: var(--text);
+    stroke-dasharray: 4 3;
+    stroke-linecap: butt;
+  }
+
+  .under {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--s-3);
+  }
+
+  .seen {
+    min-height: 1.45em;
+  }
+
+  .demo {
+    color: var(--text-2);
+    font-size: var(--t-legend);
+    white-space: nowrap;
+  }
+
+  .seen > span {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+
+  .key {
+    flex: none;
+    width: 18px;
+    height: 12px;
+    border: 1.5px dashed var(--text);
+    border-radius: 3px;
+  }
+</style>
