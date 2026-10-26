@@ -21,7 +21,10 @@ export function scenarioFrom(text, path = SCENARIO_PATH) {
     need(isObject(exchange?.request) && typeof exchange.request.method === "string", path, `exchanges[${index}] has no request method.`);
     need(isObject(exchange.error) || isObject(exchange.result), path, `exchanges[${index}] has neither an error nor a result.`);
   });
-  return { path, record, device: typeof record.device === "string" ? record.device : null, file: typeof record.file === "string" ? record.file : null };
+  const command = record.exchanges.find((exchange) => exchange.request.method !== "hal/read");
+  const device = typeof command?.request.params?.device === "string" ? command.request.params.device : null;
+  const described = Array.isArray(record.devices) ? record.devices.find((item) => item?.id === device) : null;
+  return { path, record, device, file: typeof described?.file === "string" ? described.file : null };
 }
 
 let cached = null;
@@ -46,6 +49,18 @@ export function shown(value) {
   return String(value);
 }
 
+const ELIDED = "\u2026";
+
+function resultOf(exchange) {
+  const result = exchange.result ?? {};
+  if (exchange.request.method === "hal/read") {
+    const value = isObject(result.value) && "mimeType" in result.value ? { ...result.value, data: ELIDED } : result.value;
+    return { value };
+  }
+  if (result.status === "pending") return Object.fromEntries(["status", "requestId", "expiresInS"].filter((key) => key in result).map((key) => [key, result[key]]));
+  return { status: result.status ?? null };
+}
+
 export function exchangeEntries(exchange) {
   const out = [];
   if (typeof exchange.before === "string" && exchange.before) out.push({ kind: "note", text: exchange.before });
@@ -53,11 +68,7 @@ export function exchangeEntries(exchange) {
   if (isObject(exchange.error)) {
     out.push({ kind: "error", code: Number(exchange.error.code), name: String(exchange.error.data?.name ?? ""), reason: String(exchange.error.message ?? "") });
   } else {
-    out.push({ kind: "result", result: { status: exchange.result?.status ?? null } });
-  }
-  const soil = exchange.soil_moisture;
-  if (isObject(soil) && soil.before && soil.after) {
-    out.push({ kind: "notification", method: "hal/value", params: { device: exchange.request.params?.device ?? null, channel: "soil_moisture", value: soil.after.value, unit: soil.after.unit } });
+    out.push({ kind: "result", result: resultOf(exchange) });
   }
   return out;
 }
@@ -66,14 +77,19 @@ export function scenarioEntries(scenario = loadScenario()) {
   return scenario.record.exchanges.flatMap(exchangeEntries);
 }
 
+/** A quantity as prose shows it, `70 °C` for `{ value: 70, unit: "degC" }`, as openhal.demo.trace.celsius does. */
+export function celsius(quantity) {
+  return shown(quantity).replace(" degC", " \u00b0C");
+}
+
 export function outcome(scenario = loadScenario()) {
-  const [tooLong, , watered] = scenario.record.exchanges;
-  const asked = shown(tooLong.request.params.args.duration);
-  const duration = shown(watered.request.params.args.duration);
-  const soil = watered.soil_moisture;
+  const exchanges = Object.fromEntries(scenario.record.exchanges.map((exchange) => [exchange.id, exchange]));
+  const bed = exchanges["bed-warmer"].bed_target;
+  const refused = exchanges["nozzle-too-hot"].error.data;
   return (
-    `You'll see the hub refuse a ${asked} watering, hold the pump while the tank is empty, ` +
-    `then water for ${duration} as soil moisture rises from ${shown(soil.before)} to ${shown(soil.after)}.`
+    `You'll see the agent warm the bed from ${celsius(bed.before)} to ${celsius(bed.after)}, ` +
+    `have a ${celsius(refused.requested)} nozzle refused at the ${celsius(refused.limit)} limit, ` +
+    "pause the print when it comes loose and wait for a person to approve the cancel."
   );
 }
 
