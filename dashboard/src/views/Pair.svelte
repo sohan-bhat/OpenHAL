@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Mark from "../components/Mark.svelte";
   import StopUnavailable from "../components/StopUnavailable.svelte";
   import { api } from "../lib/api";
 
@@ -25,7 +24,7 @@
 </script>
 
 <header class="bar">
-  <div class="brand"><Mark size={28} /><span class="wordmark">OpenHAL</span> <span class="muted">Inspector</span></div>
+  <div class="brand"><span class="wordmark">OpenHAL</span> <span class="muted">Inspector</span></div>
   <StopUnavailable why="unpaired" {host} />
 </header>
 <main class="pair" id="main">
@@ -91,7 +90,8 @@
   }
 
   .wordmark {
-    font-weight: 700;
+    font-weight: 800;
+    letter-spacing: -0.06em;
   }
 
   section,

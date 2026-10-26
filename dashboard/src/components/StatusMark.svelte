@@ -11,9 +11,7 @@
 <span class="status fade-status {tone}" class:compact class:plain={!hasShape(tone)} data-tone={tone}>
   {#if hasShape(tone)}
     <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
-      {#if tone === "ok"}
-        <circle cx="6" cy="6" r="5" fill="currentColor" />
-      {:else if tone === "confirm"}
+      {#if tone === "confirm"}
         <circle cx="6" cy="6" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5" />
         <path d="M6 1.25a4.75 4.75 0 0 0 0 9.5z" fill="currentColor" />
       {:else if tone === "blocked"}
