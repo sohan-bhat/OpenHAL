@@ -57,6 +57,7 @@ class AsyncClient:
         await self.aclose()
 
     async def aclose(self) -> None:
+        """Close the connection to the hub."""
         await self._http.aclose()
 
     async def call[T](self, call: Call[T]) -> T:
@@ -68,15 +69,19 @@ class AsyncClient:
         return finish(call, response, self.token_source)
 
     async def status(self) -> m.HubStatus:
+        """The hub's version, protocol version, conformance level and whether a stop is in force."""
         return await self.call(calls.status())
 
     async def whoami(self) -> m.Principal:
+        """The Principal the hub takes this token for, a human or an agent with its scope."""
         return await self.call(calls.whoami())
 
     async def devices(self) -> list[m.DeviceSummary]:
+        """Every device the hub knows, with its driver, hazard level and whether it takes commands."""
         return await self.call(calls.devices())
 
     async def device(self, device_id: str) -> m.DeviceView:
+        """One device with its channels, actions, limits, interlocks and safe state."""
         return await self.call(calls.device(device_id))
 
     async def read(self, device: str, channel: str | None = None) -> m.Reading:
@@ -86,6 +91,7 @@ class AsyncClient:
         return await self.call(calls.read(device, channel))
 
     async def read_many(self, items: Iterable[str | tuple[str, str]]) -> list[m.Reading]:
+        """Read several channels in one request, each as `"device.channel"` or a `(device, channel)` pair."""
         pairs = [split_target(item) if isinstance(item, str) else item for item in items]
         return await self.call(calls.read_many(pairs))
 
@@ -96,6 +102,10 @@ class AsyncClient:
     async def action(
         self, device: str, action: str, args: Mapping[str, Any] | None = None, **kwargs: Any
     ) -> m.Decision:
+        """Ask the kernel to run an action, with its arguments in `args` or as keywords.
+
+        A number goes with its unit, as `action("plant-waterer", "water", duration={"value": 20, "unit": "s"})`.
+        """
         return await self.call(calls.action(device, action, {**(args or {}), **kwargs}))
 
     async def dry_run(self, commands: Iterable[Command]) -> list[m.Decision]:
@@ -123,9 +133,11 @@ class AsyncClient:
         return await self.call(calls.unlock(phrase))
 
     async def confirmations(self, *, include_done: bool = False) -> list[m.ConfirmationRequest]:
+        """Requests waiting for a person. `include_done` adds the ones already decided or expired."""
         return await self.call(calls.confirmations(include_done))
 
     async def confirmation(self, request_id: str) -> m.ConfirmationRequest:
+        """One confirmation request with its command, its dry run and, once decided, its result."""
         return await self.call(calls.confirmation(request_id))
 
     async def approve(self, request_id: str) -> m.Decision:
@@ -133,6 +145,7 @@ class AsyncClient:
         return await self.call(calls.approve(request_id))
 
     async def reject(self, request_id: str, reason: str = "") -> m.ConfirmationRequest:
+        """Turn down a queued request, with an optional reason. Needs a human token."""
         return await self.call(calls.reject(request_id, reason))
 
     async def audit(
@@ -144,15 +157,19 @@ class AsyncClient:
         since: int = 0,
         limit: int = 200,
     ) -> list[m.AuditEntry]:
+        """Audit log entries after `since`, newest first, filtered by device, status or event."""
         return await self.call(calls.audit(device=device, status=status, event=event, since=since, limit=limit))
 
     async def verify_audit(self) -> m.AuditVerify:
+        """Check the audit log's hash chain. `broken_at` names the first entry that does not match."""
         return await self.call(calls.verify_audit())
 
     async def drivers(self) -> list[m.DriverInfo]:
+        """The drivers the hub knows, whether each is installed and the protocols it speaks."""
         return await self.call(calls.drivers())
 
     async def pair(self, code: str) -> m.OkResult:
+        """Trade a pairing code from `openhal pair` for a human session on this client."""
         return await self.call(calls.pair(code))
 
     async def ramp_to(
@@ -182,15 +199,19 @@ class AsyncClient:
         return decisions
 
     async def discover(self, drivers: Iterable[str] | None = None) -> m.DiscoveryResult:
+        """Look for devices with every driver, or only the named ones. Devices no file matches come back unknown."""
         return await self.call(calls.discover(drivers))
 
     async def unknown_devices(self) -> list[m.Unknown]:
+        """Devices discovery found that no device file matches yet."""
         return await self.call(calls.unknown_devices())
 
     async def routines(self) -> list[m.RoutineSummary]:
+        """Every stored routine with its devices, triggers and whether it is enabled."""
         return await self.call(calls.routines())
 
     async def routine(self, routine_id: str) -> m.Routine:
+        """One routine with its source and who drafted and enabled it."""
         return await self.call(calls.routine(routine_id))
 
     async def create_routine(self, routine_id: str, source: str, *, kind: str = "yaml") -> m.Routine:
@@ -198,21 +219,27 @@ class AsyncClient:
         return await self.call(calls.create_routine(routine_id, source, kind))
 
     async def routine_dry_run(self, routine_id: str) -> m.RoutineDryRun:
+        """Evaluate every step of a routine against the kernel without running it."""
         return await self.call(calls.routine_dry_run(routine_id))
 
     async def enable_routine(self, routine_id: str) -> m.Routine:
+        """Turn a routine on. Needs a human token, or an agent under ADR 0007's opt in."""
         return await self.call(calls.enable_routine(routine_id))
 
     async def disable_routine(self, routine_id: str) -> m.Routine:
+        """Turn a routine off. Any token but a read scoped agent can."""
         return await self.call(calls.disable_routine(routine_id))
 
     async def run_routine(self, routine_id: str) -> m.Run:
+        """Run a routine once now. Needs a human token."""
         return await self.call(calls.run_routine(routine_id))
 
     async def delete_routine(self, routine_id: str) -> m.OkResult:
+        """Delete a routine. Needs a human token."""
         return await self.call(calls.delete_routine(routine_id))
 
     async def approve_routine(self, routine_id: str, device: str) -> m.Approval:
+        """Approve a routine's current text to command one device. Needs a human token."""
         return await self.call(calls.approve_routine(routine_id, device))
 
     async def start_writer(
@@ -224,6 +251,7 @@ class AsyncClient:
         sketch_path: str | None = None,
         manual_text: str | None = None,
     ) -> m.WriterSession:
+        """Start a driver writer session from an unknown device, a driver and its params, a sketch or a manual."""
         return await self.call(
             calls.start_writer(
                 unknown_id=unknown_id, driver=driver, params=params, sketch_path=sketch_path, manual_text=manual_text
@@ -231,6 +259,7 @@ class AsyncClient:
         )
 
     async def writer_session(self, session_id: str) -> m.WriterSession:
+        """One writer session with its status, draft and the limits no person has confirmed yet."""
         return await self.call(calls.writer_session(session_id))
 
     async def propose(self, session_id: str, draft_yaml: str) -> m.WriterSession:
@@ -238,6 +267,7 @@ class AsyncClient:
         return await self.call(calls.propose(session_id, draft_yaml))
 
     async def interview(self, session_id: str) -> m.Interview:
+        """The questions a person answers to confirm the draft's limits."""
         return await self.call(calls.interview(session_id))
 
     async def answer(self, session_id: str, answers: Mapping[str, Any]) -> m.WriterSession:
@@ -245,21 +275,27 @@ class AsyncClient:
         return await self.call(calls.answer(session_id, answers))
 
     async def finish(self, session_id: str, save_as: str | None = None) -> m.FinishResult:
+        """Save the confirmed device file, named `save_as` if given. Needs a human token."""
         return await self.call(calls.finish(session_id, save_as))
 
     async def test_plan(self, session_id: str) -> m.TestPlan:
+        """The steps to try the new device file on the real hardware, in order."""
         return await self.call(calls.test_plan(session_id))
 
     async def tokens(self) -> list[m.TokenInfo]:
+        """Every token the hub has issued, without the secrets. Needs a human token."""
         return await self.call(calls.tokens())
 
     async def create_token(self, name: str, *, kind: str = "agent", scope: str = "read") -> m.NewToken:
+        """Issue a token. The answer carries the plain token once. Needs a human token."""
         return await self.call(calls.create_token(name, kind, scope))
 
     async def revoke_token(self, token_id: str) -> m.OkResult:
+        """Revoke a token so the hub stops accepting it. Needs a human token."""
         return await self.call(calls.revoke_token(token_id))
 
     async def new_pairing_code(self) -> m.PairingCode:
+        """A six digit code that pairs a browser for 300 s. Needs a human token."""
         return await self.call(calls.new_pairing_code())
 
     async def events(self) -> AsyncIterator[dict[str, Any]]:

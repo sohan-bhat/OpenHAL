@@ -26,7 +26,7 @@
             {
               "name": "action",
               "signature": "action(device: str, action: str, args: Mapping[str, Any] | None = None, **kwargs: Any) -> Decision",
-              "doc": ""
+              "doc": "Ask the kernel to run an action, with its arguments in `args` or as keywords.\n\nA number goes with its unit, as `action(\"plant-waterer\", \"water\", duration={\"value\": 20, \"unit\": \"s\"})`."
             },
             {
               "name": "answer",
@@ -41,12 +41,12 @@
             {
               "name": "approve_routine",
               "signature": "approve_routine(routine_id: str, device: str) -> Approval",
-              "doc": ""
+              "doc": "Approve a routine's current text to command one device. Needs a human token."
             },
             {
               "name": "audit",
               "signature": "audit(*, device: str | None = None, status: str | None = None, event: str | None = None, since: int = 0, limit: int = 200) -> list[AuditEntry]",
-              "doc": ""
+              "doc": "Audit log entries after `since`, newest first, filtered by device, status or event."
             },
             {
               "name": "call",
@@ -56,17 +56,17 @@
             {
               "name": "close",
               "signature": "close() -> None",
-              "doc": ""
+              "doc": "Close the connection to the hub."
             },
             {
               "name": "confirmation",
               "signature": "confirmation(request_id: str) -> ConfirmationRequest",
-              "doc": ""
+              "doc": "One confirmation request with its command, its dry run and, once decided, its result."
             },
             {
               "name": "confirmations",
               "signature": "confirmations(*, include_done: bool = False) -> list[ConfirmationRequest]",
-              "doc": ""
+              "doc": "Requests waiting for a person. `include_done` adds the ones already decided or expired."
             },
             {
               "name": "create_routine",
@@ -76,37 +76,37 @@
             {
               "name": "create_token",
               "signature": "create_token(name: str, *, kind: str = agent, scope: str = read) -> NewToken",
-              "doc": ""
+              "doc": "Issue a token. The answer carries the plain token once. Needs a human token."
             },
             {
               "name": "delete_routine",
               "signature": "delete_routine(routine_id: str) -> OkResult",
-              "doc": ""
+              "doc": "Delete a routine. Needs a human token."
             },
             {
               "name": "device",
               "signature": "device(device_id: str) -> DeviceView",
-              "doc": ""
+              "doc": "One device with its channels, actions, limits, interlocks and safe state."
             },
             {
               "name": "devices",
               "signature": "devices() -> list[DeviceSummary]",
-              "doc": ""
+              "doc": "Every device the hub knows, with its driver, hazard level and whether it takes commands."
             },
             {
               "name": "disable_routine",
               "signature": "disable_routine(routine_id: str) -> Routine",
-              "doc": ""
+              "doc": "Turn a routine off. Any token but a read scoped agent can."
             },
             {
               "name": "discover",
               "signature": "discover(drivers: Iterable[str] | None = None) -> DiscoveryResult",
-              "doc": ""
+              "doc": "Look for devices with every driver, or only the named ones. Devices no file matches come back unknown."
             },
             {
               "name": "drivers",
               "signature": "drivers() -> list[DriverInfo]",
-              "doc": ""
+              "doc": "The drivers the hub knows, whether each is installed and the protocols it speaks."
             },
             {
               "name": "dry_run",
@@ -116,27 +116,27 @@
             {
               "name": "enable_routine",
               "signature": "enable_routine(routine_id: str) -> Routine",
-              "doc": ""
+              "doc": "Turn a routine on. Needs a human token, or an agent under ADR 0007's opt in."
             },
             {
               "name": "finish",
               "signature": "finish(session_id: str, save_as: str | None = None) -> FinishResult",
-              "doc": ""
+              "doc": "Save the confirmed device file, named `save_as` if given. Needs a human token."
             },
             {
               "name": "interview",
               "signature": "interview(session_id: str) -> Interview",
-              "doc": ""
+              "doc": "The questions a person answers to confirm the draft's limits."
             },
             {
               "name": "new_pairing_code",
               "signature": "new_pairing_code() -> PairingCode",
-              "doc": ""
+              "doc": "A six digit code that pairs a browser for 300 s. Needs a human token."
             },
             {
               "name": "pair",
               "signature": "pair(code: str) -> OkResult",
-              "doc": ""
+              "doc": "Trade a pairing code from `openhal pair` for a human session on this client."
             },
             {
               "name": "propose",
@@ -156,47 +156,47 @@
             {
               "name": "read_many",
               "signature": "read_many(items: Iterable[str | tuple[str, str]]) -> list[Reading]",
-              "doc": ""
+              "doc": "Read several channels in one request, each as `\"device.channel\"` or a `(device, channel)` pair."
             },
             {
               "name": "reject",
               "signature": "reject(request_id: str, reason: str = ) -> ConfirmationRequest",
-              "doc": ""
+              "doc": "Turn down a queued request, with an optional reason. Needs a human token."
             },
             {
               "name": "revoke_token",
               "signature": "revoke_token(token_id: str) -> OkResult",
-              "doc": ""
+              "doc": "Revoke a token so the hub stops accepting it. Needs a human token."
             },
             {
               "name": "routine",
               "signature": "routine(routine_id: str) -> Routine",
-              "doc": ""
+              "doc": "One routine with its source and who drafted and enabled it."
             },
             {
               "name": "routine_dry_run",
               "signature": "routine_dry_run(routine_id: str) -> RoutineDryRun",
-              "doc": ""
+              "doc": "Evaluate every step of a routine against the kernel without running it."
             },
             {
               "name": "routines",
               "signature": "routines() -> list[RoutineSummary]",
-              "doc": ""
+              "doc": "Every stored routine with its devices, triggers and whether it is enabled."
             },
             {
               "name": "run_routine",
               "signature": "run_routine(routine_id: str) -> Run",
-              "doc": ""
+              "doc": "Run a routine once now. Needs a human token."
             },
             {
               "name": "start_writer",
               "signature": "start_writer(*, unknown_id: str | None = None, driver: str | None = None, params: Mapping[str, Any] | None = None, sketch_path: str | None = None, manual_text: str | None = None) -> WriterSession",
-              "doc": ""
+              "doc": "Start a driver writer session from an unknown device, a driver and its params, a sketch or a manual."
             },
             {
               "name": "status",
               "signature": "status() -> HubStatus",
-              "doc": ""
+              "doc": "The hub's version, protocol version, conformance level and whether a stop is in force."
             },
             {
               "name": "stop",
@@ -206,7 +206,7 @@
             {
               "name": "test_plan",
               "signature": "test_plan(session_id: str) -> TestPlan",
-              "doc": ""
+              "doc": "The steps to try the new device file on the real hardware, in order."
             },
             {
               "name": "tighten",
@@ -216,12 +216,12 @@
             {
               "name": "tokens",
               "signature": "tokens() -> list[TokenInfo]",
-              "doc": ""
+              "doc": "Every token the hub has issued, without the secrets. Needs a human token."
             },
             {
               "name": "unknown_devices",
               "signature": "unknown_devices() -> list[Unknown]",
-              "doc": ""
+              "doc": "Devices discovery found that no device file matches yet."
             },
             {
               "name": "unlock",
@@ -231,12 +231,12 @@
             {
               "name": "verify_audit",
               "signature": "verify_audit() -> AuditVerify",
-              "doc": ""
+              "doc": "Check the audit log's hash chain. `broken_at` names the first entry that does not match."
             },
             {
               "name": "whoami",
               "signature": "whoami() -> Principal",
-              "doc": ""
+              "doc": "The Principal the hub takes this token for, a human or an agent with its scope."
             },
             {
               "name": "write",
@@ -246,7 +246,7 @@
             {
               "name": "writer_session",
               "signature": "writer_session(session_id: str) -> WriterSession",
-              "doc": ""
+              "doc": "One writer session with its status, draft and the limits no person has confirmed yet."
             }
           ]
         },
@@ -259,12 +259,12 @@
             {
               "name": "aclose",
               "signature": "async aclose() -> None",
-              "doc": ""
+              "doc": "Close the connection to the hub."
             },
             {
               "name": "action",
               "signature": "async action(device: str, action: str, args: Mapping[str, Any] | None = None, **kwargs: Any) -> Decision",
-              "doc": ""
+              "doc": "Ask the kernel to run an action, with its arguments in `args` or as keywords.\n\nA number goes with its unit, as `action(\"plant-waterer\", \"water\", duration={\"value\": 20, \"unit\": \"s\"})`."
             },
             {
               "name": "answer",
@@ -279,12 +279,12 @@
             {
               "name": "approve_routine",
               "signature": "async approve_routine(routine_id: str, device: str) -> Approval",
-              "doc": ""
+              "doc": "Approve a routine's current text to command one device. Needs a human token."
             },
             {
               "name": "audit",
               "signature": "async audit(*, device: str | None = None, status: str | None = None, event: str | None = None, since: int = 0, limit: int = 200) -> list[AuditEntry]",
-              "doc": ""
+              "doc": "Audit log entries after `since`, newest first, filtered by device, status or event."
             },
             {
               "name": "call",
@@ -294,12 +294,12 @@
             {
               "name": "confirmation",
               "signature": "async confirmation(request_id: str) -> ConfirmationRequest",
-              "doc": ""
+              "doc": "One confirmation request with its command, its dry run and, once decided, its result."
             },
             {
               "name": "confirmations",
               "signature": "async confirmations(*, include_done: bool = False) -> list[ConfirmationRequest]",
-              "doc": ""
+              "doc": "Requests waiting for a person. `include_done` adds the ones already decided or expired."
             },
             {
               "name": "create_routine",
@@ -309,37 +309,37 @@
             {
               "name": "create_token",
               "signature": "async create_token(name: str, *, kind: str = agent, scope: str = read) -> NewToken",
-              "doc": ""
+              "doc": "Issue a token. The answer carries the plain token once. Needs a human token."
             },
             {
               "name": "delete_routine",
               "signature": "async delete_routine(routine_id: str) -> OkResult",
-              "doc": ""
+              "doc": "Delete a routine. Needs a human token."
             },
             {
               "name": "device",
               "signature": "async device(device_id: str) -> DeviceView",
-              "doc": ""
+              "doc": "One device with its channels, actions, limits, interlocks and safe state."
             },
             {
               "name": "devices",
               "signature": "async devices() -> list[DeviceSummary]",
-              "doc": ""
+              "doc": "Every device the hub knows, with its driver, hazard level and whether it takes commands."
             },
             {
               "name": "disable_routine",
               "signature": "async disable_routine(routine_id: str) -> Routine",
-              "doc": ""
+              "doc": "Turn a routine off. Any token but a read scoped agent can."
             },
             {
               "name": "discover",
               "signature": "async discover(drivers: Iterable[str] | None = None) -> DiscoveryResult",
-              "doc": ""
+              "doc": "Look for devices with every driver, or only the named ones. Devices no file matches come back unknown."
             },
             {
               "name": "drivers",
               "signature": "async drivers() -> list[DriverInfo]",
-              "doc": ""
+              "doc": "The drivers the hub knows, whether each is installed and the protocols it speaks."
             },
             {
               "name": "dry_run",
@@ -349,7 +349,7 @@
             {
               "name": "enable_routine",
               "signature": "async enable_routine(routine_id: str) -> Routine",
-              "doc": ""
+              "doc": "Turn a routine on. Needs a human token, or an agent under ADR 0007's opt in."
             },
             {
               "name": "events",
@@ -359,22 +359,22 @@
             {
               "name": "finish",
               "signature": "async finish(session_id: str, save_as: str | None = None) -> FinishResult",
-              "doc": ""
+              "doc": "Save the confirmed device file, named `save_as` if given. Needs a human token."
             },
             {
               "name": "interview",
               "signature": "async interview(session_id: str) -> Interview",
-              "doc": ""
+              "doc": "The questions a person answers to confirm the draft's limits."
             },
             {
               "name": "new_pairing_code",
               "signature": "async new_pairing_code() -> PairingCode",
-              "doc": ""
+              "doc": "A six digit code that pairs a browser for 300 s. Needs a human token."
             },
             {
               "name": "pair",
               "signature": "async pair(code: str) -> OkResult",
-              "doc": ""
+              "doc": "Trade a pairing code from `openhal pair` for a human session on this client."
             },
             {
               "name": "propose",
@@ -394,47 +394,47 @@
             {
               "name": "read_many",
               "signature": "async read_many(items: Iterable[str | tuple[str, str]]) -> list[Reading]",
-              "doc": ""
+              "doc": "Read several channels in one request, each as `\"device.channel\"` or a `(device, channel)` pair."
             },
             {
               "name": "reject",
               "signature": "async reject(request_id: str, reason: str = ) -> ConfirmationRequest",
-              "doc": ""
+              "doc": "Turn down a queued request, with an optional reason. Needs a human token."
             },
             {
               "name": "revoke_token",
               "signature": "async revoke_token(token_id: str) -> OkResult",
-              "doc": ""
+              "doc": "Revoke a token so the hub stops accepting it. Needs a human token."
             },
             {
               "name": "routine",
               "signature": "async routine(routine_id: str) -> Routine",
-              "doc": ""
+              "doc": "One routine with its source and who drafted and enabled it."
             },
             {
               "name": "routine_dry_run",
               "signature": "async routine_dry_run(routine_id: str) -> RoutineDryRun",
-              "doc": ""
+              "doc": "Evaluate every step of a routine against the kernel without running it."
             },
             {
               "name": "routines",
               "signature": "async routines() -> list[RoutineSummary]",
-              "doc": ""
+              "doc": "Every stored routine with its devices, triggers and whether it is enabled."
             },
             {
               "name": "run_routine",
               "signature": "async run_routine(routine_id: str) -> Run",
-              "doc": ""
+              "doc": "Run a routine once now. Needs a human token."
             },
             {
               "name": "start_writer",
               "signature": "async start_writer(*, unknown_id: str | None = None, driver: str | None = None, params: Mapping[str, Any] | None = None, sketch_path: str | None = None, manual_text: str | None = None) -> WriterSession",
-              "doc": ""
+              "doc": "Start a driver writer session from an unknown device, a driver and its params, a sketch or a manual."
             },
             {
               "name": "status",
               "signature": "async status() -> HubStatus",
-              "doc": ""
+              "doc": "The hub's version, protocol version, conformance level and whether a stop is in force."
             },
             {
               "name": "stop",
@@ -444,7 +444,7 @@
             {
               "name": "test_plan",
               "signature": "async test_plan(session_id: str) -> TestPlan",
-              "doc": ""
+              "doc": "The steps to try the new device file on the real hardware, in order."
             },
             {
               "name": "tighten",
@@ -454,12 +454,12 @@
             {
               "name": "tokens",
               "signature": "async tokens() -> list[TokenInfo]",
-              "doc": ""
+              "doc": "Every token the hub has issued, without the secrets. Needs a human token."
             },
             {
               "name": "unknown_devices",
               "signature": "async unknown_devices() -> list[Unknown]",
-              "doc": ""
+              "doc": "Devices discovery found that no device file matches yet."
             },
             {
               "name": "unlock",
@@ -469,12 +469,12 @@
             {
               "name": "verify_audit",
               "signature": "async verify_audit() -> AuditVerify",
-              "doc": ""
+              "doc": "Check the audit log's hash chain. `broken_at` names the first entry that does not match."
             },
             {
               "name": "whoami",
               "signature": "async whoami() -> Principal",
-              "doc": ""
+              "doc": "The Principal the hub takes this token for, a human or an agent with its scope."
             },
             {
               "name": "write",
@@ -484,7 +484,7 @@
             {
               "name": "writer_session",
               "signature": "async writer_session(session_id: str) -> WriterSession",
-              "doc": ""
+              "doc": "One writer session with its status, draft and the limits no person has confirmed yet."
             }
           ]
         }
