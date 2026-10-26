@@ -27,6 +27,27 @@ export function applyReading(view: DeviceView, event: ReadingEvent): DeviceView 
   return view;
 }
 
+export interface Camera {
+  device: string;
+  channel: string;
+  name: string;
+}
+
+export function imageChannels(view: DeviceView): string[] {
+  return Object.entries(view.read)
+    .filter(([, spec]) => spec.type === "image")
+    .map(([name]) => name);
+}
+
+export function camerasFor(device: string, views: Record<string, DeviceView>): Camera[] {
+  const own = views[device];
+  const cameras = (view: DeviceView) => imageChannels(view).map((channel) => ({ device: view.id, channel, name: view.name }));
+  const others = Object.values(views)
+    .filter((view) => view.id !== device)
+    .sort((a, b) => compareText(a.name, b.name) || compareText(a.id, b.id));
+  return [...(own ? cameras(own) : []), ...others.flatMap(cameras)];
+}
+
 export function sortDevices(devices: DeviceSummary[]): DeviceSummary[] {
   return [...devices].sort((a, b) => compareText(a.name, b.name) || compareText(a.id, b.id));
 }

@@ -176,6 +176,17 @@ class Inspector {
     }
   }
 
+  async loadViews(): Promise<void> {
+    await Promise.all(this.devices.filter((device) => !this.views[device.id]).map((device) => this.refreshDevice(device.id)));
+  }
+
+  noteReading(device: string, channel: string, value: unknown): void {
+    const view = this.views[device];
+    if (!view) return;
+    const next = applyReading(view, { type: "reading", device, channel, value, unit: null });
+    if (next !== view) this.views = { ...this.views, [device]: next };
+  }
+
   async refreshConfirmations(): Promise<void> {
     try {
       const confirmations = await api.confirmations();
