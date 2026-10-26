@@ -8,9 +8,7 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- website-4. The final critique's website findings and the green dot removal (BRIEF-website-4.md).
-
-Queued. website-5, the consumer first landing page with an Apple style scroll story (BRIEF-website-5.md), after website-4 merges.
+- website-5. The consumer first landing page with an Apple style scroll story (BRIEF-website-5.md).
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
@@ -34,7 +32,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - The Arduino plant waterer is the canonical example (examples/plant-waterer/). The Arduino library gained actions with typed arguments, named states and internal outputs, the firmware protocol gained ACT, and the driver, simulator and sketch reader follow. `openhal demo` runs it against a real hub and `--record` writes docs/demo/scenario.yaml, which the README, docs/QUICKSTART.md and the tests read.
 - Action run limits (max_runs) and requirement messages in device files.
 - The README leads with the one-line description, the license and CI badges, the flow diagram, a three-command quickstart and the generated trace. The description is also in pyproject, the CLI help and the GitHub repository description.
-- The mark is the stop bar mark (a request stroke meeting a stop bar above a return stroke). A circle, bar and square mark replaced it on 2026-10-25, and the owner asked for the stop bar mark back the same day.
+- No logo. On 2026-10-25 the owner asked for a text wordmark like REA's, so the brand is OpenHAL set tight at weight 800, with the initials OH for icons.
 - The safety red team suite (100 tests) merged, and its four findings RT-01 to RT-04 fixed. docs/SAFETY-REPORT.md.
 - Driver SDK commands (`openhal driver new`, `driver test`, `driver list`).
 - M11. All sixteen planned drivers are built to the Tier 1 standard and pass conformance on simulators (batch 3 grbl, alpaca, indi, ros2, opcua, sila2, pylabrobot, lerobot, and batch 4 onvif, bambu, can, knx, matter, pi-i2c-spi, upnp, zigbee-zwave). 35 drivers in all.
@@ -50,17 +48,16 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - Safety fixes from the handoff report. No driver opens a file path from a device file (certificates and the pylabrobot deck come through `ca_env` and `deck_env`, and a test guards it). One daemon per config folder, and an audit chain a second writer can't fork. A run counts from its grant, so a run the hub never finished still counts after a restart. The GPIO stop button in config.yaml is watched, and a configured button the hub can't watch stops it from starting.
 - Unit safety. pint no longer converts between angles and plain numbers (50 % to a degree channel, 1 Hz to rpm). Channels with no read-back stay controllable under a rate limit. A bare number gets UNIT_INVALID in dry runs instead of a hub error.
 - REST reports conformance, simulated drivers, run limits, requirement reasons, the protocol version and the LAN setting.
+- Website round 5, the final critique's 17 findings. Every diagram on the site in the D2 house style, the Python reference grouped with each method's docstring and route, numbered spec sections with glossary links, Docs and Blog in the navigation, one left edge on every template, no text under 13 px, readable Inspector crops, and no green status dots. Every Client method now has a docstring, and the text trace prints `hal/value` as the JSON the hub sends.
 
 ## Next
 
 - REST decision views should carry the hub-built protocol error so MCP reasons always name the confirmation (protocol report, proposal 12).
-- tests/drivers/firmata/test_firmata.py::test_silent_board_times_out can time out under full-suite load on this Mac. It passes alone.
 - Library matching proposals (library report). New `match` keys for Pi boards and HATs, libcamera models, Alpaca servers, MIDI port names and MQTT topics, so the six library files with no identifier can be matched. Discovery that reports more, with scpi sending `*IDN?`, moonraker browsing `_moonraker._tcp`, homeassistant listing entity ids, modbus scanning unit ids, mqtt listening for announce topics and esphome reporting `mdns`.
 - Driver proposals still open. A restore_connection hook, a push path for drivers that receive values, cached-read declarations, per-driver install hints, argument references in action requirements, and YAML 1.1 warnings in openhal file validate.
 - Packaging proposals. A `self_describing` flag in DriverInfo. Lazy imports so `openhal mcp` starts faster. Intel Mac installs need `--no-build` while cryptography and zeroconf ship Apple Silicon wheels only.
 - Handoff proposals still open. The GRBL simulator stays idle after a hold where real GRBL 1.1 reports Hold:0. The driver scaffold's hardware test template should match docs/hardware-tests/README.md. Expected outputs in the plans quote kernel codes, so they change if the CLI moves to registry names.
 - Verification and handoff, in progress. Lighthouse, axe and the orphan audit, the final critique, and FINAL-REPORT.md.
-- Confirm on GitHub CI that the scpi fix passes on Linux (the owner approved the fix and the push on 2026-10-25).
 
 ## Milestone 2 review
 
