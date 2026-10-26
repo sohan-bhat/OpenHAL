@@ -5,8 +5,14 @@ import { SCENARIO_PATH, scenarioFrom } from "../../src/lib/scenario-data.mjs";
 import { SNAP_AT } from "../../src/lib/story/timeline";
 
 const scenarioFile = process.env.OPENHAL_SCENARIO ?? fileURLToPath(new URL(`../../../${SCENARIO_PATH}`, import.meta.url));
-const [tooLong, empty, watered] = scenarioFrom(readFileSync(scenarioFile, "utf8")).record.exchanges as any[];
-const nb = (text: string) => text.replace(/(\d) /g, "$1 ");
+const exchanges = scenarioFrom(readFileSync(scenarioFile, "utf8")).record.exchanges as any[];
+const writes = exchanges.filter((exchange) => exchange.request.method === "hal/write");
+const bed = writes.find((exchange) => exchange.result);
+const nozzle = writes.find((exchange) => exchange.error);
+const cancel = exchanges.find((exchange) => exchange.result?.status === "pending");
+const degrees = (exchange: any) => `${exchange.request.params.value} °C`;
+const nb = (text: string) => text.replace(/(\d) /g, "$1 ");
+const people = (text: string) => text.replace(/(\d) degC\b/g, "$1 °C");
 
 async function storyTime(page: Page, t: number): Promise<void> {
   await page.evaluate((time) => {
@@ -24,6 +30,8 @@ async function storyTime(page: Page, t: number): Promise<void> {
 const shown = (page: Page, selector: string) =>
   page.evaluate((query) => [...document.querySelectorAll<HTMLElement>(query)].filter((el) => Number(getComputedStyle(el).opacity) > 0.9).map((el) => el.textContent!.trim()), selector);
 
+const total = (page: Page) => page.locator("[data-story]").evaluate((story) => parseFloat(getComputedStyle(story).getPropertyValue("--runway")));
+
 test.describe("the landing story", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
@@ -34,7 +42,7 @@ test.describe("the landing story", () => {
     await expect(story).toHaveAttribute("data-ready", "");
     await storyTime(page, 0);
     const wide = await page.locator(".story-scene").evaluate((scene) => scene.style.transform);
-    await storyTime(page, SNAP_AT.check);
+    await storyTime(page, SNAP_AT.look);
     const close = await page.locator(".story-scene").evaluate((scene) => scene.style.transform);
     expect(close).toMatch(/^translate\(.+\) scale\(.+\)$/);
     expect(close).not.toBe(wide);
@@ -42,20 +50,29 @@ test.describe("the landing story", () => {
     expect(top).toBe(await page.locator(".site-header").evaluate((header) => (header as HTMLElement).offsetHeight));
   });
 
-  test("plays the scenario's three answers on the stage", async ({ page }) => {
+  test("plays the record's answers on the stage", async ({ page }) => {
     await page.goto("/");
-    await storyTime(page, SNAP_AT.check);
-    expect(await shown(page, ".story-scene [data-cam=kernel] .verdict-box")).toEqual([tooLong.error.data.name]);
+    await storyTime(page, SNAP_AT.look);
+    expect(await shown(page, ".story-scene [data-cam=camera] .seen > *")).toEqual(["corner lifting"]);
+    await storyTime(page, SNAP_AT.warm);
+    expect(await shown(page, ".story-scene [data-cam=kernel] .verdict-box")).toEqual(["granted"]);
+    await storyTime(page, SNAP_AT.heat);
+    expect(await shown(page, ".story-scene [data-cam=printer] .figure > *")).toEqual([nb(degrees(bed))]);
+    await storyTime(page, SNAP_AT.hot);
+    expect(await shown(page, ".story-scene [data-cam=kernel] .verdict-box")).toEqual([nozzle.error.data.name]);
     await storyTime(page, SNAP_AT.reply);
-    expect((await shown(page, ".story-scene [data-cam=client] .said")).join(" ")).toContain(nb(tooLong.error.message.split(" (")[0]));
-    await storyTime(page, SNAP_AT.hold);
-    expect(await shown(page, ".story-scene [data-cam=kernel] .verdict-box")).toEqual([empty.error.data.name]);
-    await storyTime(page, SNAP_AT.soil);
-    expect(await shown(page, ".story-scene [data-cam=device] .figure > *")).toEqual([`${watered.soil_moisture.after.value} %`]);
-    await storyTime(page, SNAP_AT.done);
+    const reply = (await shown(page, ".story-scene [data-cam=client] .said")).join(" ");
+    expect(reply).toContain(nb(people(nozzle.error.message.split(" (")[0])));
+    expect(reply).toContain(nb(degrees(nozzle)));
+    await storyTime(page, SNAP_AT.loose);
+    expect(await shown(page, ".story-scene [data-cam=camera] .seen > *")).toEqual(["print loose"]);
+    await storyTime(page, SNAP_AT.pause);
+    expect(await shown(page, ".story-scene [data-cam=printer] .word > *")).toEqual(["paused"]);
+    await storyTime(page, SNAP_AT.wake);
+    expect(await shown(page, ".story-scene [data-cam=kernel] .verdict-box")).toEqual(["confirmation required"]);
     const answer = (await shown(page, ".story-scene [data-cam=client] .said")).join(" ");
-    expect(answer).toContain(watered.result.status);
-    expect(answer).not.toContain(tooLong.error.data.name);
+    expect(answer).toContain(cancel.result.status);
+    expect(answer).not.toContain(nozzle.error.data.name);
   });
 
   test("changes only transforms and opacity while it plays", async ({ page, browserName }) => {
@@ -66,7 +83,8 @@ test.describe("the landing story", () => {
     await cdp.send("Performance.enable");
     const layouts = async () => (await cdp.send("Performance.getMetrics")).metrics.find((metric) => metric.name === "LayoutCount")!.value;
     const before = await layouts();
-    for (let t = 0; t <= 520; t += 13) await storyTime(page, t);
+    const end = await total(page);
+    for (let t = 0; t <= end; t += 13) await storyTime(page, t);
     expect(await layouts()).toBe(before);
   });
 
@@ -76,26 +94,29 @@ test.describe("the landing story", () => {
     await expect(page.locator("[data-story]")).not.toHaveAttribute("data-camera", "");
     await expect(page.locator(".story-scene")).toBeHidden();
     const steps = page.locator(".story-list > li");
-    await expect(steps).toHaveCount(10);
+    await expect(steps).toHaveCount(11);
     await expect(steps.first()).toBeVisible();
-    await expect(steps.first()).toContainText(nb(`${tooLong.request.params.args.duration.value} s`));
     await expect(page.locator(".story-list .story-snap").first()).toBeVisible();
-    await expect(page.locator(".story-list")).toContainText(empty.error.data.name);
-    await expect(page.locator(".story-list")).toContainText(`${watered.soil_moisture.before.value} % to ${watered.soil_moisture.after.value} %`);
+    const list = page.locator(".story-list");
+    await expect(list).toContainText(nb(degrees(nozzle)));
+    await expect(list).toContainText(nozzle.error.data.name);
+    await expect(list).toContainText(cancel.result.status);
+    await expect(list).toContainText("confirmation required");
   });
 
   test("fits a phone's screen and never scrolls sideways", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
-    for (const t of [0, SNAP_AT.ask, SNAP_AT.check, SNAP_AT.hold, SNAP_AT.soil, SNAP_AT.done, 520]) {
+    const end = await total(page);
+    for (const t of [0, SNAP_AT.watch, SNAP_AT.look, SNAP_AT.warm, SNAP_AT.hot, SNAP_AT.pause, SNAP_AT.wake, end]) {
       await storyTime(page, t);
       const box = await page.locator(".story-stage").boundingBox();
       expect(box!.y + box!.height).toBeLessThanOrEqual(844 + 1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     }
-    await storyTime(page, SNAP_AT.ask);
-    const client = await page.locator(".story-scene [data-cam=client]").boundingBox();
-    expect(client!.x).toBeGreaterThanOrEqual(0);
-    expect(client!.x + client!.width).toBeLessThanOrEqual(390);
+    await storyTime(page, SNAP_AT.look);
+    const camera = await page.locator(".story-scene [data-cam=camera]").boundingBox();
+    expect(camera!.x).toBeGreaterThanOrEqual(0);
+    expect(camera!.x + camera!.width).toBeLessThanOrEqual(390);
   });
 });

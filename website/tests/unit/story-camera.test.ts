@@ -74,9 +74,11 @@ describe("the shot list", () => {
   it("travels the real path, starting and ending on the whole scene", () => {
     expect(SHOTS[0].target).toBe("scene");
     expect(SHOTS[SHOTS.length - 1].target).toBe("scene");
-    expect(shot("ask").target).toEqual(["client"]);
-    expect(shot("check").target).toEqual(["hub", "kernel"]);
-    expect(shot("water").target).toEqual(["kernel", "driver", "device"]);
-    expect(shot("soil").target).toEqual(["device"]);
+    expect(shot("watch").target).toEqual(["client"]);
+    expect(shot("look").target).toEqual(["camera"]);
+    expect(shot("warm").target).toEqual(["client", "hub", "kernel"]);
+    expect(shot("heat").target).toEqual(["kernel", "driver", "printer"]);
+    expect(shot("loose").target).toEqual(["camera"]);
+    expect(shot("cancel").target).toEqual(["client", "hub", "kernel"]);
   });
 });
