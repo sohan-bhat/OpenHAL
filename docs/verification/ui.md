@@ -1,6 +1,6 @@
 # Website and Inspector quality
 
-Measured on 2026-10-25 by the quality workstream, at commit b29aa75 on branch worktree-agent-a93add9689c8b7b2f, on an Intel Core i7-8750H Mac with macOS 15.5.
+Measured on 2026-10-25 by the quality workstream, at commit b29aa75 on branch worktree-agent-a93add9689c8b7b2f, on an Intel Core i7-8750H Mac with macOS 15.5. The website rows were measured again the same day by the website round 4 workstream, at commit acadaf4 on branch worktree-agent-aa39233d21696be73, on the same Mac, after the site search, the wrapped code blocks and the stacked tables landed. The Inspector rows are from the first run.
 
 ## Tools
 
@@ -45,14 +45,14 @@ Both scripts print each score and the audits that lost points. The Inspector scr
 |---|---|---|---|---|---|---|---|---|---|
 | Overview | `/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Spec page (Messages) | `/spec/2026-10-24/basic/messages/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
-| Schema reference | `/spec/2026-10-24/schema/` | 99 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Schema reference | `/spec/2026-10-24/schema/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Playground | `/spec/playground/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Drivers | `/drivers/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Driver page (mock) | `/drivers/mock/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Device Library | `/library/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Library device (Rigol DP832) | `/library/scpi-rigol-dp832/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Guide page (Quickstart) | `/docs/quickstart/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
-| Python reference | `/sdks/python/reference/` | 97 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Python reference | `/sdks/python/reference/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Inspector docs | `/inspector/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Blog | `/blog/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | 404 | `/404.html` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
@@ -93,7 +93,8 @@ Rules from the tags wcag2a, wcag2aa, wcag21a and wcag21aa, with axe 4.14.0.
 | Surface | What is checked | Violations |
 |---|---|---|
 | Website | Every page in the sitemap (114 pages), /spec/latest/ and the 404, in the light and dark themes, at 1280 by 720 in Chromium | 0 |
-| Website | At 390 px in both themes, the open phone menu, the open section menu and version switcher, a playground trace, empty driver and library searches, a focused flow part | 0 |
+| Website | At 390 px in both themes, the open phone menu, the open section menu and version switcher, a playground trace, empty driver and library filters, a focused flow part, and the site search opened from its icon button with results | 0 |
+| Website | At 1280 by 800 in both themes, the site search dialog opened with Ctrl K and showing results for LIMIT_EXCEEDED | 0 |
 | Inspector | At 1440 and 390 px in both themes, in Chromium, and at 1440 px in Firefox. Each device (the plant waterer, the curing heater, the read-only bench lamp), confirmations with a pending request, the audit log, routines and a dry run, the driver writer and its limits interview, settings, the hidden log, the stopped state, the UNLOCK dialog, pairing and the offline page | 0 |
 
 The sweep found and fixed these.
@@ -102,6 +103,11 @@ The sweep found and fixed these.
 - The driver writer's Use suggested buttons had a name that did not contain their visible text (`label-content-name-mismatch`).
 
 The tests are website/tests/e2e/a11y.spec.ts and dashboard/e2e/axe.spec.ts.
+
+## Website layout and search
+
+- **No sideways scrolling at 1280 px.** A scan of every sitemap page and the 404 at 1280 by 900 found no code block, table, trace or editor that scrolls sideways, and the page itself never does. At 390 px only the wide architecture diagrams scroll inside their own focusable frame. tests/e2e/site.spec.ts checks the SDK pages, the playground, the messages page and a library page.
+- **Search under /OpenHAL/.** A build was copied into a folder served as /OpenHAL/, checked for links, rebased with scripts/rebase.mjs and indexed with `node scripts/search-index.mjs DIR /OpenHAL`, as the Pages workflow does. Searching for LIMIT_EXCEEDED and for plant waterer in Chromium and Firefox found 7 and 22 pages, every result link started with /OpenHAL/, and Enter opened the first result. The script fails when any page would load the index from outside the base.
 
 ## Browsers
 
