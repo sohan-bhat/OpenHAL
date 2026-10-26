@@ -77,7 +77,7 @@ for (const scheme of ["light", "dark"] as const) {
 
       await page.goto("/");
       await page.getByRole("button", { name: "Search", exact: true }).click();
-      await page.locator("#site-search-input").fill("plant waterer");
+      await page.locator("#site-search-input").fill("print babysitter");
       await expect(page.locator("a.search-result").first()).toBeVisible();
       problems.push(...(await violations(page)).map((item) => `search ${item}`));
 

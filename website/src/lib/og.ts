@@ -9,7 +9,8 @@ function escape(text: string): string {
 
 export async function ogImage(title: string, kind: string): Promise<Uint8Array> {
   const entries = scenarioTrace();
-  const at = entries.findIndex((entry) => entry.kind === "request");
+  const refused = entries.findIndex((entry, index) => entry.kind === "request" && entries[index + 1]?.kind === "error");
+  const at = refused >= 0 ? refused : entries.findIndex((entry) => entry.kind === "request");
   const request = entries[at];
   const answer = entries[at + 1];
   const size = title.length > 70 ? 54 : title.length > 40 ? 64 : 76;

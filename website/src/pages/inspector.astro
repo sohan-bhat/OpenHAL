@@ -3,19 +3,21 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import captures from "../data/inspector-captures.json";
 import DocShell from "../layouts/DocShell.astro";
+import { storyFacts } from "../lib/story/facts";
 
+const facts = storyFacts();
 const SHOTS = [
   {
     file: "inspector-device",
-    caption: "The plant waterer",
+    caption: "The printer",
     crop: { x: 316, y: 128, w: 984, h: 772 },
-    alt: "The Inspector's device pane for the Arduino plant waterer, with soil moisture at 46 %, the tank reading ok, and the water action limited to 1 s to 30 s",
+    alt: `The Inspector's device pane for the ${facts.printer.name}, with its readings, the latest frame from its webcam, bed_target limited to ${facts.bed.max} and extruder_target limited to ${facts.nozzle.max}`,
   },
   {
     file: "inspector-log",
     caption: "The message log",
     crop: { x: 316, y: 126, w: 1100, h: 774 },
-    alt: "The Inspector's message log with hal/action requests from bench-agent answered by error -32010 LIMIT_EXCEEDED for a 120 s watering and error -32012 INTERLOCK_BLOCKED while the tank is empty",
+    alt: `The Inspector's message log with the agent's requests to the printer, a ${facts.nozzle.value} nozzle answered by error ${facts.nozzle.refusal.code} ${facts.nozzle.refusal.name}, and the cancel answered ${facts.cancel.status} until a person decides`,
   },
   {
     file: "inspector-stopped",
@@ -71,7 +73,7 @@ const frameStyle = (crop: { x: number; y: number; w: number; h: number }) =>
       shots.length > 0 && (
         <>
           <h2 id="screenshots"><a class="heading-link" href="#screenshots">Screenshots</a></h2>
-          <p class="muted">Recorded from the Inspector on a hub with the simulated plant waterer and two mock devices. Each one shows the part its caption names at full size.</p>
+          <p class="muted">Recorded from the Inspector on a hub with the simulated printer and its webcam. Each one shows the part its caption names at full size.</p>
         </>
       )
     }

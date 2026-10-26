@@ -15,10 +15,10 @@ const SHORT: Record<string, string> = {
 };
 
 export const DOC_SUMMARIES: Record<string, string> = {
-  "/docs/quickstart/": "Run the demo, then a hub you control with a simulated plant waterer.",
+  "/docs/quickstart/": "Run the print babysitter demo, then a hub you control.",
   "/docs/install/": "Install from a clone or as a tool, run the hub as a service, or set up a Raspberry Pi.",
   "/docs/concepts/": "The hub, device files, the safety kernel, drivers, grants and errors, in one page.",
-  "/docs/faq/": "Short answers on safety, AI clients, limits, firmware and privacy.",
+  "/docs/faq/": "Short answers on safety, agents, limits, firmware and privacy.",
   "/docs/tutorials/connect-claude/": "Give Claude an agent token and let it reach the hub through openhal mcp.",
   "/docs/tutorials/add-a-device/": "Create a device file, validate it, confirm its limits and share it.",
   "/docs/tutorials/build-a-driver/": "Build a driver for a simulated bench lamp and pass the conformance suite.",
@@ -28,7 +28,7 @@ export const DOC_SUMMARIES: Record<string, string> = {
   "/docs/safety/": "What the hub guarantees, how it enforces it, and what it does not cover.",
   "/docs/architecture/": "One hub process, one deterministic kernel, and the thin clients around them.",
   "/docs/cli/": "Every openhal command, its options and its exit codes.",
-  "/docs/mcp/": "The tools and prompts the MCP server gives an AI client.",
+  "/docs/mcp/": "The tools and prompts the MCP server gives an agent.",
   "/docs/writing-a-driver/": "The package, class, tests and catalog entry a new driver needs.",
   "/docs/mhs-mapping/": "How each OpenHAL concept maps to what is public about MHS.",
   "/docs/firmware-protocol/": "The wire protocol a board running the OpenHAL Arduino library speaks.",
