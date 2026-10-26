@@ -74,9 +74,11 @@ const rows: Array<[string, string]> = [
     margin-top: var(--s-3);
   }
 
-  .sheet th {
-    width: 11em;
-    vertical-align: top;
-    border-bottom: var(--rule);
+  @media (min-width: 600px) {
+    .sheet th {
+      width: 11em;
+      vertical-align: top;
+      border-bottom: var(--rule);
+    }
   }
 </style>

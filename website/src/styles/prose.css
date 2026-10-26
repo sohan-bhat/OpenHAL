@@ -141,6 +141,13 @@
     border: 0;
   }
 
+  .prose tbody th[scope="row"] {
+    display: block;
+    width: auto;
+    padding: var(--s-1) 0 0;
+    border: 0;
+  }
+
   .prose td::before {
     content: attr(data-label);
     display: block;
