@@ -21,7 +21,7 @@ Three elements carry the identity. The flow diagram heads the README, the messag
 
 ### The animated flow diagram
 
-A clean flowchart of one command, left to right. AI client, then OpenHAL hub (with the Device files that feed the kernel), then Safety kernel, then Driver, then Arduino plant waterer. A branch from the kernel goes down to a Blocked node, `INTERLOCK_BLOCKED: tank empty`. Connector labels in the mono face read `hal/action`, `check`, `grant` and `command`, and a thin return line reads `reading`.
+A clean flowchart of one command, left to right. Agent, then OpenHAL hub (with the Device files that feed the kernel), then Safety kernel, then Driver, then 3D printer (Klipper through Moonraker). A branch from the kernel goes down to a Blocked node, `LIMIT_EXCEEDED: nozzle 300 °C`. Connector labels in the mono face read `hal/write`, `check`, `grant` and `command`, and a thin return line reads `reading`.
 
 - Rounded rectangles with 1.5 px strokes and 6 px corners, every node 112 by 88 on a grid, with every wire level. Orthogonal connectors with right-angle turns only, one arrowhead style, no crossings.
 - The Safety kernel and Driver nodes each say what they do in a short line, and the blocked code sits under the Blocked node.
@@ -34,11 +34,11 @@ A clean flowchart of one command, left to right. AI client, then OpenHAL hub (wi
 A two-column trace of a request and the hub's answer, the way a protocol spec shows an exchange. It appears in the README as a code block, in the Playground, in the spec and docs, in the Inspector's message log and in social images.
 
 ```
-→ hal/action  { "device": "plant-waterer", "action": "water",
-                "args": { "duration": { "value": 120, "unit": "s" } } }
+→ hal/write   { "device": "printer", "channel": "extruder_target",
+                "value": 300, "unit": "degC" }
 ← error -32010 LIMIT_EXCEEDED
-  water duration 120 s exceeds the limit of 30 s
-  (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)
+  extruder_target 300 degC exceeds the limit of 260 degC
+  (printer.hal.yaml, confirmed by owner 2026-10-24)
 ```
 
 - **Direction column.** An arrow pointing right for client to hub, left for hub to client, and a dashed left arrow for notifications, in the text color. Atkinson Hyperlegible Mono has no arrow glyphs, so the arrows are drawn as small inline SVGs in the house diagram style (1.5 px stroke, 6 px filled head), never typed characters. Plain text renditions in a font that has arrows, such as the README code block, use `→` and `←`. CLI output uses `->` and `<-`.
@@ -48,7 +48,7 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
 
 ### The landing story
 
-The website's home page tells the canonical scenario as one pinned scene. A camera moves along the real path, AI client, OpenHAL hub with the device file, Safety kernel, Driver and Arduino plant waterer, and each step is one short caption with the real codes in small mono where they help. The kernel ticks its checks in order and says LIMIT_EXCEEDED, then INTERLOCK_BLOCKED with the pump held off, then granted as soil moisture climbs from 31 % to 46 %. Every number comes from docs/demo/scenario.yaml. With reduced motion or no script it is a static list of the same steps. The motion is pattern 4 under Motion. Source in website/src/components/landing/.
+The website's home page tells the canonical scenario as one pinned scene. A camera moves along the real path, Agent, OpenHAL hub with the device files, Safety kernel, Driver and the 3D printer with its webcam, and each step is one short caption with the real codes in small mono where they help. The webcam panel shows what the agent sees. The bed warms from 60 °C to 70 °C, the kernel ticks its checks and refuses a 300 °C nozzle with LIMIT_EXCEEDED, the agent pauses the print when it comes loose, and the cancel waits for a person. Every number comes from docs/demo/scenario.yaml. With reduced motion or no script it is a static list of the same steps. The motion is pattern 4 under Motion. Source in website/src/components/landing/.
 
 ## Canonical demo scenario
 
@@ -57,11 +57,11 @@ The main example is a task only an agent can do. A timer or an IoT rule can wate
 Every example value in the README, website, Inspector screenshots, docs and social images comes from one file, `docs/demo/scenario.yaml`, written by `uv run openhal demo --record docs/demo/scenario.yaml` from a real run of the hub against simulated devices. There are two. `printer` is a Klipper 3D printer reached through Moonraker, with `state`, `extruder_temp`, `bed_temp` and `progress` readings, `extruder_target` limited to 260 °C and `bed_target` limited to 110 °C, both rate limited, and the actions `pause`, `resume` and `cancel`, where cancel waits for a person. `printer-cam` is the printer's webcam watching the bed, read as snapshots over HTTP the way crowsnest serves it on a Klipper printer (the `http` driver). The limits were confirmed by owner on 2026-10-24.
 
 The story. Someone starts a long print and asks an agent to keep an eye on it.
-1. The agent reads a camera frame and sees a corner of the first layer lifting.
+1. The agent reads a camera frame, an image Reading (ADR 0015), and sees a corner of the first layer lifting.
 2. It raises `bed_target` from 60 °C to 70 °C. That is inside the limit, so it is done.
 3. It also asks for a 300 °C nozzle. The kernel answers `LIMIT_EXCEEDED`, because the limit is 260 °C.
 4. Later the camera shows the print has come loose. The agent pauses the print, which is done straight away.
-5. It asks to cancel. Cancelling can't be undone, so the hub queues it and answers pending until a person decides.
+5. It asks to cancel. Cancelling can't be undone, so `cancel` is `confirm-each-time`, and the hub queues it and answers pending until a person decides.
 
 Tests check that the file is still what the hub answers and that every surface matches it. Demo values are labeled as demo data where shown.
 
@@ -71,7 +71,7 @@ The Arduino plant waterer (examples/plant-waterer/) stays as the Arduino example
 
 | Surface, feature or state | How the theme expresses it |
 |---|---|
-| Home page | The text wordmark, the one sentence and Get started, the landing story of the plant waterer, why it's safe in three points, device families from the catalog, the three-command quickstart with a link to the Playground, and links to the spec and the docs |
+| Home page | The text wordmark, the one sentence and Get started, the landing story of the print babysitter, why it's safe in three points, device families from the catalog, the three-command quickstart with a link to the Playground, and links to the spec and the docs |
 | Spec pages | Dated version in the URL and a switcher, numbered sections, MUST, SHOULD and MAY, outline, anchors, previous and next, "Edit on GitHub" |
 | Schema reference | Generated tables of every message, type and field, monospace names |
 | Error codes | The registry table, the message trace with `error`, code and name in the blocked red with its shape |
@@ -173,7 +173,7 @@ Four patterns, nothing else.
 1. The flowing connectors in the flow diagram.
 2. A message appearing in the trace or log. A 120 ms fade, 4 px rise.
 3. A status change. A 120 ms cross-fade.
-4. The landing story. A stage pins under the header while the page scrolls normally, and the scroll position drives a camera that pans and zooms along the plant waterer's path. Each piece changes with that position, using transforms and opacity only, and a piece finishes leaving before the one replacing it arrives. Scrolling back plays it in reverse. Nothing moves on its own, so it is not scroll-jacking, parallax or fade-in on scroll. The soil moisture readout steps from 31 % to 46 % as a live reading, not a counter. The owner asked for this motion on 2026-10-25, which is its justification under Banned by default.
+4. The landing story. A stage pins under the header while the page scrolls normally, and the scroll position drives a camera that pans and zooms along the print babysitter's path. Each piece changes with that position, using transforms and opacity only, and a piece finishes leaving before the one replacing it arrives. Scrolling back plays it in reverse. Nothing moves on its own, so it is not scroll-jacking, parallax or fade-in on scroll. The bed temperature readout steps from 60 °C to 70 °C as a live reading, not a counter. The owner asked for this motion on 2026-10-25, which is its justification under Banned by default.
 
 With `prefers-reduced-motion: reduce`, nothing moves.
 
@@ -300,7 +300,7 @@ The repository README follows this structure, in this order, left-aligned.
 2. Two neutral badges, the license and CI.
 3. The animated flow diagram, directly under the badges.
 4. Quickstart. Three commands in one code block, then one line on what you'll see, generated from the scenario.
-5. The message trace, the three exchanges of the canonical scenario, as a code block generated from the scenario (`uv run python -m openhal.demo.readme`).
+5. The message trace, the six exchanges of the canonical scenario, as a code block generated from the scenario (`uv run python -m openhal.demo.readme`).
 6. "What it does", three bullets.
 7. Supported devices. Status as a sentence, "v0.1, in development. Every driver passes the conformance suite on a simulator.", then a table generated from drivers/catalog.json with driver, devices covered, status and hazard default.
 8. Safety model, at most five bullets, linking to docs/SAFETY.md.
@@ -321,4 +321,4 @@ Run these on every screen before calling it done.
 
 1. **Swap.** Put another product's name on it. If it still fits, revise.
 2. **Thumbnail.** Blur a screenshot to 200 px wide. It should still read as a specification with message exchanges.
-3. **Memory.** What does a visitor remember ten minutes later? It should be the landing story's two refusals, LIMIT_EXCEEDED and INTERLOCK_BLOCKED, and the pump held off while the tank is empty.
+3. **Memory.** What does a visitor remember ten minutes later? It should be the agent spotting the failed print on the camera, the 300 °C nozzle refused with LIMIT_EXCEEDED, and the cancel waiting for a person.
