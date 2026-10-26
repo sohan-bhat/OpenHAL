@@ -93,6 +93,6 @@ def too_large(data: bytes, where: str) -> str | None:
         return None
     return (
         f"The frame from {where} is {len(data) / 1_000_000:.1f} MB, over the {MAX_BYTES / 1_000_000:g} MB limit "
-        "for one image reading. Lower the camera's width, height or jpeg_quality in the device file's connect "
-        "settings."
+        "for one image reading. Lower the camera's resolution or JPEG quality, with width, height or jpeg_quality "
+        "in the device file's connect settings or in the camera's own settings."
     )
