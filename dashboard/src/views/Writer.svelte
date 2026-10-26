@@ -24,6 +24,7 @@
   let answers = $state<Record<string, string>>({});
   let baseline = $state<string | null>(null);
   let plan = $state<{ steps: TestStep[]; problems: string[] } | null>(null);
+  let planError = $state<string | null>(null);
   let proposal = $state("");
   let saveAs = $state("");
   let saved = $state<{ path: string; device_id: string; writable: boolean } | null>(null);
@@ -46,6 +47,7 @@
     const id = sessionId;
     saved = null;
     plan = null;
+    planError = null;
     error = null;
     if (id) void loadSession(id);
     else session = null;
@@ -87,8 +89,10 @@
     if (session.status === "ready" || session.status === "interview") {
       try {
         plan = await api.writerTestPlan(session.id);
-      } catch {
+        planError = null;
+      } catch (failure) {
         plan = null;
+        planError = failure instanceof Error ? failure.message : "The hub did not answer.";
       }
     }
   }
@@ -342,6 +346,13 @@
         {:else}
           <pre class="file"><code><Prose text={session.draft_yaml} /></code></pre>
         {/if}
+      </section>
+    {/if}
+
+    {#if planError && !plan}
+      <section class="section" aria-labelledby="plan-title">
+        <h2 id="plan-title">Staged test plan</h2>
+        <p class="problem">The hub could not build the staged test plan. {planError}</p>
       </section>
     {/if}
 
