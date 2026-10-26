@@ -1,7 +1,7 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { mkdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { AgentClient, hubState, signIn, tank } from "../e2e/hub";
+import { AgentClient, hubState, printAgain, showFrame, signIn } from "../e2e/hub";
 
 const ROUND = process.env.INSPECTOR_ROUND ?? "2";
 const OUT = process.env.INSPECTOR_SHOTS ?? fileURLToPath(new URL(`../../docs/design-rounds/inspector-round-${ROUND}/`, import.meta.url));
@@ -11,59 +11,39 @@ const THEMES = ["light", "dark"] as const;
 
 test.describe.configure({ mode: "serial" });
 
-const water = (seconds: number) => ({
-  device: "plant-waterer",
-  action: "water",
-  args: { duration: { value: seconds, unit: "s" } },
-});
-
-async function soilReads(wanted: number): Promise<void> {
+async function reads(device: string, channel: string, wanted: unknown): Promise<void> {
   const state = hubState();
   for (let attempt = 0; attempt < 100; attempt++) {
-    const response = await fetch(`${state.url}/v1/devices/plant-waterer`, {
+    const response = await fetch(`${state.url}/v1/devices/${device}`, {
       headers: { Authorization: `Bearer ${state.humanToken}` },
     });
     const view = (await response.json()) as { read: Record<string, { value: unknown }> };
-    if (view.read.soil_moisture?.value === wanted) return;
+    if (view.read[channel]?.value === wanted) return;
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
-  throw new Error(`soil_moisture never read ${wanted} %.`);
-}
-
-async function tankReads(wanted: string): Promise<void> {
-  const state = hubState();
-  for (let attempt = 0; attempt < 100; attempt++) {
-    const response = await fetch(`${state.url}/v1/devices/plant-waterer`, {
-      headers: { Authorization: `Bearer ${state.humanToken}` },
-    });
-    const view = (await response.json()) as { read: Record<string, { value: unknown }> };
-    if (view.read.tank?.value === wanted) return;
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  throw new Error(`The tank never read ${wanted}.`);
+  throw new Error(`${device}.${channel} never read ${String(wanted)}.`);
 }
 
 test.beforeAll(async () => {
   test.setTimeout(120_000);
   mkdirSync(OUT, { recursive: true });
-  expect(SCENARIO).toContain("water duration 120 s exceeds the limit of 30 s");
-  await soilReads(31);
-  const agent = await AgentClient.connect("bench-agent", hubState().agentToken);
-  const tooLong = await agent.call("hal/action", water(120));
-  expect(tooLong.error?.message).toBe(
-    "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)",
-  );
-  await tank("drain");
-  await tankReads("empty");
-  const empty = await agent.call("hal/action", water(20));
-  expect(empty.error?.data?.name).toBe("INTERLOCK_BLOCKED");
-  expect(empty.error?.message).toBe("pump can't run while tank is empty");
-  await tank("refill");
-  await tankReads("ok");
-  const watered = await agent.call("hal/action", water(20));
-  expect(watered.result?.status).toBe("done");
+  expect(SCENARIO).toContain("extruder_target 300 degC exceeds the limit of 260 degC");
+  await printAgain();
+  await showFrame("first-layer");
+  await reads("printer", "state", "printing");
+  const agent = await AgentClient.connect("print-watcher", hubState().printToken);
+  const look = { device: "printer-cam", channel: "frame" };
+  expect((await agent.call("hal/read", look)).result?.value).toMatchObject({ bytes: 19409 });
+  await agent.call("hal/read", { device: "printer", channel: "bed_target" });
+  await new Promise((resolve) => setTimeout(resolve, 1100));
+  expect((await agent.write("printer", "bed_target", 70, "degC")).result?.status).toBe("done");
+  const hot = await agent.write("printer", "extruder_target", 300, "degC");
+  expect(hot.error?.message).toBe("extruder_target 300 degC exceeds the limit of 260 degC (printer.hal.yaml, confirmed by owner 2026-10-24)");
+  await showFrame("come-loose");
+  expect((await agent.call("hal/read", look)).result?.value).toMatchObject({ bytes: 23567 });
+  expect((await agent.call("hal/action", { device: "printer", action: "pause" })).result?.status).toBe("done");
+  expect((await agent.call("hal/action", { device: "printer", action: "cancel" })).result?.status).toBe("pending");
   agent.close();
-  await soilReads(46);
   const script = await AgentClient.connect("lab-script", hubState().mediumToken);
   const pending = await script.call("hal/action", {
     device: "curing-heater",
@@ -104,9 +84,9 @@ async function scrollTo(page: Page, selector: string, below: number): Promise<vo
 
 async function showLog(page: Page, phone: boolean): Promise<void> {
   await page.getByRole("button", { name: "Message log", exact: true }).click();
-  const first = page.locator('li[data-kind="request"]').filter({ hasText: "plant-waterer" }).first();
+  const first = page.locator('li[data-kind="request"]').filter({ hasText: "printer-cam" }).first();
   if (phone) {
-    await scrollTo(page, 'li[data-kind="request"]:has-text("plant-waterer")', 90);
+    await scrollTo(page, 'li[data-kind="request"]:has-text("printer-cam")', 90);
     return;
   }
   await first.evaluate((row) => {
@@ -122,14 +102,19 @@ for (const theme of THEMES) {
       const phone = width < 800;
       const header = phone ? 80 : 140;
 
-      await page.goto("/#/devices/plant-waterer");
-      await expect(page.getByRole("heading", { name: "Arduino plant waterer", level: 1 })).toBeVisible();
-      await expect(page.locator("main output").filter({ hasText: "46 %" })).toBeVisible();
+      await page.goto("/#/devices/printer");
+      await expect(page.getByRole("heading", { name: "Klipper 3D printer", level: 1 })).toBeVisible();
+      await expect(page.locator("main output").filter({ hasText: "paused" })).toBeVisible();
       await shoot(page, "devices", width, theme);
-      await scrollTo(page, "#actions-title", header);
+      await scrollTo(page, "#write-title", header);
       await shoot(page, "devices-controls", width, theme);
       await showLog(page, phone);
       await shoot(page, "log", width, theme);
+
+      await page.goto("/#/devices/printer-cam");
+      await expect(page.getByRole("main").getByRole("img", { name: /^Demo frame from Printer camera/ })).toBeVisible();
+      if (phone) await scrollTo(page, "#frames-title", header);
+      await shoot(page, "camera", width, theme);
 
       await page.goto("/#/devices/curing-heater");
       await expect(page.getByRole("heading", { name: "Resin curing heater", level: 1 })).toBeVisible();
@@ -141,7 +126,10 @@ for (const theme of THEMES) {
       await shoot(page, "device-read-only", width, theme);
 
       await page.goto("/#/confirmations");
-      await expect(page.getByText("requested by").first()).toBeVisible();
+      const cancel = page.getByRole("main").getByRole("listitem").filter({ hasText: "asks to run cancel" }).first();
+      await cancel.getByRole("combobox", { name: /camera/i }).selectOption("printer-cam/frame");
+      await expect(cancel.getByRole("img", { name: /^Demo frame from Printer camera/ })).toBeVisible();
+      await scrollTo(page, "#pending-title", header);
       await shoot(page, "confirmations", width, theme);
 
       await page.goto("/#/audit");
@@ -201,7 +189,7 @@ test("the stopped state and UNLOCK", async ({ browser }) => {
   for (const theme of THEMES) {
     for (const width of WIDTHS) {
       const page = await open(browser, width, theme);
-      await page.goto("/#/devices/plant-waterer");
+      await page.goto("/#/devices/printer");
       await page.getByRole("button", { name: /STOP/ }).click();
       await expect(page.getByRole("button", { name: "UNLOCK" })).toBeVisible();
       await shoot(page, "stopped", width, theme);
