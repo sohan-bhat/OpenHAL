@@ -56,16 +56,27 @@ test.describe("specification", () => {
     await expect(page).toHaveURL(/\/spec\/latest\/$/);
     await expect(page.locator(".switcher summary:visible").first()).toHaveText(/^\s*Version\s+\d{4}-\d{2}-\d{2}\s+latest\s*$/);
     await page.getByRole("link", { name: "Changelog" }).first().click();
-    await expect(page.locator("h1")).toHaveText("Changelog");
+    await expect(page.locator("h1")).toHaveText(/^\d+ Changelog$/);
   });
 
   test("dated pages have an outline, heading anchors and an edit link", async ({ page }) => {
     await page.goto("/spec/2026-10-24/basic/messages/");
-    await expect(page.locator("h1")).toHaveText("Messages");
+    await expect(page.locator("h1")).toHaveText("3.3 Messages");
+    await expect(page.locator("h2 .secno").first()).toHaveText("3.3.1");
     await expect(page.locator("aside.outline")).toBeAttached();
     await expect(page.locator("h2 a.heading-link").first()).toHaveAttribute("href", /^#/);
     await expect(page.getByRole("link", { name: "Edit on GitHub" })).toHaveAttribute("href", /\/edit\/main\/spec\/2026-10-24\/basic\/messages\.md$/);
     await expect(page.locator("figure.trace-code svg.trace-arrow").first()).toBeVisible();
+  });
+
+  test("spec pages link each defined term once and mark blocked registry names", async ({ page }) => {
+    await page.goto("/spec/2026-10-24/architecture/");
+    await expect(page.locator("main a.term", { hasText: /^Hub$/ })).toHaveCount(1);
+    await expect(page.locator("main a.term", { hasText: /^Hub$/ })).toHaveAttribute("href", "/spec/glossary/#term-hub");
+    await expect(page.locator("figure.diagram.house").first()).toBeVisible();
+    await page.goto("/spec/errors/");
+    await expect(page.locator(".registry-name", { hasText: "LIMIT_EXCEEDED" })).toHaveClass(/status blocked/);
+    await expect(page.locator(".registry-name", { hasText: "PARSE_ERROR" })).not.toHaveClass(/status/);
   });
 
   test("defined terms link to the glossary", async ({ page }) => {
