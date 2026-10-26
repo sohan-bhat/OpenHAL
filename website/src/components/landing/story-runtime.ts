@@ -144,7 +144,8 @@ export function story(root: HTMLElement): void {
     shots = PLACED.map((shot) => {
       const target = (column && shot.column) || shot.target;
       const box = target === "scene" ? whole : union(target.map((name) => boxes.get(name) ?? whole));
-      return { glideFrom: shot.glideFrom, dwellFrom: shot.dwellFrom, end: shot.end, ...framing(box, frame, shot) };
+      const fit = column && target !== "scene" ? { ...shot, min: Math.max(shot.min ?? 0, 1) } : shot;
+      return { glideFrom: shot.glideFrom, dwellFrom: shot.dwellFrom, end: shot.end, ...framing(box, frame, fit) };
     });
     let y = 0;
     for (let el: HTMLElement | null = root; el; el = el.offsetParent as HTMLElement | null) y += el.offsetTop;
