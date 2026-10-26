@@ -187,6 +187,7 @@ With `prefers-reduced-motion: reduce`, nothing moves.
 - State plainly that OpenHAL is not affiliated with Anthropic or MHS.
 - No em dashes or en dashes, and no colons or semicolons in running prose.
 - No exclamation marks.
+- Say "agent", not "AI". The agent pauses the print. Keep "AI" only where "agent" alone would be unclear, as in "AI agents" in the one-line description.
 
 ## Banned
 
