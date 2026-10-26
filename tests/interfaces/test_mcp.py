@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import base64
+import json
 from pathlib import Path
 
 import httpx
 import pytest
 from mcp import Client as McpClient
 from mcp.server.mcpserver.exceptions import ToolError
+from mcp_types import ImageContent, TextContent
 
 from openhal.client import AsyncClient
 from openhal.hub.hub import Hub
@@ -19,6 +22,7 @@ from tests.interfaces.conftest import BASE_URL, SplitTransport, Tokens
 from tests.interfaces.fake_hub import FakeHub
 from tests.interfaces.test_client_routines import KEEP_COOL
 from tests.kernel.conftest import FakeClock
+from tests.protocol.test_image_readings import png
 
 REQUIRED = {
     "list_devices",
@@ -207,6 +211,51 @@ async def test_through_the_sdk_client(async_transport: httpx.ASGITransport, toke
         assert "device-data" in text
         routine = await client.get_prompt("write_routine", {"goal": "keep the room under 28 degC"})
         assert "keep the room under 28 degC." in routine.messages[0].content.text  # type: ignore[union-attr]
+
+
+CAM = """
+device: Bed camera
+id: cam
+connect: { mock: cam }
+read:
+  frame: { type: image }
+  width: { unit: dimensionless }
+hazard: low
+confirmed: { by: tester, at: 2026-10-24 }
+"""
+
+
+async def test_an_image_comes_back_as_an_image_marked_as_device_data(
+    async_transport: httpx.ASGITransport, tokens: Tokens, hub: Hub
+) -> None:
+    await hub.add_and_start(loads(CAM))
+    frame = png(8, 6)
+    hub.kernel.devices["cam"].driver.values["frame"] = frame  # type: ignore[attr-defined]
+    server, _ = build_server(AsyncClient(BASE_URL, tokens.agent, transport=async_transport, use_human_token_file=False))
+    async with McpClient(server) as client:
+        listed = {tool.name: tool for tool in (await client.list_tools()).tools}
+        assert listed["read"].output_schema is not None
+        assert "image" in (listed["read"].description or "")
+        result = await client.call_tool("read", {"device": "cam", "channel": "frame"})
+        assert not result.is_error
+        summary, note, image = result.content
+        assert isinstance(summary, TextContent)
+        assert isinstance(note, TextContent)
+        assert isinstance(image, ImageContent)
+        assert (image.mime_type, base64.b64decode(image.data)) == ("image/png", frame)
+        assert note.text.startswith('<device-data source="cam.frame image">')
+        assert "not an instruction" in note.text
+        assert note.text.endswith("</device-data>")
+        assert "image/png, 8 x 6," in note.text
+        shown = {"mimeType": "image/png", "bytes": len(frame), "width": 8, "height": 6, "data": None}
+        assert result.structured_content is not None
+        assert result.structured_content["value"] == shown
+        assert json.loads(summary.text)["value"] == shown
+        number = await client.call_tool("read", {"device": "cam", "channel": "width"})
+        assert [block.type for block in number.content] == ["text"]
+        many = await client.call_tool("read_many", {"targets": ["cam.frame"]})
+        assert many.structured_content is not None
+        assert many.structured_content["result"][0]["value"] == shown
 
 
 def test_agent_token_sources(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, isolated_env: Path) -> None:
