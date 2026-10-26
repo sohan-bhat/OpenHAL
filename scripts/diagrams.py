@@ -99,8 +99,8 @@ def d2_binary() -> str:
 
 
 NARROW_GRID = (
-    "grid-rows: 2\ngrid-columns: 5\nhorizontal-gap: 96\nvertical-gap: 56",
-    "grid-columns: 2\ngrid-rows: 5\nhorizontal-gap: 64\nvertical-gap: 52",
+    "grid-rows: 2\ngrid-columns: 5\nhorizontal-gap: 90\nvertical-gap: 48",
+    "grid-columns: 2\ngrid-rows: 5\nhorizontal-gap: 52\nvertical-gap: 52",
 )
 
 
@@ -164,16 +164,39 @@ def boxes(svg: str) -> dict[str, Box]:
 
 def label_text(body: str) -> str:
     match = re.search(r"<text[^>]*>(.*?)</text>", body)
-    return html.unescape(match.group(1)) if match else ""
+    if match is None:
+        return ""
+    lines = re.findall(r"<tspan[^>]*>(.*?)</tspan>", match.group(1)) or [match.group(1)]
+    return "\n".join(html.unescape(re.sub(r"<[^>]+>", "", line)) for line in lines)
 
 
 def relabel(body: str, x: float, y: float) -> str:
-    return re.sub(
+    body = re.sub(
         r'<text x="[-\d.]+" y="[-\d.]+"',
         f'<text x="{x:.1f}" y="{y:.1f}"',
         body,
         count=1,
     )
+    return re.sub(r'<tspan x="[-\d.]+"', f'<tspan x="{x:.1f}"', body)
+
+
+LABEL_LINE = 17
+MONO_ADVANCE = 0.632
+LABEL_SIZE = 13
+
+
+def center_chip(svg: str, nodes: dict[str, Box]) -> str:
+    """Move the device files chip to the hub's middle, so the check wire runs level with the others."""
+    chip, hub = nodes["hub.files"], nodes["hub"]
+    dy = hub.cy - chip.cy
+    if abs(dy) < 0.5:
+        return svg
+    token = base64.b64encode(b"hub.files").decode().rstrip("=")
+    opening = re.compile(rf'<g class="({re.escape(token)}=*)">')
+    svg, count = opening.subn(rf'<g class="\1" transform="translate(0 {dy:.1f})">', svg, count=1)
+    if count:
+        nodes["hub.files"] = Box(chip.x, chip.y + dy, chip.w, chip.h)
+    return svg
 
 
 def postprocess_flow(svg: str, colors: dict[str, str], narrow: bool = False) -> str:
@@ -188,12 +211,16 @@ def postprocess_flow(svg: str, colors: dict[str, str], narrow: bool = False) -> 
     svg = svg.replace("stroke-width:2;", "stroke-width:1.5;").replace('stroke-width="2"', 'stroke-width="1.5"')
     svg = svg.replace(' mask="url(#', ' data-mask="url(#')
     nodes = boxes(svg)
+    if not narrow:
+        svg = center_chip(svg, nodes)
     top = min(box.y for name, box in nodes.items() if "." not in name)
     left = min(box.x for name, box in nodes.items() if "." not in name)
     route_y = top - 22
     route_x = left - 22
 
     flows: list[str] = []
+    outcome_bottom: list[float] = []
+    outcome_right: list[float] = []
 
     def rewrite(match: re.Match[str]) -> str:
         wire_id, body = name_of(match["id"]), match["body"]
@@ -237,12 +264,19 @@ def postprocess_flow(svg: str, colors: dict[str, str], narrow: bool = False) -> 
             body = re.sub(r'<path d="[^"]*"', f'<path d="{d}"', body, count=1)
         else:
             d = f"M {x1:.1f} {y1:.1f} L {x2:.1f} {y2:.1f}"
-        if abs(y1 - y2) < 0.5 and label:
+        is_blocked = "blocked" in wire_id
+        if is_blocked and label:
+            below = nodes["blocked"]
+            body = relabel(body, below.cx, below.y + below.h + LABEL_LINE + 2)
+            body = body.replace("text-anchor:start", "text-anchor:middle", 1)
+            outcome_bottom.append(below.y + below.h + 2 * LABEL_LINE + 8)
+            longest = max(len(line) for line in label.split("\n")) if label else 0
+            outcome_right.append(below.cx + longest * LABEL_SIZE * MONO_ADVANCE / 2 + 6)
+        elif abs(y1 - y2) < 0.5 and label:
             body = relabel(body, (x1 + x2) / 2, y1 - 8)
         elif abs(x1 - x2) < 0.5 and label:
             body = relabel(body, x1 + 9, (y1 + y2) / 2 + 4)
             body = body.replace("text-anchor:middle", "text-anchor:start", 1)
-        is_blocked = "blocked" in wire_id
         color = colors["blocked"] if is_blocked else colors["accent"]
         flows.append(flow_path(d, color, "blocked" if is_blocked else label))
         return f'<g class="{match["id"]} wire">{body}</g>'
@@ -257,6 +291,10 @@ def postprocess_flow(svg: str, colors: dict[str, str], narrow: bool = False) -> 
     insert = f'<defs>{marker}</defs><style type="text/css"><![CDATA[{style}]]></style>'
     svg = svg.replace("</svg></svg>", f'{insert}<g class="oh-flows">{"".join(flows)}</g></svg></svg>', 1)
     svg = grow_left(svg, TOP_ROOM) if narrow else grow_top(svg, TOP_ROOM)
+    if outcome_bottom:
+        svg = grow_bottom(svg, max(outcome_bottom))
+    if outcome_right:
+        svg = grow_right(svg, max(outcome_right))
     return add_title(svg, FLOW_TITLE, FLOW_DESC)
 
 
@@ -270,7 +308,7 @@ def flow_path(d: str, color: str, name: str) -> str:
 
 def flow_style() -> str:
     period = (DASH + GAP) * PERIODS
-    delays = {slug: index * 0.35 for index, slug in enumerate(["hal-write", "check", "grant", "command", "reading"])}
+    delays = {slug: index * 0.35 for index, slug in enumerate(["hal-action", "check", "grant", "command", "reading"])}
     rules = [
         f"@keyframes oh-flow {{ from {{ stroke-dashoffset: {period}; }} to {{ stroke-dashoffset: 0; }} }}",
         f"@keyframes oh-flow-pause {{ 0% {{ stroke-dashoffset: {period}; }} 70% {{ stroke-dashoffset: 0; }} "
@@ -302,6 +340,68 @@ def grow_top(svg: str, room: int) -> str:
     return re.sub(
         r'width="(?P<w>[\d.]+)" height="(?P<h>[\d.]+)" viewBox="(?P<x>-?[\d.]+) (?P<y>-?[\d.]+) [\d.]+ [\d.]+"',
         inner,
+        svg,
+        count=1,
+    )
+
+
+def grow_bottom(svg: str, needed: float) -> str:
+    """Grow the canvas downwards until it reaches `needed` in diagram units."""
+    inner = re.search(
+        r'width="(?P<w>[\d.]+)" height="(?P<h>[\d.]+)" viewBox="(?P<x>-?[\d.]+) (?P<y>-?[\d.]+) [\d.]+ [\d.]+"', svg
+    )
+    if inner is None:
+        return svg
+    room = needed - (float(inner["y"]) + float(inner["h"]))
+    if room <= 0:
+        return svg
+    room = float(int(room + 0.999))
+
+    def outer(match: re.Match[str]) -> str:
+        w, h = float(match["w"]), float(match["h"]) + room
+        return f'viewBox="0 0 {w:g} {h:g}" width="{w:g}" height="{h:g}"'
+
+    svg = re.sub(r'viewBox="0 0 (?P<w>[\d.]+) (?P<h>[\d.]+)" width="[\d.]+" height="[\d.]+"', outer, svg, count=1)
+
+    def grown(match: re.Match[str]) -> str:
+        w, h = float(match["w"]), float(match["h"]) + room
+        x, y = float(match["x"]), float(match["y"])
+        return f'width="{w:g}" height="{h:g}" viewBox="{x:g} {y:g} {w:g} {h:g}"'
+
+    return re.sub(
+        r'width="(?P<w>[\d.]+)" height="(?P<h>[\d.]+)" viewBox="(?P<x>-?[\d.]+) (?P<y>-?[\d.]+) [\d.]+ [\d.]+"',
+        grown,
+        svg,
+        count=1,
+    )
+
+
+def grow_right(svg: str, needed: float) -> str:
+    """Grow the canvas to the right until it reaches `needed` in diagram units."""
+    inner = re.search(
+        r'width="(?P<w>[\d.]+)" height="(?P<h>[\d.]+)" viewBox="(?P<x>-?[\d.]+) (?P<y>-?[\d.]+) [\d.]+ [\d.]+"', svg
+    )
+    if inner is None:
+        return svg
+    room = needed - (float(inner["x"]) + float(inner["w"]))
+    if room <= 0:
+        return svg
+    room = float(int(room + 0.999))
+
+    def outer(match: re.Match[str]) -> str:
+        w, h = float(match["w"]) + room, float(match["h"])
+        return f'viewBox="0 0 {w:g} {h:g}" width="{w:g}" height="{h:g}"'
+
+    svg = re.sub(r'viewBox="0 0 (?P<w>[\d.]+) (?P<h>[\d.]+)" width="[\d.]+" height="[\d.]+"', outer, svg, count=1)
+
+    def grown(match: re.Match[str]) -> str:
+        w, h = float(match["w"]) + room, float(match["h"])
+        x, y = float(match["x"]), float(match["y"])
+        return f'width="{w:g}" height="{h:g}" viewBox="{x:g} {y:g} {w:g} {h:g}"'
+
+    return re.sub(
+        r'width="(?P<w>[\d.]+)" height="(?P<h>[\d.]+)" viewBox="(?P<x>-?[\d.]+) (?P<y>-?[\d.]+) [\d.]+ [\d.]+"',
+        grown,
         svg,
         count=1,
     )
