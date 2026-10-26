@@ -140,7 +140,7 @@ export function storyLines(facts: StoryFacts): Record<ShotId, string> {
     look: "It looks through the camera and sees a corner of the first layer lifting.",
     warm: nb(`It asks to warm the bed from ${bed(facts.bed.before)} to ${bed(facts.bed.after)}. That's inside the limit.`),
     heat: nb(`So it happens. The bed warms to ${bed(facts.bed.after)}.`),
-    hot: nb(`Then it asks for a ${facts.nozzle.value} nozzle. A person capped it at ${facts.nozzle.max}.`),
+    hot: nb(`Then it asks for a ${facts.nozzle.value} nozzle. A person set the limit at ${facts.nozzle.max}.`),
     reply: "The kernel says no and tells the agent why. The nozzle never changed.",
     loose: "Later, the camera shows the print has come loose.",
     pause: "The agent pauses the print at once.",
