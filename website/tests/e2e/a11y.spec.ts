@@ -63,8 +63,17 @@ for (const scheme of ["light", "dark"] as const) {
       problems.push(...(await violations(page)).map((item) => `library empty ${item}`));
 
       await page.goto("/");
-      await page.getByRole("button", { name: "Safety kernel" }).focus();
-      problems.push(...(await violations(page)).map((item) => `flow focus ${item}`));
+      await page.evaluate(() => {
+        const story = document.querySelector<HTMLElement>("[data-story]")!;
+        window.scrollTo(0, story.offsetTop + story.offsetHeight / 2);
+      });
+      await page.waitForTimeout(300);
+      problems.push(...(await violations(page)).map((item) => `story mid scroll ${item}`));
+
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.goto("/");
+      problems.push(...(await violations(page)).map((item) => `story as a list ${item}`));
+      await page.emulateMedia({ reducedMotion: "no-preference" });
 
       await page.goto("/");
       await page.getByRole("button", { name: "Search", exact: true }).click();

@@ -20,18 +20,25 @@ test.describe("site chrome", () => {
     }
   });
 
-  test("the overview trace leads to the playground", async ({ page }) => {
+  test("the overview's try section leads to the playground", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("link", { name: "Try it in your browser" }).click();
     await expect(page).toHaveURL(/\/spec\/playground\/$/);
     await expect(page.locator("h1")).toHaveText("Playground");
   });
 
+  test("the overview's one call to action goes to the three commands", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: "Get started" }).click();
+    await expect(page).toHaveURL(/#try$/);
+    await expect(page.locator("#try figure[data-tested]")).toBeInViewport();
+  });
+
   test("the wordmark goes to the overview", async ({ page }) => {
     await page.goto("/drivers/");
     await page.getByRole("link", { name: "OpenHAL overview" }).click();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.locator("h1")).toHaveText("An open-source protocol for AI agents to control hardware.");
+    await expect(page.locator("h1")).toHaveText("OpenHAL");
   });
 
   test("the phone menu opens and navigates", async ({ page }) => {
@@ -106,41 +113,6 @@ test.describe("documentation chrome", () => {
     await button.click();
     await expect(button).toHaveText("Copied");
     expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("id: rigol-dp832");
-  });
-});
-
-test.describe("overview", () => {
-  test("every part of the flow diagram explains itself", async ({ page }) => {
-    await page.goto("/");
-    const buttons = page.locator(".flow-parts button");
-    const count = await buttons.count();
-    expect(count).toBe(7);
-    const notes = new Set<string>();
-    for (let index = 0; index < count; index++) {
-      await buttons.nth(index).click();
-      const note = (await page.locator(".flow-note").textContent())!.trim();
-      expect(note.length).toBeGreaterThan(10);
-      notes.add(note);
-    }
-    expect(notes.size).toBe(count);
-  });
-});
-
-test.describe("flow highlight", () => {
-  test("the active step and its node share one highlight", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.getByRole("group", { name: "Click a step" })).toBeVisible();
-    const chip = page.getByRole("button", { name: "Safety kernel" });
-    await chip.click();
-    await expect(chip).toHaveAttribute("aria-pressed", "true");
-    const colors = await page.evaluate(() => {
-      const chipColor = getComputedStyle(document.querySelector(".flow-parts button.active")!).borderTopColor;
-      const node = document.querySelector(".flow svg.d2-svg > g.flow-active > rect.shape")!;
-      return { chip: chipColor, node: getComputedStyle(node).stroke, width: getComputedStyle(node).strokeWidth };
-    });
-    expect(colors.node).toBe(colors.chip);
-    expect(colors.width).toBe("2.5px");
-    await expect(page.locator(".flow-parts button[aria-pressed='true']")).toHaveCount(1);
   });
 });
 

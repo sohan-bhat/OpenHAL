@@ -1,0 +1,45 @@
+---
+import type { StoryFacts } from "../../../lib/story/facts";
+import { nb } from "../../../lib/story/facts";
+import { cue } from "../../../lib/story/script";
+import { DRIVER, type Span } from "../../../lib/story/timeline";
+
+interface Props {
+  facts: StoryFacts;
+}
+
+const { facts } = Astro.props;
+const shown = (span: Span) => cue(span.at, span.out);
+---
+
+<div class="station" data-cam="driver">
+  <div class="station-head">
+    <p class="station-name">Driver</p>
+    <p class="station-note mono">{facts.driver}</p>
+  </div>
+  <p class="station-text">Acts only on a single-use grant</p>
+  <div class="swap grant">
+    <p class="cue waiting" style={shown(DRIVER.waiting)}>Waiting for a grant</p>
+    <div class="cue" style={shown(DRIVER.granted)}>
+      <p class="mono action">{facts.action}</p>
+      <p class="figure">{nb(facts.ran)}</p>
+    </div>
+  </div>
+  <p class="cue station-text" style={shown(DRIVER.sent)}>Sent to the board</p>
+</div>
+
+<style>
+  .grant {
+    min-height: 62px;
+  }
+
+  .waiting {
+    align-self: center;
+    color: var(--text-2);
+  }
+
+  .action {
+    color: var(--accent);
+    font-weight: 700;
+  }
+</style>

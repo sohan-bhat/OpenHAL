@@ -1,0 +1,94 @@
+---
+import type { StoryFacts } from "../../../lib/story/facts";
+import { nb } from "../../../lib/story/facts";
+import { cue } from "../../../lib/story/script";
+import { CLIENT, type Span } from "../../../lib/story/timeline";
+import { arrowSvg } from "../../../lib/trace-html.mjs";
+
+interface Props {
+  facts: StoryFacts;
+}
+
+const { facts } = Astro.props;
+const shown = (span: Span) => cue(span.at, span.out);
+const answers = [
+  { span: CLIENT.limit, kind: "blocked", name: facts.tooLong.name, text: facts.tooLong.reason, mono: false },
+  { span: CLIENT.interlock, kind: "blocked", name: facts.empty.name, text: facts.empty.reason, mono: false },
+  { span: CLIENT.done, kind: "ok", name: facts.status, text: facts.soil.reading, mono: true },
+];
+---
+
+<div class="station" data-cam="client">
+  <div class="station-head">
+    <p class="station-name">AI client</p>
+    <p class="station-note">Claude, Cursor or any MCP client</p>
+  </div>
+  <div class="exchange">
+    <div class="said cue" style={shown(CLIENT.request)}>
+      <Fragment set:html={arrowSvg("out")} />
+      <div class="said-body">
+        <p class="mono said-method">{facts.method} <span class="said-arg">{facts.action}</span></p>
+        <p class="swap figure">
+          <span class="cue" style={shown(CLIENT.asked)}>{nb(facts.asked)}</span>
+          <span class="cue" style={shown(CLIENT.retried)}>{nb(facts.ran)}</span>
+        </p>
+      </div>
+    </div>
+    <div class="swap">
+      {
+        answers.map((answer) => (
+          <div class="said cue" style={shown(answer.span)}>
+            <Fragment set:html={arrowSvg("in")} />
+            <div class="said-body">
+              <p class:list={["mono", "status", answer.kind]}>{answer.name}</p>
+              <p class:list={["said-reason", { mono: answer.mono }]}>{nb(answer.text)}</p>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</div>
+
+<style>
+  .exchange {
+    display: grid;
+    gap: var(--s-4);
+  }
+
+  .said {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    column-gap: 10px;
+    align-items: start;
+  }
+
+  .said :global(.trace-arrow) {
+    margin-top: 6px;
+    color: var(--text);
+  }
+
+  .said-body {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .said-method {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .said-arg {
+    color: var(--text);
+    font-weight: 400;
+  }
+
+  .said .status {
+    white-space: normal;
+  }
+
+  .said-reason {
+    color: var(--text-2);
+  }
+</style>

@@ -17,31 +17,31 @@ function noErrors(page: Page): string[] {
 }
 
 test.describe("overview", () => {
-  test("states the protocol in one sentence and shows the canonical trace", async ({ page }) => {
+  test("names the product, says what it is in one sentence and offers one way in", async ({ page }) => {
     const errors = noErrors(page);
     await page.goto("/");
-    await expect(page.locator("h1")).toHaveText("An open-source protocol for AI agents to control hardware.");
-    const trace = page.locator(".trace").first();
-    await expect(trace).toContainText(`error ${firstError.code} ${firstError.data.name}`);
-    await expect(trace).toContainText(firstError.message);
+    await expect(page.locator("h1")).toHaveText("OpenHAL");
+    await expect(page.locator(".hero-pitch")).toHaveText("An open-source protocol for AI agents to control hardware.");
+    await expect(page.locator(".hero a")).toHaveCount(1);
+    await expect(page.locator(".hero a")).toHaveText("Get started");
     expect(errors).toEqual([]);
   });
 
-  test("the flow diagram explains each part on focus", async ({ page }) => {
+  test("tells the recorded refusal in the story, in the hub's own words", async ({ page }) => {
     await page.goto("/");
-    const part = page.getByRole("button", { name: "Safety kernel" });
-    await part.focus();
-    await expect(page.locator(".flow-note")).toHaveText("Checks units, range, rate, interlocks and confirmation, in that order.");
-    await expect(page.locator(".flow svg.d2-svg > g.flow-active").first()).toBeAttached();
+    const story = page.locator(".story-list");
+    await expect(story).toContainText(firstError.data.name);
+    await expect(story).toContainText(firstError.message.slice(0, firstError.message.indexOf(" (")).replace(/(\d) /g, "$1 "));
+    await expect(page.locator("main .trace")).toHaveCount(0);
   });
 
   test("the quickstart is three commands and says what they show", async ({ page }) => {
     await page.goto("/");
-    const block = page.locator("figure[data-tested]").first();
+    const block = page.locator("#try figure[data-tested]");
     await expect(block).toContainText("git clone https://github.com/sohan-bhat/OpenHAL");
     await expect(block).toContainText("cd OpenHAL");
     await expect(block).toContainText("uv run openhal demo");
-    await expect(page.getByText("You'll see the hub refuse")).toBeVisible();
+    await expect(page.locator("#try")).toContainText("It plays the same story in your terminal.");
   });
 
   test("says plainly that OpenHAL is not affiliated with MHS", async ({ page }) => {
@@ -169,7 +169,7 @@ test.describe("catalog pages", () => {
     const tested = devices.filter((driver) => driver.status === "implemented").length;
     await page.goto("/");
     await expect(page.locator("p.summary")).toContainText(`${tested} drivers tested on simulator`);
-    await expect(page.locator(".groups")).not.toContainText("mock");
+    await expect(page.locator(".families")).not.toContainText("mock");
     await page.goto("/drivers/");
     await expect(page.locator("[data-shown]")).toHaveText(`${devices.length} drivers.`);
     await expect(page.locator("[data-driver]")).toHaveCount(devices.length);

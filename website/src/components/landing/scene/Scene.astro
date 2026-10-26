@@ -1,0 +1,46 @@
+---
+import type { StoryFacts } from "../../../lib/story/facts";
+import Client from "./Client.astro";
+import Device from "./Device.astro";
+import Driver from "./Driver.astro";
+import Hub from "./Hub.astro";
+import Kernel from "./Kernel.astro";
+import Wire from "./Wire.astro";
+
+interface Props {
+  facts: StoryFacts;
+}
+
+const { facts } = Astro.props;
+---
+
+<div class="story-scene" aria-hidden="true">
+  <Client facts={facts} />
+  <Wire wire={1} label={facts.method} />
+  <Hub facts={facts} />
+  <Wire wire={2} label="check" />
+  <Kernel facts={facts} />
+  <Wire wire={3} label="grant" />
+  <Driver facts={facts} />
+  <Wire wire={4} label="command" />
+  <Device facts={facts} />
+</div>
+
+<style>
+  .story-scene {
+    flex-direction: column;
+    width: 320px;
+  }
+
+  @media (orientation: landscape) and (min-width: 900px) {
+    .story-scene {
+      flex-direction: row;
+      align-items: center;
+      width: max-content;
+    }
+
+    .story-scene :global(.station) {
+      width: 296px;
+    }
+  }
+</style>

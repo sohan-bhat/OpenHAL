@@ -1,6 +1,6 @@
 # Website and Inspector quality
 
-Measured on 2026-10-25 by the quality workstream, at commit b29aa75 on branch worktree-agent-a93add9689c8b7b2f, on an Intel Core i7-8750H Mac with macOS 15.5. The website rows were measured again the same day by the website round 4 workstream, at commit acadaf4 on branch worktree-agent-aa39233d21696be73, on the same Mac, after the site search, the wrapped code blocks and the stacked tables landed. They were measured a third time by the website round 5 workstream, at commit 589b7d8 on branch worktree-agent-aa06f02640ce4c4c4, on the same Mac, after the house-style diagrams, the numbered spec sections, the shared left edge and the owner's text wordmark landed. The Inspector rows are from the first run.
+Measured on 2026-10-25 by the quality workstream, at commit b29aa75 on branch worktree-agent-a93add9689c8b7b2f, on an Intel Core i7-8750H Mac with macOS 15.5. The website rows were measured again the same day by the website round 4 workstream, at commit acadaf4 on branch worktree-agent-aa39233d21696be73, on the same Mac, after the site search, the wrapped code blocks and the stacked tables landed. They were measured a third time by the website round 5 workstream, at commit 589b7d8 on branch worktree-agent-aa06f02640ce4c4c4, on the same Mac, after the house-style diagrams, the numbered spec sections, the shared left edge and the owner's text wordmark landed. The Overview row and the landing story section were measured by the landing page round, at commit 6ef60a6 on branch worktree-agent-a39e9445429fca114, on the same Mac, after the landing page was rebuilt around the scroll story. The Inspector rows are from the first run.
 
 ## Tools
 
@@ -43,7 +43,7 @@ Both scripts print each score and the audits that lost points. The Inspector scr
 
 | Page | Path | Mobile perf | Mobile a11y | Mobile best practices | Mobile SEO | Desktop perf | Desktop a11y | Desktop best practices | Desktop SEO |
 |---|---|---|---|---|---|---|---|---|---|
-| Overview | `/` | 99 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Overview | `/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Spec page (Messages) | `/spec/2026-10-24/basic/messages/` | 99 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Schema reference | `/spec/2026-10-24/schema/` | 99 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Playground | `/spec/playground/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
@@ -60,7 +60,7 @@ Both scripts print each score and the audits that lost points. The Inspector scr
 | Architecture, with seven diagrams | `/docs/architecture/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Errors | `/spec/errors/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 
-Mobile performance moves by a point or two between runs on this Mac. Pages that scored under 100 on the first run were measured three or four times, and the table shows the median. Overview scored 99, 99, 99 and 100, Messages 96, 100 and 99, Schema reference 99, 100 and 99, and Drivers 99, 100 and 100. The points they lose are first contentful paint at 1.1 to 1.5 s and blocking time of 70 to 210 ms under the simulated slow phone.
+Mobile performance moves by a point or two between runs on this Mac. Pages that scored under 100 on the first run were measured three or four times, and the table shows the median. The rebuilt Overview scored 100 on four mobile runs, with a layout shift of 0, first contentful paint at 1.0 s, largest contentful paint at 1.4 to 1.5 s, no blocking time and 74 KB in all. Before the rebuild it scored 99, 99, 99 and 100. Messages scored 96, 100 and 99, Schema reference 99, 100 and 99, and Drivers 99, 100 and 100. The points they lose are first contentful paint at 1.1 to 1.5 s and blocking time of 70 to 210 ms under the simulated slow phone.
 
 ## Lighthouse, Inspector
 
@@ -98,11 +98,11 @@ Rules from the tags wcag2a, wcag2aa, wcag21a and wcag21aa, with axe 4.14.0.
 | Surface | What is checked | Violations |
 |---|---|---|
 | Website | Every page in the sitemap (114 pages), /spec/latest/ and the 404, in the light and dark themes, at 1280 by 720 in Chromium | 0 |
-| Website | At 390 px in both themes, the open phone menu, the open section menu and version switcher, a playground trace, empty driver and library filters, a focused flow part, and the site search opened from its icon button with results | 0 |
+| Website | At 390 px in both themes, the open phone menu, the open section menu and version switcher, a playground trace, empty driver and library filters, the landing story halfway through its scroll and as the list reduced motion shows, and the site search opened from its icon button with results | 0 |
 | Website | At 1280 by 800 in both themes, the site search dialog opened with Ctrl K and showing results for LIMIT_EXCEEDED | 0 |
 | Inspector | At 1440 and 390 px in both themes, in Chromium, and at 1440 px in Firefox. Each device (the plant waterer, the curing heater, the read-only bench lamp), confirmations with a pending request, the audit log, routines and a dry run, the driver writer and its limits interview, settings, the hidden log, the stopped state, the UNLOCK dialog, pairing and the offline page | 0 |
 
-Round 5 ran the website rows again on its own build, with the house-style diagrams, the Inspector crops and the text wordmark, and found 0 violations in 239 checks.
+Round 5 ran the website rows again on its own build, with the house-style diagrams, the Inspector crops and the text wordmark, and found 0 violations in 239 checks. The landing page round ran them again on its own build and found 0 violations in 239 checks.
 
 The sweep found and fixed these.
 
@@ -118,6 +118,14 @@ The tests are website/tests/e2e/a11y.spec.ts and dashboard/e2e/axe.spec.ts.
 - **No text under 13 px.** A scan of every text node on every page at 390, 768 and 1440 px, inline SVG labels included, found none smaller than the 13 px legend size.
 - **Diagrams in the house style.** The seven Mermaid diagrams of docs/ARCHITECTURE.md and the sequence diagram of the spec's architecture section are redrawn in D2 in docs/diagrams and shown at full size in light and dark. tests/unit/diagrams.test.ts fails when a Mermaid block on the site has no current redraw.
 - **Search under /OpenHAL/.** A build was copied into a folder served as /OpenHAL/, checked for links, rebased with scripts/rebase.mjs and indexed with `node scripts/search-index.mjs DIR /OpenHAL`, as the Pages workflow does. Searching for LIMIT_EXCEEDED and for plant waterer in Chromium and Firefox found 7 and 22 pages, every result link started with /OpenHAL/, and Enter opened the first result. Round 5 repeated it on its own build, where the dialog listed 7 and 8 results with every link under /OpenHAL/ and Enter opened /OpenHAL/docs/quickstart/ and /OpenHAL/library/openhal-firmware-openhal-plant-waterer/. The script fails when any page would load the index from outside the base.
+
+## Landing page story
+
+- **Scroll drives it, and it stays smooth.** A scripted 10 s scroll through the whole story in Chromium drew 602 frames with a 95th percentile of 16.7 ms and none over 25 ms, at 1440 by 900 and at 390 by 844 with the CPU slowed 4 times. Chromium counted 0 layouts during the scroll, since only transforms and opacity change. tests/e2e/story.spec.ts checks the layout count, the pinned stage, and the kernel's and the client's answers at their moments.
+- **Reduced motion and no script.** The stage gives way to a list of the same ten steps, each with its station drawn at that moment, in Chromium and Firefox.
+- **Phones and tablets.** At 390 by 844 the stage fills the screen under the header and nothing scrolls sideways at any point of the story. At 1024 by 768 the three-station shots fit without cropping. The story was also checked at 768 by 1024 and 1920 by 1080.
+- **Text and edges.** No text node on the landing page is under 13 px at 390, 768 and 1440 px, with motion or without. Every heading starts at 344 px at 1440. The wordmark's box starts 0.04 em to the left of that, so its O lines up with the text under it.
+- **Under /OpenHAL/.** A build for sohan-bhat.github.io was checked for links, rebased and indexed as the Pages workflow does, then served as /OpenHAL/. The story's script loaded from /OpenHAL/_astro/, every link stayed under /OpenHAL/, the camera ran in Chromium and Firefox with no console errors, and Chromium counted 0 layouts while it played.
 
 ## Browsers
 

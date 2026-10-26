@@ -1,155 +1,206 @@
 ---
 import { getEntry, render } from "astro:content";
-import FlowDiagram from "../components/FlowDiagram.astro";
-import MessageTrace from "../components/MessageTrace.astro";
-import { PRODUCT_NAME } from "../config/brand";
+import Story from "../components/landing/Story.astro";
+import { PITCH, PRODUCT_NAME } from "../config/brand";
 import Base from "../layouts/Base.astro";
 import { driverCounts, driverGroups, statusWord } from "../lib/catalog";
 import { HOME_TITLE } from "../lib/pages";
-import { outcome, scenarioTrace } from "../lib/scenario";
-import { latestVersion, specPages } from "../lib/spec";
-import { specSidebar } from "../lib/spec-nav";
 import "../styles/prose.css";
 
 const quickstart = await getEntry("snippets", "quickstart");
 const { Content: Quickstart } = await render(quickstart!);
 const groups = driverGroups();
-const { total, tested, verified, planned } = driverCounts();
-const latest = latestVersion();
-const specItems = latest ? specSidebar(await specPages(latest))[0].items : [];
-const sections = specItems
-  .map((item, index) => ({ ...item, href: item.href ?? specItems[index + 1]?.href }))
-  .filter((item) => item.depth === 1 && item.href);
+const { total, tested } = driverCounts();
+const points = [
+  { title: "Limits a person confirmed", text: "An AI can't loosen them. Only a person editing the device file can." },
+  { title: "One STOP", text: "One command puts every device in its safe state. Only a person can start them again." },
+  { title: "Everything logged", text: "Every request, refusal, stop and confirmation goes into an append-only log." },
+];
+const more = [
+  { href: "/spec/latest/", title: "Read the specification", text: "Every message, error and rule, in dated versions." },
+  { href: "/docs/", title: "Read the docs", text: "Guides for the hub, device files and drivers." },
+];
 ---
 
 <Base title={`${PRODUCT_NAME}. ${HOME_TITLE}`} description={HOME_TITLE} bare>
-  <div class="wrap column home">
-    <section class="intro" aria-labelledby="home-title">
-      <h1 id="home-title">{HOME_TITLE}</h1>
-      <FlowDiagram />
-      <div class="trace-block">
-        <MessageTrace entries={scenarioTrace()} label="Message trace recorded with openhal demo" />
-        <p class="trace-after">
-          <span class="muted">Recorded from <code>openhal demo</code> on the simulated plant waterer.</span>
-          <a href="/spec/playground/">Try it in your browser</a>
-        </p>
-      </div>
-    </section>
+  <section class="wrap column hero" aria-labelledby="home-title">
+    <h1 id="home-title" class="hero-mark">{PRODUCT_NAME}</h1>
+    <p class="hero-pitch">{PITCH}</p>
+    <a class="button hero-go" href="#try">Get started</a>
+  </section>
 
-    <section aria-labelledby="start-title" class="block">
-      <h2 id="start-title">Quickstart</h2>
-      <div class="prose quickstart">
-        <Quickstart />
-        <p>{outcome().replace(/(\d) (?=[%a-zA-Z])/g, "$1\u00a0")}</p>
-      </div>
-    </section>
+  <Story />
 
-    <section aria-labelledby="devices-title" class="block">
-      <h2 id="devices-title">Device families</h2>
-      <p class="summary">
-        {verified > 0 && <span class="status ok">{verified} {verified === 1 ? "driver" : "drivers"} {statusWord("verified")}</span>}
-        <span class="status unverified">{tested} {tested === 1 ? "driver" : "drivers"} {statusWord("implemented")}</span>
-        {planned > 0 && <span class="muted">{planned} planned.</span>}
-      </p>
-      <ul class="groups">
-        {
-          groups.map((group) => (
-            <li>
-              <h3>{group.name}</h3>
-              <p class="count">
-                {group.verified > 0 && <span class="status ok">{group.verified} {statusWord("verified")}</span>}
-                {group.tested > 0 && <span class="status unverified">{group.tested} {statusWord("implemented")}</span>}
-              </p>
-              <p class="names">
-                {group.drivers.map((driver, index) => (
-                  <>
-                    <a class="mono" href={`/drivers/${driver.name}/`}>
-                      {driver.name}
-                    </a>
-                    {index < group.drivers.length - 1 ? " " : ""}
-                  </>
-                ))}
-              </p>
-            </li>
-          ))
-        }
-      </ul>
-      <p><a href="/drivers/">All {total} drivers, with protocols, tier, status and hazard</a></p>
-    </section>
-
-    <section aria-labelledby="mhs-title" class="block">
-      <h2 id="mhs-title">MHS</h2>
-      <p class="measure">
-        Anthropic's Model Hardware Standard is a limited research preview for invited labs. OpenHAL is an independent open protocol, not
-        affiliated with Anthropic or MHS, and plans to stay compatible as MHS opens up.
-      </p>
-    </section>
-
-    <section aria-labelledby="spec-title" class="block">
-      <h2 id="spec-title">Specification</h2>
+  <section class="wrap column part" aria-labelledby="safe-title">
+    <h2 id="safe-title">Why it's safe</h2>
+    <ul class="points">
       {
-        sections.length ? (
-          <ol class="spec-links">
-            {sections.map((page) => (
-              <li>
-                <a href={page.href}>
-                  <span class="mono num">{page.number}</span>
-                  <span class="title">{page.title}</span>
-                </a>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <ul class="spec-links">
-            <li><a href="/spec/">Specification</a></li>
-            <li><a href="/docs/safety/">Safety model</a></li>
-          </ul>
-        )
+        points.map((point) => (
+          <li>
+            <h3>{point.title}</h3>
+            <p>{point.text}</p>
+          </li>
+        ))
       }
-    </section>
-  </div>
+    </ul>
+  </section>
+
+  <section class="wrap column part" aria-labelledby="works-title">
+    <h2 id="works-title">What it works with</h2>
+    <p class="summary lede">
+      {tested} {tested === 1 ? "driver" : "drivers"} {statusWord("implemented")}
+    </p>
+    <ul class="families">
+      {
+        groups.map((group) => (
+          <li>
+            <h3>{group.name}</h3>
+            <p class="mono names">
+              {group.drivers.map((driver) => (
+                <span>{driver.name}</span>
+              ))}
+            </p>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="onward"><a href="/drivers/">All {total} drivers</a></p>
+  </section>
+
+  <section id="try" class="wrap column part" aria-labelledby="try-title">
+    <h2 id="try-title">Try it</h2>
+    <p class="lede">You need uv and git. Nothing touches hardware.</p>
+    <div class="prose quickstart">
+      <Quickstart />
+    </div>
+    <p class="onward">It plays the same story in your terminal. <a href="/spec/playground/">Try it in your browser</a></p>
+  </section>
+
+  <section class="wrap column part" aria-labelledby="more-title">
+    <h2 id="more-title">Read more</h2>
+    <ul class="more">
+      {
+        more.map((item) => (
+          <li>
+            <a href={item.href}>{item.title}</a>
+            <p>{item.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
 </Base>
 
 <style>
-
-  .intro {
+  .hero {
     display: grid;
-    gap: var(--s-6);
+    justify-items: start;
+    padding-top: var(--s-7);
+    padding-bottom: var(--s-4);
   }
 
-  .trace-block {
-    display: grid;
-    gap: var(--s-3);
-    min-width: 0;
+  .hero-mark {
+    margin-left: -0.04em;
+    font-size: min(21vw, 184px);
+    font-weight: 800;
+    letter-spacing: -0.06em;
+    line-height: 0.95;
   }
 
-  .trace-after {
+  .hero-pitch {
+    max-width: 22ch;
+    margin-top: var(--s-5);
+    font-size: var(--t-h2);
+    line-height: 1.3;
+  }
+
+  .hero-go {
+    margin-top: var(--s-6);
+    min-height: 48px;
+    padding: 0 var(--s-5);
+  }
+
+  .part {
+    display: grid;
+    gap: var(--s-5);
+    padding-top: var(--s-8);
+  }
+
+  .part h2 {
+    font-size: var(--t-h1);
+    line-height: 1.15;
+  }
+
+  .lede {
+    color: var(--text-2);
+    font-size: var(--t-h3);
+    line-height: 1.4;
+  }
+
+  .summary {
+    font-size: var(--t-body);
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .points {
+    display: grid;
+  }
+
+  .points li {
+    display: grid;
+    gap: var(--s-1) var(--s-7);
+    padding: var(--s-5) 0;
+    border-top: var(--rule);
+  }
+
+  .points li:last-child {
+    border-bottom: var(--rule);
+  }
+
+  .points h3 {
+    font-size: var(--t-h3);
+  }
+
+  .points p {
+    color: var(--text-2);
+    max-width: 48ch;
+  }
+
+  .families {
+    display: grid;
+    gap: var(--s-5) var(--s-7);
+  }
+
+  .families h3 {
+    font-size: var(--t-body);
+    line-height: 1.4;
+  }
+
+  .names {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--s-1) var(--s-3);
+    gap: 0 var(--s-3);
+    margin-top: var(--s-1);
+    color: var(--text-2);
+    font-size: var(--t-small);
   }
 
-  .trace-after a {
+  .names span {
+    white-space: nowrap;
+  }
+
+  .onward a,
+  .more a {
     font-weight: 700;
   }
 
-  .trace-after code {
-    font-size: 0.92em;
-  }
-
-  h1 {
-    max-width: 24ch;
-  }
-
-  .block {
-    margin-top: var(--s-8);
-    display: grid;
-    gap: var(--s-4);
-    min-width: 0;
-  }
-
   .quickstart {
-    max-width: none;
+    max-width: 720px;
     min-width: 0;
   }
 
@@ -157,114 +208,56 @@ const sections = specItems
     margin-top: 0;
   }
 
-  .summary {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--s-2) var(--s-4);
-  }
-
-  .groups {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+  .more {
     display: grid;
-    gap: 0 var(--s-5);
-    align-items: start;
+    gap: var(--s-5);
   }
 
-  .groups li + li {
-    margin-top: var(--s-4);
-  }
-
-  @media (min-width: 640px) {
-    .groups {
-      row-gap: var(--s-4);
-    }
-
-    .groups li + li {
-      margin-top: 0;
-    }
-  }
-
-  .groups li {
-    display: grid;
-    gap: var(--s-1);
-    align-content: start;
-    padding-top: var(--s-3);
-    border-top: var(--rule);
-  }
-
-  .groups h3 {
-    margin: 0;
-    font-size: var(--t-body);
-    line-height: 1.4;
-  }
-
-  .groups .count {
-    margin: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-1) var(--s-3);
-  }
-
-  .groups .names {
-    margin: 0;
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    align-self: start;
-    gap: 2px var(--s-3);
-  }
-
-  .measure {
-    max-width: var(--measure);
-  }
-
-  .spec-links {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+  .more li {
     display: grid;
     gap: var(--s-1);
   }
 
-  .spec-links a {
-    display: inline-flex;
-    gap: var(--s-2);
-    text-decoration: none;
+  .more a {
+    font-size: var(--t-h3);
   }
 
-  .spec-links .title {
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 3px;
-  }
-
-  .spec-links a:hover .title {
-    text-decoration-thickness: 2px;
-  }
-
-  .num {
-    min-width: 1.6em;
+  .more p {
     color: var(--text-2);
   }
 
-  @media (min-width: 640px) {
-    .groups {
+  @media (min-width: 768px) {
+    .hero {
+      padding-top: var(--s-8);
+    }
+
+    .part {
+      padding-top: calc(var(--s-8) + var(--s-6));
+    }
+
+    .points li {
+      grid-template-columns: 16em minmax(0, 1fr);
+      align-items: baseline;
+    }
+
+    .families {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .groups li {
-      grid-row: span 3;
-      grid-template-rows: subgrid;
-      row-gap: var(--s-1);
+    .more {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
   @media (min-width: 1024px) {
-    .groups {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+    .hero-mark {
+      font-size: min((100vw - 340px) / 4.2, 184px);
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .families {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 </style>
