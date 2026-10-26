@@ -1,21 +1,34 @@
 ---
-import { run } from "../../../lib/story/script";
-import { FILLS, type Fill } from "../../../lib/story/timeline";
+import { cue, run } from "../../../lib/story/script";
+import { FILLS, type Fill, type Span } from "../../../lib/story/timeline";
 
 interface Props {
   wire: Fill["wire"];
-  label: string;
+  label: string | Array<{ text: string; span: Span }>;
 }
 
 const { wire, label } = Astro.props;
 const mine = FILLS.filter((fill) => fill.wire === wire);
-const send = mine.filter((fill) => fill.lane === "send");
-const back = mine.filter((fill) => fill.lane !== "send");
+const outbound = (fill: Fill) => fill.lane === "send" || fill.lane === "look";
+const send = mine.filter(outbound);
+const back = mine.filter((fill) => !outbound(fill));
 ---
 
 <div class="wire" data-wire={wire}>
-  <span class="mono label">{label}</span>
-  <span class="lane send">{send.map((fill) => <span class="fill" style={run(fill.at, fill.d, fill.out)} />)}</span>
+  {
+    typeof label === "string" ? (
+      <span class="mono label">{label}</span>
+    ) : (
+      <span class="label swap">
+        {label.map((item) => (
+          <span class="mono cue" style={cue(item.span.at, item.span.out)}>
+            {item.text}
+          </span>
+        ))}
+      </span>
+    )
+  }
+  <span class="lane send">{send.map((fill) => <span class:list={["fill", fill.lane]} style={run(fill.at, fill.d, fill.out)} />)}</span>
   <span class="lane back">{back.map((fill) => <span class:list={["fill", fill.lane]} style={run(fill.at, fill.d, fill.out)} />)}</span>
 </div>
 
@@ -91,7 +104,9 @@ const back = mine.filter((fill) => fill.lane !== "send");
     background: var(--blocked);
   }
 
-  .fill.reading {
+  .fill.look,
+  .fill.read,
+  .fill.pending {
     background: var(--text-2);
   }
 

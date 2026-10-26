@@ -10,11 +10,10 @@ interface Props {
 
 const { facts } = Astro.props;
 const shown = (span: Span) => cue(span.at, span.out);
-const often = facts.window === "1 h" ? "an hour" : `per ${facts.window}`;
 const rules = [
-  { text: `Water for ${facts.min.replace(/ s$/, "")} to ${facts.max}`, span: HUB.duration },
-  { text: `At most ${facts.runs} runs ${often}`, span: null },
-  { text: `Never while the tank is ${facts.tank.low}`, span: HUB.tank },
+  { text: `Nozzle up to ${facts.nozzle.max}`, span: HUB.nozzle },
+  { text: `Bed up to ${facts.bed.max}`, span: HUB.bed },
+  { text: `${facts.cancel.target[0].toUpperCase()}${facts.cancel.target.slice(1)} waits for a person`, span: HUB.cancel },
 ];
 ---
 
@@ -29,13 +28,18 @@ const rules = [
       {
         rules.map((rule) => (
           <li class="rule">
-            {rule.span && <span class="rule-mark cue" style={shown(rule.span)} />}
+            <span class="rule-mark cue" style={shown(rule.span)} />
             <span class="rule-text">{nb(rule.text)}</span>
           </li>
         ))
       }
     </ul>
     <p class="file-confirmed">{facts.confirmed}</p>
+  </div>
+  <div class="asked cue" style={shown(HUB.asked)}>
+    <p class="mono asked-what">{facts.cancel.target} <span class="asked-on">on {facts.printer.id}</span></p>
+    <p class="asked-who">Asked by the agent</p>
+    <p class="status confirm">confirmation required</p>
   </div>
 </div>
 
@@ -79,5 +83,31 @@ const rules = [
 
   .rule-text {
     position: relative;
+  }
+
+  .asked {
+    display: grid;
+    gap: 2px;
+    padding: 10px 14px;
+    border: 1.5px dashed var(--node);
+    border-radius: 4px;
+  }
+
+  .asked-what {
+    font-weight: 700;
+  }
+
+  .asked-on {
+    color: var(--text-2);
+    font-weight: 400;
+  }
+
+  .asked-who {
+    color: var(--text-2);
+  }
+
+  .asked .status {
+    margin-top: 4px;
+    white-space: normal;
   }
 </style>

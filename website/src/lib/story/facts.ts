@@ -20,7 +20,7 @@ export interface Ask {
 
 export interface StoryFacts {
   printer: { id: string; name: string; driver: string };
-  camera: { id: string; channel: string; image: string };
+  camera: { id: string; channel: string; driver: string; image: string };
   file: string;
   confirmed: string;
   look: Ask;
@@ -64,9 +64,13 @@ export function amount(value: unknown, unit: unknown): string {
 /** Message text as a person reads it, with every `degC` written as `°C`. */
 export const humane = (text: string): string => text.replace(/(\d) (degC|degF|percent)\b/g, (_, digit: string, unit: string) => `${digit} ${unitText(unit)}`);
 
-export function readDeviceFile(path = join(REPO_ROOT, "examples", "print-babysitter", "printer.hal.yaml")): DeviceFile {
+const EXAMPLE = join(REPO_ROOT, "examples", "print-babysitter");
+
+export function readDeviceFile(path = join(EXAMPLE, "printer.hal.yaml")): DeviceFile {
   return parse(readFileSync(path, "utf8")) as DeviceFile;
 }
+
+export const readCameraFile = (path = join(EXAMPLE, "printer-cam.hal.yaml")): DeviceFile => readDeviceFile(path);
 
 function need<T>(found: T | undefined, what: string): T {
   if (found === undefined) throw new Error(`docs/demo/scenario.yaml has no ${what}, which the landing story shows.`);
@@ -88,8 +92,8 @@ function imageText(exchange: Exchange): string {
   return value?.width && value?.height ? `${kind} ${value.width} × ${value.height}` : kind;
 }
 
-/** Every word and number the landing story shows, from docs/demo/scenario.yaml and the printer's device file. */
-export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile = readDeviceFile()): StoryFacts {
+/** Every word and number the landing story shows, from docs/demo/scenario.yaml and the device files of the printer and its webcam. */
+export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile = readDeviceFile(), webcam: DeviceFile = readCameraFile()): StoryFacts {
   const record = scenario.record as Scenario["record"] & { confirmed: { by: string; at: string } };
   const exchanges = record.exchanges;
   const reads = exchanges.filter((exchange) => exchange.request.method === "hal/read");
@@ -111,7 +115,7 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
   const act = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: String(params(exchange).action), value: "" });
   return {
     printer: { id: file.id, name, driver: Object.keys(file.connect)[0] },
-    camera: { id: String(params(look).device), channel: String(params(look).channel), image: imageText(look) },
+    camera: { id: String(params(look).device), channel: String(params(look).channel), driver: Object.keys(webcam.connect)[0], image: imageText(look) },
     file: scenario.file ?? "",
     confirmed: `confirmed by ${record.confirmed.by} ${record.confirmed.at}`,
     look: { method: look.request.method, target: `${params(look).device} ${params(look).channel}`, value: "" },

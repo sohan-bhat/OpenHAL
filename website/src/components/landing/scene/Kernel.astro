@@ -1,7 +1,7 @@
 ---
 import type { StoryFacts } from "../../../lib/story/facts";
 import { ALWAYS, cue } from "../../../lib/story/script";
-import { KERNEL, type Span } from "../../../lib/story/timeline";
+import { KERNEL, type Pass, type Span, type Word } from "../../../lib/story/timeline";
 
 interface Props {
   facts: StoryFacts;
@@ -9,24 +9,22 @@ interface Props {
 
 const { facts } = Astro.props;
 const shown = (span: Span) => cue(span.at, span.out);
-const { first, second, third } = KERNEL;
-type Mark = { span: Span; word: "ok" | "blocked" | "not needed" };
-const checks: Array<{ name: string; marks: Mark[] }> = [
-  { name: "Units", marks: [{ span: first.units, word: "ok" }, { span: second.units, word: "ok" }, { span: third.units, word: "ok" }] },
-  { name: "Range", marks: [{ span: first.range, word: "blocked" }, { span: second.range, word: "ok" }, { span: third.range, word: "ok" }] },
-  { name: "Rate", marks: [{ span: second.rate, word: "ok" }, { span: third.rate, word: "ok" }] },
-  { name: "Interlocks", marks: [{ span: second.interlocks, word: "blocked" }, { span: third.interlocks, word: "ok" }] },
-  { name: "Confirmation", marks: [{ span: third.confirmation, word: "not needed" }] },
-];
+const passes: Pass[] = [KERNEL.bed, KERNEL.nozzle, KERNEL.pause, KERNEL.cancel];
+const names = ["Units", "Range", "Rate", "Interlocks", "Confirmation"];
+const checks = names.map((name, index) => ({ name, marks: passes.flatMap((pass) => (pass.checks[index] ? [pass.checks[index]] : [])) }));
+const checking = (before: Pass, after: Pass): Span => ({ at: before.verdict.out, out: after.verdict.at });
 const verdicts = [
-  { span: { at: ALWAYS, out: first.verdict.at }, kind: "idle", text: "Waiting for a command" },
-  { span: first.verdict, kind: "blocked", text: facts.tooLong.name },
-  { span: { at: first.verdict.out, out: second.verdict.at }, kind: "idle", text: "Checking" },
-  { span: second.verdict, kind: "blocked", text: facts.empty.name },
-  { span: { at: second.verdict.out, out: third.verdict.at }, kind: "idle", text: "Checking" },
-  { span: third.verdict, kind: "granted", text: "granted" },
+  { span: { at: ALWAYS, out: KERNEL.bed.verdict.at }, kind: "idle", text: "Waiting for a command" },
+  { span: KERNEL.bed.verdict, kind: "granted", text: "granted" },
+  { span: checking(KERNEL.bed, KERNEL.nozzle), kind: "idle", text: "Checking" },
+  { span: KERNEL.nozzle.verdict, kind: "blocked", text: facts.nozzle.refusal.name },
+  { span: checking(KERNEL.nozzle, KERNEL.pause), kind: "idle", text: "Checking" },
+  { span: KERNEL.pause.verdict, kind: "granted", text: "granted" },
+  { span: checking(KERNEL.pause, KERNEL.cancel), kind: "idle", text: "Checking" },
+  { span: KERNEL.cancel.verdict, kind: "confirm", text: "confirmation required" },
 ];
-const markClass = (word: Mark["word"]) => (word === "ok" ? "status ok" : word === "blocked" ? "status blocked" : "quiet");
+const markClass = (word: Word) => ({ ok: "status ok", blocked: "status blocked", required: "status confirm", "not needed": "quiet" })[word];
+const verdictClass = (kind: string) => ({ blocked: "status blocked mono", granted: "status ok", confirm: "status confirm" })[kind] ?? "quiet";
 ---
 
 <div class="station" data-cam="kernel">
@@ -54,7 +52,7 @@ const markClass = (word: Mark["word"]) => (word === "ok" ? "status ok" : word ==
     {
       verdicts.map((verdict) => (
         <p class:list={["cue", "verdict-box", verdict.kind]} style={shown(verdict.span)}>
-          <span class:list={[verdict.kind === "blocked" ? "status blocked mono" : verdict.kind === "granted" ? "status ok" : "quiet"]}>{verdict.text}</span>
+          <span class={verdictClass(verdict.kind)}>{verdict.text}</span>
         </p>
       ))
     }
@@ -107,5 +105,10 @@ const markClass = (word: Mark["word"]) => (word === "ok" ? "status ok" : word ==
 
   .verdict-box.granted {
     border-color: var(--accent);
+  }
+
+  .verdict-box.confirm {
+    border-color: var(--confirm);
+    background: var(--confirm-bg);
   }
 </style>

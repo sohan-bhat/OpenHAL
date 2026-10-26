@@ -11,7 +11,7 @@ export interface Run {
   out: number;
 }
 
-export type Lane = "send" | "blocked" | "pending" | "done";
+export type Lane = "send" | "look" | "read" | "blocked" | "pending" | "done";
 
 export interface Fill extends Run {
   wire: 1 | 2 | 3 | 4;
@@ -35,7 +35,7 @@ const span = (arrive: number, out = NEVER): Span => ({ at: arrive, out });
 const look = at("watch", -6);
 const bed = at("warm", -4);
 const nozzle = at("hot", -4);
-const second = at("loose", 4);
+const second = from("loose", 2);
 const pause = from("pause", 2);
 const cancel = at("cancel", -4);
 
@@ -43,10 +43,10 @@ const cancel = at("cancel", -4);
 export const CLIENT = {
   asks: [span(look, bed), span(bed, nozzle), span(nozzle, second), span(second, pause), span(pause, cancel), span(cancel)],
   hears: [
-    span(at("watch", 6), bed),
+    span(from("look", 50), bed),
     span(from("heat", 36), nozzle),
     span(at("hot", 32), second),
-    span(second + 2, pause),
+    span(at("loose", 24), pause),
     span(at("pause", 44), cancel),
     span(from("wake", 4)),
   ],
@@ -79,6 +79,8 @@ export const DRIVER = {
   bed: span(granted, granted + 24),
   pause: span(paused, paused + 24),
   sent: [span(granted + 6, granted + 24), span(paused + 4, paused + 24)],
+  moonraker: [span(granted, granted + 24), span(paused, paused + 24)],
+  http: [span(from("look", 20), from("look", 38)), span(from("loose", 20), at("loose", 12))],
 };
 
 export const PRINTER = {
@@ -87,27 +89,35 @@ export const PRINTER = {
   bed: { at: at("heat", 0), d: 22, out: NEVER } as Run,
 };
 
+const swapped = at("loose", -2);
+
 export const CAMERA = {
-  lifting: span(ALWAYS, at("loose", 0)),
-  loose: span(at("loose", 0)),
-  corner: span(at("look", 2), at("loose", -4)),
-  off: span(at("loose", 8)),
+  lifting: span(ALWAYS, swapped),
+  loose: span(swapped),
+  corner: span(at("look", 4), swapped - 2),
+  off: span(at("loose", 6)),
 };
 
 const fill = (wire: Fill["wire"], lane: Lane, arrive: number, d: number, out = NEVER): Fill => ({ wire, lane, at: arrive, d, out });
 const sent = granted + 4;
-const done = (start: number, out: number): Fill[] => [4, 3, 2, 1].map((wire, index) => fill(wire as Fill["wire"], "done", start + index * 4, 4, out));
+const back = (lane: Lane, start: number, out: number): Fill[] => [4, 3, 2, 1].map((wire, index) => fill(wire as Fill["wire"], lane, start + index * 4, 4, out));
+const done = (start: number, out: number): Fill[] => back("done", start, out);
+const read = (start: number, out: number): Fill[] => [1, 2, 3, 4].map((wire, index) => fill(wire as Fill["wire"], "look", start + index * 6, 6, out));
 
 export const FILLS: Fill[] = [
+  ...read(from("look", 2), bed),
+  ...back("read", from("look", 34), bed),
   fill(1, "send", at("warm", 0), 6, nozzle),
   fill(2, "send", at("warm", 6), 6, nozzle),
   fill(3, "send", granted - 6, 6, nozzle),
   fill(4, "send", sent, 6, nozzle),
   ...done(sent + 6, nozzle),
-  fill(1, "send", at("hot", 0), 6, pause),
-  fill(2, "send", at("hot", 6), 6, pause),
-  fill(2, "blocked", KERNEL.nozzle.verdict.at + 2, 6, pause),
-  fill(1, "blocked", KERNEL.nozzle.verdict.at + 8, 6, pause),
+  fill(1, "send", at("hot", 0), 6, second),
+  fill(2, "send", at("hot", 6), 6, second),
+  fill(2, "blocked", KERNEL.nozzle.verdict.at + 2, 6, second),
+  fill(1, "blocked", KERNEL.nozzle.verdict.at + 8, 6, second),
+  ...read(second + 2, pause),
+  ...back("read", at("loose", 8), pause + 8),
   fill(1, "send", pause + 2, 6, cancel),
   fill(2, "send", pause + 8, 6, cancel),
   fill(3, "send", paused - 6, 6, cancel),

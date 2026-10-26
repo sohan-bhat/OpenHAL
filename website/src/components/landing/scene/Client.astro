@@ -11,33 +11,42 @@ interface Props {
 
 const { facts } = Astro.props;
 const shown = (span: Span) => cue(span.at, span.out);
-const answers = [
-  { span: CLIENT.limit, kind: "blocked", name: facts.tooLong.name, text: facts.tooLong.reason, mono: false },
-  { span: CLIENT.interlock, kind: "blocked", name: facts.empty.name, text: facts.empty.reason, mono: false },
-  { span: CLIENT.done, kind: "ok", name: facts.status, text: facts.soil.reading, mono: true },
+const asks = [facts.look, facts.bed, facts.nozzle, facts.look, facts.pause, facts.cancel];
+const image = { kind: "ok", name: "result", text: facts.camera.image, mono: true };
+const hears = [
+  image,
+  { kind: "ok", name: facts.bed.status, text: `${facts.bed.target} ${facts.bed.value}`, mono: true },
+  { kind: "blocked", name: facts.nozzle.refusal.name, text: facts.nozzle.refusal.reason, mono: false },
+  image,
+  { kind: "ok", name: facts.pause.status, text: facts.pause.target, mono: true },
+  { kind: "confirm", name: facts.cancel.status, text: "confirmation required", mono: false },
 ];
 ---
 
 <div class="station" data-cam="client">
   <div class="station-head">
-    <p class="station-name">AI client</p>
+    <p class="station-name">Agent</p>
     <p class="station-note">Claude, Cursor or any MCP client</p>
   </div>
   <div class="exchange">
-    <div class="said cue" style={shown(CLIENT.request)}>
-      <Fragment set:html={arrowSvg("out")} />
-      <div class="said-body">
-        <p class="mono said-method">{facts.method} <span class="said-arg">{facts.action}</span></p>
-        <p class="swap figure">
-          <span class="cue" style={shown(CLIENT.asked)}>{nb(facts.asked)}</span>
-          <span class="cue" style={shown(CLIENT.retried)}>{nb(facts.ran)}</span>
-        </p>
-      </div>
+    <div class="swap">
+      {
+        asks.map((ask, index) => (
+          <div class="said cue" style={shown(CLIENT.asks[index])}>
+            <Fragment set:html={arrowSvg("out")} />
+            <div class="said-body">
+              <p class="mono said-method">{ask.method}</p>
+              <p class="mono said-arg">{ask.target}</p>
+              {ask.value && <p class="figure">{nb(ask.value)}</p>}
+            </div>
+          </div>
+        ))
+      }
     </div>
     <div class="swap">
       {
-        answers.map((answer) => (
-          <div class="said cue" style={shown(answer.span)}>
+        hears.map((answer, index) => (
+          <div class="said cue" style={shown(CLIENT.hears[index])}>
             <Fragment set:html={arrowSvg("in")} />
             <div class="said-body">
               <p class:list={["mono", "status", answer.kind]}>{answer.name}</p>
@@ -80,8 +89,7 @@ const answers = [
   }
 
   .said-arg {
-    color: var(--text);
-    font-weight: 400;
+    overflow-wrap: anywhere;
   }
 
   .said .status {
