@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import sys
 
 import pytest
@@ -48,6 +49,13 @@ def make(text: str = BOARD, board: FirmataBoard | None = None) -> tuple[FirmataD
 
 async def _analog_ready(driver: FirmataDriver) -> bool:
     return len(driver.analog_values) >= 4
+
+
+async def _analog_silent(driver: FirmataDriver) -> bool:
+    """True once no analog report arrives for five sampling periods, so none is still in flight."""
+    driver.analog_values.clear()
+    await asyncio.sleep(0.1)
+    return not driver.analog_values
 
 
 def test_seven_bit_helpers_round_trip() -> None:
@@ -195,7 +203,7 @@ async def test_silent_board_times_out() -> None:
     with pytest.raises(TimeoutError):
         await driver.read("led")
     board.analog_reporting.clear()
-    driver.analog_values.clear()
+    await eventually(lambda: _analog_silent(driver))
     with pytest.raises(TimeoutError, match="No analog report"):
         await driver.read("light")
     await bench.close()
