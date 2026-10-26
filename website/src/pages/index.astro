@@ -48,7 +48,7 @@ const more = [
   <section class="wrap column part" aria-labelledby="works-title">
     <h2 id="works-title">What it works with</h2>
     <p class="summary lede">
-      <span class="status unverified">{tested} {tested === 1 ? "driver" : "drivers"} {statusWord("implemented")}</span>
+      {tested} {tested === 1 ? "driver" : "drivers"} {statusWord("implemented")}
     </p>
     <ul class="families">
       {
@@ -137,7 +137,7 @@ const more = [
     line-height: 1.4;
   }
 
-  .summary .status {
+  .summary {
     font-size: var(--t-body);
   }
 
