@@ -221,7 +221,7 @@ p {
 }
 
 .status.planned::before {
-  border: 1.5px solid var(--text-2);
+  content: none;
 }
 
 .button {
