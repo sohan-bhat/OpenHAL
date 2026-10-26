@@ -39,7 +39,7 @@ test.describe("the landing story", () => {
     expect(close).toMatch(/^translate\(.+\) scale\(.+\)$/);
     expect(close).not.toBe(wide);
     const top = await page.locator(".story-stage").evaluate((stage) => stage.getBoundingClientRect().top);
-    expect(top).toBe(await page.locator(".site-header").evaluate((header) => header.offsetHeight));
+    expect(top).toBe(await page.locator(".site-header").evaluate((header) => (header as HTMLElement).offsetHeight));
   });
 
   test("plays the scenario's three answers on the stage", async ({ page }) => {
