@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from openhal.demo.scenario import example_file
+from openhal.demo.plant import example_file
 from openhal.drivers import registry
 from openhal.drivers.openhal_firmware.simulator import SIMULATORS
 from openhal.hub import discovery
