@@ -3,6 +3,7 @@ export interface SideItem {
   href?: string;
   number?: string;
   depth?: number;
+  summary?: string;
 }
 
 export interface SideGroup {

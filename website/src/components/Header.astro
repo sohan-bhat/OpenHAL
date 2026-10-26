@@ -1,11 +1,9 @@
 ---
-import { getCollection } from "astro:content";
 import { PRODUCT_NAME } from "../config/brand";
 import { NAV } from "../config/site";
 import SearchDialog from "./SearchDialog.astro";
 
-const published = (await getCollection("blog")).some((post) => !post.data.draft);
-const links = NAV.filter((link) => link.label !== "Blog" || published);
+const links = NAV;
 const path = Astro.url.pathname;
 const matchLength = (match: string[]) =>
   Math.max(0, ...match.filter((prefix) => (prefix === "/" ? path === "/" : path.startsWith(prefix))).map((prefix) => prefix.length));
@@ -251,7 +249,7 @@ const current = (match: string[]) => best > 0 && matchLength(match) === best;
     font-weight: 700;
   }
 
-  @media (min-width: 1100px) {
+  @media (min-width: 1180px) {
     .bar {
       gap: var(--s-4);
     }
