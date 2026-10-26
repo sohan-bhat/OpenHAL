@@ -101,7 +101,7 @@ A ConfirmationRequest's `status` is `pending`, `approved`, `rejected`, `expired`
 | `hal/routines/dryRun` | Full | [below](#halroutinesdryrun) |
 | `hal/audit/query` | Full | [below](#halauditquery) |
 
-Every example on this page uses the plant waterer from [examples/plant-waterer/](../../../examples/plant-waterer/), confirmed by sohan on 2026-10-24. It reads `soil_moisture` in `%` and `tank` as `empty` or `ok`. Its action `water` takes a `duration` from 1 s to 30 s, runs at most 3 times per 1 h and needs `tank == ok`. The tank is full and the soil reads 31 %.
+Every example on this page uses the plant waterer from [examples/plant-waterer/](../../../examples/plant-waterer/), confirmed by owner on 2026-10-24. It reads `soil_moisture` in `%` and `tank` as `empty` or `ok`. Its action `water` takes a `duration` from 1 s to 30 s, runs at most 3 times per 1 h and needs `tank == ok`. The tank is full and the soil reads 31 %.
 
 ### hal/devices/list
 
@@ -134,7 +134,7 @@ Describes one Device. Params `{ device }`. Result `{ device: DeviceDescription }
                           "confirm": "none", "suggested": false}},
      "safeState": [{"action": "stop"}], "interlocks": [],
      "watchdog": {"heartbeatS": 1, "onLoss": "safe_state", "maxDuration": []},
-     "confirmed": {"by": "sohan", "at": "2026-10-24"}, "unconfirmed": [], "file": "plant-waterer.hal.yaml"}}}
+     "confirmed": {"by": "owner", "at": "2026-10-24"}, "unconfirmed": [], "file": "plant-waterer.hal.yaml"}}}
 ```
 
 ### hal/read
@@ -182,16 +182,16 @@ The plant waterer has no write channels. Its pump runs only through `water`, so 
               "channel": "pump", "requested": true}}}
 ```
 
-The desk lamp in [spec/examples/ha-desk-lamp.hal.yaml](../../examples/ha-desk-lamp.hal.yaml) has a `brightness` channel from 1 % to 100 %, confirmed by sohan on 2026-10-24. A blocked and a granted `hal/write` on it.
+The desk lamp in [spec/examples/ha-desk-lamp.hal.yaml](../../examples/ha-desk-lamp.hal.yaml) has a `brightness` channel from 1 % to 100 %, confirmed by owner on 2026-10-24. A blocked and a granted `hal/write` on it.
 
 ```json
 → {"jsonrpc": "2.0", "id": 7, "method": "hal/write",
    "params": {"device": "desk-lamp", "channel": "brightness", "value": 150, "unit": "%"}}
 ← {"jsonrpc": "2.0", "id": 7, "error": {"code": -32010,
-     "message": "brightness 150 % exceeds the limit of 100 % (ha-desk-lamp.hal.yaml, confirmed by sohan 2026-10-24)",
+     "message": "brightness 150 % exceeds the limit of 100 % (ha-desk-lamp.hal.yaml, confirmed by owner 2026-10-24)",
      "data": {"name": "LIMIT_EXCEEDED", "kernelCode": "above_max", "device": "desk-lamp", "channel": "brightness",
               "requested": {"value": 150, "unit": "%"}, "limit": {"value": 100, "unit": "%"},
-              "file": "ha-desk-lamp.hal.yaml", "confirmedBy": "sohan", "confirmedAt": "2026-10-24",
+              "file": "ha-desk-lamp.hal.yaml", "confirmedBy": "owner", "confirmedAt": "2026-10-24",
               "kernelMessage": "Blocked. The brightness limit is 100 % (max). Asked for 150 %."}}}
 → {"jsonrpc": "2.0", "id": 8, "method": "hal/write",
    "params": {"device": "desk-lamp", "channel": "brightness", "value": 60, "unit": "%"}}
@@ -210,11 +210,11 @@ Evaluates commands in order as if each allowed one had run. Nothing is sent to a
 ← {"jsonrpc": "2.0", "id": 9, "result": {"decisions": [
      {"status": "blocked", "device": "plant-waterer", "target": "action:water", "value": null, "unit": null,
       "error": {"code": -32010,
-                "message": "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
+                "message": "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)",
                 "data": {"name": "LIMIT_EXCEEDED", "kernelCode": "above_max", "device": "plant-waterer",
                          "action": "water", "argument": "duration", "limit": {"value": 30, "unit": "s"},
                          "requested": {"value": 120, "unit": "s"}, "file": "plant-waterer.hal.yaml",
-                         "confirmedBy": "sohan", "confirmedAt": "2026-10-24"}}},
+                         "confirmedBy": "owner", "confirmedAt": "2026-10-24"}}},
      {"status": "allowed", "device": "plant-waterer", "target": "action:water",
       "value": {"duration": {"value": 20, "unit": "s"}}, "unit": null}]}}
 ```
@@ -243,10 +243,10 @@ Four waterings 10 minutes apart. The fourth is over the limit of 3 runs per 1 h.
       "value": {"duration": {"value": 20, "unit": "s"}}, "unit": null},
      {"status": "blocked", "device": "plant-waterer", "target": "action:water", "value": null, "unit": null,
       "error": {"code": -32011,
-                "message": "water may run at most 3 times per 1 h (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
+                "message": "water may run at most 3 times per 1 h (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)",
                 "data": {"name": "RATE_LIMITED", "kernelCode": "rate_limited", "device": "plant-waterer",
                          "action": "water", "runs": 3, "per": {"value": 1, "unit": "h"},
-                         "file": "plant-waterer.hal.yaml", "confirmedBy": "sohan", "confirmedAt": "2026-10-24"}}}]}}
+                         "file": "plant-waterer.hal.yaml", "confirmedBy": "owner", "confirmedAt": "2026-10-24"}}}]}}
 ```
 
 ### hal/stop
@@ -331,7 +331,7 @@ Rejects a pending request. Params `{ requestId, reason? }`. Only a human Princip
      "command": {"kind": "action", "device": "plant-waterer", "action": "water",
                  "args": {"duration": {"value": 10, "unit": "s"}}},
      "requestedBy": "agent:claude", "createdAt": "2026-10-24T14:05:00Z", "expiresAt": "2026-10-24T14:10:00Z",
-     "decidedBy": "human:sohan"}}
+     "decidedBy": "human:owner"}}
 ```
 
 ### hal/routines/list
@@ -393,7 +393,7 @@ A Core Hub sends `hal/value`. A Control Hub also sends `hal/blocked` and `hal/st
      "error": {"code": -32012, "message": "pump can't run while tank is empty",
                "data": {"name": "INTERLOCK_BLOCKED", "kernelCode": "interlock", "device": "plant-waterer",
                         "action": "water", "interlock": "pump can't run while tank is empty",
-                        "file": "plant-waterer.hal.yaml", "confirmedBy": "sohan", "confirmedAt": "2026-10-24"}}}}
+                        "file": "plant-waterer.hal.yaml", "confirmedBy": "owner", "confirmedAt": "2026-10-24"}}}}
 ← {"jsonrpc": "2.0", "method": "hal/stopped", "params": {"reason": "water on the floor", "by": "agent:claude",
      "devices": [{"device": "plant-waterer", "status": "safe"}]}}
 ← {"jsonrpc": "2.0", "method": "hal/deviceAdded", "params": {"device": {"id": "plant-waterer",

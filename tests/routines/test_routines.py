@@ -223,7 +223,7 @@ async def test_high_hazard_needs_signed_approval(tmp_path: Path) -> None:
         routines.enable(human(), "zap")
         await hub.kernel.read("laser", "door_closed", human())
         assert (await routines.run("zap", by=human())).status == "blocked"
-        approval = hub.kernel.approve_routine(human("sohan"), "laser", "zap", record.sha256)
+        approval = hub.kernel.approve_routine(human("owner"), "laser", "zap", record.sha256)
         runtime = hub.kernel.devices["laser"]
         data = runtime.file.model_dump(by_alias=True, exclude={"extensions"})
         data["approvals"] = [approval.model_dump()]

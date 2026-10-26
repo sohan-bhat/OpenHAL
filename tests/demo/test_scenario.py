@@ -21,7 +21,7 @@ def test_the_reasons_cite_the_limit_and_who_confirmed_it() -> None:
     too_long, empty, watered = scenario.read()["exchanges"]
     assert too_long["error"]["data"]["name"] == "LIMIT_EXCEEDED"
     assert too_long["error"]["message"] == (
-        "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)"
+        "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)"
     )
     assert empty["error"]["data"]["name"] == "INTERLOCK_BLOCKED"
     assert empty["error"]["message"] == "pump can't run while tank is empty"

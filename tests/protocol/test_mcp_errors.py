@@ -13,7 +13,7 @@ from openhal.mcp.tools import Step, Tools
 from tests.kernel.conftest import FakeClock
 from tests.protocol.conftest import websocket_client
 
-REASON = "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)"
+REASON = "fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by owner 2026-10-24)"
 
 
 async def test_mcp_and_protocol_errors_match(base_url: str, tokens: dict[str, str]) -> None:

@@ -20,7 +20,7 @@ The demo starts a hub with the simulated [plant waterer](../examples/plant-water
                 "args": { "duration": { "value": 120, "unit": "s" } } }
 ← error -32010 LIMIT_EXCEEDED
   water duration 120 s exceeds the limit of 30 s
-  (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)
+  (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)
 
 # tank is empty
 → hal/action  { "device": "plant-waterer", "action": "water",

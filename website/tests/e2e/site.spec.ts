@@ -120,7 +120,7 @@ test.describe("playground", () => {
     const latest = page.locator(".exchanges > li").first();
     await expect(latest).toContainText("hal/write");
     await expect(latest).toContainText("error -32010 LIMIT_EXCEEDED");
-    await expect(latest).toContainText("fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)");
+    await expect(latest).toContainText("fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by owner 2026-10-24)");
   });
 
   test("a dry run reports the decision with its registry error", async ({ page }) => {

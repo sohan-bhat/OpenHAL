@@ -97,7 +97,7 @@ Every kernel code maps to exactly one name. A test enforces this.
 
 Pending versus CONFIRMATION_REQUIRED. `hal/write` and `hal/action` answer a command that needs a person with the result `{ status: "pending", requestId, expiresInS }`, and the hub sends `hal/confirmationRequested`. The error CONFIRMATION_REQUIRED is for callers that cannot hold a pending request, such as a routine step or a command inside `hal/planCheck`, and carries `data.requestId` when a request was queued.
 
-Reason messages are formed from `data`, one template per name. LIMIT_EXCEEDED reads `water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)`. The kernel's own message stays available as `data.kernelMessage`. When the limit that blocked the write is one a principal tightened for its session, the reason names that instead and never cites the file's confirmation, for example `brightness 80 % exceeds the session limit of 70 % (tightened by claude)`. Below the minimum reads `water duration 0 s is below the limit of 1 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)`.
+Reason messages are formed from `data`, one template per name. LIMIT_EXCEEDED reads `water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)`. The kernel's own message stays available as `data.kernelMessage`. When the limit that blocked the write is one a principal tightened for its session, the reason names that instead and never cites the file's confirmation, for example `brightness 80 % exceeds the session limit of 70 % (tightened by claude)`. Below the minimum reads `water duration 0 s is below the limit of 1 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)`.
 
 ### Conformance levels
 

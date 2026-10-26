@@ -26,4 +26,4 @@ provenance:
   source: sketch
   from: examples/plant-waterer/plant-waterer.ino
   verification: { status: unverified }
-confirmed: { by: sohan, at: 2026-10-24, sha256: 04505be094b281d522aed6e739d8a8c73012adc37e9c22954eb342e49a510396 }
+confirmed: { by: owner, at: 2026-10-24, sha256: 04505be094b281d522aed6e739d8a8c73012adc37e9c22954eb342e49a510396 }

@@ -3,10 +3,10 @@ recorded_with: uv run openhal demo --full --record docs/demo/e2e.yaml
 protocol_version: '2026-10-24'
 device: plant-waterer
 file: plant-waterer.hal.yaml
-person: human:sohan
+person: human:owner
 agent: agent:claude
 confirmed:
-  by: sohan
+  by: owner
   at: '2026-10-25'
 limits:
   water_duration:
@@ -18,7 +18,7 @@ limits:
       unit: s
 steps:
 - id: discovery
-  actor: human:sohan
+  actor: human:owner
   call: discover
   args:
     drivers:
@@ -33,7 +33,7 @@ steps:
   board_received:
   - HELLO
 - id: writer
-  actor: human:sohan
+  actor: human:owner
   call: start_writer
   args:
     driver: openhal-firmware
@@ -88,7 +88,7 @@ steps:
   - HELLO
   - DESC
 - id: interview
-  actor: human:sohan
+  actor: human:owner
   call: answer
   answers:
   - question: device.hazard
@@ -138,7 +138,7 @@ steps:
   status: ready
   unconfirmed: []
 - id: save
-  actor: human:sohan
+  actor: human:owner
   call: finish
   args:
     save_as: plant-waterer
@@ -146,7 +146,7 @@ steps:
   device: plant-waterer
   writable: true
   confirmed:
-    by: sohan
+    by: owner
     at: '2026-10-25'
   water:
     args:
@@ -214,13 +214,13 @@ steps:
       target: action:water
     problems: []
 - id: person-enables
-  actor: human:sohan
+  actor: human:owner
   call: enable_routine
   args:
     routine_id: water-when-dry
   result:
     enabled: true
-    enabled_by: human:sohan
+    enabled_by: human:owner
 - id: routine-runs
   actor: routine:water-when-dry
   trigger: when plant-waterer.soil_moisture < 40 %
@@ -264,7 +264,7 @@ steps:
     error:
       code: -32010
       name: LIMIT_EXCEEDED
-      message: water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-25)
+      message: water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-25)
       data:
         name: LIMIT_EXCEEDED
         kernelCode: above_max
@@ -279,6 +279,6 @@ steps:
           value: 30
           unit: s
         file: plant-waterer.hal.yaml
-        confirmedBy: sohan
+        confirmedBy: owner
         confirmedAt: '2026-10-25'
   board_received: []

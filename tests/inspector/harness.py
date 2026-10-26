@@ -53,10 +53,10 @@ watchdog:
 hazard: medium
 provenance:
   source: hand-written
-  by: sohan
+  by: owner
   at: 2026-10-24
   verification: { status: tested-reads }
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }
 """
 
 BENCH_LAMP = """\
@@ -149,12 +149,12 @@ async def start(home: Path) -> Harness:
     SIMULATORS[UNKNOWN_PRODUCT] = PlantWatererSimulator(product=UNKNOWN_PRODUCT, speed=SPEED)
     hub = Hub(HubConfig(home=home), in_memory=True)
     await hub.start()
-    hub.routines.create(human("sohan"), "water-when-dry", "yaml", WATER_WHEN_DRY)
+    hub.routines.create(human("owner"), "water-when-dry", "yaml", WATER_WHEN_DRY)
     hub.routines.create(agent("bench-agent", "control_medium"), "cure-cycle", "yaml", CURE_CYCLE)
     hub.last_discovery = DiscoveryResult(unknown=[SIMULATED_BOARD])
     app = create_app(hub)
     mount_board(app, board)
-    human_token, _ = hub.tokens.create("sohan", "human")
+    human_token, _ = hub.tokens.create("owner", "human")
     agent_token, _ = hub.tokens.create("bench-agent", "agent", "control_low")
     medium_token, _ = hub.tokens.create("lab-script", "agent", "control_medium")
     return Harness(hub, app, human_token, agent_token, medium_token, board)

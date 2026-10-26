@@ -9,7 +9,8 @@ types are in `channels.py`.
   types. Units come from SiLA Unit constraints unless the map gives one, and a channel whose unit
   can't be converted from the SiLA unit is refused.
 - Unobservable properties are read on demand. Observable properties are streams. The driver
-  subscribes on connect and keeps the newest value, so a read costs no round trip.
+  subscribes on connect and keeps the newest value, so a read costs no round trip. Until the
+  first value arrives, a read asks the server for the current one.
 - SiLA properties are read only. A channel changes through a command with one parameter and is
   read back from a property. Actions run commands. An observable command waits up to
   `action_wait` and answers `done`, or answers `started` and keeps running on the server.
@@ -362,11 +363,10 @@ class Sila2Driver(Driver):
         read_map = self.reads.get(channel)
         if binding is None or read_map is None:
             raise DriverError(f"{self.device.device_id} has no channel {channel!r}.")
-        if binding.observable:
-            latest = self.latest.get(channel)
-            if latest is None:
-                return Reading(channel, None, unit)
-            raw, at = latest
+        if binding.observable and channel in self.latest:
+            raw, at = self.latest[channel]
+        elif binding.observable:
+            raw, at = await self._call(binding.member.get, what=f"reading {channel}"), time.time()
         else:
             raw, at = await self._call(binding.member.get, what=f"reading {channel}"), time.time()
         try:

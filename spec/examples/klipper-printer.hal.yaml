@@ -31,4 +31,4 @@ watchdog:
   heartbeat: 5 s
   on_loss: hold
 hazard: medium
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }

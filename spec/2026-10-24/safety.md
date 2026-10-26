@@ -151,4 +151,4 @@ The LIMIT_EXCEEDED templates are normative.
 | `above_max` | `{channel} {requested} exceeds the limit of {limit} ({file}, confirmed by {confirmedBy} {confirmedAt})` |
 | `below_min` | `{channel} {requested} is below the limit of {limit} ({file}, confirmed by {confirmedBy} {confirmedAt})` |
 
-For an action argument, `{channel}` is `{action} {argument}`. For the canonical example the reason reads `water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)`.
+For an action argument, `{channel}` is `{action} {argument}`. For the canonical example the reason reads `water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)`.

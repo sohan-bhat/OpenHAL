@@ -33,10 +33,10 @@ actions:
 safe_state:
   - action: stop
 hazard: low
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }
 """
 
-PERSON = human("sohan")
+PERSON = human("owner")
 
 
 def water(seconds: float) -> Action:
@@ -132,7 +132,7 @@ write:
   speed: { unit: "%", min: 0, max: 100, max_change_per_s: 10 }
 safe_state: { speed: 0 }
 hazard: low
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }
 """
 
 

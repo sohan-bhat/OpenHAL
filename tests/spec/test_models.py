@@ -51,7 +51,7 @@ def test_research_fan_is_valid_and_read_only() -> None:
 
 
 def test_confirmation_makes_it_writable() -> None:
-    fan = loads(FAN + "confirmed: { by: sohan, at: 2026-10-24 }\n")
+    fan = loads(FAN + "confirmed: { by: owner, at: 2026-10-24 }\n")
     assert fan.writable
 
 

@@ -37,7 +37,7 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
                 "args": { "duration": { "value": 120, "unit": "s" } } }
 ← error -32010 LIMIT_EXCEEDED
   water duration 120 s exceeds the limit of 30 s
-  (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)
+  (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)
 ```
 
 - **Direction column.** An arrow pointing right for client to hub, left for hub to client, and a dashed left arrow for notifications, in the text color. Atkinson Hyperlegible Mono has no arrow glyphs, so the arrows are drawn as small inline SVGs in the house diagram style (1.5 px stroke, 6 px filled head), never typed characters. Plain text renditions in a font that has arrows, such as the README code block, use `→` and `←`. CLI output uses `->` and `<-`.

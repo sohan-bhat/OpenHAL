@@ -11,4 +11,4 @@ write:
   pad_1_led: { type: bool, map: { note: 36 } }
 safe_state: { pad_1_led: false }
 hazard: low
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }

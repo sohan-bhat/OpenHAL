@@ -92,7 +92,7 @@ async def test_the_demo_scenario_reaches_the_message_log(base_url: str, harness:
         refused = await client.get("/v1/rpc/log", headers=bearer(harness.agent_token))
     assert too_long.value.name == "LIMIT_EXCEEDED"
     assert too_long.value.reason == (
-        "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)"
+        "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)"
     )
     assert empty.value.name == "INTERLOCK_BLOCKED"
     assert empty.value.reason == "pump can't run while tank is empty"
@@ -104,7 +104,7 @@ async def test_the_demo_scenario_reaches_the_message_log(base_url: str, harness:
 
 
 async def test_the_unknown_board_drafts_as_a_waterer_no_library_file_matches(harness: Harness) -> None:
-    session = await harness.hub.writer.start(human("sohan"), unknown_id=SIMULATED_BOARD.id)
+    session = await harness.hub.writer.start(human("owner"), unknown_id=SIMULATED_BOARD.id)
     draft = session.draft or {}
     registered = set(harness.hub.kernel.devices)
     assert SIMULATED_BOARD.identifiers["firmware.product"] == "herb-waterer"

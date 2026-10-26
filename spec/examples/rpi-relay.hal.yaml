@@ -6,4 +6,4 @@ write:
   relay: { type: bool }
 safe_state: { relay: false }
 hazard: low
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }

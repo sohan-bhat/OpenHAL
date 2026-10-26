@@ -201,9 +201,9 @@ device: Desk fan twin
 id: desk-fan-twin
 connect: { mock: twin }
 write:
-  fan_speed: { unit: "%", min: 0, max: 400, confirmed: { by: sohan, at: 2026-10-24 } }
+  fan_speed: { unit: "%", min: 0, max: 400, confirmed: { by: owner, at: 2026-10-24 } }
 hazard: low
-confirmed: { by: sohan, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24 }
 """
     async with rest(tokens.agent) as client:
         session = (await client.post("/v1/writer/sessions", json={"manual_text": "SPEED <n> sets the fan"})).json()
@@ -247,7 +247,7 @@ async def test_rest_write_with_extra_fields_is_refused(hub: Hub, rest: Rest, tok
     async with rest(tokens.agent) as client:
         for body in (
             {**OK30, "approved": True},
-            {**OK30, "principal": {"kind": "human", "name": "sohan"}},
+            {**OK30, "principal": {"kind": "human", "name": "owner"}},
             {**OK30, "request": {"status": "approved"}},
         ):
             response = await client.post("/v1/write", json=body)

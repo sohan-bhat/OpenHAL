@@ -51,7 +51,7 @@ test.beforeAll(async () => {
   const agent = await AgentClient.connect("bench-agent", hubState().agentToken);
   const tooLong = await agent.call("hal/action", water(120));
   expect(tooLong.error?.message).toBe(
-    "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by sohan 2026-10-24)",
+    "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)",
   );
   await tank("drain");
   await tankReads("empty");
