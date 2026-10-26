@@ -93,7 +93,7 @@ Cool neutrals with one accent. Status colors only for meaning.
 | blocked, stopped | `#B42318` | `#F07068` | circle with bar, "blocked" or "stopped" |
 | unverified | `#636A75` | `#8B93A0` | dashed outline, "unverified" |
 
-Every pair passes WCAG AA for its text size. Status never appears as color alone.
+Every pair passes WCAG AA for its text size. Status never appears as color alone. These four shapes are the only status shapes. Neutral states (disabled, started, running, connecting, no confirmation) show their word without a shape. Dashed outlines mean unverified or an agent and nothing else. Simulated devices, demo data, data blocks and empty states sit on a surface fill, and disabled controls are flat surface gray.
 
 ### Syntax theme
 
@@ -108,7 +108,7 @@ Two faces from one family.
 | Text and headings | Atkinson Hyperlegible Next (OFL) | Designed by the Braille Institute for legibility. It tells 0 from O and 1 from l and I, which matters on pages full of identifiers, units and codes. It has character without being decorative, and it is not Inter or a system stack |
 | Code, messages, method names, values | Atkinson Hyperlegible Mono (OFL) | The same family's monospace, with the same distinct letterforms, so prose and protocol read as one voice |
 
-Scale, mobile then desktop. 13/13 legend, 15/15 secondary, 16/17 body with line height 1.65, 20/22 h3, 26/30 h2, 34/44 h1. Reading column at most 72 characters. Headings are sentence case. Short labels may use small caps through `font-variant-caps: all-small-caps`.
+Scale, mobile then desktop. 13/13 legend, 15/15 secondary, 16/17 body with line height 1.65, 20/22 h3, 26/30 h2, 34/44 h1. Reading column at most 72 characters. Headings and labels are sentence case. Table headers, form labels and captions carry meaning and stay, set in sentence case at the legend size or larger. Decorative eyebrows, corner tags and micro labels are not used.
 
 ## Layout
 
@@ -141,7 +141,10 @@ The dashboard is the OpenHAL Inspector, a protocol inspector.
 - **Main pane.** The selected device's channels, limits and live values.
 - **Bottom pane.** The live message log, every request, response, notification and error as formatted JSON-RPC, filterable.
 - **Stop control.** Large and always visible in the header, in the blocked red with its word, never styled like other buttons.
-- **Agent requests and human confirmations look different.** Agent entries carry the client's name and a dashed rule. Human decisions sit on a solid surface.
+- **Agent requests and human confirmations look different.** Agent entries carry the client's name and a dashed rule, which stays dashed whatever the outcome, red when blocked. Human decisions sit on a solid surface.
+- **Commands say what a click does.** A command that needs a person's confirmation reads "Confirm and run X" or "Confirm and set X". A read-only device shows its limits without live controls. A device's own safe-state action is never a primary button, since STOP in the header covers every device.
+- **Where STOP can't be sent** (an unpaired browser, a hub that is offline), a panel with a 2 px blocked outline and a red title takes STOP's place and says why, and what still keeps devices safe.
+- **Kernel reasons outside the trace** read as prose, with identifiers and conditions set in mono.
 
 ## Motion
 
@@ -243,7 +246,7 @@ Components and icons
 - Lucide or Heroicons used as-is everywhere as decoration. Icons only where they add meaning, drawn consistently.
 - Emoji as icons or in headings.
 - Toasts for things that need attention. Blocks and stops get persistent, visible states.
-- Modals for anything except confirmations and destructive actions.
+- Modals for anything except confirmations, destructive actions and the site search dialog (⌘K or Ctrl K), which the owner asked for.
 
 Dashboard
 - Donut or pie charts for single values. Decorative gauges that can't be read precisely.
