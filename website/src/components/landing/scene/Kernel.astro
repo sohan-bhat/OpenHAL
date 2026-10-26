@@ -1,0 +1,111 @@
+---
+import type { StoryFacts } from "../../../lib/story/facts";
+import { ALWAYS, cue } from "../../../lib/story/script";
+import { KERNEL, type Span } from "../../../lib/story/timeline";
+
+interface Props {
+  facts: StoryFacts;
+}
+
+const { facts } = Astro.props;
+const shown = (span: Span) => cue(span.at, span.out);
+const { first, second, third } = KERNEL;
+type Mark = { span: Span; word: "ok" | "blocked" | "not needed" };
+const checks: Array<{ name: string; marks: Mark[] }> = [
+  { name: "Units", marks: [{ span: first.units, word: "ok" }, { span: second.units, word: "ok" }, { span: third.units, word: "ok" }] },
+  { name: "Range", marks: [{ span: first.range, word: "blocked" }, { span: second.range, word: "ok" }, { span: third.range, word: "ok" }] },
+  { name: "Rate", marks: [{ span: second.rate, word: "ok" }, { span: third.rate, word: "ok" }] },
+  { name: "Interlocks", marks: [{ span: second.interlocks, word: "blocked" }, { span: third.interlocks, word: "ok" }] },
+  { name: "Confirmation", marks: [{ span: third.confirmation, word: "not needed" }] },
+];
+const verdicts = [
+  { span: { at: ALWAYS, out: first.verdict.at }, kind: "idle", text: "Waiting for a command" },
+  { span: first.verdict, kind: "blocked", text: facts.tooLong.name },
+  { span: { at: first.verdict.out, out: second.verdict.at }, kind: "idle", text: "Checking" },
+  { span: second.verdict, kind: "blocked", text: facts.empty.name },
+  { span: { at: second.verdict.out, out: third.verdict.at }, kind: "idle", text: "Checking" },
+  { span: third.verdict, kind: "granted", text: "granted" },
+];
+const markClass = (word: Mark["word"]) => (word === "ok" ? "status ok" : word === "blocked" ? "status blocked" : "quiet");
+---
+
+<div class="station" data-cam="kernel">
+  <div class="station-head">
+    <p class="station-name">Safety kernel</p>
+    <p class="station-note">Checks every command, in order</p>
+  </div>
+  <ol class="checks">
+    {
+      checks.map((check) => (
+        <li>
+          <span>{check.name}</span>
+          <span class="swap check-mark">
+            {check.marks.map((mark) => (
+              <span class:list={["cue", markClass(mark.word)]} style={shown(mark.span)}>
+                {mark.word}
+              </span>
+            ))}
+          </span>
+        </li>
+      ))
+    }
+  </ol>
+  <div class="swap verdict">
+    {
+      verdicts.map((verdict) => (
+        <p class:list={["cue", "verdict-box", verdict.kind]} style={shown(verdict.span)}>
+          <span class:list={[verdict.kind === "blocked" ? "status blocked mono" : verdict.kind === "granted" ? "status ok" : "quiet"]}>{verdict.text}</span>
+        </p>
+      ))
+    }
+  </div>
+</div>
+
+<style>
+  .checks {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+  }
+
+  .checks li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--s-3);
+    min-height: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .checks li:last-child {
+    border-bottom: 0;
+  }
+
+  .check-mark {
+    justify-items: end;
+  }
+
+  .quiet {
+    color: var(--text-2);
+  }
+
+  .verdict-box {
+    display: flex;
+    align-items: center;
+    min-height: 46px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border: 1.5px solid var(--node);
+    border-radius: 4px;
+  }
+
+  .verdict-box.blocked {
+    border-color: var(--blocked);
+    background: color-mix(in srgb, var(--blocked) 8%, var(--bg));
+  }
+
+  .verdict-box.granted {
+    border-color: var(--accent);
+  }
+</style>

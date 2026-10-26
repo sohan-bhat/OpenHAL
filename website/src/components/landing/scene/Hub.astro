@@ -1,0 +1,83 @@
+---
+import type { StoryFacts } from "../../../lib/story/facts";
+import { nb } from "../../../lib/story/facts";
+import { cue } from "../../../lib/story/script";
+import { HUB, type Span } from "../../../lib/story/timeline";
+
+interface Props {
+  facts: StoryFacts;
+}
+
+const { facts } = Astro.props;
+const shown = (span: Span) => cue(span.at, span.out);
+const often = facts.window === "1 h" ? "an hour" : `per ${facts.window}`;
+const rules = [
+  { text: `Water for ${facts.min.replace(/ s$/, "")} to ${facts.max}`, span: HUB.duration },
+  { text: `At most ${facts.runs} runs ${often}`, span: null },
+  { text: `Never while the tank is ${facts.tank.low}`, span: HUB.tank },
+];
+---
+
+<div class="station" data-cam="hub">
+  <div class="station-head">
+    <p class="station-name">OpenHAL hub</p>
+    <p class="station-note">Runs on your computer or a Pi</p>
+  </div>
+  <div class="file">
+    <p class="mono file-name">{facts.file}</p>
+    <ul class="rules">
+      {
+        rules.map((rule) => (
+          <li class="rule">
+            {rule.span && <span class="rule-mark cue" style={shown(rule.span)} />}
+            <span class="rule-text">{nb(rule.text)}</span>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="file-confirmed">{facts.confirmed}</p>
+  </div>
+</div>
+
+<style>
+  .file {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    background: var(--bg);
+    border: 1px solid var(--node);
+    border-radius: 4px;
+  }
+
+  .file-name,
+  .file-confirmed {
+    color: var(--text-2);
+    font-size: var(--t-legend);
+  }
+
+  .rules {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+  }
+
+  .rule {
+    position: relative;
+    margin-inline: -8px;
+    padding: 4px 8px;
+  }
+
+  .rule-mark {
+    position: absolute;
+    inset: 0;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+
+  .rule-text {
+    position: relative;
+  }
+</style>
