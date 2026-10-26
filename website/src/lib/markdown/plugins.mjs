@@ -3,7 +3,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import GithubSlugger from "github-slugger";
 import { SKIP, visit } from "unist-util-visit";
 import { indentOf, languageOf, splitLines, tokenize } from "../highlight.mjs";
-import { REPO_ROOT, glossaryHref, termAnchor } from "../spec-meta.mjs";
+import { REPO_ROOT, glossaryHref, numberPages, readVersions, specFiles, termAnchor } from "../spec-meta.mjs";
 import { fromHtml } from "hast-util-from-html";
 import { scenarioTraceHtml } from "../scenario-data.mjs";
 import { linkFor } from "./routes.mjs";
@@ -145,6 +145,46 @@ export function rehypeCodeBlocks() {
   };
 }
 
+let registryCache = null;
+
+export function errorRegistry(root = REPO_ROOT) {
+  if (registryCache) return registryCache;
+  const { latest } = readVersions(root);
+  const names = new Map();
+  const blocked = new Set();
+  if (latest) {
+    const schema = join(root, "spec", latest, "schema.json");
+    if (existsSync(schema)) for (const entry of JSON.parse(readFileSync(schema, "utf8")).errors ?? []) names.set(entry.name, entry.code);
+    const safety = join(root, "spec", latest, "safety.md");
+    if (existsSync(safety)) {
+      for (const row of readFileSync(safety, "utf8").matchAll(/^\|\s*\d+\s*\|(.*)\|\s*$/gm)) {
+        const last = row[1].split("|").pop() ?? "";
+        for (const name of last.split(",").map((part) => part.trim())) if (names.has(name)) blocked.add(name);
+      }
+    }
+  }
+  registryCache = { names, blocked, codes: new Set(names.values()) };
+  return registryCache;
+}
+
+function registryNameNode(name, registry) {
+  const tone = name === "CONFIRMATION_REQUIRED" ? ["status", "confirm"] : registry.blocked.has(name) ? ["status", "blocked"] : [];
+  return el("span", { className: [...tone, "registry-name"] }, [{ type: "text", value: name }]);
+}
+
+function markRegistryCell(cell, header) {
+  const registry = errorRegistry();
+  const text = hastText(cell).trim();
+  if (!text) return;
+  if (/^Code$/i.test(header) && /^-\d+$/.test(text) && registry.codes.has(Number(text))) {
+    cell.children = [el("span", { className: ["registry-code"] }, [{ type: "text", value: text }])];
+    return;
+  }
+  const parts = text.split(/,\s*/);
+  if (!parts.every((part) => registry.names.has(part))) return;
+  cell.children = parts.flatMap((part, index) => [...(index ? [{ type: "text", value: ", " }] : []), registryNameNode(part, registry)]);
+}
+
 export function rehypeTables() {
   return (tree) => {
     visit(tree, "element", (node, index, parent) => {
@@ -160,6 +200,7 @@ export function rehypeTables() {
           if (cell.type !== "element" || cell.tagName !== "td") continue;
           if (column === 0 && headers[0] === "Term") row.properties = { ...row.properties, id: termAnchor(hastText(cell)) };
           cell.properties = { ...cell.properties, dataLabel: headers[column] ?? "" };
+          markRegistryCell(cell, headers[column] ?? "");
           cell.children = [el("span", { className: ["cell"] }, cell.children)];
           column += 1;
         }
@@ -205,6 +246,97 @@ export function rehypeTypography() {
           last = match.index + match[0].length;
         }
         if (last < value.length) next.push({ type: "text", value: value.slice(last) });
+      }
+      node.children = next;
+    };
+    walk(tree);
+  };
+}
+
+function repoPathOf(file) {
+  return file.path ? relative(REPO_ROOT, resolve(file.path)).split("\\").join("/") : "";
+}
+
+export function specSectionNumber(repoPath, root = REPO_ROOT) {
+  const match = /^spec\/(\d{4}-\d{2}-\d{2})\/(.+\.md)$/.exec(repoPath);
+  if (!match) return null;
+  return numberPages(specFiles(match[1], root)).get(match[2])?.number ?? null;
+}
+
+export function rehypeSpecSections() {
+  return (tree, file) => {
+    const number = specSectionNumber(repoPathOf(file));
+    if (!number) return;
+    let h2 = 0;
+    let h3 = 0;
+    for (const node of tree.children) {
+      if (node.type !== "element" || !/^h[23]$/.test(node.tagName)) continue;
+      if (node.tagName === "h2") {
+        h2 += 1;
+        h3 = 0;
+      } else {
+        h3 += 1;
+      }
+      const label = node.tagName === "h2" ? `${number}.${h2}` : `${number}.${h2}.${h3}`;
+      node.children = [el("span", { className: ["secno"] }, [{ type: "text", value: label }]), { type: "text", value: " " }, ...node.children];
+    }
+  };
+}
+
+let glossaryCache = null;
+
+const termSource = (term) => term.replace(/ /g, "\\s+");
+
+export function glossaryTerms(root = REPO_ROOT) {
+  if (glossaryCache) return glossaryCache;
+  const path = join(root, "spec", "GLOSSARY.md");
+  const terms = existsSync(path)
+    ? [...readFileSync(path, "utf8").matchAll(/^\|\s*([A-Z][A-Za-z ]+?)\s*\|/gm)].map((row) => row[1]).filter((term) => term !== "Term")
+    : [];
+  const linked = terms.map((term) => ({ term, href: glossaryHref(term, root), exact: new RegExp(`^${termSource(term)}$`) })).filter((item) => item.href);
+  linked.sort((a, b) => b.term.length - a.term.length);
+  const pattern = linked.length ? new RegExp(`\\b(${linked.map((item) => termSource(item.term)).join("|")})(?:s|'s)?\\b`, "g") : null;
+  glossaryCache = { linked, pattern };
+  return glossaryCache;
+}
+
+const NO_TERMS = new Set(["a", "code", "pre", "h1", "h2", "h3", "h4", "h5", "h6", "th", "svg", "script", "style", "figure"]);
+
+export function rehypeGlossaryLinks() {
+  return (tree, file) => {
+    const path = repoPathOf(file);
+    if (!path.startsWith("spec/") || /GLOSSARY\.md$/i.test(path)) return;
+    const { linked, pattern } = glossaryTerms();
+    if (!pattern) return;
+    const done = new Set();
+    visit(tree, "element", (node) => {
+      if (node.tagName !== "a") return;
+      const href = String(node.properties?.href ?? "");
+      for (const item of linked) if (href === item.href) done.add(item.term);
+    });
+    const skip = (node) =>
+      node.type === "element" &&
+      (NO_TERMS.has(node.tagName) || node.properties?.dataLabel === "Term" || classList(node).some((name) => name === "trace" || name === "registry-name"));
+    const walk = (node) => {
+      if (skip(node) || !node.children) return;
+      const next = [];
+      for (const child of node.children) {
+        if (child.type !== "text") {
+          walk(child);
+          next.push(child);
+          continue;
+        }
+        let last = 0;
+        for (const match of child.value.matchAll(pattern)) {
+          const item = linked.find((entry) => entry.exact.test(match[1]));
+          if (!item || done.has(item.term)) continue;
+          done.add(item.term);
+          if (match.index > last) next.push({ type: "text", value: child.value.slice(last, match.index) });
+          next.push(el("a", { href: item.href, className: ["term"] }, [{ type: "text", value: match[0] }]));
+          last = match.index + match[0].length;
+        }
+        if (last === 0) next.push(child);
+        else if (last < child.value.length) next.push({ type: "text", value: child.value.slice(last) });
       }
       node.children = next;
     };

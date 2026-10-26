@@ -224,6 +224,17 @@ p {
   content: none;
 }
 
+.registry-code,
+.registry-name {
+  font-family: var(--font-mono);
+  font-size: 0.94em;
+}
+
+.registry-name {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .button {
   display: inline-flex;
   align-items: center;

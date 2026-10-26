@@ -44,6 +44,7 @@ const Content = rendered?.Content;
       sidebar={sidebar}
       section="Specification"
       canonical={page.href}
+      number={page.number}
     >
       <VersionSwitcher slot="sidebar-top" current={page.version} slug={page.slug} available={available} />
       <VersionSwitcher slot="sidebar-top-mobile" current={page.version} slug={page.slug} available={available} />
