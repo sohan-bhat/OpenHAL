@@ -1,6 +1,7 @@
 ---
 import { PRODUCT_NAME } from "../config/brand";
 import { NAV } from "../config/site";
+import { wordmarkWidth } from "../lib/brand-mark";
 import SearchDialog from "./SearchDialog.astro";
 
 const links = NAV;
@@ -16,7 +17,7 @@ const current = (match: string[]) => best > 0 && matchLength(match) === best;
     <a class="brand" href="/" aria-label={`${PRODUCT_NAME} overview`}>
       <picture class="wordmark">
         <source media="(prefers-color-scheme: dark)" srcset="/brand/wordmark-dark.svg" />
-        <img src="/brand/wordmark-light.svg" alt={PRODUCT_NAME} width="107" height="24" />
+        <img src="/brand/wordmark-light.svg" alt={PRODUCT_NAME} width={wordmarkWidth(24)} height="24" />
       </picture>
     </a>
     <button type="button" class="search-field" data-search-open aria-haspopup="dialog" aria-controls="site-search" aria-keyshortcuts="Meta+K Control+K">
