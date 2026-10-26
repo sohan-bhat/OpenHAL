@@ -3178,7 +3178,7 @@
       }
     },
     {
-      "id": "scenario-too-long",
+      "id": "waterer-scenario-too-long",
       "steps": [],
       "result": {
         "status": "blocked",
@@ -3217,7 +3217,7 @@
       }
     },
     {
-      "id": "scenario-tank-empty",
+      "id": "waterer-scenario-tank-empty",
       "steps": [],
       "result": {
         "status": "blocked",
@@ -3248,7 +3248,7 @@
       }
     },
     {
-      "id": "scenario-watered",
+      "id": "waterer-scenario-watered",
       "steps": [],
       "result": {
         "status": "done",
@@ -3267,10 +3267,295 @@
           "unit": null
         }
       }
+    },
+    {
+      "id": "scenario-warm-bed",
+      "steps": [],
+      "result": {
+        "status": "done",
+        "code": null,
+        "message": "Done. bed_target is now 70 degC.",
+        "wire": {
+          "status": "done",
+          "device": "printer",
+          "target": "write:bed_target",
+          "value": 70.0,
+          "unit": "degC"
+        }
+      }
+    },
+    {
+      "id": "scenario-too-hot",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "above_max",
+        "message": "Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.",
+        "wire": {
+          "status": "blocked",
+          "device": "printer",
+          "target": "write:extruder_target",
+          "value": null,
+          "unit": "degC",
+          "error": {
+            "code": -32010,
+            "message": "extruder_target 300 degC exceeds the limit of 260 degC (printer.hal.yaml, confirmed by owner 2026-10-24)",
+            "data": {
+              "name": "LIMIT_EXCEEDED",
+              "kernelCode": "above_max",
+              "kernelMessage": "Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.",
+              "device": "printer",
+              "channel": "extruder_target",
+              "limit": {
+                "value": 260,
+                "unit": "degC"
+              },
+              "requested": {
+                "value": 300,
+                "unit": "degC"
+              },
+              "file": "printer.hal.yaml",
+              "confirmedBy": "owner",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "scenario-pause",
+      "steps": [],
+      "result": {
+        "status": "done",
+        "code": null,
+        "message": "Done. pause ran.",
+        "wire": {
+          "status": "done",
+          "device": "printer",
+          "target": "action:pause",
+          "value": {},
+          "unit": null
+        }
+      }
+    },
+    {
+      "id": "scenario-cancel",
+      "steps": [],
+      "result": {
+        "status": "pending",
+        "code": "needs_confirmation",
+        "message": "Waiting for a human to approve action:cancel on printer.",
+        "wire": {
+          "status": "pending",
+          "device": "printer",
+          "target": "action:cancel",
+          "value": {},
+          "unit": null,
+          "requestId": "REQUEST_ID"
+        }
+      }
+    },
+    {
+      "id": "printer-cancel-confirmed",
+      "steps": [
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Waiting for a human to approve action:cancel on printer.",
+          "wire": {
+            "status": "pending",
+            "device": "printer",
+            "target": "action:cancel",
+            "value": {},
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
+        },
+        {
+          "status": "done",
+          "code": null,
+          "message": "Done. cancel ran."
+        }
+      ],
+      "result": {
+        "status": "blocked",
+        "code": "interlock",
+        "message": "Blocked. resume needs state == paused, which doesn't hold right now.",
+        "wire": {
+          "status": "blocked",
+          "device": "printer",
+          "target": "action:resume",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32012,
+            "message": "resume on printer is held back by an interlock or requirement that doesn't hold (printer.hal.yaml, confirmed by owner 2026-10-24)",
+            "data": {
+              "name": "INTERLOCK_BLOCKED",
+              "kernelCode": "interlock",
+              "kernelMessage": "Blocked. resume needs state == paused, which doesn't hold right now.",
+              "device": "printer",
+              "action": "resume",
+              "file": "printer.hal.yaml",
+              "confirmedBy": "owner",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "printer-pause-twice",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "interlock",
+        "message": "Blocked. pause needs state == printing, which doesn't hold right now.",
+        "wire": {
+          "status": "blocked",
+          "device": "printer",
+          "target": "action:pause",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32012,
+            "message": "pause on printer is held back by an interlock or requirement that doesn't hold (printer.hal.yaml, confirmed by owner 2026-10-24)",
+            "data": {
+              "name": "INTERLOCK_BLOCKED",
+              "kernelCode": "interlock",
+              "kernelMessage": "Blocked. pause needs state == printing, which doesn't hold right now.",
+              "device": "printer",
+              "action": "pause",
+              "file": "printer.hal.yaml",
+              "confirmedBy": "owner",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "printer-nozzle-at-limit",
+      "steps": [],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "printer",
+          "target": "write:extruder_target",
+          "value": 260.0,
+          "unit": "degC"
+        }
+      }
+    },
+    {
+      "id": "printer-bed-too-fast",
+      "steps": [
+        {
+          "status": "blocked",
+          "code": "rate_limited",
+          "message": "Blocked. bed_target may change by 20 degC per second. Right now it can go from 0 degC to 0 degC. Asked for 60 degC, which is possible in 3.0 s, or use small steps.",
+          "wire": {
+            "status": "blocked",
+            "device": "printer",
+            "target": "write:bed_target",
+            "value": null,
+            "unit": "degC",
+            "error": {
+              "code": -32011,
+              "message": "bed_target 60 degC changes faster than 20 degC/s allows right now (printer.hal.yaml, confirmed by owner 2026-10-24)",
+              "data": {
+                "name": "RATE_LIMITED",
+                "kernelCode": "rate_limited",
+                "kernelMessage": "Blocked. bed_target may change by 20 degC per second. Right now it can go from 0 degC to 0 degC. Asked for 60 degC, which is possible in 3.0 s, or use small steps.",
+                "device": "printer",
+                "channel": "bed_target",
+                "limit": {
+                  "value": 20,
+                  "unit": "degC/s"
+                },
+                "requested": {
+                  "value": 60,
+                  "unit": "degC"
+                },
+                "file": "printer.hal.yaml",
+                "confirmedBy": "owner",
+                "confirmedAt": "2026-10-24"
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "status": "blocked",
+        "code": "rate_limited",
+        "message": "Blocked. bed_target may change by 20 degC per second. Right now it can go from 0 degC to 0 degC. Asked for 110 degC, which is possible in 5.5 s, or use small steps.",
+        "wire": {
+          "status": "blocked",
+          "device": "printer",
+          "target": "write:bed_target",
+          "value": null,
+          "unit": "degC",
+          "error": {
+            "code": -32011,
+            "message": "bed_target 110 degC changes faster than 20 degC/s allows right now (printer.hal.yaml, confirmed by owner 2026-10-24)",
+            "data": {
+              "name": "RATE_LIMITED",
+              "kernelCode": "rate_limited",
+              "kernelMessage": "Blocked. bed_target may change by 20 degC per second. Right now it can go from 0 degC to 0 degC. Asked for 110 degC, which is possible in 5.5 s, or use small steps.",
+              "device": "printer",
+              "channel": "bed_target",
+              "limit": {
+                "value": 20,
+                "unit": "degC/s"
+              },
+              "requested": {
+                "value": 110,
+                "unit": "degC"
+              },
+              "file": "printer.hal.yaml",
+              "confirmedBy": "owner",
+              "confirmedAt": "2026-10-24"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "printer-cam-read-only",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "unknown_target",
+        "message": "Blocked. printer-cam has no write channel 'frame'. Write channels are none.",
+        "wire": {
+          "status": "blocked",
+          "device": "printer-cam",
+          "target": "write:frame",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32004,
+            "message": "printer-cam has no channel frame",
+            "data": {
+              "name": "UNKNOWN_TARGET",
+              "kernelCode": "unknown_target",
+              "kernelMessage": "Blocked. printer-cam has no write channel 'frame'. Write channels are none.",
+              "device": "printer-cam",
+              "channel": "frame",
+              "requested": "on"
+            }
+          }
+        }
+      }
     }
   ],
   "hashes": {
     "examples/plant-waterer/mock/plant-waterer.hal.yaml": "04505be094b281d522aed6e739d8a8c73012adc37e9c22954eb342e49a510396",
+    "examples/print-babysitter/printer-cam.hal.yaml": "d4ab95e8d2054a86bfdab10ca8fad67f381c45b995e6cecb4c970eb9c6fc2dae",
+    "examples/print-babysitter/printer.hal.yaml": "b7f25a100fe6a820e1ec45956bbf6a7cc079f3defdf620801821ec329f6b000a",
     "spec/examples/alpaca-mount.hal.yaml": "988958a79223776ba4d7331e8daec63934e2d5771844d5bfde8b19731365d530",
     "spec/examples/ble-environment-sensor.hal.yaml": "007d1668a8bf7c66ea3c29dddedc51ea4a65b0350b8754f26e892f6e3c504490",
     "spec/examples/desk-fan-confirmed.hal.yaml": "47cbb6a66eb90fdce97c0a84e1e14e5e2d626541f084101913dd8c8d485c6863",
@@ -3292,26 +3577,37 @@
     "inline:waterer": "d5491ef1e63f99b656de01fece078affd4644e65df0356f690f4c69a07488ccb"
   },
   "scenario": {
-    "outcome": "You'll see the hub refuse a 120 s watering, hold the pump while the tank is empty, then water for 20 s as soil moisture rises from 31 % to 46 %.",
+    "outcome": "You'll see the agent warm the bed from 60 °C to 70 °C, have a 300 °C nozzle refused at the 260 °C limit, pause the print when it comes loose and wait for a person to approve the cancel.",
     "lines": [
-      "→ hal/action  { \"device\": \"plant-waterer\", \"action\": \"water\",",
-      "                \"args\": { \"duration\": { \"value\": 120, \"unit\": \"s\" } } }",
-      "← error -32010 LIMIT_EXCEEDED",
-      "  water duration 120 s exceeds the limit of 30 s",
-      "  (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)",
+      "# the agent checks the first layer",
+      "→ hal/read    { \"device\": \"printer-cam\", \"channel\": \"frame\" }",
+      "← result      { \"value\": { \"mimeType\": \"image/jpeg\", \"bytes\": 19409,",
+      "                \"width\": 640, \"height\": 480, \"data\": \"…\" } }",
       "",
-      "# tank is empty",
-      "→ hal/action  { \"device\": \"plant-waterer\", \"action\": \"water\",",
-      "                \"args\": { \"duration\": { \"value\": 20, \"unit\": \"s\" } } }",
-      "← error -32012 INTERLOCK_BLOCKED",
-      "  pump can't run while tank is empty",
-      "",
-      "# tank refilled",
-      "→ hal/action  { \"device\": \"plant-waterer\", \"action\": \"water\",",
-      "                \"args\": { \"duration\": { \"value\": 20, \"unit\": \"s\" } } }",
+      "# a corner of the first layer is lifting",
+      "→ hal/write   { \"device\": \"printer\", \"channel\": \"bed_target\",",
+      "                \"value\": 70, \"unit\": \"degC\" }",
       "← result      { \"status\": \"done\" }",
-      "← hal/value   { \"device\": \"plant-waterer\", \"channel\": \"soil_moisture\",",
-      "                \"value\": 46, \"unit\": \"%\" }"
+      "",
+      "→ hal/write   { \"device\": \"printer\", \"channel\": \"extruder_target\",",
+      "                \"value\": 300, \"unit\": \"degC\" }",
+      "← error -32010 LIMIT_EXCEEDED",
+      "  extruder_target 300 degC exceeds the limit of 260 degC",
+      "  (printer.hal.yaml, confirmed by owner 2026-10-24)",
+      "",
+      "# later",
+      "→ hal/read    { \"device\": \"printer-cam\", \"channel\": \"frame\" }",
+      "← result      { \"value\": { \"mimeType\": \"image/jpeg\", \"bytes\": 23567,",
+      "                \"width\": 640, \"height\": 480, \"data\": \"…\" } }",
+      "",
+      "# the print has come loose",
+      "→ hal/action  { \"device\": \"printer\", \"action\": \"pause\" }",
+      "← result      { \"status\": \"done\" }",
+      "",
+      "# cancelling can't be undone",
+      "→ hal/action  { \"device\": \"printer\", \"action\": \"cancel\" }",
+      "← result      { \"status\": \"pending\", \"requestId\": \"REQUEST_ID\",",
+      "                \"expiresInS\": 300 }"
     ]
   }
 }

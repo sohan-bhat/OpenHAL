@@ -631,8 +631,8 @@
             },
             {
               "name": "value",
-              "type": "Any",
-              "doc": ""
+              "type": "Image | bool | int | float | str | dict[str, Any] | None",
+              "doc": "A number in `unit`, a bool, text, or an Image for an image channel."
             },
             {
               "name": "unit",
@@ -652,7 +652,7 @@
             {
               "name": "bytes",
               "type": "int | None",
-              "doc": "Length of a binary value, which is not returned inline."
+              "doc": "Length of a binary value. An image also comes in `value`."
             },
             {
               "name": "error",
