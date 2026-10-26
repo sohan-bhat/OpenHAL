@@ -42,7 +42,7 @@ devices:
     resume:
       confirm: none
     cancel:
-      confirm: confirm
+      confirm: confirm-each-time
 - id: printer-cam
   name: Printer camera
   driver: http
