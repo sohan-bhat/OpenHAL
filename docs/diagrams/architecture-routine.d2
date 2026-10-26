@@ -1,0 +1,27 @@
+vars: @theme-light
+...@house
+
+shape: sequence_diagram
+
+t: "Trigger" {class: actor}
+r: "Routine engine" {class: actor}
+k: "Safety kernel" {class: actor}
+d: "Driver" {class: actor}
+
+t -> r: "fire" {class: msg}
+r -> r: "enabled? approved\nfor high hazard?" {class: msg}
+r -> k: "each read and command\nas routine:<name>" {class: msg}
+k -> k: "same checks as\nany client" {class: msg}
+
+blocked: "blocked" {
+  class: group
+  k -> r: "Blocked(reason)" {class: blocked}
+  r -> r: "stop the run,\napply on_block" {class: msg}
+}
+
+allowed: "allowed" {
+  class: group
+  k -> d: "command with\na Grant" {class: granted}
+}
+
+r -> r: "record the run" {class: msg}

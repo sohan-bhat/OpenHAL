@@ -1,0 +1,32 @@
+vars: @theme-light
+...@house
+
+direction: down
+
+(** -> **)[*].class: msg
+
+start: "openhal discover" {class: box; style.font: mono}
+
+sources: "Scans" {
+  class: group
+  grid-columns: 3
+  usb: "USB enumeration\nVID:PID, class,\nserial number" {class: box}
+  mdns: "mDNS and\nZeroconf browse" {class: box}
+  visa: "VISA resource\nlist" {class: box}
+  ble: "BLE scan" {class: box}
+  eco: "Ecosystem APIs\nMoonraker, OctoPrint,\nHome Assistant, ESPHome" {class: box}
+  pi: "Platform checks\nRaspberry Pi GPIO\nand camera" {class: box}
+}
+
+identify: "Identify with read-only\ncommands only\n*IDN?, firmware describe, M115" {class: box}
+match: "Library matcher" {class: box}
+offer: "Offer the library file,\nread-only until limits\nare confirmed" {class: box}
+draft: "describe() builds\na draft file" {class: box}
+unknown: "List as unknown,\noffer the driver writer" {class: box}
+
+start -> sources
+sources -> identify
+identify -> match
+match -> offer: "match"
+match -> draft: "protocol known"
+match -> unknown: "unknown"

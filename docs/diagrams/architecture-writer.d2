@@ -1,0 +1,40 @@
+vars: @theme-light
+...@house
+
+direction: down
+
+(** -> **)[*].class: msg
+
+start: "Unknown device" {class: box}
+lib: "1. Library match?" {class: box}
+prot: "2. Can a protocol\ndriver talk to it?" {class: box}
+code: "4. Sketch\navailable?" {class: box}
+manual: "5. Manual\navailable?" {class: box}
+describe: "3. Self-description\ndescribe(), firmware JSON,\nSCPI, GATT, OPC UA" {class: box}
+sketch: "Parse the sketch\ncommands, pins,\nranges, units" {class: box}
+man: "Extract commands,\nall unconfirmed" {class: box}
+probe: "6. Read-only probing\nknown read commands" {class: box}
+draft: "Draft device file\nevery limit suggested" {class: box}
+interview: "7. Limits interview\na person answers each limit" {class: box}
+plan: "8. Staged test plan\nsmallest safe value first" {class: box}
+scaffold: "9. Needs new code?" {class: box}
+new: "openhal driver new\nexperimental until tested" {class: box}
+done: "10. Device file with provenance\nand a library submission" {class: box}
+
+start -> lib
+lib -> done: "yes"
+lib -> prot: "no"
+prot -> describe: "yes"
+prot -> code: "no"
+code -> sketch: "yes"
+code -> manual: "no"
+manual -> man: "yes"
+manual -> probe: "no"
+describe -> draft
+sketch -> draft
+man -> draft
+probe -> draft
+draft -> interview -> plan -> scaffold
+scaffold -> new: "yes"
+scaffold -> done: "no"
+new -> done

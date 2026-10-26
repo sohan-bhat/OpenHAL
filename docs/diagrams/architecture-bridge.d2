@@ -1,0 +1,14 @@
+vars: @theme-light
+...@house
+
+shape: sequence_diagram
+
+k: "Safety kernel" {class: actor}
+b: "Bridge driver" {class: actor}
+s: "Bridged system" {class: actor}
+
+k -> b: "write(entity, value,\nGrant)" {class: granted}
+b -> s: "service call\nor API request" {class: msg}
+s -> b: "new state" {class: msg}
+b -> k: "result" {class: msg}
+b.note: "The device file governs limits\neven when the bridged system\nhas its own. Only entities a\nperson selects are exposed." {class: note; shape: rectangle}

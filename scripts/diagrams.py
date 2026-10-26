@@ -1,15 +1,22 @@
 """Build the house-style diagrams in docs/diagrams from their D2 sources, light and dark.
 
-D2 lays out the nodes on a grid. This script then makes the result match docs/DESIGN.md: our fonts,
-1.5 px strokes, connector labels above their lines, the return line routed over the top with right
-angles only, a transparent background, an accessible title and description, and a flowing dash
-animation on the wires that stops under prefers-reduced-motion. Run it through scripts/build-diagrams.
+D2 lays out the nodes. This script then makes the result match docs/DESIGN.md: our fonts, 1.5 px
+strokes, connector labels above their lines, a transparent background and an accessible title and
+description. The flow diagram also gets its return line routed over the top with right angles only
+and a flowing dash animation on the wires that stops under prefers-reduced-motion.
+
+The architecture and sequence diagrams redraw the Mermaid blocks in docs and the spec. The website
+shows the D2 version of a block only while docs/diagrams/diagrams.json records that block's current
+text, so a changed block falls back to Mermaid until its D2 source is updated and rebuilt. Run it
+through scripts/build-diagrams.
 """
 
 from __future__ import annotations
 
 import base64
+import hashlib
 import html
+import json
 import re
 import shutil
 import subprocess
@@ -40,8 +47,92 @@ STATIC_FONTS = {
 }
 
 THEMES = {
-    "light": {"accent": "#1D5FB4", "line": "#8A919C", "blocked": "#B42318", "label": "#4F5661"},
-    "dark": {"accent": "#7DB2F0", "line": "#5A626D", "blocked": "#F07068", "label": "#A0A7B1"},
+    "light": {"accent": "#1D5FB4", "line": "#8A919C", "blocked": "#B42318", "label": "#4F5661", "border": "#DADDE2"},
+    "dark": {"accent": "#7DB2F0", "line": "#5A626D", "blocked": "#F07068", "label": "#A0A7B1", "border": "#2A2F36"},
+}
+SHARED = ("theme-light.d2", "theme-dark.d2", "house.d2")
+MANIFEST = DIAGRAMS / "diagrams.json"
+
+
+@dataclass(frozen=True)
+class Redraw:
+    """A D2 diagram that redraws one Mermaid block of a page."""
+
+    source: str
+    index: int
+    title: str
+    desc: str
+
+
+REDRAWS = {
+    "architecture-components": Redraw(
+        "docs/ARCHITECTURE.md",
+        0,
+        "OpenHAL components",
+        "Four clients, the MCP server, the CLI, the Python library and the dashboard, call the hub's local API. "
+        "Inside the one hub process the API passes commands through tokens and principals to the safety kernel, "
+        "which alone gives drivers a single-use grant and writes the audit log. The routine engine, watchdogs and "
+        "confirmation queue also go through the kernel. Drivers reach the hardware and bridged systems.",
+    ),
+    "architecture-command": Redraw(
+        "docs/ARCHITECTURE.md",
+        1,
+        "The life of a command",
+        "An agent asks openhal mcp to water the plant. The hub API passes it to the safety kernel, which runs its "
+        "checks in order. A blocked command is logged and answered with the reason. A command that needs a person "
+        "is queued with an expiry. An allowed command gets a single-use grant, the driver verifies and consumes it, "
+        "acts, and the kernel logs the result.",
+    ),
+    "architecture-discovery": Redraw(
+        "docs/ARCHITECTURE.md",
+        2,
+        "Device discovery",
+        "openhal discover looks for devices over USB, mDNS, VISA, BLE, ecosystem APIs and Raspberry Pi checks, "
+        "identifies each with read-only commands, and asks the library matcher. A match offers a library file that "
+        "loads read-only. A known protocol builds a draft file. An unknown device is listed and offered the driver "
+        "writer.",
+    ),
+    "architecture-writer": Redraw(
+        "docs/ARCHITECTURE.md",
+        3,
+        "The driver writer",
+        "For an unknown device the driver writer tries a library match, then a protocol driver's self-description, "
+        "then a sketch, then a manual, then read-only probing. Each path ends in a draft device file with every "
+        "limit marked suggested. A person answers the limits interview, approves a staged test plan, and the writer "
+        "saves the device file, scaffolding a new driver first when one is needed.",
+    ),
+    "architecture-routine": Redraw(
+        "docs/ARCHITECTURE.md",
+        4,
+        "Routine execution",
+        "A trigger fires a routine. The routine engine checks it is enabled and approved, then sends each read and "
+        "command to the safety kernel as the routine's principal. A blocked step stops the run. An allowed step goes "
+        "to the driver with a grant. The engine records the run.",
+    ),
+    "architecture-bridge": Redraw(
+        "docs/ARCHITECTURE.md",
+        5,
+        "Bridges",
+        "The safety kernel sends a bridge driver a write with a grant. The bridge calls the bridged system, gets the "
+        "new state and returns the result. The device file governs the limits even when the bridged system has its "
+        "own.",
+    ),
+    "architecture-stop": Redraw(
+        "docs/ARCHITECTURE.md",
+        6,
+        "Stop",
+        "A stop from any client sets the kernel's global lock first, cancels pending confirmations and pauses every "
+        "routine, applies each device's safe state, reports per device, and blocks commands until a person unlocks.",
+    ),
+    "spec-exchange": Redraw(
+        "spec/2026-10-24/architecture.md",
+        0,
+        "One blocked and one granted action",
+        "A client asks the hub to water for 120 s. The safety kernel blocks it as above the maximum and the hub "
+        "answers error -32010 LIMIT_EXCEEDED. The client asks for 20 s. Every check passes, the kernel issues a "
+        "single-use grant, the driver consumes it and runs the pump, and the hub answers with a result and then a "
+        "hal/value notification of the new soil moisture.",
+    ),
 }
 
 FLOW_TITLE = "OpenHAL flow"
@@ -114,8 +205,8 @@ def render_d2(source: Path, theme: str, fonts: dict[str, Path], out: Path, narro
         text = text.replace(*NARROW_GRID)
     with tempfile.TemporaryDirectory() as scratch:
         work = Path(scratch)
-        for theme_file in DIAGRAMS.glob("theme-*.d2"):
-            shutil.copy(theme_file, work / theme_file.name)
+        for shared in SHARED:
+            shutil.copy(DIAGRAMS / shared, work / shared)
         (work / source.name).write_text(text)
         flags = [f"--font-{role}={path}" for role, path in fonts.items()]
         subprocess.run(  # noqa: S603
@@ -439,6 +530,97 @@ def add_title(svg: str, title: str, desc: str) -> str:
     )
 
 
+LIFELINE = re.compile(r'(<g class="(?P<id>[A-Za-z0-9+/=]+)"><path d="[^"]*" )stroke="[^"]*"([^>]*?)style="[^"]*"')
+MESSAGE = re.compile(r'<g class="(?P<id>[A-Za-z0-9+/=]+)(?: [\w-]+)?">(?P<body>.*?)</g>', re.S)
+
+
+def mermaid_blocks(path: Path) -> list[str]:
+    """Every Mermaid block of a Markdown page, in order."""
+    return [match.group(1).strip() for match in re.finditer(r"^```mermaid\n(.*?)\n```", path.read_text(), re.S | re.M)]
+
+
+def mermaid_hash(text: str) -> str:
+    return hashlib.sha256(text.strip().encode()).hexdigest()[:16]
+
+
+def restyle_lifelines(svg: str, colors: dict[str, str]) -> str:
+    def solid(match: re.Match[str]) -> str:
+        if " -- )" not in name_of(match["id"]):
+            return match.group(0)
+        return f'{match.group(1)}stroke="{colors["border"]}"{match.group(3)}style="stroke-width:1;"'
+
+    return LIFELINE.sub(solid, svg)
+
+
+def lift_message_labels(svg: str) -> str:
+    """Set each straight message's label just above its line, as the flow diagram does."""
+
+    def lift(match: re.Match[str]) -> str:
+        name, body = html.unescape(name_of(match["id"])), match["body"]
+        ends = re.search(r"\((?P<a>[\w.]+) -> (?P<b>[\w.]+)\)\[\d+\]$", name)
+        text = re.search(r'<text x="(?P<x>[-\d.]+)" y="(?P<y>[-\d.]+)"', body)
+        if ends is None or text is None:
+            return match.group(0)
+        steps = [float(step) for step in re.findall(r'<tspan[^>]*dy="([-\d.]+)"', body)[1:]]
+        if ends["a"].split(".")[-1] == ends["b"].split(".")[-1]:
+            loop = re.search(r'<path d="(?P<d>[^"]+)"', body)
+            if loop is None:
+                return match.group(0)
+            numbers = [float(value) for value in re.findall(r"-?[\d.]+", loop["d"])]
+            xs, ys = numbers[0::2], numbers[1::2]
+            y = (min(ys) + max(ys)) / 2 + 4 - sum(steps) / 2
+            body = relabel(body, max(xs) + 8, y).replace("text-anchor:middle", "text-anchor:start", 1)
+        else:
+            path = PATH_D.search(body)
+            if path is None or abs(float(path["y1"]) - float(path["y2"])) > 0.5:
+                return match.group(0)
+            body = relabel(body, float(text["x"]), float(path["y1"]) - 7 - sum(steps))
+        body = body.replace(' mask="url(#', ' data-mask="url(#')
+        return match.group(0).replace(match["body"], body)
+
+    return MESSAGE.sub(lift, svg)
+
+
+def postprocess_house(svg: str, colors: dict[str, str], title: str, desc: str) -> str:
+    svg = re.sub(
+        r'<rect x="[-\d.]+" y="[-\d.]+" width="[\d.]+" height="[\d.]+" rx="0" fill="[^"]+" class=" fill-N7"'
+        r' stroke-width="0" />',
+        "",
+        svg,
+        count=1,
+    )
+    svg = svg.replace("stroke-width:2;", "stroke-width:1.5;").replace('stroke-width="2"', 'stroke-width="1.5"')
+    svg = restyle_lifelines(svg, colors)
+    svg = lift_message_labels(svg)
+    return add_title(svg, title, desc)
+
+
+def build_redraws() -> None:
+    fonts = static_fonts()
+    manifest = []
+    for name, redraw in REDRAWS.items():
+        blocks = mermaid_blocks(ROOT / redraw.source)
+        if redraw.index >= len(blocks):
+            sys.exit(f"{redraw.source} has no Mermaid block {redraw.index} for {name}.d2.")
+        for theme, colors in THEMES.items():
+            out = DIAGRAMS / f"{name}-{theme}.svg"
+            raw = render_d2(DIAGRAMS / f"{name}.d2", theme, fonts, out)
+            out.write_text(postprocess_house(raw, colors, redraw.title, redraw.desc))
+            svgo(out)
+            print(f"{out.relative_to(ROOT)}  {out.stat().st_size / 1024:.0f} KB")
+        manifest.append(
+            {
+                "name": name,
+                "source": redraw.source,
+                "index": redraw.index,
+                "mermaid": mermaid_hash(blocks[redraw.index]),
+                "title": redraw.title,
+            }
+        )
+    MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n")
+    print(f"{MANIFEST.relative_to(ROOT)}")
+
+
 def svgo(path: Path) -> None:
     config = Path(__file__).with_name("svgo.config.mjs")
     npx = shutil.which("npx")
@@ -460,3 +642,4 @@ def build_flow() -> None:
 
 if __name__ == "__main__":
     build_flow()
+    build_redraws()

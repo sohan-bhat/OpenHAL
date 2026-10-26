@@ -1,0 +1,44 @@
+vars: @theme-light
+...@house
+
+shape: sequence_diagram
+
+a: "Agent\n(MCP client)" {class: actor}
+m: "openhal mcp" {class: actor}
+h: "Hub API" {class: actor}
+k: "Safety\nkernel" {class: actor}
+q: "Confirmation\nqueue" {class: actor}
+d: "Driver" {class: actor}
+l: "Audit log" {class: actor}
+
+a -> m: "action water\n20 s" {class: msg}
+m -> h: "POST /v1/action\nagent token" {class: msg}
+h -> k: "evaluate" {class: msg}
+k -> k: "units, state,\nrange, step,\nenum" {class: msg}
+k -> k: "rate, runs,\ninterlocks,\nwatchdog" {class: msg}
+k -> k: "hazard, scope,\nconfirmation" {class: msg}
+
+blocked: "blocked" {
+  class: group
+  k -> l: "block entry" {class: blocked}
+  k -> h: "Blocked(reason)" {class: blocked}
+  h -> m: "status blocked" {class: blocked}
+}
+
+pending: "needs confirmation" {
+  class: group
+  k -> q: "enqueue" {class: msg}
+  k -> l: "pending entry" {class: msg}
+  k -> h: "Pending(id)" {class: msg}
+}
+
+allowed: "allowed" {
+  class: group
+  k -> k: "issue a Grant" {class: msg}
+  k -> d: "action with\nthe Grant" {class: granted}
+  d -> k: "verify and\nconsume it" {class: msg}
+  d -> d: "act" {class: msg}
+  d -> k: "result" {class: msg}
+  k -> l: "action entry" {class: msg}
+  k -> h: "Done(result)" {class: granted}
+}
