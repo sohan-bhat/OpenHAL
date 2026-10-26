@@ -16,7 +16,7 @@ const day = post.data.date.toISOString().slice(0, 10);
 ---
 
 <Base title={post.data.title} description={post.data.description} type="article" noindex={post.data.draft}>
-  <article class="wrap page">
+  <article class="wrap column page">
     <header class="head">
       <h1>{post.data.title}</h1>
       <p class="byline">
@@ -32,13 +32,9 @@ const day = post.data.date.toISOString().slice(0, 10);
 </Base>
 
 <style>
-  .page {
-    max-width: 880px;
-    padding-top: var(--s-6);
-  }
-
   .head {
-    margin: var(--s-2) 0 var(--s-6);
+    max-width: var(--measure);
+    margin: 0 0 var(--s-6);
     padding-bottom: var(--s-4);
     border-bottom: var(--rule);
   }

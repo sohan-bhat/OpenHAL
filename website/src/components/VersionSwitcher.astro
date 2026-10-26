@@ -21,6 +21,11 @@ const target = (version: string) => {
     <span class="label">Version</span>
     <span class="mono">{current}</span>
     {current === latest && <span class="muted">latest</span>}
+    <span class="change">
+      <svg class="chevron" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
+        <polyline points="2.5,4.5 6,8 9.5,4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+      </svg>
+    </span>
   </summary>
   <ul>
     {
@@ -39,7 +44,7 @@ const target = (version: string) => {
 <style>
   .switcher {
     margin-bottom: var(--s-4);
-    border: var(--rule);
+    border: 1px solid color-mix(in srgb, var(--text-2) 60%, var(--border));
     border-radius: var(--radius);
   }
 
@@ -53,6 +58,26 @@ const target = (version: string) => {
     font-size: var(--t-small);
     font-weight: 700;
     white-space: nowrap;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary:hover {
+    background: var(--surface);
+  }
+
+  .change {
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+    color: var(--text);
+  }
+
+  .switcher[open] .chevron {
+    transform: rotate(180deg);
   }
 
   ul {

@@ -5,13 +5,13 @@ import { registryByName } from "../lib/protocol";
 
 const unknown = registryByName("UNKNOWN_TARGET");
 const entries = [
-  { kind: "request" as const, method: "GET", params: { path: "/no-such-page/" } },
+  { kind: "request" as const, method: "hal/devices/describe", params: { device: "/no-such-page/" } },
   { kind: "error" as const, code: unknown.code, name: unknown.name, reason: "There is no page at this address." },
 ];
 ---
 
 <Base title="Page not found" description="There is no page at this address." search={false}>
-  <div class="wrap page">
+  <div class="wrap column page">
     <h1>Page not found</h1>
     <div data-not-found>
       <MessageTrace entries={entries} label="What happened" />
@@ -34,10 +34,12 @@ const entries = [
 
 <style>
   .page {
-    max-width: 880px;
-    padding-top: var(--s-7);
     display: grid;
     gap: var(--s-5);
+  }
+
+  .page > * {
+    max-width: 880px;
   }
 
   .links {

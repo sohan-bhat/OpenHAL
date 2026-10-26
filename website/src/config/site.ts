@@ -10,7 +10,8 @@ export interface NavLink {
 }
 
 export const NAV: NavLink[] = [
-  { href: "/", label: "Overview", match: ["/", "/docs/"] },
+  { href: "/", label: "Overview", match: ["/"] },
+  { href: "/docs/", label: "Docs", match: ["/docs/"] },
   { href: "/spec/latest/", label: "Specification", match: ["/spec/"] },
   { href: "/spec/playground/", label: "Playground", match: ["/spec/playground/"] },
   { href: "/drivers/", label: "Drivers", match: ["/drivers/"] },

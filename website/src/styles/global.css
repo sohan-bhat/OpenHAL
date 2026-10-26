@@ -96,11 +96,26 @@ p {
   text-wrap: pretty;
 }
 
+:root {
+  --sidebar: 240px;
+}
+
 .wrap {
   width: 100%;
   max-width: 1360px;
   margin-inline: auto;
   padding-inline: var(--s-4);
+}
+
+.column {
+  padding-top: var(--s-5);
+}
+
+@media (min-width: 1024px) {
+  .column {
+    padding-top: var(--s-6);
+    padding-inline-start: calc(var(--s-4) + var(--sidebar) + var(--s-7));
+  }
 }
 
 .visually-hidden {
@@ -170,7 +185,7 @@ p {
 }
 
 .status.ok::before {
-  background: var(--ok);
+  content: none;
 }
 
 .status.blocked {
@@ -206,7 +221,18 @@ p {
 }
 
 .status.planned::before {
-  border: 1.5px solid var(--text-2);
+  content: none;
+}
+
+.registry-code,
+.registry-name {
+  font-family: var(--font-mono);
+  font-size: 0.94em;
+}
+
+.registry-name {
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .button {

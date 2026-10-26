@@ -23,6 +23,13 @@
   font-size: var(--t-body);
 }
 
+.secno {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-2);
+  margin-right: 0.3em;
+}
+
 .prose .heading-link {
   color: inherit;
   text-decoration: none;
@@ -101,6 +108,20 @@
   }
 }
 
+.prose .diagram.house {
+  border: 0;
+  border-radius: 0;
+}
+
+.prose .diagram.house .diagram-scroll {
+  padding: 0;
+}
+
+.prose .diagram.house svg {
+  max-width: none;
+  margin-inline: 0;
+}
+
 .prose .diagram-dark {
   display: none;
 }
@@ -157,7 +178,46 @@
   }
 
   .prose td:not([data-label])::before,
-  .prose td[data-label=""]::before {
+  .prose td[data-label=""]::before,
+  .prose td[data-label="#"]::before {
     display: none;
+  }
+
+  .prose td[data-label="#"] {
+    font-family: var(--font-mono);
+    color: var(--text-2);
+  }
+
+  .prose .pair table {
+    display: table;
+  }
+
+  .prose .pair thead {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    display: table-header-group;
+  }
+
+  .prose .pair tbody {
+    display: table-row-group;
+  }
+
+  .prose .pair tr {
+    display: table-row;
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .prose .pair td {
+    display: table-cell;
+    padding: var(--s-2) var(--s-3) var(--s-2) 0;
+    border-bottom: var(--rule);
+  }
+
+  .prose .pair td::before {
+    content: none;
   }
 }

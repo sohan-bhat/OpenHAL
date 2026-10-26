@@ -17,9 +17,10 @@ interface Props {
   noindex?: boolean;
   wide?: boolean;
   pager?: boolean;
+  number?: string;
 }
 
-const { title, description, repo, headings = [], sidebar, section, canonical, noindex, wide = false, pager = true } = Astro.props;
+const { title, description, repo, headings = [], sidebar, section, canonical, noindex, wide = false, pager = true, number } = Astro.props;
 const path = Astro.url.pathname;
 const flat = sidebar.flatMap((group) => group.items).filter((item) => item.href);
 const index = flat.findIndex((item) => item.href === path);
@@ -93,7 +94,7 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
     <article class="content">
       <header class="page-head">
         <slot name="before-title" />
-        <h1>{title}</h1>
+        <h1>{number && <span class="secno">{number}</span>}{number && " "}{title}</h1>
         <slot name="after-title" />
       </header>
       {
@@ -363,7 +364,7 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
 
   @media (min-width: 1024px) {
     .shell {
-      grid-template-columns: 240px minmax(0, 1fr);
+      grid-template-columns: var(--sidebar) minmax(0, 1fr);
       gap: var(--s-7);
       padding-top: var(--s-6);
     }
@@ -387,11 +388,11 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
 
   @media (min-width: 1280px) {
     .shell {
-      grid-template-columns: 240px minmax(0, 1fr) 220px;
+      grid-template-columns: var(--sidebar) minmax(0, 1fr) 220px;
     }
 
     .shell.wide {
-      grid-template-columns: 240px minmax(0, 1fr);
+      grid-template-columns: var(--sidebar) minmax(0, 1fr);
     }
 
     .outline {

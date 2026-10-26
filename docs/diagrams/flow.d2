@@ -2,19 +2,19 @@ vars: @theme-light
 
 grid-rows: 2
 grid-columns: 5
-horizontal-gap: 96
-vertical-gap: 56
+horizontal-gap: 90
+vertical-gap: 48
 
 classes: {
   node: {
-    width: 120
-    height: 84
+    width: 112
+    height: 88
     label.near: top-center
     style: {
       fill: ${surface}
       stroke: ${line}
       stroke-width: 2
-      border-radius: 10
+      border-radius: 6
       font-color: ${text}
       font-size: 15
       bold: true
@@ -29,8 +29,8 @@ classes: {
     }
   }
   spacer: {
-    width: 120
-    height: 72
+    width: 112
+    height: 52
     style.opacity: 0
   }
   wire: {
@@ -38,7 +38,7 @@ classes: {
       stroke: ${accent}
       stroke-width: 2
       font: mono
-      font-size: 12
+      font-size: 13
       font-color: ${text2}
     }
   }
@@ -51,21 +51,28 @@ client: "AI client" {
 hub: "OpenHAL hub" {
   class: node
   files: "Device files" {
-    style: {fill: ${surface}; stroke: ${line}; stroke-width: 1; border-radius: 6; font-size: 12; font-color: ${text2}; bold: false}
+    width: 96
+    height: 30
+    style: {fill: ${surface}; stroke: ${line}; stroke-width: 1; border-radius: 4; font-size: 13; font-color: ${text2}; bold: false}
   }
 }
-kernel: "Safety kernel" {class: node}
-driver: "Driver" {class: node}
+kernel: "Safety kernel" {
+  class: node
+  checks: "units, range,\nrate, interlocks" {class: detail}
+}
+driver: "Driver" {
+  class: node
+  grant: "acts on a\nsingle-use grant" {class: detail}
+}
 device: "Arduino\nplant waterer" {class: node}
 
 gap1: "" {class: spacer}
 gap2: "" {class: spacer}
 blocked: "Blocked" {
   class: node
-  width: 120
-  height: 76
+  height: 52
+  label.near: center-center
   style: {stroke: ${blocked}; font-color: ${blocked}; fill: ${blocked-fill}}
-  code: "INTERLOCK_BLOCKED:\ntank empty" {class: detail; style: {font: mono; font-size: 12; font-color: ${blocked}}}
 }
 gap3: "" {class: spacer}
 gap4: "" {class: spacer}
@@ -74,5 +81,5 @@ client -> hub: "hal/action" {class: wire}
 hub.files -> kernel: "check" {class: wire}
 kernel -> driver: "grant" {class: wire}
 driver -> device: "command" {class: wire}
-kernel -> blocked {class: wire; style.stroke: ${blocked}}
+kernel -> blocked: "INTERLOCK_BLOCKED:\ntank empty" {class: wire; style.stroke: ${blocked}; style.font-color: ${blocked}}
 client <- device: "reading" {class: wire; style.stroke: ${line}; style.stroke-width: 1}

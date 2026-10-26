@@ -1,0 +1,16 @@
+vars: @theme-light
+...@house
+
+direction: down
+
+(** -> **)[*].class: msg
+
+stop: "stop_all from the CLI, MCP,\ndashboard, library or a GPIO button" {class: box}
+lock: "The kernel sets the\nglobal lock first" {class: box}
+cancel: "Cancel pending confirmations,\npause every routine" {class: box}
+safe: "Apply each device's safe state\nwith kernel-internal grants" {class: box}
+report: "Report per device: safe,\nfailed or no safe state" {class: box}
+locked: "Commands blocked until\na person unlocks" {class: box; style: {stroke: ${blocked}; font-color: ${blocked}; fill: ${blocked-fill}}}
+unlock: "openhal unlock or the dashboard,\nhuman token and typed phrase" {class: box}
+
+stop -> lock -> cancel -> safe -> report -> locked -> unlock

@@ -3,22 +3,61 @@ import DocShell from "../../layouts/DocShell.astro";
 import { docsSidebar } from "../../lib/docs-nav";
 
 const sidebar = await docsSidebar();
+const idOf = (name: string) => `group-${name.toLowerCase().replace(/[^a-z]+/g, "-")}`;
 ---
 
-<DocShell title="Documentation" description="Guides, tutorials and reference for OpenHAL." sidebar={sidebar} section="Documentation">
-  <p>Start with the quickstart, then the tutorial that matches what you want to do.</p>
+<DocShell title="Documentation" description="Guides, tutorials and reference for OpenHAL." sidebar={sidebar} section="Documentation" pager={false}>
+  <p>Start with the <a href="/docs/quickstart/">quickstart</a>, then the tutorial that matches what you want to do. The <a href="/spec/latest/">specification</a> defines the protocol itself.</p>
   {
     sidebar.map((group) => (
-      <>
-        <h2>{group.name}</h2>
-        <ul>
+      <section class="doc-group" aria-labelledby={idOf(group.name)}>
+        <h2 id={idOf(group.name)}>{group.name}</h2>
+        <dl class="doc-list">
           {group.items.map((item) => (
-            <li>
-              <a href={item.href}>{item.title}</a>
-            </li>
+            <div>
+              <dt>
+                <a href={item.href}>{item.title}</a>
+              </dt>
+              {item.summary && <dd>{item.summary}</dd>}
+            </div>
           ))}
-        </ul>
-      </>
+        </dl>
+      </section>
     ))
   }
 </DocShell>
+
+<style>
+  .doc-group {
+    margin-top: var(--s-7);
+  }
+
+  .doc-list {
+    display: grid;
+    gap: var(--s-4) var(--s-6);
+    margin: var(--s-4) 0 0;
+  }
+
+  .doc-list div {
+    display: grid;
+    gap: 2px;
+    align-content: start;
+    padding-top: var(--s-3);
+    border-top: var(--rule);
+  }
+
+  .doc-list dt {
+    font-weight: 700;
+  }
+
+  .doc-list dd {
+    margin: 0;
+    color: var(--text-2);
+  }
+
+  @media (min-width: 720px) {
+    .doc-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

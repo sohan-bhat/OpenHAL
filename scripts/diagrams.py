@@ -1,15 +1,22 @@
 """Build the house-style diagrams in docs/diagrams from their D2 sources, light and dark.
 
-D2 lays out the nodes on a grid. This script then makes the result match docs/DESIGN.md: our fonts,
-1.5 px strokes, connector labels above their lines, the return line routed over the top with right
-angles only, a transparent background, an accessible title and description, and a flowing dash
-animation on the wires that stops under prefers-reduced-motion. Run it through scripts/build-diagrams.
+D2 lays out the nodes. This script then makes the result match docs/DESIGN.md: our fonts, 1.5 px
+strokes, connector labels above their lines, a transparent background and an accessible title and
+description. The flow diagram also gets its return line routed over the top with right angles only
+and a flowing dash animation on the wires that stops under prefers-reduced-motion.
+
+The architecture and sequence diagrams redraw the Mermaid blocks in docs and the spec. The website
+shows the D2 version of a block only while docs/diagrams/diagrams.json records that block's current
+text, so a changed block falls back to Mermaid until its D2 source is updated and rebuilt. Run it
+through scripts/build-diagrams.
 """
 
 from __future__ import annotations
 
 import base64
+import hashlib
 import html
+import json
 import re
 import shutil
 import subprocess
@@ -40,8 +47,92 @@ STATIC_FONTS = {
 }
 
 THEMES = {
-    "light": {"accent": "#1D5FB4", "line": "#8A919C", "blocked": "#B42318", "label": "#4F5661"},
-    "dark": {"accent": "#7DB2F0", "line": "#5A626D", "blocked": "#F07068", "label": "#A0A7B1"},
+    "light": {"accent": "#1D5FB4", "line": "#8A919C", "blocked": "#B42318", "label": "#4F5661", "border": "#DADDE2"},
+    "dark": {"accent": "#7DB2F0", "line": "#5A626D", "blocked": "#F07068", "label": "#A0A7B1", "border": "#2A2F36"},
+}
+SHARED = ("theme-light.d2", "theme-dark.d2", "house.d2")
+MANIFEST = DIAGRAMS / "diagrams.json"
+
+
+@dataclass(frozen=True)
+class Redraw:
+    """A D2 diagram that redraws one Mermaid block of a page."""
+
+    source: str
+    index: int
+    title: str
+    desc: str
+
+
+REDRAWS = {
+    "architecture-components": Redraw(
+        "docs/ARCHITECTURE.md",
+        0,
+        "OpenHAL components",
+        "Four clients, the MCP server, the CLI, the Python library and the dashboard, call the hub's local API. "
+        "Inside the one hub process the API passes commands through tokens and principals to the safety kernel, "
+        "which alone gives drivers a single-use grant and writes the audit log. The routine engine, watchdogs and "
+        "confirmation queue also go through the kernel. Drivers reach the hardware and bridged systems.",
+    ),
+    "architecture-command": Redraw(
+        "docs/ARCHITECTURE.md",
+        1,
+        "The life of a command",
+        "An agent asks openhal mcp to water the plant. The hub API passes it to the safety kernel, which runs its "
+        "checks in order. A blocked command is logged and answered with the reason. A command that needs a person "
+        "is queued with an expiry. An allowed command gets a single-use grant, the driver verifies and consumes it, "
+        "acts, and the kernel logs the result.",
+    ),
+    "architecture-discovery": Redraw(
+        "docs/ARCHITECTURE.md",
+        2,
+        "Device discovery",
+        "openhal discover looks for devices over USB, mDNS, VISA, BLE, ecosystem APIs and Raspberry Pi checks, "
+        "identifies each with read-only commands, and asks the library matcher. A match offers a library file that "
+        "loads read-only. A known protocol builds a draft file. An unknown device is listed and offered the driver "
+        "writer.",
+    ),
+    "architecture-writer": Redraw(
+        "docs/ARCHITECTURE.md",
+        3,
+        "The driver writer",
+        "For an unknown device the driver writer tries a library match, then a protocol driver's self-description, "
+        "then a sketch, then a manual, then read-only probing. Each path ends in a draft device file with every "
+        "limit marked suggested. A person answers the limits interview, approves a staged test plan, and the writer "
+        "saves the device file, scaffolding a new driver first when one is needed.",
+    ),
+    "architecture-routine": Redraw(
+        "docs/ARCHITECTURE.md",
+        4,
+        "Routine execution",
+        "A trigger fires a routine. The routine engine checks it is enabled and approved, then sends each read and "
+        "command to the safety kernel as the routine's principal. A blocked step stops the run. An allowed step goes "
+        "to the driver with a grant. The engine records the run.",
+    ),
+    "architecture-bridge": Redraw(
+        "docs/ARCHITECTURE.md",
+        5,
+        "Bridges",
+        "The safety kernel sends a bridge driver a write with a grant. The bridge calls the bridged system, gets the "
+        "new state and returns the result. The device file governs the limits even when the bridged system has its "
+        "own.",
+    ),
+    "architecture-stop": Redraw(
+        "docs/ARCHITECTURE.md",
+        6,
+        "Stop",
+        "A stop from any client sets the kernel's global lock first, cancels pending confirmations and pauses every "
+        "routine, applies each device's safe state, reports per device, and blocks commands until a person unlocks.",
+    ),
+    "spec-exchange": Redraw(
+        "spec/2026-10-24/architecture.md",
+        0,
+        "One blocked and one granted action",
+        "A client asks the hub to water for 120 s. The safety kernel blocks it as above the maximum and the hub "
+        "answers error -32010 LIMIT_EXCEEDED. The client asks for 20 s. Every check passes, the kernel issues a "
+        "single-use grant, the driver consumes it and runs the pump, and the hub answers with a result and then a "
+        "hal/value notification of the new soil moisture.",
+    ),
 }
 
 FLOW_TITLE = "OpenHAL flow"
@@ -99,8 +190,8 @@ def d2_binary() -> str:
 
 
 NARROW_GRID = (
-    "grid-rows: 2\ngrid-columns: 5\nhorizontal-gap: 96\nvertical-gap: 56",
-    "grid-columns: 2\ngrid-rows: 5\nhorizontal-gap: 64\nvertical-gap: 52",
+    "grid-rows: 2\ngrid-columns: 5\nhorizontal-gap: 90\nvertical-gap: 48",
+    "grid-columns: 2\ngrid-rows: 5\nhorizontal-gap: 52\nvertical-gap: 52",
 )
 
 
@@ -114,8 +205,8 @@ def render_d2(source: Path, theme: str, fonts: dict[str, Path], out: Path, narro
         text = text.replace(*NARROW_GRID)
     with tempfile.TemporaryDirectory() as scratch:
         work = Path(scratch)
-        for theme_file in DIAGRAMS.glob("theme-*.d2"):
-            shutil.copy(theme_file, work / theme_file.name)
+        for shared in SHARED:
+            shutil.copy(DIAGRAMS / shared, work / shared)
         (work / source.name).write_text(text)
         flags = [f"--font-{role}={path}" for role, path in fonts.items()]
         subprocess.run(  # noqa: S603
@@ -164,16 +255,39 @@ def boxes(svg: str) -> dict[str, Box]:
 
 def label_text(body: str) -> str:
     match = re.search(r"<text[^>]*>(.*?)</text>", body)
-    return html.unescape(match.group(1)) if match else ""
+    if match is None:
+        return ""
+    lines = re.findall(r"<tspan[^>]*>(.*?)</tspan>", match.group(1)) or [match.group(1)]
+    return "\n".join(html.unescape(re.sub(r"<[^>]+>", "", line)) for line in lines)
 
 
 def relabel(body: str, x: float, y: float) -> str:
-    return re.sub(
+    body = re.sub(
         r'<text x="[-\d.]+" y="[-\d.]+"',
         f'<text x="{x:.1f}" y="{y:.1f}"',
         body,
         count=1,
     )
+    return re.sub(r'<tspan x="[-\d.]+"', f'<tspan x="{x:.1f}"', body)
+
+
+LABEL_LINE = 17
+MONO_ADVANCE = 0.632
+LABEL_SIZE = 13
+
+
+def center_chip(svg: str, nodes: dict[str, Box]) -> str:
+    """Move the device files chip to the hub's middle, so the check wire runs level with the others."""
+    chip, hub = nodes["hub.files"], nodes["hub"]
+    dy = hub.cy - chip.cy
+    if abs(dy) < 0.5:
+        return svg
+    token = base64.b64encode(b"hub.files").decode().rstrip("=")
+    opening = re.compile(rf'<g class="({re.escape(token)}=*)">')
+    svg, count = opening.subn(rf'<g class="\1" transform="translate(0 {dy:.1f})">', svg, count=1)
+    if count:
+        nodes["hub.files"] = Box(chip.x, chip.y + dy, chip.w, chip.h)
+    return svg
 
 
 def postprocess_flow(svg: str, colors: dict[str, str], narrow: bool = False) -> str:
@@ -188,12 +302,16 @@ def postprocess_flow(svg: str, colors: dict[str, str], narrow: bool = False) -> 
     svg = svg.replace("stroke-width:2;", "stroke-width:1.5;").replace('stroke-width="2"', 'stroke-width="1.5"')
     svg = svg.replace(' mask="url(#', ' data-mask="url(#')
     nodes = boxes(svg)
+    if not narrow:
+        svg = center_chip(svg, nodes)
     top = min(box.y for name, box in nodes.items() if "." not in name)
     left = min(box.x for name, box in nodes.items() if "." not in name)
     route_y = top - 22
     route_x = left - 22
 
     flows: list[str] = []
+    outcome_bottom: list[float] = []
+    outcome_right: list[float] = []
 
     def rewrite(match: re.Match[str]) -> str:
         wire_id, body = name_of(match["id"]), match["body"]
@@ -237,12 +355,19 @@ def postprocess_flow(svg: str, colors: dict[str, str], narrow: bool = False) -> 
             body = re.sub(r'<path d="[^"]*"', f'<path d="{d}"', body, count=1)
         else:
             d = f"M {x1:.1f} {y1:.1f} L {x2:.1f} {y2:.1f}"
-        if abs(y1 - y2) < 0.5 and label:
+        is_blocked = "blocked" in wire_id
+        if is_blocked and label:
+            below = nodes["blocked"]
+            body = relabel(body, below.cx, below.y + below.h + LABEL_LINE + 2)
+            body = body.replace("text-anchor:start", "text-anchor:middle", 1)
+            outcome_bottom.append(below.y + below.h + 2 * LABEL_LINE + 8)
+            longest = max(len(line) for line in label.split("\n")) if label else 0
+            outcome_right.append(below.cx + longest * LABEL_SIZE * MONO_ADVANCE / 2 + 6)
+        elif abs(y1 - y2) < 0.5 and label:
             body = relabel(body, (x1 + x2) / 2, y1 - 8)
         elif abs(x1 - x2) < 0.5 and label:
             body = relabel(body, x1 + 9, (y1 + y2) / 2 + 4)
             body = body.replace("text-anchor:middle", "text-anchor:start", 1)
-        is_blocked = "blocked" in wire_id
         color = colors["blocked"] if is_blocked else colors["accent"]
         flows.append(flow_path(d, color, "blocked" if is_blocked else label))
         return f'<g class="{match["id"]} wire">{body}</g>'
@@ -257,6 +382,10 @@ def postprocess_flow(svg: str, colors: dict[str, str], narrow: bool = False) -> 
     insert = f'<defs>{marker}</defs><style type="text/css"><![CDATA[{style}]]></style>'
     svg = svg.replace("</svg></svg>", f'{insert}<g class="oh-flows">{"".join(flows)}</g></svg></svg>', 1)
     svg = grow_left(svg, TOP_ROOM) if narrow else grow_top(svg, TOP_ROOM)
+    if outcome_bottom:
+        svg = grow_bottom(svg, max(outcome_bottom))
+    if outcome_right:
+        svg = grow_right(svg, max(outcome_right))
     return add_title(svg, FLOW_TITLE, FLOW_DESC)
 
 
@@ -270,7 +399,7 @@ def flow_path(d: str, color: str, name: str) -> str:
 
 def flow_style() -> str:
     period = (DASH + GAP) * PERIODS
-    delays = {slug: index * 0.35 for index, slug in enumerate(["hal-write", "check", "grant", "command", "reading"])}
+    delays = {slug: index * 0.35 for index, slug in enumerate(["hal-action", "check", "grant", "command", "reading"])}
     rules = [
         f"@keyframes oh-flow {{ from {{ stroke-dashoffset: {period}; }} to {{ stroke-dashoffset: 0; }} }}",
         f"@keyframes oh-flow-pause {{ 0% {{ stroke-dashoffset: {period}; }} 70% {{ stroke-dashoffset: 0; }} "
@@ -302,6 +431,68 @@ def grow_top(svg: str, room: int) -> str:
     return re.sub(
         r'width="(?P<w>[\d.]+)" height="(?P<h>[\d.]+)" viewBox="(?P<x>-?[\d.]+) (?P<y>-?[\d.]+) [\d.]+ [\d.]+"',
         inner,
+        svg,
+        count=1,
+    )
+
+
+def grow_bottom(svg: str, needed: float) -> str:
+    """Grow the canvas downwards until it reaches `needed` in diagram units."""
+    inner = re.search(
+        r'width="(?P<w>[\d.]+)" height="(?P<h>[\d.]+)" viewBox="(?P<x>-?[\d.]+) (?P<y>-?[\d.]+) [\d.]+ [\d.]+"', svg
+    )
+    if inner is None:
+        return svg
+    room = needed - (float(inner["y"]) + float(inner["h"]))
+    if room <= 0:
+        return svg
+    room = float(int(room + 0.999))
+
+    def outer(match: re.Match[str]) -> str:
+        w, h = float(match["w"]), float(match["h"]) + room
+        return f'viewBox="0 0 {w:g} {h:g}" width="{w:g}" height="{h:g}"'
+
+    svg = re.sub(r'viewBox="0 0 (?P<w>[\d.]+) (?P<h>[\d.]+)" width="[\d.]+" height="[\d.]+"', outer, svg, count=1)
+
+    def grown(match: re.Match[str]) -> str:
+        w, h = float(match["w"]), float(match["h"]) + room
+        x, y = float(match["x"]), float(match["y"])
+        return f'width="{w:g}" height="{h:g}" viewBox="{x:g} {y:g} {w:g} {h:g}"'
+
+    return re.sub(
+        r'width="(?P<w>[\d.]+)" height="(?P<h>[\d.]+)" viewBox="(?P<x>-?[\d.]+) (?P<y>-?[\d.]+) [\d.]+ [\d.]+"',
+        grown,
+        svg,
+        count=1,
+    )
+
+
+def grow_right(svg: str, needed: float) -> str:
+    """Grow the canvas to the right until it reaches `needed` in diagram units."""
+    inner = re.search(
+        r'width="(?P<w>[\d.]+)" height="(?P<h>[\d.]+)" viewBox="(?P<x>-?[\d.]+) (?P<y>-?[\d.]+) [\d.]+ [\d.]+"', svg
+    )
+    if inner is None:
+        return svg
+    room = needed - (float(inner["x"]) + float(inner["w"]))
+    if room <= 0:
+        return svg
+    room = float(int(room + 0.999))
+
+    def outer(match: re.Match[str]) -> str:
+        w, h = float(match["w"]) + room, float(match["h"])
+        return f'viewBox="0 0 {w:g} {h:g}" width="{w:g}" height="{h:g}"'
+
+    svg = re.sub(r'viewBox="0 0 (?P<w>[\d.]+) (?P<h>[\d.]+)" width="[\d.]+" height="[\d.]+"', outer, svg, count=1)
+
+    def grown(match: re.Match[str]) -> str:
+        w, h = float(match["w"]) + room, float(match["h"])
+        x, y = float(match["x"]), float(match["y"])
+        return f'width="{w:g}" height="{h:g}" viewBox="{x:g} {y:g} {w:g} {h:g}"'
+
+    return re.sub(
+        r'width="(?P<w>[\d.]+)" height="(?P<h>[\d.]+)" viewBox="(?P<x>-?[\d.]+) (?P<y>-?[\d.]+) [\d.]+ [\d.]+"',
+        grown,
         svg,
         count=1,
     )
@@ -339,6 +530,97 @@ def add_title(svg: str, title: str, desc: str) -> str:
     )
 
 
+LIFELINE = re.compile(r'(<g class="(?P<id>[A-Za-z0-9+/=]+)"><path d="[^"]*" )stroke="[^"]*"([^>]*?)style="[^"]*"')
+MESSAGE = re.compile(r'<g class="(?P<id>[A-Za-z0-9+/=]+)(?: [\w-]+)?">(?P<body>.*?)</g>', re.S)
+
+
+def mermaid_blocks(path: Path) -> list[str]:
+    """Every Mermaid block of a Markdown page, in order."""
+    return [match.group(1).strip() for match in re.finditer(r"^```mermaid\n(.*?)\n```", path.read_text(), re.S | re.M)]
+
+
+def mermaid_hash(text: str) -> str:
+    return hashlib.sha256(text.strip().encode()).hexdigest()[:16]
+
+
+def restyle_lifelines(svg: str, colors: dict[str, str]) -> str:
+    def solid(match: re.Match[str]) -> str:
+        if " -- )" not in name_of(match["id"]):
+            return match.group(0)
+        return f'{match.group(1)}stroke="{colors["border"]}"{match.group(3)}style="stroke-width:1;"'
+
+    return LIFELINE.sub(solid, svg)
+
+
+def lift_message_labels(svg: str) -> str:
+    """Set each straight message's label just above its line, as the flow diagram does."""
+
+    def lift(match: re.Match[str]) -> str:
+        name, body = html.unescape(name_of(match["id"])), match["body"]
+        ends = re.search(r"\((?P<a>[\w.]+) -> (?P<b>[\w.]+)\)\[\d+\]$", name)
+        text = re.search(r'<text x="(?P<x>[-\d.]+)" y="(?P<y>[-\d.]+)"', body)
+        if ends is None or text is None:
+            return match.group(0)
+        steps = [float(step) for step in re.findall(r'<tspan[^>]*dy="([-\d.]+)"', body)[1:]]
+        if ends["a"].split(".")[-1] == ends["b"].split(".")[-1]:
+            loop = re.search(r'<path d="(?P<d>[^"]+)"', body)
+            if loop is None:
+                return match.group(0)
+            numbers = [float(value) for value in re.findall(r"-?[\d.]+", loop["d"])]
+            xs, ys = numbers[0::2], numbers[1::2]
+            y = (min(ys) + max(ys)) / 2 + 4 - sum(steps) / 2
+            body = relabel(body, max(xs) + 8, y).replace("text-anchor:middle", "text-anchor:start", 1)
+        else:
+            path = PATH_D.search(body)
+            if path is None or abs(float(path["y1"]) - float(path["y2"])) > 0.5:
+                return match.group(0)
+            body = relabel(body, float(text["x"]), float(path["y1"]) - 7 - sum(steps))
+        body = body.replace(' mask="url(#', ' data-mask="url(#')
+        return match.group(0).replace(match["body"], body)
+
+    return MESSAGE.sub(lift, svg)
+
+
+def postprocess_house(svg: str, colors: dict[str, str], title: str, desc: str) -> str:
+    svg = re.sub(
+        r'<rect x="[-\d.]+" y="[-\d.]+" width="[\d.]+" height="[\d.]+" rx="0" fill="[^"]+" class=" fill-N7"'
+        r' stroke-width="0" />',
+        "",
+        svg,
+        count=1,
+    )
+    svg = svg.replace("stroke-width:2;", "stroke-width:1.5;").replace('stroke-width="2"', 'stroke-width="1.5"')
+    svg = restyle_lifelines(svg, colors)
+    svg = lift_message_labels(svg)
+    return add_title(svg, title, desc)
+
+
+def build_redraws() -> None:
+    fonts = static_fonts()
+    manifest = []
+    for name, redraw in REDRAWS.items():
+        blocks = mermaid_blocks(ROOT / redraw.source)
+        if redraw.index >= len(blocks):
+            sys.exit(f"{redraw.source} has no Mermaid block {redraw.index} for {name}.d2.")
+        for theme, colors in THEMES.items():
+            out = DIAGRAMS / f"{name}-{theme}.svg"
+            raw = render_d2(DIAGRAMS / f"{name}.d2", theme, fonts, out)
+            out.write_text(postprocess_house(raw, colors, redraw.title, redraw.desc))
+            svgo(out)
+            print(f"{out.relative_to(ROOT)}  {out.stat().st_size / 1024:.0f} KB")
+        manifest.append(
+            {
+                "name": name,
+                "source": redraw.source,
+                "index": redraw.index,
+                "mermaid": mermaid_hash(blocks[redraw.index]),
+                "title": redraw.title,
+            }
+        )
+    MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n")
+    print(f"{MANIFEST.relative_to(ROOT)}")
+
+
 def svgo(path: Path) -> None:
     config = Path(__file__).with_name("svgo.config.mjs")
     npx = shutil.which("npx")
@@ -360,3 +642,4 @@ def build_flow() -> None:
 
 if __name__ == "__main__":
     build_flow()
+    build_redraws()

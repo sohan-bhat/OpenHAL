@@ -1,0 +1,58 @@
+[
+  {
+    "name": "architecture-components",
+    "source": "docs/ARCHITECTURE.md",
+    "index": 0,
+    "mermaid": "4178795d584b1f3c",
+    "title": "OpenHAL components"
+  },
+  {
+    "name": "architecture-command",
+    "source": "docs/ARCHITECTURE.md",
+    "index": 1,
+    "mermaid": "0743a2000e62f450",
+    "title": "The life of a command"
+  },
+  {
+    "name": "architecture-discovery",
+    "source": "docs/ARCHITECTURE.md",
+    "index": 2,
+    "mermaid": "14c84d70c5b77742",
+    "title": "Device discovery"
+  },
+  {
+    "name": "architecture-writer",
+    "source": "docs/ARCHITECTURE.md",
+    "index": 3,
+    "mermaid": "e391b476818e6926",
+    "title": "The driver writer"
+  },
+  {
+    "name": "architecture-routine",
+    "source": "docs/ARCHITECTURE.md",
+    "index": 4,
+    "mermaid": "3868b2627148a30a",
+    "title": "Routine execution"
+  },
+  {
+    "name": "architecture-bridge",
+    "source": "docs/ARCHITECTURE.md",
+    "index": 5,
+    "mermaid": "72b29fdd9c84c458",
+    "title": "Bridges"
+  },
+  {
+    "name": "architecture-stop",
+    "source": "docs/ARCHITECTURE.md",
+    "index": 6,
+    "mermaid": "a82f4df85fee9502",
+    "title": "Stop"
+  },
+  {
+    "name": "spec-exchange",
+    "source": "spec/2026-10-24/architecture.md",
+    "index": 0,
+    "mermaid": "6147a51065a066cb",
+    "title": "One blocked and one granted action"
+  }
+]

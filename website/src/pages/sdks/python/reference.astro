@@ -1,8 +1,12 @@
 ---
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import api from "../../../content/generated/python-api.json";
 import DocShell from "../../../layouts/DocShell.astro";
-import { highlightHtml, highlightLinesHtml } from "../../../lib/highlight.mjs";
+import { highlightLinesHtml } from "../../../lib/highlight.mjs";
+import { formatSignature, inlineCode, methodGuide, paragraphs, placeOf } from "../../../lib/python-api";
 import { sdkSidebar } from "../../../lib/sdk-nav";
+import { REPO_ROOT } from "../../../lib/spec-meta.mjs";
 
 interface Member {
   name: string;
@@ -21,13 +25,28 @@ interface Item {
   methods?: Member[];
 }
 
+const GUIDE_PATH = "docs/interfaces/PYTHON.md";
+const guide = methodGuide(readFileSync(join(REPO_ROOT, GUIDE_PATH), "utf8"));
 const groups = api.groups as Array<{ name: string; items: Item[] }>;
 const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const sync = groups.flatMap((group) => group.items).find((item) => item.name === "Client");
+const syncSignatures = new Map((sync?.methods ?? []).map((method) => [method.name, (method.signature ?? "").replace(/^async /, "")]));
+
+const order = [...guide.places.keys()];
+const rank = (name: string) => (order.includes(name) ? order.indexOf(name) : -1);
+
+function methodGroups(item: Item) {
+  const own = item.name === "AsyncClient" ? (item.methods ?? []).filter((method) => syncSignatures.get(method.name) !== (method.signature ?? "").replace(/^async /, "")) : (item.methods ?? []);
+  return guide.groups
+    .map((name) => ({ name, methods: own.filter((method) => placeOf(guide, method.name).group === name).sort((a, b) => rank(a.name) - rank(b.name)) }))
+    .filter((group) => group.methods.length > 0);
+}
+
 const headings = groups.flatMap((group) => [
   { depth: 2, slug: slug(group.name), text: group.name },
   ...group.items.map((item) => ({ depth: 3, slug: slug(item.name), text: item.name })),
 ]);
-const paragraphs = (text: string) => text.split(/\n\s*\n/).filter((part) => !/^\s{4}/m.test(part));
+const sigHtml = (signature: string) => highlightLinesHtml(formatSignature(signature), "python");
 ---
 
 <DocShell
@@ -38,7 +57,10 @@ const paragraphs = (text: string) => text.split(/\n\s*\n/).filter((part) => !/^\
   sidebar={sdkSidebar()}
   section="SDKs"
 >
-  <p>Generated from the docstrings of <code>{api.module}</code>.</p>
+  <p>
+    Generated from the docstrings of <code>{api.module}</code>. Methods are grouped as in the <a href="/sdks/python/">Python guide</a>, with the route each one
+    calls.
+  </p>
   {
     groups.map((group) => (
       <>
@@ -51,16 +73,23 @@ const paragraphs = (text: string) => text.split(/\n\s*\n/).filter((part) => !/^\
               <a class="heading-link" href={`#${slug(item.name)}`}>
                 <code>{item.name}</code>
               </a>
-              <span class="legend kind">{item.kind}</span>
+              <span class="kind">{item.kind}</span>
             </h3>
-            {item.signature && <pre class="sig" tabindex="0" set:html={highlightLinesHtml(item.signature, "python")} />}
-            {item.bases && <p class="muted">Subclass of <code>{item.bases.join(", ")}</code>.</p>}
-            {paragraphs(item.doc).map((part) => <p>{part}</p>)}
+            {item.signature && <pre class="sig" set:html={sigHtml(item.signature)} />}
+            {item.bases && (
+              <p class="muted">
+                Subclass of <code>{item.bases.join(", ")}</code>.
+              </p>
+            )}
+            {paragraphs(item.doc).map((part) => <p set:html={inlineCode(part)} />)}
             {item.fields && item.fields.length > 0 && (
               <div class="table-wrap">
                 <table>
                   <thead>
-                    <tr><th scope="col">Field</th><th scope="col">Type</th></tr>
+                    <tr>
+                      <th scope="col">Field</th>
+                      <th scope="col">Type</th>
+                    </tr>
                   </thead>
                   <tbody>
                     {item.fields.map((field) => (
@@ -73,16 +102,28 @@ const paragraphs = (text: string) => text.split(/\n\s*\n/).filter((part) => !/^\
                 </table>
               </div>
             )}
-            {item.methods && item.methods.length > 0 && (
-              <dl class="methods">
-                {item.methods.map((method) => (
-                  <div>
-                    <dt><code set:html={highlightHtml(method.signature ?? method.name, "python")} /></dt>
-                    {method.doc && <dd>{paragraphs(method.doc)[0]}</dd>}
-                  </div>
-                ))}
-              </dl>
+            {item.name === "AsyncClient" && (
+              <p>
+                It has every method of <a href="#client"><code>Client</code></a> as a coroutine, with the same arguments. These are its own.
+              </p>
             )}
+            {methodGroups(item).map((methodGroup) => (
+              <div class="method-group">
+                <h4 id={`${slug(item.name)}-${slug(methodGroup.name)}`}>{methodGroup.name}</h4>
+                {methodGroup.methods.map((method) => {
+                  const place = placeOf(guide, method.name);
+                  return (
+                    <div class="method" id={`${slug(item.name)}-${slug(method.name)}`}>
+                      <pre class="sig" set:html={sigHtml(method.signature ?? method.name)} />
+                      {paragraphs(method.doc).map((part) => (
+                        <p set:html={inlineCode(part)} />
+                      ))}
+                      {place.route && <p class="route" set:html={`Calls ${inlineCode(place.route)}.`} />}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </section>
         ))}
       </>
@@ -104,31 +145,48 @@ const paragraphs = (text: string) => text.split(/\n\s*\n/).filter((part) => !/^\
     align-items: baseline;
   }
 
+  .kind {
+    font-size: var(--t-small);
+    font-weight: 600;
+    color: var(--text-2);
+  }
+
   .sig {
     margin: 0;
     padding: var(--s-3) var(--s-4);
     background: var(--surface);
     border: var(--rule);
     border-radius: var(--radius);
-    overflow-x: auto;
     font-size: 14px;
+    line-height: 1.6;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
 
-  .methods {
-    margin: 0;
+  .method-group {
+    margin-top: var(--s-4);
     display: grid;
-    gap: var(--s-3);
+    gap: var(--s-4);
   }
 
-  .methods dt code {
-    font-size: 14px;
-    overflow-wrap: anywhere;
+  .method-group h4 {
+    font-size: var(--t-body);
+    padding-bottom: var(--s-1);
+    border-bottom: var(--rule);
   }
 
-  .methods dd {
-    margin: var(--s-1) 0 0;
+  .method {
+    display: grid;
+    gap: var(--s-2);
+    scroll-margin-top: 72px;
+  }
+
+  .method p {
+    margin: 0;
+  }
+
+  .route {
+    font-size: var(--t-small);
     color: var(--text-2);
   }
 </style>

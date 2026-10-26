@@ -107,6 +107,34 @@ export function orderPages(paths) {
   });
 }
 
+export function numberPages(paths) {
+  const out = new Map();
+  let top = 0;
+  let sub = 0;
+  let current = "";
+  for (const path of orderPages(paths)) {
+    const parts = path.split("/");
+    const head = parts.length > 1 ? parts[0] : path;
+    const isIndex = parts.length > 1 && /^(index|overview|readme)\.md$/i.test(parts[parts.length - 1]);
+    if (head !== current || parts.length === 1) {
+      top += 1;
+      sub = 0;
+      current = head;
+      if (parts.length === 1 || isIndex) {
+        out.set(path, { number: `${top}`, depth: 1 });
+        continue;
+      }
+    }
+    if (isIndex) {
+      out.set(path, { number: `${top}`, depth: 1 });
+      continue;
+    }
+    sub += 1;
+    out.set(path, { number: `${top}.${sub}`, depth: 2 });
+  }
+  return out;
+}
+
 export function slugOf(path) {
   const parts = path.replace(/\.md$/, "").split("/").map((part) => part.toLowerCase().replace(/^\d+[-_.]?/, ""));
   const last = parts[parts.length - 1];

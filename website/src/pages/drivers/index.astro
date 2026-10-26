@@ -11,6 +11,7 @@ const groups = [
   { name: "Planned", rows: all.filter((driver) => driver.status === "planned"), reference: false },
   { name: "Reference driver", rows: references, reference: true },
 ].filter((group) => group.rows.length > 0);
+const headed = groups.filter((group) => !group.reference).length > 1;
 const { total } = driverCounts();
 const listed = [...all, ...references];
 const statuses = STATUS_ORDER.filter((status) => all.some((driver) => driver.status === status));
@@ -99,11 +100,13 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
         {
           groups.map((group) => (
             <tbody data-group>
-              <tr class="group-row">
-                <th scope="colgroup" colspan={conformances.length > 0 ? 7 : 6}>
-                  {group.name}
-                </th>
-              </tr>
+              {headed && (
+                <tr class="group-row">
+                  <th scope="colgroup" colspan={conformances.length > 0 ? 7 : 6}>
+                    {group.name}
+                  </th>
+                </tr>
+              )}
               {group.rows.map((driver) => (
                 <tr
                   data-driver={group.reference ? undefined : ""}
@@ -223,6 +226,18 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
 
   td:first-child {
     white-space: nowrap;
+  }
+
+  @container (min-width: 940px) {
+    .drivers th,
+    .drivers td {
+      padding-right: var(--s-5);
+    }
+
+    .drivers th:last-child,
+    .drivers td:last-child {
+      padding-right: 0;
+    }
   }
 
   .more {

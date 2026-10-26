@@ -13,10 +13,10 @@ const narrow = flow?.narrow;
 const stamp = `(() => {
   const art = document.currentScript.previousElementSibling;
   const slot = art.querySelector(".flow-slot");
-  const narrowQuery = matchMedia("(max-width: 600px)");
+  const wideWidth = ${wide?.width ?? 0};
   const darkQuery = matchMedia("(prefers-color-scheme: dark)");
   const show = () => {
-    const size = narrowQuery.matches && art.querySelector('template[data-variant^="narrow"]') ? "narrow" : "wide";
+    const size = art.clientWidth < wideWidth && art.querySelector('template[data-variant^="narrow"]') ? "narrow" : "wide";
     const key = size + "-" + (darkQuery.matches ? "dark" : "light");
     if (art.dataset.shown === key) return;
     const template = art.querySelector('template[data-variant="' + key + '"]');
@@ -25,10 +25,11 @@ const stamp = `(() => {
     slot.style.aspectRatio = template.dataset.ratio;
     slot.style.maxWidth = template.dataset.width + "px";
     art.dataset.shown = key;
+    art.dataset.size = size;
     art.dispatchEvent(new Event("flow:stamp"));
   };
   show();
-  narrowQuery.addEventListener("change", show);
+  new ResizeObserver(show).observe(art);
   darkQuery.addEventListener("change", show);
 })();`;
 ---
@@ -143,12 +144,9 @@ const stamp = `(() => {
     aspect-ratio: var(--wide-ratio);
   }
 
-  @media (max-width: 600px) {
-    .flow-slot {
-      max-width: var(--narrow-width);
-      aspect-ratio: var(--narrow-ratio);
-      margin-inline: auto;
-    }
+  .flow-art[data-size="narrow"] .flow-slot {
+    max-width: var(--narrow-width);
+    aspect-ratio: var(--narrow-ratio);
   }
 
   .flow-art :global(svg.flow-overlay) {

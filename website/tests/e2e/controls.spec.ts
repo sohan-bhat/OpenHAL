@@ -7,7 +7,7 @@ test.describe("site chrome", () => {
     const links = await nav.getByRole("link").evaluateAll((items) =>
       items.map((item) => ({ label: item.textContent!.trim(), href: item.getAttribute("href")! })),
     );
-    expect(links.map((link) => link.label)).toEqual(["Overview", "Specification", "Playground", "Drivers", "Device Library", "SDKs", "Inspector", "GitHub"]);
+    expect(links.map((link) => link.label)).toEqual(["Overview", "Docs", "Specification", "Playground", "Drivers", "Device Library", "SDKs", "Inspector", "Blog", "GitHub"]);
     for (const link of links) {
       if (link.href.startsWith("http")) {
         expect(link.href).toBe("https://github.com/sohan-bhat/OpenHAL");
@@ -71,9 +71,9 @@ test.describe("documentation chrome", () => {
     const next = pager.locator("a.next");
     const nextTitle = (await next.locator("span").last().textContent())!.trim();
     await next.click();
-    await expect(page.locator("h1")).toHaveText(nextTitle);
+    await expect(page.locator("h1")).toHaveText(new RegExp(`^\\d+(\\.\\d+)* ${nextTitle}$`));
     await page.getByRole("navigation", { name: "Previous and next" }).locator("a.prev").click();
-    await expect(page.locator("h1")).toHaveText("Messages");
+    await expect(page.locator("h1")).toHaveText("3.3 Messages");
   });
 
   test("the version switcher lists each dated version and opens it", async ({ page }) => {

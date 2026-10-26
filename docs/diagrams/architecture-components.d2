@@ -1,0 +1,48 @@
+vars: @theme-light
+...@house
+
+direction: down
+
+(** -> **)[*].class: msg
+
+clients: "Clients" {
+  class: group
+  mcp: "openhal mcp\nstdio MCP server" {class: box}
+  cli: "openhal CLI" {class: box}
+  lib: "Python library\nopenhal.connect()" {class: box}
+  dash: "Dashboard\nserved by the hub" {class: box}
+}
+
+hub: "openhald, one process" {
+  class: group
+  api: "Local API\nFastAPI and WebSocket\n127.0.0.1:7420" {class: box}
+  auth: "Tokens,\nprincipals" {class: box}
+  reg: "Device\nregistry" {class: box}
+  cq: "Confirmation\nqueue" {class: box}
+  writer: "Driver\nwriter" {class: box}
+  rt: "Routine\nengine" {class: box}
+  wd: "Watchdogs" {class: box}
+  kernel: "Safety kernel\ndeterministic, no LLM" {class: box}
+  disc: "Discovery and\nlibrary matcher" {class: box}
+  audit: "Audit log\nhash chain" {class: box}
+  drv: "Drivers\nprotocols and bridges" {class: box}
+}
+
+hw: "Hardware and\nbridged systems" {class: box}
+
+clients.mcp -> hub.api
+clients.cli -> hub.api
+clients.lib -> hub.api
+clients.dash -> hub.api
+hub.api -> hub.auth -> hub.kernel
+hub.api -> hub.reg
+hub.api -> hub.cq
+hub.api -> hub.writer
+hub.rt -> hub.kernel
+hub.wd -> hub.kernel
+hub.writer -> hub.disc
+hub.disc -> hub.drv
+hub.kernel -> hub.drv: "single-use grant"
+hub.kernel -> hub.audit
+hub.cq -> hub.kernel
+hub.drv -> hw

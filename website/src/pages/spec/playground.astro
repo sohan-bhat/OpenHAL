@@ -1,8 +1,10 @@
 ---
 import "../../styles/trace.css";
 import Playground from "../../components/playground/Playground.svelte";
-import Base from "../../layouts/Base.astro";
+import DocShell from "../../layouts/DocShell.astro";
 import { loadScenario } from "../../lib/scenario";
+import { latestVersion, specPages } from "../../lib/spec";
+import { specSidebar } from "../../lib/spec-nav";
 
 const files = {
   ...import.meta.glob<string>("../../../../examples/**/*.hal.yaml", { query: "?raw", import: "default", eager: true }),
@@ -33,31 +35,31 @@ const suggestion = first
       ),
     }
   : null;
+const latest = latestVersion();
+const sidebar = specSidebar(latest ? await specPages(latest) : [], (item) => (item.slug ? `/spec/latest/${item.slug}/` : "/spec/latest/"));
 const initial = examples.find((item) => scenario.file && item.path.endsWith(`/${scenario.file}`))?.name ?? examples.find((item) => item.name === scenario.device)?.name ?? "plant-waterer";
 ---
 
-<Base title="Playground" description="Edit an OpenHAL device file, validate it as you type, and see the hub's JSON-RPC answer to each request. Runs in your browser.">
-  <div class="wrap page">
-    <header class="head">
-      <h1>Playground</h1>
-      <p class="lede">Edit a device file, then send requests to a simulated hub. Each answer is the JSON-RPC message the hub sends.</p>
-      <p class="lede muted">An in-browser demo. A TypeScript port of the safety kernel runs here and never talks to hardware.</p>
-    </header>
-    <Playground client:interact examples={examples} initial={initial} suggestion={suggestion} />
+<DocShell
+  title="Playground"
+  description="Edit an OpenHAL device file, validate it as you type, and see the hub's JSON-RPC answer to each request. Runs in your browser."
+  sidebar={sidebar}
+  section="Specification"
+  wide
+  pager={false}
+>
+  <div slot="after-title" class="ledes">
+    <p class="lede">Edit a device file, then send requests to a simulated hub. Each answer is the JSON-RPC message the hub sends.</p>
+    <p class="lede muted">An in-browser demo. A TypeScript port of the safety kernel runs here and never talks to hardware.</p>
   </div>
-</Base>
+  <Playground client:interact examples={examples} initial={initial} suggestion={suggestion} />
+</DocShell>
 
 <style>
-  .page {
-    padding-top: var(--s-6);
-  }
-
-  .head {
+  .ledes {
     display: grid;
     gap: var(--s-2);
-    padding-bottom: var(--s-4);
-    margin-bottom: var(--s-5);
-    border-bottom: var(--rule);
+    margin-top: var(--s-3);
   }
 
   .lede {
