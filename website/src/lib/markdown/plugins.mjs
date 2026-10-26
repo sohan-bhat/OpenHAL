@@ -205,7 +205,7 @@ export function rehypeTables() {
           column += 1;
         }
       });
-      parent.children[index] = el("div", { className: ["table-wrap"] }, [node]);
+      parent.children[index] = el("div", { className: headers.length === 2 ? ["table-wrap", "pair"] : ["table-wrap"] }, [node]);
       return SKIP;
     });
   };

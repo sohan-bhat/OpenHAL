@@ -187,4 +187,37 @@
     font-family: var(--font-mono);
     color: var(--text-2);
   }
+
+  .prose .pair table {
+    display: table;
+  }
+
+  .prose .pair thead {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    display: table-header-group;
+  }
+
+  .prose .pair tbody {
+    display: table-row-group;
+  }
+
+  .prose .pair tr {
+    display: table-row;
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .prose .pair td {
+    display: table-cell;
+    padding: var(--s-2) var(--s-3) var(--s-2) 0;
+    border-bottom: var(--rule);
+  }
+
+  .prose .pair td::before {
+    content: none;
+  }
 }
