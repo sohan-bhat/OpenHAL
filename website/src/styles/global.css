@@ -185,7 +185,7 @@ p {
 }
 
 .status.ok::before {
-  background: var(--ok);
+  content: none;
 }
 
 .status.blocked {

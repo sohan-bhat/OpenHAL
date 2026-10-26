@@ -29,7 +29,7 @@ describe("status shapes", () => {
   const css = readFileSync(fileURLToPath(new URL("../../src/styles/global.css", import.meta.url)), "utf8");
   const shaped = [...css.matchAll(/\.status\.([a-z]+)::before\s*\{([^}]*)\}/g)].filter(([, , body]) => !/content:\s*none/.test(body)).map(([, name]) => name);
 
-  it("draws only the four shapes DESIGN.md names", () => {
-    expect([...new Set(shaped)].sort()).toEqual(["blocked", "confirm", "ok", "unverified"]);
+  it("draws only the shapes DESIGN.md names, and no green dot for ok or granted", () => {
+    expect([...new Set(shaped)].sort()).toEqual(["blocked", "confirm", "unverified"]);
   });
 });
