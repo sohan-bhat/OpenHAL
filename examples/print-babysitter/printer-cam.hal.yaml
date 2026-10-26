@@ -1,0 +1,10 @@
+openhal: "0.1"
+device: Printer camera
+id: printer-cam
+connect: { http: "http://printer.local", timeout: 5 s }
+read:
+  frame: { type: image, map: { path: /webcam/, query: { action: snapshot } } }
+hazard: low
+notes: "A USB camera on the printer's host, pointed at the bed. crowsnest serves its snapshots over HTTP. Read-only."
+provenance: { source: hand-written, by: openhal print babysitter example, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24, sha256: d4ab95e8d2054a86bfdab10ca8fad67f381c45b995e6cecb4c970eb9c6fc2dae }
