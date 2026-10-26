@@ -23,7 +23,7 @@ from openhal._brand import DAEMON_NAME, PRODUCT_NAME
 from openhal.client import AsyncClient
 from openhal.client.settings import TOKEN_ENV, home_dir, read_token_file, resolve_url
 from openhal.mcp import prompts
-from openhal.mcp.tools import HUMAN_PRINCIPAL_REFUSED, TOOLS, Tools
+from openhal.mcp.tools import HUMAN_PRINCIPAL_REFUSED, TOOLS, Tools, image_tool
 
 INSTRUCTIONS: Final = """\
 OpenHAL connects you to real hardware through a local hub. A deterministic safety kernel in the hub checks
@@ -77,7 +77,8 @@ def build_server(client: AsyncClient) -> tuple[MCPServer, Tools]:
     )
     tools = Tools(client)
     for name, hints in TOOLS.items():
-        server.add_tool(getattr(tools, name), name=name, annotations=hints)
+        handler = getattr(tools, name)
+        server.add_tool(image_tool(handler) if name == "read" else handler, name=name, annotations=hints)
     server.prompt(
         name="set_up_device",
         title="Set up a new device",

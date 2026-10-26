@@ -33,7 +33,7 @@ from typing import Any, Final
 import yaml
 
 from openhal.client import AsyncClient, models
-from openhal.demo import scenario
+from openhal.demo import plant
 from openhal.demo.rig import (
     MCP_COMMAND,
     Agent,
@@ -48,14 +48,14 @@ from openhal.drivers.openhal_firmware.simulator import PlantWatererSimulator
 from openhal.hub.views import quantity
 from openhal.protocol.version import LATEST
 
-DEVICE: Final = scenario.DEVICE
-FILE_NAME: Final = scenario.FILE_NAME
+DEVICE: Final = plant.DEVICE
+FILE_NAME: Final = plant.FILE_NAME
 DRIVER: Final = "openhal-firmware"
 SKETCH: Final = "plant-waterer.ino"
 PERSON: Final = "owner"
 AGENT: Final = "claude"
 AGENT_SCOPE: Final = "control_low"
-SPEED: Final = scenario.SPEED
+SPEED: Final = plant.SPEED
 WAIT_S: Final = 30.0
 E2E_PATH: Final = Path("docs") / "demo" / "e2e.yaml"
 RECORDED_WITH: Final = "uv run openhal demo --full --record docs/demo/e2e.yaml"
@@ -138,7 +138,7 @@ async def _set_up(person: AsyncClient, board: Board, port: str) -> list[dict[str
 
     board.mark()
     params = {"port": found.address}
-    session = await person.start_writer(driver=DRIVER, params=params, sketch_path=str(scenario.example(SKETCH)))
+    session = await person.start_writer(driver=DRIVER, params=params, sketch_path=str(plant.sketch(SKETCH)))
     if session.status != "interview" or session.draft_yaml is None:
         raise DemoError(f"The driver writer couldn't draft a file ({session.status}). {session.problems}")
     writer = {
