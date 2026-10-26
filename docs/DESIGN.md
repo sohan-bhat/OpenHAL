@@ -17,7 +17,7 @@ OpenHAL is an open protocol for AI agents to discover, read and control hardware
 
 ## Signature elements
 
-Two elements carry the identity.
+Three elements carry the identity. The flow diagram heads the README, the message trace shows every exchange, and the landing story tells both as one scene on the website.
 
 ### The animated flow diagram
 
@@ -27,11 +27,11 @@ A clean flowchart of one command, left to right. AI client, then OpenHAL hub (wi
 - The Safety kernel and Driver nodes each say what they do in a short line, and the blocked code sits under the Blocked node.
 - One neutral for nodes and wires, the accent for the active path, red only for the Blocked node and its connector.
 - Only the wires move. A dash flows along each connector in the direction data travels, 2 to 3 s per loop, staggered from client to device. The blocked branch flows to Blocked, then pauses. `prefers-reduced-motion` stops all of it.
-- Source `docs/diagrams/flow.d2`, built with `scripts/build-diagrams` into `docs/diagrams/flow-light.svg` and `flow-dark.svg`, plus narrow variants for phones. The page picks the narrow one by the figure's width, not the viewport. The README hero and the website use these files.
+- Source `docs/diagrams/flow.d2`, built with `scripts/build-diagrams` into `docs/diagrams/flow-light.svg` and `flow-dark.svg`, plus narrow variants for phones. The page picks the narrow one by the figure's width, not the viewport. The README hero uses these files.
 
 ### The message trace
 
-A two-column trace of a request and the hub's answer, the way a protocol spec shows an exchange. It appears below the hero on the website, in the README as a code block, in the spec and docs, in the Inspector's message log and in social images.
+A two-column trace of a request and the hub's answer, the way a protocol spec shows an exchange. It appears in the README as a code block, in the Playground, in the spec and docs, in the Inspector's message log and in social images.
 
 ```
 → hal/action  { "device": "plant-waterer", "action": "water",
@@ -46,6 +46,10 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
 - **Payload.** JSON in the mono face with the house syntax theme. Reasons as plain mono text on their own line.
 - Method names, codes and names match ADR 0015 and the generated schema exactly, everywhere.
 
+### The landing story
+
+The website's home page tells the canonical scenario as one pinned scene. A camera moves along the real path, AI client, OpenHAL hub with the device file, Safety kernel, Driver and Arduino plant waterer, and each step is one short caption with the real codes in small mono where they help. The kernel ticks its checks in order and says LIMIT_EXCEEDED, then INTERLOCK_BLOCKED with the pump held off, then granted as soil moisture climbs from 31 % to 46 %. Every number comes from docs/demo/scenario.yaml. With reduced motion or no script it is a static list of the same steps. The motion is pattern 4 under Motion. Source in website/src/components/landing/.
+
 ## Canonical demo scenario
 
 Every example value in the README, website, Inspector screenshots, docs and social images comes from one file, `docs/demo/scenario.yaml`, written by `uv run openhal demo --record docs/demo/scenario.yaml` from a real run of the hub against the plant waterer mock (examples/plant-waterer/). The device is an Arduino plant waterer with `soil_moisture` and `tank` readings and one action, `water(duration)`, limited to 30 s, 3 runs per hour and never while the tank is empty. The trace has three exchanges. Watering for 120 s gets `LIMIT_EXCEEDED`. Watering for 20 s with the tank empty gets `INTERLOCK_BLOCKED`. After a refill, watering for 20 s is done and soil moisture rises from 31 % to 46 %. Tests check that the file is still what the hub answers and that every surface matches it. The desk fan stays only as a secondary example in spec/examples/. Demo values are labeled as demo data where shown.
@@ -54,7 +58,7 @@ Every example value in the README, website, Inspector screenshots, docs and soci
 
 | Surface, feature or state | How the theme expresses it |
 |---|---|
-| Home page | One sentence, the flow diagram, the message trace, a three-command quickstart, device families from the catalog, two sentences on MHS, links into the spec |
+| Home page | The text wordmark, the one sentence and Get started, the landing story of the plant waterer, why it's safe in three points, device families from the catalog, the three-command quickstart with a link to the Playground, and links to the spec and the docs |
 | Spec pages | Dated version in the URL and a switcher, numbered sections, MUST, SHOULD and MAY, outline, anchors, previous and next, "Edit on GitHub" |
 | Schema reference | Generated tables of every message, type and field, monospace names |
 | Error codes | The registry table, the message trace with `error`, code and name in the blocked red with its shape |
@@ -152,10 +156,11 @@ The dashboard is the OpenHAL Inspector, a protocol inspector.
 
 ## Motion
 
-Three patterns, nothing else.
+Four patterns, nothing else.
 1. The flowing connectors in the flow diagram.
 2. A message appearing in the trace or log. A 120 ms fade, 4 px rise.
 3. A status change. A 120 ms cross-fade.
+4. The landing story. A stage pins under the header while the page scrolls normally, and the scroll position drives a camera that pans and zooms along the plant waterer's path. Each piece changes with that position, using transforms and opacity only, and a piece finishes leaving before the one replacing it arrives. Scrolling back plays it in reverse. Nothing moves on its own, so it is not scroll-jacking, parallax or fade-in on scroll. The soil moisture readout steps from 31 % to 46 % as a live reading, not a counter. The owner asked for this motion on 2026-10-25, which is its justification under Banned by default.
 
 With `prefers-reduced-motion: reduce`, nothing moves.
 
@@ -263,7 +268,7 @@ Motion and interaction
 - Scroll-jacking, parallax, scroll-triggered fade-in on every section.
 - Typewriter text effects, counting-up numbers.
 - Custom cursors, cursor trails, magnetic buttons.
-- More than 3 motion patterns sitewide. Any animation that doesn't communicate a state change.
+- More than the four motion patterns above. Any animation that doesn't communicate a state change.
 
 Copy
 - Banned words: unlock (except the literal control after a stop), seamless, supercharge, elevate, effortless, empower, revolutionary, next-generation, cutting-edge, game-changer, magic, harness, unleash, journey, "Welcome to", "the future of".
@@ -302,4 +307,4 @@ Run these on every screen before calling it done.
 
 1. **Swap.** Put another product's name on it. If it still fits, revise.
 2. **Thumbnail.** Blur a screenshot to 200 px wide. It should still read as a specification with message exchanges.
-3. **Memory.** What does a visitor remember ten minutes later? It should be the flow diagram's blocked branch and the message trace with LIMIT_EXCEEDED and INTERLOCK_BLOCKED.
+3. **Memory.** What does a visitor remember ten minutes later? It should be the landing story's two refusals, LIMIT_EXCEEDED and INTERLOCK_BLOCKED, and the pump held off while the tank is empty.
