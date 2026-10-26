@@ -1,5 +1,6 @@
 <script lang="ts">
   import Mark from "../components/Mark.svelte";
+  import StopUnavailable from "../components/StopUnavailable.svelte";
   import { api } from "../lib/api";
 
   let { onpaired }: { onpaired: () => void } = $props();
@@ -7,6 +8,7 @@
   let code = $state("");
   let error = $state<string | null>(null);
   let busy = $state(false);
+  const host = typeof location === "undefined" ? "" : location.host;
 
   async function pair(event: SubmitEvent) {
     event.preventDefault();
@@ -22,8 +24,11 @@
   }
 </script>
 
-<main class="pair" id="main">
+<header class="bar">
   <div class="brand"><Mark size={28} /><span class="wordmark">OpenHAL</span> <span class="muted">Inspector</span></div>
+  <StopUnavailable why="unpaired" {host} />
+</header>
+<main class="pair" id="main">
   <section aria-labelledby="pair-title">
     <h1 id="pair-title">Pair this browser with the hub</h1>
     <p>The Inspector acts as you, a human Principal. Run this on the machine that runs the hub, then enter the code.</p>
@@ -50,12 +55,32 @@
 </main>
 
 <style>
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-4) var(--s-6);
+    padding: var(--s-3) var(--s-5);
+    border-bottom: var(--rule);
+  }
+
   .pair {
     display: grid;
     gap: var(--s-6);
     max-width: 520px;
     margin: 0 auto;
     padding: var(--s-7) var(--s-4);
+  }
+
+  @media (max-width: 767px) {
+    .bar {
+      padding: var(--s-3) var(--s-4);
+    }
+
+    .pair {
+      padding-top: var(--s-5);
+    }
   }
 
   .brand {

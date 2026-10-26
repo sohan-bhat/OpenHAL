@@ -235,6 +235,7 @@ test("a pairing code from Settings pairs a new browser", async ({ page, browser 
   const stranger = await browser.newContext();
   const other = await stranger.newPage();
   await other.goto(hubState().url + "/");
+  await expect(other.getByRole("complementary", { name: "STOP needs a paired browser" })).toContainText("openhal stop");
   await other.getByLabel("Pairing code").fill(code);
   await other.getByRole("button", { name: "Pair" }).click();
   await expect(other.getByRole("button", { name: /STOP/ })).toBeVisible();
@@ -245,7 +246,9 @@ test("the offline page tries the hub again on its own", async ({ page }) => {
   let refuse = true;
   await page.route("**/v1/whoami", (route) => (refuse ? route.abort() : route.continue()));
   await page.goto("/");
-  await expect(page.getByText("does not answer")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The hub does not answer" })).toBeVisible();
+  const stop = page.getByRole("complementary", { name: "STOP can't reach the hub" });
+  await expect(stop).toContainText("hardware e-stop");
   refuse = false;
   await expect(page.getByRole("button", { name: /STOP/ })).toBeVisible({ timeout: 8_000 });
 });
