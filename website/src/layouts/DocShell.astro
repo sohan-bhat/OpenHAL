@@ -363,7 +363,7 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
 
   @media (min-width: 1024px) {
     .shell {
-      grid-template-columns: 240px minmax(0, 1fr);
+      grid-template-columns: var(--sidebar) minmax(0, 1fr);
       gap: var(--s-7);
       padding-top: var(--s-6);
     }
@@ -387,11 +387,11 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
 
   @media (min-width: 1280px) {
     .shell {
-      grid-template-columns: 240px minmax(0, 1fr) 220px;
+      grid-template-columns: var(--sidebar) minmax(0, 1fr) 220px;
     }
 
     .shell.wide {
-      grid-template-columns: 240px minmax(0, 1fr);
+      grid-template-columns: var(--sidebar) minmax(0, 1fr);
     }
 
     .outline {

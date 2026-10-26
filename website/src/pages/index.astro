@@ -23,7 +23,7 @@ const sections = specItems
 ---
 
 <Base title={`${PRODUCT_NAME}. ${HOME_TITLE}`} description={HOME_TITLE} bare>
-  <div class="wrap home">
+  <div class="wrap column home">
     <section class="intro" aria-labelledby="home-title">
       <h1 id="home-title">{HOME_TITLE}</h1>
       <FlowDiagram />
@@ -111,10 +111,6 @@ const sections = specItems
 </Base>
 
 <style>
-  .home {
-    max-width: 1040px;
-    padding-top: var(--s-7);
-  }
 
   .intro {
     display: grid;
