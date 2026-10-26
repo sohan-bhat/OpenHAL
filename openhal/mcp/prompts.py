@@ -34,14 +34,14 @@ Help me write an OpenHAL routine. The goal is {goal}
 2. Draft the routine as YAML in this shape. Every number needs a unit. Keep every value inside the limits,
    with margin, and inside max_change_per_s between steps. Use plan_check on the commands first.
 
-   id: cool-bed-when-done
+   id: pause-when-bed-cools
    triggers:
-     - when: "printer.state == complete"
+     - when: "printer.bed_temp < 50 degC"
    steps:
-     - write: { device: printer, channel: bed_target, value: 0 degC }
+     - action: { device: printer, action: pause }
 
    Triggers can also be every (an interval such as 1 h), at (a time such as 07:00) or manual. Steps can also
-   be action (device, action, args), if (a condition with then), wait (a duration) and log (text).
+   be write (device, channel, value), if (a condition with then), wait (a duration) and log (text).
 3. Call draft_routine. Routines always start disabled. If the hub reports a problem, fix it and draft again.
 4. Call run_routine_dry and show me each decision. Change the routine until nothing is blocked.
 5. Tell me how to enable it with openhal routine enable <id>. Leave enabling to me. The hub lets an agent

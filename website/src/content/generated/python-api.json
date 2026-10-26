@@ -662,6 +662,38 @@
           ]
         },
         {
+          "name": "Image",
+          "kind": "class",
+          "doc": "An image channel's value, such as a camera frame. `content()` gives the image itself.",
+          "fields": [
+            {
+              "name": "mime_type",
+              "type": "str",
+              "doc": "The image format, for example image/jpeg."
+            },
+            {
+              "name": "bytes",
+              "type": "int",
+              "doc": "The image's size in bytes."
+            },
+            {
+              "name": "width",
+              "type": "int | None",
+              "doc": "Width in pixels, when the format says."
+            },
+            {
+              "name": "height",
+              "type": "int | None",
+              "doc": "Height in pixels, when the format says."
+            },
+            {
+              "name": "data",
+              "type": "str | None",
+              "doc": "The image, base64 encoded. Device views leave it out."
+            }
+          ]
+        },
+        {
           "name": "HubStatus",
           "kind": "class",
           "doc": "",
