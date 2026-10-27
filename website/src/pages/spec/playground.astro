@@ -4,6 +4,7 @@ import Playground from "../../components/playground/Playground.svelte";
 import DocShell from "../../layouts/DocShell.astro";
 import { parse as parseYaml } from "yaml";
 import { loadScenario } from "../../lib/scenario";
+import { IDS, storyFacts } from "../../lib/story/facts";
 import { latestVersion, specPages } from "../../lib/spec";
 import { specSidebar } from "../../lib/spec-nav";
 
@@ -44,36 +45,41 @@ const suggestion = first
         first.method === "hal/action"
           ? Object.entries(params.args ?? {}).map(([name, value]) => `${name}=${quantityText(value)}`).join(" ")
           : params.unit ? `${params.value} ${params.unit}` : String(params.value),
-      readings: Object.fromEntries([...held, ...before]),
+      readings: Object.fromEntries([...before, ...held]),
     }
   : null;
+const facts = storyFacts(scenario);
+const command = (id: string) => {
+  const params = scenario.record.exchanges.find((exchange) => exchange.id === id)!.request.params as Record<string, any>;
+  return params.action
+    ? { kind: "action" as const, device: String(params.device), action: String(params.action), args: params.args ?? {} }
+    : { kind: "write" as const, device: String(params.device), channel: String(params.channel), value: params.value, unit: params.unit ?? null };
+};
+const quick = [
+  { label: `Warm the bed to ${facts.bed.value}`, command: command(IDS.bed) },
+  { label: `Set the nozzle to ${facts.nozzle.value}`, command: command(IDS.nozzle) },
+  { label: "Pause the print", command: command(IDS.pause) },
+  { label: "Cancel the print", command: command(IDS.cancel) },
+];
 const latest = latestVersion();
 const sidebar = specSidebar(latest ? await specPages(latest) : [], (item) => (item.slug ? `/spec/latest/${item.slug}/` : "/spec/latest/"));
 ---
 
 <DocShell
   title="Playground"
-  description="Edit an OpenHAL device file, validate it as you type, and see the hub's JSON-RPC answer to each request. Runs in your browser."
+  description="Send the print babysitter's requests to a simulated printer and see what the hub answers. Runs in your browser."
   sidebar={sidebar}
   section="Specification"
   wide
   pager={false}
 >
-  <div slot="after-title" class="ledes">
-    <p class="lede">Edit a device file, then send requests to a simulated hub. Each answer is the JSON-RPC message the hub sends.</p>
-    <p class="lede muted">An in-browser demo. A TypeScript port of the safety kernel runs here and never talks to hardware.</p>
-  </div>
-  <Playground client:interact examples={examples} initial={initial} suggestion={suggestion} />
+  <p slot="after-title" class="lede">Press a request from the story and see what the hub answers.</p>
+  <Playground client:interact examples={examples} initial={initial} suggestion={suggestion} quick={quick} watch={Object.keys(suggestion?.readings ?? {})} />
 </DocShell>
 
 <style>
-  .ledes {
-    display: grid;
-    gap: var(--s-2);
-    margin-top: var(--s-3);
-  }
-
   .lede {
     max-width: var(--measure);
+    margin-top: var(--s-3);
   }
 </style>
