@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
 import { SCENARIO_PATH, scenarioFrom } from "../../src/lib/scenario-data.mjs";
 import { ASKED, IDS, nb, storyFacts, storyLines } from "../../src/lib/story/facts";
-import { COUNTED, PLACED, step, type StepId } from "../../src/lib/story/script";
+import { COUNTED, PLACED, TOTAL, step, type StepId } from "../../src/lib/story/script";
 
 const scenarioFile = process.env.OPENHAL_SCENARIO ?? fileURLToPath(new URL(`../../../${SCENARIO_PATH}`, import.meta.url));
 const scenario = scenarioFrom(readFileSync(scenarioFile, "utf8")) as any;
@@ -23,8 +23,22 @@ async function storyTime(page: Page, t: number): Promise<void> {
     const top = parseFloat(getComputedStyle(stage).top) || 0;
     window.scrollTo({ top: y - top + (time * runway.offsetHeight) / parseFloat(runway.style.height), behavior: "instant" });
   }, t);
-  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-  await page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== "running"));
+  await page.waitForFunction(
+    ([ends, total]) => {
+      const story = document.querySelector<HTMLElement>("[data-story]")!;
+      const stage = story.querySelector<HTMLElement>(".story-stage")!;
+      const runway = story.querySelector<HTMLElement>(".story-runway")!;
+      let y = 0;
+      for (let el: HTMLElement | null = story; el; el = el.offsetParent as HTMLElement | null) y += el.offsetTop;
+      const top = parseFloat(getComputedStyle(stage).top) || 0;
+      const now = Math.min(total, Math.max(0, (window.scrollY - y + top) / (Math.max(1, runway.offsetHeight) / total)));
+      const found = ends.findIndex((end) => now < end);
+      return story.dataset.step === String(found < 0 ? ends.length - 1 : found);
+    },
+    [PLACED.map((item) => item.to), TOTAL] as const,
+    { polling: 25 },
+  );
+  await page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== "running"), undefined, { polling: 25 });
 }
 
 const shown = (page: Page, selector: string) =>
