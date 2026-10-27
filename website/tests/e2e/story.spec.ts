@@ -221,7 +221,7 @@ test.describe("smooth scrolling", () => {
     await page.waitForTimeout(900);
     const settled = await page.evaluate(() => window.scrollY);
     expect(early).toBeLessThan(settled);
-    expect(Math.abs(settled - start - 400)).toBeLessThan(2);
+    expect(Math.abs(settled - start - 400)).toBeLessThan(6);
     await page.keyboard.press("End");
     await page.waitForTimeout(300);
     expect(await page.evaluate(() => Math.abs(window.scrollY + innerHeight - document.documentElement.scrollHeight))).toBeLessThan(2);

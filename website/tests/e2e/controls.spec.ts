@@ -187,6 +187,7 @@ test.describe("catalog filters", () => {
 test.describe("playground controls", () => {
   test("the example picker opens on the printer and loads the desk fan too", async ({ page }) => {
     await page.goto("/spec/playground/");
+    await page.locator("summary", { hasText: "Build your own request" }).click();
     const picker = page.locator(".example select");
     await expect(picker).toHaveValue(/printer/);
     await picker.selectOption({ label: "spec/examples/desk-fan-confirmed.hal.yaml" });
@@ -196,6 +197,7 @@ test.describe("playground controls", () => {
 
   test("the client picker changes who sends, and a read-only agent is refused", async ({ page }) => {
     await page.goto("/spec/playground/");
+    await page.locator("summary", { hasText: "Build your own request" }).click();
     const as = page.locator(".request select").nth(0);
     const options = await as.locator("option").allTextContents();
     expect(options.length).toBeGreaterThan(1);
@@ -210,7 +212,7 @@ test.describe("playground controls", () => {
     await page.goto("/spec/playground/");
     await page.getByRole("button", { name: "Stop", exact: true }).click();
     await expect(page.locator(".stop-area .status.blocked")).toHaveText("stopped");
-    await page.getByRole("button", { name: /^Send hal\// }).click();
+    await page.getByRole("button", { name: "Pause the print" }).click();
     await expect(page.locator(".exchanges > li").first()).toContainText("STOPPED");
     await page.getByLabel("Type unlock to lift the stop").fill("unlock");
     await page.getByRole("button", { name: "Unlock" }).click();
@@ -233,6 +235,7 @@ test.describe("playground controls", () => {
 
   test("the device picker lists the devices in the file", async ({ page }) => {
     await page.goto("/spec/playground/");
+    await page.locator("summary", { hasText: "Build your own request" }).click();
     const device = page.locator(".request select").nth(1);
     await expect(device).toHaveValue("printer");
     expect(await device.locator("option").count()).toBeGreaterThan(0);

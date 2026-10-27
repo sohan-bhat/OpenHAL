@@ -245,6 +245,14 @@
   min-width: 0;
 }
 
+.story .story-trace {
+  overflow-x: visible;
+}
+
+.story .story-trace .payload {
+  overflow-wrap: anywhere;
+}
+
 .story-snap .story-trace .swap > *,
 .step-words .story-trace .swap > * {
   grid-area: auto;
