@@ -2,5 +2,62 @@
   "width": 1440,
   "height": 900,
   "quality": 0.8,
-  "bytes": 424022
+  "bytes": 604288,
+  "shots": [
+    {
+      "file": "inspector-device",
+      "caption": "The printer",
+      "alt": "The Inspector's device pane for the simulated Klipper 3D printer, paused, with its temperatures and extruder_target limited to 0 °C to 260 °C",
+      "crop": {
+        "x": 317,
+        "y": 126,
+        "w": 992,
+        "h": 774
+      }
+    },
+    {
+      "file": "inspector-camera",
+      "caption": "The camera frame",
+      "alt": "The Inspector's camera pane with the latest demo frame, a line drawing of the print knocked over on the bed, image/jpeg, 640 × 480, 24 KB",
+      "crop": {
+        "x": 317,
+        "y": 287,
+        "w": 992,
+        "h": 612
+      }
+    },
+    {
+      "file": "inspector-confirmations",
+      "caption": "The pending cancel",
+      "alt": "The Inspector's pending cancel. The agent print-watcher asks to run cancel on Klipper 3D printer, which can't be resumed, so it waits for a person, with the camera's frame beside Approve and run cancel and Reject",
+      "crop": {
+        "x": 321,
+        "y": 152,
+        "w": 1064,
+        "h": 722
+      }
+    },
+    {
+      "file": "inspector-log",
+      "caption": "The message log",
+      "alt": "The Inspector's message log with hal/read results shown as image/jpeg 640 by 480 descriptions, hal/write answered by error -32010 LIMIT_EXCEEDED for a 300 °C nozzle, and the cancel answered pending",
+      "crop": {
+        "x": 301,
+        "y": 119,
+        "w": 1139,
+        "h": 781
+      }
+    },
+    {
+      "file": "inspector-stopped",
+      "caption": "Stopped",
+      "alt": "The Inspector's stop banner, saying every command is refused with error -32014 STOPPED until a person lifts the stop with UNLOCK",
+      "crop": {
+        "x": 0,
+        "y": 118,
+        "w": 1440,
+        "h": 49
+      }
+    }
+  ]
 }
