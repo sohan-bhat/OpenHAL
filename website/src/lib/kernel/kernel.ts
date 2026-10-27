@@ -527,7 +527,7 @@ export class Kernel {
       throw new Block("not_permitted", "Blocked. This client has a read-only token. Ask the owner for a control token.");
     }
     if (!covers(principal, hazard)) {
-      throw new Block("not_permitted", `Blocked. ${command.device} is ${hazard} hazard and this client's ${principal.scope} scope doesn't cover it.`);
+      throw new Block("not_permitted", `Blocked. ${command.device} is ${hazard} hazard, which this client's ${principal.scope} scope doesn't cover.`);
     }
     let value: unknown;
     let changes: Map<string, unknown>;

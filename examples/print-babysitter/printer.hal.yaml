@@ -31,6 +31,6 @@ interlocks:
     message: "Clear the printer error before heating."
 watchdog: { heartbeat: 5 s, on_loss: hold }
 hazard: medium
-notes: "A print keeps running if the hub goes away, so the watchdog holds instead of stopping it. Klipper's own heater checks stay on either way."
+notes: "A print keeps running if the hub goes away, so the watchdog holds the printer's state instead of stopping the print. Klipper's own heater checks stay on either way."
 provenance: { source: hand-written, by: openhal print babysitter example, at: 2026-10-24 }
 confirmed: { by: owner, at: 2026-10-24, sha256: 43396b8f02a70481b9653275f22cc58f96b060ad2e31f4d80214acb26e51af1a }

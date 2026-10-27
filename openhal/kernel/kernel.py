@@ -476,8 +476,8 @@ class Kernel:
         if not principal.covers(hazard):
             raise Block(
                 "not_permitted",
-                f"Blocked. {command.device} is {hazard} hazard and this client's {principal.scope} scope "
-                "doesn't cover it.",
+                f"Blocked. {command.device} is {hazard} hazard, which this client's {principal.scope} scope "
+                "doesn't cover.",
             )
         if isinstance(command, Write):
             assert spec is not None

@@ -381,7 +381,7 @@ class RoutineEngine:
     def enable(self, principal: Principal, routine_id: str) -> Record:
         record = self.get(routine_id)
         if self.kernel.stopped:
-            raise RoutineError("The hub is stopped. Unlock it before enabling routines.")
+            raise RoutineError("The hub is stopped. Unlock the hub before enabling routines.")
         if record.disabled_reason and record.disabled_reason.startswith("invalid"):
             raise RoutineError(f"This routine is invalid and can't be enabled ({record.disabled_reason}).")
         missing = sorted(device for device in self._devices(record) if device not in self.kernel.devices)

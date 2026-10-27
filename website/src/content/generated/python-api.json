@@ -96,7 +96,7 @@
             {
               "name": "disable_routine",
               "signature": "disable_routine(routine_id: str) -> Routine",
-              "doc": "Turn a routine off. Any token but a read scoped agent can."
+              "doc": "Turn a routine off. Every token may turn a routine off except a read scoped agent's token."
             },
             {
               "name": "discover",
@@ -329,7 +329,7 @@
             {
               "name": "disable_routine",
               "signature": "async disable_routine(routine_id: str) -> Routine",
-              "doc": "Turn a routine off. Any token but a read scoped agent can."
+              "doc": "Turn a routine off. Every token may turn a routine off except a read scoped agent's token."
             },
             {
               "name": "discover",

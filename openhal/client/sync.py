@@ -221,7 +221,7 @@ class Client:
         return self.call(calls.enable_routine(routine_id))
 
     def disable_routine(self, routine_id: str) -> m.Routine:
-        """Turn a routine off. Any token but a read scoped agent can."""
+        """Turn a routine off. Every token may turn a routine off except a read scoped agent's token."""
         return self.call(calls.disable_routine(routine_id))
 
     def run_routine(self, routine_id: str) -> m.Run:
