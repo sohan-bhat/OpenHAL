@@ -14,6 +14,7 @@ Measured on the live site (https://sohan-bhat.github.io/OpenHAL/) on 2026-10-26,
 - The home page on mobile has first paint at 1.13 s and largest paint at 1.45 s, but a Speed Index of 3.70 s and 59 ms of blocking time. Something keeps painting for seconds after the first frame.
 - docs/architecture is 312 KB of HTML (67 KB over the wire). Its 17 inline SVGs carry 122 KB of base64 fonts that D2 embeds, two per diagram, and every diagram ships twice, once per theme.
 - The Inspector page downloads 210 KB of full-size WebP captures on a phone and crops them with CSS.
+- The Python reference has 88 ms of blocking time on mobile, the most of any page, with 1,912 elements in its DOM. The Playground and every other page score 100 on mobile and desktop.
 - Both fonts are preloaded on every page. One playwright-cli run logged that a preloaded font was not used within a few seconds.
 - No link prefetching, so every click waits for a full page fetch.
 - GitHub Pages sends `cache-control: max-age=600` for everything, hashed assets included, and its headers can't be changed.
@@ -22,6 +23,7 @@ Measured on the live site (https://sohan-bhat.github.io/OpenHAL/) on 2026-10-26,
 
 1. **Instant navigation.** Prerender or prefetch nav and in-page links on hover and pointer down. Use Speculation Rules where the browser supports them, with Astro's prefetch as the fallback. Make sure the view transitions from the landing round still play with prerendered pages. Don't prefetch the Playground's or the search's heavy files until they're needed.
 2. **The home page paints once.** Find what drives the home page's Speed Index past the first paint on mobile and fix it, so the first screen is complete at first paint. Target a Speed Index under 1.5 s and blocking time under 50 ms on Lighthouse mobile.
+   Bring the Python reference's blocking time under 50 ms too.
 3. **Fonts.** Subset both faces to the glyphs the site uses. Narrow the weight axis to the weights in use, or ship static instances if they come out smaller. Preload only the face and weight the first screen needs. Keep the fallback metrics, so the swap doesn't move anything. Put the before and after sizes in your report.
 4. **Diagrams on the page.** When the site inlines a diagram, strip D2's embedded font data, since the page already has the fonts, and ship one SVG that follows the theme through CSS custom properties instead of a light copy and a dark copy. The files in docs/diagrams stay self-contained for the README. Target docs/architecture under 100 KB of HTML.
 5. **Images.** Serve the Inspector captures as cropped, responsive images (srcset at the sizes the page shows, AVIF with WebP fallback, width and height set, lazy below the fold), and the full image only behind "Open the whole screen".
