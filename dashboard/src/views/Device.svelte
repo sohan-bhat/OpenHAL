@@ -6,7 +6,7 @@
   import WriteControl from "../components/WriteControl.svelte";
   import { imageChannels, isSimulated } from "../lib/devices";
   import { latestImage } from "../lib/frames.svelte";
-  import { describeImage, isImageReading } from "../lib/images";
+  import { imageFacts, isImageReading } from "../lib/images";
   import { conformanceFor } from "../lib/protocol";
   import { router } from "../lib/router.svelte";
   import { inspector } from "../lib/state.svelte";
@@ -149,7 +149,7 @@
                 <td class="num">
                   {#if spec.type === "image"}
                     <output class="value mono image" class:unknown={!spec.known}>
-                      {spec.known && isImageReading(spec.value) ? describeImage(spec.value) : "not read yet"}
+                      {#if spec.known && isImageReading(spec.value)}{@const facts = imageFacts(spec.value)}{#each facts as fact, index (fact)}<span class="nobreak">{fact}{index < facts.length - 1 ? "," : ""}</span>{index < facts.length - 1 ? " " : ""}{/each}{:else}not read yet{/if}
                     </output>
                   {:else}
                     <output class="value mono" style="min-width: {valueWidth(spec.range?.[0], spec.range?.[1]) + 3}ch" class:unknown={!spec.known}>
@@ -366,6 +366,12 @@
 
   .value.image {
     white-space: nowrap;
+  }
+
+  @media (max-width: 767px) {
+    .value.image {
+      white-space: normal;
+    }
   }
 
   .channel {
