@@ -7,7 +7,7 @@ test.describe("site chrome", () => {
     const links = await nav.getByRole("link").evaluateAll((items) =>
       items.map((item) => ({ label: item.textContent!.trim(), href: item.getAttribute("href")! })),
     );
-    expect(links.map((link) => link.label)).toEqual(["Overview", "Docs", "Specification", "Playground", "Drivers", "Device Library", "SDKs", "Inspector", "Blog", "GitHub"]);
+    expect(links.map((link) => link.label)).toEqual(["Overview", "Docs", "Specification", "Playground", "Drivers", "Device Library", "GitHub"]);
     for (const link of links) {
       if (link.href.startsWith("http")) {
         expect(link.href).toBe("https://github.com/sohan-bhat/OpenHAL");
@@ -18,6 +18,47 @@ test.describe("site chrome", () => {
       await expect(page.locator(".desktop-nav").getByRole("link", { name: link.label, exact: true })).toHaveAttribute("aria-current", "page");
       await expect(page.locator(".desktop-nav [aria-current]")).toHaveCount(1);
     }
+  });
+
+  test("SDKs and the Inspector sit under Docs, which stays current on their pages", async ({ page }) => {
+    for (const path of ["/sdks/", "/inspector/"]) {
+      await page.goto(path);
+      await expect(page.locator(".desktop-nav [aria-current]")).toHaveText("Docs");
+    }
+    await page.goto("/docs/");
+    await expect(page.locator("main")).toContainText("SDKs and Inspector");
+    await expect(page.locator("main a[href='/sdks/']").first()).toBeVisible();
+    await expect(page.locator("main a[href='/inspector/']").first()).toBeVisible();
+  });
+
+  test("the nav highlight has one view transition name on every page", async ({ page }) => {
+    for (const path of ["/", "/docs/", "/spec/latest/", "/spec/playground/", "/drivers/", "/library/", "/sdks/"]) {
+      await page.goto(path);
+      const names = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>("*")].map((el) => getComputedStyle(el).viewTransitionName).filter((name) => name && name !== "none"),
+      );
+      expect(names.filter((name) => name === "nav-pill")).toHaveLength(1);
+      expect(new Set(names).size).toBe(names.length);
+      await expect(page.locator(".desktop-nav [aria-current] .nav-pill")).toHaveCount(1);
+    }
+  });
+
+  test("a page turn moves the way the nav goes, and only for nav links", async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "cross-document view transitions are a Chromium feature");
+    const turn = () => page.evaluate(() => document.documentElement.dataset.turn ?? null);
+    await page.goto("/drivers/");
+    await page.locator(".desktop-nav").getByRole("link", { name: "Device Library", exact: true }).click();
+    await expect(page).toHaveURL(/\/library\/$/);
+    expect(await turn()).toBe("forward");
+    await page.locator(".desktop-nav").getByRole("link", { name: "Specification", exact: true }).click();
+    await expect(page).toHaveURL(/\/spec\//);
+    expect(await turn()).toBe("backward");
+    await page.goto("/");
+    await page.getByRole("link", { name: "Try it in your browser" }).click();
+    await expect(page).toHaveURL(/\/spec\/playground\/$/);
+    expect(await turn()).toBeNull();
+    await page.goBack();
+    expect(await turn()).toBeNull();
   });
 
   test("the overview's try section leads to the playground", async ({ page }) => {
