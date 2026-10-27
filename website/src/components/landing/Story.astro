@@ -43,6 +43,10 @@ const camera = `(() => {
             {COUNTED.map((item, index) => <span {...shown([item.id])}>{index + 1} / {COUNTED.length}</span>)}
           </p>
           <a class="story-skip" href={`#${after}`}>Skip the demo</a>
+          <button type="button" class="smooth" role="switch" aria-checked="false" data-smooth hidden>
+            <span class="smooth-track" aria-hidden="true"><span class="smooth-knob"></span></span>
+            <span class="smooth-label">Smooth scrolling</span>
+          </button>
         </div>
         <div class="story-heads">
           <h2 id="story-title" class="story-title" {...shown(["intro"])}>{lines.intro}</h2>
@@ -85,7 +89,9 @@ const camera = `(() => {
 </section>
 
 <script>
+  import { smoothSwitch } from "./smooth-switch";
   import { story } from "./story-runtime";
 
   for (const root of document.querySelectorAll<HTMLElement>("[data-story]")) story(root);
+  for (const toggle of document.querySelectorAll<HTMLButtonElement>("[data-smooth]")) smoothSwitch(toggle);
 </script>
