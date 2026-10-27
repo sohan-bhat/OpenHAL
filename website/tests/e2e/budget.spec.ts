@@ -23,21 +23,21 @@ interface Weight {
  * measured weights of the build in docs/verification/ui.md with about ten percent of headroom.
  */
 const BUDGETS: Record<string, { path: string } & Weight> = {
-  home: { path: "/", html: 15_500, css: 9_000, js: 6_500, fonts: 29_000 },
-  "docs index": { path: "/docs/", html: 7_000, css: 5_700, js: 3_300, fonts: 29_000 },
-  "guide page": { path: "/docs/quickstart/", html: 8_300, css: 5_700, js: 3_300, fonts: 36_000 },
-  "page with diagrams": { path: "/docs/architecture/", html: 19_500, css: 5_700, js: 3_300, fonts: 29_000 },
-  "spec page": { path: "/spec/2026-10-24/basic/messages/", html: 19_500, css: 5_700, js: 3_300, fonts: 29_000 },
-  "schema reference": { path: "/spec/2026-10-24/schema/", html: 17_000, css: 5_700, js: 3_300, fonts: 29_000 },
-  drivers: { path: "/drivers/", html: 13_000, css: 5_700, js: 3_300, fonts: 29_000 },
-  "driver page": { path: "/drivers/moonraker/", html: 10_700, css: 5_700, js: 3_300, fonts: 29_000 },
-  library: { path: "/library/", html: 8_600, css: 5_700, js: 3_300, fonts: 29_000 },
-  "library device": { path: "/library/scpi-rigol-dp832/", html: 8_700, css: 5_700, js: 3_300, fonts: 29_000 },
-  playground: { path: "/spec/playground/", html: 16_500, css: 7_700, js: 3_300, fonts: 29_000 },
-  "Python reference": { path: "/sdks/python/reference/", html: 14_500, css: 5_700, js: 3_300, fonts: 29_000 },
-  "Inspector page": { path: "/inspector/", html: 7_800, css: 5_700, js: 3_300, fonts: 29_000 },
-  blog: { path: "/blog/", html: 3_900, css: 4_600, js: 3_300, fonts: 29_000 },
-  "not found": { path: "/404.html", html: 4_700, css: 4_600, js: 3_300, fonts: 29_000 },
+  home: { path: "/", html: 16_100, css: 9_100, js: 6_500, fonts: 29_100 },
+  "docs index": { path: "/docs/", html: 6_700, css: 5_600, js: 3_300, fonts: 18_400 },
+  "guide page": { path: "/docs/quickstart/", html: 8_200, css: 5_600, js: 3_300, fonts: 35_600 },
+  "page with diagrams": { path: "/docs/architecture/", html: 19_200, css: 5_600, js: 3_300, fonts: 29_100 },
+  "spec page": { path: "/spec/2026-10-24/basic/messages/", html: 19_100, css: 5_600, js: 3_300, fonts: 29_100 },
+  "schema reference": { path: "/spec/2026-10-24/schema/", html: 16_700, css: 5_600, js: 3_300, fonts: 29_100 },
+  drivers: { path: "/drivers/", html: 12_700, css: 5_600, js: 3_300, fonts: 29_100 },
+  "driver page": { path: "/drivers/moonraker/", html: 10_400, css: 5_600, js: 3_300, fonts: 29_100 },
+  library: { path: "/library/", html: 8_300, css: 5_600, js: 3_300, fonts: 29_100 },
+  "library device": { path: "/library/scpi-rigol-dp832/", html: 8_500, css: 5_600, js: 3_300, fonts: 29_100 },
+  playground: { path: "/spec/playground/", html: 16_200, css: 7_700, js: 3_300, fonts: 29_100 },
+  "Python reference": { path: "/sdks/python/reference/", html: 14_300, css: 5_600, js: 3_300, fonts: 29_100 },
+  "Inspector page": { path: "/inspector/", html: 7_500, css: 5_600, js: 3_300, fonts: 29_100 },
+  blog: { path: "/blog/", html: 3_600, css: 4_600, js: 3_300, fonts: 29_100 },
+  "not found": { path: "/404.html", html: 4_500, css: 4_600, js: 3_300, fonts: 29_100 },
 };
 
 function fileOf(url: string): string {
