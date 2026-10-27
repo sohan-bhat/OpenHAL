@@ -23,7 +23,8 @@ async function storyTime(page: Page, t: number): Promise<void> {
     const top = parseFloat(getComputedStyle(stage).top) || 0;
     window.scrollTo({ top: y - top + (time * runway.offsetHeight) / parseFloat(runway.style.height), behavior: "instant" });
   }, t);
-  await page.waitForTimeout(320);
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== "running"));
 }
 
 const shown = (page: Page, selector: string) =>
@@ -77,8 +78,8 @@ const states: Record<Exclude<StepId, "intro">, Array<[string, string]>> = {
 test.describe("the landing story", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test("pins the whole diagram, centered, at one size", async ({ page }) => {
-    for (const form of FORMS) {
+  for (const form of FORMS) {
+    test(`pins the whole diagram, centered, at one size, at ${form.width} by ${form.height}`, async ({ page }) => {
       await page.setViewportSize(form);
       await page.goto("/");
       const story = page.locator("[data-story]");
@@ -99,8 +100,8 @@ test.describe("the landing story", () => {
         expect(await page.locator(".story-scene").evaluate((el) => getComputedStyle(el).transform)).toBe("none");
       }
       expect(new Set(sizes).size).toBe(1);
-    }
-  });
+    });
+  }
 
   test("drops the trace from the short stage on a phone and keeps every station", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 664 });
@@ -119,8 +120,8 @@ test.describe("the landing story", () => {
     await expect(page.locator(".story-list .story-snap").first()).toBeVisible();
   });
 
-  test("keeps every word inside its card", async ({ page }) => {
-    for (const form of [...FORMS, { width: 1200, height: 800 }, { width: 768, height: 1024 }, { width: 375, height: 667 }]) {
+  for (const form of [...FORMS, { width: 1200, height: 800 }, { width: 768, height: 1024 }, { width: 375, height: 667 }]) {
+    test(`keeps every word inside its card at ${form.width} by ${form.height}`, async ({ page }) => {
       await page.setViewportSize(form);
       await page.goto("/");
       await expect(page.locator("[data-story]")).toHaveAttribute("data-ready", "");
@@ -148,8 +149,8 @@ test.describe("the landing story", () => {
         });
         expect(spills, `${form.width}x${form.height} ${item.id}`).toEqual([]);
       }
-    }
-  });
+    });
+  }
 
   test("opens with its title and how many steps follow", async ({ page }) => {
     await page.goto("/");
