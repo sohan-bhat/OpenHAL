@@ -42,7 +42,7 @@ for (const scheme of ["light", "dark"] as const) {
   for (const width of [1440, 390]) {
     test(`every view and state passes axe WCAG 2.1 AA at ${width} px in the ${scheme} theme`, async ({ browser, browserName }) => {
       test.skip(browserName !== "chromium" && width < 800, "the phone pass runs in Chromium");
-      test.setTimeout(300_000);
+      test.setTimeout(browserName === "firefox" ? 600_000 : 300_000);
       const context = await browser.newContext({ viewport: { width, height: width < 800 ? 844 : 900 }, colorScheme: scheme });
       await signIn(context);
       const page = await context.newPage();

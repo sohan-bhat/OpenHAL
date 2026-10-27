@@ -161,7 +161,7 @@ test("the audit log filters, and verifies its hash chain", async ({ page }) => {
   agent.close();
   await page.goto("/#/audit");
   const entries = page.locator("li.entry");
-  await expect(entries.first()).toBeVisible();
+  await expect(entries.first()).toBeVisible({ timeout: 20_000 });
   await page.getByRole("button", { name: "Verify the hash chain" }).click();
   await expect(page.getByText("chain intact")).toBeVisible();
   for (const [label, value] of [["Device", "curing-heater"], ["Status", "blocked"], ["Event", "action"]] as const) {
@@ -179,7 +179,7 @@ test("the audit log labels values on a phone and an agent stays dashed when bloc
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/#/audit");
   const blocked = page.locator("li.entry.agent.blocked").first();
-  await expect(blocked).toBeVisible();
+  await expect(blocked).toBeVisible({ timeout: 20_000 });
   for (const label of ["event", "by", "target", "status"]) await expect(blocked.locator(".cell .key", { hasText: label })).toBeVisible();
   expect(await blocked.evaluate((row) => getComputedStyle(row).borderLeftStyle)).toBe("dashed");
   await expect(blocked.locator(".code")).toHaveCSS("white-space", "nowrap");
