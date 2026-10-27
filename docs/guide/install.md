@@ -4,7 +4,7 @@ OpenHAL needs Python 3.12 or newer. [uv](https://docs.astral.sh/uv/) is the quic
 
 ## From a clone
 
-This is the README's route. It runs the CLI from the checkout and installs nothing else.
+This is the README's route, which runs the CLI from the checkout and installs nothing else.
 
 ```text
 git clone https://github.com/sohan-bhat/OpenHAL
@@ -14,7 +14,7 @@ uv run openhal demo
 
 ## As a tool
 
-`uv tool install` and `pipx install` put `openhal` and `openhald` on your PATH, each in its own environment. OpenHAL isn't on PyPI yet, so install it from GitHub.
+`uv tool install` and `pipx install` put `openhal` and `openhald` on your PATH, each in its own environment. OpenHAL isn't on PyPI yet, so install OpenHAL from GitHub.
 
 ```text
 uv tool install --compile-bytecode git+https://github.com/sohan-bhat/OpenHAL
@@ -39,15 +39,15 @@ pipx install dist/openhal_hub-0.1.0.dev0-py3-none-any.whl
 openhal init
 ```
 
-In a terminal it asks a few short questions.
+In a terminal `openhal init` asks a few short questions.
 
 1. Look for devices. Discovery sends only read-only identify commands.
-2. Add each device it found as a read-only device file. OpenHAL firmware boards and ESPHome nodes describe themselves, and library matches come from the device library. No limit is confirmed for you.
-3. Make a token for your AI client. It is read-only unless you pick another scope.
+2. Add each device discovery found as a read-only device file. OpenHAL firmware boards and ESPHome nodes describe themselves, and library matches come from the device library. No limit is confirmed for you.
+3. Make a token for your AI client, read-only unless you pick another scope.
 4. Save a client's config for you. The setup for Claude Desktop, Claude Code and Cursor is printed either way, and a file is backed up before it changes.
 5. Run the hub in the background, starting at login.
 
-`openhal init --yes` takes the safe defaults without asking. It looks for devices, adds them read-only and makes a read token. It saves a client config only with `--client NAME` and installs the service only with `--service`.
+`openhal init --yes` takes the safe defaults without asking. With `--yes`, init looks for devices, adds every device read-only and makes a read token. A client config is saved only with `--client NAME`, and the service installs only with `--service`.
 
 A device that discovery can't see, such as a board on a known port, goes in with `--device`.
 
@@ -72,7 +72,7 @@ git clone https://github.com/sohan-bhat/OpenHAL
 OpenHAL/scripts/install-pi.sh
 ```
 
-The script installs uv if it's missing, the system packages the Pi drivers need, and the hub with the rpi-gpio, rpi-camera, pi-i2c-spi, serial and openhal-firmware extras. It adds you to the gpio, i2c, spi and dialout groups, turns on lingering, installs the service and prints the next command. Add `--dry-run` to see every command first.
+The script installs uv if it's missing, the system packages the Pi drivers need, and the hub with the rpi-gpio, rpi-camera, pi-i2c-spi, serial and openhal-firmware extras. The script then adds you to the gpio, i2c, spi and dialout groups, turns on lingering, installs the service and prints the next command. Add `--dry-run` to see every command first.
 
 The camera needs Raspberry Pi OS with Python 3.12 or newer, so the hub can see the system's picamera2.
 

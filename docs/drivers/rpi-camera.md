@@ -1,6 +1,6 @@
 # rpi-camera driver
 
-The rpi-camera driver captures JPEG frames from Raspberry Pi camera modules on the CSI connector, through picamera2 and libcamera, and reads the per-frame metadata libcamera reports, such as light level and exposure time. It is read-only. It never changes camera controls.
+The rpi-camera driver captures JPEG frames from Raspberry Pi camera modules on the CSI connector, through picamera2 and libcamera, and reads the per-frame metadata libcamera reports, such as light level and exposure time. The driver is read-only and never changes camera controls.
 
 This driver has only been tested against a fake Picamera2 class, because picamera2 installs only on Raspberry Pi OS. docs/hardware-tests/rpi-camera.md lists what a person has to check on a real Pi.
 
@@ -22,7 +22,7 @@ uv pip install -e .
 rpicam-hello --list-cameras
 ```
 
-`rpicam-hello --list-cameras` should list your module. If it doesn't, check the ribbon cable and, on older OS images, the `camera_auto_detect=1` line in `/boot/firmware/config.txt`.
+`rpicam-hello --list-cameras` should list your module. If the module isn't listed, check the ribbon cable and, on older OS images, the `camera_auto_detect=1` line in `/boot/firmware/config.txt`.
 
 ## Parameters
 

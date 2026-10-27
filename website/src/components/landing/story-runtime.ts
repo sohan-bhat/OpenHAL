@@ -39,7 +39,7 @@ function held(spans: Array<[number, number]>, t: number): number {
 }
 
 /**
- * Pins the stage, centered under the header, while the page scrolls past the runway after it, and
+ * Pins the stage right under the header while the page scrolls past the runway after it, and
  * turns the scroll position into a point in the story. The step that holds that point is written
  * as data-step on the story and as data-on on every piece and station that shows in it, so a
  * caption and its state change together. story.css cross-fades them, the leaving piece first. The
@@ -108,9 +108,8 @@ export function story(root: HTMLElement): void {
     const view = probe?.offsetHeight || window.innerHeight;
     root.removeAttribute("data-short");
     if (stage.offsetHeight > view - pin) root.setAttribute("data-short", "");
-    const height = stage.offsetHeight;
-    if (height > view - pin) return off();
-    const top = Math.max(pin, Math.round((view + pin - height) / 2));
+    if (stage.offsetHeight > view - pin) return off();
+    const top = pin;
     root.style.setProperty("--top", `${top}px`);
     let y = 0;
     for (let el: HTMLElement | null = root; el; el = el.offsetParent as HTMLElement | null) y += el.offsetTop;

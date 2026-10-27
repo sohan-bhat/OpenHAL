@@ -1,6 +1,6 @@
 # Hardware test plan, upnp driver
 
-This plan checks the upnp driver against a real UPnP media renderer. It was made for a Sonos speaker with the example file. Any device whose actions a device file maps works the same way.
+This plan checks the upnp driver against a real UPnP media renderer. The plan was made for a Sonos speaker with the example file. Any device whose actions a device file maps works the same way.
 
 Run every step from the repository checkout, on a computer on the same network as the speaker. [README.md](README.md) has the setup and rules every plan shares. Keep the speaker's volume low.
 
@@ -13,7 +13,7 @@ Run every step from the repository checkout, on a computer on the same network a
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|set CHANNEL VALUE|action NAME [ARG=VALUE ...]|stop"""
@@ -112,7 +112,7 @@ Expected. The read shows `transport_state`, `volume` matching the Sonos app and 
 
 Unplug the speaker and run the read.
 
-Expected. `DriverError` or `TimeoutError` saying the description could not be fetched. Plug it in, wait until the app sees it, and read again. It reads normally.
+Expected. `DriverError` or `TimeoutError` saying the description could not be fetched. Plug the speaker in, wait until the app sees the speaker, and read again. The device reads normally.
 
 ## Steps that change the device
 
@@ -124,7 +124,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-speaker.hal.yaml
 ```
 
-It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-speaker.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-speaker.hal.yaml` then says `writable`.
 
 ### 7. The smallest safe change
 

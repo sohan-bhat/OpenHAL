@@ -1,13 +1,13 @@
 # Hardware test plan, hid driver
 
-This plan checks the hid driver against a real USB HID device. It was written for a homemade macropad with key LEDs (any board running a TinyUSB or Arduino HID sketch whose reports you know), and works the same way for any HID device described in a device file. Writing an LED report is the smallest write that proves the path works.
+This plan checks the hid driver against a real USB HID device. The plan was written for a homemade macropad with key LEDs (any board running a TinyUSB or Arduino HID sketch whose reports you know), and works the same way for any HID device described in a device file. Writing an LED report is the smallest write that proves the path works.
 
 Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Don't use a keyboard or mouse you rely on, since some systems release it from the desktop while the driver holds it.
 
 ## What you need
 
 - The HID device, plugged in.
-- Its report layout, from its firmware or documentation.
+- The device's report layout, from the device's firmware or documentation.
 - An independent HID tool to cross-check, such as `hidapitester` (https://github.com/todbot/hidapitester), or `usbhid-dump` on Linux.
 - On Linux, a udev rule that lets your user open the device (see docs/drivers/hid.md).
 - The repository with the hid extra, `uv sync --extra hid`.
@@ -15,7 +15,7 @@ Run every step from the repository checkout. [README.md](README.md) has the setu
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|write CHANNEL VALUE|stop"""
@@ -107,7 +107,7 @@ Expected. `key_1 = True` if the device sent a report since the driver connected,
 
 Run step 4, unplug the device, and run it again.
 
-Expected. The second run fails with `DriverError` saying no HID interfaces match. Plug it back in and step 4 works again.
+Expected. The second run fails with `DriverError` saying no HID interfaces match. Plug the device back in and step 4 works again.
 
 ## Write steps
 
@@ -121,7 +121,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-pad.hal.yaml
 ```
 
-It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-pad.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-pad.hal.yaml` then says `writable`.
 
 ### 7. The smallest safe write
 

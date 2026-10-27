@@ -1,6 +1,6 @@
 # Command line reference
 
-`openhal` talks to the hub's local API, so every command except `init`, `file` and `doctor`'s local checks needs a running hub (`openhald`). It makes no safety decisions. The hub's kernel decides every command.
+`openhal` talks to the hub's local API, so every command except `init`, `file` and `doctor`'s local checks needs a running hub (`openhald`). The CLI makes no safety decisions. The hub's kernel decides every command.
 
 ## Global options
 
@@ -24,7 +24,7 @@ Most commands take `--json` and then print JSON on stdout instead of tables.
 | 3 | The hub is not running |
 | 4 | Token problem, missing or not accepted |
 
-## Commands only a person may run
+## Commands that need a person
 
 `unlock`, `confirm approve`, `routine enable`, `routine run`, `routine approve`, `writer interview`, `writer finish` and `file confirm` need the human token. With `confirm.require_tty: true` (the default) they also need an interactive terminal and a typed phrase, read from the terminal itself rather than standard input. A script or an agent that runs shell commands as you can't pipe the phrase in. `--phrase` passes the phrase on the command line, and is accepted only when `confirm.require_tty` is false.
 
@@ -48,7 +48,7 @@ Most commands take `--json` and then print JSON on stdout instead of tables.
 openhal init [--new-token] [--no-sample]
 ```
 
-Creates the config folder (mode 0700), `config.yaml` with the defaults, the human token in `human.token` (mode 0600) and `devices/plant-waterer.hal.yaml`, the simulated plant waterer from `examples/plant-waterer/mock/`. The sample loads read-only until you confirm its limits with `openhal file confirm`, because only a person may confirm limits. Running `init` again keeps a working token. `--new-token` creates a new one.
+Creates the config folder (mode 0700), `config.yaml` with the defaults, the human token in `human.token` (mode 0600) and `devices/plant-waterer.hal.yaml`, the simulated plant waterer from `examples/plant-waterer/mock/`. The sample loads read-only until you confirm its limits with `openhal file confirm`, since confirming limits takes a person. Running `init` again keeps a working token. `--new-token` creates a new one.
 
 ### openhal doctor
 
@@ -72,7 +72,7 @@ Runs the stdio MCP server for AI clients. See docs/interfaces/MCP.md.
 openhal pair
 ```
 
-Prints a six digit code that pairs a browser with the dashboard as you. It works once and expires after 5 minutes. Needs the human token.
+Prints a six digit code that pairs a browser with the dashboard as you. The code works once and expires after 5 minutes. Needs the human token.
 
 ### openhal token
 
@@ -221,9 +221,9 @@ openhal routine delete ID [--yes]
 openhal routine approve ID --device DEVICE [--phrase approve]
 ```
 
-`new` stores a routine, always disabled. The kind comes from the file suffix unless given. `enable` prints the routine and its dry run first, and refuses if the dry run does not pass. `run` runs it once now. `approve` signs an approval that lets this exact routine content drive a high hazard device. Any change to the routine voids it.
+`new` stores a routine, always disabled. The kind comes from the file suffix unless given. `enable` prints the routine and its dry run first, and refuses if the dry run does not pass. `run` runs the routine once now. `approve` signs an approval that lets this exact routine content drive a high hazard device. Any change to the routine voids the approval.
 
-A YAML routine looks like this. It checks the soil every hour and waters for 20 s when it is dry.
+A YAML routine looks like the one below, which checks the soil every hour and waters for 20 s when the soil is dry.
 
 ```yaml
 id: morning-water
@@ -266,7 +266,7 @@ openhal file schema
 openhal file confirm PATH [--by NAME] [--phrase confirm]
 ```
 
-`validate` checks files against the spec. `schema` prints the JSON Schema. `confirm` prints every limit in a file, then adds a top-level `confirmed` with your name, the date and the hash of the limits. Any later change to a limit makes the file read-only again. It refuses while any entry is still marked `suggested: true`. Restart `openhald` to load the change.
+`validate` checks files against the spec. `schema` prints the JSON Schema. `confirm` prints every limit in a file, then adds a top-level `confirmed` with your name, the date and the hash of the limits. Any later change to a limit makes the file read-only again. `confirm` refuses while any entry is still marked `suggested: true`. Restart `openhald` to load the change.
 
 ## Device library
 
@@ -276,7 +276,7 @@ openhal library show NAME [--json]
 openhal library add NAME
 ```
 
-`list` shows every starter device file in the library with its driver, hazard class and what it can change. `show` prints what a file matches, every limit it suggests and the file itself, and `--json` gives the limits in the shape `hal/devices/describe` uses. `add` copies a file into the devices folder as it is. It never adds a confirmation, and it refuses to overwrite a file or to add a second file for a device id the folder already has. A name is the file name without `.hal.yaml`, such as `rigol-dp832`. When `discover` matches a library file, it prints the `add` command to run. How matching and confirmation work is in docs/guide/library.md.
+`list` shows every starter device file in the library with its driver, hazard class and what it can change. `show` prints what a file matches, every limit it suggests and the file itself, and `--json` gives the limits in the shape `hal/devices/describe` uses. `add` copies a file into the devices folder unchanged, never adds a confirmation, and refuses to overwrite a file or to add a second file for a device id the folder already has. A name is the file name without `.hal.yaml`, such as `rigol-dp832`. When `discover` matches a library file, it prints the `add` command to run. How matching and confirmation work is in docs/guide/library.md.
 
 ## Install and background service
 

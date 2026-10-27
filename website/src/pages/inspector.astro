@@ -22,11 +22,11 @@ const frameStyle = (crop: { x: number; y: number; w: number; h: number }) =>
   `--x: ${crop.x}; --y: ${crop.y}; --w: ${crop.w}; --h: ${crop.h}; --full-w: ${captures.width}; --full-h: ${captures.height}`;
 ---
 
-<DocShell title="Inspector" description="The OpenHAL Inspector shows every device and every message, and stops everything in one click." sidebar={sidebar} section="Inspector" wide>
+<DocShell title="Inspector" description="The OpenHAL Inspector shows every device and every message, and stops every device in one click." sidebar={sidebar} section="Inspector" wide>
   <div class="prose">
-    <p>The Inspector is the hub's dashboard. It shows every device and every JSON-RPC message, and stops everything in one click.</p>
+    <p>The Inspector is the hub's dashboard. Every device and every JSON-RPC message shows there, and one click stops every device.</p>
 
-    <h2 id="open"><a class="heading-link" href="#open">Open it</a></h2>
+    <h2 id="open"><a class="heading-link" href="#open">Open the Inspector</a></h2>
     <p>The hub serves the Inspector at <code>http://127.0.0.1:7420/</code>. Pair a browser with the one-time code that <code>openhal pair</code> prints.</p>
 
     <h2 id="views"><a class="heading-link" href="#views">Views</a></h2>
@@ -38,12 +38,12 @@ const frameStyle = (crop: { x: number; y: number; w: number; h: number }) =>
         <tbody>
           <tr><td data-label="View">Devices</td><td data-label="Shows">Every device with its connection, conformance level and verification, and the selected device's channels, limits and actions</td></tr>
           <tr><td data-label="View">Message log</td><td data-label="Shows">Every request, response, notification and error, as formatted JSON-RPC</td></tr>
-          <tr><td data-label="View">Confirmations</td><td data-label="Shows">Commands waiting for a person to approve or reject them</td></tr>
+          <tr><td data-label="View">Confirmations</td><td data-label="Shows">Commands waiting for a person's approval or rejection</td></tr>
           <tr><td data-label="View">Audit log</td><td data-label="Shows">Every decision, in a hash chain</td></tr>
           <tr><td data-label="View">Routines</td><td data-label="Shows">Each routine with its source and its dry run</td></tr>
           <tr><td data-label="View">Driver writer</td><td data-label="Shows">A draft device file for an unknown device, and the limits interview</td></tr>
           <tr><td data-label="View">Settings</td><td data-label="Shows">Client tokens</td></tr>
-          <tr><td data-label="View">Stop</td><td data-label="Shows">Always visible. Any client may stop. Only a person may lift the stop</td></tr>
+          <tr><td data-label="View">Stop</td><td data-label="Shows">Always visible. Any client may send a stop, and lifting the stop takes a person's token</td></tr>
         </tbody>
       </table>
     </div>
@@ -52,7 +52,7 @@ const frameStyle = (crop: { x: number; y: number; w: number; h: number }) =>
       shots.length > 0 && (
         <>
           <h2 id="screenshots"><a class="heading-link" href="#screenshots">Screenshots</a></h2>
-          <p class="muted">Recorded from the Inspector on a hub with the simulated printer and its webcam. Each one shows the part its caption names at full size.</p>
+          <p class="muted">Each screenshot comes from the Inspector on a hub with the simulated printer and its webcam, and shows the part its caption names at full size.</p>
         </>
       )
     }

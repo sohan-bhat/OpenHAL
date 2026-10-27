@@ -13,7 +13,6 @@ import typer
 from rich.markup import escape
 from rich.table import Table
 
-from openhal._brand import DAEMON_NAME
 from openhal.cli import _common
 from openhal.cli._common import EXIT_FAILED, OPTIONS, console, home
 from openhal.client.settings import TOKEN_ENV, human_token_path
@@ -75,7 +74,7 @@ def _hub() -> list[Check]:
             status = client.status()
             url = client.url
     except HubNotRunning as exc:
-        return [*checks, Check("hub", "fail", f"{exc} Start it with {DAEMON_NAME}.")]
+        return [*checks, Check("hub", "fail", str(exc))]
     except Unauthorized as exc:
         return [*checks, Check("hub", "ok", "the hub answers"), Check("token", "fail", str(exc))]
     except OpenHALError as exc:

@@ -182,7 +182,7 @@ sequenceDiagram
   R->>R: record run history
 ```
 
-Routines run with no model. Their principal is `routine:<name>`, whose scope is the scope of the human who enabled it, capped at `control_medium`.
+Routines run with no model. A routine's principal is `routine:<name>`, whose scope is the scope of the human who enabled the routine, capped at `control_medium`.
 
 ## Bridges
 

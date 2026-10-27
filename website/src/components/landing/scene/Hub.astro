@@ -10,17 +10,20 @@ interface Props {
 }
 
 const { facts, step } = Astro.props;
-const cancel = `${facts.cancel.target[0].toUpperCase()}${facts.cancel.target.slice(1)} waits for a person`;
+const cancel = facts.cancel.rule;
 const rules = [
   { text: `Nozzle up to ${facts.nozzle.max}`, in: HUB.nozzle },
   { text: `Bed up to ${facts.bed.max}`, in: HUB.bed },
   { text: cancel, in: HUB.cancel },
 ];
-const named = new Set<StepId>([...HUB.nozzle, ...HUB.bed, ...HUB.cancel, ...HUB.asked]);
+const resting = PLACED.map((item) => item.id).filter((id) => !HUB.asked.includes(id));
+const quiet = resting.filter((id: StepId) => !HUB.nozzle.includes(id) && !HUB.bed.includes(id));
 const now = [
-  ...rules.filter((rule) => rule.in !== HUB.cancel),
-  { text: cancel, in: HUB.asked },
-  { text: facts.confirmed, in: PLACED.map((item) => item.id).filter((id) => !named.has(id)) },
+  { text: rules[0].text, in: HUB.nozzle, kind: "" },
+  { text: rules[1].text, in: HUB.bed, kind: "" },
+  { text: cancel, in: HUB.pending, kind: "" },
+  { text: facts.approve.approved, in: HUB.approved, kind: "status ok" },
+  { text: facts.confirmed, in: quiet, kind: "" },
 ];
 ---
 
@@ -40,14 +43,17 @@ const now = [
     }
   </ul>
   <div class="swap wide-only">
-    <p class="confirmed" {...shown(PLACED.map((item) => item.id).filter((id) => !HUB.asked.includes(id)), step)}>{facts.confirmed}</p>
+    <p class="confirmed" {...shown(resting, step)}>{facts.confirmed}</p>
     <div class="asked" {...shown(HUB.asked, step)}>
       <p class="mono asked-what">{facts.cancel.target} <span class="asked-on">on {facts.printer.id}</span></p>
-      <p class="status confirm">confirmation required</p>
+      <p class="swap">
+        <span class="status confirm" {...shown(HUB.pending, step)}>confirmation required</span>
+        <span class="status ok" {...shown(HUB.approved, step)}>{facts.approve.approved}</span>
+      </p>
     </div>
   </div>
   <p class="swap compact-only">
-    {now.map((line) => <span {...shown(line.in, step)}>{nb(line.text)}</span>)}
+    {now.map((line) => <span class={line.kind || undefined} {...shown(line.in, step)}>{nb(line.text)}</span>)}
   </p>
 </div>
 

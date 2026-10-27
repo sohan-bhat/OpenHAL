@@ -42,7 +42,7 @@ test.describe("overview", () => {
     await expect(block).toContainText("git clone https://github.com/sohan-bhat/OpenHAL");
     await expect(block).toContainText("cd OpenHAL");
     await expect(block).toContainText("uv run openhal demo");
-    await expect(page.locator("#try")).toContainText("It plays the same story in your terminal.");
+    await expect(page.locator("#try")).toContainText("The demo plays the same story in your terminal.");
   });
 
   test("says plainly that OpenHAL is not affiliated with MHS", async ({ page }) => {
@@ -239,7 +239,7 @@ test.describe("catalog pages", () => {
     await expect(page.getByRole("article").getByRole("link", { name: "How the library works" })).toHaveAttribute("href", "/docs/library/");
     await page.goto("/library/scpi-keysight-34461a/");
     await expect(page.locator(".facts")).toContainText("unconfirmed");
-    await expect(page.locator(".facts")).toContainText("This file only reads.");
+    await expect(page.locator(".facts")).toContainText("This file has read channels only, so nothing in the file changes the device.");
     await page.goto("/library/scpi-rigol-dp832/");
     await expect(page.locator(".facts")).toContainText("set_ch1 (action)");
     await expect(page.getByRole("table", { name: "Actions" })).toContainText("volts 0 to 5 V, step 0.01");

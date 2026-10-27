@@ -1,20 +1,20 @@
 # bambu driver
 
-The bambu driver reads a Bambu Lab printer's status and pauses, resumes and stops prints over the printer's own MQTT broker on the local network. It needs the printer in LAN-only mode with Developer Mode on. It uses paho-mqtt, the same client as the mqtt driver.
+The bambu driver reads a Bambu Lab printer's status and pauses, resumes and stops prints over the printer's own MQTT broker on the local network. The driver needs the printer in LAN-only mode with Developer Mode on. The driver uses paho-mqtt, the same client as the mqtt driver.
 
 ## Local access status
 
 Checked on 2026-10-24. Read this before you connect a printer.
 
 - In January 2025 Bambu Lab added Authorization Control to its firmware. Starting a print and controlling motion, temperature, fans, the AMS and calibration now need authorization in cloud mode and in normal LAN mode. Status reports over MQTT stay readable. X1 printers got it first, from firmware 01.08.03.00, and the P and A series followed.
-- Bambu Lab's follow-up post describes Developer Mode, an opt-in setting for X1, P1, A1 and A1 mini printers. It must be turned on at the printer, leaves MQTT, the live stream and FTP open on the local network, and makes the owner responsible for securing that network. Bambu Lab says it won't give customer support for this mode. Later guides report Developer Mode on newer models too, but this wasn't checked on an H2D or P2S.
+- Bambu Lab's follow-up post describes Developer Mode, an opt-in setting for X1, P1, A1 and A1 mini printers. Developer Mode must be turned on at the printer, leaves MQTT, the live stream and FTP open on the local network, and makes the owner responsible for securing that network. Bambu Lab says the company won't give customer support for this mode. Later guides report Developer Mode on newer models too, but this wasn't checked on an H2D or P2S.
 - Bambu Lab's Terms of Use restrict using its technology to develop software associated with its products without consent (section 3.1, quoted secondhand because the terms page didn't load here). In April 2026 Bambu Lab sent a cease-and-desist letter to the maintainer of an OrcaSlicer fork that reached Bambu Cloud by presenting itself as Bambu Studio. The owner reviewed this on 2026-10-25 and approved shipping the driver.
 
 What this driver does with that.
 
-- It talks only to the printer on the local network, only through the MQTT interface Developer Mode leaves open, and only with the LAN access code shown on the printer's screen.
-- It never contacts Bambu Cloud, never uses Bambu Connect or its keys, never presents itself as Bambu Studio and never tries to get around authorization.
-- It sends only status requests and the pause, resume, stop, speed level and chamber light commands. It doesn't start prints, upload files, send G-code, change temperatures or move axes.
+- The driver talks only to the printer on the local network, only through the MQTT interface Developer Mode leaves open, and only with the LAN access code shown on the printer's screen.
+- The driver never contacts Bambu Cloud, never uses Bambu Connect or its keys, never presents itself as Bambu Studio and never tries to get around authorization.
+- The driver sends only status requests and the pause, resume, stop, speed level and chamber light commands, and doesn't start prints, upload files, send G-code, change temperatures or move axes.
 - Without Developer Mode the printer refuses the commands, and the driver reports the refusal with a hint to turn the mode on. Reads keep working.
 
 ## What it supports
@@ -71,7 +71,7 @@ Channels are named after what they read. A map can read any other field of the r
 | `speed_level` | `spd_lvl` | enum, control channel |
 | `chamber_light` | `lights_report` | bool, control channel |
 
-Actions are named `pause`, `resume` and `stop`, or map to one with `map: { command: pause }`. They take no arguments.
+Actions are named `pause`, `resume` and `stop`, or map to one with `map: { command: pause }`. The actions take no arguments.
 
 ## How reads and commands behave
 
@@ -92,7 +92,7 @@ Actions are named `pause`, `resume` and `stop`, or map to one with `map: { comma
 
 ## Limitations
 
-- No print start, file upload, camera, AMS control, G-code, temperature targets or motion. These are left out on purpose.
+- No print start, file upload, camera, AMS control, G-code, temperature targets or motion, all left out on purpose.
 - MQTT 3.1.1 only, and one printer per device file.
 - Untested on real printers so far. The simulator follows the community documentation of the report format, which Bambu Lab doesn't publish.
 

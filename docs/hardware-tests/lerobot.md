@@ -1,6 +1,6 @@
 # Hardware test plan for the lerobot driver
 
-This plan checks the LeRobot driver on a real arm, and checks every assumption the test fake makes about LeRobot. It starts with read-only steps and ends with the smallest safe moves. Clamp the arm's base to the table, clear its reach, rest it over something soft, and keep a hand on its power switch. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the LeRobot driver on a real arm, and checks every assumption the test fake makes about LeRobot. The plan starts with read-only steps and ends with the smallest safe moves. Clamp the arm's base to the table, clear its reach, rest it over something soft, and keep a hand on its power switch. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -12,7 +12,7 @@ The fake in `openhal/drivers/lerobot/simulator.py` makes nine numbered assumptio
 
 ## The probe
 
-Save this as `probe.py`. It connects, identifies the arm and reads every channel. It holds no kernel grant, so it can't change anything.
+Save this as `probe.py`. The probe connects, identifies the arm and reads every channel. The probe holds no kernel grant, so the probe can't change anything.
 
 ```python
 import asyncio, json, sys
@@ -51,7 +51,7 @@ Set `port` and `robot_id`. Expected. `valid ./arm.hal.yaml (so101, high hazard, 
 uv run python probe.py ./arm.hal.yaml
 ```
 
-Expected. No calibration prompt appears and the arm doesn't move. While the probe runs the arm holds its pose, because torque is on. When it ends the arm goes limp, because close() turns torque off. Then change `robot_id` to a name you never calibrated and run it again. Expected. `... isn't calibrated. Run lerobot-calibrate --robot.type=so101_follower ...`. Put the id back.
+Expected. No calibration prompt appears and the arm doesn't move. While the probe runs the arm holds its pose, because torque is on. When the probe ends the arm goes limp, because close() turns torque off. Then change `robot_id` to a name you never calibrated and run the probe again. Expected. `... isn't calibrated. Run lerobot-calibrate --robot.type=so101_follower ...`. Put the id back.
 
 ## Step 3. Joint readings (assumption 3)
 
@@ -114,7 +114,7 @@ uv run openhal read so101.shoulder_pan
 uv run openhal read so101.elbow_flex
 ```
 
-Expected. Only the shoulder pan turns, by about 5 degrees. The other joints hold. That checks that a goal for one joint leaves the others alone.
+Expected. Only the shoulder pan turns, by about 5 degrees. The other joints hold, which shows that a goal for one joint leaves the other joints alone.
 
 Then check LeRobot's own clipping. A change to `connect` changes the limits, so the file needs your confirmation again. Stop the hub, set `max_relative_target: 2` in `$OPENHAL_HOME/devices/arm.hal.yaml`, then confirm and restart.
 

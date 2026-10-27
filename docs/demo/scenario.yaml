@@ -1,6 +1,9 @@
 scenario: print-babysitter
 recorded_with: uv run openhal demo --record docs/demo/scenario.yaml
 protocol_version: '2026-10-24'
+principals:
+  agent: agent:claude
+  person: human:owner
 devices:
 - id: printer
   name: Klipper 3D printer
@@ -57,6 +60,7 @@ devices:
   actions: {}
 exchanges:
 - id: first-layer
+  by: agent:claude
   before: the agent checks the first layer
   frame: examples/print-babysitter/frames/first-layer.jpg
   request:
@@ -74,7 +78,26 @@ exchanges:
       height: 480
     unit: null
     suspect: false
+  kernel:
+    checks:
+      channel: ok
+      device: ok
+    grant: not needed
+    logged:
+    - 6
+  printer:
+    state: printing
+    extruder_temp:
+      value: 215.0
+      unit: degC
+    extruder_target:
+      value: 215.0
+      unit: degC
+    bed_target:
+      value: 60.0
+      unit: degC
 - id: bed-warmer
+  by: agent:claude
   before: a corner of the first layer is lifting
   bed_target:
     before:
@@ -96,7 +119,32 @@ exchanges:
     channel: bed_target
     value: 70.0
     unit: degC
+  kernel:
+    checks:
+      units: ok
+      range: ok
+      rate: ok
+      interlocks: ok
+      confirmation: not needed
+    grant: issued
+    logged:
+    - 7
+  printer_received:
+  - SET_HEATER_TEMPERATURE HEATER=heater_bed TARGET=70.0
+  printer:
+    state: printing
+    extruder_temp:
+      value: 215.0
+      unit: degC
+    extruder_target:
+      value: 215.0
+      unit: degC
+    bed_target:
+      value: 70.0
+      unit: degC
 - id: nozzle-too-hot
+  by: agent:claude
+  before: a hotter nozzle might help the corner stick
   request:
     method: hal/write
     params:
@@ -122,8 +170,28 @@ exchanges:
       file: printer.hal.yaml
       confirmedBy: owner
       confirmedAt: '2026-10-24'
+  kernel:
+    checks:
+      units: ok
+      range: blocked
+    grant: none
+    logged:
+    - 8
+  printer_received: []
+  printer:
+    state: printing
+    extruder_temp:
+      value: 215.0
+      unit: degC
+    extruder_target:
+      value: 215.0
+      unit: degC
+    bed_target:
+      value: 70.0
+      unit: degC
 - id: come-loose
-  before: later
+  by: agent:claude
+  before: later the agent checks the print again
   frame: examples/print-babysitter/frames/come-loose.jpg
   request:
     method: hal/read
@@ -140,7 +208,26 @@ exchanges:
       height: 480
     unit: null
     suspect: false
+  kernel:
+    checks:
+      channel: ok
+      device: ok
+    grant: not needed
+    logged:
+    - 9
+  printer:
+    state: printing
+    extruder_temp:
+      value: 215.0
+      unit: degC
+    extruder_target:
+      value: 215.0
+      unit: degC
+    bed_target:
+      value: 70.0
+      unit: degC
 - id: paused
+  by: agent:claude
   before: the print has come loose
   request:
     method: hal/action
@@ -153,7 +240,31 @@ exchanges:
       device: printer
       action: pause
       args: {}
+  kernel:
+    checks:
+      units: ok
+      range: ok
+      rate: ok
+      interlocks: ok
+      confirmation: not needed
+    grant: issued
+    logged:
+    - 10
+  printer_received:
+  - printer.print.pause
+  printer:
+    state: paused
+    extruder_temp:
+      value: 215.0
+      unit: degC
+    extruder_target:
+      value: 215.0
+      unit: degC
+    bed_target:
+      value: 70.0
+      unit: degC
 - id: cancel-waits
+  by: agent:claude
   before: cancelling can't be undone
   request:
     method: hal/action
@@ -164,5 +275,137 @@ exchanges:
     status: pending
     requestId: REQUEST_ID
     expiresInS: 300.0
+  kernel:
+    checks:
+      units: ok
+      range: ok
+      rate: ok
+      interlocks: ok
+      confirmation: required
+    grant: none
+    logged:
+    - 11
+  printer_received: []
+  printer:
+    state: paused
+    extruder_temp:
+      value: 215.0
+      unit: degC
+    extruder_target:
+      value: 215.0
+      unit: degC
+    bed_target:
+      value: 70.0
+      unit: degC
   masked:
   - requestId
+- id: owner-approves
+  by: human:owner
+  before: the owner approves the cancel
+  request:
+    method: hal/confirmations/approve
+    params:
+      requestId: REQUEST_ID
+  result:
+    status: done
+    device: printer
+    target: action:cancel
+    value: {}
+    unit: null
+  kernel:
+    checks:
+      units: ok
+      range: ok
+      rate: ok
+      interlocks: ok
+      confirmation: ok
+    grant: issued
+    approved_by: human:owner
+    logged:
+    - 12
+    - 13
+  printer_received:
+  - printer.print.cancel
+  printer:
+    state: cancelled
+    extruder_temp:
+      value: 215.0
+      unit: degC
+    extruder_target:
+      value: 215.0
+      unit: degC
+    bed_target:
+      value: 70.0
+      unit: degC
+  masked:
+  - requestId
+audit:
+  request:
+    method: hal/audit/query
+    params: {}
+  printed_with: uv run openhal log -n 8
+  counts:
+    requests: 6
+    refused: 1
+    confirmed_by_a_person: 1
+  entries:
+  - seq: 13
+    event: action
+    who: agent:claude
+    target: printer.cancel
+    status: done
+    message: Done. cancel ran.
+  - seq: 12
+    event: confirm
+    who: human:owner
+    target: printer.cancel
+    status: done
+    message: ''
+  - seq: 11
+    event: action
+    who: agent:claude
+    target: printer.cancel
+    status: pending
+    message: Waiting for a human to approve action:cancel on printer.
+  - seq: 10
+    event: action
+    who: agent:claude
+    target: printer.pause
+    status: done
+    message: Done. pause ran.
+  - seq: 9
+    event: read
+    who: agent:claude
+    target: printer-cam.frame
+    status: done
+    message: ''
+  - seq: 8
+    event: write
+    who: agent:claude
+    target: printer.extruder_target
+    status: blocked
+    message: Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.
+  - seq: 7
+    event: write
+    who: agent:claude
+    target: printer.bed_target
+    status: done
+    message: Done. bed_target is now 70 degC.
+  - seq: 6
+    event: read
+    who: agent:claude
+    target: printer-cam.frame
+    status: done
+    message: ''
+  lines:
+  - seq  time  event    who           target                   status   message
+  - 13   TIME  action   agent:claude  printer.cancel           done     Done. cancel ran.
+  - 12   TIME  confirm  human:owner   printer.cancel           done
+  - 11   TIME  action   agent:claude  printer.cancel           pending  Waiting for a human to approve action:cancel on printer.
+  - 10   TIME  action   agent:claude  printer.pause            done     Done. pause ran.
+  - 9    TIME  read     agent:claude  printer-cam.frame        done
+  - 8    TIME  write    agent:claude  printer.extruder_target  blocked  Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.
+  - 7    TIME  write    agent:claude  printer.bed_target       done     Done. bed_target is now 70 degC.
+  - 6    TIME  read     agent:claude  printer-cam.frame        done
+  masked:
+  - time

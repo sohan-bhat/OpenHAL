@@ -1,6 +1,6 @@
 # firmata driver
 
-The `firmata` driver talks to Arduino-compatible boards running StandardFirmata. It reads digital and analog pins and drives digital outputs, PWM pins and hobby servos. Each channel's `map` names the pin.
+The `firmata` driver talks to Arduino-compatible boards running StandardFirmata. The driver reads digital and analog pins and drives digital outputs, PWM pins and hobby servos. Each channel's `map` names the pin.
 
 | | |
 |---|---|
@@ -47,7 +47,7 @@ Output pins are not touched until the first granted write. Setting a pin to outp
 1. Upload StandardFirmata from the Arduino IDE (File, Examples, Firmata, StandardFirmata).
 2. Install the extra with `uv tool install --compile-bytecode "openhal-hub[firmata] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 3. Start from `openhal/drivers/firmata/examples/uno-desk-kit.hal.yaml` and keep only the pins that are wired.
-4. Validate it with `openhal file validate`, then confirm the limits by hand.
+4. Validate the file with `openhal file validate`, then confirm the limits by hand.
 
 ## Parameters
 

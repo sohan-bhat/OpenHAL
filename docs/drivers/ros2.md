@@ -1,6 +1,6 @@
 # ros2 driver
 
-The `ros2` driver reaches ROS 2 robots through rosbridge. Topic fields become read channels, publishing to a topic or calling a service sets a channel, and services, topics and action goals become actions. It is a bridge, so only the topics, services and actions the device file names are touched.
+The `ros2` driver reaches ROS 2 robots through rosbridge. Topic fields become read channels, publishing to a topic or calling a service sets a channel, and services, topics and action goals become actions. The driver is a bridge, so only the topics, services and actions the device file names are touched.
 
 | | |
 |---|---|

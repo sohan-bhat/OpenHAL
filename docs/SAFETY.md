@@ -1,12 +1,12 @@
 # Safety model
 
-OpenHAL lets AI agents move real things. This document says exactly what the hub guarantees, how, and what it does not guarantee. It is the reference the safety kernel is written and reviewed against. If code and this document disagree, the code is wrong.
+OpenHAL lets AI agents move real things. This document says exactly what the hub guarantees, how, and what it does not guarantee. This document is the reference the safety kernel is written and reviewed against. If code and this document disagree, the code is wrong.
 
 ## Guarantees
 
 1. **One path.** Every write and every action, from any source (MCP, CLI, Python library, routines, dashboard, driver writer, bridges, the stop command itself), is evaluated by the safety kernel. Drivers accept writes only with a single-use grant the kernel issued for that exact device, channel or action, and value (ADR 0004).
 2. **Deterministic.** The kernel is plain Python with no model, no network calls and no randomness in decisions. The same state and the same command always produce the same decision and the same message.
-3. **Limits come from humans.** Agents can tighten limits for their session. They can never loosen them. Loosening only happens when a human edits the device file, which records who and when. A device file with unconfirmed limits loads read-only.
+3. **Limits come from humans.** A person sets the limits in the device file, which records who confirmed the limits and when, and every command is checked against the limits. Agents may tighten limits for their own session. A device file with unconfirmed limits loads read-only.
 4. **Stop works.** One stop command puts every device in its safe state and locks writes until a human unlocks.
 5. **Fail closed.** Any unexpected exception inside the kernel blocks the command and is logged. Nothing fails open.
 6. **Everything is recorded.** Every read request, write attempt, block, confirmation, stop and unlock is in an append-only audit log with a hash chain.
@@ -74,10 +74,10 @@ A file is writable only when a human confirmed its limits (spec section 12). Int
 ## Confirmation queue
 
 - Requests needing confirmation are queued with the exact command, the requesting principal, the dry-run result at the time of the request and an expiry (default 5 minutes).
-- Each client may have at most 20 pending requests, and the queue holds at most 100. A full queue refuses new requests with `queue_full`. It never evicts someone else's request.
+- Each client may have at most 20 pending requests, and the queue holds at most 100. A full queue refuses new requests with `queue_full` and never evicts someone else's request.
 - Every change of a request's status (expired, cancelled, approved, rejected) is logged.
-- Only a human principal can approve or reject. Agents can see the status of their own requests.
-- Approval re-runs every check against the current state. If anything changed so that the command would now be blocked, it is blocked, not executed.
+- Approving or rejecting a request takes a human principal. Agents see the status of their own requests.
+- Approval re-runs every check against the current state. If anything changed so that the command would now be blocked, the command is blocked, not executed.
 - Tiers. `confirm` lets one approval cover identical repeat requests from the same principal for 10 minutes. `confirm-each-time` approves exactly one execution. High hazard is always `confirm-each-time`.
 - Expired requests are rejected automatically and logged.
 
@@ -85,9 +85,9 @@ A file is writable only when a human confirmed its limits (spec section 12). Int
 
 - `stop_all` is available from the CLI (`openhal stop`), MCP, the dashboard, the Python library and an optional Raspberry Pi GPIO input.
 - The GPIO input is set in config.yaml as `stop_button: { pin: 27 }`, a BCM number, with the Pi's pull-up on unless `pull_up: false`. A press stops everything. If the hub can't watch the pin, it refuses to start, so no one relies on a stop that isn't there. The button only asks the hub to stop. Keep the hardware e-stop that cuts power.
-- Any principal may stop, including agents. Only a human may unlock.
+- Any principal may stop, including agents, and unlocking takes a human principal.
 - Order. Set the lock, cancel pending confirmations, clear approval windows, disable routines, cancel any command still in flight, apply every device's safe state, report the result per device.
-- Every safe-state step runs even if an earlier one fails. The result per device is `safe`, `partial` (some steps failed), `failed`, `no_safe_state`, or `pending` when a command was still running and couldn't be cancelled in time. A command that was in flight during a stop reapplies the safe state when it returns, so it can't win.
+- Every safe-state step runs even if an earlier one fails. The result per device is `safe`, `partial` (some steps failed), `failed`, `no_safe_state`, or `pending` when a command was still running and couldn't be cancelled in time. A command that was in flight during a stop reapplies the safe state when the command returns, so the stop wins.
 - Unlock is refused while a stop is still being applied, and clears approval windows again.
 - Devices without a safe state are reported as such. The device file schema warns about write-capable devices with no safe state.
 - `openhal unlock` needs a human token and, by default, an interactive terminal and the typed phrase `unlock`.

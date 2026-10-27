@@ -219,17 +219,17 @@ def show_file(
     for action_name, action in file.actions.items():
         console.print(f"action  {escape(action_name)}, {tier(action.confirm)}, suggested")
     console.print(f"file  {escape(str(entry.path))}")
-    console.print(f"Add it with {CLI_NAME} library add {escape(entry.name)}")
+    console.print(f"Add the file with {CLI_NAME} library add {escape(entry.name)}")
     typer.echo("")
     typer.echo(entry.path.read_text(encoding="utf-8").rstrip("\n"))
 
 
 @app.command("add")
 def add_file(name: str = typer.Argument(..., help="A library name, such as rigol-dp832.")) -> None:
-    """Copy a library file into the hub's devices folder. It loads read-only until you confirm it."""
+    """Copy a library file into the hub's devices folder. The copy stays read-only until you confirm its limits."""
     entry = find(name)
     if _confirmed(entry.file):
-        fail(f"{entry.path} carries a confirmation. Library files never do, so it was not added.")
+        fail(f"{entry.path} carries a confirmation, and a library file never carries one, so the file was not added.")
     folder = config().devices_dir
     target = folder / entry.path.name
     if target.exists():
@@ -240,7 +240,7 @@ def add_file(name: str = typer.Argument(..., help="A library name, such as rigol
         except (DeviceFileError, OSError):
             continue
         if existing.device_id == entry.file.device_id:
-            fail(f"{path} already describes a device with id {existing.device_id}, so it was not added.")
+            fail(f"{path} already describes a device with id {existing.device_id}, so the library file was not added.")
     folder.mkdir(parents=True, exist_ok=True)
     try:
         with target.open("xb") as handle:
@@ -249,8 +249,8 @@ def add_file(name: str = typer.Argument(..., help="A library name, such as rigol
         fail(f"{target} already exists. The library never overwrites a device file. Edit that file instead.")
     console.print(f"[green]added[/green]  {escape(str(target))}")
     console.print(
-        "It loads read-only. Set the connection for your device, check every limit and remove suggested: true "
-        f"from each one you checked. Then run {CLI_NAME} file confirm {escape(str(target))} and restart "
+        "The file loads read-only. Set the connection for your device, check every limit and remove suggested: true "
+        f"from each limit you checked. Then run {CLI_NAME} file confirm {escape(str(target))} and restart "
         f"{DAEMON_NAME}."
     )
 

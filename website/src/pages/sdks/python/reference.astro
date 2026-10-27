@@ -104,7 +104,7 @@ const sigHtml = (signature: string) => highlightLinesHtml(formatSignature(signat
             )}
             {item.name === "AsyncClient" && (
               <p>
-                It has every method of <a href="#client"><code>Client</code></a> as a coroutine, with the same arguments. These are its own.
+                <code>AsyncClient</code> has every method of <a href="#client"><code>Client</code></a> as a coroutine, with the same arguments. The methods below belong to <code>AsyncClient</code> alone.
               </p>
             )}
             {methodGroups(item).map((methodGroup) => (

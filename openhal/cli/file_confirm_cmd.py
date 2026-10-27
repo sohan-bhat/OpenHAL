@@ -1,8 +1,8 @@
 """`openhal file confirm`, a person confirming every limit in a device file (spec section 12).
 
-It writes a top-level `confirmed` with the person's name, today's date and the hash of the file's
-limits, so any later change to a limit makes the file read-only again. It needs an interactive
-terminal and the typed phrase confirm, like every other human-only command.
+The command writes a top-level `confirmed` with the person's name, today's date and the hash of the
+file's limits, so any later change to a limit makes the file read-only again. The command needs an
+interactive terminal and the typed phrase confirm, like every other human-only command.
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ def confirm(
     by: str = typer.Option(None, "--by", help="Your name for the record. Defaults to your user name."),
     phrase: str = typer.Option(None, "--phrase", help="Only when confirm.require_tty is false."),
 ) -> None:
-    """Confirm every limit in a device file after reading it. The hub then loads it writable."""
+    """Confirm every limit in a device file after reading the file. The hub then loads the file writable."""
     from openhal.spec.loader import DeviceFileError, load
 
     try:
@@ -84,4 +84,4 @@ def confirm(
     remaining = again.unconfirmed()
     if remaining:
         fail(f"Still unconfirmed after saving {path}. {', '.join(remaining)}")
-    console.print(f"[green]confirmed[/green]  {escape(str(path))} by {escape(who)}. Restart openhald to load it.")
+    console.print(f"[green]confirmed[/green]  {escape(str(path))} by {escape(who)}. Restart openhald to load the file.")

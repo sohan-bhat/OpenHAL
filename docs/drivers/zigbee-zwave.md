@@ -2,7 +2,7 @@
 
 The zigbee-zwave driver reaches Zigbee devices through Zigbee2MQTT and Z-Wave nodes through zwave-js-server, the two bridges most home setups already run. One device file names one device. The URL picks the bridge, `mqtt://` for Zigbee2MQTT and `ws://` for zwave-js-server.
 
-If the devices already live in Home Assistant, the homeassistant driver is the other route. It reaches the same devices through Home Assistant's entities instead of the bridge, which suits setups where Home Assistant owns the Zigbee or Z-Wave stick.
+If the devices already live in Home Assistant, the homeassistant driver is the other route. The homeassistant driver reaches the same devices through Home Assistant's entities instead of the bridge, which suits setups where Home Assistant owns the Zigbee or Z-Wave stick.
 
 ## What it supports
 
@@ -75,8 +75,8 @@ Bridge units are converted to the channel unit (`°C` to `degF`, for example). V
 
 ## Limitations
 
-- No actions, scenes, groups, pairing, OTA updates or network management. Those belong in the bridge's own interface.
-- zwave-js-server schema 40 at most. Newer servers still accept it.
+- No actions, scenes, groups, pairing, OTA updates or network management, which belong in the bridge's own interface.
+- zwave-js-server schema 40 at most. Newer servers still accept schema 40.
 - Non-linear conversions, such as mired to kelvin, are left to the device file as raw values.
 
 ## Hazard default and safe state

@@ -84,7 +84,7 @@ Actions use `path`, `method`, `query` and `body` the same way, with `{arg}` for 
 
 ## Example
 
-`openhal/drivers/http/examples/smart-plug.hal.yaml` describes a Shelly Plus Plug S through its Gen2 RPC API. Its output relay is switched with `GET /rpc/Switch.Set?id=0&on=true`, which is how that API works.
+`openhal/drivers/http/examples/smart-plug.hal.yaml` describes a Shelly Plus Plug S through its Gen2 RPC API. The plug's output relay is switched with `GET /rpc/Switch.Set?id=0&on=true`, which is how that API works.
 
 ## Describe from OpenAPI
 

@@ -1,4 +1,4 @@
-import { span, step, type StepId } from "./script";
+import { span, step, type Station, type StepId } from "./script";
 
 export interface Run {
   at: number;
@@ -8,31 +8,33 @@ export interface Run {
 
 export type Lane = "send" | "look" | "read" | "blocked" | "pending" | "done";
 
+export type WireId = 1 | 2 | 3 | 4;
+
 export interface Fill extends Run {
-  wire: 1 | 2 | 3 | 4;
+  wire: WireId;
   lane: Lane;
 }
 
-export type Word = "ok" | "blocked" | "not needed" | "required";
-
-export interface Pass {
-  in: StepId[];
-  words: Word[];
+export interface Trip {
+  id: StepId;
+  out: Lane;
+  back: Lane;
+  wires: WireId[];
 }
 
 const reads: StepId[] = ["look", "loose"];
-const commands: StepId[] = ["warm", "hot", "pause", ...span("cancel")];
 
 /** Which steps show each piece of the scene, by station. A piece shows for the whole of each step it names. */
 export const AGENT = {
   person: ["ask"] as StepId[],
+  logged: ["end"] as StepId[],
   asks: {
     look: ["look"] as StepId[],
     bed: ["warm"] as StepId[],
     nozzle: ["hot"] as StepId[],
     loose: ["loose"] as StepId[],
     pause: ["pause"] as StepId[],
-    cancel: span("cancel"),
+    cancel: ["cancel", "approve"] as StepId[],
   },
   hears: {
     look: ["look"] as StepId[],
@@ -40,43 +42,27 @@ export const AGENT = {
     nozzle: ["hot"] as StepId[],
     loose: ["loose"] as StepId[],
     pause: ["pause"] as StepId[],
-    cancel: span("cancel"),
+    cancel: ["cancel", "approve"] as StepId[],
   },
 };
 
 export const HUB = {
   nozzle: ["hot"] as StepId[],
   bed: ["warm"] as StepId[],
-  cancel: ["cancel", "wake"] as StepId[],
-  asked: span("cancel"),
-};
-
-export const KERNEL = {
-  passes: [
-    { in: ["warm"], words: ["ok", "ok", "ok", "ok", "not needed"] },
-    { in: ["hot"], words: ["ok", "blocked"] },
-    { in: ["pause"], words: ["ok", "ok", "ok", "ok", "not needed"] },
-    { in: span("cancel"), words: ["ok", "ok", "ok", "ok", "required"] },
-  ] as Pass[],
-  waiting: ["intro", "ask", "look", "loose"] as StepId[],
-  granted: ["warm", "pause"] as StepId[],
-  blocked: ["hot"] as StepId[],
-  confirm: span("cancel"),
+  cancel: ["cancel", "approve"] as StepId[],
+  asked: ["cancel", "approve"] as StepId[],
+  pending: ["cancel"] as StepId[],
+  approved: ["approve"] as StepId[],
 };
 
 export const DRIVER = {
-  moonraker: ["warm", "pause"] as StepId[],
+  moonraker: ["warm", "pause", "approve"] as StepId[],
   http: reads,
+  frame: reads,
   bed: ["warm"] as StepId[],
   pause: ["pause"] as StepId[],
-  waiting: ["intro", "ask", "look", "hot", "loose", ...span("cancel")] as StepId[],
-};
-
-export const PRINTER = {
-  before: ["intro", "ask", "look"] as StepId[],
-  after: span("warm"),
-  printing: span("intro", "loose"),
-  paused: span("pause"),
+  cancel: ["approve"] as StepId[],
+  waiting: ["intro", "ask", "hot", "cancel", "end"] as StepId[],
 };
 
 export const CAMERA = {
@@ -88,28 +74,37 @@ export const CAMERA = {
 
 export const WIRES = {
   read: reads,
-  write: ["warm", "hot"] as StepId[],
-  action: ["pause", ...span("cancel")] as StepId[],
-  command: ["intro", "ask", ...commands] as StepId[],
+  command: ["intro", "ask", "warm", "hot", "pause", "cancel", "approve", "end"] as StepId[],
 };
 
-const fill = (wire: Fill["wire"], lane: Lane, at: number, d: number, out: number): Fill => ({ wire, lane, at, d, out });
+/** Each message's way through the scene. A read leaves the driver for the webcam, every command for the printer. */
+export const TRIPS: Trip[] = [
+  { id: "look", out: "look", back: "read", wires: [1, 2, 3, 4] },
+  { id: "warm", out: "send", back: "done", wires: [1, 2, 3, 4] },
+  { id: "hot", out: "send", back: "blocked", wires: [1, 2] },
+  { id: "loose", out: "look", back: "read", wires: [1, 2, 3, 4] },
+  { id: "pause", out: "send", back: "done", wires: [1, 2, 3, 4] },
+  { id: "cancel", out: "send", back: "pending", wires: [1, 2] },
+  { id: "approve", out: "send", back: "done", wires: [2, 3, 4] },
+];
 
-function trip(id: StepId, out: Lane, back: Lane, depth: number): Fill[] {
+const ENDS: Record<WireId, [Station, Station]> = { 1: ["client", "hub"], 2: ["hub", "kernel"], 3: ["kernel", "driver"], 4: ["driver", "printer"] };
+
+/** The stations a trip's message passes, which are the stations its step lights. */
+export function stations(trip: Trip): Station[] {
+  const reading = trip.out === "look";
+  return [...new Set(trip.wires.flatMap((wire) => ENDS[wire].map((end): Station => (end === "printer" && reading ? "camera" : end))))];
+}
+
+const fill = (wire: WireId, lane: Lane, at: number, d: number, out: number): Fill => ({ wire, lane, at, d, out });
+
+function fills({ id, out, back, wires }: Trip): Fill[] {
   const { from, to } = step(id);
-  const wires = ([1, 2, 3, 4] as const).slice(0, depth);
   const leg = 3;
   const going = wires.map((wire, index) => fill(wire, out, from + 2 + index * leg, leg, to));
-  const returning = [...wires].reverse().map((wire, index) => fill(wire, back, from + 4 + depth * leg + index * leg, leg, to));
+  const returning = [...wires].reverse().map((wire, index) => fill(wire, back, from + 4 + wires.length * leg + index * leg, leg, to));
   return [...going, ...returning];
 }
 
 /** Each step's message drawn out along the wires it travels and its answer drawn back. */
-export const FILLS: Fill[] = [
-  ...trip("look", "look", "read", 4),
-  ...trip("warm", "send", "done", 4),
-  ...trip("hot", "send", "blocked", 2),
-  ...trip("loose", "look", "read", 4),
-  ...trip("pause", "send", "done", 4),
-  ...trip("cancel", "send", "pending", 2),
-];
+export const FILLS: Fill[] = TRIPS.flatMap(fills);
