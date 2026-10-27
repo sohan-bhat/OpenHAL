@@ -38,8 +38,8 @@
   cursor: pointer;
 }
 
-.smooth[hidden] {
-  display: none;
+.smooth[data-wait] {
+  visibility: hidden;
 }
 
 .smooth:focus-visible {
@@ -251,6 +251,10 @@
 
 .story .story-trace .payload {
   overflow-wrap: anywhere;
+}
+
+.story .story-trace li.note {
+  font-style: normal;
 }
 
 .story-snap .story-trace .swap > *,

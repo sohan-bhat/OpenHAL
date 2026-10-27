@@ -43,7 +43,7 @@ const camera = `(() => {
             {COUNTED.map((item, index) => <span {...shown([item.id])}>{index + 1} / {COUNTED.length}</span>)}
           </p>
           <a class="story-skip" href={`#${after}`}>Skip the demo</a>
-          <button type="button" class="smooth" role="switch" aria-checked="false" data-smooth hidden>
+          <button type="button" class="smooth" role="switch" aria-checked="false" data-smooth data-wait tabindex="-1" aria-hidden="true">
             <span class="smooth-track" aria-hidden="true"><span class="smooth-knob"></span></span>
             <span class="smooth-label">Smooth scrolling</span>
           </button>

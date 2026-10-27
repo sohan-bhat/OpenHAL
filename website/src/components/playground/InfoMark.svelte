@@ -54,7 +54,7 @@
   <button bind:this={button} type="button" class="info" aria-label={`About ${topic}`} aria-expanded={open} aria-controls={id} onclick={toggle}>i</button>
   <span {id} class="info-pop" style={`left: ${shift}px`} role="note" hidden={!open}>
     {text}
-    {#if href}<a href={href}>Read more</a>{/if}
+    {#if href}<a href={href}>Read more about {topic}</a>{/if}
   </span>
 </span>
 

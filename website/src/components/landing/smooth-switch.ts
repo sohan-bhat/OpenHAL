@@ -55,6 +55,8 @@ export function smoothSwitch(toggle: HTMLButtonElement): void {
     apply();
   });
   reduce.addEventListener("change", apply);
-  toggle.hidden = false;
+  toggle.removeAttribute("data-wait");
+  toggle.removeAttribute("tabindex");
+  toggle.removeAttribute("aria-hidden");
   apply();
 }
