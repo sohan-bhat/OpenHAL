@@ -48,11 +48,11 @@ The simulated camera shows two demo frames, line drawings that [openhal/demo/fra
 
 | First frame | Later frame |
 |---|---|
-| ![A line drawing of a print on the bed with one corner lifting off it](frames/first-layer.jpg) | ![A line drawing of the print knocked over and filament piling up under the nozzle](frames/come-loose.jpg) |
+| ![A line drawing of a print on the bed with one corner lifting off the bed](frames/first-layer.jpg) | ![A line drawing of the print knocked over and filament piling up under the nozzle](frames/come-loose.jpg) |
 
 ## Files
 
-| File | What it is |
+| File | Purpose |
 |---|---|
 | `printer.hal.yaml` | The printer, a Klipper printer reached through Moonraker |
 | `printer-cam.hal.yaml` | A USB camera on the printer's host, served by crowsnest and read through the http driver |

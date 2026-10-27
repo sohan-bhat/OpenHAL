@@ -11,7 +11,7 @@ An open-source protocol for AI agents to control hardware.
   <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="docs/diagrams/flow-narrow-dark.svg">
   <source media="(max-width: 600px)" srcset="docs/diagrams/flow-narrow-light.svg">
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/flow-dark.svg">
-  <img src="docs/diagrams/flow-light.svg" width="900" alt="OpenHAL flow. An agent sends hal/write to the hub. The safety kernel checks it against the device file's limits. An allowed command gets a grant and goes through the driver to the 3D printer, and the reading comes back to the agent. A 300 °C nozzle is blocked with LIMIT_EXCEEDED because the limit is 260 °C.">
+  <img src="docs/diagrams/flow-light.svg" width="900" alt="OpenHAL flow. An agent sends hal/write to the hub. The safety kernel checks the command against the device file's limits. An allowed command gets a grant and goes through the driver to the 3D printer, and the reading comes back to the agent. A 300 °C nozzle is blocked with LIMIT_EXCEEDED because the limit is 260 °C.">
 </picture>
 
 ## Quickstart

@@ -1,6 +1,6 @@
 # Quickstart
 
-## See it work
+## See the demo
 
 ```
 git clone https://github.com/sohan-bhat/OpenHAL
