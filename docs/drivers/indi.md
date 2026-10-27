@@ -69,8 +69,8 @@ A stop turns on TELESCOPE_ABORT_MOTION for a telescope, FOCUS_ABORT_MOTION for a
 | `port` | 7624 | INDI server port |
 | `device` | required | INDI device name |
 | `kind` | `telescope` | `telescope`, `focuser`, `camera` or `generic` |
-| `timeout` | `5 s` | How long to wait for an answer |
-| `action_wait` | `8 s` | How long a waiting action follows Busy before answering `started`. At most 9 s |
+| `timeout` | `5 s` | How long to wait for a response |
+| `action_wait` | `8 s` | How long a waiting action follows Busy before returning `started`. At most 9 s |
 | `define_wait` | `5 s` | How long connect waits for the file's properties |
 | `connect_device` | true | Turn the device's CONNECTION switch on during connect |
 

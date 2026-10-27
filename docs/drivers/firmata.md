@@ -30,7 +30,7 @@ The maintained Python Firmata clients are pymata4, pymata-express and telemetrix
 - Servo angles are converted to degrees and rounded to whole degrees from 0 to 180.
 - `invert: true` suits active-low relays and buttons wired to ground.
 - Write channels read back with PIN_STATE_QUERY. A pin that is not yet in the channel's mode reads as unknown. A PWM pin still in output mode after reset reads as 0 % or 100 %.
-- With `verify: true` (the default) each write is followed by a pin state query, so a write to a board that stopped answering fails.
+- With `verify: true` (the default) each write is followed by a pin state query, so a write to a board that stopped responding fails.
 - `describe()` proposes a volt channel per analog pin, a percent channel per PWM pin and a bool channel per other output-capable pin, all marked `suggested: true`.
 
 ## How connect works

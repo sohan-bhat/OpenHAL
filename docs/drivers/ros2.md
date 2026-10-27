@@ -57,7 +57,7 @@ Many bases stop on their own when `cmd_vel` messages stop arriving, and many do 
 | `scheme` | `ws` | `ws` or `wss` |
 | `path` | empty | URL path, for a rosbridge behind a proxy |
 | `timeout` | `5 s` | How long to wait for a service reply |
-| `action_wait` | `8 s` | How long a goal waits for its result before answering `started`. At most 9 s |
+| `action_wait` | `8 s` | How long a goal waits for its result before returning `started`. At most 9 s |
 | `throttle` | `0 s` | Smallest gap between messages rosbridge sends per topic |
 
 ## Example device file

@@ -1,8 +1,8 @@
 # Writing a driver
 
-A driver speaks one protocol. A device file describes one device and its limits. Most new devices need only a device file on top of an existing driver. Write a new driver only when no protocol driver can talk to the device.
+A driver speaks one protocol and a device file describes one device and its limits, so most new devices need only a device file on top of an existing driver. Write a new driver only when no protocol driver can talk to the device.
 
-This page is the contract every driver in the repository follows. The tutorial at the end builds a working driver with `openhal driver new`.
+This page is the contract every driver in the repository follows, and the tutorial at the end builds a working driver with `openhal driver new`.
 
 ## The package
 
@@ -47,21 +47,23 @@ class ScpiDriver(Driver):
     async def close(self) -> None: ...
 ```
 
-Rules.
+Every driver follows these rules.
 
-1. **Never override `write`, `action`, `safe_state`, `attach` or `_consume`.** The base class refuses to load a class that does. Those methods consume the kernel's grant and then call `_write`, `_action` and `_safe_state`.
+1. **Never override `write`, `action`, `safe_state`, `attach` or `_consume`.** Because those methods consume the kernel's grant and then call `_write`, `_action` and `_safe_state`, the base class refuses to load a class that overrides them.
 2. **Never call `_write`, `_action` or `_safe_state` yourself**, from anywhere. A test walks the whole package and fails if anything outside `drivers/base.py` does.
-3. **Values arrive already checked and converted** to the channel's declared unit. Don't re-check limits and don't convert units again. Do convert from the channel unit to whatever the protocol needs (for example percent to a 0 to 255 PWM byte), and document the mapping.
+3. **Values arrive already checked and converted** to the channel's declared unit, so don't re-check limits or convert units again, but do convert from the channel unit to whatever the protocol needs (for example percent to a 0 to 255 PWM byte), and document the mapping.
 4. **Discovery and identification send only documented read-only commands**, with short timeouts, and never open a port another process holds.
 5. **`read` returns values in the channel's declared unit**, with `Reading.unit` set for numeric channels.
-6. **Errors raise `DriverError`** with a message that says what happened and what to try next. Timeouts may raise `TimeoutError`. Never swallow an error and return a fake value.
-7. **`describe()`** maps whatever the protocol exposes (SCPI queries, Modbus registers, GATT characteristics, Home Assistant entities, ROS topics, OPC UA nodes, Moonraker objects) into device file sections. `describe()` returns a mapping with any of `device`, `match`, `read`, `write`, `actions` and `notes`. Every limit `describe()` proposes is marked `suggested: true`. Limits are never confirmed by a driver.
-8. **Safe state.** Set `DriverInfo.safe_state_support` to `"native"` if the protocol has its own emergency behavior (GRBL feed hold, outputs off), implement `_safe_state`, and say in the docs what it does. If the protocol can't guarantee a safe state, say so in the docs page and in the example device file's `safe_state_note`.
+6. **Errors raise `DriverError`** with a message that says what happened and what to try next. Timeouts may raise `TimeoutError`, but never swallow an error and return a fake value.
+7. **`describe()`** maps whatever the protocol exposes (SCPI queries, Modbus registers, GATT characteristics, Home Assistant entities, ROS topics, OPC UA nodes, Moonraker objects) into device file sections. `describe()` returns a mapping with any of `device`, `match`, `read`, `write`, `actions` and `notes`. Every limit `describe()` proposes is marked `suggested: true`, because a driver never confirms limits.
+8. **Safe state.** Set `DriverInfo.safe_state_support` to `"native"` if the protocol has its own emergency behavior (GRBL feed hold, outputs off), implement `_safe_state`, and describe in the docs what `_safe_state` does. If the protocol can't guarantee a safe state, say so in the docs page and in the example device file's `safe_state_note`.
 9. **Bridges** (Home Assistant, ESPHome, ROS 2) expose only the entities the user selected in the device file, and the device file's limits apply even when the bridged system has its own.
 10. **No secrets in device files.** Parameters that need a secret take an environment variable name (`token_env: HA_TOKEN`).
 11. **Optional dependencies** go in a `pyproject.toml` extra named after the driver. Import the optional dependencies inside `driver.py`, never in `__init__.py`.
 
 ## Tests
+
+A driver's tests cover these cases.
 
 - Normal operation for every channel type the driver supports.
 - Disconnects, timeouts, malformed responses and every error path.
@@ -70,7 +72,7 @@ Rules.
 
 ## Docs page
 
-`docs/drivers/<name>.md` covers what the driver supports, setup steps, an example device file, known limitations, hazard defaults, and the protocol sources used to write it.
+`docs/drivers/<name>.md` covers what the driver supports, setup steps, an example device file, known limitations, hazard defaults, and the protocol sources used to write the driver.
 
 ## Hardware test plan
 
@@ -78,7 +80,7 @@ Rules.
 
 ## Catalog entry
 
-`catalog.json` in the driver package.
+The catalog entry is `catalog.json` in the driver package.
 
 ```json
 {
@@ -97,7 +99,7 @@ Rules.
 
 The scaffold is a complete driver of about 80 lines that talks to an in-memory simulator, and the scaffold passes the conformance suite before you change anything. You then replace the simulator transport with the real protocol, one method at a time, and keep the suite passing.
 
-1. **Scaffold it** from an OpenHAL checkout.
+1. **Scaffold the driver** from an OpenHAL checkout.
 
    ```
    uv run openhal driver new acme-pump --title "Acme pump"
@@ -113,12 +115,12 @@ The scaffold is a complete driver of about 80 lines that talks to an in-memory s
 
    Every check passes against the simulator.
 
-3. **Write the protocol.** In `driver.py`, replace `connect`, `read` and `_write` with the real transport, and make `simulator.py` speak the same bytes the device does. Keep `discover()` and `identify()` read-only. Never call `_write` yourself, because only the safety kernel's grant reaches it.
+3. **Write the protocol.** In `driver.py`, replace `connect`, `read` and `_write` with the real transport, and make `simulator.py` speak the same bytes the device does. Keep `discover()` and `identify()` read-only. Because only the safety kernel's grant may reach `_write`, never call `_write` yourself.
 
 4. **Test every error path.** Disconnects, timeouts, malformed replies and refusals each get a test, and each raises `DriverError` with a message that says what to do.
 
 5. **Run the suite again**, then fill in the docs page, the hardware test plan and the catalog entry's estimate with sources.
 
-6. **Promote it.** When it passes conformance and a person has run the hardware test plan, a maintainer adds the plain name to the spec's known drivers and sets its status to implemented.
+6. **Promote the driver.** When the driver passes conformance and a person has run the hardware test plan, a maintainer adds the plain name to the spec's known drivers and sets the driver's status to implemented.
 
 `openhal driver list` shows every driver with its protocols, hazard default, conformance level and status.

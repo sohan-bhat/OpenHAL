@@ -28,7 +28,7 @@ You need a KNXnet/IP interface or router on the network, and the group address l
 | `local_ip` | found automatically | The hub's address on the KNX network |
 | `individual_address` | from the interface | The hub's own individual address, needed for routing |
 | `route_back` | `false` | For tunneling through NAT |
-| `timeout` | `2 s` | How long a read waits for an answer |
+| `timeout` | `2 s` | How long a read waits for a response |
 
 KNX Secure isn't supported yet, so a secure interface needs a plain tunnel enabled for the hub.
 

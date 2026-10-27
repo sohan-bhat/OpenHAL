@@ -80,7 +80,7 @@ A `stream: true` channel returns the newest notification. Before the first notif
 
 - No matching advertiser, or more than one, for `address: auto` raises `DriverError` listing the candidates.
 - Connect failures, missing characteristics, refused reads and writes raise `DriverError` with what to check.
-- No answer within `timeout` raises `TimeoutError`.
+- No response within `timeout` raises `TimeoutError`.
 - Values too short for the format, IEEE 11073 special values (NaN, NRes, infinity) and non-finite floats raise `DriverError`.
 
 ## Limitations

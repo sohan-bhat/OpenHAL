@@ -61,7 +61,7 @@ SiLA has no general stop command, and the core features have none either, so the
 | `insecure` | false | Connect without encryption, for development servers only |
 | `ca_env` | none | The name of an environment variable that holds the path of the server's CA certificate, a PEM file. The device file never names the path itself |
 | `timeout` | `5 s` | Per call |
-| `action_wait` | `8 s` | How long an observable command waits before answering `started`. At most 9 s |
+| `action_wait` | `8 s` | How long an observable command waits before returning `started`. At most 9 s |
 
 ## Example device file
 

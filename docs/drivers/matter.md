@@ -31,7 +31,7 @@ Commission the device into the Matter Server first, with the server's frontend o
 |---|---|---|
 | `url` | required | The Matter Server WebSocket, such as `ws://192.168.1.10:5580/ws`. The shorthand `matter: "ws://..."` sets it |
 | `node` | required | The node id |
-| `timeout` | `5 s` | Connect and answer deadline |
+| `timeout` | `5 s` | Connect and response deadline |
 
 ## Channel maps
 

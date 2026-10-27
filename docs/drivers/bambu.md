@@ -13,7 +13,7 @@ This section was checked on 2026-10-24, and you should read this section before 
 Given that status, the driver works within these rules.
 
 - The driver talks only to the printer on the local network, only through the MQTT interface Developer Mode leaves open, and only with the LAN access code shown on the printer's screen.
-- The driver never contacts Bambu Cloud, never uses Bambu Connect or its keys, never presents itself as Bambu Studio and never tries to get around authorization.
+- The driver never contacts Bambu Cloud, never uses Bambu Connect or its keys, never presents itself as Bambu Studio and never bypasses authorization.
 - The driver sends only status requests and the pause, resume, stop, speed level and chamber light commands, and doesn't start prints, upload files, send G-code, change temperatures or move axes.
 - Without Developer Mode the printer refuses the commands and the driver reports the refusal with a hint to turn the mode on, but reads keep working.
 

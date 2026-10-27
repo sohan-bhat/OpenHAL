@@ -52,7 +52,7 @@ Because a raw line would bypass every limit in the device file, the driver delib
 - Lines go out one at a time, and each line waits for its `ok` or `error:N`, with the error number translated into a sentence.
 - Status comes from the `?` realtime byte. Reads within `status_age` share one report so a page of channels costs one query.
 - Work and machine positions are converted with the `WCO` offset. When a report has no `WCO` the driver reads `$#` and `$G` once.
-- GRBL answers motion lines with `ok` when the lines are queued, and `jog` and `move` then poll until the machine is idle and return `done`, or return `started` after `action_wait`.
+- GRBL responds to motion lines with `ok` when the lines are queued, and `jog` and `move` then poll until the machine is idle and return `done`, or return `started` after `action_wait`.
 - `$H` blocks the line until homing ends. If homing takes longer than `action_wait` the action returns `started` and the `ok` is collected in the background.
 - `ALARM:N` fails the command in flight. After a hard or soft limit GRBL ignores everything but a reset, and the driver refuses lines until a reset is sent.
 - The banner `Grbl 1.1h ['$' for help]` means the board reset, so commands in flight fail.
@@ -78,7 +78,7 @@ Because a software stop is not an emergency stop, keep a physical e-stop that cu
 | `baud` | 115200 | Baud rate |
 | `timeout` | `5 s` | How long to wait for `ok` or a status report |
 | `settle` | `2 s` | Longest wait for the banner after opening the port |
-| `action_wait` | `8 s` | How long motion actions wait before answering `started`. At most 9 s |
+| `action_wait` | `8 s` | How long motion actions wait before returning `started`. At most 9 s |
 | `status_age` | `200 ms` | Reuse a status report this fresh across reads |
 
 ## Example device file

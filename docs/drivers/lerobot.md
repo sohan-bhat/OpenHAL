@@ -66,7 +66,7 @@ close() turns torque off too, LeRobot's `disable_torque_on_disconnect`, unless `
 | `max_relative_target` | none | LeRobot's own clip on how far one goal may move from the present position, in degrees |
 | `torque_off_on_close` | true | Turn torque off when the hub closes the device |
 | `timeout` | `2 s` | Per call |
-| `action_wait` | `8 s` | How long `move` waits for the joints to arrive before answering `started` |
+| `action_wait` | `8 s` | How long `move` waits for the joints to arrive before returning `started` |
 | `observation_age` | `50 ms` | Reuse one observation across reads this close together |
 | `tolerance` | 2 | How close, in the joint's unit, counts as arrived for `move` |
 

@@ -74,7 +74,7 @@ Telescopes and domes get AbortSlew, focusers Halt and cameras AbortExposure, on 
 | `device_type` | `telescope` | `telescope`, `focuser`, `camera`, `switch`, `dome` and the other Alpaca types |
 | `device_number` | 0 | Device number on the server |
 | `timeout` | `5 s` | Per request |
-| `action_wait` | `8 s` | How long a waiting action polls before answering `started`. At most 9 s |
+| `action_wait` | `8 s` | How long a waiting action polls before returning `started`. At most 9 s |
 | `park_on_stop` | false | Park telescopes and domes during a stop |
 | `disconnect_on_close` | false | Set `Connected` to false when the hub closes the device |
 

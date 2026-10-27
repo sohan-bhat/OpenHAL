@@ -76,10 +76,10 @@ A stop cancels running operations, and the instrument finishes the firmware comm
 | `num_channels` | 8 | Channels of the chatterbox simulation |
 | `host`, `port` | none, 31950 | The OT-2's address |
 | `serial_number` | none | Which STAR to open when several are plugged in |
-| `setup_on_connect` | false | Run `setup()` during connect. It homes the channels |
+| `setup_on_connect` | false | Run `setup()`, which homes the channels, during connect |
 | `track_volumes` | true | Turn on PyLabRobot's tip and volume tracking |
 | `volumes` | empty | Starting volumes, such as `{ "plate:A1": 200 uL }`. Every well starts empty otherwise |
-| `action_wait` | `8 s` | How long an action waits before answering `started`. At most 9 s |
+| `action_wait` | `8 s` | How long an action waits before returning `started`. At most 9 s |
 
 ## Known limitations
 

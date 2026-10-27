@@ -8,7 +8,7 @@ The suite tests the driver's declared [Conformance Level](glossary:conformance-l
 
 | Check | Level | What passes |
 |---|---|---|
-| `identify` | Core | Identification answers using read-only commands |
+| `identify` | Core | Identification returns a result using read-only commands |
 | `connect` | Core | The kernel connects the device |
 | `describe` | Core | Self-description, if the protocol has one, uses only known sections |
 | `read every channel` | Core | Each readable channel returns a value in its declared unit |

@@ -48,7 +48,7 @@ actions:
 |---|---|---|
 | `register` | none | I2C. The register to read or set. Commands and actions on I2C need one |
 | `read_length` | the field's end | I2C. How many bytes to read from the register |
-| `command` | required for SPI reads | SPI. The bytes to clock out. They are padded with zeros to the field's end |
+| `command` | required for SPI reads | SPI. The bytes to clock out, padded with zeros to the field's end |
 | `data` | zeros | Commands and actions. The bytes the rest of the payload carries. For SPI this is the whole word |
 | `preserve` | `false` | I2C commands. Read the register and change only this field's bits |
 | `byte`, `length` | `0`, `1` | Where the value starts in the payload and how many bytes it spans, 1 to 8 |
@@ -56,7 +56,7 @@ actions:
 | `signed` | `false` | Two's complement |
 | `bit`, `bits` | `0`, the rest | The bit range inside those bytes, counted from the least significant bit |
 | `scale`, `offset` | `1`, `0` | device value = raw × scale + offset |
-| `unit` | the channel unit | The unit the device value is in. It is converted to the channel unit |
+| `unit` | the channel unit | The unit the device value is in, which the driver converts to the channel unit |
 | `on`, `off` | `1`, `0` | Raw values for bool channels |
 | `lookup` | none | Raw numbers to enum values |
 | `state` | none | Control channels. A read map that shows the result, often the same register |

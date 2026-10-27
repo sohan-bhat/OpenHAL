@@ -30,10 +30,10 @@ httpx is also part of the hub extra, so a hub install already has it.
 | `auth_header` | `Authorization` | Header that carries the token |
 | `auth_scheme` | `Bearer` | Prefix before the token. Use `""` for a bare API key header |
 | `verify_tls` | `true` | Check HTTPS certificates |
-| `health` | `/` | Path fetched with GET for connect and the heartbeat. Any HTTP answer counts as alive |
+| `health` | `/` | Path fetched with GET for connect and the heartbeat. Any HTTP response counts as alive |
 | `identify` | none | Path fetched with GET by `identify()`. Scalar fields of the JSON reply become identity fields |
 | `openapi` | none | Path of an OpenAPI 3 JSON document for `describe()` |
-| `max_response_bytes` | `1048576` | Larger answers are refused |
+| `max_response_bytes` | `1048576` | Larger responses are refused |
 
 ## Channel maps
 

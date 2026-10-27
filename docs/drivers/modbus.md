@@ -30,7 +30,7 @@ For RTU you need a USB to RS-485 adapter and the bus wired A to A and B to B, wi
 | `parity` | `N` | RTU only. `N`, `E` or `O` |
 | `stopbits` | `1` | RTU only |
 | `bytesize` | `8` | RTU only |
-| `timeout` | `1 s` | How long to wait for each answer |
+| `timeout` | `1 s` | How long to wait for each response |
 | `retries` | `1` | Extra attempts after a timeout |
 | `word_order` | `big` | Default order of the two registers of 32-bit values. `big` sends the high word first |
 | `byte_order` | `big` | Default byte order inside each register. Only a few devices need `little` |

@@ -55,7 +55,7 @@ actions:
 | `signed` | `false` | Two's complement |
 | `bit`, `bits` | `0`, the rest | The bit range inside those bytes, counted from the least significant bit |
 | `scale`, `offset` | `1`, `0` | device value = raw × scale + offset |
-| `unit` | the channel unit | The unit the device value is in. It is converted to the channel unit |
+| `unit` | the channel unit | The unit the device value is in, which the driver converts to the channel unit |
 | `on`, `off` | `1`, `0` | Raw values for bool channels |
 | `lookup` | none | Raw numbers to enum values, such as `{ 0: coast, 1: eco }` |
 | `data` | zeros | Command and action frames. The bytes the rest of the frame carries |
