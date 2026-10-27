@@ -1,71 +1,104 @@
 ---
-import { nb, storyFacts, storyLines } from "../../lib/story/facts";
-import { CAMERA, NEVER, TOTAL, cue } from "../../lib/story/script";
-import { NOTE_AT, SNAP_AT, TITLE_OUT } from "../../lib/story/timeline";
+import { storyFacts, storyLines, storyTrace } from "../../lib/story/facts";
+import { CAMERA, COUNTED, TOTAL, shown, type StepId } from "../../lib/story/script";
 import "../../styles/story.css";
+import Camera from "./scene/Camera.astro";
 import Client from "./scene/Client.astro";
-import Device from "./scene/Device.astro";
+import Hub from "./scene/Hub.astro";
 import Kernel from "./scene/Kernel.astro";
+import Printer from "./scene/Printer.astro";
 import Scene from "./scene/Scene.astro";
+import Trace from "./scene/Trace.astro";
 
+interface Props {
+  after: string;
+}
+
+const { after } = Astro.props;
 const facts = storyFacts();
 const lines = storyLines(facts);
-const noted = Object.keys(NOTE_AT) as Array<keyof typeof NOTE_AT>;
-const notes = noted.map((id, index) => ({ text: lines[id], style: cue(NOTE_AT[id], NOTE_AT[noted[index + 1]] ?? NEVER, 3) }));
-const steps: Array<{ id: keyof typeof SNAP_AT; station: typeof Client; code: string[] }> = [
-  { id: "ask", station: Client, code: [`${facts.method} ${facts.action} ${facts.asked}`] },
-  { id: "check", station: Kernel, code: [facts.tooLong.name] },
-  { id: "reply", station: Client, code: [facts.tooLong.reason] },
-  { id: "dry", station: Device, code: [`tank ${facts.tank.low}`] },
-  { id: "hold", station: Kernel, code: [facts.empty.name, facts.empty.reason] },
-  { id: "refill", station: Device, code: [`tank ${facts.tank.ok}`] },
-  { id: "water", station: Kernel, code: ["granted"] },
-  { id: "soil", station: Device, code: [facts.soil.text] },
-  { id: "done", station: Client, code: [facts.status, facts.soil.text] },
-];
+const trace = storyTrace(facts);
+const snaps: Partial<Record<StepId, typeof Client>> = {
+  ask: Client,
+  look: Camera,
+  warm: Printer,
+  hot: Kernel,
+  loose: Camera,
+  pause: Printer,
+  cancel: Kernel,
+  wake: Hub,
+};
 const camera = `(() => {
   const story = document.currentScript.previousElementSibling;
-  if (matchMedia(${JSON.stringify(CAMERA)}).matches) story.setAttribute("data-camera", "");
+  if (!matchMedia(${JSON.stringify(CAMERA)}).matches) return;
+  story.setAttribute("data-camera", "");
+  const stage = story.querySelector(".story-stage");
+  const room = story.querySelector(".story-probe").offsetHeight - (document.querySelector(".site-header")?.offsetHeight ?? 0);
+  if (stage.offsetHeight > room) story.setAttribute("data-short", "");
+  if (stage.offsetHeight > room) story.removeAttribute("data-camera"), story.removeAttribute("data-short");
 })();`;
 ---
 
 <section class="story-section" aria-labelledby="story-title">
-  <div class="story" data-story style={`--runway: ${TOTAL}`}>
+  <div class="story" data-story>
     <div class="story-stage">
       <div class="story-band">
-        <div class="wrap column story-heads">
-          <h2 id="story-title" class="story-title" style={`--out: ${TITLE_OUT}; --f: 3`}>{lines.wide}</h2>
-          <div class="story-notes" aria-hidden="true">
-            {notes.map((note) => <p class="story-note cue" style={note.style}>{note.text}</p>)}
+        <div class="story-meta">
+          <p class="story-count" aria-hidden="true" data-pagefind-ignore="all">
+            <span {...shown(["intro"])}>{COUNTED.length} steps</span>
+            {COUNTED.map((item, index) => <span {...shown([item.id])}>{index + 1} / {COUNTED.length}</span>)}
+          </p>
+          <a class="story-skip" href={`#${after}`}>Skip the demo</a>
+          <button type="button" class="smooth" role="switch" aria-checked="false" data-smooth data-wait tabindex="-1" aria-hidden="true">
+            <span class="smooth-track" aria-hidden="true"><span class="smooth-knob"></span></span>
+            <span class="smooth-label">Smooth scrolling</span>
+          </button>
+        </div>
+        <div class="story-heads">
+          <h2 id="story-title" class="story-title" {...shown(["intro"])}>{lines.intro}</h2>
+          <div class="story-notes" aria-hidden="true" data-pagefind-ignore="all">
+            {COUNTED.map((item) => <p class="story-note" {...shown([item.id])}>{lines[item.id]}</p>)}
           </div>
         </div>
       </div>
-      <Scene facts={facts} />
+      <div data-pagefind-ignore="all">
+        <Scene facts={facts} />
+      </div>
     </div>
-    <ol class="wrap column story-list" role="list">
+    <div class="story-runway" style={`height: ${TOTAL}vh`} aria-hidden="true"></div>
+    <span class="story-probe" aria-hidden="true"></span>
+    <ol class="story-list" role="list">
       {
-        steps.map((step) => (
-          <li class="story-step">
-            <div class="step-words">
-              <p class="step-line">{lines[step.id]}</p>
-              {step.code.map((code) => <p class="visually-hidden">{nb(code)}</p>)}
-            </div>
-            <div class="story-snap" style={`--t: ${SNAP_AT[step.id]}`} aria-hidden="true">
-              <step.station facts={facts} />
-            </div>
-          </li>
-        ))
+        COUNTED.map((item) => {
+          const Snap = snaps[item.id];
+          return (
+            <li class="story-step">
+              <div class="step-words">
+                <p class="step-line">{lines[item.id]}</p>
+                {trace[item.id] && (
+                  <div data-pagefind-ignore="all">
+                    <Trace facts={facts} step={item.index} only={item.id} />
+                  </div>
+                )}
+              </div>
+              {Snap && (
+                <div class="story-snap" aria-hidden="true" data-pagefind-ignore="all">
+                  <Snap facts={facts} step={item.index} />
+                </div>
+              )}
+            </li>
+          );
+        })
       }
-      <li class="story-step story-last">
-        <p class="step-line">{lines.end}</p>
-      </li>
     </ol>
   </div>
   <script is:inline set:html={camera} />
 </section>
 
 <script>
+  import { smoothSwitch } from "./smooth-switch";
   import { story } from "./story-runtime";
 
   for (const root of document.querySelectorAll<HTMLElement>("[data-story]")) story(root);
+  for (const toggle of document.querySelectorAll<HTMLButtonElement>("[data-smooth]")) smoothSwitch(toggle);
 </script>

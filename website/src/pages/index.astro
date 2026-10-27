@@ -1,7 +1,7 @@
 ---
 import { getEntry, render } from "astro:content";
 import Story from "../components/landing/Story.astro";
-import { PITCH, PRODUCT_NAME } from "../config/brand";
+import { PITCH, PRODUCT_LONG_NAME, PRODUCT_NAME } from "../config/brand";
 import Base from "../layouts/Base.astro";
 import { driverCounts, driverGroups, statusWord } from "../lib/catalog";
 import { HOME_TITLE } from "../lib/pages";
@@ -12,10 +12,16 @@ const { Content: Quickstart } = await render(quickstart!);
 const groups = driverGroups();
 const { total, tested } = driverCounts();
 const points = [
-  { title: "Limits a person confirmed", text: "An AI can't loosen them. Only a person editing the device file can." },
+  { title: "Limits a person confirmed", text: "An agent can't loosen them. Only a person editing the device file can." },
   { title: "One STOP", text: "One command puts every device in its safe state. Only a person can start them again." },
   { title: "Everything logged", text: "Every request, refusal, stop and confirmation goes into an append-only log." },
 ];
+const spelled = [
+  { letter: "H", word: "hardware" },
+  { letter: "A", word: "agent" },
+  { letter: "L", word: "layer" },
+].map((item) => ({ ...item, at: PRODUCT_NAME.lastIndexOf(item.letter) }));
+const site = JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: PRODUCT_NAME, alternateName: PRODUCT_LONG_NAME, url: new URL("/", Astro.site).href });
 const more = [
   { href: "/spec/latest/", title: "Read the specification", text: "Every message, error and rule, in dated versions." },
   { href: "/docs/", title: "Read the docs", text: "Guides for the hub, device files and drivers." },
@@ -23,15 +29,26 @@ const more = [
 ---
 
 <Base title={`${PRODUCT_NAME}. ${HOME_TITLE}`} description={HOME_TITLE} bare>
-  <section class="wrap column hero" aria-labelledby="home-title">
-    <h1 id="home-title" class="hero-mark">{PRODUCT_NAME}</h1>
+  <Fragment slot="head">
+    <meta name="application-name" content={PRODUCT_NAME} />
+    <script type="application/ld+json" set:html={site} />
+  </Fragment>
+  <section class="home-width hero" aria-labelledby="home-title">
+    <div class="hero-name" data-spell>
+      <h1 id="home-title" class="hero-mark">{PRODUCT_NAME}</h1>
+      <p class="hero-spell" aria-hidden="true">
+        {spelled.map((item) => <span data-at={item.at}>{item.word}</span>)}
+      </p>
+    </div>
     <p class="hero-pitch">{PITCH}</p>
     <a class="button hero-go" href="#try">Get started</a>
   </section>
 
-  <Story />
+  <div class="home-width">
+    <Story after="safe" />
+  </div>
 
-  <section class="wrap column part" aria-labelledby="safe-title">
+  <section id="safe" class="home-width part after-story" aria-labelledby="safe-title">
     <h2 id="safe-title">Why it's safe</h2>
     <ul class="points">
       {
@@ -45,7 +62,7 @@ const more = [
     </ul>
   </section>
 
-  <section class="wrap column part" aria-labelledby="works-title">
+  <section class="home-width part" aria-labelledby="works-title">
     <h2 id="works-title">What it works with</h2>
     <p class="summary lede">
       {tested} {tested === 1 ? "driver" : "drivers"} {statusWord("implemented")}
@@ -67,7 +84,7 @@ const more = [
     <p class="onward"><a href="/drivers/">All {total} drivers</a></p>
   </section>
 
-  <section id="try" class="wrap column part" aria-labelledby="try-title">
+  <section id="try" class="home-width part" aria-labelledby="try-title">
     <h2 id="try-title">Try it</h2>
     <p class="lede">You need uv and git. Nothing touches hardware.</p>
     <div class="prose quickstart">
@@ -76,7 +93,7 @@ const more = [
     <p class="onward">It plays the same story in your terminal. <a href="/spec/playground/">Try it in your browser</a></p>
   </section>
 
-  <section class="wrap column part" aria-labelledby="more-title">
+  <section class="home-width part" aria-labelledby="more-title">
     <h2 id="more-title">Read more</h2>
     <ul class="more">
       {
@@ -91,12 +108,48 @@ const more = [
   </section>
 </Base>
 
+<script>
+  function place(root: HTMLElement): void {
+    const mark = root.querySelector<HTMLElement>(".hero-mark");
+    const spell = root.querySelector<HTMLElement>(".hero-spell");
+    const text = mark?.firstChild;
+    if (!mark || !spell || !text || text.nodeType !== Node.TEXT_NODE) return;
+    const style = getComputedStyle(mark);
+    const context = document.createElement("canvas").getContext("2d");
+    if (!context) return;
+    context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const box = root.getBoundingClientRect();
+    const range = document.createRange();
+    for (const label of spell.querySelectorAll<HTMLElement>("[data-at]")) {
+      const at = Number(label.dataset.at);
+      range.setStart(text, at);
+      range.setEnd(text, at + 1);
+      const glyph = range.getBoundingClientRect();
+      const metrics = context.measureText(text.textContent!.charAt(at));
+      const center = glyph.left + (metrics.actualBoundingBoxRight - metrics.actualBoundingBoxLeft) / 2;
+      const baseline = glyph.top + metrics.fontBoundingBoxAscent;
+      label.style.setProperty("--x", `${(center - box.left).toFixed(1)}px`);
+      label.style.setProperty("--y", `${(baseline - box.top + parseFloat(style.fontSize) * 0.08).toFixed(1)}px`);
+    }
+    const boxes = Array.from(spell.children, (label) => label.getBoundingClientRect());
+    const apart = boxes.every((item, index) => index === 0 || item.left >= boxes[index - 1].right + 4);
+    spell.toggleAttribute("data-placed", apart);
+  }
+
+  for (const root of document.querySelectorAll<HTMLElement>("[data-spell]")) {
+    const again = () => place(root);
+    again();
+    document.fonts?.ready.then(again);
+    new ResizeObserver(again).observe(root);
+  }
+</script>
+
 <style>
   .hero {
     display: grid;
     justify-items: start;
     padding-top: var(--s-7);
-    padding-bottom: var(--s-4);
+    padding-bottom: var(--s-7);
   }
 
   .hero-mark {
@@ -107,9 +160,35 @@ const more = [
     line-height: 0.95;
   }
 
+  .hero-name {
+    position: relative;
+  }
+
+  .hero-spell {
+    position: absolute;
+    inset: 0;
+    visibility: hidden;
+    pointer-events: none;
+    color: var(--text-2);
+    font-size: var(--t-legend);
+    line-height: 1;
+  }
+
+  .hero-spell[data-placed] {
+    visibility: visible;
+  }
+
+  .hero-spell span {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(calc(var(--x, 0px) - 50%), var(--y, 0px));
+    white-space: nowrap;
+  }
+
   .hero-pitch {
     max-width: 22ch;
-    margin-top: var(--s-5);
+    margin-top: var(--s-6);
     font-size: var(--t-h2);
     line-height: 1.3;
   }
@@ -129,6 +208,10 @@ const more = [
   .part h2 {
     font-size: var(--t-h1);
     line-height: 1.15;
+  }
+
+  .part.after-story {
+    padding-top: var(--s-6);
   }
 
   .lede {
@@ -246,12 +329,6 @@ const more = [
 
     .more {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .hero-mark {
-      font-size: min((100vw - 340px) / 4.2, 184px);
     }
   }
 

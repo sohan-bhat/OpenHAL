@@ -1,12 +1,12 @@
 ---
 title: Why we built OpenHAL
-description: AI clients can already drive hardware. OpenHAL defines one place where every command meets the limits a person confirmed.
+description: Agents can already drive hardware. OpenHAL defines one place where every command meets the limits a person confirmed.
 date: 2026-10-24
 author: OpenHAL contributors
 draft: true
 ---
 
-An AI client can read a datasheet, code a serial protocol and move a motor in an afternoon. Nothing on that path knows the limits a person would set. Nothing enforces them the same way for every client.
+An agent can read a datasheet, code a serial protocol and move a motor in an afternoon. Nothing on that path knows the limits a person would set. Nothing enforces them the same way for every client.
 
 ## The gap
 
@@ -19,10 +19,10 @@ OpenHAL is an open protocol with a dated specification. It defines two things.
 1. The [Device File](glossary:device-file). It lists what a device can read and change, the limits on each change and the safe state. A person confirms the limits. Until then the file is read-only.
 2. The hub protocol. Clients speak JSON-RPC 2.0 to one [Hub](glossary:hub). Its [Safety Kernel](glossary:safety-kernel) decides every command before a [Driver](glossary:driver) may act.
 
-```yaml tested include=examples/plant-waterer/plant-waterer.hal.yaml
+```yaml tested include=examples/print-babysitter/printer.hal.yaml
 ```
 
-A request over a limit is refused with a stable code, a registry name and a reason that cites the rule. A request inside every limit runs. This trace is recorded from the reference hub with a simulated device.
+A request over a limit is refused with a stable code, a registry name and a reason that cites the rule. A request inside every limit runs, and one that can't be undone waits for a person. This trace is recorded from the reference hub with a simulated printer and its webcam.
 
 ```scenario
 ```
@@ -39,4 +39,4 @@ Anthropic's Model Hardware Standard is a limited research preview for invited la
 
 OpenHAL is not a safety system. It can't make firmware obey, and it doesn't replace e-stops, enclosures or interlocks wired in hardware. It checks each request against what a person allowed, and it stops every device on request.
 
-The [quickstart](/docs/quickstart/) runs the plant waterer demo and needs no hardware.
+The [quickstart](/docs/quickstart/) runs the print babysitter demo and needs no hardware.

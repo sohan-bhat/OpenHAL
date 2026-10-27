@@ -1,15 +1,18 @@
 ---
+import { getCollection } from "astro:content";
 import { PRODUCT_NAME } from "../config/brand";
-import { NAV } from "../config/site";
+import { navLinks } from "../config/site";
 import { wordmarkWidth } from "../lib/brand-mark";
 import SearchDialog from "./SearchDialog.astro";
 
-const links = NAV;
+const published = (await getCollection("blog")).some((post) => !post.data.draft);
+const links = navLinks(published);
 const path = Astro.url.pathname;
 const matchLength = (match: string[]) =>
   Math.max(0, ...match.filter((prefix) => (prefix === "/" ? path === "/" : path.startsWith(prefix))).map((prefix) => prefix.length));
 const best = Math.max(0, ...links.map((link) => matchLength(link.match)));
 const current = (match: string[]) => best > 0 && matchLength(match) === best;
+const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//, "")).join(" ");
 ---
 
 <header class="site-header">
@@ -40,8 +43,14 @@ const current = (match: string[]) => best > 0 && matchLength(match) === best;
         {
           links.map((link) => (
             <li>
-              <a href={link.href} aria-current={current(link.match) ? "page" : undefined} rel={link.external ? "noopener" : undefined}>
-                {link.label}
+              <a
+                href={link.href}
+                aria-current={current(link.match) ? "page" : undefined}
+                rel={link.external ? "noopener" : undefined}
+                data-match={link.external ? undefined : relative(link.match)}
+              >
+                {current(link.match) && <span class="nav-pill" aria-hidden="true" />}
+                <span class="nav-text">{link.label}</span>
               </a>
             </li>
           ))
@@ -70,6 +79,7 @@ const current = (match: string[]) => best > 0 && matchLength(match) === best;
 
 <style>
   .site-header {
+    view-transition-name: site-header;
     position: sticky;
     top: 0;
     z-index: 20;
@@ -131,8 +141,21 @@ const current = (match: string[]) => best > 0 && matchLength(match) === best;
     background: var(--surface);
   }
 
+  .desktop-nav a {
+    position: relative;
+    isolation: isolate;
+  }
+
   .desktop-nav a[aria-current="page"] {
     color: var(--accent);
+  }
+
+  .nav-pill {
+    view-transition-name: nav-pill;
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: var(--radius);
     background: color-mix(in srgb, var(--accent) 10%, var(--bg));
   }
 

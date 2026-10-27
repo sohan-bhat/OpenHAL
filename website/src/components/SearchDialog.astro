@@ -1,8 +1,10 @@
 ---
-import { NAV } from "../config/site";
+import { navLinks } from "../config/site";
 
-const sections = NAV.filter((link) => !link.external && link.href !== "/").map((link) => ({ prefix: link.match[0] ?? link.href, label: link.label }));
-sections.push({ prefix: "/docs/", label: "Guides" }, { prefix: "/blog/", label: "Blog" });
+const sections = navLinks(true)
+  .filter((link) => !link.external && link.href !== "/" && link.href !== "/docs/")
+  .map((link) => ({ prefix: link.match[0] ?? link.href, label: link.label }));
+sections.push({ prefix: "/docs/", label: "Docs" }, { prefix: "/sdks/", label: "SDKs" }, { prefix: "/inspector/", label: "Inspector" });
 ---
 
 <dialog id="site-search" class="search-dialog" aria-labelledby="site-search-title" data-src="/pagefind/pagefind.js" data-sections={JSON.stringify(sections)}>

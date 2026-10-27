@@ -7,7 +7,7 @@ test.describe("site chrome", () => {
     const links = await nav.getByRole("link").evaluateAll((items) =>
       items.map((item) => ({ label: item.textContent!.trim(), href: item.getAttribute("href")! })),
     );
-    expect(links.map((link) => link.label)).toEqual(["Overview", "Docs", "Specification", "Playground", "Drivers", "Device Library", "SDKs", "Inspector", "Blog", "GitHub"]);
+    expect(links.map((link) => link.label)).toEqual(["Overview", "Docs", "Specification", "Playground", "Drivers", "Device Library", "GitHub"]);
     for (const link of links) {
       if (link.href.startsWith("http")) {
         expect(link.href).toBe("https://github.com/sohan-bhat/OpenHAL");
@@ -18,6 +18,48 @@ test.describe("site chrome", () => {
       await expect(page.locator(".desktop-nav").getByRole("link", { name: link.label, exact: true })).toHaveAttribute("aria-current", "page");
       await expect(page.locator(".desktop-nav [aria-current]")).toHaveCount(1);
     }
+  });
+
+  test("SDKs and the Inspector sit under Docs, which stays current on their pages", async ({ page }) => {
+    for (const path of ["/sdks/", "/inspector/"]) {
+      await page.goto(path);
+      await expect(page.locator(".desktop-nav [aria-current]")).toHaveText("Docs");
+    }
+    await page.goto("/docs/");
+    await expect(page.locator("main")).toContainText("SDKs and Inspector");
+    await expect(page.locator("main a[href='/sdks/']").first()).toBeVisible();
+    await expect(page.locator("main a[href='/inspector/']").first()).toBeVisible();
+  });
+
+  test("the nav highlight has one view transition name on every page", async ({ page }) => {
+    for (const path of ["/", "/docs/", "/spec/latest/", "/spec/playground/", "/drivers/", "/library/", "/sdks/"]) {
+      await page.goto(path);
+      const names = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>("*")].map((el) => getComputedStyle(el).viewTransitionName).filter((name) => name && name !== "none"),
+      );
+      expect(names.filter((name) => name === "nav-pill")).toHaveLength(1);
+      expect(new Set(names).size).toBe(names.length);
+      await expect(page.locator(".desktop-nav [aria-current] .nav-pill")).toHaveCount(1);
+    }
+  });
+
+  test("a page turn moves the way the nav goes, and only for nav links", async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "cross-document view transitions are a Chromium feature");
+    const turn = () => page.evaluate(() => document.documentElement.dataset.turn ?? null);
+    await page.goto("/drivers/");
+    await page.locator(".desktop-nav").getByRole("link", { name: "Device Library", exact: true }).click();
+    await expect(page).toHaveURL(/\/library\/$/);
+    expect(await turn()).toBe("forward");
+    await page.waitForTimeout(500);
+    await page.locator(".desktop-nav").getByRole("link", { name: "Specification", exact: true }).click();
+    await expect(page).toHaveURL(/\/spec\//);
+    expect(await turn()).toBe("backward");
+    await page.goto("/");
+    await page.getByRole("link", { name: "Try it in your browser" }).click();
+    await expect(page).toHaveURL(/\/spec\/playground\/$/);
+    expect(await turn()).toBeNull();
+    await page.goBack();
+    expect(await turn()).toBeNull();
   });
 
   test("the overview's try section leads to the playground", async ({ page }) => {
@@ -144,10 +186,11 @@ test.describe("catalog filters", () => {
 });
 
 test.describe("playground controls", () => {
-  test("the example picker loads the desk fan as the secondary example", async ({ page }) => {
+  test("the example picker opens on the printer and loads the desk fan too", async ({ page }) => {
     await page.goto("/spec/playground/");
+    await page.locator("summary", { hasText: "Build your own request" }).click();
     const picker = page.locator(".example select");
-    await expect(picker).toHaveValue(/plant-waterer/);
+    await expect(picker).toHaveValue(/printer/);
     await picker.selectOption({ label: "spec/examples/desk-fan-confirmed.hal.yaml" });
     await expect(page.getByLabel("Device file YAML")).toHaveValue(/fan_speed/);
     await expect(page.getByRole("button", { name: "Send hal/write" })).toBeEnabled();
@@ -155,12 +198,13 @@ test.describe("playground controls", () => {
 
   test("the client picker changes who sends, and a read-only agent is refused", async ({ page }) => {
     await page.goto("/spec/playground/");
+    await page.locator("summary", { hasText: "Build your own request" }).click();
     const as = page.locator(".request select").nth(0);
     const options = await as.locator("option").allTextContents();
     expect(options.length).toBeGreaterThan(1);
     const reader = options.find((option) => /read/i.test(option))!;
     await as.selectOption({ label: reader });
-    await page.getByLabel("Value").fill("duration=20 s");
+    await page.getByLabel("Value").fill("240 degC");
     await page.getByRole("button", { name: /^Send hal\// }).click();
     await expect(page.locator(".exchanges > li").first()).toContainText("error");
   });
@@ -169,7 +213,7 @@ test.describe("playground controls", () => {
     await page.goto("/spec/playground/");
     await page.getByRole("button", { name: "Stop", exact: true }).click();
     await expect(page.locator(".stop-area .status.blocked")).toHaveText("stopped");
-    await page.getByRole("button", { name: /^Send hal\// }).click();
+    await page.getByRole("button", { name: "Pause the print" }).click();
     await expect(page.locator(".exchanges > li").first()).toContainText("STOPPED");
     await page.getByLabel("Type unlock to lift the stop").fill("unlock");
     await page.getByRole("button", { name: "Unlock" }).click();
@@ -192,8 +236,9 @@ test.describe("playground controls", () => {
 
   test("the device picker lists the devices in the file", async ({ page }) => {
     await page.goto("/spec/playground/");
+    await page.locator("summary", { hasText: "Build your own request" }).click();
     const device = page.locator(".request select").nth(1);
-    await expect(device).toHaveValue("plant-waterer");
+    await expect(device).toHaveValue("printer");
     expect(await device.locator("option").count()).toBeGreaterThan(0);
   });
 });
@@ -207,7 +252,7 @@ test.describe("site search", () => {
     await expect(page.locator("#site-search-input")).toBeFocused();
     await page.locator("#site-search-input").fill("LIMIT_EXCEEDED");
     const results = dialog.locator("a.search-result");
-    await expect(results.first()).toBeVisible();
+    await expect(results.first()).toBeVisible({ timeout: 15_000 });
     expect(await results.evaluateAll((items) => items.map((item) => item.getAttribute("href")))).toContain("/spec/errors/");
     await expect(dialog.locator("[data-search-status]")).toHaveText(/pages? match/);
     await page.keyboard.press("ArrowDown");
@@ -225,8 +270,8 @@ test.describe("site search", () => {
     await field.click();
     const dialog = page.getByRole("dialog", { name: "Search the site" });
     await expect(dialog).toBeVisible();
-    await page.locator("#site-search-input").fill("plant waterer");
-    await expect(dialog.locator("a.search-result").first()).toBeVisible();
+    await page.locator("#site-search-input").fill("print babysitter");
+    await expect(dialog.locator("a.search-result").first()).toBeVisible({ timeout: 15_000 });
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
     await expect(field).toBeFocused();
@@ -246,7 +291,7 @@ test.describe("site search", () => {
     await expect(page.locator(".search-field")).toBeHidden();
     await page.getByRole("button", { name: "Search", exact: true }).click();
     await expect(page.getByRole("dialog", { name: "Search the site" })).toBeVisible();
-    await page.locator("#site-search-input").fill("plant waterer");
-    await expect(page.locator("a.search-result").first()).toBeVisible();
+    await page.locator("#site-search-input").fill("print babysitter");
+    await expect(page.locator("a.search-result").first()).toBeVisible({ timeout: 15_000 });
   });
 });

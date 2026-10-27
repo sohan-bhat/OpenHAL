@@ -48,8 +48,10 @@ for (const scheme of ["light", "dark"] as const) {
       problems.push(...(await violations(page)).map((item) => `spec menus ${item}`));
 
       await page.goto("/spec/playground/");
-      await page.getByRole("button", { name: /^Send hal\// }).click();
+      await page.getByRole("button", { name: "Set the nozzle to 300 °C" }).click();
       await expect(page.locator(".exchanges > li").first()).toBeVisible();
+      await page.getByRole("button", { name: "About hazard" }).click();
+      await page.locator("summary", { hasText: "Build your own request" }).click();
       problems.push(...(await violations(page)).map((item) => `playground trace ${item}`));
 
       await page.goto("/drivers/");
@@ -77,7 +79,7 @@ for (const scheme of ["light", "dark"] as const) {
 
       await page.goto("/");
       await page.getByRole("button", { name: "Search", exact: true }).click();
-      await page.locator("#site-search-input").fill("plant waterer");
+      await page.locator("#site-search-input").fill("print babysitter");
       await expect(page.locator("a.search-result").first()).toBeVisible();
       problems.push(...(await violations(page)).map((item) => `search ${item}`));
 
@@ -103,6 +105,7 @@ test("status never relies on color alone", async ({ page }) => {
   for (const path of ["/", "/drivers/", "/library/", "/library/scpi-rigol-dp832/", "/spec/playground/"]) {
     await page.goto(path);
     for (const status of await page.locator(".status").all()) {
+      if (!(await status.isVisible())) continue;
       expect((await status.innerText()).trim().length, path).toBeGreaterThan(0);
     }
   }

@@ -1,0 +1,67 @@
+---
+import type { StoryFacts } from "../../../lib/story/facts";
+import { amount, nb } from "../../../lib/story/facts";
+import { lit, shown } from "../../../lib/story/script";
+import { PRINTER } from "../../../lib/story/timeline";
+
+interface Props {
+  facts: StoryFacts;
+  step?: number;
+}
+
+const { facts, step } = Astro.props;
+const bed = [
+  { in: PRINTER.before, text: nb(amount(facts.bed.before, facts.bed.unit)) },
+  { in: PRINTER.after, text: nb(amount(facts.bed.after, facts.bed.unit)) },
+];
+const states = [
+  { in: PRINTER.printing, text: "printing" },
+  { in: PRINTER.paused, text: "paused" },
+];
+---
+
+<div class="node" data-cam="printer" {...lit("printer", step)}>
+  <div class="node-head">
+    <p class="node-name">{facts.printer.name}</p>
+    <p class="node-note">Simulated</p>
+  </div>
+  <div class="readings">
+    <div class="reading">
+      <p class="reading-name">Bed</p>
+      <p class="swap figure value">
+        {bed.map((reading) => <span {...shown(reading.in, step)}>{reading.text}</span>)}
+      </p>
+    </div>
+    <div class="reading">
+      <p class="reading-name">State</p>
+      <p class="swap value word">{states.map((state) => <span {...shown(state.in, step)}>{state.text}</span>)}</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .readings {
+    display: grid;
+    gap: 6px;
+  }
+
+  .reading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: var(--s-2);
+  }
+
+  .reading-name {
+    color: var(--text-2);
+  }
+
+  .value {
+    justify-items: end;
+  }
+
+  .word {
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+</style>

@@ -1,9 +1,4 @@
-import { ALWAYS, NEVER, at, from, type ShotId } from "./script";
-
-export interface Span {
-  at: number;
-  out: number;
-}
+import { span, step, type StepId } from "./script";
 
 export interface Run {
   at: number;
@@ -11,132 +6,110 @@ export interface Run {
   out: number;
 }
 
-export type Lane = "send" | "blocked" | "reading" | "done";
+export type Lane = "send" | "look" | "read" | "blocked" | "pending" | "done";
 
 export interface Fill extends Run {
   wire: 1 | 2 | 3 | 4;
   lane: Lane;
 }
 
-const span = (arrive: number, out = NEVER): Span => ({ at: arrive, out });
+export type Word = "ok" | "blocked" | "not needed" | "required";
 
-const ask = at("ask", -8);
-const retry = from("hold", 2);
-const last = from("water", 2);
+export interface Pass {
+  in: StepId[];
+  words: Word[];
+}
 
-/** When each piece of the scene changes, by station. Every number is a point on the shot list. */
-export const CLIENT = {
-  request: span(ask),
-  asked: span(ask, retry),
-  retried: span(retry),
-  limit: span(at("reply", -3), retry),
-  interlock: span(at("hold", 14), last),
-  done: span(at("done", -4)),
+const reads: StepId[] = ["look", "loose"];
+const commands: StepId[] = ["warm", "hot", "pause", ...span("cancel")];
+
+/** Which steps show each piece of the scene, by station. A piece shows for the whole of each step it names. */
+export const AGENT = {
+  person: ["ask"] as StepId[],
+  asks: {
+    look: ["look"] as StepId[],
+    bed: ["warm"] as StepId[],
+    nozzle: ["hot"] as StepId[],
+    loose: ["loose"] as StepId[],
+    pause: ["pause"] as StepId[],
+    cancel: span("cancel"),
+  },
+  hears: {
+    look: ["look"] as StepId[],
+    bed: ["warm"] as StepId[],
+    nozzle: ["hot"] as StepId[],
+    loose: ["loose"] as StepId[],
+    pause: ["pause"] as StepId[],
+    cancel: span("cancel"),
+  },
 };
 
 export const HUB = {
-  duration: span(from("check", 22), at("reply", 4)),
-  tank: span(from("hold", 16), from("refill", 2)),
+  nozzle: ["hot"] as StepId[],
+  bed: ["warm"] as StepId[],
+  cancel: ["cancel", "wake"] as StepId[],
+  asked: span("cancel"),
 };
-
-const steps = (start: number, count: number, gap: number) => Array.from({ length: count }, (_, index) => start + index * gap);
-const once = steps(at("check", 2), 2, 4);
-const twice = steps(at("hold", 2), 4, 3);
-const thrice = steps(at("water", 0), 5, 2.5);
 
 export const KERNEL = {
-  first: { units: span(once[0], retry), range: span(once[1], retry), verdict: span(once[1] + 4, retry) },
-  second: {
-    units: span(twice[0], last),
-    range: span(twice[1], last),
-    rate: span(twice[2], last),
-    interlocks: span(twice[3], last),
-    verdict: span(twice[3] + 3, last),
-  },
-  third: {
-    units: span(thrice[0]),
-    range: span(thrice[1]),
-    rate: span(thrice[2]),
-    interlocks: span(thrice[3]),
-    confirmation: span(thrice[4]),
-    verdict: span(thrice[4] + 3),
-  },
+  passes: [
+    { in: ["warm"], words: ["ok", "ok", "ok", "ok", "not needed"] },
+    { in: ["hot"], words: ["ok", "blocked"] },
+    { in: ["pause"], words: ["ok", "ok", "ok", "ok", "not needed"] },
+    { in: span("cancel"), words: ["ok", "ok", "ok", "ok", "required"] },
+  ] as Pass[],
+  waiting: ["intro", "ask", "look", "loose"] as StepId[],
+  granted: ["warm", "pause"] as StepId[],
+  blocked: ["hot"] as StepId[],
+  confirm: span("cancel"),
 };
-
-const grant = at("water", 14);
 
 export const DRIVER = {
-  waiting: span(ALWAYS, grant),
-  granted: span(grant),
-  sent: span(grant + 8),
+  moonraker: ["warm", "pause"] as StepId[],
+  http: reads,
+  bed: ["warm"] as StepId[],
+  pause: ["pause"] as StepId[],
+  waiting: ["intro", "ask", "look", "hot", "loose", ...span("cancel")] as StepId[],
 };
 
-const empty = at("dry", 2);
-const refilled = at("refill", 2);
-const held = at("hold", 12);
-const pumping = at("water", 30);
-const stopped = at("soil", 30);
-
-export const DEVICE = {
-  tank: { ok: span(ALWAYS, empty), empty: span(empty, refilled), refilled: span(refilled) },
-  pump: {
-    off: span(ALWAYS, held),
-    held: span(held, refilled),
-    ready: span(refilled, pumping),
-    on: span(pumping, stopped),
-    done: span(stopped),
-  },
-  soil: { at: at("soil", 2), d: 26, out: NEVER } as Run,
+export const PRINTER = {
+  before: ["intro", "ask", "look"] as StepId[],
+  after: span("warm"),
+  printing: span("intro", "loose"),
+  paused: span("pause"),
 };
 
-const fill = (wire: Fill["wire"], lane: Lane, arrive: number, d: number, out = NEVER): Fill => ({ wire, lane, at: arrive, d, out });
+export const CAMERA = {
+  lifting: span("intro", "hot"),
+  loose: span("loose"),
+  corner: span("look", "hot"),
+  off: span("loose"),
+};
 
+export const WIRES = {
+  read: reads,
+  write: ["warm", "hot"] as StepId[],
+  action: ["pause", ...span("cancel")] as StepId[],
+  command: ["intro", "ask", ...commands] as StepId[],
+};
+
+const fill = (wire: Fill["wire"], lane: Lane, at: number, d: number, out: number): Fill => ({ wire, lane, at, d, out });
+
+function trip(id: StepId, out: Lane, back: Lane, depth: number): Fill[] {
+  const { from, to } = step(id);
+  const wires = ([1, 2, 3, 4] as const).slice(0, depth);
+  const leg = 3;
+  const going = wires.map((wire, index) => fill(wire, out, from + 2 + index * leg, leg, to));
+  const returning = [...wires].reverse().map((wire, index) => fill(wire, back, from + 4 + depth * leg + index * leg, leg, to));
+  return [...going, ...returning];
+}
+
+/** Each step's message drawn out along the wires it travels and its answer drawn back. */
 export const FILLS: Fill[] = [
-  fill(1, "send", from("check", 4), 10, at("reply", 4)),
-  fill(2, "send", from("check", 14), 10, at("reply", 4)),
-  fill(2, "blocked", from("reply", 2), 10, from("dry", 4)),
-  fill(1, "blocked", from("reply", 12), 10, from("dry", 4)),
-  fill(1, "send", retry, 8, from("refill", 2)),
-  fill(2, "send", retry + 8, 8, from("refill", 2)),
-  fill(4, "reading", from("hold", 14), 6, from("refill", 2)),
-  fill(3, "reading", from("hold", 20), 6, from("refill", 2)),
-  fill(2, "blocked", held, 8, from("water")),
-  fill(1, "blocked", held + 8, 8, from("water")),
-  fill(1, "send", last, 8),
-  fill(2, "send", last + 8, 8),
-  fill(3, "send", grant, 8),
-  fill(4, "send", grant + 8, 8),
-  fill(4, "done", from("done", 2), 7),
-  fill(3, "done", from("done", 9), 7),
-  fill(2, "done", from("done", 16), 7),
-  fill(1, "done", from("done", 23), 7),
+  ...trip("look", "look", "read", 4),
+  ...trip("warm", "send", "done", 4),
+  ...trip("hot", "send", "blocked", 2),
+  ...trip("loose", "look", "read", 4),
+  ...trip("pause", "send", "done", 4),
+  ...trip("cancel", "send", "pending", 2),
 ];
-
-/** When each line over the stage arrives. Each one leaves as the next arrives. */
-export const NOTE_AT: Record<Exclude<ShotId, "wide">, number> = {
-  ask: from("ask", 11),
-  check: at("check", 6),
-  reply: at("reply", -4),
-  dry: at("dry", 0),
-  hold: at("hold", 8),
-  refill: at("refill", 0),
-  water: at("water", 8),
-  soil: at("soil", 0),
-  done: at("done", -4),
-  end: from("end", 12),
-};
-
-export const TITLE_OUT = from("ask", 4);
-
-/** The moment each step of the static list shows its station at, once its shot has played out. */
-export const SNAP_AT: Record<Exclude<ShotId, "wide" | "end">, number> = {
-  ask: at("ask", 20),
-  check: at("check", 32),
-  reply: at("reply", 20),
-  dry: at("dry", 18),
-  hold: at("hold", 32),
-  refill: at("refill", 18),
-  water: at("water", 32),
-  soil: at("soil", 32),
-  done: at("done", 20),
-};

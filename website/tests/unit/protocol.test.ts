@@ -48,14 +48,15 @@ describe("the recorded scenario", () => {
     }
   });
 
-  it("sends hal/value with the params ADR 0015 names and the recorded value", () => {
-    const watered = scenario.record.exchanges.find((exchange) => exchange.soil_moisture);
-    const notification = scenarioTrace(scenario).find((entry) => entry.kind === "notification");
-    expect(notification).toEqual({
-      kind: "notification",
-      method: "hal/value",
-      params: { device: watered!.request.params.device, channel: "soil_moisture", value: watered!.soil_moisture!.after.value, unit: watered!.soil_moisture!.after.unit },
-    });
+  it("shows an image's format and size with its data elided, and a pending answer's request id", () => {
+    const entries = scenarioTrace(scenario);
+    const results = entries.filter((entry) => entry.kind === "result").map((entry) => (entry as { result: any }).result);
+    const frames = scenario.record.exchanges.filter((exchange) => exchange.request.method === "hal/read");
+    expect(frames.length).toBeGreaterThan(0);
+    for (const frame of frames) expect(results).toContainEqual({ value: { ...frame.result!.value, data: "…" } });
+    const pending = scenario.record.exchanges.find((exchange) => exchange.result?.status === "pending")!;
+    expect(results).toContainEqual({ status: "pending", requestId: pending.result!.requestId, expiresInS: pending.result!.expiresInS });
+    expect(traceText(entries)).not.toMatch(/"data": "[A-Za-z0-9+/=]{8,}/);
   });
 
   it("writes narration as comments, the same way openhal.demo.trace does", () => {

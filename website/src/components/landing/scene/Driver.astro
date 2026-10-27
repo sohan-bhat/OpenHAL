@@ -1,45 +1,111 @@
 ---
 import type { StoryFacts } from "../../../lib/story/facts";
 import { nb } from "../../../lib/story/facts";
-import { cue } from "../../../lib/story/script";
-import { DRIVER, type Span } from "../../../lib/story/timeline";
+import { lit, shown } from "../../../lib/story/script";
+import { DRIVER } from "../../../lib/story/timeline";
 
 interface Props {
   facts: StoryFacts;
+  step?: number;
 }
 
-const { facts } = Astro.props;
-const shown = (span: Span) => cue(span.at, span.out);
+const { facts, step } = Astro.props;
+const drivers = [
+  { name: facts.printer.driver, part: "printer", in: DRIVER.moonraker },
+  { name: facts.camera.driver, part: "webcam", in: DRIVER.http },
+];
+const now = [
+  { in: DRIVER.waiting.filter((id) => !DRIVER.http.includes(id)), name: "", text: "Waiting for a grant" },
+  { in: DRIVER.http, name: facts.camera.driver, text: "reads the webcam" },
+  { in: DRIVER.bed, name: facts.printer.driver, text: nb(`${facts.bed.target} ${facts.bed.value}`) },
+  { in: DRIVER.pause, name: facts.printer.driver, text: facts.pause.target },
+];
 ---
 
-<div class="station" data-cam="driver">
-  <div class="station-head">
-    <p class="station-name">Driver</p>
-    <p class="station-note mono">{facts.driver}</p>
+<div class="node" data-cam="driver" {...lit("driver", step)}>
+  <div class="node-head">
+    <p class="node-name">Drivers</p>
+    <p class="node-note wide-only">Single-use grants</p>
   </div>
-  <p class="station-text">Acts only on a single-use grant</p>
-  <div class="swap grant">
-    <p class="cue waiting" style={shown(DRIVER.waiting)}>Waiting for a grant</p>
-    <div class="cue" style={shown(DRIVER.granted)}>
-      <p class="mono action">{facts.action}</p>
-      <p class="figure">{nb(facts.ran)}</p>
-    </div>
+  <ul class="drivers wide-only">
+    {
+      drivers.map((driver) => (
+        <li class="driver">
+          <span class="driver-mark" {...shown(driver.in, step)} />
+          <span class="driver-text">
+            <span class="mono">{driver.name}</span> <span class="driver-part">{driver.part}</span>
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+  <div class="swap grant wide-only">
+    <p class="waiting" {...shown(DRIVER.waiting, step)}>Waiting for a grant</p>
+    <p class="mono action" {...shown(DRIVER.bed, step)}>
+      {facts.bed.target} <span class="action-value">{nb(facts.bed.value)}</span>
+    </p>
+    <p class="mono action" {...shown(DRIVER.pause, step)}>{facts.pause.target}</p>
   </div>
-  <p class="cue station-text" style={shown(DRIVER.sent)}>Sent to the board</p>
+  <p class="swap compact-only">
+    {
+      now.map((line) => (
+        <span {...shown(line.in, step)}>
+          {line.name && <span class="mono">{line.name} </span>}
+          {line.text}
+        </span>
+      ))
+    }
+  </p>
 </div>
 
 <style>
+  .drivers {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+  }
+
+  .driver {
+    position: relative;
+    margin-inline: -6px;
+    padding: 3px 6px;
+  }
+
+  .driver-mark {
+    position: absolute;
+    inset: 0;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+
+  .driver-text {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s-2);
+  }
+
+  .driver-part {
+    color: var(--text-2);
+  }
+
   .grant {
-    min-height: 62px;
+    min-height: 26px;
   }
 
   .waiting {
-    align-self: center;
     color: var(--text-2);
   }
 
   .action {
     color: var(--accent);
     font-weight: 700;
+  }
+
+  .action-value {
+    color: var(--text);
   }
 </style>

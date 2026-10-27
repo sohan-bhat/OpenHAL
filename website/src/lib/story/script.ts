@@ -1,81 +1,95 @@
 /**
- * The landing story as one shot list, in vh of scroll. A shot glides in from the one before, then
- * dwells while its pieces change. The scene places every cue on this list and the camera frames
- * each shot's targets, so the two can't drift apart. Scrolling back plays it in reverse.
+ * The landing story as a list of steps, in vh of scroll. The whole diagram stays in view at one
+ * size, and each step lights the stations it is about while the others rest. A caption and the
+ * state it describes change together at a step's first scroll position and hold until its last.
+ * Within a step only the wires move, drawing the message out and its answer back. Scrolling back
+ * plays it in reverse.
  */
 
-export type ShotId = "wide" | "ask" | "check" | "reply" | "dry" | "hold" | "refill" | "water" | "soil" | "done" | "end";
+export type StepId = "intro" | "ask" | "look" | "warm" | "hot" | "loose" | "pause" | "cancel" | "wake" | "end";
 
-export type Station = "client" | "hub" | "kernel" | "driver" | "device";
+export type Station = "client" | "hub" | "kernel" | "driver" | "printer" | "camera";
 
-export interface Shot {
-  id: ShotId;
-  target: Station[] | "scene";
-  column?: Station[] | "scene";
-  glide: number;
-  dwell: number;
-  pad: number;
-  max?: number;
-  min?: number;
-  top?: boolean;
+export interface Step {
+  id: StepId;
+  length: number;
+  lit: Station[];
 }
 
-export const CAMERA = "(prefers-reduced-motion: no-preference) and (min-height: 500px)";
+/**
+ * Screens tall enough that the stage may play. The height is under the shortest stage of any
+ * layout with the header, so the story never turns off while a phone hides its toolbars.
+ * Story.astro and the runtime still check the fit, the whole stage first and then the short one.
+ */
+export const CAMERA = "(prefers-reduced-motion: no-preference) and (min-height: 600px)";
 
-export const SHOTS: readonly Shot[] = [
-  { id: "wide", target: "scene", glide: 0, dwell: 14, pad: 24, top: true },
-  { id: "ask", target: ["client"], glide: 22, dwell: 22, pad: 16, max: 1.5, min: 1 },
-  { id: "check", target: ["hub", "kernel"], glide: 30, dwell: 34, pad: 16, max: 1.3, min: 0.95 },
-  { id: "reply", target: ["client", "hub", "kernel"], column: ["client"], glide: 24, dwell: 22, pad: 16, max: 1.1, min: 0.8 },
-  { id: "dry", target: ["device"], glide: 34, dwell: 20, pad: 16, max: 1.5, min: 1 },
-  { id: "hold", target: ["kernel", "driver", "device"], glide: 22, dwell: 34, pad: 16, max: 1.1, min: 0.8 },
-  { id: "refill", target: ["device"], glide: 20, dwell: 20, pad: 16, max: 1.5, min: 1 },
-  { id: "water", target: ["kernel", "driver", "device"], glide: 20, dwell: 34, pad: 16, max: 1.1, min: 0.8 },
-  { id: "soil", target: ["device"], glide: 20, dwell: 34, pad: 16, max: 1.5, min: 1 },
-  { id: "done", target: ["client"], glide: 30, dwell: 22, pad: 16, max: 1.5, min: 1 },
-  { id: "end", target: "scene", glide: 24, dwell: 18, pad: 24 },
+export const STEPS: readonly Step[] = [
+  { id: "intro", length: 20, lit: [] },
+  { id: "ask", length: 44, lit: ["client"] },
+  { id: "look", length: 50, lit: ["client", "driver", "camera"] },
+  { id: "warm", length: 50, lit: ["hub", "kernel", "printer"] },
+  { id: "hot", length: 50, lit: ["client", "hub", "kernel"] },
+  { id: "loose", length: 50, lit: ["client", "driver", "camera"] },
+  { id: "pause", length: 50, lit: ["kernel", "driver", "printer"] },
+  { id: "cancel", length: 50, lit: ["client", "hub", "kernel"] },
+  { id: "wake", length: 44, lit: ["hub", "printer", "camera"] },
+  { id: "end", length: 36, lit: ["client", "hub", "kernel", "driver", "printer", "camera"] },
 ];
 
-export interface Placed extends Shot {
-  glideFrom: number;
-  dwellFrom: number;
-  end: number;
+export interface Placed extends Step {
+  index: number;
+  from: number;
+  to: number;
 }
 
 export const PLACED: readonly Placed[] = (() => {
   let t = 0;
-  return SHOTS.map((s) => {
-    const glideFrom = t;
-    const dwellFrom = (t += s.glide);
-    return { ...s, glideFrom, dwellFrom, end: (t += s.dwell) };
-  });
+  return STEPS.map((item, index) => ({ ...item, index, from: t, to: (t += item.length) }));
 })();
 
-export const TOTAL = PLACED[PLACED.length - 1].end;
+export const TOTAL = PLACED[PLACED.length - 1].to;
 
-export function shot(id: ShotId): Placed {
-  const found = PLACED.find((s) => s.id === id);
-  if (!found) throw new Error(`No shot ${id}`);
+/** The steps a visitor counts, every one after the title. */
+export const COUNTED: readonly Placed[] = PLACED.filter((item) => item.id !== "intro");
+
+export function step(id: StepId): Placed {
+  const found = PLACED.find((item) => item.id === id);
+  if (!found) throw new Error(`No step ${id}`);
   return found;
 }
 
-/** A point in the story, `offset` into the shot's dwell, or back into its glide when negative. */
-export const at = (id: ShotId, offset = 0): number => shot(id).dwellFrom + offset;
+/** The index of the step that holds story time t. */
+export function stepAt(t: number): number {
+  const found = PLACED.findIndex((item) => t < item.to);
+  return found < 0 ? PLACED.length - 1 : found;
+}
 
-/** A point `offset` into the shot's glide. */
-export const from = (id: ShotId, offset = 0): number => shot(id).glideFrom + offset;
+/** The steps given, as the data-in and data-lit attributes list them. */
+export const steps = (ids: readonly StepId[]): string => ids.map((id) => step(id).index).join(" ");
+
+/** Every step from `first` up to and including `last`. */
+export function span(first: StepId, last: StepId = "end"): StepId[] {
+  return PLACED.slice(step(first).index, step(last).index + 1).map((item) => item.id);
+}
+
+/** The steps whose state shows a piece, as attributes, with data-on set when `now` is one of them. */
+export function shown(ids: readonly StepId[], now?: number): Record<string, string | undefined> {
+  const list = steps(ids);
+  return { "data-in": list, "data-on": now !== undefined && list.split(" ").includes(String(now)) ? "" : undefined };
+}
+
+/** The steps that light a station, as attributes, with data-on set when `now` is one of them. */
+export function lit(station: Station, now?: number): Record<string, string | undefined> {
+  const ids = PLACED.filter((item) => item.lit.includes(station)).map((item) => item.id);
+  const list = steps(ids);
+  return { "data-lit": list, "data-on": now !== undefined && list.split(" ").includes(String(now)) ? "" : undefined };
+}
 
 export const NEVER = 100000;
-export const ALWAYS = -NEVER;
 
 const round = (n: number) => Math.round(n * 100) / 100;
 
-/** A piece that arrives at `at` and leaves at `out`, each over `fade`, as the custom properties story.css reads. */
-export function cue(arrive: number, out = NEVER, fade = 2): string {
-  return `--at: ${round(arrive)}; --out: ${round(out)}; --f: ${fade}`;
-}
-
-/** A wire fill that runs from `at` over `run`, then fades at `out`. */
-export function run(arrive: number, length: number, out = NEVER): string {
-  return `--at: ${round(arrive)}; --d: ${length}; --out: ${round(out)}; --f: 2`;
+/** A wire fill that draws from `at` over `length` and is gone by `out`, as story.css reads it. */
+export function run(at: number, length: number, out = NEVER): string {
+  return `--at: ${round(at)}; --d: ${length}; --out: ${round(out)}; --f: 2`;
 }

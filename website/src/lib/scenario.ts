@@ -16,14 +16,25 @@ export interface Exchange {
   request: { method: string; params: Record<string, any> };
   error?: { code: number; message: string; data: Record<string, any> };
   result?: Record<string, any>;
-  soil_moisture?: { before: { value: number; unit: string }; after: { value: number; unit: string } };
+  frame?: string;
+  [key: string]: unknown;
+}
+
+export interface DescribedDevice {
+  id: string;
+  name: string;
+  driver: string;
+  file: string;
+  confirmed: { by: string; at: string };
+  limits: Record<string, Record<string, { value: number; unit: string }>>;
+  actions: Record<string, { confirm: string }>;
 }
 
 export interface Scenario {
   path: string;
   device: string | null;
   file: string | null;
-  record: { exchanges: Exchange[]; [key: string]: unknown };
+  record: { exchanges: Exchange[]; devices?: DescribedDevice[]; [key: string]: unknown };
 }
 
 export const scenarioFrom = (text: string, path?: string): Scenario => fromText(text, path) as Scenario;

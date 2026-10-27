@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { faviconSvg, markLightSvg, wordmarkLightSvg, wordmarkWidth } from "../../src/lib/brand-mark";
@@ -30,11 +31,28 @@ describe("the mark matches docs/assets", () => {
   });
 });
 
-describe("status shapes", () => {
-  const css = readFileSync(fileURLToPath(new URL("../../src/styles/global.css", import.meta.url)), "utf8");
-  const shaped = [...css.matchAll(/\.status\.([a-z]+)::before\s*\{([^}]*)\}/g)].filter(([, , body]) => !/content:\s*none/.test(body)).map(([, name]) => name);
+describe("status words", () => {
+  const files = (dir: string): string[] =>
+    readdirSync(dir).flatMap((name) => {
+      const full = join(dir, name);
+      return statSync(full).isDirectory() ? files(full) : /\.(css|astro|svelte)$/.test(name) ? [full] : [];
+    });
+  const source = fileURLToPath(new URL("../../src/", import.meta.url));
+  const rules = files(source).flatMap((file) =>
+    [...readFileSync(file, "utf8").matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({ file: file.slice(source.length), selector: selector.trim(), body })),
+  );
+  const TONE = /var\(--(ok|blocked|confirm|confirm-bg|unverified)\)/;
+  const CONTROLS = /\.stop\b|\.fill\b/;
 
-  it("draws only the shapes DESIGN.md names, and no green dot for ok or granted", () => {
-    expect([...new Set(shaped)].sort()).toEqual(["blocked", "confirm", "unverified"]);
+  it("have no shape, dot or icon drawn beside them", () => {
+    const shaped = rules.filter((rule) => /\.status[^,{]*::(before|after)/.test(rule.selector) && !/content:\s*none/.test(rule.body));
+    expect(shaped.map((rule) => `${rule.file} ${rule.selector}`)).toEqual([]);
+  });
+
+  it("never sit in a box with a status colored border or tinted background", () => {
+    const boxed = rules.filter((rule) => !CONTROLS.test(rule.selector) && /(^|;|\s)(border[a-z-]*|background[a-z-]*|box-shadow|outline)\s*:[^;]*/.test(rule.body)).filter((rule) =>
+      rule.body.split(";").some((line) => /^\s*(border[a-z-]*|background[a-z-]*|box-shadow|outline)\s*:/.test(line) && TONE.test(line)),
+    );
+    expect(boxed.map((rule) => `${rule.file} ${rule.selector}`)).toEqual([]);
   });
 });

@@ -6,6 +6,7 @@ import { SCENARIO_PATH, scenarioFrom } from "../../src/lib/scenario-data.mjs";
 const scenarioFile = process.env.OPENHAL_SCENARIO ?? fileURLToPath(new URL(`../../../${SCENARIO_PATH}`, import.meta.url));
 const recorded = scenarioFrom(readFileSync(scenarioFile, "utf8"));
 const firstError = recorded.record.exchanges.find((exchange: any) => exchange.error)?.error as { code: number; message: string; data: { name: string } };
+const bed = recorded.record.exchanges.find((exchange: any) => exchange.request.method === "hal/write" && exchange.result) as any;
 
 function noErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -31,8 +32,8 @@ test.describe("overview", () => {
     await page.goto("/");
     const story = page.locator(".story-list");
     await expect(story).toContainText(firstError.data.name);
-    await expect(story).toContainText(firstError.message.slice(0, firstError.message.indexOf(" (")).replace(/(\d) /g, "$1 "));
-    await expect(page.locator("main .trace")).toHaveCount(0);
+    await expect(story).toContainText(firstError.message.slice(0, firstError.message.indexOf(" (")).replace(/(\d) degC\b/g, "$1 °C").replace(/(\d) /g, "$1\u00a0"));
+    await expect(page.locator("main .trace:not(.story-trace)")).toHaveCount(0);
   });
 
   test("the quickstart is three commands and says what they show", async ({ page }) => {
@@ -91,6 +92,7 @@ test.describe("playground", () => {
   test("validates live and shows a problem with its place", async ({ page }) => {
     const errors = noErrors(page);
     await page.goto("/spec/playground/");
+    await page.locator("summary", { hasText: "Build your own request" }).click();
     const editor = page.getByLabel("Device file YAML");
     await expect(page.locator("#pg-problems")).toContainText("valid");
     await editor.fill("device: Fan\nconnect: { mock: fan }\nwrite:\n  speed: { unit: percent, min: 0 }\n");
@@ -98,17 +100,46 @@ test.describe("playground", () => {
     expect(errors).toEqual([]);
   });
 
-  test("opens on the recorded scenario and answers it as the hub did", async ({ page }) => {
+  test("opens on the story's requests, and a first click shows the hub's answer", async ({ page }) => {
     await page.goto("/spec/playground/");
-    const send = page.getByRole("button", { name: /^Send hal\// });
-    await send.click();
+    await expect(page.locator("details.build")).not.toHaveAttribute("open", "");
+    await page.getByRole("button", { name: `Set the nozzle to ${(firstError.data as any).requested.value} °C` }).click();
     const latest = page.locator(".exchanges > li").first();
     await expect(latest).toContainText(`error ${firstError.code} ${firstError.data.name}`);
-    await page.getByLabel("Simulated reading for tank").fill("ok");
-    await page.getByLabel("Simulated reading for tank").press("Enter");
-    await page.getByLabel("Value").fill("duration=20 s");
-    await send.click();
+    await page.getByRole("button", { name: `Warm the bed to ${bed.request.params.value} °C` }).click();
     await expect(page.locator(".exchanges > li").first()).toContainText('"status": "done"');
+    await expect(page.locator(".printer .readout")).toContainText(`${bed.request.params.value}\u00a0°C`);
+    await page.getByRole("button", { name: "Pause the print" }).click();
+    await expect(page.locator(".exchanges > li").first()).toContainText('"status": "done"');
+    await expect(page.locator(".printer .readout")).toContainText("paused");
+    await page.getByRole("button", { name: "Cancel the print" }).click();
+    await expect(page.locator(".exchanges > li").first()).toContainText('"status": "pending"');
+    await page.getByRole("button", { name: "Approve" }).click();
+    await expect(page.locator(".exchanges > li").first()).toContainText("hal/confirmations/approve");
+    await expect(page.locator(".printer .readout")).toContainText("cancelled");
+  });
+
+  test("its information marks open and close by keyboard and touch", async ({ browser }) => {
+    const context = await browser.newContext({ hasTouch: true, viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    await page.goto("/spec/playground/");
+    const mark = page.getByRole("button", { name: "About hazard" });
+    const note = page.locator("#info-hazard");
+    await mark.focus();
+    await page.keyboard.press("Enter");
+    await expect(mark).toHaveAttribute("aria-expanded", "true");
+    await expect(note).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(note).toBeHidden();
+    await expect(mark).toBeFocused();
+    await mark.tap();
+    await expect(note).toBeVisible();
+    const box = await note.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+    await page.locator("h1").tap();
+    await expect(note).toBeHidden();
+    await context.close();
   });
 
   test("answers an over-limit write as the hub does", async ({ page }) => {
@@ -281,6 +312,7 @@ test.describe("site", () => {
   test("the playground's As picker shows its whole label", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/spec/playground/");
+    await page.locator("summary", { hasText: "Build your own request" }).click();
     const fits = await page.locator(".request select").first().evaluate((select: HTMLSelectElement) => {
       const probe = document.createElement("span");
       probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font:${getComputedStyle(select).font}`;
