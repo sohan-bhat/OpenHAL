@@ -9,8 +9,7 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
 - website-7. The speed round (BRIEF-website-7.md), measured again on the merged print babysitter site.
-- scenario-approval. The story ends with the owner approving the cancel, with the nozzle's reason line, nozzle readings, the read path and the closing audit lines in the record, and the owner's copy rules in the README and docs (BRIEF-scenario-approval.md).
-- website-8. The story resolves at step 8 and closes on the audit log, with the read path, hub highlights, log colors, the caption slot, the empty bands, the nav and footer alignment and the copy rules (BRIEF-website-8.md). website-7 stays out of its files and takes the search snippets.
+- copy-messages. The hub's own messages, the Playground's mirror of the messages and the remaining generated text follow the owner's copy rules (BRIEF-copy-messages.md).
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
@@ -52,6 +51,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - REST reports conformance, simulated drivers, run limits, requirement reasons, the protocol version and the LAN setting.
 - Website round 5, the final critique's 17 findings. Every diagram on the site in the D2 house style, the Python reference grouped with each method's docstring and route, numbered spec sections with glossary links, Docs and Blog in the navigation, one left edge on every template, no text under 13 px, readable Inspector crops, and no green status dots. Every Client method now has a docstring, and the text trace prints `hal/value` as the JSON the hub sends.
 - The 3D print babysitter is the main example (scenario-printer, website-6 and inspector-5, merged 2026-10-26). examples/print-babysitter/ has a Klipper printer through Moonraker and its webcam through the http driver, camera reads return the image (ADR 0015, amended), and `openhal demo --record` writes docs/demo/scenario.yaml from it. The landing story tells it in nine steps with the whole diagram in view, the Playground opens on four requests from the story with information marks, and the Inspector shows camera frames, a clear pending cancel and status words with no shapes or boxes. The plant waterer stays the Arduino example. The green and red are dulled everywhere, the diagrams included, and the message log keeps a frame's description instead of its pixels.
+- The story resolves (scenario-approval and website-8, merged 2026-10-27). The recorded demo ends with the owner approving the cancel over the hub protocol, the kernel checking every limit again and the printer reading cancelled, and closes on the audit log with 6 requests, 1 refused and 1 confirmed by a person. The landing story lights every station a message passes, shows the read path through the kernel, keeps a two-line caption slot and ends on the audit log. The README, docs, CLI, MCP, Inspector and website copy name the subject and drop every can't and only contrast.
 
 ## Next
 
