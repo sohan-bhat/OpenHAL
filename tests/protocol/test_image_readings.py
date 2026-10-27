@@ -12,6 +12,7 @@ import pytest
 
 from openhal import images
 from openhal.hub.hub import Hub
+from openhal.protocol.log import NOT_KEPT
 from openhal.spec import loads
 from tests.protocol.conftest import Connect
 
@@ -100,7 +101,7 @@ async def test_hal_read_sends_the_image_and_the_logs_keep_only_its_shape(
         messages = (await http.get("/v1/rpc/log")).json()
     results = [entry["message"].get("result") for entry in messages if entry["direction"] == "out"]
     sent = [result for result in results if isinstance(result, dict) and result.get("channel") == "frame"]
-    assert sent[-1]["value"] == images.describe(frame)
+    assert sent[-1]["value"] == {**images.describe(frame), "data": NOT_KEPT}
     assert base64.b64encode(frame).decode("ascii") not in json.dumps(messages)
 
 
