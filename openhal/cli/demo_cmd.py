@@ -75,7 +75,8 @@ def register(app: typer.Typer) -> None:
             console.print(f"[dim]The simulated board ran {speed:g} times faster than real time.[/dim]")
         if not full:
             console.print("The demo hub's audit log, newest first")
-            console.print(log_cmd.table(result["audit"]["entries"]))
+            for line in log_cmd.lines(result["audit"]["entries"]):
+                console.print(escape(line))
             console.print(f"{escape(trace.counts(result))}.")
             console.print()
             console.print("[dim]Demo data from simulated devices. The camera frames are line drawings.[/dim]")
