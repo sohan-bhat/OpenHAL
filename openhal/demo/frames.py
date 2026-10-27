@@ -2,11 +2,11 @@
 
     uv run --extra uvc python -m openhal.demo.frames
 
-writes examples/print-babysitter/frames/first-layer.jpg and come-loose.jpg. Drawing them needs
-OpenCV, which comes with the uvc extra. Running the demo doesn't, since the simulated printer
-webcam only serves the files (openhal/demo/webcam.py). They are demo frames, never photos, in the
-house diagram style of docs/DESIGN.md, 1.5 px lines in the secondary text color on the page
-background. The first shows a corner of the first layer lifting off the bed. The second shows the
+writes examples/print-babysitter/frames/first-layer.jpg and come-loose.jpg. Drawing the frames
+needs OpenCV, which comes with the uvc extra. Running the demo needs no OpenCV, since the simulated
+printer webcam only serves the files (openhal/demo/webcam.py). The frames are demo frames in the
+house diagram style of docs/DESIGN.md, never photos, with 1.5 px lines in the secondary text color
+on the page background. The first shows a corner of the first layer lifting off the bed. The second shows the
 print knocked over and filament piling up under the nozzle.
 """
 

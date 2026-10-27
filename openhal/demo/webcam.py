@@ -1,9 +1,9 @@
 """A simulated printer webcam, the way crowsnest serves a USB camera on a Klipper printer's host.
 
 `GET /webcam/?action=snapshot` answers with the frame the camera is showing, as JPEG. `show()`
-changes it. The frames are the demo's line drawings (examples/print-babysitter/frames/), never
-photos. It is served through httpx.MockTransport to the http driver, so nothing opens a socket or
-touches a camera.
+changes the frame. The frames are the demo's line drawings (examples/print-babysitter/frames/),
+never photos. The webcam is served through httpx.MockTransport to the http driver, so nothing
+opens a socket or touches a camera.
 """
 
 from __future__ import annotations
@@ -42,7 +42,8 @@ class Webcam:
 
 
 class SimulatedWebcam(HttpDriver):
-    """The http driver on a simulated webcam. It reports itself as simulated, so clients label it demo data."""
+    """The http driver on a simulated webcam. The driver reports itself as simulated, so clients label the frames
+    demo data."""
 
     def __init__(self, device: DeviceFile, webcam: Webcam) -> None:
         super().__init__(device, transport=webcam.transport())
