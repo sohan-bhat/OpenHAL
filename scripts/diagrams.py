@@ -47,8 +47,8 @@ STATIC_FONTS = {
 }
 
 THEMES = {
-    "light": {"accent": "#1D5FB4", "line": "#8A919C", "blocked": "#B42318", "label": "#4F5661", "border": "#DADDE2"},
-    "dark": {"accent": "#7DB2F0", "line": "#5A626D", "blocked": "#F07068", "label": "#A0A7B1", "border": "#2A2F36"},
+    "light": {"accent": "#1D5FB4", "line": "#8A919C", "blocked": "#A14034", "label": "#4F5661", "border": "#DADDE2"},
+    "dark": {"accent": "#7DB2F0", "line": "#5A626D", "blocked": "#D57A72", "label": "#A0A7B1", "border": "#2A2F36"},
 }
 SHARED = ("theme-light.d2", "theme-dark.d2", "house.d2")
 MANIFEST = DIAGRAMS / "diagrams.json"
@@ -168,7 +168,7 @@ def static_fonts() -> dict[str, Path]:
     for role, (source, weight) in STATIC_FONTS.items():
         target = CACHE / f"{source.removesuffix('.woff2')}-{weight}.ttf"
         if not target.exists():
-            font = instancer.instantiateVariableFont(TTFont(FONTS / source), {"wght": weight})
+            font = instancer.instantiateVariableFont(TTFont(FONTS / source, recalcTimestamp=False), {"wght": weight})
             font.flavor = None
             font.save(target)
         made[role] = target

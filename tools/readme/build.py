@@ -25,8 +25,8 @@ THEMES = {
         "text": "#15181C",
         "text2": "#4F5661",
         "accent": "#1D5FB4",
-        "ok": "#1E7A44",
-        "blocked": "#B42318",
+        "ok": "#3C754F",
+        "blocked": "#A14034",
     },
     "dark": {
         "surface": "#15181D",
@@ -34,8 +34,8 @@ THEMES = {
         "text": "#E7EAEE",
         "text2": "#A0A7B1",
         "accent": "#7DB2F0",
-        "ok": "#5BC58A",
-        "blocked": "#F07068",
+        "ok": "#72B88E",
+        "blocked": "#D57A72",
     },
 }
 
