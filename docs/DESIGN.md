@@ -48,7 +48,7 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
 
 ### The landing story
 
-The website's home page tells the canonical scenario as one pinned scene that stays whole. The diagram follows the real path, Agent, OpenHAL hub with the device files, Safety kernel, Drivers and the 3D printer with its webcam, at one size from the first step to the last. Scroll moves the story through nine steps. Each step lights the stations it uses and has one short caption, with the real codes in small mono where they help and the step's messages in a trace under the diagram. The step count reads as text ("4 / 9") beside a Skip the demo link. The webcam panel shows what the agent sees. The bed warms from 60 °C to 70 °C, the kernel ticks its checks and refuses a 300 °C nozzle with LIMIT_EXCEEDED, the agent pauses the print when it comes loose, and the cancel waits for a person. Every number comes from docs/demo/scenario.yaml. The stations sit in one row from 1200 px and in a centered column at most 600 px wide below that. Where the whole stage doesn't fit the screen, a short stage drops the trace on phones and sets the caption on one line on laptops. Under 600 px of height, with reduced motion or with no script, the story is a static list of the same steps. The motion is pattern 4 under Motion. Source in website/src/components/landing/.
+The website's home page tells the canonical scenario as one pinned scene that stays whole. The diagram follows the real path, Agent, OpenHAL hub with the device files, Safety kernel, Drivers and the 3D printer with its webcam, at one size from the first step to the last. Scroll moves the story through nine steps. Each step lights the stations it uses and has one short caption, with the real codes in small mono where they help and the step's messages in a trace under the diagram. The step count reads as text ("4 / 9") beside a Skip the demo link. The webcam panel shows what the agent sees. The bed warms from 60 °C to 70 °C, the kernel ticks its checks and refuses a 300 °C nozzle with LIMIT_EXCEEDED, the agent pauses the print when the print comes loose, the cancel waits for a person, and the owner approves the cancel. The last step shows the audit log. Every number comes from docs/demo/scenario.yaml. The stations sit in one row from 1200 px and in a centered column at most 600 px wide below that. Where the whole stage doesn't fit the screen, a short stage drops the trace on phones and sets the caption on one line on laptops. Under 600 px of height, with reduced motion or with no script, the story is a static list of the same steps. The motion is pattern 4 under Motion. Source in website/src/components/landing/.
 
 ## Canonical demo scenario
 
@@ -58,10 +58,11 @@ Every example value in the README, website, Inspector screenshots, docs and soci
 
 The story. Someone starts a long print and asks an agent to keep an eye on it.
 1. The agent reads a camera frame, an image Reading (ADR 0015), and sees a corner of the first layer lifting.
-2. It raises `bed_target` from 60 °C to 70 °C. That is inside the limit, so it is done.
-3. It also asks for a 300 °C nozzle. The kernel answers `LIMIT_EXCEEDED`, because the limit is 260 °C.
+2. The agent raises `bed_target` from 60 °C to 70 °C. The new target is inside the limit, so the write is done.
+3. The agent also asks for a 300 °C nozzle, since a hotter nozzle might help the corner stick. The kernel answers `LIMIT_EXCEEDED`, because the limit is 260 °C.
 4. Later the camera shows the print has come loose. The agent pauses the print, which is done straight away.
-5. It asks to cancel. Cancelling can't be undone, so `cancel` is `confirm-each-time`, and the hub queues it and answers pending. A person approves or rejects it within the hub's five minute window, or it expires and the print stays paused. Either way the cancel is the person's call, which is what the story's closing caption says.
+5. The agent asks to cancel. Cancelling can't be undone, so `cancel` is `confirm-each-time`, and the hub queues the request and answers pending.
+6. The owner approves the cancel within the hub's five minute window. The kernel checks every limit again and grants the cancel, the driver sends the cancel to the printer, and the printer's state reads cancelled. The hub's audit log then holds every request, the refusal and the person's approval.
 
 Tests check that the file is still what the hub answers and that every surface matches it. Demo values are labeled as demo data where shown.
 
@@ -200,6 +201,9 @@ With `prefers-reduced-motion: reduce`, nothing moves.
 - No em dashes or en dashes, and no colons or semicolons in running prose.
 - No exclamation marks.
 - Say "agent", not "AI". The agent pauses the print. Keep "AI" only where "agent" alone would be unclear, as in "AI agents" in the one-line description.
+- Name the subject. Write "the agent", "the limits" or "the stop" instead of "it" or "them", unless the noun sits earlier in the same sentence. The owner asked for this on 2026-10-26.
+- Never set up a contrast like "An agent can't loosen them. Only a person editing the device file can." Say what happens in one plain sentence, for example "A person sets the limits in the device file, and every command is checked against the limits."
+- No vague wrap-ups like "That fixes it." Say what changed.
 
 ## Banned
 

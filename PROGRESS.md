@@ -9,6 +9,8 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
 - website-7. The speed round (BRIEF-website-7.md), measured again on the merged print babysitter site.
+- scenario-approval. The story ends with the owner approving the cancel, with the nozzle's reason line, nozzle readings, the read path and the closing audit lines in the record, and the owner's copy rules in the README and docs (BRIEF-scenario-approval.md).
+- website-8. The story resolves at step 8 and closes on the audit log, with the read path, hub highlights, log colors, the caption slot, the empty bands, the nav and footer alignment and the copy rules (BRIEF-website-8.md). website-7 stays out of its files and takes the search snippets.
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
