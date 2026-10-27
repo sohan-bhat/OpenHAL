@@ -182,7 +182,6 @@ def plant_facts() -> dict[str, tuple[str, ...]]:
     assert duration.min is not None
     assert duration.max is not None
     assert water.max_runs is not None
-    assert MOCK.confirmed is not None
     longest, shortest = shown(duration.max), shown(duration.min)
     runs = str(water.max_runs.count)
     window = f"{shown(water.max_runs.per / 3600)} h"
@@ -190,7 +189,6 @@ def plant_facts() -> dict[str, tuple[str, ...]]:
     soil = e2e.step(FULL, "agent-reads-again")["soil_moisture"]
     before, after = shown(soil["before"]["value"]), shown(soil["after"]["value"])
     asked = shown(e2e.step(FULL, "too-long")["arguments"]["args"]["duration"]["value"])
-    citation = rf"\({re.escape(plant.FILE_NAME)}, confirmed by (\S+) (\d{{4}}-\d{{2}}-\d{{2}})\)"
     return {
         r"water duration \d+ s exceeds the limit of (\d+) s": (longest,),
         r"water duration \d+ s is below the limit of (\d+) s": (shortest,),
@@ -204,7 +202,6 @@ def plant_facts() -> dict[str, tuple[str, ...]]:
         r"VAL soil_moisture (\d+)": (before,),
         r"EVT soil_moisture (\d+)": (after,),
         r"agent's (\d+) s request": (asked,),
-        citation: (MOCK.confirmed.by, str(MOCK.confirmed.at)),
     }
 
 
