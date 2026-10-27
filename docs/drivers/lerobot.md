@@ -12,7 +12,7 @@ The `lerobot` driver controls Hugging Face LeRobot arms, such as the SO-100, SO-
 | Safe state | native. Torque off on every motor |
 | Self-describe | yes, from the arm's joints and where they are now |
 
-LeRobot pulls in PyTorch, which is several gigabytes and has no wheels for some machines, such as Intel Macs. So LeRobot is not an OpenHAL extra. The driver imports it only when a device connects and explains how to install it when it is missing.
+Because LeRobot pulls in PyTorch, which is several gigabytes and has no wheels for some machines such as Intel Macs, LeRobot is not an OpenHAL extra. The driver imports LeRobot only when a device connects and, when LeRobot is missing, explains how to install it.
 
 ## What it supports
 
@@ -35,16 +35,16 @@ Body joints are in degrees with `use_degrees: true`, LeRobot's default, and from
 
 ## How it works
 
-- connect() builds the robot from its LeRobot type and calls `connect(calibrate=False)`. Calibration moves the arm by hand and asks questions at the keyboard, so the driver never runs it. An uncalibrated arm is refused with the exact `lerobot-calibrate` command to run.
-- Connecting turns torque on, so the arm holds where it is. Nothing moves.
-- A goal channel reads the joint's present position until a goal is sent, because the servo holds there. The kernel's `max_change_per_s` is then measured from where the joint really is.
+- connect() builds the robot from its LeRobot type and calls `connect(calibrate=False)`. Because calibration moves the arm by hand and prompts at the keyboard, the driver never runs calibration, and an uncalibrated arm is refused with the exact `lerobot-calibrate` command to run.
+- Connecting turns torque on, so the arm holds its position and nothing moves.
+- Because the servo holds the joint's present position, a goal channel reads that position until a goal is sent, so the kernel's `max_change_per_s` is measured from where the joint really is.
 - A goal reads back as the value LeRobot actually wrote, after its own `max_relative_target` clipping.
 - `torque_on` sends every present position as the goal first, so no joint jumps to an old goal.
-- Every LeRobot call blocks on the serial bus, so it runs in a worker thread with a deadline.
+- Every LeRobot call blocks on the serial bus, so each call runs in a worker thread with a deadline.
 
 ## Safe state
 
-A stop turns torque off on every motor. The arm goes limp and falls under gravity. Rest the arm over something soft while testing, and keep the power switch within reach. The device file's own safe state steps run afterwards, and with torque off they only set registers.
+A stop turns torque off on every motor, so the arm goes limp and falls under gravity. Rest the arm over something soft while testing, and keep the power switch within reach. The device file's own safe state steps run afterwards, and with torque off those steps only set registers.
 
 close() turns torque off too, LeRobot's `disable_torque_on_disconnect`, unless `torque_off_on_close: false`.
 
@@ -89,13 +89,13 @@ hazard: high
 ## Known limitations
 
 - Cameras in the observation are ignored.
-- The fake in `simulator.py` stands in for LeRobot in tests. The assumptions it makes are listed in its docstring and checked step by step in the hardware test plan.
-- Kinematics and Cartesian moves are not exposed. Goals are per joint.
+- The fake in `simulator.py` stands in for LeRobot in tests, and the fake's assumptions are listed in its docstring and checked step by step in the hardware test plan.
+- Kinematics and Cartesian moves are not exposed, so goals are per joint.
 - `move` arguments get their limits from the action, not from the goal channels, so keep both the same.
 
 ## Hazard defaults
 
-`high`. Arms can pinch and strike, and they fall when torque goes off. The kernel asks a person for every change and action.
+The default hazard is `high`, because arms can pinch and strike and fall when torque goes off, so every change and action waits for a person's approval.
 
 ## Sources
 

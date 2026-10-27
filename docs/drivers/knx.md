@@ -8,7 +8,7 @@ The knx driver reads and sets KNX group addresses through a KNXnet/IP interface 
 - Read channels of type bool (DPT 1.x), number (numeric DPTs such as 5.001, 7.x, 9.x, 13.x and 14.x), enum (enum DPTs such as 20.102) and string (DPT 16).
 - Control channels that send a GroupValueWrite, read back from the actuator's status address.
 - Units from the DPT, converted to the channel unit, such as DPT 9.001 in degC to a channel in degF.
-- `discover()` sends a KNXnet/IP SEARCH_REQUEST, which only asks interfaces to describe themselves.
+- `discover()` sends a KNXnet/IP SEARCH_REQUEST, which only requests a description from each interface.
 
 ## Setup
 
@@ -52,10 +52,10 @@ Enum channels use the DPT's names in lower case, such as `comfort` and `economy`
 
 ## How reads and commands behave
 
-- The driver listens to every telegram for its addresses. A read returns the newest value with the time it arrived. When nothing has arrived since connecting, the read sends one GroupValueRead and waits `timeout`. An address whose read flag is off never answers, and reads as no value until a telegram arrives.
-- A command waits for the interface's L_Data.con, which proves the telegram reached the bus, not that an actuator acted. The status address shows that.
+- The driver listens to every telegram for its addresses, and a read returns the newest value with the time the value arrived. When nothing has arrived since connecting, the read sends one GroupValueRead and waits `timeout`. An address whose read flag is off never responds, and reads as no value until a telegram arrives.
+- A command waits for the interface's L_Data.con, which proves that the telegram reached the bus but not that an actuator acted, so read the status address to see whether the actuator acted.
 - Values are rounded to the DPT's resolution. A channel without a status address reads back the value as encoded, such as 51 % for 50.4 %.
-- xknx's own reconnect is off. A lost tunnel leaves the device unavailable until the hub reconnects, so nothing goes out late.
+- Because xknx's own reconnect is off, a lost tunnel leaves the device unavailable until the hub reconnects, so nothing goes out late.
 
 ## Example
 
@@ -69,9 +69,9 @@ Enum channels use the DPT's names in lower case, such as `comfort` and `economy`
 
 ## Limitations
 
-- No KNX Secure, no device management (programming, individual address changes) and no ETS project import.
+- The driver has no KNX Secure, no device management (programming, individual address changes) and no ETS project import.
 - `describe()` returns nothing, because KNX devices can't list their group addresses.
-- One telegram at a time per device file, as the KNX bus is slow (about 50 telegrams a second).
+- Because the KNX bus is slow (about 50 telegrams a second), the driver sends one telegram at a time per device file.
 
 ## Hazard default and safe state
 

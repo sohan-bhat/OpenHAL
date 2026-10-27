@@ -24,7 +24,7 @@ One device file is one Alpaca device, chosen with `device_type` and `device_numb
 | switch | `switch_0`, `switch_1`, ... | `switch_0`, `switch_1`, ... | |
 | dome | `azimuth`, `altitude`, `shutter`, `slewing`, `at_park`, `at_home` | | `abort_slew`, `park`, `find_home`, `open_shutter`, `close_shutter`, `slew_to_azimuth` (arg `azimuth`) |
 
-Right ascension and sidereal time come from Alpaca in hours and are reported in degrees, hours times 15, because the unit registry has no hour angle. Send `90 deg` to slew to 6 h.
+Because the unit registry has no hour angle, right ascension and sidereal time come from Alpaca in hours and are reported in degrees, hours times 15, so send `90 deg` to slew to 6 h.
 
 A switch channel is a bool through GetSwitch and SetSwitch, or a number through GetSwitchValue and SetSwitchValue, depending on the channel type.
 
@@ -43,19 +43,19 @@ Other members need a `map`.
 ## How the protocol is handled
 
 - connect() checks `/management/apiversions` for version 1 and that every device the file uses is configured, then sets `Connected` on each.
-- close() leaves `Connected` alone, because an imaging program may share the device. Set `disconnect_on_close: true` to clear it.
+- Because an imaging program may share the device, close() leaves `Connected` alone, and `disconnect_on_close: true` clears `Connected` instead.
 - Every request carries `ClientID` and `ClientTransactionID`. PUT parameter names are spelled exactly as the reference spells them.
-- An ASCOM error comes back as HTTP 200 with a non-zero `ErrorNumber`. The driver names it, for example `0x408 not allowed while parked`, and fails the command.
-- Actions with `wait` poll it until it is false and answer `done`, or answer `started` after `action_wait`.
-- Integer members such as the focuser position refuse a value that isn't whole. Nothing is sent.
+- An ASCOM error comes back as HTTP 200 with a non-zero `ErrorNumber`, and the driver names the error, for example `0x408 not allowed while parked`, and fails the command.
+- Actions with `wait` poll the `wait` member until the member is false and return `done`, or return `started` after `action_wait`.
+- Integer members such as the focuser position refuse a value that isn't whole, and nothing is sent.
 
 ## Safe state
 
-Telescopes and domes get AbortSlew, focusers Halt and cameras AbortExposure, on every device the file uses. A parked mount refuses AbortSlew as InvalidWhileParked, which counts as safe since it isn't moving. `park_on_stop: true` also parks telescopes and domes after the abort. Switches have no native safe state, so the file's own `safe_state` values set them. A stop doesn't turn tracking off unless the file says so.
+Telescopes and domes get AbortSlew, focusers Halt and cameras AbortExposure, on every device the file uses. A parked mount refuses AbortSlew as InvalidWhileParked, which counts as safe because a parked mount isn't moving. `park_on_stop: true` also parks telescopes and domes after the abort. Switches have no native safe state, so the file's own `safe_state` values set the switches, and a stop turns tracking off only when the file's safe state does.
 
 ## Discovery
 
-`openhal discover` broadcasts `alpacadiscovery1` to UDP port 32227 and waits one second. Each answering server is asked for its configured devices with read-only GET requests. Nothing is connected and nothing changes.
+`openhal discover` broadcasts `alpacadiscovery1` to UDP port 32227 and waits one second, then requests the configured devices of each server that responds with read-only GET requests, so nothing is connected and nothing changes.
 
 ## Setup
 
@@ -106,14 +106,14 @@ hazard: medium
 
 ## Known limitations
 
-- Camera images are not downloaded. `imagearray` can be tens of megabytes, and the hub has no image path for Alpaca yet.
-- Relative focusers are not written. The `position` convention needs an absolute focuser.
-- MoveAxis and pulse guiding are not exposed. Use slews, which the device bounds itself.
-- The declination and altitude limits in the file are the only horizon limits OpenHAL knows. The mount's own limits still matter.
+- Because `imagearray` can be tens of megabytes and the hub has no image path for Alpaca yet, camera images are not downloaded.
+- Because the `position` convention needs an absolute focuser, the driver doesn't write to relative focusers.
+- MoveAxis and pulse guiding are not exposed, so use slews, which the device bounds itself.
+- The declination and altitude limits in the file are the only horizon limits OpenHAL checks, so the mount's own limits still matter.
 
 ## Hazard defaults
 
-`medium`. A slewing mount can hit the pier, a tripod leg or a person, and a dome rotates with force. Keep `confirm-each-time` on slews and add `require` conditions on park state and tracking.
+The default hazard is `medium`, because a slewing mount can hit the pier, a tripod leg or a person, and a dome rotates with force. Keep `confirm-each-time` on slews and add `require` conditions on park state and tracking.
 
 ## Sources
 

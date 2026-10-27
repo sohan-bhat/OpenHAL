@@ -1,6 +1,6 @@
 # homeassistant driver
 
-The `homeassistant` driver is a bridge. The driver exposes a few Home Assistant entities that the device file selects as one OpenHAL device, so the safety kernel's limits, interlocks and confirmations apply to them. Everything else in the Home Assistant instance stays out of reach.
+The `homeassistant` driver is a bridge that exposes a few Home Assistant entities, selected by the device file, as one OpenHAL device, so the safety kernel's limits, interlocks and confirmations apply to those entities. Everything else in the Home Assistant instance stays out of reach.
 
 | | |
 |---|---|
@@ -13,14 +13,14 @@ The `homeassistant` driver is a bridge. The driver exposes a few Home Assistant 
 
 ## Which entities are exposed
 
-- `entity` names one entity, or `entities` lists several. A channel's `map.entity` must be one of them, otherwise the file is refused when it loads.
+- `entity` names one entity, or `entities` lists several, and a channel's `map.entity` must be one of the selected entities, otherwise the file is refused when it loads.
 - With neither, the entities named in channel maps are the selection.
 - `match.homeassistant` is a glob, and every selected entity must match it.
-- The device file's limits apply even when Home Assistant has its own. A `number` entity's `min`, `max` and `step` only appear in `describe()` as `suggested` values.
+- The device file's limits apply even when Home Assistant has its own limits, so a `number` entity's `min`, `max` and `step` only appear in `describe()` as `suggested` values.
 
 ## Channel roles
 
-A channel's role comes from the entity's domain and from the channel name or `map.attribute`. With one selected entity no map is needed. With several, give `map.entity` and name the channel after the role, or end its name with the role (`lamp_brightness`).
+A channel's role comes from the entity's domain and from the channel name or `map.attribute`. With one selected entity no map is needed, but with several entities, give `map.entity` and name the channel after the role, or end the channel's name with the role (`lamp_brightness`).
 
 | Domain | Channel name or attribute | Type | Reads | Writes |
 |---|---|---|---|---|
@@ -39,14 +39,14 @@ A channel's role comes from the entity's domain and from the channel name or `ma
 
 Units from Home Assistant (`°C`, `°F`, `%`, `kWh`, `hPa` and the rest) are converted to the channel's unit. A sensor whose unit can't convert fails its read with a clear message.
 
-An entity in state `unavailable` fails its reads, and `health()` reports the device disconnected. `unknown` reads as no value.
+An entity in state `unavailable` fails its reads, and `health()` reports the device disconnected, while an entity in state `unknown` reads as no value.
 
 ## Transports
 
-- `transport: rest` (the default). `GET /api/states/<entity_id>` per read and `POST /api/services/<domain>/<service>` per write.
-- `transport: websocket`. The driver authenticates, sends `subscribe_entities` for the selected entities only and keeps their states in a cache, so reads cost no round trip. Writes use `call_service`.
+- `transport: rest`, the default, sends `GET /api/states/<entity_id>` per read and `POST /api/services/<domain>/<service>` per write.
+- With `transport: websocket`, the driver authenticates, sends `subscribe_entities` for the selected entities only and keeps their states in a cache, so reads cost no round trip, and writes use `call_service`.
 
-Both send the long-lived access token from the environment variable named in `token_env` (default `HA_TOKEN`).
+Both transports send the long-lived access token from the environment variable named in `token_env` (default `HA_TOKEN`).
 
 ## Setup
 
@@ -85,14 +85,14 @@ hazard: low
 
 ## Known limitations
 
-- Climate, cover, lock, vacuum, media player and other domains are read-only through `map.attribute` for now. Locks and covers move things and need their own careful mapping.
-- The driver sees only what Home Assistant reports. An integration that marks a device available while it is not will fool the health check.
-- Home Assistant automations can still change the same entities. OpenHAL limits only what goes through OpenHAL.
-- Rate limits and interlocks act on OpenHAL commands. A human at a wall switch bypasses them, as it should.
+- Climate, cover, lock, vacuum, media player and other domains are read-only through `map.attribute` for now, because locks and covers move things and need their own careful mapping.
+- Because the driver has only what Home Assistant reports, a device that an integration marks available while the device is not available still passes the health check.
+- Home Assistant automations can still change the same entities, because OpenHAL limits only what goes through OpenHAL.
+- Rate limits and interlocks act on OpenHAL commands only, so a person at a wall switch bypasses them by design.
 
 ## Hazard defaults
 
-`low`. Lights, fans and sensors are the usual case. A switch that powers a heater or a pump deserves `medium` or `high` in the device file.
+The default hazard is `low`, because lights, fans and sensors are the usual case, but a switch that powers a heater or a pump deserves `medium` or `high` in the device file.
 
 ## Sources
 

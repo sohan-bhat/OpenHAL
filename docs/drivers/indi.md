@@ -14,7 +14,7 @@ The `indi` driver talks to telescope mounts, focusers and cameras on an INDI ser
 
 ## What it supports
 
-One device file is one INDI device, named in `device` exactly as the INDI control panel shows it. `kind` picks the conventions below. A map can reach any property of any device on the same server.
+One device file is one INDI device, named in `device` exactly as the INDI control panel shows the device, and `kind` picks the conventions below. A map can reach any property of any device on the same server.
 
 | Kind | Read | Set | Actions |
 |---|---|---|---|
@@ -23,7 +23,7 @@ One device file is one INDI device, named in `device` exactly as the INDI contro
 | camera | `ccd_temperature`, `cooler`, `exposure_left`, `exposing` | `cooler`, `target_temperature` | `start_exposure` (arg `duration`), `abort_exposure` |
 | generic | anything through a map | anything through a map | anything through a map |
 
-Right ascension comes from INDI in hours and is reported in degrees, hours times 15, because the unit registry has no hour angle. `slewing`, `moving` and `exposing` are true while their property is Busy.
+Because the unit registry has no hour angle, right ascension comes from INDI in hours and is reported in degrees, hours times 15. `slewing`, `moving` and `exposing` are true while their property is Busy.
 
 | Map | Meaning |
 |---|---|
@@ -38,21 +38,21 @@ Right ascension comes from INDI in hours and is reported in degrees, hours times
 
 ## How the protocol is handled
 
-- connect() sends `getProperties` for each device the file uses, turns the device's CONNECTION switch on, and waits up to `define_wait` until every property the file names is defined. Many drivers define their properties only after they connect.
-- close() leaves the device connected, because KStars, Ekos or a guider may share it.
-- The server pushes updates. Reads come from a cache it keeps current, so a read costs no round trip.
-- A change sends `new*Vector` with only the members that change and waits for the server's answer. An answer in the Alert state fails the command with the driver's own message, such as `Mount is parked`.
-- Actions with `wait` follow the property while it is Busy and answer `done`, or `started` after `action_wait`.
+- connect() sends `getProperties` for each device the file uses and turns the device's CONNECTION switch on. Because many drivers define their properties only after they connect, connect() then waits up to `define_wait` until every property the file names is defined.
+- Because KStars, Ekos or a guider may share the device, close() leaves the device connected.
+- Because the server pushes updates, reads come from a cache that the updates keep current, so a read costs no round trip.
+- A change sends `new*Vector` with only the members that change and waits for the server's response. A response in the Alert state fails the command with the driver's own message, such as `Mount is parked`.
+- Actions with `wait` follow the property while the property is Busy and return `done`, or `started` after `action_wait`.
 - Numbers may arrive in sexagesimal form (`5:30:00`) and are read as decimal.
-- Document type declarations and entities are refused, and the connection is dropped. INDI never uses them. BLOBs are never requested, so no image arrives.
+- Because INDI never uses document type declarations and entities, the driver refuses them and drops the connection. BLOBs are never requested, so no image arrives.
 
 ## Safe state
 
-A stop turns on TELESCOPE_ABORT_MOTION for a telescope, FOCUS_ABORT_MOTION for a focuser and CCD_ABORT_EXPOSURE for a camera, then runs the file's own steps. A `generic` device has no native step. Other devices reached through maps are not aborted by the native step, so give them their own device file or file steps. A stop doesn't park the mount or turn tracking off unless the file says so.
+A stop turns on TELESCOPE_ABORT_MOTION for a telescope, FOCUS_ABORT_MOTION for a focuser and CCD_ABORT_EXPOSURE for a camera, then runs the file's own steps. A `generic` device has no native step, and other devices reached through maps are not aborted by the native step, so give those devices their own device file or file steps. A stop parks the mount or turns tracking off only when the file's safe state does.
 
 ## Discovery
 
-`openhal discover` asks the INDI server on `127.0.0.1:7624` for its properties and lists every device with its driver name. Discovery never sends a change and never connects a device.
+`openhal discover` requests the properties from the INDI server on `127.0.0.1:7624` and lists every device with its driver name, and discovery never sends a change or connects a device.
 
 ## Setup
 
@@ -103,13 +103,13 @@ hazard: medium
 ## Known limitations
 
 - Images (BLOBs) are not downloaded.
-- Manual motion (TELESCOPE_MOTION_NS and WE) is not a convention. Map manual motion as a generic switch only with tight interlocks.
+- Manual motion (TELESCOPE_MOTION_NS and WE) is not a convention, so map manual motion as a generic switch only with tight interlocks.
 - A property the server deletes after connect fails its reads until the server defines it again.
-- Discovery only checks the local server. Name remote servers in a device file.
+- Discovery only checks the local server, so name remote servers in a device file.
 
 ## Hazard defaults
 
-`medium`. A slewing mount can hit the pier or a person, and a focuser can drive past its mechanical end. Keep `confirm-each-time` on slews and use `require` conditions on the park state.
+The default hazard is `medium`, because a slewing mount can hit the pier or a person, and a focuser can drive past its mechanical end. Keep `confirm-each-time` on slews and use `require` conditions on the park state.
 
 ## Sources
 

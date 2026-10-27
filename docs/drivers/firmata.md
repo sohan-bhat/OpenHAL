@@ -37,10 +37,10 @@ The maintained Python Firmata clients are pymata4, pymata-express and telemetrix
 
 1. Open the port. Most boards reset and StandardFirmata takes about 2 s to start, which is what `settle` waits for.
 2. Send REPORT_FIRMWARE, REPORT_VERSION, CAPABILITY_QUERY and ANALOG_MAPPING_QUERY.
-3. Check every channel's pin and mode against the capability report. A pin that can't do what the file asks fails the connect with the modes it does support.
+3. Check every channel's pin and mode against the capability report. A pin that can't do what the file requires fails the connect with the modes the pin does support.
 4. Set the sampling interval, put read pins in their input mode and turn on reporting.
 
-Output pins are not touched until the first granted write. Setting a pin to output already drives it, so that only happens as part of a write the kernel allowed.
+Because setting a pin to output already drives the pin, output pins are not touched until the first granted write, so setting a pin to output only happens as part of a write the kernel allowed.
 
 ## Setup
 
@@ -83,14 +83,14 @@ hazard: low
 ## Known limitations
 
 - I2C, SPI, OneWire, stepper and encoder features of ConfigurableFirmata are not supported.
-- Digital inputs report on change only, so a read can't tell a quiet board from a stopped one. Analog reads and pin state queries can, and they raise a timeout.
-- Pins 0 and 1 carry the serial link on an Uno. StandardFirmata reports no modes for them, so the driver refuses them.
-- A servo holds its last angle after a stop unless the safe state moves it. Say so in `safe_state_note`.
-- The driver never sends SYSTEM_RESET. Power-on pin modes are not a safe state for every circuit.
+- Digital inputs report on change only, so a read can't tell a quiet board from a stopped one, but analog reads and pin state queries raise a timeout on a stopped board.
+- Because pins 0 and 1 carry the serial link on an Uno, StandardFirmata reports no modes for those pins, and the driver refuses them.
+- Because a servo holds its last angle after a stop unless the safe state moves the servo, say so in `safe_state_note`.
+- Because power-on pin modes are not a safe state for every circuit, the driver never sends SYSTEM_RESET.
 
 ## Hazard defaults
 
-`low`. Boards running Firmata usually drive LEDs, small fans and hobby servos. Set `hazard` higher in the device file when the pins switch relays or motors that can hurt.
+The default hazard is `low`, because boards running Firmata usually drive LEDs, small fans and hobby servos. Set `hazard` higher in the device file when the pins switch relays or motors that can hurt.
 
 ## Sources
 

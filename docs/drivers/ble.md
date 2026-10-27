@@ -18,7 +18,7 @@ The ble driver reads and writes GATT characteristics of Bluetooth Low Energy per
 uv tool install --compile-bytecode "openhal-hub[ble] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-On Linux, BlueZ 5.55 or newer must be running and your user needs access to it (usually the `bluetooth` group). On macOS, the terminal or app running the hub needs Bluetooth permission in System Settings, and peripherals are addressed by the UUID CoreBluetooth assigns, not by MAC address. Run `discover()` (or the hardware test plan's step 1) to find it.
+On Linux, BlueZ 5.55 or newer must be running and your user needs access to BlueZ (usually the `bluetooth` group). On macOS, the terminal or app running the hub needs Bluetooth permission in System Settings, and peripherals are addressed by the UUID CoreBluetooth assigns, not by MAC address. Run `discover()` (or the hardware test plan's step 1) to find the UUID.
 
 ## Parameters
 
@@ -55,7 +55,7 @@ Writes encode raw = (value - offset) / scale, rounded for integer formats, and t
 
 ## How reads work
 
-A `stream: true` channel returns the newest notification. Before the first notification it does a GATT read if the characteristic allows one, and otherwise reports no value (`None`), which the kernel treats as unknown. Other channels do a GATT read every time. A write channel on a write-only characteristic reports the last value the driver wrote.
+A `stream: true` channel returns the newest notification. Before the first notification the channel does a GATT read if the characteristic allows one, and otherwise reports no value (`None`), which the kernel treats as unknown. Other channels do a GATT read every time. A write channel on a write-only characteristic reports the last value the driver wrote.
 
 ## Describe
 
@@ -70,7 +70,7 @@ A `stream: true` channel returns the newest notification. Before the first notif
 | 0x2A6C Elevation | `elevation` | sint24 | 0.01 | m |
 | 0x2A19 Battery Level | `battery_level` | uint8 | 1 | percent |
 
-`describe()` also fills `device` from the Device Information service and `match.ble_services` from the service list, and lists every vendor characteristic with its properties in the notes, because their formats can't be known without the device's documentation.
+`describe()` also fills `device` from the Device Information service and `match.ble_services` from the service list. Because the formats of vendor characteristics can't be known without the device's documentation, `describe()` lists every vendor characteristic with its properties in the notes.
 
 ## Example
 
@@ -85,8 +85,8 @@ A `stream: true` channel returns the newest notification. Before the first notif
 
 ## Limitations
 
-- No actions, no image channels and no descriptors.
-- Only one central can usually connect to a peripheral. Close the vendor's phone app first.
+- The driver has no actions, no image channels and no descriptors.
+- Because only one central can usually connect to a peripheral, close the vendor's phone app first.
 - Values that are split over several characteristics, or that need a flags byte to parse (such as Health Thermometer measurements), need a dedicated driver.
 - Broadcast-only sensors that put readings in advertisements without a GATT server are not covered yet.
 

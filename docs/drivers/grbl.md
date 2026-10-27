@@ -45,28 +45,28 @@ Other names need a `map`.
 
 Values arrive in the channel's unit and are converted for GRBL. Lengths go out in mm with `G21` on every line, so the machine's own unit mode never matters. Reads from a controller with `$13=1` (inch reports) are converted back.
 
-There is no raw G-code action, on purpose. A raw line would step around every limit in the device file.
+Because a raw line would bypass every limit in the device file, the driver deliberately has no raw G-code action.
 
 ## How the protocol is handled
 
-- Lines go out one at a time. Each waits for its `ok` or `error:N`, and the error number is translated into a sentence.
+- Lines go out one at a time, and each line waits for its `ok` or `error:N`, with the error number translated into a sentence.
 - Status comes from the `?` realtime byte. Reads within `status_age` share one report so a page of channels costs one query.
 - Work and machine positions are converted with the `WCO` offset. When a report has no `WCO` the driver reads `$#` and `$G` once.
-- Motion lines are answered with `ok` when they are queued. `jog` and `move` then poll until the machine is idle and answer `done`, or answer `started` after `action_wait`.
-- `$H` blocks the line until homing ends. If homing takes longer than `action_wait` the action answers `started` and the `ok` is collected in the background.
-- `ALARM:N` fails the command in flight. After a hard or soft limit GRBL ignores everything but a reset, and the driver refuses lines until one is sent.
-- The banner `Grbl 1.1h ['$' for help]` means the board reset. Commands in flight fail.
+- GRBL answers motion lines with `ok` when the lines are queued, and `jog` and `move` then poll until the machine is idle and return `done`, or return `started` after `action_wait`.
+- `$H` blocks the line until homing ends. If homing takes longer than `action_wait` the action returns `started` and the `ok` is collected in the background.
+- `ALARM:N` fails the command in flight. After a hard or soft limit GRBL ignores everything but a reset, and the driver refuses lines until a reset is sent.
+- The banner `Grbl 1.1h ['$' for help]` means the board reset, so commands in flight fail.
 
 ## Safe state
 
-The driver sends feed hold (`!`), waits up to 2 s for the machine to stop, then sends a soft reset (Ctrl-X). The reset turns the spindle, laser and coolant off. If the machine was moving GRBL comes back in `ALARM:3`, so home or clear the alarm before the next job. The file's own safe state steps run afterwards. Turning an output off while GRBL is in alarm counts as done when `$G` shows it is already off.
+The driver sends feed hold (`!`), waits up to 2 s for the machine to stop, then sends a soft reset (Ctrl-X), which turns the spindle, laser and coolant off. If the machine was moving GRBL comes back in `ALARM:3`, so home or clear the alarm before the next job. The file's own safe state steps run afterwards, and turning an output off while GRBL is in alarm counts as done when `$G` shows the output is already off.
 
-A software stop is not an emergency stop. Keep a physical e-stop that cuts motor and spindle power.
+Because a software stop is not an emergency stop, keep a physical e-stop that cuts motor and spindle power.
 
 ## Setup
 
 1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[grbl] @ git+https://github.com/sohan-bhat/OpenHAL"`.
-2. Close any sender that holds the port (UGS, Candle, LightBurn, bCNC). The driver opens the port exclusively.
+2. Because the driver opens the port exclusively, close any sender that holds the port (UGS, Candle, LightBurn, bCNC).
 3. Start from `openhal/drivers/grbl/examples/3018-router.hal.yaml`. Set `match.usb` or the port path, and set limits that fit your machine and work.
 4. Run `openhal file validate`, then confirm the limits by hand.
 
@@ -108,15 +108,15 @@ hazard: high
 
 ## Known limitations
 
-- G-code files are not streamed. Run jobs from a sender, and use this driver to watch, hold and stop them.
+- G-code files are not streamed, so run jobs from a sender and use this driver to watch, hold and stop the jobs.
 - Overrides (feed, rapid and spindle percentages) are not exposed yet.
 - Only the active work coordinate system is used for `work_*` reads and `set_work_zero`.
 - In laser mode `M4` only fires while moving, so setting `laser_power` alone never burns. `{ laser: constant }` uses `M3`, which keeps the laser at power during moves.
-- Spindle speeds above `$30` or below `$31` are refused, because GRBL would clamp them silently.
+- Because GRBL would clamp spindle speeds above `$30` or below `$31` silently, the driver refuses those speeds.
 
 ## Hazard defaults
 
-`high`. Spindles, bits and lasers cut and burn, and axes can crush. The kernel asks a human for every change and action on a high hazard device. Keep `confirm: confirm-each-time` in the file as well, so the intent is visible.
+The default hazard is `high`, because spindles, bits and lasers cut and burn, and axes can crush. Every change and action on a high hazard device waits for a person's approval, and keeping `confirm: confirm-each-time` in the file as well makes the intent visible.
 
 ## Sources
 
