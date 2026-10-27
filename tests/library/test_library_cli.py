@@ -157,4 +157,4 @@ def test_discover_tells_the_person_to_add_a_matched_library_file(monkeypatch: py
     code, out = run("discover", "--driver", "scpi")
     assert code == 0, out
     assert "as rigol-dp832" in out
-    assert "Add it with openhal library add rigol-dp832" in out
+    assert "Add the library file with openhal library add rigol-dp832" in out

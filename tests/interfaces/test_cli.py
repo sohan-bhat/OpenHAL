@@ -181,7 +181,7 @@ def test_confirm_queue(cli_hub: SyncHub, monkeypatch: pytest.MonkeyPatch, termin
     terminal.append("approve")
     code, out = run("confirm", "approve", request_id)
     assert code == 1
-    assert "Only a human" in out, "the hub refuses an agent even when the phrase is typed"
+    assert "This request takes a human principal" in out, "the hub refuses an agent even when the phrase is typed"
     second = json.loads(run("action", "heater.purge", "--json")[1])["request_id"]
 
     monkeypatch.setenv("OPENHAL_TOKEN", cli_hub.tokens.human)
@@ -237,7 +237,7 @@ def test_errors_have_exit_codes(monkeypatch: pytest.MonkeyPatch, cli_hub: SyncHu
     monkeypatch.setattr(_common, "TRANSPORT", None)
     code, out = run("--url", "http://127.0.0.1:9", "status")
     assert code == 3
-    assert "Start it with openhald" in out
+    assert "Start the hub with openhald" in out
     code, out = run("devices", "nope")
     assert code in (1, 3)
 
@@ -249,7 +249,7 @@ def test_pair_prints_a_code(cli_hub: SyncHub, monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("OPENHAL_TOKEN", cli_hub.tokens.agent)
     code, out = run("pair")
     assert code == 1
-    assert "Only a human" in out
+    assert "This request takes a human principal" in out
 
 
 def test_token_file_option(cli_hub: SyncHub, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

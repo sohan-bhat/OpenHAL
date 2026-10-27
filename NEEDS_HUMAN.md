@@ -1,6 +1,6 @@
 # Needs a human
 
-Items that only the owner can do, in the order they should be done. Each has exact steps.
+These items need the owner, in the order listed. Each item has exact steps.
 
 ## 1. Run the first hardware test, the plant waterer
 
@@ -8,7 +8,7 @@ The plant waterer is the cheapest complete rig and its pump stays unplugged unti
 
 1. Get the parts in examples/plant-waterer/README.md (an Arduino Uno, a capacitive soil sensor, a float switch, a 5 V relay module and a small pump with its own supply).
 2. Follow examples/plant-waterer/TEST-PLAN.md from step 1. Read-only steps come first.
-3. Fill in its report template and save it in docs/hardware-tests/reports/. A passing report is what lets the device file say `verified-on-hardware`.
+3. Fill in the report template at the end of TEST-PLAN.md and save the report in docs/hardware-tests/reports/. A passing report lets the device file say `verified-on-hardware`.
 
 The order for every other driver is in docs/hardware-tests/README.md, lowest hazard first.
 
@@ -27,7 +27,7 @@ Options if you want a different public name, all checked free on PyPI and npm as
 1. `openhal-hub` (current default)
 2. `openhal-core`
 3. `openhald` (the daemon name, free on PyPI)
-4. Ask the owner of `openhal` on PyPI whether they would transfer it (https://pypi.org/project/openhal/, repository https://github.com/otherland/hal)
+4. Ask the PyPI owner of `openhal` about transferring the name (https://pypi.org/project/openhal/, repository https://github.com/otherland/hal)
 5. Rename the whole project. Five alternatives that searched clean on 2026-10-24, said as words where possible.
    - OpenHAIL (Open Hardware Agent Interface Layer, "open hail")
    - OpenHARI (Open Hardware Agent Runtime Interface, "open harry")
@@ -37,4 +37,4 @@ Options if you want a different public name, all checked free on PyPI and npm as
 
 ## 4. Domain
 
-openhal.com and openhal.org are registered by someone else. openhal.io looked unregistered on 2026-10-24. openhal.dev could not be checked. The website is published at https://sohan-bhat.github.io/OpenHAL/ until then. Check and buy at a registrar of your choice, add it as the custom domain in the repository's Pages settings, set `OPENHAL_SITE` in .github/workflows/pages.yml to it, and drop the rebase step there, which only exists to serve the site under /OpenHAL/.
+openhal.com and openhal.org are registered by someone else. openhal.io looked unregistered on 2026-10-24. openhal.dev could not be checked. The website is published at https://sohan-bhat.github.io/OpenHAL/ until then. Buy one of the unregistered domains at a registrar of your choice. Then set that domain as the custom domain in the repository's Pages settings, set `OPENHAL_SITE` in .github/workflows/pages.yml to the domain, and drop the rebase step in that workflow, which only exists to serve the site under /OpenHAL/.

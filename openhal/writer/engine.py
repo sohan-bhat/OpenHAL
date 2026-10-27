@@ -3,14 +3,14 @@
 A session turns an unknown device into a confirmed device file in this order.
 
 1. Library match. Discovery already offers library files, so an unknown device has none.
-2. Protocol match and self-description. If a driver can talk to it, the driver connects with its
-   read-only commands and `describe()` maps what the device exposes into sections.
+2. Protocol match and self-description. If a driver can talk to the device, the driver connects
+   with its read-only commands and `describe()` maps what the device exposes into sections.
 3. A sketch, parsed statically (writer/sketch.py).
 4. A manual, with its commands extracted and every one unconfirmed (writer/manual.py).
-5. A draft from any of those, or from the user's AI through `propose`. Every limit in a draft is
-   forced to suggested, and confirmations in it are dropped.
-6. The limits interview. Only a human's answers count, and the confirmed entry is bound to the
-   hash of the limits.
+5. A draft from any of those, or from the user's agent through `propose`. Every limit in a draft
+   is forced to suggested, and any confirmation in the draft is dropped.
+6. The limits interview. A human principal answers every question, and the confirmed entry is
+   bound to the hash of the limits.
 7. The staged test plan, generated and dry-run through a kernel, never executed.
 8. Saving. The file goes into the devices folder with provenance, plus a library submission
    bundle with a test report template.
@@ -54,7 +54,7 @@ class WriterError(ValueError):
 
 
 class NotHumanError(PermissionError):
-    """Only a person can answer the interview or save a file."""
+    """Answering the limits interview or saving a device file takes a human principal."""
 
 
 @dataclass
@@ -332,7 +332,10 @@ class WriterEngine:
     def answer(self, who: Principal, session_id: str, answers: dict[str, Any]) -> Session:
         if who.kind != "human":
             self.hub.audit.append("writer_answer", who.label, target=session_id, status="blocked", code="not_permitted")
-            raise NotHumanError("Only a person can answer the limits interview. An AI can suggest, never confirm.")
+            raise NotHumanError(
+                "Answering the limits interview takes a human principal, and an agent can suggest answers for a "
+                "person to confirm."
+            )
         session = self.get(session_id)
         if session.draft is None:
             raise WriterError("There is no valid draft to interview yet. Propose one first.")
@@ -379,7 +382,7 @@ class WriterEngine:
     async def finish(self, who: Principal, session_id: str, save_as: str | None = None) -> dict[str, Any]:
         if who.kind != "human":
             self.hub.audit.append("writer_finish", who.label, target=session_id, status="blocked", code="not_permitted")
-            raise NotHumanError("Only a person can save a device file from the driver writer.")
+            raise NotHumanError("Saving a device file from the driver writer takes a human principal.")
         session = self.get(session_id)
         if session.status == "saved":
             raise WriterError(f"This session is saved already, at {session.saved_path}.")

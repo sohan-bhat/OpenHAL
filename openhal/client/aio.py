@@ -77,7 +77,7 @@ class AsyncClient:
         return await self.call(calls.whoami())
 
     async def devices(self) -> list[m.DeviceSummary]:
-        """Every device the hub knows, with its driver, hazard level and whether it takes commands."""
+        """Every device the hub knows, with its driver, its hazard level and whether the device takes commands."""
         return await self.call(calls.devices())
 
     async def device(self, device_id: str) -> m.DeviceView:
@@ -110,7 +110,7 @@ class AsyncClient:
         return await self.call(calls.action(device, action, {**(args or {}), **kwargs}))
 
     async def dry_run(self, commands: Iterable[Command]) -> list[m.Decision]:
-        """Evaluate commands in order without running them. Nothing reaches a driver."""
+        """Evaluate commands in order as a dry run. No command reaches a driver."""
         return await self.call(calls.dry_run(commands))
 
     async def tighten(
@@ -142,7 +142,7 @@ class AsyncClient:
         return await self.call(calls.confirmation(request_id))
 
     async def approve(self, request_id: str) -> m.Decision:
-        """Approve a queued request. Needs a human token. The kernel checks it again first."""
+        """Approve a queued request with a human token. The kernel runs every check again first."""
         return await self.call(calls.approve(request_id))
 
     async def reject(self, request_id: str, reason: str = "") -> m.ConfirmationRequest:
@@ -166,7 +166,7 @@ class AsyncClient:
         return await self.call(calls.verify_audit())
 
     async def drivers(self) -> list[m.DriverInfo]:
-        """The drivers the hub knows, whether each is installed and the protocols it speaks."""
+        """The drivers the hub knows, with each driver's protocols and whether the driver is installed."""
         return await self.call(calls.drivers())
 
     async def pair(self, code: str) -> m.OkResult:
@@ -208,19 +208,19 @@ class AsyncClient:
         return await self.call(calls.unknown_devices())
 
     async def routines(self) -> list[m.RoutineSummary]:
-        """Every stored routine with its devices, triggers and whether it is enabled."""
+        """Every stored routine with its devices, its triggers and whether the routine is enabled."""
         return await self.call(calls.routines())
 
     async def routine(self, routine_id: str) -> m.Routine:
-        """One routine with its source and who drafted and enabled it."""
+        """One routine with its source and who drafted and enabled the routine."""
         return await self.call(calls.routine(routine_id))
 
     async def create_routine(self, routine_id: str, source: str, *, kind: str = "yaml") -> m.Routine:
-        """Store a routine. It always starts disabled."""
+        """Store a routine. Every new routine starts disabled."""
         return await self.call(calls.create_routine(routine_id, source, kind))
 
     async def routine_dry_run(self, routine_id: str) -> m.RoutineDryRun:
-        """Evaluate every step of a routine against the kernel without running it."""
+        """Evaluate every step of a routine against the kernel without running the routine."""
         return await self.call(calls.routine_dry_run(routine_id))
 
     async def enable_routine(self, routine_id: str) -> m.Routine:
@@ -264,7 +264,7 @@ class AsyncClient:
         return await self.call(calls.writer_session(session_id))
 
     async def propose(self, session_id: str, draft_yaml: str) -> m.WriterSession:
-        """Store a draft device file. The hub marks every limit in it as suggested."""
+        """Store a draft device file. The hub marks every limit in the draft as suggested."""
         return await self.call(calls.propose(session_id, draft_yaml))
 
     async def interview(self, session_id: str) -> m.Interview:
@@ -292,7 +292,7 @@ class AsyncClient:
         return await self.call(calls.create_token(name, kind, scope))
 
     async def revoke_token(self, token_id: str) -> m.OkResult:
-        """Revoke a token so the hub stops accepting it. Needs a human token."""
+        """Revoke a token so the hub refuses the token from then on. Revoking needs a human token."""
         return await self.call(calls.revoke_token(token_id))
 
     async def new_pairing_code(self) -> m.PairingCode:
@@ -336,7 +336,7 @@ async def aconnect(
 ) -> AsyncClient:
     """Open an async client to the hub.
 
-    With `check` it calls `/v1/whoami` first, so a wrong address or token fails here.
+    With `check`, the client calls `/v1/whoami` first, so a wrong address or token fails here.
     """
     client = AsyncClient(url, token, home=home, timeout=timeout, transport=transport)
     if check:

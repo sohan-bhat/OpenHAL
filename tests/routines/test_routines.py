@@ -75,7 +75,7 @@ async def test_yaml_routine_runs_through_the_kernel(hub: Hub) -> None:
     assert not record.enabled
     assert routines.summary(record)["devices"] == ["desk-fan"]
     assert routines.summary(record)["triggers"] == ["every 30 s", "when desk-fan.temperature > 28 degC"]
-    with pytest.raises(RoutineError, match="Only a human can enable"):
+    with pytest.raises(RoutineError, match="Enabling a routine on this hub takes a human principal"):
         routines.enable(agent("claude", "control_low"), "keep-cool")
     routines.enable(human(), "keep-cool")
     await hub.kernel.read("desk-fan", "temperature", human())
@@ -132,7 +132,7 @@ async def test_python_routine(hub: Hub) -> None:
     routines = engine(hub)
     record = routines.create(human(), "py", "python", PYTHON)
     assert routines.summary(record)["triggers"] == ["every 60 s"]
-    with pytest.raises(RoutineError, match="Only a human can enable"):
+    with pytest.raises(RoutineError, match="Enabling a routine on this hub takes a human principal"):
         routines.enable(agent("claude", "control_low"), "py")
     routines.enable(human(), "py")
     run = await routines.run("py", by=human())
@@ -258,7 +258,7 @@ async def test_stop_disables_and_cancels(hub: Hub) -> None:
 async def test_run_rules(hub: Hub) -> None:
     routines = engine(hub)
     routines.create(human(), "slow", "yaml", "id: slow\nmax_runtime: 1 s\nsteps:\n  - wait: 5 s\n")
-    with pytest.raises(RoutineError, match="Only a human"):
+    with pytest.raises(RoutineError, match="Running a routine by hand takes a human principal"):
         await routines.run("slow", by=agent("a", "control_low"))
     task = asyncio.create_task(routines.run("slow", by=human()))
     await asyncio.sleep(0.05)
@@ -271,7 +271,7 @@ async def test_run_rules(hub: Hub) -> None:
         routines.get("nope")
     with pytest.raises(RoutineError, match="already exists"):
         routines.create(human(), "slow", "yaml", "id: slow\nsteps:\n  - log: x\n")
-    with pytest.raises(RoutineError, match="Only a human can delete"):
+    with pytest.raises(RoutineError, match="Deleting a routine takes a human principal"):
         routines.delete(agent("a", "control_low"), "slow")
     routines.delete(human(), "slow")
     assert "slow" not in routines.records

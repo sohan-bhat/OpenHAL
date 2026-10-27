@@ -150,7 +150,8 @@ def run(
             print(f"Started {DAEMON_NAME} at {base}.", file=sys.stderr)
         else:
             print(
-                f"The hub is not running at {base}. Start it with {DAEMON_NAME}. Tools will report this until it runs.",
+                f"The hub is not running at {base}. Start the hub with {DAEMON_NAME}. "
+                "Every tool call returns the same error until the hub is running.",
                 file=sys.stderr,
             )
     if check_token_kind(base, token) == "human":
