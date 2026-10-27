@@ -75,7 +75,7 @@ button = watch_stop_button(27, kernel_stop, loop=asyncio.get_running_loop())
 button.close()
 ```
 
-`watch_stop_button(pin, on_press, *, pull_up=True, active_state=None, bounce_s=0.05, loop=None, pin_factory=None)` calls `on_press` every time the button on BCM `pin` is pressed. With `loop`, the call runs on that event loop, and a coroutine function runs as a task there. Without it, the call runs on gpiozero's thread. It never touches an output. `RpiGpioDriver.stop_button_pin()` returns the number of a `stop_button` pin named in `pins` but not used by a channel, so the hub can find it in a device file. The hub wires this up. The driver doesn't call it on its own.
+`watch_stop_button(pin, on_press, *, pull_up=True, active_state=None, bounce_s=0.05, loop=None, pin_factory=None)` calls `on_press` every time the button on BCM `pin` is pressed. With `loop`, the call runs on that event loop, and a coroutine function runs as a task there. Without `loop`, the call runs on gpiozero's thread. `watch_stop_button` never touches an output. `RpiGpioDriver.stop_button_pin()` returns the number of a `stop_button` pin named in `pins` but not used by a channel, so the hub can find the pin in a device file. The hub wires up the stop button, and the driver doesn't call `watch_stop_button` on its own.
 
 A GPIO stop button only asks the hub to stop. Keep a hardware e-stop that cuts power on anything that can hurt someone.
 

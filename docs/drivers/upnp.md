@@ -80,7 +80,7 @@ Arguments are converted to their state variable's type before each call, so `Spe
 
 - No GENA eventing, so values are polled.
 - No UPnP Device Protection or HTTPS client certificates.
-- No ContentDirectory browsing helpers. Its actions work like any other, but their DIDL-Lite results are returned as text.
+- No ContentDirectory browsing helpers. ContentDirectory actions work like any other, but the DIDL-Lite results come back as text.
 
 ## Hazard default and safe state
 

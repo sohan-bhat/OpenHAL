@@ -1,6 +1,6 @@
 # firmata driver
 
-The `firmata` driver talks to Arduino-compatible boards running StandardFirmata. It reads digital and analog pins and drives digital outputs, PWM pins and hobby servos. Each channel's `map` names the pin.
+The `firmata` driver talks to Arduino-compatible boards running StandardFirmata. The driver reads digital and analog pins and drives digital outputs, PWM pins and hobby servos. Each channel's `map` names the pin.
 
 | | |
 |---|---|

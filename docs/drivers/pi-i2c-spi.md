@@ -1,6 +1,6 @@
 # pi-i2c-spi driver
 
-The pi-i2c-spi driver reads and sets I2C and SPI chips on a Raspberry Pi, or any Linux board with i2c-dev and spidev. It uses smbus2 for I2C and spidev for SPI. The device file is the register map. Each channel names a register, or the bytes to clock out over SPI, and where the value sits in the bytes that come back, so temperature sensors, ADCs, DACs and port expanders work without chip-specific code.
+The pi-i2c-spi driver reads and sets I2C and SPI chips on a Raspberry Pi, or any Linux board with i2c-dev and spidev. The driver uses smbus2 for I2C and spidev for SPI. The device file is the register map. Each channel names a register, or the bytes to clock out over SPI, and where the value sits in the bytes that come back, so temperature sensors, ADCs, DACs and port expanders work without chip-specific code.
 
 ## What it supports
 

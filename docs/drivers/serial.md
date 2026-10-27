@@ -1,6 +1,6 @@
 # serial driver
 
-The `serial` driver talks to any device with a line-based text protocol over a serial port. It has no command set of its own. Every query, reply pattern and command template comes from the device file, so one driver covers Arduino sketches, RS-232 instruments and sensor modules alike.
+The `serial` driver talks to any device with a line-based text protocol over a serial port. The driver has no command set of its own. Every query, reply pattern and command template comes from the device file, so one driver covers Arduino sketches, RS-232 instruments and sensor modules alike.
 
 | | |
 |---|---|

@@ -52,7 +52,7 @@ A stop turns on TELESCOPE_ABORT_MOTION for a telescope, FOCUS_ABORT_MOTION for a
 
 ## Discovery
 
-`openhal discover` asks the INDI server on `127.0.0.1:7624` for its properties and lists every device with its driver name. It never sends a change and never connects a device.
+`openhal discover` asks the INDI server on `127.0.0.1:7624` for its properties and lists every device with its driver name. Discovery never sends a change and never connects a device.
 
 ## Setup
 

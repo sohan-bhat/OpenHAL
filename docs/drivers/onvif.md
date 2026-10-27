@@ -1,6 +1,6 @@
 # onvif driver
 
-The onvif driver reads an ONVIF camera's identity and stream addresses and moves PTZ cameras through the safety kernel. It speaks the ONVIF device, media and PTZ services itself, with a small SOAP 1.2 client and WS-Security digest authentication, so it works with the Profile S and T cameras most brands sell.
+The onvif driver reads an ONVIF camera's identity and stream addresses and moves PTZ cameras through the safety kernel. The driver speaks the ONVIF device, media and PTZ services itself, with a small SOAP 1.2 client and WS-Security digest authentication, so it works with the Profile S and T cameras most brands sell.
 
 ## What it supports
 

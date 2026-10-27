@@ -35,11 +35,11 @@ Node ids may be numeric (`i=2258`), string (`s=...`), GUID (`g=...`) or opaque (
 
 ## Safe state
 
-OPC UA has no general stop, so the driver has no native safe state. Give the device file a `safe_state` with the equipment's own stop, such as a Stop method and setpoints of 0. They run in order on every stop.
+OPC UA has no general stop, so the driver has no native safe state. Give the device file a `safe_state` with the equipment's own stop, such as a Stop method and setpoints of 0. The safe state's steps run in order on every stop.
 
 ## Discovery
 
-`openhal discover` asks `opc.tcp://127.0.0.1:4840`, the usual local discovery server, for the servers it knows, with FindServers. It never reads or changes a variable.
+`openhal discover` asks `opc.tcp://127.0.0.1:4840`, the usual local discovery server, for the servers it knows, with FindServers. Discovery never reads or changes a variable.
 
 ## Setup
 
@@ -84,7 +84,7 @@ hazard: medium
 - Subscriptions are not used. Each read is one request, and the hub's polling sets the rate.
 - Arrays, structures and enumerated data types beyond String and the numeric and Boolean types are not mapped.
 - describe proposes 0 to 0 limits for numeric changes when the server has no EURange, so nothing moves until a person sets real limits.
-- asyncua is LGPL-3.0. It is installed as a separate package and not modified or copied.
+- asyncua is LGPL-3.0, installed as a separate package and not modified or copied.
 
 ## Hazard defaults
 

@@ -49,7 +49,7 @@ Every proposed write and action is `suggested: true` and carries rated limits at
 
 ## Setup
 
-1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[scpi] @ git+https://github.com/sohan-bhat/OpenHAL"`. It brings pyusb and pyserial for the USB-TMC and serial transports. USB-TMC also needs the system libusb library.
+1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[scpi] @ git+https://github.com/sohan-bhat/OpenHAL"`. The extra brings pyusb and pyserial for the USB-TMC and serial transports. USB-TMC also needs the system libusb library.
 2. On Linux, give your user access to the USB device (a udev rule for the vendor id).
 3. Find the resource with `python -m pyvisa info` and `python -c "import pyvisa; print(pyvisa.ResourceManager('@py').list_resources())"`.
 4. Start from `openhal/drivers/scpi/examples/rigol-dp832.hal.yaml`, or from the driver's `describe()` output.

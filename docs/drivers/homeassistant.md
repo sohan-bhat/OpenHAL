@@ -1,6 +1,6 @@
 # homeassistant driver
 
-The `homeassistant` driver is a bridge. It exposes a few Home Assistant entities that the device file selects as one OpenHAL device, so the safety kernel's limits, interlocks and confirmations apply to them. Everything else in the Home Assistant instance stays out of reach.
+The `homeassistant` driver is a bridge. The driver exposes a few Home Assistant entities that the device file selects as one OpenHAL device, so the safety kernel's limits, interlocks and confirmations apply to them. Everything else in the Home Assistant instance stays out of reach.
 
 | | |
 |---|---|

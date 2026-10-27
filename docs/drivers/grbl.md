@@ -1,6 +1,6 @@
 # grbl driver
 
-The `grbl` driver talks to CNC routers, laser engravers and plotters running GRBL 1.1 over USB serial. It reads the machine state, positions and settings, sets the spindle, laser power and coolant, and runs homing, jogs and moves. grblHAL controllers speak the same protocol and work too.
+The `grbl` driver talks to CNC routers, laser engravers and plotters running GRBL 1.1 over USB serial. The driver reads the machine state, positions and settings, sets the spindle, laser power and coolant, and runs homing, jogs and moves. grblHAL controllers speak the same protocol and work too.
 
 | | |
 |---|---|

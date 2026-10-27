@@ -1,6 +1,6 @@
 # marlin driver
 
-The `marlin` driver talks to printers and other machines running Marlin firmware over USB serial. It reads temperatures, positions and SD print state, sets heater targets and the part fan, and runs homing and SD print control.
+The `marlin` driver talks to printers and other machines running Marlin firmware over USB serial. The driver reads temperatures, positions and SD print state, sets heater targets and the part fan, and runs homing and SD print control.
 
 | | |
 |---|---|

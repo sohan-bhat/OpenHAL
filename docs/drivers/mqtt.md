@@ -1,6 +1,6 @@
 # mqtt driver
 
-The mqtt driver reads devices that publish their state on MQTT topics and controls devices that take commands on topics, through a broker such as Mosquitto. It uses paho-mqtt and MQTT 3.1.1. Each channel's map names the state topic, the command topic and how the payload is written, so Tasmota, Zigbee2MQTT, ESPHome, Shelly and homemade boards all work without device-specific code.
+The mqtt driver reads devices that publish their state on MQTT topics and controls devices that take commands on topics, through a broker such as Mosquitto. The driver uses paho-mqtt and MQTT 3.1.1. Each channel's map names the state topic, the command topic and how the payload is written, so Tasmota, Zigbee2MQTT, ESPHome, Shelly and homemade boards all work without device-specific code.
 
 ## What it supports
 

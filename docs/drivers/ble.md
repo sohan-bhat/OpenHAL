@@ -1,6 +1,6 @@
 # ble driver
 
-The ble driver reads and writes GATT characteristics of Bluetooth Low Energy peripherals, through bleak. It runs on Linux (BlueZ), macOS (CoreBluetooth) and Windows (WinRT). Each channel's map names a characteristic UUID, the value format, a byte offset and a scale. `describe()` maps the standard Environmental Sensing and Battery services by itself.
+The ble driver reads and writes GATT characteristics of Bluetooth Low Energy peripherals, through bleak. The driver runs on Linux (BlueZ), macOS (CoreBluetooth) and Windows (WinRT). Each channel's map names a characteristic UUID, the value format, a byte offset and a scale. `describe()` maps the standard Environmental Sensing and Battery services by itself.
 
 ## What it supports
 
@@ -70,7 +70,7 @@ A `stream: true` channel returns the newest notification. Before the first notif
 | 0x2A6C Elevation | `elevation` | sint24 | 0.01 | m |
 | 0x2A19 Battery Level | `battery_level` | uint8 | 1 | percent |
 
-It also fills `device` from the Device Information service and `match.ble_services` from the service list, and lists every vendor characteristic with its properties in the notes, because their formats can't be known without the device's documentation.
+`describe()` also fills `device` from the Device Information service and `match.ble_services` from the service list, and lists every vendor characteristic with its properties in the notes, because their formats can't be known without the device's documentation.
 
 ## Example
 
