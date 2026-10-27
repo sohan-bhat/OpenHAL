@@ -1,54 +1,46 @@
-import { CAMERA, NEVER, TOTAL, stepAt } from "../../lib/story/script";
+import { CAMERA, TOTAL, stepAt } from "../../lib/story/script";
 
-interface Track {
+interface Leg {
   el: HTMLElement;
-  spans: Array<[number, number]>;
+  from: number;
+  to: number;
   last: string;
 }
 
 interface State {
-  el: HTMLElement;
-  steps: number[];
+  el: Element;
+  spans: number[];
+  on: boolean;
 }
 
-function read(el: HTMLElement, name: string, fallback: number): number {
+function read(el: HTMLElement, name: string): number {
   const value = parseFloat(el.style.getPropertyValue(name));
-  return Number.isFinite(value) ? value : fallback;
+  return Number.isFinite(value) ? value : 0;
 }
 
-/** Every wire fill, and the stretches of story time in which it changes. */
-function tracks(stage: HTMLElement): Track[] {
+/** Every arrow's leg, and the stretch of story time in which it draws. */
+function legs(stage: HTMLElement): Leg[] {
   return Array.from(stage.querySelectorAll<HTMLElement>('[style*="--at"]')).map((el) => {
-    const fade = read(el, "--f", 2);
-    const length = read(el, "--d", 0);
-    const arrive = read(el, "--at", NEVER);
-    const leave = read(el, "--out", NEVER);
-    const spans: Array<[number, number]> = [[arrive - 1, arrive + length + 1]];
-    if (leave < NEVER) spans.push([leave - fade - 1, leave + 1]);
-    return { el, spans, last: "" };
+    const at = read(el, "--at");
+    return { el, from: at - 1, to: at + read(el, "--d") + 1, last: "" };
   });
 }
 
-function held(spans: Array<[number, number]>, t: number): number {
-  let value = spans[0][0];
-  for (const [start, end] of spans) {
-    if (t < start) break;
-    value = Math.min(t, end);
-  }
-  return value;
+function within(spans: number[], t: number): boolean {
+  for (let index = 0; index < spans.length; index += 2) if (t >= spans[index] && t < spans[index + 1]) return true;
+  return false;
 }
 
 /**
- * Pins the stage right under the header while the page scrolls past the runway after it, and
- * turns the scroll position into a point in the story. The step that holds that point is written
- * as data-step on the story and as data-on on every piece and station that shows in it, so a
- * caption and its state change together. story.css cross-fades them, the leaving piece first. The
- * wire fills read the point as --t, set only on the fills that change, so a scroll frame touches
- * nothing else. The fit is measured against the small viewport, read from a 100svh probe, so a
- * phone that hides its toolbars while scrolling changes nothing. A stage too tall for it tries its
- * short form, data-short, which drops the trace on a phone and shrinks the caption and the webcam
- * on a laptop. Without this script, with reduced motion or on a screen too short for both, the
- * story is the list of steps after the runway.
+ * Pins the stage right under the header while the page scrolls past the runway after it, and turns
+ * the scroll position into a point in the story. Every piece of the scene lists the spans of story
+ * time it shows in, and the piece carries data-on while the point is inside one of them, so a
+ * caption and the arrow it describes change together. story.css cross-fades them, the leaving piece
+ * first. Each leg of an arrow reads the point as --t and draws itself, and only the legs that change
+ * are touched, so a scroll frame changes no layout. The fit is measured against the small viewport,
+ * read from a 100svh probe, so a phone that hides its toolbars while scrolling changes nothing.
+ * Without this script, with reduced motion or on a screen too short for the stage, the story is the
+ * whole diagram as it ends, followed by the list of steps.
  */
 export function story(root: HTMLElement): void {
   const stage = root.querySelector<HTMLElement>(".story-stage");
@@ -56,10 +48,11 @@ export function story(root: HTMLElement): void {
   if (!stage || !runway) return;
   const header = document.querySelector<HTMLElement>(".site-header");
   const probe = root.querySelector<HTMLElement>(".story-probe");
-  const pieces = tracks(stage);
-  const states: State[] = Array.from(stage.querySelectorAll<HTMLElement>("[data-in], [data-lit]")).map((el) => ({
+  const drawing = legs(stage);
+  const states: State[] = Array.from(stage.querySelectorAll("[data-in]")).map((el) => ({
     el,
-    steps: (el.dataset.in ?? el.dataset.lit ?? "").split(" ").filter(Boolean).map(Number),
+    spans: (el.getAttribute("data-in") ?? "").split(" ").filter(Boolean).map(Number),
+    on: el.hasAttribute("data-on"),
   }));
   const media = window.matchMedia(CAMERA);
   let on = false;
@@ -69,21 +62,19 @@ export function story(root: HTMLElement): void {
   let frameId = 0;
   let resizing = 0;
 
-  const show = (index: number) => {
-    if (index === current) return;
-    current = index;
-    root.dataset.step = String(index);
-    for (const state of states) state.el.toggleAttribute("data-on", state.steps.includes(index));
-  };
-
   const update = () => {
     frameId = 0;
     if (!on) return;
     const t = Math.min(TOTAL, Math.max(0, (window.scrollY - start) / unit));
-    show(stepAt(t));
-    for (const piece of pieces) {
-      const value = held(piece.spans, t).toFixed(2);
-      if (value !== piece.last) piece.el.style.setProperty("--t", (piece.last = value));
+    const index = stepAt(t);
+    if (index !== current) root.dataset.step = String((current = index));
+    for (const state of states) {
+      const now = within(state.spans, t);
+      if (now !== state.on) state.el.toggleAttribute("data-on", (state.on = now));
+    }
+    for (const leg of drawing) {
+      const value = Math.min(leg.to, Math.max(leg.from, t)).toFixed(2);
+      if (value !== leg.last) leg.el.style.setProperty("--t", (leg.last = value));
     }
   };
 
@@ -92,12 +83,11 @@ export function story(root: HTMLElement): void {
     current = -1;
     root.removeAttribute("data-camera");
     root.removeAttribute("data-ready");
-    root.removeAttribute("data-short");
     delete root.dataset.step;
-    pieces.forEach((piece) => {
-      piece.last = "";
-      piece.el.style.removeProperty("--t");
-    });
+    for (const leg of drawing) {
+      leg.last = "";
+      leg.el.style.removeProperty("--t");
+    }
   };
 
   const measure = () => {
@@ -106,18 +96,15 @@ export function story(root: HTMLElement): void {
     const pin = header?.offsetHeight ?? 0;
     root.style.setProperty("--pin", `${pin}px`);
     const view = probe?.offsetHeight || window.innerHeight;
-    root.removeAttribute("data-short");
-    if (stage.offsetHeight > view - pin) root.setAttribute("data-short", "");
     if (stage.offsetHeight > view - pin) return off();
-    const top = pin;
-    root.style.setProperty("--top", `${top}px`);
+    root.style.setProperty("--top", `${pin}px`);
     let y = 0;
     for (let el: HTMLElement | null = root; el; el = el.offsetParent as HTMLElement | null) y += el.offsetTop;
-    start = y - top;
+    start = y - pin;
     unit = Math.max(1, runway.offsetHeight) / TOTAL;
     on = true;
     current = -1;
-    pieces.forEach((piece) => (piece.last = ""));
+    for (const leg of drawing) leg.last = "";
     update();
     root.setAttribute("data-ready", "");
   };

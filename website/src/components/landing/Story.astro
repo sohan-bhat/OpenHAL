@@ -1,14 +1,10 @@
 ---
-import { storyFacts, storyLines, storyTrace } from "../../lib/story/facts";
-import { CAMERA, COUNTED, TOTAL, shown, step as placed, type StepId } from "../../lib/story/script";
+import { nb, storyFacts, storyLines, type Sending } from "../../lib/story/facts";
+import { CAMERA, COUNTED, TOTAL, during, held } from "../../lib/story/script";
+import { storySequence } from "../../lib/story/timeline";
 import "../../styles/story.css";
-import Camera from "./scene/Camera.astro";
-import Client from "./scene/Client.astro";
-import Hub from "./scene/Hub.astro";
-import Kernel from "./scene/Kernel.astro";
-import Printer from "./scene/Printer.astro";
-import Scene from "./scene/Scene.astro";
-import Trace from "./scene/Trace.astro";
+import Sequence from "./scene/Sequence.astro";
+import Webcam from "./scene/Webcam.astro";
 import { KEY } from "./smooth-switch";
 
 interface Props {
@@ -17,20 +13,10 @@ interface Props {
 }
 
 const { after, lead = "" } = Astro.props;
-const first = placed("intro").index;
 const facts = storyFacts();
 const lines = storyLines(facts);
-const trace = storyTrace(facts);
-const snaps: Partial<Record<StepId, typeof Client>> = {
-  ask: Client,
-  look: Camera,
-  warm: Printer,
-  hot: Kernel,
-  loose: Camera,
-  pause: Printer,
-  cancel: Kernel,
-  approve: Hub,
-};
+const sequence = storySequence(facts);
+const reasons: Partial<Record<Sending, string>> = { hot: facts.nozzle.refusal.reason };
 const camera = `(() => {
   const story = document.currentScript.previousElementSibling;
   const toggle = story.querySelector("[data-smooth]");
@@ -50,8 +36,7 @@ const camera = `(() => {
   story.setAttribute("data-camera", "");
   const stage = story.querySelector(".story-stage");
   const room = story.querySelector(".story-probe").offsetHeight - (document.querySelector(".site-header")?.offsetHeight ?? 0);
-  if (stage.offsetHeight > room) story.setAttribute("data-short", "");
-  if (stage.offsetHeight > room) story.removeAttribute("data-camera"), story.removeAttribute("data-short");
+  if (stage.offsetHeight > room) story.removeAttribute("data-camera");
 })();`;
 ---
 
@@ -61,8 +46,8 @@ const camera = `(() => {
       <div class="story-band">
         <div class="story-meta">
           <p class="story-count" aria-hidden="true" data-pagefind-ignore="all">
-            <span {...shown(["intro"], first)}>{COUNTED.length} steps</span>
-            {COUNTED.map((item, index) => <span {...shown([item.id])}>{index + 1} / {COUNTED.length}</span>)}
+            <span {...during([held("intro")])}>{COUNTED.length} steps</span>
+            {COUNTED.map((item, index) => <span {...during([held(item.id)])}>{index + 1} / {COUNTED.length}</span>)}
           </p>
           <a class="story-skip" href={`#${after}`}>Skip the demo</a>
           <button type="button" class="smooth" role="switch" aria-checked="false" data-smooth data-wait tabindex="-1" aria-hidden="true">
@@ -71,14 +56,15 @@ const camera = `(() => {
           </button>
         </div>
         <div class="story-heads">
-          <h2 id="story-title" class="story-title" {...shown(["intro"], first)}>{lines.intro}</h2>
+          <h2 id="story-title" class="story-title" {...during([held("intro")])}>{lines.intro}</h2>
           <div class="story-notes" aria-hidden="true" data-pagefind-ignore="all">
-            {COUNTED.map((item) => <p class="story-note" {...shown([item.id])}>{lines[item.id]}</p>)}
+            {COUNTED.map((item) => <p class="story-note" {...during([held(item.id)])}>{nb(lines[item.id])}</p>)}
           </div>
         </div>
       </div>
-      <div data-pagefind-ignore="all">
-        <Scene facts={facts} step={first} />
+      <div class="story-scene" aria-hidden="true" data-pagefind-ignore="all">
+        <Sequence sequence={sequence} />
+        <Webcam sequence={sequence} />
       </div>
     </div>
     <div class="story-runway" style={`height: ${TOTAL}vh`} aria-hidden="true"></div>
@@ -86,22 +72,27 @@ const camera = `(() => {
     <ol class="story-list" role="list">
       {
         COUNTED.map((item) => {
-          const Snap = snaps[item.id];
+          const said = facts.said[item.id as Sending] ?? [];
+          const reason = reasons[item.id as Sending];
           return (
             <li class="story-step">
-              <div class="step-words">
-                <p class="step-line">{lines[item.id]}</p>
-                {trace[item.id] && (
-                  <div data-pagefind-ignore="all">
-                    <Trace facts={facts} step={item.index} only={item.id} />
-                  </div>
-                )}
-              </div>
-              {Snap && (
-                <div class="story-snap" aria-hidden="true" data-pagefind-ignore="all">
-                  <Snap facts={facts} step={item.index} />
-                </div>
+              <p class="step-line">{nb(lines[item.id])}</p>
+              {said.length > 0 && (
+                <p class:list={["step-said", { mono: item.id !== "ask" }]}>
+                  {said.map((words) => (
+                    <span class="step-words">
+                      {nb(words.label)}
+                      {words.answer && (
+                        <Fragment>
+                          {" "}
+                          <span class:list={["status", words.answer.tone]}>{words.answer.text}</span>
+                        </Fragment>
+                      )}
+                    </span>
+                  ))}
+                </p>
               )}
+              {reason && <p class="step-reason mono">{nb(reason)}</p>}
             </li>
           );
         })
