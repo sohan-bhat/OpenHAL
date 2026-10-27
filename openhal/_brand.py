@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Final
 
 PRODUCT_NAME: Final = "OpenHAL"
-PRODUCT_LONG_NAME: Final = "Open Hardware Abstraction Layer"
+PRODUCT_LONG_NAME: Final = "Open Hardware Agent Layer"
 PACKAGE_NAME: Final = "openhal"
 DISTRIBUTION_NAME: Final = "openhal-hub"
 CLI_NAME: Final = "openhal"

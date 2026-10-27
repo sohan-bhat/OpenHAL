@@ -1,6 +1,6 @@
 # OpenHAL research (earlier working name Plugsy)
 
-The product is now called OpenHAL (Open Hardware Abstraction Layer). Older sections below say Plugsy.
+The product is now called OpenHAL (Open Hardware Agent Layer). Older sections below say Plugsy.
 
 ## Later findings (October 24, 2026)
 
