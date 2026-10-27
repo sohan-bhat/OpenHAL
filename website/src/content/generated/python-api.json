@@ -9,13 +9,13 @@
           "name": "connect",
           "kind": "function",
           "signature": "connect(url: str | None = None, token: str | None = None, *, home: Path | str | None = None, timeout: float = 15.0, transport: httpx.BaseTransport | None = None, check: bool = True) -> Client",
-          "doc": "Open a blocking client to the hub.\n\nWith `check` it calls `/v1/whoami` first, so a wrong address or token fails here."
+          "doc": "Open a blocking client to the hub.\n\nWith `check`, the client calls `/v1/whoami` first, so a wrong address or token fails here."
         },
         {
           "name": "aconnect",
           "kind": "function",
           "signature": "async aconnect(url: str | None = None, token: str | None = None, *, home: Path | str | None = None, timeout: float = 15.0, transport: httpx.AsyncBaseTransport | None = None, check: bool = True) -> AsyncClient",
-          "doc": "Open an async client to the hub.\n\nWith `check` it calls `/v1/whoami` first, so a wrong address or token fails here."
+          "doc": "Open an async client to the hub.\n\nWith `check`, the client calls `/v1/whoami` first, so a wrong address or token fails here."
         },
         {
           "name": "Client",
@@ -36,7 +36,7 @@
             {
               "name": "approve",
               "signature": "approve(request_id: str) -> Decision",
-              "doc": "Approve a queued request. Needs a human token. The kernel checks it again first."
+              "doc": "Approve a queued request with a human token. The kernel runs every check again first."
             },
             {
               "name": "approve_routine",
@@ -71,7 +71,7 @@
             {
               "name": "create_routine",
               "signature": "create_routine(routine_id: str, source: str, *, kind: str = yaml) -> Routine",
-              "doc": "Store a routine. It always starts disabled."
+              "doc": "Store a routine. Every new routine starts disabled."
             },
             {
               "name": "create_token",
@@ -91,7 +91,7 @@
             {
               "name": "devices",
               "signature": "devices() -> list[DeviceSummary]",
-              "doc": "Every device the hub knows, with its driver, hazard level and whether it takes commands."
+              "doc": "Every device the hub knows, with its driver, its hazard level and whether the device takes commands."
             },
             {
               "name": "disable_routine",
@@ -106,12 +106,12 @@
             {
               "name": "drivers",
               "signature": "drivers() -> list[DriverInfo]",
-              "doc": "The drivers the hub knows, whether each is installed and the protocols it speaks."
+              "doc": "The drivers the hub knows, with each driver's protocols and whether the driver is installed."
             },
             {
               "name": "dry_run",
               "signature": "dry_run(commands: Iterable[Command]) -> list[Decision]",
-              "doc": "Evaluate commands in order without running them. Nothing reaches a driver."
+              "doc": "Evaluate commands in order as a dry run. No command reaches a driver."
             },
             {
               "name": "enable_routine",
@@ -141,7 +141,7 @@
             {
               "name": "propose",
               "signature": "propose(session_id: str, draft_yaml: str) -> WriterSession",
-              "doc": "Store a draft device file. The hub marks every limit in it as suggested."
+              "doc": "Store a draft device file. The hub marks every limit in the draft as suggested."
             },
             {
               "name": "ramp_to",
@@ -166,22 +166,22 @@
             {
               "name": "revoke_token",
               "signature": "revoke_token(token_id: str) -> OkResult",
-              "doc": "Revoke a token so the hub stops accepting it. Needs a human token."
+              "doc": "Revoke a token so the hub refuses the token from then on. Revoking needs a human token."
             },
             {
               "name": "routine",
               "signature": "routine(routine_id: str) -> Routine",
-              "doc": "One routine with its source and who drafted and enabled it."
+              "doc": "One routine with its source and who drafted and enabled the routine."
             },
             {
               "name": "routine_dry_run",
               "signature": "routine_dry_run(routine_id: str) -> RoutineDryRun",
-              "doc": "Evaluate every step of a routine against the kernel without running it."
+              "doc": "Evaluate every step of a routine against the kernel without running the routine."
             },
             {
               "name": "routines",
               "signature": "routines() -> list[RoutineSummary]",
-              "doc": "Every stored routine with its devices, triggers and whether it is enabled."
+              "doc": "Every stored routine with its devices, its triggers and whether the routine is enabled."
             },
             {
               "name": "run_routine",
@@ -274,7 +274,7 @@
             {
               "name": "approve",
               "signature": "async approve(request_id: str) -> Decision",
-              "doc": "Approve a queued request. Needs a human token. The kernel checks it again first."
+              "doc": "Approve a queued request with a human token. The kernel runs every check again first."
             },
             {
               "name": "approve_routine",
@@ -304,7 +304,7 @@
             {
               "name": "create_routine",
               "signature": "async create_routine(routine_id: str, source: str, *, kind: str = yaml) -> Routine",
-              "doc": "Store a routine. It always starts disabled."
+              "doc": "Store a routine. Every new routine starts disabled."
             },
             {
               "name": "create_token",
@@ -324,7 +324,7 @@
             {
               "name": "devices",
               "signature": "async devices() -> list[DeviceSummary]",
-              "doc": "Every device the hub knows, with its driver, hazard level and whether it takes commands."
+              "doc": "Every device the hub knows, with its driver, its hazard level and whether the device takes commands."
             },
             {
               "name": "disable_routine",
@@ -339,12 +339,12 @@
             {
               "name": "drivers",
               "signature": "async drivers() -> list[DriverInfo]",
-              "doc": "The drivers the hub knows, whether each is installed and the protocols it speaks."
+              "doc": "The drivers the hub knows, with each driver's protocols and whether the driver is installed."
             },
             {
               "name": "dry_run",
               "signature": "async dry_run(commands: Iterable[Command]) -> list[Decision]",
-              "doc": "Evaluate commands in order without running them. Nothing reaches a driver."
+              "doc": "Evaluate commands in order as a dry run. No command reaches a driver."
             },
             {
               "name": "enable_routine",
@@ -379,7 +379,7 @@
             {
               "name": "propose",
               "signature": "async propose(session_id: str, draft_yaml: str) -> WriterSession",
-              "doc": "Store a draft device file. The hub marks every limit in it as suggested."
+              "doc": "Store a draft device file. The hub marks every limit in the draft as suggested."
             },
             {
               "name": "ramp_to",
@@ -404,22 +404,22 @@
             {
               "name": "revoke_token",
               "signature": "async revoke_token(token_id: str) -> OkResult",
-              "doc": "Revoke a token so the hub stops accepting it. Needs a human token."
+              "doc": "Revoke a token so the hub refuses the token from then on. Revoking needs a human token."
             },
             {
               "name": "routine",
               "signature": "async routine(routine_id: str) -> Routine",
-              "doc": "One routine with its source and who drafted and enabled it."
+              "doc": "One routine with its source and who drafted and enabled the routine."
             },
             {
               "name": "routine_dry_run",
               "signature": "async routine_dry_run(routine_id: str) -> RoutineDryRun",
-              "doc": "Evaluate every step of a routine against the kernel without running it."
+              "doc": "Evaluate every step of a routine against the kernel without running the routine."
             },
             {
               "name": "routines",
               "signature": "async routines() -> list[RoutineSummary]",
-              "doc": "Every stored routine with its devices, triggers and whether it is enabled."
+              "doc": "Every stored routine with its devices, its triggers and whether the routine is enabled."
             },
             {
               "name": "run_routine",

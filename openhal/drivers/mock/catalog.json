@@ -8,7 +8,7 @@
   "tests": "reference driver for the conformance suite",
   "estimate": {
     "devices": "none (simulation only)",
-    "reasoning": "The mock driver never talks to hardware. It runs any device file in memory for tests, demos and the website playground.",
+    "reasoning": "The mock driver never talks to hardware and runs any device file in memory for tests, demos and the website playground.",
     "sources": []
   }
 }
