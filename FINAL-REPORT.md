@@ -75,7 +75,7 @@ The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from 
 |---|---|---|
 | Design rounds | Three critique rounds, a final review by a fresh critic from screenshots and DESIGN.md only, then rounds for the critic's fixes, site search, the landing story and the print babysitter | Three critique rounds, the same final review, then rounds for the critic's fixes and the print babysitter |
 | Final critic score, before the later rounds | 3.5 of 5 | 4 of 5 |
-| Lighthouse, mobile | 100 on the home page and the Playground on round 6's build, and 100 on six more pages of the live site | 93 to 99 on every view, with Confirmations lowest |
+| Lighthouse, mobile | 100 on every page measured after the speed round, except the home page at 97 to 100 from a headless Lighthouse first-frame delay that also hit the page before | 93 to 99 on every view, with Confirmations lowest |
 | Lighthouse, desktop | 100 on every template | 100 on every view, 96 best practices on the pairing page |
 | axe (WCAG 2.1 A and AA) | 0 violations in 236 runs, every page in both themes plus the phone and search states | 0 violations on every view and state, both themes, 1440 and 390 px |
 

@@ -8,7 +8,7 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- website-7. The speed round (BRIEF-website-7.md), measured again on the merged print babysitter site.
+None running.
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
@@ -52,6 +52,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - The 3D print babysitter is the main example (scenario-printer, website-6 and inspector-5, merged 2026-10-26). examples/print-babysitter/ has a Klipper printer through Moonraker and its webcam through the http driver, camera reads return the image (ADR 0015, amended), and `openhal demo --record` writes docs/demo/scenario.yaml from it. The landing story tells it in nine steps with the whole diagram in view, the Playground opens on four requests from the story with information marks, and the Inspector shows camera frames, a clear pending cancel and status words with no shapes or boxes. The plant waterer stays the Arduino example. The green and red are dulled everywhere, the diagrams included, and the message log keeps a frame's description instead of its pixels.
 - The story resolves (scenario-approval and website-8, merged 2026-10-27). The recorded demo ends with the owner approving the cancel over the hub protocol, the kernel checking every limit again and the printer reading cancelled, and closes on the audit log with 6 requests, 1 refused and 1 confirmed by a person. The landing story lights every station a message passes, shows the read path through the kernel, keeps a two-line caption slot and ends on the audit log. The README, docs, CLI, MCP, Inspector and website copy name the subject and drop every can't and only contrast.
 - The hub's own messages follow the owner's copy rules (copy-messages, merged 2026-10-27). Each human-only refusal is one plain sentence such as "Approving a request takes a human principal.", with every code, field and check unchanged, and the Playground mirrors the new words.
+- The speed round (website-7, merged 2026-10-27). Pages send 31 to 73 % of their old weight, largest paint on a phone is 147 to 378 ms sooner, blocking time is 0 everywhere and desktop scores 100 on every page. Fonts are subset, inline diagrams carry no fonts and follow the theme in one SVG, the Inspector crops are responsive AVIF and WebP, pages prerender on hover, search snippets skip code, and a budget test guards every template (docs/verification/ui.md).
 
 ## Next
 
@@ -60,6 +61,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - Driver proposals still open. A restore_connection hook, a push path for drivers that receive values, cached-read declarations, per-driver install hints, argument references in action requirements, and YAML 1.1 warnings in openhal file validate.
 - Packaging proposals. A `self_describing` flag in DriverInfo. Lazy imports so `openhal mcp` starts faster. Intel Mac installs need `--no-build` while cryptography and zeroconf ship Apple Silicon wheels only.
 - Handoff proposals still open. The GRBL simulator stays idle after a hold where real GRBL 1.1 reports Hold:0. The driver scaffold's hardware test template should match docs/hardware-tests/README.md. Expected outputs in the plans quote kernel codes, so they change if the CLI moves to registry names.
+- Speed round proposals. A size-adjusted mono fallback in design/tokens.css so pages can drop the mono preload, the header wordmark inlined as SVG, a lighter first story() call, and the service worker for hashed /_astro/ files, which is the owner's call.
 - A kernel parity case that tries approve, reject and unlock as an agent and records each message, so the Playground's three permission messages are checked against the hub (copy-messages report).
 - Inspector proposals (inspector-5 report). Fold dashboard/e2e/print_hub.py into tests/inspector so the ruff and mypy gates cover it. A camera to device link in the Device File (`watches: [printer]`), so Confirmations shows the right camera without the picker. A read of the cached latest frame without a new snapshot. RFC 3339 times in /v1/confirmations instead of monotonic ones. `img-src 'self' data:` in any future Content-Security-Policy.
 - Owner decisions. Whether `openhal init` keeps the plant waterer as its sample, which the Python SDK snippet follows. Whether an action whose approval can't hurt, like cancel on a paused printer, gets a confirmation window long enough to wake up to, since the reference expiry is 5 minutes and the hub allows at most an hour.
