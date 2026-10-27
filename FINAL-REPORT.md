@@ -22,6 +22,8 @@ The research brief (docs/research/OPENHAL_RESEARCH.md, First version) set this s
 
 Beyond the scope, there are 34 drivers plus the mock reference driver, the protocol website, the OpenHAL Inspector, `openhal demo` and `openhal demo --full`, the `openhal init` wizard and a hardware test plan for every driver.
 
+The main example is the 3D print babysitter (examples/print-babysitter/), a task only an agent can do. An agent watches a Klipper printer's webcam, warms the bed, is refused a 300 °C nozzle, pauses the print when it comes loose and leaves the cancel to a person. Camera frames travel as image readings (ADR 0015, amended). The Arduino plant waterer stays the hardware example and the first hardware test.
+
 ## Driver coverage
 
 34 drivers and the mock reference driver (35 entries in the catalog), every one implemented and passing the conformance suite at its declared level on a simulator or fake that speaks the real protocol.
@@ -71,15 +73,15 @@ The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from 
 
 | Check | Website | Inspector |
 |---|---|---|
-| Design rounds | Three critique rounds, then a final review by a fresh critic from screenshots and DESIGN.md only | Three critique rounds, then the same final review |
-| Final critic score | 3.5 of 5 | 4 of 5 |
-| Lighthouse, mobile | 100 on every template, 99 on the schema reference and 97 on the Python reference | 93 to 95 before the hub gzipped and cached its assets, which measured 99 behind a gzip proxy |
+| Design rounds | Three critique rounds, a final review by a fresh critic from screenshots and DESIGN.md only, then rounds for the critic's fixes, site search, the landing story and the print babysitter | Three critique rounds, the same final review, then rounds for the critic's fixes and the print babysitter |
+| Final critic score, before the later rounds | 3.5 of 5 | 4 of 5 |
+| Lighthouse, mobile | 100 on the home page and the Playground on round 6's build, and 100 on six more pages of the live site | 93 to 99 on every view, with Confirmations lowest |
 | Lighthouse, desktop | 100 on every template | 100 on every view, 96 best practices on the pairing page |
-| axe (WCAG 2.1 A and AA) | 0 violations on all 114 sitemap pages and the 404, both themes | 0 violations on every view and state, both themes, 1440 and 390 px |
+| axe (WCAG 2.1 A and AA) | 0 violations in 236 runs, every page in both themes plus the phone and search states | 0 violations on every view and state, both themes, 1440 and 390 px |
 
 docs/verification/ui.md has every score and the commands, and docs/verification/orphans.md has the orphan audit.
 
-The critic's verdict. The protocol voice holds on the home page, spec, playground, quickstart and 404, and the Inspector's STOP and UNLOCK, confirmations, message log and stopped state express the protocol exactly. What held the scores back was mostly phones (the drivers table, wide driver pages, the library table, the Inspector's settings table and audit log), a coverage page that still called four drivers planned, the hub port shown four different ways, and slider numbers with no units. A website round and an Inspector round with those fixes were running when this report was written.
+The critic's verdict. The protocol voice holds on the home page, spec, playground, quickstart and 404, and the Inspector's STOP and UNLOCK, confirmations, message log and stopped state express the protocol exactly. What held the scores back was mostly phones (the drivers table, wide driver pages, the library table, the Inspector's settings table and audit log), a coverage page that still called four drivers planned, the hub port shown four different ways, and slider numbers with no units. Later website and Inspector rounds fixed those, and a speed round for the website is running now.
 
 ## Subagent log
 
@@ -149,7 +151,7 @@ The Arduino plant waterer, following examples/plant-waterer/TEST-PLAN.md. It is 
 4. ADR 0015. The hub protocol is JSON-RPC 2.0 with dated spec versions, positioned as an open protocol and not affiliated with Anthropic or MHS.
 5. ADR 0016. Values travel as a number and a unit apart on the wire, while device files and routines keep quantity strings like `30 s`.
 6. A person's own command counts as their confirmation. Agents need `control_medium` to ask for high hazard commands, which always wait for a person.
-7. The plant waterer's mock file ships confirmed by sohan so the demo can water. The real board's file and every copy `openhal init` makes are unconfirmed.
+7. The plant waterer's mock file and the print babysitter's printer file ship confirmed by owner so the demos can run. The real board's file and every copy `openhal init` makes are unconfirmed.
 8. A dangling reference to an unregistered device blocks every command on that device until it is fixed (review finding F17). It is strict and will surprise people during setup.
 9. LGPL dependencies (zeroconf, python-can) are used unmodified. No code is copied from copyleft projects.
 10. The bambu driver ships after the owner's review of Bambu Lab's terms. It stays LAN only and never contacts Bambu Cloud.

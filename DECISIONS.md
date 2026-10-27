@@ -16,7 +16,7 @@ Small decisions, one line each. Architectural decisions live in docs/adr/.
 - 2026-10-24: The flow diagram has a vertical variant for screens under 600 px, chosen by <picture> media queries, so the diagram stays readable on phones.
 - 2026-10-25: The CI badge is back on the README because the owner asked to keep the license and CI badges.
 - 2026-10-25: The kernel's Python API still parses quantity strings for routines and other human-written inputs. Every wire entry point calls it with wire=True, which refuses them (ADR 0016).
-- 2026-10-25: The plant waterer's mock file ships confirmed by sohan on 2026-10-24 so the demo can water. The real board's file and the copy `openhal init` makes ship unconfirmed, so every owner confirms their own hardware.
+- 2026-10-25: The plant waterer's mock file ships confirmed by owner on 2026-10-24 so the demo can water. The real board's file and the copy `openhal init` makes ship unconfirmed, so every owner confirms their own hardware.
 - 2026-10-25: The plant waterer has a stop action besides water, because its safe state (pump off) has to be an action of the file.
 - 2026-10-25: `openhal demo` runs the simulated board 40 times faster than real time, and `--real-time` runs it at real speed. Heartbeats always use real time.
 - 2026-10-25: The scenario record leaves out times, so two runs give the same file and a test can rerun the hub and compare.

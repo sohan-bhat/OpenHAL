@@ -14,7 +14,7 @@ Implement the OpenHAL hub protocol exactly as docs/adr/0015-openhal-hub-protocol
    - `dispatch.py`: one dispatcher, given a hub and a principal, that handles a parsed JSON-RPC message and returns a response. Both transports use it.
    - `version.py`: `PROTOCOL_VERSIONS = ["2026-10-24"]` and the negotiation rule.
    - The lifecycle rules: NOT_INITIALIZED before `hal/initialize`, and notifications only after `hal/initialized`.
-   - LIMIT_EXCEEDED reasons read exactly like `fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-11-02)`. Take the file name from the hub's DeviceInfo path, and the confirmer and date from the file's `confirmed`. Reasons for the other names come from templates too. Keep `data.kernelMessage`.
+   - LIMIT_EXCEEDED reasons read exactly like `fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by owner 2026-11-02)`. Take the file name from the hub's DeviceInfo path, and the confirmer and date from the file's `confirmed`. Reasons for the other names come from templates too. Keep `data.kernelMessage`.
 2. **WebSocket transport** at `/rpc` on the hub app.
    - Same auth and network guard as the REST API. The token goes in the Authorization header or in initialize params.
    - Notifications fan out from the hub's existing event stream (`hub._emit` / `/v1/live`).

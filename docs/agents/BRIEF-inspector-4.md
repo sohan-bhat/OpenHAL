@@ -5,7 +5,7 @@ Read docs/agents/COMMON.md first, then docs/DESIGN.md and dashboard/ with its te
 ## The critic's findings
 
 1. **Settings on phones.** The token table overflows at 390 px, so Id truncates and Created, State and Revoke fall off screen. On desktop the row dividers stop short of the Revoke column, and the selects and checkbox are native and unstyled.
-2. **Audit log on phones.** Stacked values have no labels (writer_answer, human:sohan, c8cd4cfe). Rows style inconsistently, so the confirmation row's code wraps in plain text while blocked rows are bold red. "Done. water ran." starts a sentence in lowercase.
+2. **Audit log on phones.** Stacked values have no labels (writer_answer, human:owner, c8cd4cfe). Rows style inconsistently, so the confirmation row's code wraps in plain text while blocked rows are bold red. "Done. water ran." starts a sentence in lowercase.
 3. **The mobile header.** The hub and connection labels are dropped, and protocol and conformance turn into lowercase fragments on a misaligned row.
 4. **Numbers with no units**, which DESIGN.md bans. Slider midpoints such as "16", "11", "30" and "40", and the power "0", need their unit. The power slider has no min bar where action sliders do.
 5. **Agent and human markers.** lab-script log entries have no dashed agent rule. Blocked agent rows in the audit log swap the dashed agent rule for a solid red one, the same solid treatment human rows get. An agent stays dashed whatever its status.

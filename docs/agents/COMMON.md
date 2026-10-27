@@ -11,6 +11,7 @@
   - No em or en dashes. No colons or semicolons in running prose (headings, labels, tables and code are fine).
   - No exclamation marks. No banned words (docs/DESIGN.md, Banned).
   - Keep text short. The owner wants simple, digestible pages.
+  - Never write the owner's name or a local home path in anything you commit. Write owner, as in "confirmed by owner".
 - docs/DESIGN.md is binding for anything visual. Load the skills frontend-design:frontend-design, design-taste-frontend, web-design-guidelines and playwright-cli before UI work.
 - Processes
   - Start servers in the background and stop them by their exact PID. Never pkill by pattern.

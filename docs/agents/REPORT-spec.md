@@ -33,7 +33,7 @@ Test: `tests/spec/test_spec_names.py`, 40 cases, no comments.
 - `versions.json` must name this version as latest.
 
 ### Decisions
-- Every example uses the canonical values. The reason reads `fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)`. The action examples add one action, `spin_test`, to desk-fan.
+- Every example uses the canonical values. The reason reads `fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by owner 2026-10-24)`. The action examples add one action, `spin_test`, to desk-fan.
 - The Device File format stays version 0.1 in the `openhal` field. It keeps its semantic versioning, separate from the dated spec versions.
 - Added rules taken from the reference code:
   - unknown driver names are rejected unless they start with `x-`

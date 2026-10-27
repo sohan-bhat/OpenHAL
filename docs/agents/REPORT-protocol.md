@@ -33,7 +33,7 @@ Other files:
 
 ### What the tests cover
 - Every method and every one of the 24 error names, over both transports. The stdio side runs the real bridge in-process, and one test also runs the actual `openhal rpc` process.
-- The exact LIMIT_EXCEEDED trace with the canonical values. It is read 20 %, blocked at 150 %, granted 60 %, with `fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by sohan 2026-10-24)`.
+- The exact LIMIT_EXCEEDED trace with the canonical values. It is read 20 %, blocked at 150 %, granted 60 %, with `fan_speed 150 % exceeds the limit of 100 % (desk-fan.hal.yaml, confirmed by owner 2026-10-24)`.
 - The session-limit reason, version negotiation, lifecycle ordering, and that agents get SCOPE_DENIED on approve, reject and unlock.
 - PARSE_ERROR for bad JSON, INVALID_REQUEST for a batch, and a hub limited to core answering only core methods.
 - Every notification, including a block made over REST showing up as `hal/blocked`.
