@@ -189,7 +189,11 @@
             {#snippet picker()}
               <label class="field pick">
                 <span>{camera ? "Camera" : "Show a camera"}</span>
-                <select value={camera ? cameraKey(camera) : ""} onchange={(event) => keep(device, event.currentTarget.value)}>
+                <select
+                  value={camera ? cameraKey(camera) : ""}
+                  aria-describedby={camera ? undefined : `pick-${request.id}`}
+                  onchange={(event) => keep(device, event.currentTarget.value)}
+                >
                   <option value="">None</option>
                   {#each cameras as option (cameraKey(option))}
                     <option value={cameraKey(option)}>{option.name}, {option.channel}</option>
@@ -222,7 +226,7 @@
                   </CameraFrame>
                 {:else}
                   {@render picker()}
-                  <p class="muted small">Pick the camera that watches {ask.device}. This browser keeps the choice.</p>
+                  <p class="muted small" id="pick-{request.id}">Pick the camera that watches {ask.device}. This browser keeps the choice.</p>
                 {/if}
               </div>
             {/if}

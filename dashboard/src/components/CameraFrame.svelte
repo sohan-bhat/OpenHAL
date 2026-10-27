@@ -64,7 +64,7 @@
         {#if image}{#each imageFacts(image) as fact (fact)}<span>{fact}</span>{/each}{:else}<span>no frame read yet</span>{/if}
       </span>
       <span class="when" aria-live="polite">
-        {#if frame?.reading}reading{:else if time}read at <span class="mono">{time}</span>{/if}
+        {#if frame?.reading}reading…{:else if time}read at <span class="mono">{time}</span>{/if}
       </span>
     </figcaption>
   </figure>
