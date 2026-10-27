@@ -1,8 +1,7 @@
 ---
 import "../styles/global.css";
 import "../styles/code.css";
-import atkinson from "../../../design/fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2?url";
-import atkinsonMono from "../../../design/fonts/atkinson-hyperlegible-mono-latin-wght-normal.woff2?url";
+import atkinson from "../fonts/atkinson-hyperlegible-next-normal.woff2?url";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
 import { PITCH, PRODUCT_NAME } from "../config/brand";
@@ -104,7 +103,6 @@ const indexed = search && !noindex && canonical.pathname === new URL(Astro.url.p
       })();
     </script>
     <link rel="preload" href={atkinson} as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={atkinsonMono} as="font" type="font/woff2" crossorigin />
     <meta property="og:type" content={type} />
     <meta property="og:site_name" content={PRODUCT_NAME} />
     <meta property="og:title" content={title} />
