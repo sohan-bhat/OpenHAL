@@ -13,9 +13,10 @@ import { KEY } from "./smooth-switch";
 
 interface Props {
   after: string;
+  lead?: string;
 }
 
-const { after } = Astro.props;
+const { after, lead = "" } = Astro.props;
 const first = placed("intro").index;
 const facts = storyFacts();
 const lines = storyLines(facts);
@@ -107,7 +108,7 @@ const camera = `(() => {
       }
     </ol>
   </div>
-  <script is:inline set:html={camera} />
+  <script is:inline set:html={`${lead}${camera}`} />
 </section>
 
 <script>

@@ -43,13 +43,12 @@ const more = [
         {spelled.map((item) => <span data-at={item.at}>{item.word}</span>)}
       </p>
     </div>
-    <script is:inline set:html={heroSpell} />
     <p class="hero-pitch">{PITCH}</p>
     <a class="button hero-go" href="#try">Get started</a>
   </section>
 
   <div class="home-width">
-    <Story after="safe" />
+    <Story after="safe" lead={heroSpell} />
   </div>
 
   <section id="safe" class="home-width part after-story" aria-labelledby="safe-title">
