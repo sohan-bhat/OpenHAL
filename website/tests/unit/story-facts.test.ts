@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { IDS, amount, humane, nb, readDeviceFile, storyFacts, storyLines, storyTrace } from "../../src/lib/story/facts";
+import { IDS, TOLD, amount, humane, nb, readDeviceFile, storyFacts, storyLines, storyTrace } from "../../src/lib/story/facts";
 import { COUNTED, PLACED, STEPS, TOTAL, step, stepAt, type StepId } from "../../src/lib/story/script";
-import { AGENT, CAMERA, DRIVER, FILLS, HUB, KERNEL, PRINTER, WIRES } from "../../src/lib/story/timeline";
+import { AGENT, CAMERA, DRIVER, FILLS, HUB, PRINTER, WIRES } from "../../src/lib/story/timeline";
 import type { Exchange, Scenario } from "../../src/lib/scenario";
 import { SCENARIO_PATH, scenarioFrom } from "../../src/lib/scenario-data.mjs";
 
@@ -34,11 +34,6 @@ describe("the story's steps", () => {
       ...Object.values(AGENT.asks),
       ...Object.values(AGENT.hears),
       ...Object.values(HUB),
-      ...KERNEL.passes.map((pass) => pass.in),
-      KERNEL.waiting,
-      KERNEL.granted,
-      KERNEL.blocked,
-      KERNEL.confirm,
       ...Object.values(DRIVER),
       ...Object.values(PRINTER),
       ...Object.values(CAMERA),
@@ -50,16 +45,12 @@ describe("the story's steps", () => {
   it("tell the record in order, one state per step", () => {
     const only = (lists: StepId[][], id: StepId) => lists.filter((list) => list.includes(id)).length;
     for (const item of STEPS) {
-      expect(only([KERNEL.waiting, KERNEL.granted, KERNEL.blocked, KERNEL.confirm], item.id)).toBe(1);
       expect(only([PRINTER.before, PRINTER.after], item.id)).toBe(1);
       expect(only([PRINTER.printing, PRINTER.paused], item.id)).toBe(1);
       expect(only([CAMERA.lifting, CAMERA.loose], item.id)).toBe(1);
     }
     expect(PRINTER.after[0]).toBe("warm");
-    expect(KERNEL.granted).toContain("warm");
-    expect(KERNEL.blocked).toEqual(["hot"]);
     expect(PRINTER.paused[0]).toBe("pause");
-    expect(KERNEL.confirm[0]).toBe("cancel");
     expect(CAMERA.loose[0]).toBe("loose");
     expect(index("warm")).toBeLessThan(index("hot"));
     expect(index("hot")).toBeLessThan(index("loose"));
@@ -118,6 +109,26 @@ describe("the story's words and numbers", () => {
     expect(facts.confirmed).toBe(`confirmed by ${described.confirmed.by} ${described.confirmed.at}`);
     expect([facts.bed.before, facts.bed.after]).toEqual([(bed as any)[facts.bed.channel].before.value, (bed as any)[facts.bed.channel].after.value]);
     expect(facts.camera.image).toBe(`${look.result!.value.mimeType} ${look.result!.value.width} × ${look.result!.value.height}`);
+  });
+
+  it("show the kernel's checks and verdict in the record's words", () => {
+    for (const item of PLACED) {
+      const view = facts.kernel[item.id];
+      if (!TOLD[item.id]) {
+        expect(view.verdict.text).toBe("Waiting for a command");
+        continue;
+      }
+      const kernel = (byId(record, IDS[TOLD[item.id]!]) as Record<string, any>).kernel;
+      for (const [name, word] of Object.entries(kernel.checks as Record<string, string>)) expect(view.checks).toContainEqual({ name: `${name[0].toUpperCase()}${name.slice(1)}`, word });
+      if (view.reading) {
+        expect(view.checks).toContainEqual({ name: "Grant", word: kernel.grant });
+        expect(view.checks).toContainEqual({ name: "Audit log", word: `entry ${kernel.logged.join(", ")}` });
+        expect(view.verdict).toEqual({ kind: "granted", text: "allowed" });
+      }
+    }
+    expect(facts.kernel.warm.verdict.text).toBe("granted");
+    expect(facts.kernel.hot.verdict).toEqual({ kind: "blocked", text: nozzle.error!.data.name });
+    expect(facts.kernel.cancel.verdict).toEqual({ kind: "confirm", text: "confirmation required" });
   });
 
   it("take the limits from printer.hal.yaml, which match what the hub described", () => {

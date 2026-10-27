@@ -4,7 +4,7 @@ import { parse } from "yaml";
 import { loadScenario, type Exchange, type Scenario } from "../scenario";
 import { REPO_ROOT } from "../spec-meta.mjs";
 import { reasonLines } from "../trace-html.mjs";
-import type { StepId } from "./script";
+import { PLACED, type StepId } from "./script";
 
 export interface Refusal {
   name: string;
@@ -19,6 +19,24 @@ export interface Ask {
   note: string;
 }
 
+export interface Check {
+  name: string;
+  word: string;
+}
+
+export type VerdictKind = "idle" | "granted" | "blocked" | "confirm";
+
+export interface Verdict {
+  kind: VerdictKind;
+  text: string;
+}
+
+export interface KernelView {
+  reading: boolean;
+  checks: Check[];
+  verdict: Verdict;
+}
+
 export const ASKED = "Keep an eye on my print tonight.";
 
 /** The exchanges of docs/demo/scenario.yaml the story tells, by their ids in the record. */
@@ -31,6 +49,16 @@ export const IDS = {
   cancel: "cancel-waits",
 } as const;
 
+/** The exchange each step tells. The title, the ask and the last two steps send nothing. */
+export const TOLD: Partial<Record<StepId, keyof typeof IDS>> = {
+  look: "look",
+  warm: "bed",
+  hot: "nozzle",
+  loose: "loose",
+  pause: "pause",
+  cancel: "cancel",
+};
+
 export interface StoryFacts {
   printer: { id: string; name: string; driver: string };
   camera: { id: string; channel: string; driver: string; image: string };
@@ -42,6 +70,7 @@ export interface StoryFacts {
   nozzle: Ask & { channel: string; max: string; now: string; refusal: Refusal };
   pause: Ask & { status: string };
   cancel: Ask & { status: string; wait: string };
+  kernel: Record<StepId, KernelView>;
   requests: number;
 }
 
@@ -83,13 +112,16 @@ export function readDeviceFile(path = join(REPO_ROOT, "examples", "print-babysit
   return parse(readFileSync(path, "utf8")) as DeviceFile;
 }
 
-function need<T>(found: T | undefined, what: string): T {
-  if (found === undefined) throw new Error(`docs/demo/scenario.yaml has no ${what}, which the landing story shows.`);
+function need<T>(found: T | undefined | null, what: string): T {
+  if (found === undefined || found === null) throw new Error(`docs/demo/scenario.yaml has no ${what}, which the landing story shows.`);
   return found;
 }
 
+const capital = (word: string): string => `${word[0].toUpperCase()}${word.slice(1)}`;
+
 const params = (exchange: Exchange): Record<string, any> => exchange.request.params ?? {};
 const statusOf = (exchange: Exchange): string => String(exchange.result?.status ?? "");
+const field = (exchange: Exchange, key: string): any => (exchange as Record<string, any>)[key];
 
 function reading(exchange: Exchange, channel: string): { before: number; after: number; unit: string } | null {
   const found = (exchange as Record<string, any>)[channel];
@@ -103,12 +135,36 @@ function imageText(exchange: Exchange): string {
   return value?.width && value?.height ? `${kind} ${value.width}${NBSP}×${NBSP}${value.height}` : kind;
 }
 
+/** What the kernel did with a step's request, in the record's words, and the verdict it reached. */
+function kernelView(exchange: Exchange | undefined, id: string): KernelView {
+  if (!exchange) return { reading: false, checks: [], verdict: { kind: "idle", text: "Waiting for a command" } };
+  const kernel = need(field(exchange, "kernel"), `kernel record for ${id}`);
+  const checks: Check[] = Object.entries(need(kernel.checks as Record<string, string>, `kernel checks for ${id}`)).map(([name, word]) => ({ name: capital(name), word: String(word) }));
+  const reading = exchange.request.method === "hal/read";
+  if (reading) {
+    checks.push({ name: "Grant", word: String(kernel.grant) });
+    checks.push({ name: "Audit log", word: `entry ${need(kernel.logged as number[], `log entry for ${id}`).join(", ")}` });
+  }
+  const words = checks.map((check) => check.word);
+  const verdict: Verdict | undefined = exchange.error
+    ? { kind: "blocked", text: String(exchange.error.data.name) }
+    : words.includes("required")
+      ? { kind: "confirm", text: "confirmation required" }
+      : kernel.grant === "issued"
+        ? { kind: "granted", text: "granted" }
+        : reading && kernel.grant === "not needed"
+          ? { kind: "granted", text: "allowed" }
+          : undefined;
+  return { reading, checks, verdict: need(verdict, `kernel verdict for ${id}`) };
+}
+
 /** Every word and number the landing story shows, from docs/demo/scenario.yaml and the printer's device file. */
 export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile = readDeviceFile()): StoryFacts {
   const record = scenario.record;
   const exchanges = record.exchanges;
   const described = (id: string) => need(record.devices?.find((item) => item.id === id), `description of ${id}`);
   const byId = (id: string) => need(exchanges.find((exchange) => exchange.id === id), `exchange ${id}`);
+  const told = (step: StepId) => (TOLD[step] ? byId(IDS[TOLD[step]!]) : undefined);
   const look = byId(IDS.look);
   const loose = byId(IDS.loose);
   const bed = byId(IDS.bed);
@@ -145,6 +201,7 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
     },
     pause: { ...act(pause), status: statusOf(pause) },
     cancel: { ...act(cancel), status: statusOf(cancel), wait: "waiting for a person" },
+    kernel: Object.fromEntries(PLACED.map((item) => [item.id, kernelView(told(item.id), item.id)])) as Record<StepId, KernelView>,
     requests: exchanges.length,
   };
 }

@@ -13,13 +13,6 @@ export interface Fill extends Run {
   lane: Lane;
 }
 
-export type Word = "ok" | "blocked" | "not needed" | "required";
-
-export interface Pass {
-  in: StepId[];
-  words: Word[];
-}
-
 const reads: StepId[] = ["look", "loose"];
 const commands: StepId[] = ["warm", "hot", "pause", ...span("cancel")];
 
@@ -49,19 +42,6 @@ export const HUB = {
   bed: ["warm"] as StepId[],
   cancel: ["cancel", "wake"] as StepId[],
   asked: span("cancel"),
-};
-
-export const KERNEL = {
-  passes: [
-    { in: ["warm"], words: ["ok", "ok", "ok", "ok", "not needed"] },
-    { in: ["hot"], words: ["ok", "blocked"] },
-    { in: ["pause"], words: ["ok", "ok", "ok", "ok", "not needed"] },
-    { in: span("cancel"), words: ["ok", "ok", "ok", "ok", "required"] },
-  ] as Pass[],
-  waiting: ["intro", "ask", "look", "loose"] as StepId[],
-  granted: ["warm", "pause"] as StepId[],
-  blocked: ["hot"] as StepId[],
-  confirm: span("cancel"),
 };
 
 export const DRIVER = {
