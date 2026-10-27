@@ -36,14 +36,14 @@ Other names need a `map`.
 
 Temperatures are degC on the wire and converted to the channel unit both ways. Fan percent maps to `M106 S` as `round(percent * 255 / 100)` and to `SET_FAN_SPEED SPEED` as `percent / 100`.
 
-There is no raw G-code action, on purpose.
+The driver deliberately has no raw G-code action.
 
 ## How the protocol is handled
 
-- `transport: http` polls one object per read. `transport: websocket` subscribes to every object the file uses with `printer.objects.subscribe`, keeps a cache that `notify_status_update` refreshes, and reads from it without a round trip.
+- `transport: http` polls one object per read, while `transport: websocket` subscribes to every object the file uses with `printer.objects.subscribe`, keeps a cache that `notify_status_update` refreshes, and reads from the cache without a round trip.
 - An API key, when Moonraker requires one, is read from the environment variable named in `token_env` and sent as `X-Api-Key`.
-- G-code requests return when Klipper has finished the command. `home` waits up to `action_wait`, then returns `started` and finishes in the background with a 300 s deadline. The hub's driver timeout is 10 s.
-- Klipper refuses heater targets above `max_temp` in printer.cfg. That error, and every other Klipper or Moonraker error, fails the command with the original message.
+- G-code requests return when Klipper has finished the command. Because the hub's driver timeout is 10 s, `home` waits up to `action_wait`, then returns `started` and finishes in the background with a deadline of 300 s.
+- Klipper refuses heater targets above `max_temp` in printer.cfg, and that error, like every other Klipper or Moonraker error, fails the command with the original message.
 - `health()` reads `printer.info` (or the subscribed `webhooks` object). Anything but `ready` reports the printer as disconnected with Klipper's own message, for example an MCU shutdown.
 - `match.moonraker` is checked against `printer.info` on connect, with glob patterns, so a file can't drive the wrong printer.
 
@@ -91,13 +91,13 @@ hazard: medium
 ## Known limitations
 
 - File uploads and starting prints are not exposed.
-- `exclude_object`, macros and other Klipper commands need their own driver support. A raw G-code action is deliberately absent.
+- `exclude_object`, macros and other Klipper commands need their own driver support, because the driver deliberately has no raw G-code action.
 - With `transport: http` each read is one request, so poll intervals under about 200 ms per channel will load the printer's host.
-- The safe state needs Moonraker to be reachable. Klipper's own `max_temp`, `verify_heater` and MCU watchdogs remain the protection when the network is down. Set `watchdog.on_loss: hold` when you'd rather let a print continue through a network drop.
+- Because the safe state needs Moonraker to be reachable, Klipper's own `max_temp`, `verify_heater` and MCU watchdogs remain the protection when the network is down. Set `watchdog.on_loss: hold` when you'd rather let a print continue through a network drop.
 
 ## Hazard defaults
 
-`medium`. Heaters and moving axes can burn or pinch. Keep `confirm: confirm` on the hotend target and on `home`.
+The default hazard is `medium`, because heaters and moving axes can burn or pinch, so keep `confirm: confirm` on the hotend target and on `home`.
 
 ## Sources
 

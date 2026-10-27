@@ -16,7 +16,7 @@ The midi driver reads knobs, faders and pads from MIDI controllers and sends not
 uv tool install --compile-bytecode "openhal-hub[midi] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-python-rtmidi has no prebuilt wheel for every Python version and platform. Where none exists, pip builds it from source, which needs a C++ compiler (Xcode command line tools on macOS) and, on Linux, the ALSA headers (`sudo apt install libasound2-dev`). To use another mido backend, set `backend`, for example `backend: mido.backends.portmidi`.
+python-rtmidi has no prebuilt wheel for every Python version and platform. Where no wheel exists, pip builds python-rtmidi from source, which needs a C++ compiler (Xcode command line tools on macOS) and, on Linux, the ALSA headers (`sudo apt install libasound2-dev`). To use another mido backend, set `backend`, for example `backend: mido.backends.portmidi`.
 
 ## Parameters
 
@@ -52,11 +52,11 @@ write:
 | `velocity` | `127` | Velocity for bool note writes |
 | `on`, `off` | `127`, `0` | CC values for bool CC writes |
 
-Units. `dimensionless` channels carry the raw MIDI value (0 to 127, or -8192 to 8191 for pitch bend). `percent` channels map 0 to 100 onto 0 to 127, and -100 to 100 onto the pitch bend range, rounded to the nearest step. The reading a write returns shows the value really sent, so `50 %` reads back as 50.4 %.
+`dimensionless` channels carry the raw MIDI value (0 to 127, or -8192 to 8191 for pitch bend). `percent` channels map 0 to 100 onto 0 to 127, and -100 to 100 onto the pitch bend range, rounded to the nearest step. The reading a write returns shows the value really sent, so `50 %` reads back as 50.4 %.
 
 ## How reads work
 
-MIDI controllers push messages when something moves and can't be asked where a knob is. A read returns the newest value received since the driver connected, stamped with the time it arrived, and no value (`None`) until the control is first moved. The kernel treats that as unknown. Write channels report the last value the driver sent, because controllers don't report LED or parameter state.
+Because MIDI controllers push messages when something moves and can't be queried for a knob's position, a read returns the newest value received since the driver connected, stamped with the time the value arrived. Until the control is first moved, a read returns no value (`None`), which the kernel treats as unknown. Because controllers don't report LED or parameter state, write channels report the last value the driver sent.
 
 ## Example
 
@@ -70,9 +70,9 @@ MIDI controllers push messages when something moves and can't be asked where a k
 
 ## Limitations
 
-- No SysEx, NRPN, RPN, 14-bit CC pairs, aftertouch or MIDI 2.0.
-- No timestamps from the device. The arrival time on the hub is used.
-- No actions. Model each message as a write channel.
+- The driver has no SysEx, NRPN, RPN, 14-bit CC pairs, aftertouch or MIDI 2.0 support.
+- Because the device sends no timestamps, the hub uses the arrival time.
+- The driver has no actions, so model each message as a write channel.
 
 ## Hazard default and safe state
 

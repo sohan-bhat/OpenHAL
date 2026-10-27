@@ -128,10 +128,10 @@ REDRAWS = {
         "spec/2026-10-24/architecture.md",
         0,
         "One blocked and one granted command",
-        "A client asks the hub for a 300 °C nozzle. The safety kernel blocks it as above the 260 °C maximum and the "
-        "hub answers error -32010 LIMIT_EXCEEDED. The client asks for a 70 °C bed. Every check passes, the kernel "
-        "issues a single-use grant, the driver consumes it and sets the bed heater, and the hub answers with a "
-        "result.",
+        "A client requests a nozzle temperature of 300 °C, and because the nozzle maximum is 260 °C the safety "
+        "kernel blocks the request and the hub returns error -32010 LIMIT_EXCEEDED. The client then requests a bed "
+        "temperature of 70 °C, every check passes, the kernel issues a single-use grant, the driver consumes the "
+        "grant and sets the bed heater, and the hub returns a result.",
     ),
 }
 
@@ -139,7 +139,8 @@ FLOW_TITLE = "OpenHAL flow"
 FLOW_DESC = (
     "OpenHAL flow. An agent sends hal/write to the hub. The safety kernel checks the command against the device "
     "file's limits. An allowed command gets a grant and goes through the driver to the 3D printer, and the reading "
-    "comes back to the agent. A 300 °C nozzle is blocked with LIMIT_EXCEEDED because the limit is 260 °C."
+    "comes back to the agent. Because the nozzle limit is 260 °C, a request for a nozzle temperature of 300 °C is "
+    "blocked with LIMIT_EXCEEDED."
 )
 FLOW_ORDER = ["hal/action", "check", "grant", "command", "reading"]
 TOP_ROOM = 40

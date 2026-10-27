@@ -29,18 +29,18 @@ The maintained Python Firmata clients are pymata4, pymata-express and telemetrix
 - PWM percent maps to `round(percent / 100 * (2^resolution - 1))`, which is 0 to 255 on an Uno.
 - Servo angles are converted to degrees and rounded to whole degrees from 0 to 180.
 - `invert: true` suits active-low relays and buttons wired to ground.
-- Write channels read back with PIN_STATE_QUERY. A pin that is not yet in the channel's mode reads as unknown. A PWM pin still in output mode after reset reads as 0 % or 100 %.
-- With `verify: true` (the default) each write is followed by a pin state query, so a write to a board that stopped answering fails.
+- Write channels read back with PIN_STATE_QUERY, where a pin that is not yet in the channel's mode reads as unknown and a PWM pin still in output mode after reset reads as 0 % or 100 %.
+- With `verify: true` (the default) each write is followed by a pin state query, so a write to a board that stopped responding fails.
 - `describe()` proposes a volt channel per analog pin, a percent channel per PWM pin and a bool channel per other output-capable pin, all marked `suggested: true`.
 
 ## How connect works
 
 1. Open the port. Most boards reset and StandardFirmata takes about 2 s to start, which is what `settle` waits for.
 2. Send REPORT_FIRMWARE, REPORT_VERSION, CAPABILITY_QUERY and ANALOG_MAPPING_QUERY.
-3. Check every channel's pin and mode against the capability report. A pin that can't do what the file asks fails the connect with the modes it does support.
+3. Check every channel's pin and mode against the capability report. A pin that can't do what the file requires fails the connect with the modes the pin does support.
 4. Set the sampling interval, put read pins in their input mode and turn on reporting.
 
-Output pins are not touched until the first granted write. Setting a pin to output already drives it, so that only happens as part of a write the kernel allowed.
+Because setting a pin to output already drives the pin, output pins are not touched until the first granted write, so setting a pin to output only happens as part of a write the kernel allowed.
 
 ## Setup
 
@@ -83,14 +83,14 @@ hazard: low
 ## Known limitations
 
 - I2C, SPI, OneWire, stepper and encoder features of ConfigurableFirmata are not supported.
-- Digital inputs report on change only, so a read can't tell a quiet board from a stopped one. Analog reads and pin state queries can, and they raise a timeout.
-- Pins 0 and 1 carry the serial link on an Uno. StandardFirmata reports no modes for them, so the driver refuses them.
-- A servo holds its last angle after a stop unless the safe state moves it. Say so in `safe_state_note`.
-- The driver never sends SYSTEM_RESET. Power-on pin modes are not a safe state for every circuit.
+- Digital inputs report on change only, so a read can't tell a quiet board from a stopped one, but analog reads and pin state queries raise a timeout on a stopped board.
+- Because pins 0 and 1 carry the serial link on an Uno, StandardFirmata reports no modes for those pins, and the driver refuses them.
+- Because a servo holds its last angle after a stop unless the safe state moves the servo, record that behavior in `safe_state_note`.
+- Because power-on pin modes are not a safe state for every circuit, the driver never sends SYSTEM_RESET.
 
 ## Hazard defaults
 
-`low`. Boards running Firmata usually drive LEDs, small fans and hobby servos. Set `hazard` higher in the device file when the pins switch relays or motors that can hurt.
+The default hazard is `low`, because boards running Firmata usually drive LEDs, small fans and hobby servos. Set `hazard` higher in the device file when the pins switch relays or motors that can hurt.
 
 ## Sources
 

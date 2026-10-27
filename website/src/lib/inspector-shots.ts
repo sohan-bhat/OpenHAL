@@ -29,7 +29,7 @@ export function inspectorShots(facts: StoryFacts = storyFacts(), shots: Shot[] |
       file: "inspector-log",
       caption: "The message log",
       crop: { x: 316, y: 126, w: 1100, h: 774 },
-      alt: `The Inspector's message log with the agent's requests to the printer, a ${facts.nozzle.value} nozzle answered by error ${facts.nozzle.refusal.code} ${facts.nozzle.refusal.name}, and the cancel answered ${facts.cancel.status} until a person decides`,
+      alt: `The Inspector's message log with the agent's requests to the printer, the request for a nozzle temperature of ${facts.nozzle.value} refused with error ${facts.nozzle.refusal.code} ${facts.nozzle.refusal.name}, and the cancel left ${facts.cancel.status} until a person approves or rejects the cancel`,
     },
     {
       file: "inspector-stopped",

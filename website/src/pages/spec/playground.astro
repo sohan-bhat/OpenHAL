@@ -67,13 +67,13 @@ const sidebar = specSidebar(latest ? await specPages(latest) : [], (item) => (it
 
 <DocShell
   title="Playground"
-  description="Send the print babysitter's requests to a simulated printer and see what the hub answers. Runs in your browser."
+  description="Send the print babysitter's requests to a simulated printer in your browser and see the hub's response to each request."
   sidebar={sidebar}
   section="Specification"
   wide
   pager={false}
 >
-  <p slot="after-title" class="lede">Press a request from the story and see what the hub answers.</p>
+  <p slot="after-title" class="lede">Press a request from the story to see the hub's response.</p>
   <Playground client:interact examples={examples} initial={initial} suggestion={suggestion} quick={quick} watch={Object.keys(suggestion?.readings ?? {})} />
 </DocShell>
 

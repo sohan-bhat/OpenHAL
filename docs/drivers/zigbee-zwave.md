@@ -1,15 +1,15 @@
 # zigbee-zwave driver
 
-The zigbee-zwave driver reaches Zigbee devices through Zigbee2MQTT and Z-Wave nodes through zwave-js-server, the two bridges most home setups already run. One device file names one device. The URL picks the bridge, `mqtt://` for Zigbee2MQTT and `ws://` for zwave-js-server.
+The zigbee-zwave driver reaches Zigbee devices through Zigbee2MQTT and Z-Wave nodes through zwave-js-server, the two bridges most home setups already run. One device file names one device, and the URL picks the bridge, `mqtt://` for Zigbee2MQTT and `ws://` for zwave-js-server.
 
 If the devices already live in Home Assistant, the homeassistant driver is the other route. The homeassistant driver reaches the same devices through Home Assistant's entities instead of the bridge, which suits setups where Home Assistant owns the Zigbee or Z-Wave stick.
 
 ## What it supports
 
-- Zigbee2MQTT. Every feature in a device's `exposes` list, binary, numeric, enum and text, including features nested in lights, switches and composite values.
-- zwave-js-server. Every value a node reports, named by command class, endpoint, property and property key, with the unit and states from its metadata.
-- Read channels and control channels. A Z-Wave channel mapped to `currentValue` is set through `targetValue` and read back from `currentValue`.
-- A check on connect that every channel exists on the bridge, can be read or set as the file asks, and has a matching type and unit.
+- For Zigbee2MQTT, the driver supports every feature in a device's `exposes` list, binary, numeric, enum and text, including features nested in lights, switches and composite values.
+- For zwave-js-server, the driver supports every value a node reports, named by command class, endpoint, property and property key, with the unit and states from its metadata.
+- Read channels and control channels, where a Z-Wave channel mapped to `currentValue` is set through `targetValue` and read back from `currentValue`.
+- A check on connect that every channel exists on the bridge, can be read or set as the file requires, and has a matching type and unit.
 - Health from the MQTT session, Zigbee2MQTT's bridge state and device availability, or from the WebSocket and the node's dead or alive status.
 - `describe()` proposes channels from what the bridge reports, with the bridge's own limits marked suggested.
 
@@ -58,25 +58,25 @@ Bridge units are converted to the channel unit (`°C` to `degF`, for example). V
 
 ## How reads and commands behave
 
-- Reads come from what the bridge last pushed, with the time it arrived. On connect the driver asks Zigbee2MQTT to report the properties it can `get`, and takes Z-Wave values from the server's state. Battery sensors often report only when they wake, so a sensor value can read as no value at first.
-- A command returns once the bridge accepted it, the broker's acknowledgement for Zigbee2MQTT and the `node.set_value` result for zwave-js-server. A failed Z-Wave status raises `DriverError`. The device's new state arrives when the device confirms it.
-- Commands are never queued. A lost MQTT acknowledgement drops the connection so nothing arrives late.
+- Reads come from what the bridge last pushed, with the time the value arrived. On connect the driver requests the properties that support `get` from Zigbee2MQTT, and takes Z-Wave values from the server's state. Battery sensors often report only when they wake, so a sensor value can read as no value at first.
+- A command returns once the bridge accepted the command, which means the broker's acknowledgement for Zigbee2MQTT and the `node.set_value` result for zwave-js-server. A failed Z-Wave status raises `DriverError`, and the device's new state arrives when the device confirms the change.
+- Commands are never queued, and a lost MQTT acknowledgement drops the connection so nothing arrives late.
 
 ## Examples
 
 - `ikea-bulb-zigbee2mqtt.hal.yaml` switches and dims an IKEA bulb through Zigbee2MQTT.
-- `zooz-plug-zwave.hal.yaml` reads power and energy from a Zooz plug and switches it through zwave-js-server, with a watchdog that turns it off after two hours.
+- `zooz-plug-zwave.hal.yaml` reads power and energy from a Zooz plug and switches the plug through zwave-js-server, with a watchdog that turns the plug off after two hours.
 
 ## Errors
 
 - A broker or server that can't be reached, refused credentials, a missing password variable, an unknown friendly name or node, and a bridge that sends nothing raise `DriverError` that says what to check.
 - A channel the bridge doesn't have, can't set, or reports with a different type or unit fails the connect with `DriverError` naming the channel.
-- A value of the wrong type on read raises `DriverError`. A command the bridge refuses raises `DriverError` with its reason, and a bridge that doesn't answer raises `TimeoutError`.
+- A value of the wrong type on read raises `DriverError`. A command the bridge refuses raises `DriverError` with the bridge's reason, and a bridge that doesn't respond raises `TimeoutError`.
 
 ## Limitations
 
-- No actions, scenes, groups, pairing, OTA updates or network management, which belong in the bridge's own interface.
-- zwave-js-server schema 40 at most. Newer servers still accept schema 40.
+- The driver has no actions, scenes, groups, pairing, OTA updates or network management, because those belong in the bridge's own interface.
+- The driver uses zwave-js-server schema 40 at most, and newer servers still accept schema 40.
 - Non-linear conversions, such as mired to kelvin, are left to the device file as raw values.
 
 ## Hazard default and safe state

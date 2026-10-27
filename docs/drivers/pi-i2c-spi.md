@@ -1,11 +1,11 @@
 # pi-i2c-spi driver
 
-The pi-i2c-spi driver reads and sets I2C and SPI chips on a Raspberry Pi, or any Linux board with i2c-dev and spidev. The driver uses smbus2 for I2C and spidev for SPI. The device file is the register map. Each channel names a register, or the bytes to clock out over SPI, and where the value sits in the bytes that come back, so temperature sensors, ADCs, DACs and port expanders work without chip-specific code.
+The pi-i2c-spi driver reads and sets I2C and SPI chips on a Raspberry Pi, or any Linux board with i2c-dev and spidev. The driver uses smbus2 for I2C and spidev for SPI, and the device file is the register map. Each channel names a register, or the bytes to clock out over SPI, and where the value sits in the bytes that come back, so temperature sensors, ADCs, DACs and port expanders work without chip-specific code.
 
 ## What it supports
 
 - I2C chips with 8-bit or 16-bit register addresses, and chips read without a register.
-- SPI chips that answer a command in the same transfer, such as most ADCs, and chips that only take values, such as DACs.
+- SPI chips that respond to a command in the same transfer, such as most ADCs, and chips that only take values, such as DACs.
 - Read channels of type number, bool and enum, decoded from any byte range or bit range, big or little endian, signed or unsigned, with scale, offset and a device unit.
 - Control channels that set one register, or clock out one SPI word, with the value placed in it.
 - `preserve: true` for I2C configuration registers, which reads the register and changes only the field's bits.
@@ -18,7 +18,7 @@ The pi-i2c-spi driver reads and sets I2C and SPI chips on a Raspberry Pi, or any
 uv tool install --compile-bytecode "openhal-hub[pi-i2c-spi] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-Enable I2C and SPI with `sudo raspi-config` (Interface Options) and reboot. Add the hub's user to the `i2c` and `spi` groups. spidev builds only on Linux, so on other systems only the tests run.
+Enable I2C and SPI with `sudo raspi-config` (Interface Options), reboot, and add the hub's user to the `i2c` and `spi` groups. spidev builds only on Linux, so on other systems only the tests run.
 
 ## Parameters
 
@@ -48,7 +48,7 @@ actions:
 |---|---|---|
 | `register` | none | I2C. The register to read or set. Commands and actions on I2C need one |
 | `read_length` | the field's end | I2C. How many bytes to read from the register |
-| `command` | required for SPI reads | SPI. The bytes to clock out. They are padded with zeros to the field's end |
+| `command` | required for SPI reads | SPI. The bytes to clock out, padded with zeros to the field's end |
 | `data` | zeros | Commands and actions. The bytes the rest of the payload carries. For SPI this is the whole word |
 | `preserve` | `false` | I2C commands. Read the register and change only this field's bits |
 | `byte`, `length` | `0`, `1` | Where the value starts in the payload and how many bytes it spans, 1 to 8 |
@@ -56,7 +56,7 @@ actions:
 | `signed` | `false` | Two's complement |
 | `bit`, `bits` | `0`, the rest | The bit range inside those bytes, counted from the least significant bit |
 | `scale`, `offset` | `1`, `0` | device value = raw × scale + offset |
-| `unit` | the channel unit | The unit the device value is in. It is converted to the channel unit |
+| `unit` | the channel unit | The unit the device value is in, which the driver converts to the channel unit |
 | `on`, `off` | `1`, `0` | Raw values for bool channels |
 | `lookup` | none | Raw numbers to enum values |
 | `state` | none | Control channels. A read map that shows the result, often the same register |
@@ -64,11 +64,11 @@ actions:
 
 ## How reads and commands behave
 
-- The driver only changes the registers and byte sequences that the device file's control channels and actions list. Connecting changes nothing. Configuration a chip needs before it measures, such as starting conversions, goes in an action so it passes through the safety kernel.
-- Values are rounded to the field's raw step, and the reading a command returns shows the value actually sent. A value the field can't hold fails the command and nothing is sent. Nothing is clamped.
+- The driver only changes the registers and byte sequences that the device file's control channels and actions list, and connecting changes nothing. Configuration a chip needs before measuring, such as starting conversions, goes in an action so the configuration passes through the safety kernel.
+- Values are rounded to the field's raw step, and the reading a command returns shows the value actually sent. A value the field can't hold fails the command, and nothing is sent or clamped.
 - A control channel without `state` reads as the last value sent, or no value before the first command.
-- `health()` reads the first read channel. Make the first read channel a register that is safe to read often, not one that clears on read.
-- Transactions on one device run one at a time. Other devices on the same bus are separate device files, and the kernel's i2c-dev locking keeps their transactions apart.
+- Because `health()` reads the first read channel, make the first read channel a register that is safe to read often rather than one that clears on read.
+- Transactions on one device run one at a time, and other devices on the same bus are separate device files whose transactions the Linux kernel's i2c-dev locking keeps apart.
 
 ## Examples
 
@@ -84,14 +84,14 @@ actions:
 
 ## Limitations
 
-- Linear values only. Sensors that need calibration math, such as the BME280 compensation formulas, can be read as raw registers but not converted.
-- No SMBus block protocols with a length byte, no packet error checking, and no 10-bit I2C addresses.
+- The driver converts linear values only, so sensors that need calibration math, such as the BME280 compensation formulas, can be read as raw registers but not converted.
+- The driver doesn't support SMBus block protocols with a length byte, packet error checking or 10-bit I2C addresses.
 - SPI words are whole bytes.
 - `describe()` returns nothing, because a register map can't be read from the chip.
 
 ## Hazard default and safe state
 
-The default hazard is low, because most chips on these buses are sensors and converters. A DAC or driver chip can still switch a real load, so set the file's hazard to match what it controls. I2C and SPI have no emergency behavior, so `safe_state_support` is `file` and the hub sends the device file's safe state like any other value. A chip keeps its last output if the Pi stops, so wire pull resistors that make power loss safe.
+The default hazard is low, because most chips on these buses are sensors and converters. A DAC or driver chip can still switch a real load, so set the file's hazard to match what the chip controls. I2C and SPI have no emergency behavior, so `safe_state_support` is `file` and the hub sends the device file's safe state like any other value. A chip keeps its last output if the Pi stops, so wire pull resistors that make power loss safe.
 
 ## Sources
 

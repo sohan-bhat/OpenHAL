@@ -6,10 +6,10 @@ The mqtt driver reads devices that publish their state on MQTT topics and contro
 
 - Read channels of type number, bool, string and enum from raw payloads (`21.5`, `ON`) or JSON payloads with a JSON path.
 - Write channels that publish raw words, numbers, JSON built from a path, or a JSON template.
-- Retained messages seed reads right after connecting. Live messages replace them as they arrive.
+- Retained messages seed reads right after connecting, and live messages replace the retained ones as they arrive.
 - QoS 0 or 1 for commands, and an optional retain flag.
 - Username and password, with the password from an environment variable, and TLS.
-- `describe()` listens on the broker for a moment and proposes read channels from the topics it sees.
+- `describe()` listens on the broker for a moment and proposes read channels from the topics that carry messages.
 
 ## Setup
 
@@ -17,7 +17,7 @@ The mqtt driver reads devices that publish their state on MQTT topics and contro
 uv tool install --compile-bytecode "openhal-hub[mqtt] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-You need a broker the hub can reach. Mosquitto works well and runs on a Raspberry Pi.
+You need a broker the hub can reach, and Mosquitto works well and runs on a Raspberry Pi.
 
 ## Parameters
 
@@ -36,7 +36,7 @@ You need a broker the hub can reach. Mosquitto works well and runs on a Raspberr
 | `retain_commands` | `false` | Default retain flag for commands |
 | `discover_topic` | `#` | Topic filter `describe()` listens on, under `prefix` |
 
-The password parameter is `token_env`, not `password_env`, because the device file loader rejects any parameter whose name contains `password`.
+Because the device file loader rejects any parameter whose name contains `password`, the password parameter is `token_env` rather than `password_env`.
 
 ## Channel maps
 
@@ -70,9 +70,9 @@ A write channel without a `state` topic reads back the last value the driver sen
 
 ## How reads and writes behave
 
-- MQTT only pushes. The driver subscribes to every state topic and keeps the newest message per topic, and a read returns it with the time it arrived. A topic that has had no message since connecting reads as no value (`None`), which the kernel treats as unknown.
-- Commands are never queued. A write while the broker is down fails, and paho's automatic reconnect is off so nothing is replayed later on a new connection. The hub's heartbeat reconnects with a fresh client.
-- A QoS 1 command waits for the broker's PUBACK. Without the PUBACK the write fails with `TimeoutError` and the driver drops the connection, so the broker can't deliver the command late. A PUBACK proves the broker has the message, not that the device acted. Watch the state topic for that.
+- Because MQTT only pushes, the driver subscribes to every state topic and keeps the newest message per topic, and a read returns that message with the time the message arrived. A topic that has had no message since connecting reads as no value (`None`), which the kernel treats as unknown.
+- Commands are never queued, so a write while the broker is down fails, and paho's automatic reconnect is off so nothing is replayed later on a new connection. The hub's heartbeat reconnects with a fresh client.
+- A QoS 1 command waits for the broker's PUBACK. Without the PUBACK the write fails with `TimeoutError` and the driver drops the connection, so the broker can't deliver the command late. A PUBACK proves that the broker has the message but not that the device acted, so watch the state topic to see whether the device acted.
 
 ## Example
 
@@ -86,10 +86,10 @@ A write channel without a `state` topic reads back the last value the driver sen
 
 ## Limitations
 
-- MQTT 3.1.1 only. MQTT 5 properties are not used.
-- No binary or protobuf payloads, and no image channels.
-- No actions. Model each command topic as a write channel.
-- `describe()` can only see topics that carry messages while it listens, so it proposes reads only, all `dimensionless` until you set the units.
+- The driver speaks MQTT 3.1.1 only and doesn't use MQTT 5 properties.
+- The driver doesn't support binary or protobuf payloads or image channels.
+- The driver has no actions, so model each command topic as a write channel.
+- `describe()` only finds topics that carry messages while `describe()` listens, so `describe()` proposes reads only, all `dimensionless` until you set the units.
 
 ## Hazard default and safe state
 

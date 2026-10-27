@@ -1,9 +1,9 @@
 """Every page tells the print babysitter story with the numbers docs/demo/scenario.yaml records.
 
 The README and the docs quickstart show the recorded trace exactly. Every page that names a printer
-value (the 260 degC and 110 degC limits, their rates, the 300 degC nozzle, the bed from 60 degC to
-70 degC, the reason, the confirmation, the audit log's counts and the printer's state after the
-owner's approval) names the recorded one. Pages about the Arduino plant
+value (the 260 degC and 110 degC limits, their rates, the requested nozzle temperature of 300 degC,
+the bed from 60 degC to 70 degC, the reason, the confirmation, the audit log's counts and the
+printer's state after the owner's approval) names the recorded one. Pages about the Arduino plant
 waterer name the values of its mock device file and of docs/demo/e2e.yaml, which `openhal demo
 --full` records. The desk fan stays in spec/examples/, and user-facing copy says command or change
 instead of write or layer.
@@ -133,7 +133,7 @@ def test_the_readme_and_the_flow_diagram_use_the_printer() -> None:
         built = (ROOT / "docs" / "diagrams" / f"{name}.svg").read_text(encoding="utf-8")
         assert "3D printer" in built
         assert "LIMIT_EXCEEDED" in built
-        assert f"A {nozzle} nozzle is blocked" in built
+        assert f"a request for a nozzle temperature of {nozzle} is blocked" in built
 
 
 def demo_pages() -> list[Path]:
@@ -182,6 +182,7 @@ def printer_facts() -> dict[str, tuple[str, ...]]:
             shown(warmer["after"]["value"]),
         ),
         rf"\b(\d+){d} nozzle": (asked,),
+        rf"nozzle temperature of (\d+){d}": (asked,),
         rf"at the (\d+){d} limit": (hottest,),
         rf"since the limit is (\d+){d}": (hottest,),
         rf"`?extruder_target`? (?:is )?limited to (\d+){d}": (hottest,),
@@ -219,7 +220,7 @@ def plant_facts() -> dict[str, tuple[str, ...]]:
         r"rises from (\d+) ?% to (\d+) ?%": (before, after),
         r"VAL soil_moisture (\d+)": (before,),
         r"EVT soil_moisture (\d+)": (after,),
-        r"agent's (\d+) s request": (asked,),
+        r"request to water for (\d+) s": (asked,),
     }
 
 

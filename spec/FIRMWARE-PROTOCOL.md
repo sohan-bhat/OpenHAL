@@ -1,13 +1,13 @@
 # OpenHAL firmware protocol, version 1
 
-The wire protocol between the hub's `openhal-firmware` driver and a board running the OpenHAL Arduino library (firmware/arduino/OpenHAL/). A board that speaks it describes itself, so the hub can build its device file without a person typing channels.
+This page defines the wire protocol between the hub's `openhal-firmware` driver and a board running the OpenHAL Arduino library (firmware/arduino/OpenHAL/). A board that speaks the protocol describes itself, so the hub can build the board's device file without a person typing channels.
 
-The board enforces its own limits too. That is defense in depth. The hub's safety kernel is still the authority, and nothing in this protocol can widen a limit the device file sets.
+The board also enforces its own limits as defense in depth, but the hub's safety kernel is still the authority, and nothing in this protocol can widen a limit the device file sets.
 
 ## Transport
 
-- A serial line (USB CDC, UART). Default 115200 baud, 8N1.
-- ASCII text, one message per line, lines end with `\n` (a preceding `\r` is ignored).
+- The transport is a serial line (USB CDC, UART) at a default of 115200 baud, 8N1.
+- Messages are ASCII text, one message per line, and lines end with `\n` (a preceding `\r` is ignored).
 - Lines are at most 250 bytes, except the `DESC` reply, which may be up to 1,500 bytes.
 
 ## Message format
@@ -16,19 +16,19 @@ The board enforces its own limits too. That is defense in depth. The hub's safet
 <seq> <verb> [arg ...]*<checksum>
 ```
 
-- `seq` is a decimal number from 1 to 65535 chosen by the host. The board echoes it in its reply. Unsolicited board messages use `0`.
-- `verb` is an uppercase word. Arguments are separated by single spaces. Names match `[a-z][a-z0-9_]{0,23}`. Numbers are decimal, with an optional sign and decimal point.
-- `*<checksum>` is two uppercase hex digits, the XOR of every byte before the `*`. Both sides check it and discard lines with a wrong or missing checksum.
+- `seq` is a decimal number from 1 to 65535 chosen by the host, and the board echoes the number in its reply, while unsolicited board messages use `0`.
+- `verb` is an uppercase word, arguments are separated by single spaces, and names match `[a-z][a-z0-9_]{0,23}`. Numbers are decimal, with an optional sign and decimal point.
+- `*<checksum>` is two uppercase hex digits, the XOR of every byte before the `*`. Both sides check the checksum and discard lines with a wrong or missing checksum.
 
 ## Host to board
 
 | Verb | Arguments | Reply | Meaning |
 |---|---|---|---|
-| `HELLO` | | `OK openhal 1 <product> <firmware-version>` | Identify. Read-only. Safe to send to an unknown device during discovery |
+| `HELLO` | | `OK openhal 1 <product> <firmware-version>` | Identify the board with a read-only command that is safe to send to an unknown device during discovery |
 | `DESC` | | `DESC <json>` | The capability document below |
-| `READ` | `<name>` | `VAL <name> <value>` | Read one channel. A channel with states answers with the state's name |
+| `READ` | `<name>` | `VAL <name> <value>` | Read one channel. A channel with states returns the state's name |
 | `WRITE` | `<name> <value>` | `OK <name> <value>` or `ERR <code> <detail>` | Set one write channel. The board checks its own min and max first |
-| `ACT` | `<name> [<arg> <value> ...]` | `OK <name>` or `ERR <code> <detail>` | Run one action. Every argument it declares is given once, in any order. The board checks each against its own min and max, then its own conditions |
+| `ACT` | `<name> [<arg> <value> ...]` | `OK <name>` or `ERR <code> <detail>` | Run one action, giving every argument the action declares once, in any order. The board checks each argument against its own min and max, then its own conditions |
 | `HB` | | `OK` | Heartbeat. The board falls to its safe state if heartbeats stop for `hb` milliseconds |
 | `SAFE` | | `OK` | Apply the safe state now |
 
@@ -43,7 +43,7 @@ The board enforces its own limits too. That is defense in depth. The hub's safet
 
 ## Capability document
 
-The `DESC` reply is a compact JSON object. The plant waterer (examples/plant-waterer/) reports its float switch as states and offers actions. Its pump is an output the sketch keeps to itself, so `w` is empty and the pump runs only through `water`.
+The `DESC` reply is a compact JSON object, and the plant waterer (examples/plant-waterer/) reports its float switch as states and offers actions. Because the plant waterer's pump is an output the sketch keeps to itself, `w` is empty and the pump runs only through `water`.
 
 ```json
 {
@@ -63,17 +63,17 @@ The `DESC` reply is a compact JSON object. The plant waterer (examples/plant-wat
 | `v` | Firmware version |
 | `hb` | Heartbeat timeout in milliseconds (0 means none) |
 | `r` | Read channels. `n` name, `u` unit, `e` streaming interval in milliseconds (0 means on request), optional `lo` and `hi` sanity range |
-| `w` | Write channels. `n`, `u`, `min`, `max`, `safe` (the safe-state value), optional `rate` (unit per second) and `t` (milliseconds after which the board returns the output to `safe` on its own). A unit of `bool` marks an on and off output with values 0 and 1. An output the sketch keeps to itself is left out, and `WRITE` to it answers `ERR unknown`. `SAFE` and a lost heartbeat still return it to `safe` |
+| `w` | Write channels. `n`, `u`, `min`, `max`, `safe` (the safe-state value), optional `rate` (unit per second) and `t` (milliseconds after which the board returns the output to `safe` on its own). A unit of `bool` marks an on and off output with values 0 and 1. An output the sketch keeps to itself is left out, and a `WRITE` to that output returns `ERR unknown`, while `SAFE` and a lost heartbeat still return the output to `safe` |
 | `r` with `s` | A channel with states, such as a float switch. `u` is `enum` and `s` lists the state names, at most 8. `VAL` and `EVT` carry the name |
 | `a` | Actions, at most 4. `n` name and `g` its arguments, at most 3, each with `n`, `u`, `min` and `max` |
 
 The library's LedStrip example reports its one write channel as `{ "n": "brightness", "u": "percent", "min": 0, "max": 100, "safe": 0, "rate": 50 }`.
 
-The hub turns this into a draft device file with every limit marked `suggested: true`. A human still confirms the limits in the interview, and may tighten them below what the board allows.
+The hub turns the capability document into a draft device file with every limit marked `suggested: true`, and a human still confirms the limits in the interview and may tighten the limits below what the board allows.
 
 ## Example session
 
-The plant waterer. A watering over the board's own limit, one that runs, the tank running dry, and a `WRITE` to the pump the sketch keeps to itself.
+This session shows the plant waterer with a watering request over the board's own limit, a watering that runs, the tank running dry, and a `WRITE` to the pump the sketch keeps to itself.
 
 ```
 host  1 HELLO*53
@@ -93,8 +93,8 @@ board 6 ERR unknown pump*23
 board 0 SAFE heartbeat_lost*02
 ```
 
-The checksums are real. `openhal.drivers.openhal_firmware.protocol.checksum` computes them, and the Arduino library computes the same value while it prints.
+The checksums are real values that `openhal.drivers.openhal_firmware.protocol.checksum` computes, and the Arduino library computes the same value while the library prints each line.
 
 ## Versioning
 
-The `1` in the `HELLO` reply is the protocol version. A board that speaks a newer major version than the hub refuses commands other than `HELLO` and `DESC`, and the hub reports it as unsupported.
+The `1` in the `HELLO` reply is the protocol version. A board that speaks a newer major version than the hub refuses commands other than `HELLO` and `DESC`, and the hub reports the board as unsupported.

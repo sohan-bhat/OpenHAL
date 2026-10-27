@@ -25,21 +25,21 @@ Every channel and action names its ROS endpoint in a `map`.
 | `{ action: /navigate, type: nav2_msgs/action/NavigateToPose, args: { x: pose.pose.position.x } }` | An action that sends a goal. Each argument names the field it fills |
 | `{ topic: /goal_point, type: geometry_msgs/msg/Point, args: { x: x, y: y } }` | An action that publishes one message |
 
-`field` is a dotted path, with numbers for list items (`ranges.0`). `unit` is the unit ROS uses for the field, which REP 103 makes SI, so `m/s`, `rad`, `degC` and fractions from 0 to 1 for percentages. `scale` multiplies the ROS value, and `integer: true` sends whole numbers to int fields. An argument can be a plain field path or `{ field, unit, scale, integer }`.
+`field` is a dotted path, with numbers for list items (`ranges.0`). `unit` is the unit ROS uses for the field, which REP 103 makes SI, such as `m/s`, `rad`, `degC` and fractions from 0 to 1 for percentages. `scale` multiplies the ROS value, and `integer: true` sends whole numbers to int fields. An argument can be a plain field path or `{ field, unit, scale, integer }`.
 
 ## How the protocol is handled
 
 - connect() opens the WebSocket, subscribes to each read topic once and advertises each topic the file publishes to, so the first message isn't lost while DDS matches publishers and subscribers.
-- Reads come from the newest message on each topic, with its arrival time. A channel is unknown until its first message arrives.
-- rosbridge reports a refused subscription or advertisement in a status line. Reads and changes on that topic then fail with its reason, and health shows the last one.
-- Publishing has no reply in rosbridge. A set channel reads back as the last value the driver sent.
-- A goal waits up to `action_wait` for its result and answers `done`, or answers `started` and keeps running. Aborted and canceled goals fail with their status.
+- Reads come from the newest message on each topic, with its arrival time, and a channel is unknown until its first message arrives.
+- rosbridge reports a refused subscription or advertisement in a status line, and reads and changes on that topic then fail with the reported reason, while health shows the last refusal.
+- Because publishing has no reply in rosbridge, a set channel reads back as the last value the driver sent.
+- A goal waits up to `action_wait` for its result and returns `done`, or returns `started` and keeps running. Aborted and canceled goals fail with their status.
 
 ## Safe state
 
-A stop cancels every goal this driver started that is still running and waits up to 2 s for each to end. ROS has no general stop command, so put the robot's own stop in the device file, for example a `cmd_vel` channel set to 0 in `safe_state`. The kernel publishes it right after the cancel.
+A stop cancels every goal this driver started that is still running and waits up to 2 s for each goal to end. ROS has no general stop command, so put the robot's own stop in the device file, for example a `cmd_vel` channel set to 0 in `safe_state`. The kernel publishes that stop right after the cancel.
 
-Many bases stop on their own when `cmd_vel` goes quiet, and many do not. Check yours, and keep a physical stop within reach.
+Many bases stop on their own when `cmd_vel` messages stop arriving, and many do not, so check your robot's base and keep a physical stop within reach.
 
 ## Setup
 
@@ -57,7 +57,7 @@ Many bases stop on their own when `cmd_vel` goes quiet, and many do not. Check y
 | `scheme` | `ws` | `ws` or `wss` |
 | `path` | empty | URL path, for a rosbridge behind a proxy |
 | `timeout` | `5 s` | How long to wait for a service reply |
-| `action_wait` | `8 s` | How long a goal waits for its result before answering `started`. At most 9 s |
+| `action_wait` | `8 s` | How long a goal waits for its result before returning `started`. At most 9 s |
 | `throttle` | `0 s` | Smallest gap between messages rosbridge sends per topic |
 
 ## Example device file
@@ -91,14 +91,14 @@ hazard: high
 
 ## Known limitations
 
-- Images and point clouds are not read. Large messages are refused above 4 MB.
-- Velocity commands are published once per change. Robots that need a steady stream of `cmd_vel` stop after their own timeout.
-- rosauth is not supported. Keep rosbridge on a trusted network.
+- Images and point clouds are not read, and messages above 4 MB are refused.
+- Velocity commands are published once per change, so robots that need a steady stream of `cmd_vel` stop after their own timeout.
+- Because rosauth is not supported, keep rosbridge on a trusted network.
 - QoS settings use rosbridge's defaults.
 
 ## Hazard defaults
 
-`high`. Mobile robots and arms can injure. The kernel asks a human for every change and action, and velocity channels need small limits and a `max_change_per_s`.
+The default hazard is `high`, because mobile robots and arms can injure. Every change and action waits for a person's approval, and velocity channels need small limits and a `max_change_per_s`.
 
 ## Sources
 

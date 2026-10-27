@@ -16,8 +16,8 @@ The `scpi` driver talks to programmable test instruments over VISA. Bench suppli
 - Read channels of type number, bool, enum and string through a query.
 - Write channels of every type through a setting command, with an optional readback query.
 - Actions whose arguments fill a command template, such as `APPL CH1,{volts},{amps}`.
-- Error checking. After every setting the driver reads `SYST:ERR?` until the queue says `0`. Any error fails the command with the instrument's message, for example `-222,"Data out of range"`.
-- Health checks with `*OPC?`, which every IEEE 488.2 instrument answers.
+- Error checking, where the driver reads `SYST:ERR?` after every setting until the queue reports `0`, and any error fails the command with the instrument's message, for example `-222,"Data out of range"`.
+- Health checks with `*OPC?`, which every IEEE 488.2 instrument responds to.
 - `resource: auto`, which picks the one USB instrument whose vendor and product id match `match.usb`. `match.scpi_idn` is checked against `*IDN?` on every connect, so a file can't drive the wrong instrument.
 
 ## Channel maps
@@ -30,11 +30,11 @@ The `scpi` driver talks to programmable test instruments over VISA. Bench suppli
 | `command` | action | Template with the action's argument names as placeholders |
 | `parse`, `scale`, `offset`, `unit`, `on`, `off`, `lookup` | read, write | As in the serial driver (docs/drivers/serial.md) |
 
-`unit` in a map is the unit the instrument uses, so a channel in `mA` can read a query that answers in amps. Numbers are formatted with Python format specs, for example `{value:.3f}`. Templates are checked when the file loads and a rendered command with a control character is refused.
+`unit` in a map is the unit the instrument uses, so a channel in `mA` can read a query that returns amps. Numbers are formatted with Python format specs, for example `{value:.3f}`. Templates are checked when the file loads and a rendered command with a control character is refused.
 
 ## describe()
 
-The proposal always has `device` and `match.scpi_idn`. Then, by family.
+The proposal always has `device` and `match.scpi_idn`, and the rest of the proposal depends on the instrument family.
 
 | Family | Matched by | Proposal |
 |---|---|---|
@@ -45,7 +45,7 @@ The proposal always has `device` and `match.scpi_idn`. Then, by family.
 | Generators | Rigol DG, Siglent SDG, Keysight 33500 and 33600 | channel 1 frequency read and output switch |
 | Scopes | Rigol DS, MSO and DHO, Siglent SDS | trigger status |
 
-Every proposed write and action is `suggested: true` and carries rated limits at most. The file loads read-only until a human lowers and confirms them.
+Every proposed write and action is `suggested: true` and carries rated limits at most, so the file loads read-only until a human lowers and confirms the limits.
 
 ## Setup
 
@@ -92,15 +92,15 @@ hazard: medium
 
 ## Known limitations
 
-- Binary block transfers (screenshots, waveform data) are not read. Use the `string` type for short text replies only.
+- Binary block transfers (screenshots, waveform data) are not read, so use the `string` type for short text replies only.
 - An instrument that doesn't implement `SYST:ERR?` needs `check_errors: false`, and then a refused setting passes silently.
-- After a timeout the driver reopens the VISA session before the next command, so a late reply can't be read as the next answer. Instruments that are slow to accept new sessions may take one extra timeout to recover.
+- After a timeout the driver reopens the VISA session before the next command, so a late reply can't be read as the next response. Instruments that are slow to accept new sessions may take one extra timeout to recover.
 - The first `ResourceManager('@py')` in a process can take several seconds while pyvisa-py loads its backends.
-- Supplies keep their outputs on after the host disconnects. The safe state only runs when the hub can still reach the instrument.
+- Supplies keep their outputs on after the host disconnects, and the safe state only runs when the hub can still reach the instrument.
 
 ## Hazard defaults
 
-`medium`. Supplies and loads can damage circuits and start fires. Keep `confirm-each-time` on output switches and set actions, and keep the volt and amp limits at what the circuit can take.
+The default hazard is `medium`, because supplies and loads can damage circuits and start fires. Keep `confirm-each-time` on output switches and set actions, and keep the volt and amp limits at what the circuit can take.
 
 ## Sources
 
