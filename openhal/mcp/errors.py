@@ -6,7 +6,7 @@ from `hal/devices/describe` over the hub's `/rpc` socket. When that socket can't
 REST device view gives the file name and limits, and the reason leaves the confirmation out.
 
 Tool errors for refused calls start with the registry name and number, for example
-`SCOPE_DENIED (-32003). Only a human can do this.`
+`SCOPE_DENIED (-32003). This request takes a human principal.`
 """
 
 from __future__ import annotations

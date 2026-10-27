@@ -2,10 +2,10 @@
 
 Questions cover every write channel and action: unit, min, max, rate, safe value and confirmation
 tier for channels, argument limits, requirements, a run limit and the tier for actions, plus the
-device's hazard class, the action that makes it safe and its interlocks. Each question carries a conservative
-suggestion and the reason for it. Only a human's answers are applied (the engine checks the
-principal), and only when every question is answered does the draft get a `confirmed` entry bound
-to the hash of its limits. Nothing an AI proposes can skip a question.
+device's hazard class, the action that makes the device safe and its interlocks. Each question
+carries a conservative suggestion and the reason for the suggestion. The engine checks that a human
+principal gave the answers, and the draft gets a `confirmed` entry bound to the hash of its limits
+once every question is answered. A draft an agent proposes still goes through every question.
 """
 
 from __future__ import annotations

@@ -202,7 +202,7 @@ def create_app(hub: Hub) -> FastAPI:
 
     def human_only(principal: Principal) -> None:
         if principal.kind != "human":
-            raise HTTPException(403, "Only a human can do this.")
+            raise HTTPException(403, "This request takes a human principal.")
 
     def device_or_404(device_id: str) -> None:
         if device_id not in hub.kernel.devices:

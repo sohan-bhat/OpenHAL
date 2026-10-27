@@ -199,7 +199,7 @@ REGISTRY: Final[tuple[ErrorSpec, ...]] = (
         lambda data: (
             f"This token's scope doesn't cover {data['device']}"
             if data.get("device")
-            else f"Only a human can call {data['method']}"
+            else f"Calling {data['method']} takes a human principal"
             if data.get("method")
             else "This token's scope doesn't cover this method"
         ),

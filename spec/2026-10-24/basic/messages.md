@@ -274,9 +274,9 @@ An agent tries to unlock.
 
 ```json
 → {"jsonrpc": "2.0", "id": 12, "method": "hal/unlock", "params": {"phrase": "unlock"}}
-← {"jsonrpc": "2.0", "id": 12, "error": {"code": -32003, "message": "Only a human can call hal/unlock",
+← {"jsonrpc": "2.0", "id": 12, "error": {"code": -32003, "message": "Calling hal/unlock takes a human principal",
      "data": {"name": "SCOPE_DENIED", "kernelCode": "not_permitted", "method": "hal/unlock",
-              "kernelMessage": "Only a person can call hal/unlock."}}}
+              "kernelMessage": "Calling hal/unlock takes a human principal."}}}
 ```
 
 ### hal/action

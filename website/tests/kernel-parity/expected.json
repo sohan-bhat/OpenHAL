@@ -1054,7 +1054,7 @@
       "result": {
         "status": "blocked",
         "code": "not_permitted",
-        "message": "Blocked. curing-heater is medium hazard and this client's control_low scope doesn't cover it.",
+        "message": "Blocked. curing-heater is medium hazard, which this client's control_low scope doesn't cover.",
         "wire": {
           "status": "blocked",
           "device": "curing-heater",
@@ -1067,7 +1067,7 @@
             "data": {
               "name": "SCOPE_DENIED",
               "kernelCode": "not_permitted",
-              "kernelMessage": "Blocked. curing-heater is medium hazard and this client's control_low scope doesn't cover it.",
+              "kernelMessage": "Blocked. curing-heater is medium hazard, which this client's control_low scope doesn't cover.",
               "device": "curing-heater",
               "channel": "power",
               "requested": {
@@ -1882,7 +1882,7 @@
       "result": {
         "status": "blocked",
         "code": "not_permitted",
-        "message": "Blocked. laser is high hazard and this client's control_low scope doesn't cover it.",
+        "message": "Blocked. laser is high hazard, which this client's control_low scope doesn't cover.",
         "wire": {
           "status": "blocked",
           "device": "laser",
@@ -1895,7 +1895,7 @@
             "data": {
               "name": "SCOPE_DENIED",
               "kernelCode": "not_permitted",
-              "kernelMessage": "Blocked. laser is high hazard and this client's control_low scope doesn't cover it.",
+              "kernelMessage": "Blocked. laser is high hazard, which this client's control_low scope doesn't cover.",
               "device": "laser",
               "channel": "laser_power",
               "requested": {

@@ -20,7 +20,7 @@ from openhal.client.errors import (
 )
 from openhal.client.settings import TokenSource
 
-START_HINT = "Start it with openhald (or run openhal doctor to see what is wrong)."
+START_HINT = "Start the hub with openhald, or run openhal doctor to see what is wrong."
 _ROUTE_MISSING = {"Not Found", "Method Not Allowed"}
 
 
@@ -35,7 +35,7 @@ def transport_error(url: str, exc: httpx.TransportError) -> OpenHALError:
     if isinstance(exc, httpx.ConnectError | httpx.ConnectTimeout):
         return HubNotRunning(f"The hub is not running at {url}. {START_HINT}")
     if isinstance(exc, httpx.TimeoutException):
-        return HubError(f"The hub at {url} did not answer in time. It may be busy talking to a slow device.")
+        return HubError(f"The hub at {url} did not answer in time. The hub may be busy talking to a slow device.")
     return HubError(f"Could not talk to the hub at {url} ({type(exc).__name__}).")
 
 

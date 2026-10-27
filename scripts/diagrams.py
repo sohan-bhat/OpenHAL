@@ -137,9 +137,9 @@ REDRAWS = {
 
 FLOW_TITLE = "OpenHAL flow"
 FLOW_DESC = (
-    "OpenHAL flow. An agent sends hal/write to the hub. The safety kernel checks it against the device file's "
-    "limits. An allowed command gets a grant and goes through the driver to the 3D printer, and the reading comes "
-    "back to the agent. A 300 °C nozzle is blocked with LIMIT_EXCEEDED because the limit is 260 °C."
+    "OpenHAL flow. An agent sends hal/write to the hub. The safety kernel checks the command against the device "
+    "file's limits. An allowed command gets a grant and goes through the driver to the 3D printer, and the reading "
+    "comes back to the agent. A 300 °C nozzle is blocked with LIMIT_EXCEEDED because the limit is 260 °C."
 )
 FLOW_ORDER = ["hal/action", "check", "grant", "command", "reading"]
 TOP_ROOM = 40

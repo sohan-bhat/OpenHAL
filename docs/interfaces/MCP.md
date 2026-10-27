@@ -110,7 +110,7 @@ Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)
 | `get_confirmation_status` | Status of requests that wait for a person |
 | `list_routines` | Routines with state, devices, hazard and last run |
 | `get_routine` | One routine with source and history |
-| `draft_routine` | Store a routine. It always starts disabled |
+| `draft_routine` | Store a routine. Every new routine starts disabled |
 | `run_routine_dry` | Dry run a routine step by step |
 | `enable_routine` | Ask to enable. Refused unless the owner allowed agents to enable low hazard routines |
 | `disable_routine` | Disable a routine |

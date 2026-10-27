@@ -527,7 +527,7 @@ export class Kernel {
       throw new Block("not_permitted", "Blocked. This client has a read-only token. Ask the owner for a control token.");
     }
     if (!covers(principal, hazard)) {
-      throw new Block("not_permitted", `Blocked. ${command.device} is ${hazard} hazard and this client's ${principal.scope} scope doesn't cover it.`);
+      throw new Block("not_permitted", `Blocked. ${command.device} is ${hazard} hazard, which this client's ${principal.scope} scope doesn't cover.`);
     }
     let value: unknown;
     let changes: Map<string, unknown>;
@@ -799,7 +799,7 @@ export class Kernel {
 
   confirm(requestId: string, principal: Principal): Decision {
     const request = this.requests.get(requestId);
-    if (principal.kind !== "human") throw new KernelError("permission", "Only a human can approve a request.");
+    if (principal.kind !== "human") throw new KernelError("permission", "Approving a request takes a human principal.");
     this.expire();
     if (!request || request.status !== "pending") {
       throw new KernelError("lookup", `Request ${requestId} is ${request ? request.status : "missing"}, so it can't be approved.`);
@@ -825,7 +825,7 @@ export class Kernel {
   }
 
   reject(requestId: string, principal: Principal): Request {
-    if (principal.kind !== "human") throw new KernelError("permission", "Only a human can reject a request.");
+    if (principal.kind !== "human") throw new KernelError("permission", "Rejecting a request takes a human principal.");
     const request = this.requests.get(requestId);
     if (!request || request.status !== "pending") throw new KernelError("lookup", `Request ${requestId} is not pending.`);
     request.status = "rejected";
@@ -930,7 +930,7 @@ export class Kernel {
   }
 
   unlock(principal: Principal, phrase: string): void {
-    if (principal.kind !== "human") throw new KernelError("permission", "Only a human can unlock after a stop.");
+    if (principal.kind !== "human") throw new KernelError("permission", "Unlocking the hub after a stop takes a human principal.");
     if (phrase.trim().toLowerCase() !== UNLOCK_PHRASE) throw new KernelError("value", `Type ${UNLOCK_PHRASE} to confirm.`);
     this.stopped = false;
     this.stopReason = null;

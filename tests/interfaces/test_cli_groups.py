@@ -186,7 +186,7 @@ def test_doctor(isolated_env: Path, split: SyncHub, monkeypatch: pytest.MonkeyPa
     assert "chmod 600" in out
     monkeypatch.setattr(_common, "TRANSPORT", None)
     code, out = run("--url", "http://127.0.0.1:9", "doctor")
-    assert "Start it with openhald" in out
+    assert "Start the hub with openhald" in out
 
 
 def test_mcp_needs_an_agent_token(isolated_env: Path) -> None:

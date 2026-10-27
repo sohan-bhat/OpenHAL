@@ -476,8 +476,8 @@ class Kernel:
         if not principal.covers(hazard):
             raise Block(
                 "not_permitted",
-                f"Blocked. {command.device} is {hazard} hazard and this client's {principal.scope} scope "
-                "doesn't cover it.",
+                f"Blocked. {command.device} is {hazard} hazard, which this client's {principal.scope} scope "
+                "doesn't cover.",
             )
         if isinstance(command, Write):
             assert spec is not None
@@ -609,7 +609,7 @@ class Kernel:
     def approve_routine(self, principal: Principal, device_id: str, routine: str, sha256: str) -> Approval:
         """Create a signed approval for a routine on a high hazard device. Humans only."""
         if principal.kind != "human":
-            raise PermissionError("Only a human can approve a routine for a high hazard device.")
+            raise PermissionError("Approving a routine for a high hazard device takes a human principal.")
         at = dt.datetime.now(dt.UTC).replace(microsecond=0)
         signature = self._sign(device_id, routine, sha256, principal.name, at.isoformat())
         self.audit.append(
@@ -983,7 +983,7 @@ class Kernel:
         request = self.queue.get(request_id)
         if principal.kind != "human":
             self.audit.append("confirm", principal.label, status="blocked", code="not_permitted", request_id=request_id)
-            raise PermissionError("Only a human can approve a request.")
+            raise PermissionError("Approving a request takes a human principal.")
         self.queue.expire(self.clock())
         if request is None or request.status != "pending":
             status = "missing" if request is None else request.status
@@ -1037,7 +1037,7 @@ class Kernel:
     def reject(self, request_id: str, principal: Principal, reason: str = "") -> Request:
         """A human rejects a queued request."""
         if principal.kind != "human":
-            raise PermissionError("Only a human can reject a request.")
+            raise PermissionError("Rejecting a request takes a human principal.")
         request = self.queue.get(request_id)
         if request is None or request.status != "pending":
             raise LookupError(f"Request {request_id} is not pending.")
@@ -1279,7 +1279,7 @@ class Kernel:
         """A human lifts the stop lock by typing the unlock phrase."""
         if principal.kind != "human":
             self.audit.append("unlock", principal.label, status="blocked", code="not_permitted")
-            raise PermissionError("Only a human can unlock after a stop.")
+            raise PermissionError("Unlocking the hub after a stop takes a human principal.")
         if phrase.strip().lower() != UNLOCK_PHRASE:
             self.audit.append("unlock", principal.label, status="blocked", code="bad_request")
             raise ValueError(f"Type {UNLOCK_PHRASE} to confirm.")

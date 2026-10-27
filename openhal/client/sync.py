@@ -72,7 +72,7 @@ class Client:
         return self.call(calls.whoami())
 
     def devices(self) -> list[m.DeviceSummary]:
-        """Every device the hub knows, with its driver, hazard level and whether it takes commands."""
+        """Every device the hub knows, with its driver, its hazard level and whether the device takes commands."""
         return self.call(calls.devices())
 
     def device(self, device_id: str) -> m.DeviceView:
@@ -103,7 +103,7 @@ class Client:
         return self.call(calls.action(device, action, {**(args or {}), **kwargs}))
 
     def dry_run(self, commands: Iterable[Command]) -> list[m.Decision]:
-        """Evaluate commands in order without running them. Nothing reaches a driver."""
+        """Evaluate commands in order as a dry run. No command reaches a driver."""
         return self.call(calls.dry_run(commands))
 
     def tighten(
@@ -135,7 +135,7 @@ class Client:
         return self.call(calls.confirmation(request_id))
 
     def approve(self, request_id: str) -> m.Decision:
-        """Approve a queued request. Needs a human token. The kernel checks it again first."""
+        """Approve a queued request with a human token. The kernel runs every check again first."""
         return self.call(calls.approve(request_id))
 
     def reject(self, request_id: str, reason: str = "") -> m.ConfirmationRequest:
@@ -159,7 +159,7 @@ class Client:
         return self.call(calls.verify_audit())
 
     def drivers(self) -> list[m.DriverInfo]:
-        """The drivers the hub knows, whether each is installed and the protocols it speaks."""
+        """The drivers the hub knows, with each driver's protocols and whether the driver is installed."""
         return self.call(calls.drivers())
 
     def pair(self, code: str) -> m.OkResult:
@@ -201,19 +201,19 @@ class Client:
         return self.call(calls.unknown_devices())
 
     def routines(self) -> list[m.RoutineSummary]:
-        """Every stored routine with its devices, triggers and whether it is enabled."""
+        """Every stored routine with its devices, its triggers and whether the routine is enabled."""
         return self.call(calls.routines())
 
     def routine(self, routine_id: str) -> m.Routine:
-        """One routine with its source and who drafted and enabled it."""
+        """One routine with its source and who drafted and enabled the routine."""
         return self.call(calls.routine(routine_id))
 
     def create_routine(self, routine_id: str, source: str, *, kind: str = "yaml") -> m.Routine:
-        """Store a routine. It always starts disabled."""
+        """Store a routine. Every new routine starts disabled."""
         return self.call(calls.create_routine(routine_id, source, kind))
 
     def routine_dry_run(self, routine_id: str) -> m.RoutineDryRun:
-        """Evaluate every step of a routine against the kernel without running it."""
+        """Evaluate every step of a routine against the kernel without running the routine."""
         return self.call(calls.routine_dry_run(routine_id))
 
     def enable_routine(self, routine_id: str) -> m.Routine:
@@ -221,7 +221,7 @@ class Client:
         return self.call(calls.enable_routine(routine_id))
 
     def disable_routine(self, routine_id: str) -> m.Routine:
-        """Turn a routine off. Any token but a read scoped agent can."""
+        """Turn a routine off. Every token may turn a routine off except a read scoped agent's token."""
         return self.call(calls.disable_routine(routine_id))
 
     def run_routine(self, routine_id: str) -> m.Run:
@@ -257,7 +257,7 @@ class Client:
         return self.call(calls.writer_session(session_id))
 
     def propose(self, session_id: str, draft_yaml: str) -> m.WriterSession:
-        """Store a draft device file. The hub marks every limit in it as suggested."""
+        """Store a draft device file. The hub marks every limit in the draft as suggested."""
         return self.call(calls.propose(session_id, draft_yaml))
 
     def interview(self, session_id: str) -> m.Interview:
@@ -285,7 +285,7 @@ class Client:
         return self.call(calls.create_token(name, kind, scope))
 
     def revoke_token(self, token_id: str) -> m.OkResult:
-        """Revoke a token so the hub stops accepting it. Needs a human token."""
+        """Revoke a token so the hub refuses the token from then on. Revoking needs a human token."""
         return self.call(calls.revoke_token(token_id))
 
     def new_pairing_code(self) -> m.PairingCode:
@@ -304,7 +304,7 @@ def connect(
 ) -> Client:
     """Open a blocking client to the hub.
 
-    With `check` it calls `/v1/whoami` first, so a wrong address or token fails here.
+    With `check`, the client calls `/v1/whoami` first, so a wrong address or token fails here.
     """
     client = Client(url, token, home=home, timeout=timeout, transport=transport)
     if check:
