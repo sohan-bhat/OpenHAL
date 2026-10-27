@@ -121,6 +121,25 @@ test.describe("page weight", () => {
     }
   });
 
+  test("every page uses the fonts it preloads", async ({ page }) => {
+    test.setTimeout(120_000);
+    for (const { path } of Object.values(BUDGETS)) {
+      await page.goto(path);
+      const { preloads, loaded } = await page.evaluate(async () => {
+        await document.fonts.ready;
+        return {
+          preloads: [...document.querySelectorAll<HTMLLinkElement>('link[rel="preload"][as="font"]')].map((link) => link.getAttribute("href") ?? ""),
+          loaded: [...document.fonts].filter((face) => face.status === "loaded").map((face) => `${face.family.replace(/["']/g, "")} ${face.style}`),
+        };
+      });
+      for (const href of preloads) {
+        const face = manifest.faces.find((item) => href.includes(item.file.replace(/\.woff2$/, "")));
+        expect(face, `${path} preloads ${href}`).toBeDefined();
+        expect(loaded, `${path} preloads ${href} but shows no ${face!.family} ${face!.style}`).toContain(`${face!.family} ${face!.style}`);
+      }
+    }
+  });
+
   test("the font subsets hold every character the build shows that the full faces have", () => {
     const shown = siteCodepoints(dist).map((code: string) => parseInt(code, 16));
     for (const face of manifest.faces) {

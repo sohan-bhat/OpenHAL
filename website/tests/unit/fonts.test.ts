@@ -58,9 +58,11 @@ describe("the website's fonts", () => {
     }
   });
 
-  it("preload only the text face", () => {
-    const preloads = [...base.matchAll(/<link rel="preload"[^>]*as="font"[^>]*>/g)];
-    expect(preloads).toHaveLength(1);
+  it("preload the subsets, the mono face only where a page asks for it", () => {
+    const preloads = [...base.matchAll(/<link rel="preload"[^>]*as="font"[^>]*>/g)].map((match) => match[0]);
+    expect(preloads).toHaveLength(2);
     expect(base).toContain('from "../fonts/atkinson-hyperlegible-next-normal.woff2?url"');
+    expect(base).toContain('from "../fonts/atkinson-hyperlegible-mono-normal.woff2?url"');
+    expect(base).toContain("{mono && <link rel=\"preload\" href={atkinsonMono}");
   });
 });

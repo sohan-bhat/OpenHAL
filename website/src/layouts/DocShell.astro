@@ -18,9 +18,10 @@ interface Props {
   wide?: boolean;
   pager?: boolean;
   number?: string;
+  mono?: boolean;
 }
 
-const { title, description, repo, headings = [], sidebar, section, canonical, noindex, wide = false, pager = true, number } = Astro.props;
+const { title, description, repo, headings = [], sidebar, section, canonical, noindex, wide = false, pager = true, number, mono = true } = Astro.props;
 const path = Astro.url.pathname;
 const flat = sidebar.flatMap((group) => group.items).filter((item) => item.href);
 const index = flat.findIndex((item) => item.href === path);
@@ -29,7 +30,7 @@ const next = pager && index !== -1 && index < flat.length - 1 ? flat[index + 1] 
 const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 ---
 
-<Base title={title} description={description} canonical={canonical} noindex={noindex}>
+<Base title={title} description={description} canonical={canonical} noindex={noindex} mono={mono}>
   <div class:list={["wrap", "shell", { wide }]}>
     <aside class="sidebar" aria-label={section} data-pagefind-ignore="all">
       <nav class="side-desktop" aria-label={`${section} pages`}>
