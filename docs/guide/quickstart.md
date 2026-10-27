@@ -1,6 +1,6 @@
 # Quickstart
 
-This guide runs the demo, an agent keeping an eye on a simulated 3D print, then a [Hub](glossary:hub) you control with the simulated Arduino plant waterer. Nothing in it touches real hardware.
+This guide runs the demo, an agent keeping an eye on a simulated 3D print, then a [Hub](glossary:hub) you control with the simulated Arduino plant waterer. Nothing in this guide touches real hardware.
 
 You need Python 3.12 or newer and [uv](https://docs.astral.sh/uv/).
 

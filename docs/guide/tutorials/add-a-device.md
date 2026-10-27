@@ -1,6 +1,6 @@
 # Add a device
 
-Most devices need a [Device File](glossary:device-file) and no new code. This tutorial creates one, validates it, confirms it and shares it. The [device file format](../../../spec/SPEC.md) defines every field.
+Most devices need a [Device File](glossary:device-file) and no new code. This tutorial creates a device file, validates the file, confirms the limits and shares the file. The [device file format](../../../spec/SPEC.md) defines every field.
 
 ## Pick a driver
 
@@ -36,9 +36,9 @@ provenance:
 - Every number channel has a unit.
 - Every number channel you can change has `min` and `max`.
 - Every file has a `safe_state`.
-- A file never holds a password or token. It names an environment variable, as in `token_env: HA_TOKEN`.
+- A file never holds a password or token, and names an environment variable instead, as in `token_env: HA_TOKEN`.
 
-## Validate it
+## Validate the file
 
 ```sh tested
 $ uv run openhal file validate led-strip.hal.yaml
@@ -49,7 +49,7 @@ The [playground](/spec/playground/) runs the same schema in the browser.
 
 ## Confirm the limits
 
-Only a person may confirm limits. Read each limit before you type `confirm`.
+A person confirms the limits at a terminal. Read each limit before you type `confirm`.
 
 ```sh tested
 $ uv run openhal file confirm led-strip.hal.yaml --by owner
