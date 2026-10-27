@@ -1,6 +1,6 @@
 # Hardware test plan, matter driver
 
-This plan checks the matter driver against a real Matter Server and a real Matter device. It was made for an Eve Energy plug with the example file, on the Home Assistant Matter Server add-on. matterjs-server and a standalone python-matter-server work the same way.
+This plan checks the matter driver against a real Matter Server and a real Matter device. The plan was made for an Eve Energy plug with the example file, on the Home Assistant Matter Server add-on. matterjs-server and a standalone python-matter-server work the same way.
 
 Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Plug nothing into the plug.
 
@@ -13,7 +13,7 @@ Run every step from the repository checkout. [README.md](README.md) has the setu
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|set CHANNEL VALUE|action NAME [ARG=VALUE ...]|stop"""
@@ -115,7 +115,7 @@ Expected. The first prints the server URL and node. The read shows `active_power
 
 Unplug the plug from the wall, wait until the server's frontend shows it unavailable, and run the read again.
 
-Expected. The connect works, then the reads fail with `DriverError` saying the node is unavailable. Plug it back in, wait until it shows available, and read again. It reads normally.
+Expected. The connect works, then the reads fail with `DriverError` saying the node is unavailable. Plug it back in, wait until it shows available, and read again. The device reads normally.
 
 ### 6. Server loss
 
@@ -133,7 +133,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-plug.hal.yaml
 ```
 
-It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-plug.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-plug.hal.yaml` then says `writable`.
 
 ### 8. The smallest safe action
 

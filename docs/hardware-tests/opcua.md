@@ -1,6 +1,6 @@
 # Hardware test plan for the opcua driver
 
-This plan checks the OPC UA driver against a real OPC UA server, such as a PLC. It starts with read-only checks and ends with the smallest safe change. Use a variable that drives nothing physical for the first change, or a machine that is safe to run with its own e-stop in reach. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the OPC UA driver against a real OPC UA server, such as a PLC. The plan starts with read-only checks and ends with the smallest safe change. Use a variable that drives nothing physical for the first change, or a machine that is safe to run with its own e-stop in reach. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -11,7 +11,7 @@ This plan checks the OPC UA driver against a real OPC UA server, such as a PLC. 
 
 ## The read-only probe
 
-Save this as `probe.py`. It connects, identifies the server and reads every channel. It holds no kernel grant, so it can't change anything.
+Save this as `probe.py`. The probe connects, identifies the server and reads every channel. The probe holds no kernel grant, so the probe can't change anything.
 
 ```python
 import asyncio, json, sys
@@ -38,7 +38,7 @@ async def main(path):
 asyncio.run(main(sys.argv[1]))
 ```
 
-Connecting opens a session and reads node classes, data types, access levels and properties. It changes nothing.
+Connecting opens a session and reads node classes, data types, access levels and properties, and changes nothing.
 
 ## Step 1. Discovery (read-only)
 

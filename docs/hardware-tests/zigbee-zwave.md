@@ -1,6 +1,6 @@
 # Hardware test plan, zigbee-zwave driver
 
-This plan checks the zigbee-zwave driver against a real Zigbee2MQTT install and a real zwave-js-server, using the two example files. It was made for an IKEA TRADFRI bulb on Zigbee2MQTT and a Zooz ZEN04 plug on Z-Wave JS UI. Run the Zigbee steps, the Z-Wave steps or both.
+This plan checks the zigbee-zwave driver against a real Zigbee2MQTT install and a real zwave-js-server, using the two example files. The plan was made for an IKEA TRADFRI bulb on Zigbee2MQTT and a Zooz ZEN04 plug on Z-Wave JS UI. Run the Zigbee steps, the Z-Wave steps or both.
 
 Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Plug nothing into the Z-Wave plug.
 
@@ -15,7 +15,7 @@ Run every step from the repository checkout. [README.md](README.md) has the setu
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|set CHANNEL VALUE|action NAME [ARG=VALUE ...]|stop"""
@@ -125,7 +125,7 @@ Expected. `power` close to `0.0 W`, `energy` matching Z-Wave JS UI's meter value
 
 Stop the broker (`sudo systemctl stop mosquitto`) and run step 3, then stop Z-Wave JS UI's server and run step 5.
 
-Expected. Each fails with `DriverError` saying the broker or zwave-js-server could not be reached. Start them again and run steps 3 and 5. They read normally.
+Expected. Each fails with `DriverError` saying the broker or zwave-js-server could not be reached. Start them again and run steps 3 and 5. Both devices read normally.
 
 ### 7. An offline bulb
 

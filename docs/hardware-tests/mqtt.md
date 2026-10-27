@@ -1,6 +1,6 @@
 # Hardware test plan, mqtt driver
 
-This plan checks the mqtt driver against a real broker and a real device. It was written for a Tasmota smart plug with nothing plugged into it and a Mosquitto broker on the local network. Any device described in a device file works the same way.
+This plan checks the mqtt driver against a real broker and a real device. The plan was written for a Tasmota smart plug with nothing plugged into it and a Mosquitto broker on the local network. Any device described in a device file works the same way.
 
 Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Never plug a load into the device while you run the write steps.
 
@@ -15,7 +15,7 @@ Run every step from the repository checkout. [README.md](README.md) has the setu
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|write CHANNEL VALUE|stop"""
@@ -104,7 +104,7 @@ Expected. `relay = False` (or `True`) from the retained state. `power`, `voltage
 
 Stop the broker (`sudo systemctl stop mosquitto`), then run step 4 again.
 
-Expected. `DriverError` saying the broker could not be reached. Start the broker again and run step 4. It reads normally.
+Expected. `DriverError` saying the broker could not be reached. Start the broker again and run step 4. The device reads normally.
 
 ### 6. Describe
 
@@ -128,7 +128,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-plug.hal.yaml
 ```
 
-It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-plug.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-plug.hal.yaml` then says `writable`.
 
 ### 8. The smallest safe write
 

@@ -1,6 +1,6 @@
 # Hardware test plan for the scpi driver
 
-This plan checks the scpi driver on a real bench power supply. Another SCPI instrument works for steps 1 to 4 with its own queries. It starts with read-only checks and ends with the smallest safe writes. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the scpi driver on a real bench power supply. Another SCPI instrument works for steps 1 to 4 with its own queries. The plan starts with read-only checks and ends with the smallest safe writes. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -10,7 +10,7 @@ This plan checks the scpi driver on a real bench power supply. Another SCPI inst
 
 ## The read-only probe
 
-Save this as `probe.py`. It connects, sends `*IDN?`, prints the driver's proposal and reads every channel. It holds no kernel grant, so it can't change the instrument. Connecting also drains `SYST:ERR?`, which only empties the error queue.
+Save this as `probe.py`. The probe connects, sends `*IDN?`, prints the driver's proposal and reads every channel. The probe holds no kernel grant, so the probe can't change the instrument. Connecting also drains `SYST:ERR?`, which only empties the error queue.
 
 ```python
 import asyncio, json, sys
@@ -100,7 +100,7 @@ Expected. `bench-psu` is connected and writable.
 
 ## Step 6. The smallest safe write, 1 V at 10 mA
 
-The example's action and output switch are `confirm-each-time`. A command sent with your own human token counts as your confirmation, so this step sends both as an agent would and approves each one. That also tests the confirmation queue on the real instrument. `openhal init` made an agent token with the read scope only, so create one with `control_medium` in the test home, then send the setting with it.
+The example's action and output switch are `confirm-each-time`. A command sent with your own human token counts as your confirmation, so this step sends both as an agent would and approves each one, which also tests the confirmation queue on the real instrument. `openhal init` made an agent token with the read scope only, so create one with `control_medium` in the test home, then send the setting with it.
 
 ```
 uv run openhal token create --name hwtest-agent --scope control_medium --json | uv run python -c "import json, sys; print(json.load(sys.stdin)['token'])" > "$OPENHAL_HOME/hwtest-agent.token"

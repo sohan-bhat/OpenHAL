@@ -4,7 +4,7 @@ Every driver passes its conformance suite against a simulator. These plans are h
 
 ## Order
 
-1. **The plant waterer first.** It is the Arduino example and the cheapest complete rig. It runs the whole path, from discovery and a read-only file to confirmation, a blocked command, an interlock, an action, a stop and the board's own fallback, and its pump stays unplugged until the last step.
+1. **The plant waterer first.** The plant waterer is the Arduino example and the cheapest complete rig. The plant waterer plan runs the whole path, from discovery and a read-only file to confirmation, a blocked command, an interlock, an action, a stop and the board's own fallback, and its pump stays unplugged until the last step.
 2. **Read-only plans next.** These drivers can't change their device.
 3. **Low hazard plans**, ordered by what the smallest change moves. An LED or a register first, then lights and relays with nothing plugged in, then a camera's pan.
 4. **Medium hazard plans.** Low voltage first, then relays that can switch mains with no load on them, then motors, heaters and mounts.
@@ -66,7 +66,7 @@ Each plan names its extra in place of `serial`. `uv sync` installs only the extr
 
 ### On a Raspberry Pi
 
-Use Raspberry Pi OS Trixie or later. Its Python 3.13 meets OpenHAL's minimum of 3.12, and the camera's libcamera bindings and lgpio come from apt for that system Python. Make the checkout's environment on the system Python, so it sees them.
+Use Raspberry Pi OS Trixie or later. Trixie's Python 3.13 meets OpenHAL's minimum of 3.12, and the camera's libcamera bindings and lgpio come from apt for that system Python. Make the checkout's environment on the system Python, so the environment sees the bindings.
 
 ```
 sudo apt install -y python3-dev python3-lgpio python3-picamera2 i2c-tools

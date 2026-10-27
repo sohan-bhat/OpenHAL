@@ -1,6 +1,6 @@
 # Hardware test plan for the grbl driver
 
-This plan checks the GRBL driver on a real machine. It starts with read-only checks and ends with the smallest safe moves. Stay at the machine for every step that changes something with a hand on the physical emergency stop. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the GRBL driver on a real machine. The plan starts with read-only checks and ends with the smallest safe moves. Stay at the machine for every step that changes something with a hand on the physical emergency stop. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -11,7 +11,7 @@ This plan checks the GRBL driver on a real machine. It starts with read-only che
 
 ## The read-only probe
 
-Save this as `probe.py`. It connects, identifies the firmware and reads every channel. It holds no kernel grant, so it can't change anything.
+Save this as `probe.py`. The probe connects, identifies the firmware and reads every channel. The probe holds no kernel grant, so the probe can't change anything.
 
 ```python
 import asyncio, json, sys
@@ -79,7 +79,7 @@ read spindle_speed 0.0 rpm
 describe {"device": {"name": "GRBL 1.1h controller"}, ...
 ```
 
-If homing is enabled the state is `alarm` after power-up. That is correct. `max_spindle` matches `$30` in your sender. Positions match your sender's machine coordinates. Paste the full output into the report.
+If homing is enabled the state is `alarm` after power-up, which is correct. `max_spindle` matches `$30` in your sender. Positions match your sender's machine coordinates. Paste the full output into the report.
 
 ## Step 4. Status during a manual jog (read-only for OpenHAL)
 
@@ -120,7 +120,7 @@ uv run openhal action router.resume
 uv run openhal read router.state
 ```
 
-Expected. `hold` answers `done` and the state reads `hold`, because GRBL 1.1 enters Hold:0 even when nothing moves. `resume` answers `done` and the state is `idle` again. If the state stays `idle` after the hold, `resume` is blocked with `interlock`, because it needs `state == hold`. That is safe, but write down which one you saw, since the simulator assumes the state stays `idle`.
+Expected. `hold` answers `done` and the state reads `hold`, because GRBL 1.1 enters Hold:0 even when nothing moves. `resume` answers `done` and the state is `idle` again. If the state stays `idle` after the hold, `resume` is blocked with `interlock`, because `resume` needs `state == hold`. Either outcome is safe, but write down which one you saw, since the simulator assumes the state stays `idle`.
 
 ## Step 8. The smallest move, a 1 mm jog with Z clear
 
@@ -161,7 +161,7 @@ Expected. The spindle spins up and the read says the speed you asked for. After 
 
 Open a second terminal in the checkout and run `export OPENHAL_HOME="$PWD/openhal-test"` there, so the stop can go in while the machine moves.
 
-In the first terminal, start a 20 mm jog. It takes 12 s at 100 mm/min.
+In the first terminal, start a 20 mm jog. The jog takes 12 s at 100 mm/min.
 
 ```
 uv run openhal action router.jog x="20 mm" y="0 mm" z="0 mm" feed="100 mm/min"

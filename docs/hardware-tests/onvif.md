@@ -1,6 +1,6 @@
 # Hardware test plan, onvif driver
 
-This plan checks the onvif driver against a real ONVIF PTZ camera. It was made for a Hikvision PTZ camera with the example file. Any ONVIF Profile S camera works the same way, and the PTZ steps need a PTZ camera.
+This plan checks the onvif driver against a real ONVIF PTZ camera. The plan was made for a Hikvision PTZ camera with the example file. Any ONVIF Profile S camera works the same way, and the PTZ steps need a PTZ camera.
 
 Run every step from the repository checkout, on a computer on the same network as the camera. [README.md](README.md) has the setup and rules every plan shares. Keep people and objects out of the camera's swing.
 
@@ -15,7 +15,7 @@ Run every step from the repository checkout, on a computer on the same network a
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|set CHANNEL VALUE|action NAME [ARG=VALUE ...]|stop"""
@@ -122,7 +122,7 @@ Expected. The proposal lists pan, tilt, zoom, move, stop, home and goto_preset w
 
 Run step 3 with a wrong password (`CAMERA_PASSWORD=wrong uv run python hwtest.py my-camera.hal.yaml read`), then unplug the camera's network cable and run it again.
 
-Expected. The first fails with `DriverError` saying the camera refused the credentials. The second fails with `DriverError` saying the camera could not be reached, or `TimeoutError`. Plug it back in and run step 3. It reads normally.
+Expected. The first fails with `DriverError` saying the camera refused the credentials. The second fails with `DriverError` saying the camera could not be reached, or `TimeoutError`. Plug it back in and run step 3. The device reads normally.
 
 ## Steps that change the device
 
@@ -134,7 +134,7 @@ Read the file and decide the limits are right for where the camera hangs. Then c
 uv run openhal file confirm my-camera.hal.yaml
 ```
 
-It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-camera.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-camera.hal.yaml` then says `writable`.
 
 ### 8. The smallest safe action
 

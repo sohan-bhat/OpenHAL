@@ -1,6 +1,6 @@
 # Hardware test plan for the indi driver
 
-This plan checks the INDI driver on a real mount, and optionally a focuser. It starts with read-only checks and ends with the smallest safe moves. Stay at the mount for every step that moves it, with its power switch in reach. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the INDI driver on a real mount, and optionally a focuser. The plan starts with read-only checks and ends with the smallest safe moves. Stay at the mount for every step that moves it, with its power switch in reach. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -11,7 +11,7 @@ This plan checks the INDI driver on a real mount, and optionally a focuser. It s
 
 ## The read-only probe
 
-Save this as `probe.py`. It connects, identifies the device and reads every channel. It holds no kernel grant, so it can't change anything.
+Save this as `probe.py`. The probe connects, identifies the device and reads every channel. The probe holds no kernel grant, so the probe can't change anything.
 
 ```python
 import asyncio, json, sys

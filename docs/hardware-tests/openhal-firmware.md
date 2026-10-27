@@ -1,6 +1,6 @@
 # Hardware test plan for the openhal-firmware driver
 
-This plan checks the openhal-firmware driver and the OpenHAL Arduino library on a real board, with the library's `LedStrip` example and its device file from the starter library. It covers what the plant waterer plan doesn't, a control channel with a range and a rate, a library file and a lost USB link. Run [the plant waterer plan](../../examples/plant-waterer/TEST-PLAN.md) first, since it checks discovery, actions and the board's own fallback. [README.md](README.md) has the setup and rules every plan shares. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists.
+This plan checks the openhal-firmware driver and the OpenHAL Arduino library on a real board, with the library's `LedStrip` example and its device file from the starter library. The plan covers what the plant waterer plan doesn't, a control channel with a range and a rate, a library file and a lost USB link. Run [the plant waterer plan](../../examples/plant-waterer/TEST-PLAN.md) first, since that plan checks discovery, actions and the board's own fallback. [README.md](README.md) has the setup and rules every plan shares. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists.
 
 ## What you need
 
@@ -122,7 +122,7 @@ Expected. The stop reports `openhal-led-strip  safe`, the LED goes off, the read
 
 ### 10. The board falls safe on its own
 
-The sketch turns the LED off when the hub's heartbeats stop for 5 s. This kills the hub with SIGKILL, so it can't send anything on its way out.
+The sketch turns the LED off when the hub's heartbeats stop for 5 s. This step kills the hub with SIGKILL, so the hub sends nothing on its way out.
 
 ```
 uv run openhal write openhal-led-strip.brightness "30 %"

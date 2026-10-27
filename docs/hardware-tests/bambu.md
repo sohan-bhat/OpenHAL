@@ -1,6 +1,6 @@
 # Hardware test plan, bambu driver
 
-This plan checks the bambu driver against a real Bambu Lab printer on the local network. It was made for a P1S with the example file. X1, P1 and A1 printers work the same way. Read the local access status in docs/drivers/bambu.md first. The owner reviewed the Bambu Lab terms and approved the driver on 2026-10-25 (DECISIONS.md). It stays on the LAN and never contacts Bambu Cloud.
+This plan checks the bambu driver against a real Bambu Lab printer on the local network. The plan was made for a P1S with the example file. X1, P1 and A1 printers work the same way. Read the local access status in docs/drivers/bambu.md first. The owner reviewed the Bambu Lab terms and approved the driver on 2026-10-25 (DECISIONS.md). The driver stays on the LAN and never contacts Bambu Cloud.
 
 Run every step from the repository checkout, on a computer on the same network as the printer. [README.md](README.md) has the setup and rules every plan shares. Stay next to the printer during the steps that change anything.
 
@@ -16,7 +16,7 @@ Run every step from the repository checkout, on a computer on the same network a
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|set CHANNEL VALUE|action NAME [ARG=VALUE ...]|stop"""
@@ -135,7 +135,7 @@ Expected. `DriverError` saying the certificate's fingerprint is not the pinned o
 
 Run step 5, turn the printer's Wi-Fi off, and run step 5 again.
 
-Expected. The second run fails with `TimeoutError` or `DriverError` saying the printer did not answer or could not be reached. Turn Wi-Fi back on, wait for the printer to show its address, and run step 5. It reads normally.
+Expected. The second run fails with `TimeoutError` or `DriverError` saying the printer did not answer or could not be reached. Turn Wi-Fi back on, wait for the printer to show its address, and run step 5. The device reads normally.
 
 ## Steps that change the device
 
@@ -147,7 +147,7 @@ Read the file and decide the limits are right. Then confirm them yourself.
 uv run openhal file confirm my-printer.hal.yaml
 ```
 
-It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-printer.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-printer.hal.yaml` then says `writable`.
 
 ### 10. The smallest safe change
 

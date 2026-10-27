@@ -1,6 +1,6 @@
 # Hardware test plan, can driver
 
-This plan checks the can driver against a real CAN bus. It was made for a Linux computer (a Raspberry Pi works) with a USB CAN adapter and a VESC motor controller, using the example file. Any node described in a device file works the same way.
+This plan checks the can driver against a real CAN bus. The plan was made for a Linux computer (a Raspberry Pi works) with a USB CAN adapter and a VESC motor controller, using the example file. Any node described in a device file works the same way.
 
 Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Take the load off the motor, or remove the motor, before the steps that change anything.
 
@@ -15,7 +15,7 @@ Run every step from the repository checkout. [README.md](README.md) has the setu
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|set CHANNEL VALUE|action NAME [ARG=VALUE ...]|stop"""
@@ -131,7 +131,7 @@ Expected. Proposed read channels `frame_901`, `frame_1001` and `frame_1b01`, eac
 
 Run `sudo ip link set can0 down`, then run step 5 again.
 
-Expected. The connect fails with `DriverError` and a hint to bring the interface up, or the reads fail with `DriverError` saying the bus failed. Bring the interface up again with step 1 and run step 5. It reads normally.
+Expected. The connect fails with `DriverError` and a hint to bring the interface up, or the reads fail with `DriverError` saying the bus failed. Bring the interface up again with step 1 and run step 5. The device reads normally.
 
 ## Steps that change the device
 
@@ -145,7 +145,7 @@ Read the file and decide the limits and the safe state are right for your motor.
 uv run openhal file confirm my-vesc.hal.yaml
 ```
 
-It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-vesc.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-vesc.hal.yaml` then says `writable`.
 
 ### 9. The smallest safe frame
 

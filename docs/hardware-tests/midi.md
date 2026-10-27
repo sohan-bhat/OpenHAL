@@ -1,6 +1,6 @@
 # Hardware test plan, midi driver
 
-This plan checks the midi driver against a real USB MIDI controller. It was written for an Akai LPD8, and any class-compliant controller with knobs, pads and pad LEDs works the same way. MIDI writes only change LEDs and parameters on the controller, so the write steps are safe on any controller that isn't wired to something physical.
+This plan checks the midi driver against a real USB MIDI controller. The plan was written for an Akai LPD8, and any class-compliant controller with knobs, pads and pad LEDs works the same way. MIDI writes only change LEDs and parameters on the controller, so the write steps are safe on any controller that isn't wired to something physical.
 
 Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Close any music software that has the controller open, since some systems give a port to one program at a time.
 
@@ -13,7 +13,7 @@ Run every step from the repository checkout. [README.md](README.md) has the setu
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|write CHANNEL VALUE|stop"""
@@ -134,7 +134,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-pads.hal.yaml
 ```
 
-It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-pads.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-pads.hal.yaml` then says `writable`.
 
 ### 7. The smallest safe write
 

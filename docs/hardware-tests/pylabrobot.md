@@ -1,6 +1,6 @@
 # Hardware test plan for the pylabrobot driver
 
-This plan checks the PyLabRobot driver on a real liquid handler. It starts with checks that move nothing and ends with the smallest safe motions, with water only. Close the cover, keep the instrument's own stop within reach, and watch every motion. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the PyLabRobot driver on a real liquid handler. The plan starts with checks that move nothing and ends with the smallest safe motions, with water only. Close the cover, keep the instrument's own stop within reach, and watch every motion. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -10,7 +10,7 @@ This plan checks the PyLabRobot driver on a real liquid handler. It starts with 
 
 ## The probe
 
-Save this as `probe.py`. It connects, builds the deck, identifies the setup and reads every channel. It holds no kernel grant, so it can't run any action, and connecting moves nothing.
+Save this as `probe.py`. The probe connects, builds the deck, identifies the setup and reads every channel. The probe holds no kernel grant, so the probe can't run any action, and connecting moves nothing.
 
 ```python
 import asyncio, json, sys

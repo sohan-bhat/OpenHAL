@@ -1,6 +1,6 @@
 # Hardware test plan, knx driver
 
-This plan checks the knx driver against a real KNX installation through a KNXnet/IP interface. It was made for the example file, a room with a dimmer actuator, a thermostat and a window contact. Change the group addresses to the ones in your ETS project.
+This plan checks the knx driver against a real KNX installation through a KNXnet/IP interface. The plan was made for the example file, a room with a dimmer actuator, a thermostat and a window contact. Change the group addresses to the ones in your ETS project.
 
 Run every step from the repository checkout, on a computer on the same network as the interface. [README.md](README.md) has the setup and rules every plan shares. Ask the installation's owner before you change anything on the bus.
 
@@ -13,7 +13,7 @@ Run every step from the repository checkout, on a computer on the same network a
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|set CHANNEL VALUE|action NAME [ARG=VALUE ...]|stop"""
@@ -110,7 +110,7 @@ Expected. `ceiling_light` follows the switch.
 
 Unplug the interface's network cable and run step 3.
 
-Expected. `DriverError` or `TimeoutError` saying the interface did not accept a connection. Plug it back in, wait a few seconds, and run step 3. It reads normally.
+Expected. `DriverError` or `TimeoutError` saying the interface did not accept a connection. Plug it back in, wait a few seconds, and run step 3. The device reads normally.
 
 ## Steps that change the device
 
@@ -122,7 +122,7 @@ Read the file and decide the limits, the interlock and the safe state are right.
 uv run openhal file confirm my-room.hal.yaml
 ```
 
-It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-room.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-room.hal.yaml` then says `writable`.
 
 ### 7. The smallest safe change
 

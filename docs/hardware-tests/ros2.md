@@ -1,6 +1,6 @@
 # Hardware test plan for the ros2 driver
 
-This plan checks the ROS 2 driver on a real robot. It starts with read-only checks and ends with the smallest safe motion. Lift the wheels off the floor, or clear a 2 by 2 m space, before any step that moves the robot, and keep its physical stop within reach. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the ROS 2 driver on a real robot. The plan starts with read-only checks and ends with the smallest safe motion. Lift the wheels off the floor, or clear a 2 by 2 m space, before any step that moves the robot, and keep its physical stop within reach. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -10,7 +10,7 @@ This plan checks the ROS 2 driver on a real robot. It starts with read-only chec
 
 ## The read-only probe
 
-Save this as `probe.py`. It connects, identifies the graph and reads every channel. It holds no kernel grant, so it can't change anything.
+Save this as `probe.py`. The probe connects, identifies the graph and reads every channel. The probe holds no kernel grant, so the probe can't change anything.
 
 ```python
 import asyncio, json, sys

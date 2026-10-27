@@ -13,7 +13,7 @@ Run every step from the repository checkout. [README.md](README.md) has the setu
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|write CHANNEL VALUE|stop"""
