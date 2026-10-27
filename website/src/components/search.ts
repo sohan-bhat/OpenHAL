@@ -135,7 +135,7 @@ export function searchDialog(): void {
     if (ticket !== latest) return;
     if (!pagefind) {
       list.hidden = true;
-      status.textContent = "Search needs the index that pnpm build makes. This build has none.";
+      status.textContent = "Search needs the index that pnpm build makes, and this build has no index.";
       return;
     }
     const found = await pagefind.search(query);

@@ -424,7 +424,7 @@
 <div class="frame">
   {#if ready.length}
     <section class="try" aria-labelledby="pg-try-title">
-      <h2 id="pg-try-title">Try a request from the story<InfoMark topic="this demo" text="An in-browser demo. A TypeScript port of the safety kernel runs here and never talks to hardware." /></h2>
+      <h2 id="pg-try-title">Try a request from the story<InfoMark topic="this demo" text="This demo runs in your browser, so a TypeScript port of the safety kernel checks each request here and sends nothing to hardware." /></h2>
       <div class="try-grid">
         <ul class="quick">
           {#each ready as item (item.label)}
@@ -444,7 +444,7 @@
             {/each}
             {#if file}
               <div>
-                <dt>Hazard<InfoMark topic="hazard" text="How much harm the device can do. A medium hazard device needs a control_medium token, and its riskiest actions wait for a person." href="/docs/safety/" /></dt>
+                <dt>Hazard<InfoMark topic="hazard" text="The hazard class states how much harm the device can do, so a medium hazard device needs a control_medium token and the device's riskiest actions wait for a person." href="/docs/safety/" /></dt>
                 <dd class="mono">{effectiveHazard(file)}</dd>
               </div>
               <div>
@@ -455,7 +455,7 @@
           </dl>
           {#if pending.length}
             <div class="waiting">
-              <p class="waiting-head">Waiting for a person<InfoMark topic="pending" text="The hub answered pending. A request that needs a person, such as a cancel that can't be undone, waits here until a person approves or rejects the request." /></p>
+              <p class="waiting-head">Waiting for a person<InfoMark topic="pending" text="Because a request such as a cancel that can't be undone needs a person, the hub returned pending, and the request waits here until a person approves or rejects the request." /></p>
               <ul>
                 {#each pending as request (request.requestId)}
                   <li>
@@ -480,12 +480,12 @@
               </form>
             {:else}
               <button type="button" class="stop" onclick={stopAll} disabled={!kernel}>Stop</button>
-              <p class="muted">Any client may send a stop. Lifting the stop takes a person's token.</p>
+              <p class="muted">Any client may send a stop, but lifting the stop takes a person's token.</p>
             {/if}
           </div>
         </aside>
         <div class="answers">
-          <h3 class="small-head">What the hub answered</h3>
+          <h3 class="small-head">The hub's responses</h3>
           <TraceList {exchanges} />
         </div>
       </div>
@@ -539,7 +539,7 @@
             <form class="request" onsubmit={(event) => { event.preventDefault(); send(); }}>
               <div class="fields">
                 <div class="field">
-                  <span class="legend as-label"><label for="pg-as">As</label><InfoMark topic="who is asking" text="Each client signs in with a token. An agent's token sets which hazards the agent may touch. Approving a request or lifting a stop takes a person's token." href="/docs/concepts/" /></span>
+                  <span class="legend as-label"><label for="pg-as">As</label><InfoMark topic="tokens" text="Each client signs in with a token, and an agent's token sets which hazard classes the agent may control. Approving a request or lifting a stop takes a person's token." href="/docs/concepts/" /></span>
                   <select id="pg-as" bind:value={clientKey}>
                     {#each CLIENTS as item (item.key)}
                       <option value={item.key}>{item.label}</option>
@@ -586,7 +586,7 @@
                 </form>
               {:else}
                 <button type="button" class="stop" onclick={stopAll} disabled={!kernel}>Stop</button>
-                <p class="muted">Any client may send a stop. Lifting the stop takes a person's token.</p>
+                <p class="muted">Any client may send a stop, but lifting the stop takes a person's token.</p>
               {/if}
             </div>
             {#if pending.length}

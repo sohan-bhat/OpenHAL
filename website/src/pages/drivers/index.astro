@@ -28,7 +28,7 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
   wide
   pager={false}
 >
-  <p slot="after-title" class="lede">A driver speaks one protocol. Statuses come from <code>drivers/catalog.json</code>.</p>
+  <p slot="after-title" class="lede">Each driver speaks one protocol, and every status on this page comes from <code>drivers/catalog.json</code>.</p>
 
     <form class="filters" role="search" aria-label="Filter drivers" data-filters>
       <label class="field grow">
@@ -140,7 +140,7 @@ const conformances = [...new Set(listed.map(conformanceOf).filter((value): value
         }
       </table>
     </div></div>
-    <p class="empty muted" data-empty hidden>No driver matches. Clear a filter to see more.</p>
+    <p class="empty muted" data-empty hidden>No driver matches these filters, so clear a filter to see more drivers.</p>
     {
       references.length > 0 && (
         <p class="more">

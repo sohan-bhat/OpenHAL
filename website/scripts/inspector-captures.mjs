@@ -211,12 +211,12 @@ const SHOTS = [
   {
     file: "inspector-confirmations",
     caption: "The pending cancel",
-    alt: "The Inspector's pending cancel. The agent print-watcher asks to run cancel on Klipper 3D printer, which can't be resumed, so it waits for a person, with the camera's frame beside Approve and run cancel and Reject",
+    alt: "The Inspector's pending cancel. Because a cancelled print on the Klipper 3D printer can't be resumed, the agent print-watcher's request to run cancel waits for a person, with the camera's frame beside the Approve and run cancel and Reject buttons",
   },
   {
     file: "inspector-log",
     caption: "The message log",
-    alt: "The Inspector's message log with hal/read results shown as image/jpeg 640 by 480 descriptions, hal/write answered by error -32010 LIMIT_EXCEEDED for a 300 °C nozzle, and the cancel answered pending",
+    alt: "The Inspector's message log with hal/read results shown as image/jpeg 640 by 480 descriptions, the hal/write for a nozzle temperature of 300 °C refused with error -32010 LIMIT_EXCEEDED, and the cancel left pending",
   },
   {
     file: "inspector-stopped",

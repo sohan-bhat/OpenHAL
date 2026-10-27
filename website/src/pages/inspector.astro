@@ -19,10 +19,10 @@ const sidebar = [
 
 <DocShell title="Inspector" description="The OpenHAL Inspector shows every device and every message, and stops every device in one click." sidebar={sidebar} section="Inspector" wide>
   <div class="prose">
-    <p>The Inspector is the hub's dashboard. Every device and every JSON-RPC message shows there, and one click stops every device.</p>
+    <p>The Inspector is the hub's dashboard, which shows every device and every JSON-RPC message and stops every device in one click.</p>
 
     <h2 id="open"><a class="heading-link" href="#open">Open the Inspector</a></h2>
-    <p>The hub serves the Inspector at <code>http://127.0.0.1:7420/</code>. Pair a browser with the one-time code that <code>openhal pair</code> prints.</p>
+    <p>The hub serves the Inspector at <code>http://127.0.0.1:7420/</code>, and a browser pairs with the one-time code that <code>openhal pair</code> prints.</p>
 
     <h2 id="views"><a class="heading-link" href="#views">Views</a></h2>
     <div class="table-wrap">
@@ -38,7 +38,7 @@ const sidebar = [
           <tr><td data-label="View">Routines</td><td data-label="Shows">Each routine with its source and its dry run</td></tr>
           <tr><td data-label="View">Driver writer</td><td data-label="Shows">A draft device file for an unknown device, and the limits interview</td></tr>
           <tr><td data-label="View">Settings</td><td data-label="Shows">Client tokens</td></tr>
-          <tr><td data-label="View">Stop</td><td data-label="Shows">Always visible. Any client may send a stop, and lifting the stop takes a person's token</td></tr>
+          <tr><td data-label="View">Stop</td><td data-label="Shows">The stop control, which is always visible. Any client may send a stop, but lifting the stop takes a person's token</td></tr>
         </tbody>
       </table>
     </div>
