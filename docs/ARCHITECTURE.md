@@ -1,8 +1,8 @@
 # Architecture
 
-OpenHAL is one hub process that owns every device, plus thin clients around it. Safety lives in one deterministic kernel inside the hub. Everything else, including the MCP server an agent talks to, asks the hub.
+OpenHAL is one hub process that owns every device, plus thin clients around the hub. Safety lives in one deterministic kernel inside the hub, so everything else, including the MCP server an agent talks to, sends requests to the hub.
 
-Decisions behind this design are in docs/adr/. Safety rules are in docs/SAFETY.md. The device file format is in spec/SPEC.md.
+The decisions behind this design are in docs/adr/, the safety rules are in docs/SAFETY.md and the device file format is in spec/SPEC.md.
 
 ## Components
 
@@ -70,7 +70,7 @@ flowchart LR
 
 ## The life of a command
 
-Every command from every source takes this path, here the printer's `pause` action from an agent. There is no other path to a driver's `_write` or `_action`.
+Every command from every source takes this path, shown here for the printer's `pause` action from an agent, and no other path leads to a driver's `_write` or `_action`.
 
 ```mermaid
 sequenceDiagram
@@ -159,7 +159,7 @@ flowchart TD
   NEW --> DONE
 ```
 
-The user's own model participates through MCP (ADR 0006). The hub does every deterministic step. Nothing a model proposes can confirm a limit.
+The user's own model participates through MCP (ADR 0006) while the hub does every deterministic step, and nothing a model proposes can confirm a limit.
 
 ## Routine execution
 
@@ -182,7 +182,7 @@ sequenceDiagram
   R->>R: record run history
 ```
 
-Routines run with no model. A routine's principal is `routine:<name>`, whose scope is the scope of the human who enabled the routine, capped at `control_medium`.
+Routines run with no model, and a routine's principal is `routine:<name>`, whose scope is the scope of the human who enabled the routine, capped at `control_medium`.
 
 ## Bridges
 
