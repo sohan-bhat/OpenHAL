@@ -13,6 +13,8 @@ Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5
 
 - inspector-5. Camera frames, the pending cancel, demo data and captures for the print babysitter (BRIEF-inspector-5.md).
 
+Queued. website-7, the speed round (BRIEF-website-7.md), once scenario-printer, website-6 and inspector-5 merge.
+
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
 Kernel coverage on the full suite, 2026-10-25. 100 % of lines but two, 99 % of branches. The four branches left are fail-closed guards the public API can't reach (an expression naming a device the reference check already blocked, a bare name in a hub expression, a missing asyncio task, and a safe state value that isn't a number on a rate-limited number channel).
