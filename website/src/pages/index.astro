@@ -27,8 +27,8 @@ const spelled = [
 const after = "safe";
 const site = JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: PRODUCT_NAME, alternateName: PRODUCT_LONG_NAME, url: new URL("/", Astro.site).href });
 const more = [
-  { href: "/spec/latest/", title: "Read the specification", text: "Every message, error and rule, in dated versions." },
-  { href: "/docs/", title: "Read the docs", text: "Guides for the hub, device files and drivers." },
+  { href: "/spec/latest/", title: "Read the specification", text: "The specification defines every message, error and rule in dated versions." },
+  { href: "/docs/", title: "Read the docs", text: "The docs explain how to run the hub, create device files and add drivers." },
 ];
 ---
 
@@ -70,7 +70,7 @@ const more = [
   <section class="home-width part" aria-labelledby="works-title">
     <h2 id="works-title">What OpenHAL works with</h2>
     <p class="summary lede">
-      {tested} {tested === 1 ? "driver" : "drivers"} {statusWord("implemented")}
+      OpenHAL has {tested} {tested === 1 ? "driver" : "drivers"} {statusWord("implemented")}, in these device families.
     </p>
     <ul class="families">
       {
@@ -91,11 +91,11 @@ const more = [
 
   <section id="try" class="home-width part" aria-labelledby="try-title">
     <h2 id="try-title">Run the demo</h2>
-    <p class="lede">You need uv and git. The demo runs on simulated devices.</p>
+    <p class="lede">Because the demo runs on simulated devices, the demo needs only uv and git.</p>
     <div class="prose quickstart">
       <Quickstart />
     </div>
-    <p class="onward">The demo plays the same story in your terminal. <a href="/spec/playground/">Send the requests in your browser</a></p>
+    <p class="onward">The demo plays the same story in your terminal. To send the same requests from your browser, open the <a href="/spec/playground/">Playground</a>.</p>
   </section>
 
   <section class="home-width part" aria-labelledby="more-title">
