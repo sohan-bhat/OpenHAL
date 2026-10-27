@@ -74,11 +74,11 @@ The Arduino plant waterer (examples/plant-waterer/) stays as the Arduino example
 | Home page | The text wordmark, the one sentence and Get started, the landing story of the print babysitter, why it's safe in three points, device families from the catalog, the three-command quickstart with a link to the Playground, and links to the spec and the docs |
 | Spec pages | Dated version in the URL and a switcher, numbered sections, MUST, SHOULD and MAY, outline, anchors, previous and next, "Edit on GitHub" |
 | Schema reference | Generated tables of every message, type and field, monospace names |
-| Error codes | The registry table, the message trace with `error`, code and name in the blocked red with its shape |
-| Granted write | `result` in the granted green with its shape |
-| Confirmation required | Amber with the half-circle shape and the words "confirmation required" |
+| Error codes | The registry table, the message trace with `error`, code and name in the blocked red as plain text |
+| Granted write | `result` in the granted green |
+| Confirmation required | The words "confirmation required" in amber |
 | Stopped | The blocked red, the word "stopped", the STOP control turning into UNLOCK |
-| Unverified driver or device | Gray with a dashed outline and the word "unverified" |
+| Unverified driver or device | The word "unverified" in gray |
 | Drivers and Device Library | Datasheet-style tables with conformance level, status and hazard default |
 | Playground | A spec-style editor and the message trace for each attempted command, labeled as an in-browser demo |
 | Inspector | Device list, device pane and message log as JSON-RPC traces |
@@ -104,14 +104,14 @@ Cool neutrals with one accent. Status colors only for meaning.
 | `--text-2` | `#4F5661` | `#A0A7B1` | Secondary text, JSON keys |
 | `--accent` | `#1D5FB4` | `#7DB2F0` | Links, active navigation, method names, the logo |
 
-| Status | Light | Dark | Shape and word |
+| Status | Light | Dark | How it shows |
 |---|---|---|---|
-| ok, granted | `#1E7A44` | `#5BC58A` | the word alone in green, "granted", "ok" or "connected". No dot |
-| confirmation required | `#8A5A00` text on `#FFF3CC` | `#E8B341` | half circle, "confirmation required" |
-| blocked, stopped | `#B42318` | `#F07068` | circle with bar, "blocked" or "stopped" |
-| unverified | `#636A75` | `#8B93A0` | dashed outline, "unverified" |
+| ok, granted | `#3C754F` | `#72B88E` | the word in green, "granted", "ok" or "connected" |
+| confirmation required | `#8A5A00` | `#E8B341` | the words "confirmation required" in amber |
+| blocked, stopped | `#A14034` | `#D57A72` | the word in red, "blocked" or "stopped" |
+| unverified | `#636A75` | `#8B93A0` | the word "unverified" in gray |
 
-Every pair passes WCAG AA for its text size. Status never appears as color alone. These three shapes are the only status shapes, and ok has none. Neutral states (disabled, started, running, connecting, no confirmation) show their word without a shape. Dashed outlines mean unverified or an agent and nothing else. Simulated devices, demo data, data blocks and empty states sit on a surface fill, and disabled controls are flat surface gray.
+Every pair passes WCAG AA for its text size on `--bg` and `--surface`. A status always shows as its word, so it never relies on color alone. No status has a dot, circle, shape or icon beside it, and a status, error code or verdict never sits in a box with a colored border or a tinted background. It is plain text, in mono for codes. The owner had the green and red dulled slightly on 2026-10-26. Neutral states (disabled, started, running, connecting, no confirmation) show their word in the text colors. Dashed rules mark an agent's entries in the Inspector and nothing else. Simulated devices, demo data, data blocks and empty states sit on a surface fill, and disabled controls are flat surface gray.
 
 ### Syntax theme
 
@@ -144,6 +144,7 @@ Pages show the one thing a person needs and keep the depth one tap away. A term 
 ## Wordmark
 
 - **Wordmark, no logo.** The brand is the name, OpenHAL, set in Atkinson Hyperlegible Next at weight 800 with tracking at -0.06 em, in `--text`. There is no logo shape. Where a square is needed (favicon, app icons) the initials OH are set the same way. Built by tools/readme/build.py into docs/assets/wordmark-{light,dark}.svg, mark-{light,dark}.svg (the initials) and favicon.svg, which the README and the website read. The Inspector sets the same wordmark in its header.
+- **HAL spelled out, on the landing hero only.** Under the letters H, A and L of the large hero wordmark sit three small labels, hardware, agent and layer, lowercase in `--text-2` at the legend size, each centered under its letter. They are hidden from screen readers, which read OpenHAL, and the long name Open Hardware Agent Layer is in the page's metadata. The header wordmark, icons and the README stay plain.
 - Original. It never imitates MCP's, Anthropic's or any other logo.
 
 ## Diagrams
@@ -168,7 +169,8 @@ The dashboard is the OpenHAL Inspector, a protocol inspector.
 - **Stop control.** Large and always visible in the header, in the blocked red with its word, never styled like other buttons.
 - **Agent requests and human confirmations look different.** Agent entries carry the client's name and a dashed rule, which stays dashed whatever the outcome, red when blocked. Human decisions sit on a solid surface.
 - **Commands say what a click does.** A command that needs a person's confirmation reads "Confirm and run X" or "Confirm and set X". A read-only device shows its limits without live controls. A device's own safe-state action is never a primary button, since STOP in the header covers every device.
-- **Where STOP can't be sent** (an unpaired browser, a hub that is offline), a panel with a 2 px blocked outline and a red title takes STOP's place and says why, and what still keeps devices safe.
+- **Where STOP can't be sent** (an unpaired browser, a hub that is offline), a panel on the surface fill with no colored border takes STOP's place. Its title is in the blocked red, and it says why and what still keeps devices safe.
+- **Buttons are controls, not status.** STOP keeps its solid blocked red fill. No other control has a red outline, so UNLOCK uses the standard secondary button with its word in the blocked red.
 - **Kernel reasons outside the trace** read as prose, with identifiers and conditions set in mono.
 
 ## Motion
@@ -223,7 +225,9 @@ Honesty
 Safety semantics
 - Red used decoratively. Red means blocked, stopped or danger, and nothing else.
 - Yellow and black hazard stripes or ISO 7010 symbols as decoration. They only appear next to real hazards.
-- Status shown by color alone. Always pair it with an icon, a label or a shape.
+- Status shown by color alone. Always show its word.
+- A dot, circle, shape or icon beside a status word, including the old circle with a bar for blocked and the half circle for confirmation.
+- A status, error code or verdict inside a box with a colored border or a tinted background. Show it as plain text, in mono for codes.
 - A stop control that is hidden, collapsed, small or styled like a normal button.
 - Any UI where an agent action and a human confirmation look the same.
 
