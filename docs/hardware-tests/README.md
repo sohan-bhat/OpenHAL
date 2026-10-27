@@ -4,7 +4,7 @@ Every driver passes its conformance suite against a simulator. These plans are h
 
 ## Order
 
-1. **The plant waterer first.** It is the canonical example and the cheapest complete rig. It runs the whole path, from discovery and a read-only file to confirmation, a blocked command, an interlock, an action, a stop and the board's own fallback, and its pump stays unplugged until the last step.
+1. **The plant waterer first.** It is the Arduino example and the cheapest complete rig. It runs the whole path, from discovery and a read-only file to confirmation, a blocked command, an interlock, an action, a stop and the board's own fallback, and its pump stays unplugged until the last step.
 2. **Read-only plans next.** These drivers can't change their device.
 3. **Low hazard plans**, ordered by what the smallest change moves. An LED or a register first, then lights and relays with nothing plugged in, then a camera's pan.
 4. **Medium hazard plans.** Low voltage first, then relays that can switch mains with no load on them, then motors, heaters and mounts.

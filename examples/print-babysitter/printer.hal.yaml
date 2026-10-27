@@ -1,0 +1,36 @@
+openhal: "0.1"
+device: Klipper 3D printer
+id: printer
+match:
+  mdns: _moonraker._tcp
+  moonraker: { hostname: "printer*" }
+connect: { moonraker: printer.local, port: 7125, timeout: 5 s }
+read:
+  state: { type: enum, values: [standby, printing, paused, complete, cancelled, error], every: 1 s }
+  extruder_temp: { unit: degC, every: 1 s, range: [0, 320] }
+  bed_temp: { unit: degC, every: 1 s, range: [0, 130] }
+  progress: { unit: percent, every: 5 s }
+write:
+  extruder_target: { unit: degC, min: 0, max: 260, max_change_per_s: 50 }
+  bed_target: { unit: degC, min: 0, max: 110, max_change_per_s: 20 }
+actions:
+  pause:
+    description: Pause the print. Klipper parks the nozzle and keeps the heaters on.
+    require: ["state == printing"]
+  resume:
+    description: Resume a paused print.
+    require: ["state == paused"]
+  cancel:
+    description: Cancel the print. It can't be resumed afterwards.
+    confirm: confirm-each-time
+safe_state:
+  - { extruder_target: 0, bed_target: 0 }
+interlocks:
+  - if: "extruder_target > 0 degC"
+    require: "state != error"
+    message: "Clear the printer error before heating."
+watchdog: { heartbeat: 5 s, on_loss: hold }
+hazard: medium
+notes: "A print keeps running if the hub goes away, so the watchdog holds instead of stopping it. Klipper's own heater checks stay on either way."
+provenance: { source: hand-written, by: openhal print babysitter example, at: 2026-10-24 }
+confirmed: { by: owner, at: 2026-10-24, sha256: 43396b8f02a70481b9653275f22cc58f96b060ad2e31f4d80214acb26e51af1a }

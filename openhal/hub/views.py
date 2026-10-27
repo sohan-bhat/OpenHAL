@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from openhal import images
 from openhal._brand import DATA_BLOCK_TAG
 from openhal.kernel.commands import Action, Decision, Write
 from openhal.kernel.confirmations import Request
@@ -36,10 +37,14 @@ def device_text(source: str, text: str | None) -> str | None:
     return data_block(source, text, "a device")
 
 
-def device_value(file: Any, device_id: str, channel: str, value: Any) -> Any:
-    """A reading as clients see it. Strings are wrapped, except enum values the device file lists."""
+def device_value(file: Any, device_id: str, channel: str, value: Any, *, image_data: bool = False) -> Any:
+    """A reading as clients see it. Strings are wrapped, except enum values the device file lists.
+
+    Bytes are an image, sent as `{ mimeType, bytes, width, height }` (openhal/images.py). Only a read
+    asks for `image_data`, which adds the pixels as base64 in `data`.
+    """
     if isinstance(value, bytes):
-        return None
+        return images.value(value) if image_data else images.describe(value)
     if not isinstance(value, str):
         return value
     spec = file.read.get(channel) or file.write.get(channel)

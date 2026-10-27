@@ -9,19 +9,18 @@ k: "Safety kernel" {class: actor}
 d: "Driver" {class: actor}
 v: "Device" {class: actor}
 
-c -> h: "hal/action\nwater 120 s" {class: msg}
+c -> h: "hal/write\nnozzle 300 °C" {class: msg}
 h -> k: "evaluate" {class: msg}
 k -> h: "blocked\nabove_max" {class: blocked}
 h -> c: "error -32010\nLIMIT_EXCEEDED" {class: blocked}
 
-c -> h: "hal/action\nwater 20 s" {class: msg}
+c -> h: "hal/write\nbed 70 °C" {class: msg}
 h -> k: "evaluate" {class: msg}
 k -> k: "checks pass,\nissue a Grant" {class: msg}
-k -> d: "action water\nwith the Grant" {class: granted}
+k -> d: "write bed_target\nwith the Grant" {class: granted}
 d -> d: "consume it" {class: msg}
-d -> v: "pump 20 s" {class: msg}
+d -> v: "bed heater\nto 70 °C" {class: msg}
 v -> d: "ok" {class: msg}
 d -> k: "done" {class: msg}
 k -> h: "done" {class: msg}
 h -> c: "result\nstatus done" {class: granted}
-h -> c: "hal/value\nsoil_moisture\n46 %" {class: notification}

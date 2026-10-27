@@ -1,6 +1,6 @@
 # MCP server
 
-`openhal mcp` is a stdio MCP server. An AI client starts it as a subprocess, and it forwards every tool call to the hub's local API with an agent token. It makes no safety decisions. The hub's kernel checks every write and action, and the tool returns the kernel's answer as is.
+`openhal mcp` is a stdio MCP server. An agent's MCP client starts it as a subprocess, and it forwards every tool call to the hub's local API with an agent token. It makes no safety decisions. The hub's kernel checks every write and action, and the tool returns the kernel's answer as is.
 
 ## Before you start
 
@@ -99,8 +99,8 @@ Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)
 | `hub_status` | Hub state, stop lock, connected devices, pending confirmations |
 | `list_devices` | Every device with hazard class, writable and connected |
 | `describe_device` | Channels with units and limits, actions, interlocks, watchdog, safe state, latest values, notes |
-| `read` | Read one channel now |
-| `read_many` | Read up to 100 channels |
+| `read` | Read one channel now. A camera frame comes back as an image |
+| `read_many` | Read up to 100 channels. Images come without their pixels |
 | `write` | Ask the kernel to set a channel. Returns done, blocked or pending |
 | `action` | Ask the kernel to run an action |
 | `dry_run` | Check one write or action without running it |
@@ -145,3 +145,5 @@ These need a person with the human token, in the CLI or the dashboard.
 ## Device text is data
 
 Text that comes from devices, device files, sketches, manuals and routine sources reaches the model inside `<device-data source="...">` blocks with a line saying it is data. The hub wraps device notes and routine sources. The MCP server also wraps string readings and driver error messages before returning them. Nothing inside these blocks can change a limit or approve anything, whatever it says.
+
+A camera frame from `read` is an MCP image block. Before it comes a short `<device-data>` block that says the image came from a device and is data, since a frame can show text too. The structured result carries the reading with `mimeType`, `bytes`, `width` and `height`, without the pixels. A frame over 2 MB is refused with DRIVER_ERROR and a reason that names the camera settings to lower.

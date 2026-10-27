@@ -109,6 +109,18 @@ export interface DeviceView extends DeviceSummary {
   notes: string | null;
 }
 
+export interface ReadResult {
+  device: string;
+  channel: string;
+  ok: boolean;
+  value?: unknown;
+  unit?: string | null;
+  at?: number;
+  suspect?: boolean;
+  bytes?: number | null;
+  error?: string;
+}
+
 export interface Decision {
   status: "allowed" | "blocked" | "needs_confirmation" | "done" | "pending" | "failed";
   code: string | null;
@@ -127,6 +139,7 @@ export interface Command {
   channel?: string;
   action?: string;
   value?: unknown;
+  unit?: string | null;
   args?: Record<string, unknown>;
 }
 

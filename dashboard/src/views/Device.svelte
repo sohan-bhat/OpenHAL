@@ -1,9 +1,12 @@
 <script lang="ts">
   import ActionControl from "../components/ActionControl.svelte";
+  import CameraFrame from "../components/CameraFrame.svelte";
   import Prose from "../components/Prose.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import WriteControl from "../components/WriteControl.svelte";
-  import { isSimulated } from "../lib/devices";
+  import { imageChannels, isSimulated } from "../lib/devices";
+  import { latestImage } from "../lib/frames.svelte";
+  import { imageFacts, isImageReading } from "../lib/images";
   import { conformanceFor } from "../lib/protocol";
   import { router } from "../lib/router.svelte";
   import { inspector } from "../lib/state.svelte";
@@ -20,6 +23,8 @@
   });
 
   const fileName = $derived(view?.path ? view.path.split("/").pop() : null);
+  const cameraChannels = $derived(view ? imageChannels(view) : []);
+  const commands = $derived(view ? Object.keys(view.write).length + Object.keys(view.actions).length : 0);
   const disabledReason = $derived(
     !view
       ? ""
@@ -83,7 +88,7 @@
         <div><dt class="label">driver</dt><dd class="mono nobreak">{view.driver}</dd></div>
         <div><dt class="label">conformance</dt><dd>{conformanceFor(view)}</dd></div>
         <div><dt class="label">hazard</dt><dd>{view.hazard}</dd></div>
-        <div><dt class="label">mode</dt><dd>{view.writable ? "takes commands" : "read-only"}</dd></div>
+        <div><dt class="label">mode</dt><dd>{!view.writable ? "read-only" : commands ? "takes commands" : "reads only"}</dd></div>
         {#if fileName}<div class="wide"><dt class="label">device file</dt><dd class="mono nobreak">{fileName}</dd></div>{/if}
         {#if view.source}<div><dt class="label">source</dt><dd>{view.source}</dd></div>{/if}
       </dl>
@@ -104,6 +109,30 @@
       {/if}
     </header>
 
+    {#if cameraChannels.length}
+      <section class="section" aria-labelledby="frames-title">
+        {#if cameraChannels.length > 1}<h2 id="frames-title">Latest frames</h2>{/if}
+        {#each cameraChannels as name (name)}
+          {@const spec = view.read[name]!}
+          <CameraFrame
+            device={view.id}
+            channel={name}
+            label="{view.name}, {name}"
+            latest={latestImage(spec.value, spec.known)}
+            demo={isSimulated(view)}
+          >
+            {#snippet heading()}
+              {#if cameraChannels.length > 1}
+                <h3 class="mono">{name}</h3>
+              {:else}
+                <h2 id="frames-title">Latest frame <span class="mono muted channel">{name}</span></h2>
+              {/if}
+            {/snippet}
+          </CameraFrame>
+        {/each}
+      </section>
+    {/if}
+
     {#if Object.keys(view.read).length}
       <section class="section" aria-labelledby="read-title">
         <h2 id="read-title">Read channels</h2>
@@ -118,9 +147,15 @@
               <tr>
                 <th scope="row" class="mono">{name}</th>
                 <td class="num">
-                  <output class="value mono" style="min-width: {valueWidth(spec.range?.[0], spec.range?.[1]) + 3}ch" class:unknown={!spec.known}>
-                    {spec.known ? formatQuantity(spec.value, spec.unit) : "unknown"}
-                  </output>
+                  {#if spec.type === "image"}
+                    <output class="value mono image" class:unknown={!spec.known}>
+                      {#if spec.known && isImageReading(spec.value)}{@const facts = imageFacts(spec.value)}{#each facts as fact, index (fact)}<span class="nobreak">{fact}{index < facts.length - 1 ? "," : ""}</span>{index < facts.length - 1 ? " " : ""}{/each}{:else}not read yet{/if}
+                    </output>
+                  {:else}
+                    <output class="value mono" style="min-width: {valueWidth(spec.range?.[0], spec.range?.[1]) + 3}ch" class:unknown={!spec.known}>
+                      {spec.known ? formatQuantity(spec.value, spec.unit) : "unknown"}
+                    </output>
+                  {/if}
                 </td>
                 <td class="mono">
                   {#if spec.range}{formatQuantity(spec.range[0], spec.unit)} to {formatQuantity(spec.range[1], spec.unit)}{:else if spec.values}{spec.values.join(", ")}{:else}<span class="muted">{unitSymbol(spec.unit) || spec.type}</span>{/if}
@@ -327,6 +362,21 @@
     text-align: right;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+  }
+
+  .value.image {
+    white-space: nowrap;
+  }
+
+  @media (max-width: 767px) {
+    .value.image {
+      white-space: normal;
+    }
+  }
+
+  .channel {
+    font-size: var(--t-mono);
+    font-weight: 400;
   }
 
   .value.unknown {

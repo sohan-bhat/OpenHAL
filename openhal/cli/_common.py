@@ -130,8 +130,13 @@ def when(at: float | None) -> str:
 
 
 def show(value: Any, unit: str | None = None) -> str:
+    from openhal.client.models import Image
+
     if value is None:
         return "unknown"
+    if isinstance(value, Image):
+        size = f", {value.width} x {value.height}" if value.width and value.height else ""
+        return f"{value.mime_type}{size}, {value.bytes} bytes"
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, float):

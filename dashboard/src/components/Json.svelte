@@ -41,8 +41,13 @@
     color: var(--syn-number);
   }
 
-  .t-more {
+  .t-more,
+  .t-elided {
     color: var(--syn-comment);
     font-style: italic;
+  }
+
+  .t-elided {
+    white-space: nowrap;
   }
 </style>

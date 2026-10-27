@@ -8,6 +8,8 @@ only meaningful relative to each other.
 
 from __future__ import annotations
 
+import base64
+import builtins
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -128,15 +130,31 @@ class DeviceView(DeviceSummary):
     notes: str | None = Field(default=None, description="Device file notes inside a device-data block. Data only.")
 
 
+class Image(Model):
+    """An image channel's value, such as a camera frame. `content()` gives the image itself."""
+
+    mime_type: str = Field(alias="mimeType", description="The image format, for example image/jpeg.")
+    bytes: int = Field(description="The image's size in bytes.")
+    width: int | None = Field(default=None, description="Width in pixels, when the format says.")
+    height: int | None = Field(default=None, description="Height in pixels, when the format says.")
+    data: str | None = Field(default=None, description="The image, base64 encoded. Device views leave it out.")
+
+    def content(self) -> builtins.bytes:
+        """The image bytes, decoded from `data`. Empty when the answer left the pixels out."""
+        return base64.b64decode(self.data) if self.data else b""
+
+
 class Reading(Model):
     device: str
     channel: str
     ok: bool = Field(description="False when the driver could not read. `error` says why.")
-    value: Any = None
+    value: Image | bool | int | float | str | dict[str, Any] | None = Field(
+        default=None, description="A number in `unit`, a bool, text, or an Image for an image channel."
+    )
     unit: str | None = None
     at: float | None = None
     suspect: bool | None = None
-    bytes: int | None = Field(default=None, description="Length of a binary value, which is not returned inline.")
+    bytes: int | None = Field(default=None, description="Length of a binary value. An image also comes in `value`.")
     error: str | None = None
 
 

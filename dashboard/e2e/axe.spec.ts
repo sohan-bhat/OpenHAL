@@ -4,6 +4,8 @@ import { AgentClient, hubState, signIn } from "./hub";
 
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 const VIEWS = [
+  "#/devices/printer",
+  "#/devices/printer-cam",
   "#/devices/plant-waterer",
   "#/devices/curing-heater",
   "#/devices/bench-lamp",
@@ -21,36 +23,52 @@ async function violations(page: Page, name: string): Promise<string[]> {
   return results.violations.map((violation) => `${name} ${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`);
 }
 
-async function queueVent(): Promise<void> {
-  const agent = await AgentClient.connect("axe-script", hubState().mediumToken);
-  const pending = await agent.call("hal/action", {
+async function queueRequests(): Promise<void> {
+  const script = await AgentClient.connect("axe-script", hubState().mediumToken);
+  const vent = await script.call("hal/action", {
     device: "curing-heater",
     action: "vent",
     args: { seconds: { value: 5, unit: "s" } },
   });
-  agent.close();
-  expect(pending.result?.status).toBe("pending");
+  script.close();
+  expect(vent.result?.status).toBe("pending");
+  const watcher = await AgentClient.connect("print-watcher", hubState().printToken);
+  const cancel = await watcher.call("hal/action", { device: "printer", action: "cancel" });
+  watcher.close();
+  expect(cancel.result?.status).toBe("pending");
 }
 
 for (const scheme of ["light", "dark"] as const) {
   for (const width of [1440, 390]) {
     test(`every view and state passes axe WCAG 2.1 AA at ${width} px in the ${scheme} theme`, async ({ browser, browserName }) => {
       test.skip(browserName !== "chromium" && width < 800, "the phone pass runs in Chromium");
-      test.setTimeout(300_000);
+      test.setTimeout(browserName === "firefox" ? 600_000 : 300_000);
       const context = await browser.newContext({ viewport: { width, height: width < 800 ? 844 : 900 }, colorScheme: scheme });
       await signIn(context);
       const page = await context.newPage();
-      const agent = await AgentClient.connect("axe-agent", hubState().agentToken);
-      await agent.call("hal/action", { device: "plant-waterer", action: "water", args: { duration: { value: 120, unit: "s" } } });
+      const agent = await AgentClient.connect("axe-agent", hubState().printToken);
+      await agent.write("printer", "extruder_target", 300, "degC");
+      await agent.call("hal/read", { device: "printer-cam", channel: "frame" });
       agent.close();
-      await queueVent();
+      await queueRequests();
       const problems: string[] = [];
 
       for (const view of VIEWS) {
         await page.goto(`/${view}`);
         await expect(page.locator("main h1, main h2").first()).toBeVisible();
+        if (view === "#/devices/printer-cam") await expect(page.getByRole("main").getByRole("img", { name: /^Demo frame/ })).toBeVisible();
         problems.push(...(await violations(page, view)));
       }
+
+      await page.goto("/#/confirmations");
+      const cancel = page.getByRole("main").getByRole("listitem").filter({ hasText: "asks to run cancel" }).first();
+      await cancel.getByRole("combobox", { name: "Show a camera" }).selectOption("printer-cam/frame");
+      await expect(cancel.getByRole("img", { name: /^Demo frame from Printer camera/ })).toBeVisible();
+      problems.push(...(await violations(page, "cancel with its camera")));
+
+      await page.goto("/#/devices/printer");
+      await page.locator('li[data-kind="result"]').filter({ hasText: "printer-cam" }).last().getByRole("button", { name: "Show the whole message" }).click();
+      problems.push(...(await violations(page, "frame result expanded")));
 
       await page.goto("/#/routines/water-when-dry");
       await page.getByRole("button", { name: "Dry run" }).click();
@@ -62,7 +80,7 @@ for (const scheme of ["light", "dark"] as const) {
       await expect(page.getByRole("heading", { name: "Limits interview" })).toBeVisible();
       problems.push(...(await violations(page, "writer interview")));
 
-      await page.goto("/#/devices/plant-waterer");
+      await page.goto("/#/devices/printer");
       await page.getByRole("button", { name: "Hide the log" }).click();
       problems.push(...(await violations(page, "log hidden")));
       await page.getByRole("button", { name: "Show the log" }).click();

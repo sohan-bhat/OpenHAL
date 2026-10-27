@@ -57,7 +57,7 @@ def when(value: dt.date | dt.datetime | None) -> str | None:
 
 
 def file_name(hub: Hub, device_id: str) -> str | None:
-    """The device file's name, for example plant-waterer.hal.yaml, when the device came from a file."""
+    """The device file's name, for example printer.hal.yaml, when the device came from a file."""
     info = hub.info.get(device_id)
     if info is None or not info.path:
         return None
@@ -130,7 +130,7 @@ def _is_session_limit(facts: Facts, limit: dict[str, Any] | None) -> bool:
 
 
 def target_parts(target: str | None) -> tuple[str | None, str | None]:
-    """`write:brightness` as (brightness, None), `read:tank` as (tank, None) and `action:water` as (None, water)."""
+    """`write:bed_target` as (bed_target, None), `read:state` as (state, None) and `action:pause` as (None, pause)."""
     kind, _, name = (target or "").partition(":")
     if kind in ("write", "read"):
         return name or None, None
@@ -484,7 +484,7 @@ def reading(hub: Hub, device_id: str, item: DriverReading) -> m.Reading:
     return m.Reading(
         device=device_id,
         channel=item.channel,
-        value=views.device_value(file, device_id, item.channel, item.value),
+        value=views.device_value(file, device_id, item.channel, item.value, image_data=True),
         unit=wire_unit(item.unit),
         at=timestamp(item.at),
         suspect=item.suspect,

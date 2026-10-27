@@ -1,3 +1,4 @@
+import { Elided, isImageReading, stripImageData, withoutData } from "./images";
 import { fromCode } from "./protocol";
 import { compareText } from "./text";
 
@@ -133,6 +134,24 @@ interface RequestInfo {
   principal?: LogEntry["principal"];
 }
 
+function imageSummary(result: unknown): unknown {
+  if (!isObject(result)) return undefined;
+  if (isImageReading(result.value)) {
+    return { device: result.device, channel: result.channel, value: withoutData(result.value) };
+  }
+  const readings = Array.isArray(result.readings) ? result.readings : null;
+  if (readings && readings.some((reading) => isObject(reading) && isImageReading(reading.value))) {
+    return {
+      readings: readings.map((reading) =>
+        isObject(reading) && isImageReading(reading.value)
+          ? { device: reading.device, channel: reading.channel, value: withoutData(reading.value) }
+          : reading,
+      ),
+    };
+  }
+  return undefined;
+}
+
 function resultOutcome(result: unknown): Outcome {
   if (isObject(result) && result.status === "pending") return "pending";
   return "granted";
@@ -176,7 +195,7 @@ function toRow(entry: LogEntry, requests: Map<string, RequestInfo>): TraceRow {
     principal: principalFor(entry, client, requests),
     direction: entry.direction,
   };
-  const message = entry.message;
+  const message = stripImageData(entry.message);
   if (!isObject(message)) {
     return {
       ...base,
@@ -260,6 +279,8 @@ function toRow(entry: LogEntry, requests: Map<string, RequestInfo>): TraceRow {
     outcome,
     startsExchange: !request,
   };
+  const summary = imageSummary(message.result);
+  if (summary !== undefined) row.summary = summary;
   if (request) row.method = request.method;
   return row;
 }
@@ -317,7 +338,7 @@ export function plainTrace(rows: TraceRow[]): string {
   return lines.join("\n");
 }
 
-export type TokenType = "punct" | "key" | "string" | "number" | "boolean" | "null" | "space" | "more";
+export type TokenType = "punct" | "key" | "string" | "number" | "boolean" | "null" | "space" | "more" | "elided";
 
 export interface Token {
   type: TokenType;
@@ -342,7 +363,8 @@ export function tokenizeJson(value: unknown, limit = 4000): Token[] {
   };
   const visit = (node: unknown) => {
     if (truncated) return;
-    if (node === null || node === undefined) push("null", "null");
+    if (node instanceof Elided) push("elided", node.toString());
+    else if (node === null || node === undefined) push("null", "null");
     else if (typeof node === "string") push("string", JSON.stringify(node));
     else if (typeof node === "number") push("number", Number.isFinite(node) ? String(node) : "null");
     else if (typeof node === "boolean") push("boolean", String(node));

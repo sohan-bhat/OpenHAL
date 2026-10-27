@@ -1,11 +1,14 @@
 <script lang="ts">
+  import CameraFrame from "../components/CameraFrame.svelte";
   import Reason from "../components/Reason.svelte";
   import { onDestroy } from "svelte";
   import Json from "../components/Json.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import TraceArrow from "../components/TraceArrow.svelte";
   import { api } from "../lib/api";
-  import { describeDecision } from "../lib/devices";
+  import { askedAgo, askOf } from "../lib/asks";
+  import { camerasFor, describeDecision, isSimulated, type Camera } from "../lib/devices";
+  import { latestImage } from "../lib/frames.svelte";
   import { inspector } from "../lib/state.svelte";
   import { decisionStatus } from "../lib/status";
   import { identifiersOf } from "../lib/units";
@@ -18,6 +21,7 @@
   let busy = $state<Record<string, boolean>>({});
   let errors = $state<Record<string, string>>({});
   let outcomes = $state<Record<string, { by: "approved" | "rejected"; decision: Decision | null }>>({});
+  let chosen = $state<Record<string, string>>({});
 
   const timer = setInterval(() => (now = Date.now()), 1000);
   onDestroy(() => clearInterval(timer));
@@ -25,10 +29,18 @@
   const pending = $derived(inspector.confirmations.filter((request) => request.status === "pending"));
   const decided = $derived(recent.filter((request) => request.status !== "pending").slice(0, 20));
 
+  let watching = false;
   $effect(() => {
     void inspector.auditTick;
-    void load();
+    if (watching) void load();
+    watching = true;
   });
+
+  const settle = inspector.hold();
+  void Promise.race([
+    Promise.all([load(), inspector.loadViews()]),
+    new Promise((resolve) => setTimeout(resolve, 1500)),
+  ]).then(() => settle());
 
   async function load() {
     try {
@@ -43,6 +55,46 @@
     void inspector.confirmations;
     fetchedAt = Date.now();
   });
+
+  $effect(() => {
+    if (pending.length && inspector.devices.length) void inspector.loadViews();
+  });
+
+  const STORE = "openhal.inspector.camera.";
+  const cameraKey = (camera: Camera) => `${camera.device}/${camera.channel}`;
+
+  function stored(device: string): string | null {
+    try {
+      return localStorage.getItem(STORE + device);
+    } catch {
+      return null;
+    }
+  }
+
+  function keep(device: string, key: string): void {
+    chosen = { ...chosen, [device]: key };
+    try {
+      if (key) localStorage.setItem(STORE + device, key);
+      else localStorage.removeItem(STORE + device);
+    } catch {
+      return;
+    }
+  }
+
+  function cameraFor(device: string, cameras: Camera[]): Camera | undefined {
+    const picked = device in chosen ? chosen[device] : stored(device);
+    if (picked !== null && picked !== undefined) return cameras.find((camera) => cameraKey(camera) === picked);
+    return cameras.find((camera) => camera.device === device);
+  }
+
+  function latestOf(camera: Camera) {
+    const spec = inspector.views[camera.device]?.read[camera.channel];
+    return spec ? latestImage(spec.value, spec.known) : null;
+  }
+
+  function asked(request: ConfirmationRequest): string {
+    return askedAgo(request.expires_at - request.created_at - remaining(request));
+  }
 
   function remaining(request: ConfirmationRequest): number {
     return Math.max(0, Math.round(request.expires_in_s - (now - fetchedAt) / 1000));
@@ -99,39 +151,104 @@
       <ol class="requests">
         {#each pending as request (request.id)}
           {@const dry = describeDecision(request.dry_run)}
-          <li class="request appear" aria-labelledby="req-{request.id}">
+          {@const ask = askOf(request, inspector.views[request.command.device])}
+          {@const device = request.command.device}
+          {@const cameras = camerasFor(device, inspector.views)}
+          {@const camera = cameraFor(device, cameras)}
+          {@const pickable = cameras.length > 1 || !cameras.some((option) => option.device === device)}
+          <li class="request appear" class:with-camera={cameras.length > 0} aria-labelledby="req-{request.id}">
             <div class="asked agent-rule">
+              <h3 id="req-{request.id}" class="ask">
+                {ask.actor} <span class="mono nobreak">{ask.name}</span> asks to {ask.verb} <span class="mono nobreak">{ask.target}</span>{#if ask.value}{ask.verb === "set" ? " to " : " with "}<span class="mono nobreak">{ask.value}</span>{/if} on {ask.device}.
+              </h3>
               <p class="who">
-                <span class="label">requested by</span>
-                <span class="mono client">{request.requested_by}</span>
+                <span class="mono muted nobreak">{request.requested_by}</span>
+                <span class="muted">asked {asked(request)}</span>
                 <span class="mono muted">request <span class="nobreak">{request.id}</span></span>
               </p>
-              <p id="req-{request.id}" class="trace">
+              <p class="trace">
                 <TraceArrow arrow="right" />
                 <span class="mono method">{method(request.command)}</span>
                 <Json value={params(request.command)} />
               </p>
-              <div class="dry">
-                <span class="label">dry run</span>
-                <StatusMark
-                  tone={dry.tone === "granted" ? "ok" : dry.tone === "pending" ? "confirm" : "blocked"}
-                  label={dry.word}
-                />
-                {#if dry.head && dry.tone !== "granted"}<span class="mono code {dry.tone}">{dry.head}</span>{/if}
-                <span><Reason text={request.dry_run.message} code={identifiersOf(request.dry_run.device, request.dry_run.target)} /></span>
-              </div>
-              <p class="expires">
-                <span class="label">expires in</span>
-                <span class="mono countdown">{String(remaining(request)).padStart(3, " ")} s</span>
-              </p>
+              <dl class="facts">
+                {#if ask.does}
+                  <div><dt class="label">what {ask.target} does</dt><dd>{ask.does}</dd></div>
+                {/if}
+                {#if ask.limit}
+                  <div><dt class="label">limit</dt><dd class="mono">{ask.limit}</dd></div>
+                {/if}
+                <div>
+                  <dt class="label">why it waits</dt>
+                  <dd><Reason text={ask.why} code={[ask.file ?? "", ask.target].filter(Boolean)} /></dd>
+                </div>
+                {#if dry.tone !== "pending"}
+                  <div>
+                    <dt class="label">dry run</dt>
+                    <dd class="dry">
+                      <StatusMark tone={dry.tone === "granted" ? "ok" : "blocked"} label={dry.word} />
+                      {#if dry.head && dry.tone !== "granted"}<span class="mono code {dry.tone}">{dry.head}</span>{/if}
+                      <span><Reason text={request.dry_run.message} code={identifiersOf(request.dry_run.device, request.dry_run.target)} /></span>
+                    </dd>
+                  </div>
+                {/if}
+              </dl>
             </div>
+            {#snippet picker()}
+              <label class="field pick">
+                <span>{camera ? "Camera" : "Show a camera"}</span>
+                <select
+                  value={camera ? cameraKey(camera) : ""}
+                  aria-describedby={camera ? undefined : `pick-${request.id}`}
+                  onchange={(event) => keep(device, event.currentTarget.value)}
+                >
+                  <option value="">None</option>
+                  {#each cameras as option (cameraKey(option))}
+                    <option value={cameraKey(option)}>{option.name}, {option.channel}</option>
+                  {/each}
+                </select>
+              </label>
+            {/snippet}
+            {#if cameras.length}
+              <div class="camera">
+                {#if camera}
+                  <CameraFrame
+                    device={camera.device}
+                    channel={camera.channel}
+                    label="{camera.name}, {camera.channel}"
+                    latest={latestOf(camera)}
+                    width={480}
+                    demo={isSimulated(inspector.views[camera.device] ?? {})}
+                  >
+                    {#snippet heading()}
+                      {#if pickable}
+                        {@render picker()}
+                      {:else}
+                        <p class="camera-name">
+                          <span class="label">camera</span>
+                          <span>{camera.name}</span>
+                          <span class="mono muted nobreak">{camera.device}.{camera.channel}</span>
+                        </p>
+                      {/if}
+                    {/snippet}
+                  </CameraFrame>
+                {:else}
+                  {@render picker()}
+                  <p class="muted small" id="pick-{request.id}">Pick the camera that watches {ask.device}. This browser keeps the choice.</p>
+                {/if}
+              </div>
+            {/if}
             <form class="decide human-surface" onsubmit={(event) => event.preventDefault()}>
               <span class="label">your decision</span>
+              <p class="expires">
+                Expires in <span class="mono countdown">{String(remaining(request)).padStart(3, " ")} s</span>
+              </p>
               <div class="buttons">
                 <button type="button" class="button primary" disabled={busy[request.id]} onclick={() => approve(request)}>
-                  Approve
+                  Approve and {ask.verb} {ask.target}
                 </button>
               </div>
+              <p class="muted small">The Safety Kernel checks every limit again before it runs.</p>
               <div class="buttons">
                 <label class="field reason">
                   <span>Reason to reject, optional</span>
@@ -218,29 +335,86 @@
   .request {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+    grid-template-areas: "asked decide";
     border: var(--rule);
     border-radius: var(--radius);
     overflow: hidden;
   }
 
+  .request.with-camera {
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "asked decide"
+      "camera decide";
+  }
+
   .asked {
+    grid-area: asked;
     display: grid;
     gap: var(--s-2);
     padding: var(--s-3) var(--s-4);
     margin: var(--s-2) 0 var(--s-2) var(--s-2);
   }
 
+  .ask {
+    font-size: 18px;
+    line-height: 1.4;
+  }
+
+  .ask .mono {
+    font-size: 0.92em;
+  }
+
+  .facts {
+    display: grid;
+    gap: var(--s-2);
+    margin: var(--s-1) 0 0;
+  }
+
+  .facts div {
+    display: grid;
+    grid-template-columns: 9.5em minmax(0, 1fr);
+    gap: var(--s-3);
+    align-items: baseline;
+  }
+
+  .facts dd {
+    margin: 0;
+  }
+
+  .camera {
+    grid-area: camera;
+    display: grid;
+    align-content: start;
+    gap: var(--s-2);
+    padding: var(--s-2) var(--s-4) var(--s-4) calc(var(--s-2) + 2px + var(--s-4));
+  }
+
+  .camera-name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--s-1) var(--s-2);
+  }
+
+  .pick {
+    width: min(100%, 320px);
+  }
+
+  .pick select {
+    width: 100%;
+  }
+
   .who,
-  .dry,
-  .expires {
+  .dry {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
     gap: var(--s-1) var(--s-3);
   }
 
-  .client {
-    font-weight: 700;
+  .small {
+    font-size: var(--t-label);
   }
 
   .trace {
@@ -272,6 +446,7 @@
   }
 
   .decide {
+    grid-area: decide;
     display: grid;
     align-content: start;
     gap: var(--s-3);
@@ -311,8 +486,20 @@
   }
 
   @media (max-width: 767px) {
-    .request {
+    .request,
+    .request.with-camera {
       grid-template-columns: 1fr;
+      grid-template-rows: none;
+      grid-template-areas: "asked" "camera" "decide";
+    }
+
+    .facts div {
+      grid-template-columns: 1fr;
+      gap: 2px;
+    }
+
+    .camera {
+      padding-left: var(--s-4);
     }
 
     .decide {

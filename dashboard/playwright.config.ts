@@ -20,7 +20,7 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: `${python} run python -m tests.inspector.serve --port ${PORT} --state ${STATE_PATH}`,
+    command: `PYTHONPATH=. ${python} run python dashboard/e2e/print_hub.py --port ${PORT} --state ${STATE_PATH}`,
     cwd: repo,
     url: `http://127.0.0.1:${PORT}/`,
     reuseExistingServer: false,

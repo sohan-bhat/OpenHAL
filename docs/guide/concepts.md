@@ -1,6 +1,6 @@
 # Concepts
 
-OpenHAL is an open protocol between AI clients and hardware. This page defines its parts.
+OpenHAL is an open protocol between agents and hardware. This page defines its parts.
 
 ## Hub
 
@@ -10,7 +10,7 @@ The [Hub](glossary:hub) is one process on your computer or a Raspberry Pi. It ow
 
 Each device has a [Device File](glossary:device-file) that lists what can be read, what can be changed, the limits on every change and the safe state.
 
-```yaml tested include=examples/plant-waterer/plant-waterer.hal.yaml
+```yaml tested include=examples/print-babysitter/printer.hal.yaml
 ```
 
 A file is read-only until a person confirms its limits. Tools may suggest limits. They can never confirm them.

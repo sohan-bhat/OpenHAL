@@ -21,65 +21,82 @@ describe("buildTrace", () => {
   it("gives hal/initialize the principal its answer names, so agents keep their dashed rule", () => {
     const hello = rows.find((row) => row.seq === 1)!;
     expect(hello.head).toBe("hal/initialize");
-    expect(hello.client).toBe("bench-agent");
+    expect(hello.client).toBe("print-watcher");
     expect(hello.principal.kind).toBe("agent");
-    expect(hello.principal.label).toBe("agent:bench-agent");
+    expect(hello.principal.label).toBe("agent:print-watcher");
   });
 
   it("draws a request as a right arrow with its method", () => {
-    const request = rows.find((row) => row.seq === 4)!;
+    const request = rows.find((row) => row.seq === 11)!;
     expect(request.arrow).toBe("right");
     expect(request.kind).toBe("request");
-    expect(request.head).toBe("hal/action");
+    expect(request.head).toBe("hal/write");
     expect(request.tone).toBe("method");
-    expect(stringifyCompact(request.payload)).toBe(
-      '{ "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 120, "unit": "s" } } }',
-    );
+    expect(stringifyCompact(request.payload)).toBe('{ "device": "printer", "channel": "extruder_target", "value": 300, "unit": "degC" }');
   });
 
   it("names a blocked command with the registry code and name and its reason", () => {
-    const error = rows.find((row) => row.seq === 5)!;
+    const error = rows.find((row) => row.seq === 13)!;
     expect(error.arrow).toBe("left");
     expect(error.head).toBe("error -32010 LIMIT_EXCEEDED");
     expect(error.errorName).toBe("LIMIT_EXCEEDED");
     expect(error.reason).toBe(
-      "water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)",
+      "extruder_target 300 degC exceeds the limit of 260 degC (printer.hal.yaml, confirmed by owner 2026-10-24)",
     );
-    expect(error.method).toBe("hal/action");
-    expect(error.devices).toEqual(["plant-waterer"]);
+    expect(error.method).toBe("hal/write");
+    expect(error.devices).toEqual(["printer"]);
     expect(error.hasPayload).toBe(false);
   });
 
   it("pairs responses with requests to give the request its outcome", () => {
-    expect(rows.find((row) => row.seq === 4)!.outcome).toBe("error");
-    expect(rows.find((row) => row.seq === 7)!.outcome).toBe("error");
+    expect(rows.find((row) => row.seq === 11)!.outcome).toBe("error");
+    expect(rows.find((row) => row.seq === 21)!.outcome).toBe("error");
     expect(rows.find((row) => row.seq === 9)!.outcome).toBe("granted");
-    expect(rows.find((row) => row.seq === 11)!.outcome).toBe("pending");
-    expect(rows.find((row) => row.seq === 10)!.method).toBe("hal/action");
-    expect(rows.find((row) => row.seq === 8)!.head).toBe("error -32012 INTERLOCK_BLOCKED");
-    expect(rows.find((row) => row.seq === 8)!.reason).toBe("pump can't run while tank is empty");
+    expect(rows.find((row) => row.seq === 16)!.outcome).toBe("granted");
+    expect(rows.find((row) => row.seq === 18)!.outcome).toBe("pending");
+    expect(rows.find((row) => row.seq === 17)!.method).toBe("hal/action");
+    expect(rows.find((row) => row.seq === 23)!.head).toBe("error -32012 INTERLOCK_BLOCKED");
+    expect(rows.find((row) => row.seq === 23)!.reason).toBe("Clear the printer error before heating.");
   });
 
   it("marks a pending result as needing confirmation, not as granted", () => {
-    const pending = rows.find((row) => row.seq === 12)!;
+    const pending = rows.find((row) => row.seq === 20)!;
     expect(pending.head).toBe("result");
     expect(pending.tone).toBe("pending");
-    expect(pending.devices).toEqual(["curing-heater"]);
+    expect(pending.devices).toEqual(["printer"]);
+    expect(rows.find((row) => row.seq === 19)!.outcome).toBe("pending");
   });
 
   it("draws notifications with dashed arrows", () => {
     expect(rows.find((row) => row.seq === 3)!.arrow).toBe("right-dashed");
-    const value = rows.find((row) => row.seq === 13)!;
+    const value = rows.find((row) => row.seq === 8)!;
     expect(value.arrow).toBe("left-dashed");
     expect(value.kind).toBe("notification");
-    const blocked = rows.find((row) => row.seq === 6)!;
+    const blocked = rows.find((row) => row.seq === 12)!;
     expect(blocked.outcome).toBe("error");
     expect(blocked.errorName).toBe("LIMIT_EXCEEDED");
-    expect(blocked.summary).toEqual({ device: "plant-waterer", target: "action:water" });
+    expect(blocked.summary).toEqual({ device: "printer", target: "write:extruder_target" });
+  });
+
+  it("shows a camera frame as its description and never its base64", () => {
+    const frame = rows.find((row) => row.seq === 5)!;
+    expect(frame.kind).toBe("result");
+    expect(frame.summary).toEqual({
+      device: "printer-cam",
+      channel: "frame",
+      value: { mimeType: "image/jpeg", bytes: 19409, width: 640, height: 480 },
+    });
+    const whole = stringifyCompact(frame.payload);
+    expect(whole).toContain('"data": <base64 not shown>');
+    expect(whole).not.toContain("/9j/");
+    expect(rows.find((row) => row.seq === 15)!.summary).toMatchObject({ value: { bytes: 23567 } });
+    expect(plainTrace(rows.filter((row) => [4, 5, 14, 15].includes(row.seq)))).not.toContain("/9j/");
+    const raw = (entries[4]!.message as { result: { value: { data: string } } }).result.value.data;
+    expect(raw.startsWith("/9j/")).toBe(true);
   });
 
   it("keeps text that is not JSON-RPC as an invalid row", () => {
-    const invalid = rows.find((row) => row.seq === 14)!;
+    const invalid = rows.find((row) => row.seq === 24)!;
     expect(invalid.kind).toBe("invalid");
     expect(invalid.payload).toBe("{not json");
   });
@@ -100,11 +117,11 @@ describe("buildTrace", () => {
         direction: "in",
         client: null,
         principal: null,
-        message: { jsonrpc: "2.0", id: 1, method: "hal/initialize", params: { clientInfo: { name: "bench-agent" } } },
+        message: { jsonrpc: "2.0", id: 1, method: "hal/initialize", params: { clientInfo: { name: "print-watcher" } } },
       },
-      { seq: 2, at: 1792900000.6, direction: "out", client: "bench-agent", principal: "agent:bench-agent", message: { jsonrpc: "2.0", id: 1, result: {} } },
+      { seq: 2, at: 1792900000.6, direction: "out", client: "print-watcher", principal: "agent:print-watcher", message: { jsonrpc: "2.0", id: 1, result: {} } },
     ]);
-    expect(rows[0]!.client).toBe("bench-agent");
+    expect(rows[0]!.client).toBe("print-watcher");
     expect(rows[0]!.outcome).toBe("granted");
     expect(rows[1]!.method).toBe("hal/initialize");
     expect(rows[1]!.startsExchange).toBe(false);
@@ -122,16 +139,16 @@ describe("filters", () => {
 
   it("filters by client, device, method and outcome", () => {
     expect(filterRows(rows, NO_FILTERS)).toHaveLength(rows.length);
-    expect(filterRows(rows, { ...NO_FILTERS, client: "lab-script" }).map((row) => row.seq)).toEqual([14]);
-    expect(filterRows(rows, { ...NO_FILTERS, device: "curing-heater" }).map((row) => row.seq)).toEqual([11, 12]);
-    expect(filterRows(rows, { ...NO_FILTERS, method: "hal/action" }).map((row) => row.seq)).toEqual([4, 5, 7, 8, 9, 10, 11, 12]);
-    expect(filterRows(rows, { ...NO_FILTERS, outcome: "error" }).map((row) => row.seq)).toEqual([4, 5, 6, 7, 8, 14]);
+    expect(filterRows(rows, { ...NO_FILTERS, client: "lab-script" }).map((row) => row.seq)).toEqual([21, 22, 23, 24]);
+    expect(filterRows(rows, { ...NO_FILTERS, device: "printer-cam" }).map((row) => row.seq)).toEqual([4, 5, 14, 15]);
+    expect(filterRows(rows, { ...NO_FILTERS, method: "hal/action" }).map((row) => row.seq)).toEqual([16, 17, 18, 20]);
+    expect(filterRows(rows, { ...NO_FILTERS, outcome: "error" }).map((row) => row.seq)).toEqual([11, 12, 13, 21, 22, 23, 24]);
   });
 
   it("lists the options found in the log", () => {
     const options = filterOptions(rows);
-    expect(options.clients).toEqual(["bench-agent", "inspector", "lab-script"]);
-    expect(options.devices).toEqual(["curing-heater", "plant-waterer"]);
+    expect(options.clients).toEqual(["lab-script", "print-watcher"]);
+    expect(options.devices).toEqual(["printer", "printer-cam"]);
     expect(options.methods).toContain("hal/action");
     expect(options.methods).toContain("hal/blocked");
   });
@@ -139,19 +156,18 @@ describe("filters", () => {
 
 describe("formatting", () => {
   it("renders the plain text trace from the design document", () => {
-    const rows = buildTrace(entries).filter((row) => [4, 5, 7, 8, 9, 10].includes(row.seq));
+    const rows = buildTrace(entries).filter((row) => [9, 10, 11, 13, 18, 20].includes(row.seq));
     expect(plainTrace(rows)).toBe(
       [
-        '-> hal/action   { "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 120, "unit": "s" } } }',
+        '-> hal/write    { "device": "printer", "channel": "bed_target", "value": 70, "unit": "degC" }',
+        '<- result       { "status": "done", "device": "printer", "channel": "bed_target", "value": 70, "unit": "degC" }',
+        "",
+        '-> hal/write    { "device": "printer", "channel": "extruder_target", "value": 300, "unit": "degC" }',
         "<- error -32010 LIMIT_EXCEEDED",
-        "               water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)",
+        "               extruder_target 300 degC exceeds the limit of 260 degC (printer.hal.yaml, confirmed by owner 2026-10-24)",
         "",
-        '-> hal/action   { "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 20, "unit": "s" } } }',
-        "<- error -32012 INTERLOCK_BLOCKED",
-        "               pump can't run while tank is empty",
-        "",
-        '-> hal/action   { "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 20, "unit": "s" } } }',
-        '<- result       { "status": "done", "result": { "device": "plant-waterer", "action": "water", "args": { "duration": { "value": 20, "unit": "s" } } } }',
+        '-> hal/action   { "device": "printer", "action": "cancel" }',
+        '<- result       { "status": "pending", "requestId": "fc100aa740c6f81b", "expiresInS": 300 }',
       ].join("\n"),
     );
   });
@@ -172,7 +188,7 @@ describe("formatting", () => {
   });
 
   it("reads principals as labels or objects", () => {
-    expect(principalInfo("agent:bench-agent")).toEqual({ kind: "agent", name: "bench-agent", label: "agent:bench-agent" });
+    expect(principalInfo("agent:print-watcher")).toEqual({ kind: "agent", name: "print-watcher", label: "agent:print-watcher" });
     expect(principalInfo({ kind: "human", name: "owner" }).label).toBe("human:owner");
     expect(principalInfo(null).kind).toBe("unknown");
   });

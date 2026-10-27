@@ -71,13 +71,7 @@
         <a href={href(item.view)} aria-current={router.route.view === item.view ? "page" : undefined}>
           {item.label}
           {#if item.view === "confirmations" && pending > 0}
-            <span class="count">
-              <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
-                <circle cx="6" cy="6" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5" />
-                <path d="M6 1.25a4.75 4.75 0 0 0 0 9.5z" fill="currentColor" />
-              </svg>
-              {pending}<span class="visually-hidden"> waiting for confirmation</span>
-            </span>
+            <span class="count">{pending}<span class="visually-hidden"> waiting for confirmation</span></span>
           {/if}
         </a>
       </li>
@@ -217,13 +211,14 @@
     border-bottom-color: var(--accent);
   }
 
-  .count {
-    display: inline-flex;
+  .stop-slot {
+    display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 0 6px;
-    border-radius: var(--radius);
-    background: var(--confirm-bg);
+    justify-content: flex-end;
+    min-height: 52px;
+  }
+
+  .count {
     color: var(--confirm);
     font-family: var(--font-mono);
     font-size: var(--t-label);
@@ -236,7 +231,7 @@
     align-items: baseline;
     gap: var(--s-2) var(--s-4);
     padding: var(--s-3) var(--s-5);
-    border-bottom: 2px solid var(--blocked);
+    border-bottom: var(--rule);
     background: var(--surface);
   }
 
@@ -273,6 +268,7 @@
     .stop-slot {
       grid-column: 2;
       grid-row: 1;
+      min-height: 48px;
     }
 
     .views ul {

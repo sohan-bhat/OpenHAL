@@ -11,7 +11,7 @@ An open-source protocol for AI agents to control hardware.
   <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="docs/diagrams/flow-narrow-dark.svg">
   <source media="(max-width: 600px)" srcset="docs/diagrams/flow-narrow-light.svg">
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/flow-dark.svg">
-  <img src="docs/diagrams/flow-light.svg" width="900" alt="OpenHAL flow. An AI client sends hal/action to the hub. The safety kernel checks it against the device file's limits. An allowed command gets a grant and goes through the driver to the Arduino plant waterer, and the reading comes back to the client. A command that fails a check is blocked with INTERLOCK_BLOCKED because the tank is empty.">
+  <img src="docs/diagrams/flow-light.svg" width="900" alt="OpenHAL flow. An agent sends hal/write to the hub. The safety kernel checks it against the device file's limits. An allowed command gets a grant and goes through the driver to the 3D printer, and the reading comes back to the agent. A 300 °C nozzle is blocked with LIMIT_EXCEEDED because the limit is 260 °C.">
 </picture>
 
 ## Quickstart
@@ -25,35 +25,46 @@ uv run openhal demo
 ```
 
 <!-- outcome:start -->
-You'll see the hub refuse a 120 s watering, hold the pump while the tank is empty, then water for 20 s as soil moisture rises from 31 % to 46 %.
+You'll see the agent warm the bed from 60 °C to 70 °C, have a 300 °C nozzle refused at the 260 °C limit, pause the print when it comes loose and wait for a person to approve the cancel.
 <!-- outcome:end -->
 
 ## Message trace
 
 <!-- trace:start -->
 ```
-→ hal/action  { "device": "plant-waterer", "action": "water",
-                "args": { "duration": { "value": 120, "unit": "s" } } }
-← error -32010 LIMIT_EXCEEDED
-  water duration 120 s exceeds the limit of 30 s
-  (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)
+# the agent checks the first layer
+→ hal/read    { "device": "printer-cam", "channel": "frame" }
+← result      { "value": { "mimeType": "image/jpeg", "bytes": 19409,
+                "width": 640, "height": 480, "data": "…" } }
 
-# tank is empty
-→ hal/action  { "device": "plant-waterer", "action": "water",
-                "args": { "duration": { "value": 20, "unit": "s" } } }
-← error -32012 INTERLOCK_BLOCKED
-  pump can't run while tank is empty
-
-# tank refilled
-→ hal/action  { "device": "plant-waterer", "action": "water",
-                "args": { "duration": { "value": 20, "unit": "s" } } }
+# a corner of the first layer is lifting
+→ hal/write   { "device": "printer", "channel": "bed_target",
+                "value": 70, "unit": "degC" }
 ← result      { "status": "done" }
-← hal/value   { "device": "plant-waterer", "channel": "soil_moisture",
-                "value": 46, "unit": "%" }
+
+→ hal/write   { "device": "printer", "channel": "extruder_target",
+                "value": 300, "unit": "degC" }
+← error -32010 LIMIT_EXCEEDED
+  extruder_target 300 degC exceeds the limit of 260 degC
+  (printer.hal.yaml, confirmed by owner 2026-10-24)
+
+# later
+→ hal/read    { "device": "printer-cam", "channel": "frame" }
+← result      { "value": { "mimeType": "image/jpeg", "bytes": 23567,
+                "width": 640, "height": 480, "data": "…" } }
+
+# the print has come loose
+→ hal/action  { "device": "printer", "action": "pause" }
+← result      { "status": "done" }
+
+# cancelling can't be undone
+→ hal/action  { "device": "printer", "action": "cancel" }
+← result      { "status": "pending", "requestId": "REQUEST_ID",
+                "expiresInS": 300 }
 ```
 <!-- trace:end -->
 
-The trace is a real run of the hub against the simulated [plant waterer](examples/plant-waterer/), recorded in [docs/demo/scenario.yaml](docs/demo/scenario.yaml).
+An agent keeps an eye on a long 3D print. It looks at the camera, judges what is going wrong and acts, and the safety kernel keeps it inside the limits a person confirmed. The trace is a real run of the hub against a simulated [printer and camera](examples/print-babysitter/), recorded in [docs/demo/scenario.yaml](docs/demo/scenario.yaml). The camera frames are line drawings, and `REQUEST_ID` stands in for the hub's random request id.
 
 ## Install
 
@@ -115,7 +126,7 @@ v0.1, in development. Every driver passes the conformance suite on a simulator.
 
 ## Safety model
 
-- A device file stays read-only until a person confirms its limits, and nothing an AI proposes can confirm them.
+- A device file stays read-only until a person confirms its limits, and nothing an agent proposes can confirm them.
 - Drivers can only change hardware with a single-use grant the kernel issues for that exact command.
 - Unknown values never pass a check, so a stale or missing reading blocks the command.
 - One stop puts every device in its safe state and refuses every command until a person unlocks.

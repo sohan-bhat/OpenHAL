@@ -6,6 +6,7 @@ import type {
   DeviceView,
   Principal,
   Question,
+  ReadResult,
   Routine,
   RoutineDryRun,
   RoutineSummary,
@@ -76,6 +77,7 @@ export const api = {
   status: () => get<Status>("/v1/status"),
   devices: () => get<DeviceSummary[]>("/v1/devices"),
   device: (id: string) => get<DeviceView>(`/v1/devices/${encodeURIComponent(id)}`),
+  read: (device: string, channel: string) => post<ReadResult>("/v1/read", { device, channel }),
   write: (device: string, channel: string, value: unknown, unit?: string) =>
     post<Decision>("/v1/write", unit ? { device, channel, value, unit } : { device, channel, value }),
   action: (device: string, action: string, args: Record<string, unknown>) =>

@@ -1,3 +1,4 @@
+import { stripImageData } from "./images";
 import type { LogEntry } from "./trace";
 
 export const LOG_LIMIT = 2000;
@@ -27,8 +28,14 @@ export function parseLiveFrame(data: unknown): LogEntry[] {
   return [];
 }
 
-export function mergeEntries(existing: LogEntry[], incoming: LogEntry[], limit = LOG_LIMIT): LogEntry[] {
-  if (!incoming.length) return existing;
+export function withoutPixels(entry: LogEntry): LogEntry {
+  const message = stripImageData(entry.message);
+  return message === entry.message ? entry : { ...entry, message };
+}
+
+export function mergeEntries(existing: LogEntry[], arriving: LogEntry[], limit = LOG_LIMIT): LogEntry[] {
+  if (!arriving.length) return existing;
+  const incoming = arriving.map(withoutPixels);
   const last = existing[existing.length - 1];
   const appendOnly = last !== undefined && incoming.every((entry) => entry.seq > last.seq);
   let merged: LogEntry[];

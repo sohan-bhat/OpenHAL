@@ -132,6 +132,9 @@ export interface ReasonSegment {
 
 const CONDITION = /[A-Za-z_][\w.-]*\s?(?:==|!=|<=|>=|<|>)\s?(?:-?\d+(?:\.\d+)?(?:\s?(?:%|°C|[A-Za-z]{1,4})(?![\w]))?|[A-Za-z_][\w.-]*)/g;
 
+const PLAIN_WORD = /^[A-Za-z]+$/;
+const ARTICLE_BEFORE = /\b(?:the|a|an|this|that|its|your)\s$/i;
+
 function escape(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -157,6 +160,7 @@ export function reasonSegments(text: string, identifiers: string[] = []): Reason
     for (const match of text.matchAll(words)) {
       const start = match.index ?? 0;
       const end = start + match[0].length;
+      if (PLAIN_WORD.test(match[0]) && ARTICLE_BEFORE.test(text.slice(0, start))) continue;
       if (!marks.some((mark) => start < mark.end && end > mark.start)) marks.push({ start, end });
     }
   }

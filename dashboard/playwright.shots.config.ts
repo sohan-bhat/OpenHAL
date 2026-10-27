@@ -18,7 +18,7 @@ export default defineConfig({
   reporter: [["list"]],
   use: { baseURL: `http://127.0.0.1:${port}`, headless: true, ...devices["Desktop Chrome"] },
   webServer: {
-    command: `${process.env.UV ?? "uv"} run python -m tests.inspector.serve --port ${port} --state ${state}`,
+    command: `PYTHONPATH=. ${process.env.UV ?? "uv"} run python dashboard/e2e/print_hub.py --port ${port} --state ${state}`,
     cwd: repo,
     url: `http://127.0.0.1:${port}/`,
     reuseExistingServer: false,

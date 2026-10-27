@@ -4,10 +4,6 @@
 
 <aside class="stop-unavailable" aria-labelledby="stop-unavailable-title">
   <p id="stop-unavailable-title" class="title">
-    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-      <circle cx="10" cy="10" r="8.25" fill="none" stroke="currentColor" stroke-width="2" />
-      <path d="M5.5 10h9" stroke="currentColor" stroke-width="2.5" />
-    </svg>
     {why === "unpaired" ? "STOP needs a paired browser" : "STOP can't reach the hub"}
   </p>
   {#if why === "unpaired"}
@@ -30,22 +26,14 @@
     gap: var(--s-1);
     max-width: 420px;
     padding: var(--s-3) var(--s-4);
-    border: 2px solid var(--blocked);
     border-radius: var(--radius);
-    background: var(--bg);
+    background: var(--surface);
   }
 
   .title {
-    display: flex;
-    align-items: center;
-    gap: var(--s-2);
     font-weight: 800;
     letter-spacing: 0.02em;
     color: var(--blocked);
-  }
-
-  .title svg {
-    flex: none;
   }
 
   p {

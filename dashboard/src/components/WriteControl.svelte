@@ -348,19 +348,6 @@
     flex-wrap: wrap;
     align-items: baseline;
     gap: var(--s-1) var(--s-3);
-    padding: var(--s-2) var(--s-3);
-    background: var(--surface);
-    border-left: 3px solid var(--ok);
-    border-radius: 0 var(--radius) var(--radius) 0;
-  }
-
-  .result.blocked,
-  .result.failed {
-    border-left-color: var(--blocked);
-  }
-
-  .result.pending {
-    border-left-color: var(--confirm);
   }
 
   .head.error {

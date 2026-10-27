@@ -23,8 +23,8 @@ async function hasVisibleFocus(page: Page): Promise<string | true> {
 }
 
 test("the Inspector works from the keyboard with visible focus", async ({ page, browserName }) => {
-  await page.goto("/#/devices/plant-waterer");
-  await expect(page.getByRole("heading", { name: "Plant waterer" })).toBeVisible();
+  await page.goto("/#/devices/printer");
+  await expect(page.getByRole("heading", { name: "Klipper 3D printer", level: 1 })).toBeVisible();
   const tab = browserName === "webkit" ? "Alt+Tab" : "Tab";
 
   await page.keyboard.press(tab);
@@ -56,7 +56,7 @@ test("the Inspector works from the keyboard with visible focus", async ({ page, 
   expect(await slider.inputValue()).toBe("60");
 });
 
-const VIEWS = ["#/devices/plant-waterer", "#/devices/curing-heater", "#/devices/bench-lamp", "#/confirmations", "#/audit", "#/routines", "#/writer", "#/settings"];
+const VIEWS = ["#/devices/printer", "#/devices/printer-cam", "#/devices/plant-waterer", "#/devices/curing-heater", "#/devices/bench-lamp", "#/confirmations", "#/audit", "#/routines", "#/writer", "#/settings"];
 
 test("no view scrolls sideways on a 390 px phone", async ({ page }) => {
   test.setTimeout(120_000);

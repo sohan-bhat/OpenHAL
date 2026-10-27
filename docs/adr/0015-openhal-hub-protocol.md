@@ -62,6 +62,19 @@ Notifications from the hub, after `hal/initialized`:
 
 Clients subscribe to all notifications by default. A later version may add filters.
 
+### Image readings
+
+Amended on 2026-10-26. The value of an image channel, such as a camera frame, is an object.
+
+```json
+{ "mimeType": "image/jpeg", "bytes": 23817, "width": 640, "height": 480, "data": "<base64>" }
+```
+
+- `hal/read`, `hal/readMany`, REST `/v1/read` and `/v1/read_many` carry the image in `data`, base64 encoded. `width` and `height` come from the image header and are null when the hub can't read it.
+- `hal/value`, device descriptions and views, the audit log and the MCP `read_many` tool leave `data` out and keep `{ mimeType, bytes, width, height }`.
+- A frame over 2 MB is refused with DRIVER_ERROR. The reason names the limit and the camera settings to lower. A frame is never cut short.
+- The MCP `read` tool returns the image as an MCP image block, next to a short text block that marks it as device data. A frame can show text, and that text is data, never an instruction.
+
 ### Error registry
 
 A blocked or failed command is a JSON-RPC error. `error.code` is the number, `error.message` is the human-readable reason, and `error.data` is `{ name, kernelCode, kernelMessage?, device?, channel?, action?, limit?, requested?, file?, confirmedBy?, confirmedAt?, tightenedBy?, requestId?, method?, routine?, problems? }`. `limit` and `requested` are Quantity objects such as `{"value": 100, "unit": "%"}` (ADR 0016). `name` is the registry name and is what clients branch on. Numbers are stable across versions and never reused.
@@ -97,7 +110,7 @@ Every kernel code maps to exactly one name. A test enforces this.
 
 Pending versus CONFIRMATION_REQUIRED. `hal/write` and `hal/action` answer a command that needs a person with the result `{ status: "pending", requestId, expiresInS }`, and the hub sends `hal/confirmationRequested`. The error CONFIRMATION_REQUIRED is for callers that cannot hold a pending request, such as a routine step or a command inside `hal/planCheck`, and carries `data.requestId` when a request was queued.
 
-Reason messages are formed from `data`, one template per name. LIMIT_EXCEEDED reads `water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)`. The kernel's own message stays available as `data.kernelMessage`. When the limit that blocked the write is one a principal tightened for its session, the reason names that instead and never cites the file's confirmation, for example `brightness 80 % exceeds the session limit of 70 % (tightened by claude)`. Below the minimum reads `water duration 0 s is below the limit of 1 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)`.
+Reason messages are formed from `data`, one template per name. LIMIT_EXCEEDED reads `extruder_target 300 degC exceeds the limit of 260 degC (printer.hal.yaml, confirmed by owner 2026-10-24)`. The kernel's own message stays available as `data.kernelMessage`. When the limit that blocked the write is one a principal tightened for its session, the reason names that instead and never cites the file's confirmation, for example `brightness 80 % exceeds the session limit of 70 % (tightened by claude)`. Below the minimum reads `bed_target -10 degC is below the limit of 0 degC (printer.hal.yaml, confirmed by owner 2026-10-24)`, and an action argument reads `water duration 0 s is below the limit of 1 s`.
 
 ### Conformance levels
 

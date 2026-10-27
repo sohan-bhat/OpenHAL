@@ -91,6 +91,7 @@ packages = ["openhal"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "examples/plant-waterer" = "openhal/examples/plant-waterer"
+"examples/print-babysitter" = "openhal/examples/print-babysitter"
 "library" = "openhal/library_data"
 
 [tool.ruff]

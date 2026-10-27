@@ -13,6 +13,7 @@ from openhal.client import (
     BadRequest,
     Client,
     HubNotRunning,
+    Image,
     NotFound,
     Refused,
     Unauthorized,
@@ -23,8 +24,11 @@ from openhal.client import (
 )
 from openhal.client.settings import resolve_token, resolve_url
 from openhal.hub.hub import Hub
+from openhal.spec import loads
 from tests.interfaces.conftest import BASE_URL, SyncHub, Tokens
+from tests.interfaces.test_mcp import CAM
 from tests.kernel.conftest import FakeClock
+from tests.protocol.test_image_readings import png
 
 
 def aclient(transport: httpx.AsyncBaseTransport, token: str | None) -> AsyncClient:
@@ -52,6 +56,21 @@ async def test_status_devices_and_reads(async_transport: httpx.ASGITransport, to
             await hub.device("nope")
         with pytest.raises(NotFound):
             await hub.read("desk-fan", "nope")
+
+
+async def test_an_image_reading_is_typed(async_transport: httpx.ASGITransport, tokens: Tokens, hub: Hub) -> None:
+    await hub.add_and_start(loads(CAM))
+    frame = png(8, 6)
+    hub.kernel.devices["cam"].driver.values["frame"] = frame  # type: ignore[attr-defined]
+    async with aclient(async_transport, tokens.reader) as client:
+        reading = await client.read("cam.frame")
+        view = await client.device("cam")
+    assert isinstance(reading.value, Image)
+    assert (reading.value.mime_type, reading.value.width, reading.value.height) == ("image/png", 8, 6)
+    assert reading.value.content() == frame
+    assert reading.bytes == len(frame)
+    seen = Image.model_validate(view.read["frame"].value)
+    assert (seen.bytes, seen.data, seen.content()) == (len(frame), None, b"")
 
 
 async def test_write_action_and_dry_run(async_transport: httpx.ASGITransport, tokens: Tokens) -> None:

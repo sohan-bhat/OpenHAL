@@ -4,6 +4,7 @@
   import Reason from "../components/Reason.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import { api } from "../lib/api";
+  import { stripImageData } from "../lib/images";
   import { formatDateTime, identifiersOf } from "../lib/units";
   import { fromKernelCode } from "../lib/protocol";
   import { inspector } from "../lib/state.svelte";
@@ -139,7 +140,7 @@
               </span>
             </span>
             {#if text}<p class="reason"><Reason {text} code={identifiersOf(entry.device, entry.target)} /></p>{/if}
-            {#if more}<span class="details"><Json value={more} limit={600} /></span>{/if}
+            {#if more}<span class="details"><Json value={stripImageData(more)} limit={600} /></span>{/if}
           </li>
         {/each}
       </ol>
@@ -206,10 +207,6 @@
   }
 
   .entry.agent.blocked {
-    border-left-color: var(--blocked);
-  }
-
-  .entry.human.blocked {
     border-left-color: var(--blocked);
   }
 

@@ -85,7 +85,7 @@ class AsyncClient:
         return await self.call(calls.device(device_id))
 
     async def read(self, device: str, channel: str | None = None) -> m.Reading:
-        """Read one channel. `read("plant-waterer", "soil_moisture")` or `read("plant-waterer.soil_moisture")`."""
+        """Read one channel. `read("printer", "bed_temp")` or `read("printer.bed_temp")`."""
         if channel is None:
             device, channel = split_target(device)
         return await self.call(calls.read(device, channel))
@@ -96,7 +96,7 @@ class AsyncClient:
         return await self.call(calls.read_many(pairs))
 
     async def write(self, device: str, channel: str, value: Value, unit: str | None = None) -> m.Decision:
-        """Ask the kernel to set a channel. A number needs its unit, as `write("led-strip", "brightness", 60, "%")`."""
+        """Ask the kernel to set a channel. A number needs its unit, as `write("printer", "bed_target", 70, "degC")`."""
         return await self.call(calls.write(device, channel, value, unit))
 
     async def action(
@@ -104,7 +104,8 @@ class AsyncClient:
     ) -> m.Decision:
         """Ask the kernel to run an action, with its arguments in `args` or as keywords.
 
-        A number goes with its unit, as `action("plant-waterer", "water", duration={"value": 20, "unit": "s"})`.
+        `action("printer", "pause")` takes none. A number argument goes with its unit, as
+        `duration={"value": 20, "unit": "s"}`.
         """
         return await self.call(calls.action(device, action, {**(args or {}), **kwargs}))
 
