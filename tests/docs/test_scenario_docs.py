@@ -133,7 +133,7 @@ def test_the_readme_and_the_flow_diagram_use_the_printer() -> None:
         built = (ROOT / "docs" / "diagrams" / f"{name}.svg").read_text(encoding="utf-8")
         assert "3D printer" in built
         assert "LIMIT_EXCEEDED" in built
-        assert f"A {nozzle} nozzle is blocked" in built
+        assert f"a request for a nozzle temperature of {nozzle} is blocked" in built
 
 
 def demo_pages() -> list[Path]:
