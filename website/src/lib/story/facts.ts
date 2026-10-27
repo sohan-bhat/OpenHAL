@@ -85,7 +85,7 @@ function reading(exchange: Exchange, channel: string): { before: number; after: 
 function imageText(exchange: Exchange): string {
   const value = exchange.result?.value ?? exchange.result?.result?.value ?? exchange.result;
   const kind = String(value?.mimeType ?? value?.mime ?? "image");
-  return value?.width && value?.height ? `${kind} ${value.width} × ${value.height}` : kind;
+  return value?.width && value?.height ? `${kind} ${value.width}${NBSP}×${NBSP}${value.height}` : kind;
 }
 
 /** Every word and number the landing story shows, from docs/demo/scenario.yaml and the printer's device file. */

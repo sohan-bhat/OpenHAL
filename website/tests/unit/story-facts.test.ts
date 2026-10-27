@@ -105,7 +105,7 @@ describe("the story's words and numbers", () => {
     expect(facts.camera.driver).toBe(fresh().record.devices!.find((item) => item.id === look.request.params.device)!.driver);
     expect(facts.confirmed).toBe(`confirmed by ${described.confirmed.by} ${described.confirmed.at}`);
     expect([facts.bed.before, facts.bed.after]).toEqual([(bed as any)[facts.bed.channel].before.value, (bed as any)[facts.bed.channel].after.value]);
-    expect(facts.camera.image).toBe(`${look.result!.value.mimeType} ${look.result!.value.width} × ${look.result!.value.height}`);
+    expect(facts.camera.image).toBe(`${look.result!.value.mimeType} ${look.result!.value.width}\u00a0×\u00a0${look.result!.value.height}`);
   });
 
   it("take the limits from printer.hal.yaml, which match what the hub described", () => {
