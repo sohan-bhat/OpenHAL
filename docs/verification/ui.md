@@ -39,6 +39,24 @@ node scripts/lighthouse.mjs LIGHTHOUSE_BIN STATE.json "#/devices/printer,#/confi
 
 Both scripts print each score and the audits that lost points. The Inspector script signs in with the human token from the state file. The pairing page was measured with a state file whose token is not a session.
 
+The page weight budgets, from a production build. The spec loads one page of each template in Chromium and prints what each sends.
+
+```text
+cd website
+pnpm build
+pnpm exec playwright test tests/e2e/budget.spec.ts --project=chromium
+```
+
+When the budget spec says a font subset lacks a character, list the characters the build shows and cut the subsets again, then rebuild.
+
+```text
+cd website
+pnpm build
+node scripts/glyphs.mjs dist
+cd ..
+uv run --no-project --with fonttools==4.67.0 --with brotli python website/scripts/fonts.py
+```
+
 ## Lighthouse, website
 
 | Page | Path | Mobile perf | Mobile a11y | Mobile best practices | Mobile SEO | Desktop perf | Desktop a11y | Desktop best practices | Desktop SEO |
@@ -62,7 +80,41 @@ Both scripts print each score and the audits that lost points. The Inspector scr
 
 Mobile performance moves by a point or two between runs on this Mac. Pages that scored under 100 on the first run were measured three or four times, and the table shows the median. The rebuilt Overview scored 100 on four mobile runs, with a layout shift of 0, first contentful paint at 1.0 s, largest contentful paint at 1.4 to 1.5 s, no blocking time and 74 KB in all. Before the rebuild it scored 99, 99, 99 and 100. In round 6 the Overview scored 100 in every category on three mobile and three desktop runs, with a layout shift of 0, first contentful paint at 1.10 to 1.13 s, largest contentful paint at 1.51 to 1.59 s, no blocking time and 81 KB in all on a phone. The Playground scored 100 in every category on all six runs, with 79 KB on a phone, since its kernel loads only when a person first uses it. Messages scored 96, 100 and 99, Schema reference 99, 100 and 99, and Drivers 99, 100 and 100. The points they lose are first contentful paint at 1.1 to 1.5 s and blocking time of 70 to 210 ms under the simulated slow phone.
 
-Gzipped, the home page's HTML is 14.7 KB, which holds 3.5 KB of inline script and 1.3 KB of inline style, its two stylesheets are 7.8 KB and the story script is 2.3 KB. The smooth scrolling code adds 0.6 KB once the page is idle. The Playground's HTML is 16.6 KB and its three stylesheets are 6.8 KB, and its kernel, 98 KB with the Svelte runtime, loads the first time a person uses the page, which then replays that first click.
+Gzipped, the home page's HTML is 14.7 KB, which holds 3.5 KB of inline script and 1.3 KB of inline style, its two stylesheets are 7.8 KB and the story script is 2.3 KB. The smooth scrolling code adds 0.6 KB once the page is idle. The Playground's HTML is 16.6 KB and its three stylesheets are 6.8 KB, and its kernel, 98 KB with the Svelte runtime, loads the first time a person uses the page, which then replays that first click. The speed round's weights are under Website speed below.
+
+## Website speed
+
+Measured by the website round 7 workstream, the speed round, on the same Mac. Before is the starting commit 2aa54f2. After is the round's last commit. Both were built the same way and served the same way in one session, one before run and one after run in turn, so a busy moment on the shared Mac hits both. Live is https://sohan-bhat.github.io/OpenHAL/ serving 2aa54f2, measured from this Mac on 2026-10-26. Each value is the median of three runs, times in ms and weights in KB as Lighthouse counts them.
+
+### Where the bytes went
+
+| Template | Page | Before, HTML + CSS + JS + fonts | After, HTML + CSS + JS + fonts |
+|---|---|---|---|
+| Home | `/` | 77.4 KB | 53.4 KB |
+| Docs index | `/docs/` | 64.8 KB | 30.9 KB |
+| Guide page | `/docs/quickstart/` | 85.1 KB | 47.7 KB |
+| Page with diagrams | `/docs/architecture/` | 125.1 KB | 51.9 KB |
+| Spec page | `/spec/2026-10-24/basic/messages/` | 76.2 KB | 51.7 KB |
+| Drivers | `/drivers/` | 70.3 KB | 46.0 KB |
+| Playground | `/spec/playground/` | 75.3 KB | 51.0 KB |
+| Python reference | `/sdks/python/reference/` | 71.8 KB | 47.3 KB |
+| Inspector page | `/inspector/` | 65.1 KB | 41.3 KB |
+
+HTML, CSS and JavaScript are gzipped the way GitHub Pages serves them, fonts are their WOFF2 bytes. The Inspector page's screenshots come on top, 241 KB before on a phone and on a desktop, 53 KB after on a phone and 102 KB on a desktop.
+
+- **Fonts.** website/scripts/fonts.py cuts the two faces to the characters a build shows and the weights the styles use, 400 to 800 for the text face, 400 to 700 for the mono face and 400 for the mono italic. The text face went from 34.0 KB to 16.7 KB, the mono face from 17.8 KB to 9.7 KB and the mono italic from 19.1 KB to 6.0 KB. A static instance came out at 7.0 to 7.5 KB a weight, more than the narrowed variable face once a page uses three weights, so the subsets stay variable apart from the mono italic, which the site sets only at 400. Each subset keeps its face's family, style and weight range, so its rule joins the full face's rule in design/tokens.css, and a character a subset lacks still renders in the full face. Both subsets are preloaded. The mono face shows in the first screen of 101 of 115 pages at 1440 px and 75 at 390 px, and its fallback is about 9 % narrower than the face, so a mono font that arrives after the first paint moves text. The docs index shows no mono text and preloads only the text face. Body text renders the same, apart from anti-aliasing in under 0.2 % of a page's pixels.
+- **Diagrams.** A page inlines each D2 diagram once. D2's embedded fonts go, the diagram's text uses the page's faces at the weights D2 drew with and without kerning, as D2's fonts have none, and every color that differs between the light and dark files becomes a design token or a property the SVG sets for each theme. docs/architecture went from 321 KB of HTML to 98 KB, and from 68 KB to 17 KB gzipped. The diagrams render as before in both themes in Chromium and Firefox, apart from anti-aliasing in 0.4 to 2.2 % of their pixels. The files in docs/diagrams are unchanged.
+- **Inspector screenshots.** The build cuts each crop out of its capture with sharp, from the crop website/src/data/inspector-captures.json records, as AVIF with a WebP fallback in both themes. Each crop comes at its recorded width and at 85 %, the narrowest the page draws it, with its width and height set and loaded lazily, since the first one starts 1,099 px down at 1440 px and 1,948 px down at 390 px. Open the whole screen still links the full capture.
+- **Scripts.** The copy buttons, the scrolling regions, the search dialog and the prefetch for browsers without speculation rules ship as one module, 7.3 KB, 3.0 KB gzipped, cached across pages. The Pagefind index loads only when a person points at the search or opens it. The page turn script stays inline in the head and is minified, 2.5 KB down to 1.2 KB. The story and smooth scrolling load only on home and the Playground's kernel only on its first use, as before. A CSS coverage pass over every page in both themes at 1440 and 390 px found no dead rules beyond the full faces kept as the subsets' fallback, the dark rules for data-theme that the Inspector uses, and the two-copy diagram rules kept for a diagram with no redraw.
+- **Search snippets.** The owner asked that a result never show YAML or code. The index leaves code blocks, YAML and message traces out of what it reads, and a snippet that still reads as code shows the page's description, which is also the snippet when a result has none.
+
+### Page turns and prerendering
+
+Every page carries speculation rules that prerender a same-site page after a short hover or on pointer down, and only prefetch the Playground, whose kernel still waits for the first click. Search files, captures and social images are never fetched ahead. tests/e2e/navigation.spec.ts checks the rules on four pages, that pointing at Drivers and the Playground fetches their pages in Chromium without the Playground's script, and that Firefox, which has no speculation rules, prefetches with Astro's prefetch on hover and on focus. Chrome turns prerendering off while DevTools drives it, so those tests see a prefetch. A self-driving page checked the prerendered path in Chrome for Testing with nothing attached. The Device Library page was prerendered, then activated 3.8 s after its prerender began, its pagereveal event carried the view transition with the type forward, and the page turned forward as the navigation goes. Under /OpenHAL/ the rules' pattern reads /OpenHAL/* and every request stayed under /OpenHAL/ in Chromium and Firefox.
+
+### A first frame that waits a second
+
+In some Lighthouse runs on a phone, Chrome draws nothing for about a second after the page has loaded, and sometimes two. The trace shows the load event near 200 ms, no main frame until a tick near 1.16 s, and the first contentful paint near 1.2 or 2.2 s. Lighthouse's Speed Index weighs the paint it saw by 1.4, so such a run reads about 2.0 s instead of the first paint's 1.1 s, and its blocking time rises when the late frame lands after the simulated first paint. The delay happened in 6 of 24 phone runs of the starting commit and never on a desktop. The delay still happened with the view transition rule, the font preloads, the head script, every script or every stylesheet removed, and with the reference's sections hidden by content-visibility. The delay did not happen on a page with a small main column or on a plain test page. The delay reads as a headless Chrome frame scheduling issue that larger pages meet more often, not something a page asks for. The tables give the median of three runs, as the brief asks, so one such run doesn't set a median.
 
 ## Lighthouse, Inspector
 
