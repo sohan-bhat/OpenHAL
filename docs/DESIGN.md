@@ -144,7 +144,7 @@ Pages show the one thing a person needs and keep the depth one tap away. A term 
 ## Wordmark
 
 - **Wordmark, no logo.** The brand is the name, OpenHAL, set in Atkinson Hyperlegible Next at weight 800 with tracking at -0.06 em, in `--text`. There is no logo shape. Where a square is needed (favicon, app icons) the initials OH are set the same way. Built by tools/readme/build.py into docs/assets/wordmark-{light,dark}.svg, mark-{light,dark}.svg (the initials) and favicon.svg, which the README and the website read. The Inspector sets the same wordmark in its header.
-- **HAL spelled out, on the landing hero only.** Under the letters H, A and L of the large hero wordmark sit three small labels, hardware, agent and layer, lowercase in `--text-2` at the legend size, each centered under its letter. They are hidden from screen readers, which read OpenHAL, and the long name Open Hardware Agent Layer is in the page's metadata. The header wordmark, icons and the README stay plain.
+- **HAL spelled out, on the landing hero only.** Under the letters H, A and L of the large hero wordmark sit three small labels, written exactly `[hardware]`, `[agent]` and `[layer]` with their square brackets, lowercase in `--text-2` at the legend size, each centered under its letter. The owner asked for the brackets on 2026-10-26. On a narrow phone the labels move apart just enough to keep 6 px between them, and each stays under its own letter. They are hidden from screen readers, which read OpenHAL, and the long name Open Hardware Agent Layer is in the page's metadata. The header wordmark, icons and the README stay plain.
 - Original. It never imitates MCP's, Anthropic's or any other logo.
 
 ## Diagrams

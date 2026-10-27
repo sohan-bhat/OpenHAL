@@ -62,7 +62,7 @@ test.describe("status words", () => {
 });
 
 test.describe("the hero", () => {
-  for (const width of [1440, 768, 390]) {
+  for (const width of [1440, 768, 390, 360]) {
     test(`spells HAL out under its own letters at ${width} px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/");
@@ -85,12 +85,15 @@ test.describe("the hero", () => {
           const ink = context.measureText(text.textContent!.charAt(at));
           const center = glyph.left + (ink.actualBoundingBoxRight - ink.actualBoundingBoxLeft) / 2;
           const box = label.getBoundingClientRect();
-          return { letter: text.textContent!.charAt(at), word: label.textContent, off: Math.abs(box.left + box.width / 2 - center), size: parseFloat(getComputedStyle(label).fontSize), below: box.top - glyph.top };
+          const middle = box.left + box.width / 2;
+          const under = middle >= glyph.left - ink.actualBoundingBoxLeft && middle <= glyph.left + ink.actualBoundingBoxRight;
+          return { letter: text.textContent!.charAt(at), word: label.textContent, off: Math.abs(middle - center), under, size: parseFloat(getComputedStyle(label).fontSize), below: box.top - glyph.top };
         });
       });
-      expect(offsets.map((item) => `${item.letter} ${item.word}`)).toEqual(["H hardware", "A agent", "L layer"]);
+      expect(offsets.map((item) => `${item.letter} ${item.word}`)).toEqual(["H [hardware]", "A [agent]", "L [layer]"]);
       for (const item of offsets) {
-        expect(item.off).toBeLessThan(1.5);
+        expect(item.under).toBe(true);
+        if (width >= 768) expect(item.off).toBeLessThan(1.5);
         expect(item.size).toBe(13);
         expect(item.below).toBeGreaterThan(0);
       }
