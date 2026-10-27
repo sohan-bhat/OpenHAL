@@ -1,6 +1,6 @@
 # Create a routine
 
-A routine is an automation that runs on the [Hub](glossary:hub) without a model. The routine's triggers set when the routine runs and the routine's steps set what the routine does, and every change a step makes goes through the [Safety Kernel](glossary:safety-kernel) like any other command.
+A routine is an automation that runs on the [Hub](glossary:hub) without a model. Triggers set when a routine runs and steps set what the routine does, and every change a step makes goes through the [Safety Kernel](glossary:safety-kernel) like any other command.
 
 ## Start the hub
 

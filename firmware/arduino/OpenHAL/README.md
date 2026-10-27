@@ -60,7 +60,7 @@ An output the hub may set directly works the same way without `.internal()`. The
 | `heartbeat(ms)` | Fall to the safe state when no heartbeat arrives from the hub for `ms` milliseconds |
 | `applySafeState(reason)` | Apply the safe state from the sketch, for example from a local stop button |
 | `.states(labels, count)` | A reading with named states, such as a float switch. `fn` returns the index of the state |
-| `.internal()` | An output only the sketch sets. The hub can't see or set the output, but a stop and a lost heartbeat still return the output to safe |
+| `.internal()` | An output only the sketch sets. The hub can't read or set the output, but a stop and a lost heartbeat still return the output to safe |
 | `action(name, fn)` | An action the hub can request from the board. `fn` receives the arguments in the order they were declared and returns `nullptr` to run, or a short reason such as `"tank_empty"` to refuse |
 | `.arg(name, unit, min, max)` | One argument of an action, up to 3. The board refuses values outside the range |
 | `drive(output, value, ms)` | Set an output from the sketch, and return it to safe after `ms` milliseconds when `ms` isn't 0 |

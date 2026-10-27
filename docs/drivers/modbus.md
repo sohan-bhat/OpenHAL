@@ -81,7 +81,7 @@ Because changing one bit needs a read-modify-write that could race with the devi
 - Because scanning unit ids would send requests to devices nobody configured, the driver has no discovery.
 - The driver doesn't support strings, 64-bit values or file records.
 - Modbus devices don't describe their registers, so `describe()` only returns the unit id and any identification objects.
-- The driver is built to be the only master on the bus, so don't run the driver on a bus with another master.
+- The driver doesn't coordinate with other masters, so don't run the driver on a bus with another master.
 
 ## Hazard default and safe state
 

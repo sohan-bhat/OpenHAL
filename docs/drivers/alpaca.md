@@ -55,7 +55,7 @@ Telescopes and domes get AbortSlew, focusers Halt and cameras AbortExposure, on 
 
 ## Discovery
 
-`openhal discover` broadcasts `alpacadiscovery1` to UDP port 32227 and waits one second, then requests the configured devices of each server that responds with read-only GET requests, so nothing is connected and nothing changes.
+`openhal discover` broadcasts `alpacadiscovery1` to UDP port 32227 and waits one second, then sends read-only GET requests to each server that responds to list the server's configured devices, so nothing is connected and nothing changes.
 
 ## Setup
 

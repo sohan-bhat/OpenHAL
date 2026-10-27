@@ -18,7 +18,7 @@ The token is shown only once, and the token's scope limits what the token may do
 | `control_low` | Changes to low hazard devices |
 | `control_medium` | Changes to low and medium hazard devices |
 
-A change from an agent token to a high hazard device always waits for a person's approval, and `openhal mcp` refuses the human token.
+A change that an agent token requests on a high hazard device always waits for a person's approval, and `openhal mcp` refuses the human token.
 
 ## Claude Code
 

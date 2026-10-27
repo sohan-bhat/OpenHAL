@@ -69,7 +69,7 @@ A change starts from the last payload the driver sent with that id, so changing 
 
 - Because CAN only broadcasts, a background thread keeps the newest frame per id, and a read decodes that frame with the time the frame arrived. An id that hasn't been received since connecting reads as no value, which the kernel treats as unknown, and reads never put anything on the bus.
 - Values are rounded to the field's raw step, and the reading a command returns shows the value actually sent. A value the field can't hold fails the command, and nothing is sent or clamped.
-- A successful send means the controller put the frame on the bus, which doesn't prove the node acted. Use a `state` map or a read channel to see that.
+- A successful send means the controller put the frame on the bus, which doesn't prove the node acted, so use a `state` map or a read channel to check whether the node acted.
 - Frames are never queued or retried, so a failed send fails the command.
 
 ## Example

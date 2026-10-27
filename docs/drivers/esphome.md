@@ -38,7 +38,7 @@ Because native API commands have no acknowledgement, the driver verifies each wr
 
 1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[esphome] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. Give the node an `api:` block in its YAML. With `encryption: key: ...`, put the same base64 key in an environment variable such as `PLANT_PSK` and set `noise_psk_env`.
-3. Prefer failsafes on the node itself, for example an `on_turn_on` automation that turns a pump off after a delay, or `api: reboot_timeout`. Because the hub can't see those failsafes, mention them in `safe_state_note`.
+3. Prefer failsafes on the node itself, for example an `on_turn_on` automation that turns a pump off after a delay, or `api: reboot_timeout`. Because the hub can't detect those failsafes, mention them in `safe_state_note`.
 4. Start from `openhal/drivers/esphome/examples/plant-waterer.hal.yaml` or from `describe()`.
 5. Validate with `openhal file validate`, then confirm the limits by hand.
 

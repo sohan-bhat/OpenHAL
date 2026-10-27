@@ -22,7 +22,7 @@ An agent may tighten a limit for the agent's own session, but loosening a limit,
 
 ## What happens when a sensor stops responding?
 
-The sensor's value becomes unknown after a short time, and an unknown value never lets a command pass. Interlocks that depend on the value block the command, and rate limits wait for a fresh reading. If the device itself drops off, the hub applies the device's safe state where the device's protocol allows a safe state.
+The sensor's value becomes unknown after a short time, and an unknown value never lets a command pass. Interlocks that depend on the value then block the command, and rate limits wait for a fresh reading. If the device itself drops off, the hub applies the device's safe state where the device's protocol allows a safe state.
 
 ## Does OpenHAL need firmware on my device?
 

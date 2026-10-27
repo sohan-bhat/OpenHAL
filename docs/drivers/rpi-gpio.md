@@ -99,7 +99,7 @@ Because a GPIO stop button only sends a stop request to the hub, keep a hardware
 
 The default hazard is low, because a GPIO pin drives 3.3 V at a few milliamps. What a pin switches can be anything, so set the hazard in the device file from what the relay or transistor drives. GPIO has no emergency behavior, so `safe_state_support` is `file`, and the hub applies the device file's `safe_state` with ordinary writes.
 
-When the driver closes or the hub exits, gpiozero releases the pins and the pin library usually turns them into inputs, so they stop being driven. An active-low relay board without a pull-up on its input can then switch on, so fit a pull resistor that makes a released pin mean off, and say so in the device file's `safe_state_note`.
+When the driver closes or the hub exits, gpiozero releases the pins and the pin library usually turns them into inputs, so they stop being driven. An active-low relay board without a pull-up on its input can then switch on, so fit a pull resistor that makes a released pin mean off, and record the resistor in the device file's `safe_state_note`.
 
 ## Sources
 

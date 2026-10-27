@@ -41,7 +41,7 @@ openhal init
 
 In a terminal, `openhal init` prompts with a few short questions.
 
-1. Look for devices, which sends only read-only identify commands.
+1. Look for devices, using only read-only identify commands.
 2. Add each device discovery found as a read-only device file. OpenHAL firmware boards and ESPHome nodes describe themselves and library matches come from the device library, but no limit is confirmed for you.
 3. Make a token for your AI client, read-only unless you pick another scope.
 4. Save a client's config for you. The setup for Claude Desktop, Claude Code and Cursor is printed either way, and a file is backed up before it changes.
@@ -49,7 +49,7 @@ In a terminal, `openhal init` prompts with a few short questions.
 
 `openhal init --yes` takes the safe defaults without prompting. With `--yes`, init looks for devices, adds every device read-only and makes a read token. A client config is saved only with `--client NAME`, and the service installs only with `--service`.
 
-A device that discovery can't see, such as a board on a known port, goes in with `--device`.
+A device that discovery can't find, such as a board on a known port, goes in with `--device`.
 
 ```text
 openhal init --device openhal-firmware=/dev/ttyACM0
@@ -74,7 +74,7 @@ OpenHAL/scripts/install-pi.sh
 
 The script installs uv if it's missing, the system packages the Pi drivers need, and the hub with the rpi-gpio, rpi-camera, pi-i2c-spi, serial and openhal-firmware extras. The script then adds you to the gpio, i2c, spi and dialout groups, turns on lingering, installs the service and prints the next command. Add `--dry-run` to see every command first.
 
-The camera needs Raspberry Pi OS with Python 3.12 or newer, so the hub can see the system's picamera2.
+The camera needs Raspberry Pi OS with Python 3.12 or newer, so the hub can import the system's picamera2.
 
 ## Next
 

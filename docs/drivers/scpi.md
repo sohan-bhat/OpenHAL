@@ -34,7 +34,7 @@ The `scpi` driver talks to programmable test instruments over VISA. Bench suppli
 
 ## describe()
 
-The proposal always has `device` and `match.scpi_idn`, and then adds these channels for each instrument family.
+The proposal always has `device` and `match.scpi_idn`, and the rest of the proposal depends on the instrument family.
 
 | Family | Matched by | Proposal |
 |---|---|---|
