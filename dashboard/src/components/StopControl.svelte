@@ -31,21 +31,9 @@
 </script>
 
 {#if stopped}
-  <button type="button" class="control unlock" onclick={openUnlock} aria-describedby="stopped-state">
-    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-      <circle cx="10" cy="10" r="8.25" fill="none" stroke="currentColor" stroke-width="2" />
-      <path d="M5.5 10h9" stroke="currentColor" stroke-width="2.5" />
-    </svg>
-    <span>UNLOCK</span>
-  </button>
+  <button type="button" class="button unlock" onclick={openUnlock} aria-describedby="stopped-state">UNLOCK</button>
 {:else}
-  <button type="button" class="control stop" onclick={stop} disabled={busy} aria-label="STOP every device">
-    <svg width="22" height="22" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-      <circle cx="10" cy="10" r="8.25" fill="none" stroke="currentColor" stroke-width="2" />
-      <path d="M5.5 10h9" stroke="currentColor" stroke-width="2.5" />
-    </svg>
-    <span>STOP</span>
-  </button>
+  <button type="button" class="control stop" onclick={stop} disabled={busy} aria-label="STOP every device">STOP</button>
 {/if}
 
 <dialog bind:this={dialog} class="unlock-dialog" aria-labelledby="unlock-title">
@@ -111,20 +99,14 @@
     cursor: progress;
   }
 
-  .stop:focus-visible,
-  .unlock:focus-visible {
+  .stop:focus-visible {
     outline: 3px solid var(--text);
     outline-offset: 3px;
   }
 
   .unlock {
-    background: var(--bg);
     color: var(--blocked);
-    border: 2px solid var(--blocked);
-  }
-
-  .unlock:hover {
-    background: var(--surface);
+    letter-spacing: 0.08em;
   }
 
   .unlock-dialog {
