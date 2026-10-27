@@ -8,7 +8,8 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-None running.
+- website-9. The landing story without boxes, drawn as a sequence diagram with the webcam's line drawing, and the home page's copy to the owner's writing rules (BRIEF-website-9.md).
+- site-copy. Every other page and the repo docs the site renders follow the owner's writing rules (BRIEF-site-copy.md).
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
