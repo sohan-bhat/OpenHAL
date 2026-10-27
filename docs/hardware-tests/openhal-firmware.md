@@ -47,7 +47,7 @@ Expected.
 
 ```
 matched  OpenHAL board led-strip as openhal-led-strip
-  The library has openhal-led-strip, and the hub has no device file for it yet. Add it with openhal library add openhal-led-strip
+  The library has openhal-led-strip, and the hub has no device file for this device yet. Add the library file with openhal library add openhal-led-strip
 ```
 
 ### 3. The library file loads read-only

@@ -48,7 +48,7 @@ Expected.
 
 ```
 matched  OpenHAL board plant-waterer as openhal-plant-waterer
-  The library has openhal-plant-waterer, and the hub has no device file for it yet. Add it with openhal library add openhal-plant-waterer
+  The library has openhal-plant-waterer, and the hub has no device file for this device yet. Add the library file with openhal library add openhal-plant-waterer
 ```
 
 Discovery sends only `HELLO`. The match shows the starter library knows the board. This plan uses the example's own device file, so don't add the library's.

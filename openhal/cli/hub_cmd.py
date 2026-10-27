@@ -138,8 +138,8 @@ def register(app: typer.Typer) -> None:
             if match.library_file:
                 name = library_cmd.name_for(match.library_file)
                 console.print(
-                    f"  The library has {escape(name)}, and the hub has no device file for it yet. "
-                    f"Add it with openhal library add {escape(name)}"
+                    f"  The library has {escape(name)}, and the hub has no device file for this device yet. "
+                    f"Add the library file with openhal library add {escape(name)}"
                 )
         for unknown in result.unknown:
             console.print(
