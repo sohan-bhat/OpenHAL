@@ -161,7 +161,7 @@ export function storyLines(facts: StoryFacts): Record<StepId, string> {
     loose: "Later, the webcam shows the print has come loose.",
     pause: "The agent pauses the print at once.",
     cancel: "Cancelling can't be undone, so the hub asks a person first.",
-    wake: "You wake up to a paused print and one question.",
+    wake: "You wake up to a paused print. Cancelling it is your call.",
     end: "Every command to every device takes this path.",
   };
 }

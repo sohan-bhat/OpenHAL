@@ -48,7 +48,7 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
 
 ### The landing story
 
-The website's home page tells the canonical scenario as one pinned scene. A camera moves along the real path, Agent, OpenHAL hub with the device files, Safety kernel, Driver and the 3D printer with its webcam, and each step is one short caption with the real codes in small mono where they help. The webcam panel shows what the agent sees. The bed warms from 60 °C to 70 °C, the kernel ticks its checks and refuses a 300 °C nozzle with LIMIT_EXCEEDED, the agent pauses the print when it comes loose, and the cancel waits for a person. Every number comes from docs/demo/scenario.yaml. With reduced motion or no script it is a static list of the same steps. The motion is pattern 4 under Motion. Source in website/src/components/landing/.
+The website's home page tells the canonical scenario as one pinned scene that stays whole. The diagram follows the real path, Agent, OpenHAL hub with the device files, Safety kernel, Drivers and the 3D printer with its webcam, at one size from the first step to the last. Scroll moves the story through nine steps. Each step lights the stations it uses and has one short caption, with the real codes in small mono where they help and the step's messages in a trace under the diagram. The step count reads as text ("4 / 9") beside a Skip the demo link. The webcam panel shows what the agent sees. The bed warms from 60 °C to 70 °C, the kernel ticks its checks and refuses a 300 °C nozzle with LIMIT_EXCEEDED, the agent pauses the print when it comes loose, and the cancel waits for a person. Every number comes from docs/demo/scenario.yaml. The stations sit in one row from 1200 px and in a centered column at most 600 px wide below that. Where the whole stage doesn't fit the screen, a short stage drops the trace on phones and sets the caption on one line on laptops. Under 600 px of height, with reduced motion or with no script, the story is a static list of the same steps. The motion is pattern 4 under Motion. Source in website/src/components/landing/.
 
 ## Canonical demo scenario
 
@@ -61,7 +61,7 @@ The story. Someone starts a long print and asks an agent to keep an eye on it.
 2. It raises `bed_target` from 60 °C to 70 °C. That is inside the limit, so it is done.
 3. It also asks for a 300 °C nozzle. The kernel answers `LIMIT_EXCEEDED`, because the limit is 260 °C.
 4. Later the camera shows the print has come loose. The agent pauses the print, which is done straight away.
-5. It asks to cancel. Cancelling can't be undone, so `cancel` is `confirm-each-time`, and the hub queues it and answers pending until a person decides.
+5. It asks to cancel. Cancelling can't be undone, so `cancel` is `confirm-each-time`, and the hub queues it and answers pending. A person approves or rejects it within the hub's five minute window, or it expires and the print stays paused. Either way the cancel is the person's call, which is what the story's closing caption says.
 
 Tests check that the file is still what the hub answers and that every surface matches it. Demo values are labeled as demo data where shown.
 
@@ -111,7 +111,7 @@ Cool neutrals with one accent. Status colors only for meaning.
 | blocked, stopped | `#A14034` | `#D57A72` | the word in red, "blocked" or "stopped" |
 | unverified | `#636A75` | `#8B93A0` | the word "unverified" in gray |
 
-Every pair passes WCAG AA for its text size on `--bg` and `--surface`. A status always shows as its word, so it never relies on color alone. No status has a dot, circle, shape or icon beside it, and a status, error code or verdict never sits in a box with a colored border or a tinted background. It is plain text, in mono for codes. The owner had the green and red dulled slightly on 2026-10-26. Neutral states (disabled, started, running, connecting, no confirmation) show their word in the text colors. Dashed rules mark an agent's entries in the Inspector and nothing else. Simulated devices, demo data, data blocks and empty states sit on a surface fill, and disabled controls are flat surface gray.
+Every pair passes WCAG AA for its text size on `--bg` and `--surface`. A status always shows as its word, so it never relies on color alone. No status has a dot, circle, shape or icon beside it, and a status, error code or verdict never sits in a box with a colored border or a tinted background. It is plain text, in mono for codes. The owner had the green and red dulled slightly on 2026-10-26. Neutral states (disabled, started, running, connecting, no confirmation) show their word in the text colors. Dashed rules mark an agent's entries, in the Inspector and in the Playground's log, and nothing else. Simulated devices, demo data, data blocks and empty states sit on a surface fill, and disabled controls are flat surface gray.
 
 ### Syntax theme
 
@@ -131,7 +131,7 @@ Scale, mobile then desktop. 13/13 legend, 15/15 secondary, 16/17 body with line 
 ## Layout
 
 - Documentation-first. Left sidebar navigation, a centered reading column, and an "On this page" outline on the right at 1280 px and wider.
-- One left edge. Every template starts its content at the documentation column, 344 px from the left at 1440 px and 304 px from 1024 to 1360 px.
+- One left edge. Every documentation template starts its content at the documentation column, 344 px from the left at 1440 px and 304 px from 1024 to 1360 px. The home page is the one exception, a centered column at most 1200 px wide, the owner's request on 2026-10-26.
 - Breakpoints 390, 768, 1024, 1280. At 390 the sidebar becomes a menu and the outline moves above the content.
 - Spacing scale 4, 8, 12, 16, 24, 32, 48, 64.
 - Borders are 1 px `--border`, radius at most 6 px, no shadows.
@@ -181,7 +181,7 @@ Six patterns, nothing else.
 1. The flowing connectors in the flow diagram.
 2. A message appearing in the trace or log. A 120 ms fade, 4 px rise.
 3. A status change. A 120 ms cross-fade.
-4. The landing story. A stage pins under the header while the page scrolls normally, and the scroll position drives a camera that pans and zooms along the print babysitter's path. Each piece changes with that position, using transforms and opacity only, and a piece finishes leaving before the one replacing it arrives. Scrolling back plays it in reverse. Nothing moves on its own, so it is not scroll-jacking, parallax or fade-in on scroll. The bed temperature readout steps from 60 °C to 70 °C as a live reading, not a counter. The owner asked for this motion on 2026-10-25, which is its justification under Banned by default.
+4. The landing story. A stage pins under the header while the page scrolls normally, and the scroll position moves the story from step to step. The diagram never pans or zooms. Stations light as a step uses them and messages travel the wires with the scroll, using transforms and opacity only, and a caption finishes leaving before the next one arrives. Scrolling back plays it in reverse. Nothing moves on its own, so it is not scroll-jacking, parallax or fade-in on scroll. The bed temperature readout steps from 60 °C to 70 °C as a live reading, not a counter. The owner asked for this motion on 2026-10-25, and on 2026-10-26 for the whole diagram in view at one zoom level, which is its justification under Banned by default.
 5. The nav highlight. The blue highlight behind the current top-level item slides to the item a person clicks, as one shape moving between positions, about 240 ms with an ease out. It never bounces or stretches.
 6. The page transition. A page change moves the content sideways in the direction of travel through the nav, with the header and its highlight held still. Going to an item further right, the old content slides 24 px left and fades as the new content wipes in from the right with a clip-path, and going left mirrors it. About 260 ms in all. It is not a fade, a rise or a scale, so it stays distinct from the owner's other sites. Built on cross-document view transitions, so a browser without them changes pages instantly. The owner asked for patterns 5 and 6 on 2026-10-26.
 
