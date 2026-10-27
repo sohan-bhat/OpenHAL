@@ -1,5 +1,6 @@
 .story {
   --pin: 61px;
+  --lifeline: color-mix(in srgb, var(--text-2) 38%, var(--bg));
 }
 
 .story-band {
@@ -99,10 +100,9 @@
 .story-title {
   font-size: var(--t-h1);
   line-height: 1.15;
-  max-width: 20ch;
+  max-width: 22ch;
 }
 
-.story-scene,
 .story-notes,
 .story-count,
 .story-runway {
@@ -120,14 +120,13 @@
   pointer-events: none;
 }
 
-.story-stage [data-in],
-.story-snap [data-in] {
+.story-stage [data-in] {
   opacity: 0.999;
   transition: opacity var(--motion-status) linear;
 }
 
 .story[data-camera] .story-stage [data-in]:not([data-on]),
-.story-snap [data-in]:not([data-on]) {
+.story:not([data-camera]) .story-scene [data-in]:not([data-end]) {
   opacity: 0;
 }
 
@@ -135,36 +134,318 @@
   transition-delay: var(--motion-status);
 }
 
+.story-scene {
+  display: grid;
+  gap: var(--s-2);
+  margin-top: var(--s-6);
+  pointer-events: none;
+  user-select: none;
+}
+
+.seq {
+  --edge: 22px;
+  --g1: 21fr;
+  --g2: 46fr;
+  --g3: 30fr;
+  --under: 2px;
+  --arrow: 10px;
+  --tail: 2px;
+  --gap: 3px;
+  --pad: 4px;
+  display: grid;
+  grid-template-columns: [left] var(--edge) [owner] var(--g1) [agent] var(--g2) [hub] var(--g3) [printer] var(--edge) [right];
+  min-width: 0;
+  font-size: var(--t-legend);
+  line-height: 1.25;
+}
+
+.seq-head {
+  justify-self: start;
+  transform: translateX(-50%);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.lifeline {
+  grid-row: 2 / -1;
+  justify-self: start;
+  width: 1px;
+  margin-left: -0.5px;
+  background: var(--lifeline);
+}
+
+.say {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  align-self: end;
+  column-gap: var(--s-2);
+  min-width: 0;
+  padding: var(--gap) var(--pad) 2px;
+  font-family: var(--font-mono);
+}
+
+.say.plain {
+  font-family: var(--font-text);
+}
+
+.label {
+  display: grid;
+  min-width: 0;
+}
+
+.label > *,
+.value > * {
+  grid-area: 1 / 1;
+}
+
+.label .quiet {
+  color: var(--text-2);
+}
+
+.label .live {
+  color: var(--text);
+}
+
+.say .answer {
+  margin-left: auto;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.leg {
+  --t: 0;
+  --p: clamp(0, (var(--t) - var(--at)) / var(--d), 1);
+  position: relative;
+  color: var(--text-2);
+}
+
+.stroke {
+  position: absolute;
+  inset: 0;
+}
+
+.stroke.live {
+  color: var(--accent);
+}
+
+.stroke.held {
+  color: var(--confirm);
+}
+
+.line {
+  position: absolute;
+  left: 0;
+  right: 7px;
+  top: calc(50% - 0.75px);
+  height: 1.5px;
+  background: currentColor;
+  transform-origin: left center;
+  transform: scaleX(var(--p));
+}
+
+.head {
+  position: absolute;
+  right: 0;
+  top: calc(50% - 4px);
+  width: 7px;
+  height: 8px;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.story:not([data-camera]) .leg {
+  --p: 1;
+}
+
+.cam {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.75fr);
+  grid-template-areas: "readings frame" "readings note";
+  align-content: start;
+  align-items: center;
+  column-gap: var(--s-4);
+  row-gap: 2px;
+}
+
+.cam-frame {
+  grid-area: frame;
+  display: grid;
+}
+
+.cam-frame > svg {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
+.ink {
+  stroke: var(--text-2);
+  stroke-width: 1.5px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.seen .ink {
+  stroke: var(--accent);
+  stroke-width: 2px;
+}
+
+.fill-none {
+  fill: none;
+}
+
+.fill-bg {
+  fill: var(--bg);
+}
+
+.cam-note {
+  grid-area: note;
+  color: var(--text-2);
+  font-size: var(--t-legend);
+  line-height: 1.35;
+}
+
+.readings {
+  grid-area: readings;
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: var(--t-legend);
+  line-height: 1.4;
+}
+
+.reading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-2);
+}
+
+.reading dt {
+  color: var(--text-2);
+}
+
+.reading dd {
+  margin: 0;
+}
+
+.value {
+  display: grid;
+  justify-items: end;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .story-list {
   list-style: none;
-  margin: var(--s-6) 0 0;
+  margin: var(--s-7) 0 0;
   padding: 0;
   display: grid;
+  gap: var(--s-6);
 }
 
 .story-step {
   display: grid;
-  gap: var(--s-4) var(--s-7);
-  padding: var(--s-6) 0;
-  border-top: var(--rule);
-}
-
-.story-step:last-child {
-  border-bottom: var(--rule);
-}
-
-.step-words {
-  display: grid;
-  gap: var(--s-4);
-  align-content: start;
-  min-width: 0;
+  gap: var(--s-2);
+  max-width: 62ch;
 }
 
 .step-line {
   font-size: var(--t-h3);
-  font-weight: 700;
-  line-height: 1.35;
-  max-width: 30ch;
+  line-height: 1.4;
+}
+
+.step-said {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--s-5);
+  color: var(--text-2);
+  font-size: var(--t-small);
+}
+
+.step-reason {
+  color: var(--text-2);
+  font-size: var(--t-small);
+}
+
+@media (min-width: 640px) {
+  .story-scene {
+    gap: var(--s-5);
+  }
+
+  .seq {
+    --edge: 30px;
+    --g1: 20fr;
+    --g2: 44fr;
+    --g3: 34fr;
+    --under: 6px;
+    --arrow: 12px;
+    --tail: 6px;
+    --gap: 5px;
+    --pad: 6px;
+    font-size: var(--t-small);
+    line-height: 1.3;
+  }
+
+  .say {
+    column-gap: var(--s-3);
+  }
+
+  .seq-head {
+    font-size: var(--t-body);
+  }
+
+  .cam {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: var(--s-6);
+  }
+
+  .readings,
+  .cam-note {
+    font-size: var(--t-small);
+  }
+
+  .value {
+    font-size: var(--t-body);
+  }
+}
+
+@media (min-width: 1024px) {
+  .story-scene {
+    grid-template-columns: minmax(0, 1fr) clamp(240px, 25%, 296px);
+    column-gap: clamp(var(--s-6), 5vw, var(--s-8));
+    align-items: start;
+  }
+
+  .seq {
+    --g1: 16fr;
+    --g2: 50fr;
+    --g3: 32fr;
+    --arrow: 14px;
+    --gap: 6px;
+  }
+
+  .cam {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "frame" "note" "readings";
+    align-items: start;
+    row-gap: var(--s-2);
+    padding-top: var(--s-1);
+  }
+
+  .readings {
+    margin-top: var(--s-3);
+    gap: var(--s-1);
+  }
 }
 
 @media screen {
