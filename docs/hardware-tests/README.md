@@ -103,7 +103,7 @@ A plan that stops a command while it runs uses a second terminal. Open it in the
 
 ### Confirming limits
 
-Only you confirm limits. `uv run openhal file confirm` with the file's path prints every limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. The hub reads device files when it starts, so restart it after a confirmation. A changed limit makes the file read-only until you confirm it again. A command you send with your own human token counts as your confirmation, so plans that test the confirmation queue send the command with an agent token and approve it with `uv run openhal confirm approve`.
+You confirm the limits yourself. `uv run openhal file confirm` with the file's path prints every limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. The hub reads device files when the hub starts, so restart the hub after a confirmation. A changed limit makes the file read-only until you confirm the file again. A command you send with your own human token counts as your confirmation, so plans that test the confirmation queue send the command with an agent token and approve the request with `uv run openhal confirm approve`.
 
 ## Rules while testing
 

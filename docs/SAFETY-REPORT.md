@@ -13,8 +13,8 @@ All four findings are fixed on main, and their proofs now run as ordinary tests 
 
 - One module per attack family in tests/redteam/.
 - A passing test means the kernel refused the attempt and no mock transport saw a byte.
-- A strict xfail (`pytest.mark.xfail(strict=True)`) is a real finding. It fails against the current
-  kernel on purpose, so it turns green the moment the kernel is fixed.
+- A strict xfail (`pytest.mark.xfail(strict=True)`) is a real finding. The test fails against the current
+  kernel on purpose, so the test turns green the moment the kernel is fixed.
 
 ## Findings, worst first
 

@@ -1,12 +1,12 @@
 # Python library
 
-`openhal.client` is a sync and an async client of the hub's local API v1. Scripts, the CLI and the MCP server all use it. It makes no safety decisions. The hub's kernel decides every command, and a blocked command comes back as a `Decision`, not as an exception.
+`openhal.client` is a sync and an async client of the hub's local API v1. Scripts, the CLI and the MCP server all use the client. The client makes no safety decisions. The hub's kernel decides every command, and a blocked command comes back as a `Decision`, not as an exception.
 
 ```sh
 uv pip install "openhal-hub @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-That puts the client in the current environment, so your own scripts can import it.
+The install puts the client in the current environment, so your own scripts can import the client.
 
 ## Connect
 
@@ -128,7 +128,7 @@ Every method exists on `Client` and, as a coroutine, on `AsyncClient`.
 
 `Write` and `Action` are the kernel's command models, exported from `openhal.client`. A plain dict with `device` and `channel` and `value`, or `device` and `action` and `args`, works too.
 
-`ramp_to` moves a channel to a target in steps that each pass its `max_change_per_s`, waiting `interval_s` before each step, with `margin` of the allowed change per step. The kernel still checks every step, and the ramp stops at the first step it does not accept. It returns every decision. The LED strip from [Add a device](../guide/tutorials/add-a-device.md) allows 40 %/s on `brightness`.
+`ramp_to` moves a channel to a target in steps that each pass its `max_change_per_s`, waiting `interval_s` before each step, with `margin` of the allowed change per step. The kernel still checks every step, and the ramp stops at the first step the kernel does not accept. `ramp_to` returns every decision. The LED strip from [Add a device](../guide/tutorials/add-a-device.md) allows 40 %/s on `brightness`.
 
 ```python
 for decision in hub.ramp_to("led-strip", "brightness", 80, "%"):
