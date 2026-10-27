@@ -3577,7 +3577,7 @@
     "inline:waterer": "d5491ef1e63f99b656de01fece078affd4644e65df0356f690f4c69a07488ccb"
   },
   "scenario": {
-    "outcome": "You'll see the agent warm the bed from 60 °C to 70 °C, have a 300 °C nozzle refused at the 260 °C limit, pause the print when it comes loose and wait for a person to approve the cancel.",
+    "outcome": "You'll see the agent warm the bed from 60 °C to 70 °C, have a 300 °C nozzle refused at the 260 °C limit and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.",
     "lines": [
       "# the agent checks the first layer",
       "→ hal/read    { \"device\": \"printer-cam\", \"channel\": \"frame\" }",
@@ -3589,13 +3589,14 @@
       "                \"value\": 70, \"unit\": \"degC\" }",
       "← result      { \"status\": \"done\" }",
       "",
+      "# a hotter nozzle might help the corner stick",
       "→ hal/write   { \"device\": \"printer\", \"channel\": \"extruder_target\",",
       "                \"value\": 300, \"unit\": \"degC\" }",
       "← error -32010 LIMIT_EXCEEDED",
       "  extruder_target 300 degC exceeds the limit of 260 degC",
       "  (printer.hal.yaml, confirmed by owner 2026-10-24)",
       "",
-      "# later",
+      "# later the agent checks the print again",
       "→ hal/read    { \"device\": \"printer-cam\", \"channel\": \"frame\" }",
       "← result      { \"value\": { \"mimeType\": \"image/jpeg\", \"bytes\": 23567,",
       "                \"width\": 640, \"height\": 480, \"data\": \"…\" } }",
@@ -3607,7 +3608,11 @@
       "# cancelling can't be undone",
       "→ hal/action  { \"device\": \"printer\", \"action\": \"cancel\" }",
       "← result      { \"status\": \"pending\", \"requestId\": \"REQUEST_ID\",",
-      "                \"expiresInS\": 300 }"
+      "                \"expiresInS\": 300 }",
+      "",
+      "# the owner approves the cancel",
+      "→ hal/confirmations/approve { \"requestId\": \"REQUEST_ID\" }",
+      "← result      { \"status\": \"done\" }"
     ]
   }
 }
