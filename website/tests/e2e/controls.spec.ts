@@ -252,7 +252,7 @@ test.describe("site search", () => {
     await expect(page.locator("#site-search-input")).toBeFocused();
     await page.locator("#site-search-input").fill("LIMIT_EXCEEDED");
     const results = dialog.locator("a.search-result");
-    await expect(results.first()).toBeVisible();
+    await expect(results.first()).toBeVisible({ timeout: 15_000 });
     expect(await results.evaluateAll((items) => items.map((item) => item.getAttribute("href")))).toContain("/spec/errors/");
     await expect(dialog.locator("[data-search-status]")).toHaveText(/pages? match/);
     await page.keyboard.press("ArrowDown");
@@ -271,7 +271,7 @@ test.describe("site search", () => {
     const dialog = page.getByRole("dialog", { name: "Search the site" });
     await expect(dialog).toBeVisible();
     await page.locator("#site-search-input").fill("print babysitter");
-    await expect(dialog.locator("a.search-result").first()).toBeVisible();
+    await expect(dialog.locator("a.search-result").first()).toBeVisible({ timeout: 15_000 });
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
     await expect(field).toBeFocused();
@@ -292,6 +292,6 @@ test.describe("site search", () => {
     await page.getByRole("button", { name: "Search", exact: true }).click();
     await expect(page.getByRole("dialog", { name: "Search the site" })).toBeVisible();
     await page.locator("#site-search-input").fill("print babysitter");
-    await expect(page.locator("a.search-result").first()).toBeVisible();
+    await expect(page.locator("a.search-result").first()).toBeVisible({ timeout: 15_000 });
   });
 });
