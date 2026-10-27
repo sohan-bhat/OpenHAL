@@ -76,12 +76,12 @@ export function cropImages(shots: Shot[] = presentShots()): CropImage[] {
 }
 
 /** One cropped image, cut from its capture at the measured crop and scaled to its width. */
-export async function renderCrop(image: CropImage): Promise<Uint8Array> {
+export async function renderCrop(image: CropImage): Promise<Uint8Array<ArrayBuffer>> {
   const region = { left: image.crop.x, top: image.crop.y, width: image.crop.w, height: image.crop.h };
   const cut = sharp(image.source).extract(region);
   const sized = image.width === image.crop.w ? cut : cut.resize({ width: image.width });
   const encoded = image.format === "avif" ? sized.avif({ quality: 60, effort: 4 }) : sized.webp({ quality: 85, effort: 4 });
-  return new Uint8Array(await encoded.toBuffer());
+  return Uint8Array.from(await encoded.toBuffer());
 }
 
 export const captureSize = { width: captures.width, height: captures.height };

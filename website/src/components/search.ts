@@ -151,7 +151,7 @@ export function searchDialog(): void {
   }
 
   function links(): HTMLAnchorElement[] {
-    return [...list.querySelectorAll<HTMLAnchorElement>("a.search-result")];
+    return list ? [...list.querySelectorAll<HTMLAnchorElement>("a.search-result")] : [];
   }
 
   dialog.querySelector("[data-search-form]")?.addEventListener("submit", (event) => {
