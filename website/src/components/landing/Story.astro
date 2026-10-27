@@ -45,6 +45,7 @@ const camera = `(() => {
       <div class="story-band">
         <div class="story-meta">
           <p class="story-count" aria-hidden="true" data-pagefind-ignore="all">
+            <span {...shown(["intro"])}>{COUNTED.length} steps</span>
             {COUNTED.map((item, index) => <span {...shown([item.id])}>{index + 1} / {COUNTED.length}</span>)}
           </p>
           <a class="story-skip" href={`#${after}`}>Skip the demo</a>

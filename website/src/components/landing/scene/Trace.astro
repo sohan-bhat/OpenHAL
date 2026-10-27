@@ -19,7 +19,7 @@ const entries = PLACED.filter((item) => trace[item.id] && (!only || item.id === 
 }));
 ---
 
-<div class="trace story-trace">
+<div class="trace story-trace" {...(only ? {} : shown(entries.map((entry) => entry.id), step))}>
   <div class="swap">
     {entries.map((entry) => <ol {...(only ? {} : shown([entry.id], step))} set:html={entry.html} />)}
   </div>

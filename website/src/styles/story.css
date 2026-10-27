@@ -301,6 +301,10 @@
     grid-area: 1 / 1;
   }
 
+  .story[data-camera] .story-title {
+    align-self: end;
+  }
+
   .story[data-camera] .story-notes {
     display: grid;
     align-items: end;

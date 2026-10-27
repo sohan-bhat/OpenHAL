@@ -151,6 +151,14 @@ test.describe("the landing story", () => {
     }
   });
 
+  test("opens with its title and how many steps follow", async ({ page }) => {
+    await page.goto("/");
+    await storyTime(page, step("intro").from + step("intro").length / 2);
+    expect(await shown(page, ".story-title")).toEqual([flat(lines.intro)]);
+    expect(await shown(page, ".story-count > *")).toEqual([`${COUNTED.length} steps`]);
+    expect(await shown(page, ".story-scene .story-trace")).toEqual([]);
+  });
+
   test("changes each caption and the state it describes at the same moment", async ({ page }) => {
     await page.goto("/");
     for (const item of COUNTED) {
