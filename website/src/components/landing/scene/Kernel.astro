@@ -1,45 +1,42 @@
 ---
 import type { StoryFacts } from "../../../lib/story/facts";
-import { ALWAYS, cue } from "../../../lib/story/script";
-import { KERNEL, type Pass, type Span, type Word } from "../../../lib/story/timeline";
+import { lit, shown } from "../../../lib/story/script";
+import { KERNEL, type Word } from "../../../lib/story/timeline";
 
 interface Props {
   facts: StoryFacts;
+  step?: number;
 }
 
-const { facts } = Astro.props;
-const shown = (span: Span) => cue(span.at, span.out);
-const passes: Pass[] = [KERNEL.bed, KERNEL.nozzle, KERNEL.pause, KERNEL.cancel];
+const { facts, step } = Astro.props;
 const names = ["Units", "Range", "Rate", "Interlocks", "Confirmation"];
-const checks = names.map((name, index) => ({ name, marks: passes.flatMap((pass) => (pass.checks[index] ? [pass.checks[index]] : [])) }));
-const checking = (before: Pass, after: Pass): Span => ({ at: before.verdict.out, out: after.verdict.at });
+const checks = names.map((name, index) => ({
+  name,
+  marks: KERNEL.passes.flatMap((pass) => (pass.words[index] ? [{ in: pass.in, word: pass.words[index] }] : [])),
+}));
 const verdicts = [
-  { span: { at: ALWAYS, out: KERNEL.bed.verdict.at }, kind: "idle", text: "Waiting for a command" },
-  { span: KERNEL.bed.verdict, kind: "granted", text: "granted" },
-  { span: checking(KERNEL.bed, KERNEL.nozzle), kind: "idle", text: "Checking" },
-  { span: KERNEL.nozzle.verdict, kind: "blocked", text: facts.nozzle.refusal.name },
-  { span: checking(KERNEL.nozzle, KERNEL.pause), kind: "idle", text: "Checking" },
-  { span: KERNEL.pause.verdict, kind: "granted", text: "granted" },
-  { span: checking(KERNEL.pause, KERNEL.cancel), kind: "idle", text: "Checking" },
-  { span: KERNEL.cancel.verdict, kind: "confirm", text: "confirmation required" },
+  { in: KERNEL.waiting, kind: "idle", text: "Waiting for a command" },
+  { in: KERNEL.granted, kind: "granted", text: "granted" },
+  { in: KERNEL.blocked, kind: "blocked", text: facts.nozzle.refusal.name },
+  { in: KERNEL.confirm, kind: "confirm", text: "confirmation required" },
 ];
 const markClass = (word: Word) => ({ ok: "status ok", blocked: "status blocked", required: "status confirm", "not needed": "quiet" })[word];
 const verdictClass = (kind: string) => ({ blocked: "status blocked mono", granted: "status ok", confirm: "status confirm" })[kind] ?? "quiet";
 ---
 
-<div class="station" data-cam="kernel">
-  <div class="station-head">
-    <p class="station-name">Safety kernel</p>
-    <p class="station-note">Checks every command, in order</p>
+<div class="node" data-cam="kernel" {...lit("kernel", step)}>
+  <div class="node-head">
+    <p class="node-name">Safety kernel</p>
+    <p class="node-note wide-only">Checks in order</p>
   </div>
-  <ol class="checks">
+  <ol class="checks wide-only">
     {
       checks.map((check) => (
         <li>
           <span>{check.name}</span>
           <span class="swap check-mark">
             {check.marks.map((mark) => (
-              <span class:list={["cue", markClass(mark.word)]} style={shown(mark.span)}>
+              <span class={markClass(mark.word)} {...shown(mark.in, step)}>
                 {mark.word}
               </span>
             ))}
@@ -51,7 +48,7 @@ const verdictClass = (kind: string) => ({ blocked: "status blocked mono", grante
   <div class="swap verdict">
     {
       verdicts.map((verdict) => (
-        <p class:list={["cue", "verdict-box", verdict.kind]} style={shown(verdict.span)}>
+        <p class:list={["verdict-box", verdict.kind]} {...shown(verdict.in, step)}>
           <span class={verdictClass(verdict.kind)}>{verdict.text}</span>
         </p>
       ))
@@ -71,8 +68,9 @@ const verdictClass = (kind: string) => ({ blocked: "status blocked mono", grante
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: var(--s-3);
-    min-height: 32px;
+    gap: var(--s-2);
+    min-height: 21px;
+    font-size: var(--t-legend);
     border-bottom: 1px solid var(--border);
   }
 
@@ -84,6 +82,10 @@ const verdictClass = (kind: string) => ({ blocked: "status blocked mono", grante
     justify-items: end;
   }
 
+  .check-mark .status {
+    font-size: var(--t-legend);
+  }
+
   .quiet {
     color: var(--text-2);
   }
@@ -91,11 +93,15 @@ const verdictClass = (kind: string) => ({ blocked: "status blocked mono", grante
   .verdict-box {
     display: flex;
     align-items: center;
-    min-height: 46px;
-    padding: 8px 12px;
+    min-height: 34px;
+    padding: 4px 8px;
     background: var(--bg);
-    border: 1.5px solid var(--node);
+    border: 1.5px solid var(--border);
     border-radius: 4px;
+  }
+
+  .verdict-box .status {
+    white-space: normal;
   }
 
   .verdict-box.blocked {

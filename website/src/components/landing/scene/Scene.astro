@@ -1,12 +1,13 @@
 ---
 import type { StoryFacts } from "../../../lib/story/facts";
-import { ALWAYS } from "../../../lib/story/script";
-import { CLIENT } from "../../../lib/story/timeline";
+import { WIRES } from "../../../lib/story/timeline";
+import Camera from "./Camera.astro";
 import Client from "./Client.astro";
 import Driver from "./Driver.astro";
 import Hub from "./Hub.astro";
 import Kernel from "./Kernel.astro";
 import Printer from "./Printer.astro";
+import Trace from "./Trace.astro";
 import Wire from "./Wire.astro";
 
 interface Props {
@@ -14,17 +15,23 @@ interface Props {
 }
 
 const { facts } = Astro.props;
-const asked = [facts.look, facts.bed, facts.nozzle, facts.look, facts.pause, facts.cancel].map((ask, index) => ({ text: ask.method, span: index ? CLIENT.asks[index] : { ...CLIENT.asks[index], at: ALWAYS } }));
+const leg = (command: string) => [
+  { text: command, in: WIRES.command },
+  { text: "read", in: WIRES.read },
+];
 ---
 
 <div class="story-scene" aria-hidden="true">
   <Client facts={facts} />
-  <Wire wire={1} label={asked} />
+  <Wire wire={1} labels={[]} />
   <Hub facts={facts} />
-  <Wire wire={2} label="check" />
+  <Wire wire={2} labels={leg("check")} />
   <Kernel facts={facts} />
-  <Wire wire={3} label="grant" />
+  <Wire wire={3} labels={leg("grant")} />
   <Driver facts={facts} />
-  <Wire wire={4} label="command" />
+  <Wire wire={4} labels={[{ text: "command", in: WIRES.command }]} />
   <Printer facts={facts} />
+  <Wire wire={5} labels={[{ text: facts.camera.driver, in: [...WIRES.command, ...WIRES.read] }]} />
+  <Camera facts={facts} />
+  <Trace facts={facts} />
 </div>

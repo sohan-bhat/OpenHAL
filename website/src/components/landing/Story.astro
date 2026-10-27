@@ -1,31 +1,33 @@
 ---
-import { humane, nb, storyFacts, storyLines } from "../../lib/story/facts";
-import { CAMERA, NEVER, TOTAL, cue } from "../../lib/story/script";
-import { NOTE_AT, SNAP_AT, TITLE_OUT } from "../../lib/story/timeline";
+import { storyFacts, storyLines, storyTrace } from "../../lib/story/facts";
+import { CAMERA, COUNTED, TOTAL, shown, type StepId } from "../../lib/story/script";
 import "../../styles/story.css";
+import Camera from "./scene/Camera.astro";
 import Client from "./scene/Client.astro";
 import Hub from "./scene/Hub.astro";
 import Kernel from "./scene/Kernel.astro";
 import Printer from "./scene/Printer.astro";
 import Scene from "./scene/Scene.astro";
+import Trace from "./scene/Trace.astro";
 
+interface Props {
+  after: string;
+}
+
+const { after } = Astro.props;
 const facts = storyFacts();
 const lines = storyLines(facts);
-const noted = Object.keys(NOTE_AT) as Array<keyof typeof NOTE_AT>;
-const notes = noted.map((id, index) => ({ text: lines[id], style: cue(NOTE_AT[id], NOTE_AT[noted[index + 1]] ?? NEVER, 3) }));
-const ask = (item: { method: string; target: string; value: string }) => [item.method, item.target, item.value].filter(Boolean).join(" ");
-const steps: Array<{ id: keyof typeof SNAP_AT; station: typeof Client; code: string[] }> = [
-  { id: "watch", station: Client, code: [ask(facts.look), facts.camera.image] },
-  { id: "look", station: Printer, code: ["corner lifting"] },
-  { id: "warm", station: Kernel, code: [ask(facts.bed), "granted"] },
-  { id: "heat", station: Printer, code: [facts.bed.status, `bed ${facts.bed.value}`] },
-  { id: "hot", station: Kernel, code: [ask(facts.nozzle), facts.nozzle.refusal.name] },
-  { id: "reply", station: Client, code: [facts.nozzle.refusal.name, humane(facts.nozzle.refusal.reason)] },
-  { id: "loose", station: Printer, code: ["print loose"] },
-  { id: "pause", station: Printer, code: [ask(facts.pause), facts.pause.status, "paused"] },
-  { id: "cancel", station: Kernel, code: [ask(facts.cancel), "confirmation required"] },
-  { id: "wake", station: Hub, code: [facts.cancel.status, `${facts.cancel.target} confirmation required`] },
-];
+const trace = storyTrace(facts);
+const snaps: Partial<Record<StepId, typeof Client>> = {
+  ask: Client,
+  look: Camera,
+  warm: Printer,
+  hot: Kernel,
+  loose: Camera,
+  pause: Printer,
+  cancel: Kernel,
+  wake: Hub,
+};
 const camera = `(() => {
   const story = document.currentScript.previousElementSibling;
   if (matchMedia(${JSON.stringify(CAMERA)}).matches) story.setAttribute("data-camera", "");
@@ -33,35 +35,50 @@ const camera = `(() => {
 ---
 
 <section class="story-section" aria-labelledby="story-title">
-  <div class="story" data-story style={`--runway: ${TOTAL}`}>
+  <div class="story" data-story>
     <div class="story-stage">
       <div class="story-band">
-        <div class="wrap column story-heads">
-          <h2 id="story-title" class="story-title" style={`--out: ${TITLE_OUT}; --f: 3`}>{lines.wide}</h2>
-          <div class="story-notes" aria-hidden="true">
-            {notes.map((note) => <p class="story-note cue" style={note.style}>{note.text}</p>)}
+        <div class="story-meta">
+          <p class="story-count" aria-hidden="true" data-pagefind-ignore="all">
+            {COUNTED.map((item, index) => <span {...shown([item.id])}>{index + 1} / {COUNTED.length}</span>)}
+          </p>
+          <a class="story-skip" href={`#${after}`}>Skip the demo</a>
+        </div>
+        <div class="story-heads">
+          <h2 id="story-title" class="story-title" {...shown(["intro"])}>{lines.intro}</h2>
+          <div class="story-notes" aria-hidden="true" data-pagefind-ignore="all">
+            {COUNTED.map((item) => <p class="story-note" {...shown([item.id])}>{lines[item.id]}</p>)}
           </div>
         </div>
       </div>
-      <Scene facts={facts} />
+      <div data-pagefind-ignore="all">
+        <Scene facts={facts} />
+      </div>
     </div>
-    <ol class="wrap column story-list" role="list">
+    <div class="story-runway" style={`height: ${TOTAL}vh`} aria-hidden="true"></div>
+    <ol class="story-list" role="list">
       {
-        steps.map((step) => (
-          <li class="story-step">
-            <div class="step-words">
-              <p class="step-line">{lines[step.id]}</p>
-              {step.code.map((code) => <p class="visually-hidden">{nb(code)}</p>)}
-            </div>
-            <div class="story-snap" style={`--t: ${SNAP_AT[step.id]}`} aria-hidden="true">
-              <step.station facts={facts} />
-            </div>
-          </li>
-        ))
+        COUNTED.map((item) => {
+          const Snap = snaps[item.id];
+          return (
+            <li class="story-step">
+              <div class="step-words">
+                <p class="step-line">{lines[item.id]}</p>
+                {trace[item.id] && (
+                  <div data-pagefind-ignore="all">
+                    <Trace facts={facts} step={item.index} only={item.id} />
+                  </div>
+                )}
+              </div>
+              {Snap && (
+                <div class="story-snap" aria-hidden="true" data-pagefind-ignore="all">
+                  <Snap facts={facts} step={item.index} />
+                </div>
+              )}
+            </li>
+          );
+        })
       }
-      <li class="story-step story-last">
-        <p class="step-line">{lines.end}</p>
-      </li>
     </ol>
   </div>
   <script is:inline set:html={camera} />

@@ -1,0 +1,26 @@
+---
+import type { StoryFacts } from "../../../lib/story/facts";
+import { storyTrace } from "../../../lib/story/facts";
+import { PLACED, shown, type StepId } from "../../../lib/story/script";
+import { traceItemsHtml } from "../../../lib/trace-html.mjs";
+import "../../../styles/trace.css";
+
+interface Props {
+  facts: StoryFacts;
+  step?: number;
+  only?: StepId;
+}
+
+const { facts, step, only } = Astro.props;
+const trace = storyTrace(facts);
+const entries = PLACED.filter((item) => trace[item.id] && (!only || item.id === only)).map((item) => ({
+  id: item.id,
+  html: traceItemsHtml(trace[item.id]!.map((line) => (line.kind === "request" || line.kind === "result" ? { ...line, params: {}, result: {} } : line))),
+}));
+---
+
+<div class="trace story-trace">
+  <div class="swap">
+    {entries.map((entry) => <ol {...(only ? {} : shown([entry.id], step))} set:html={entry.html} />)}
+  </div>
+</div>

@@ -1,47 +1,35 @@
 ---
-import { cue, run } from "../../../lib/story/script";
-import { FILLS, type Fill, type Span } from "../../../lib/story/timeline";
+import { run, shown, type StepId } from "../../../lib/story/script";
+import { FILLS, type Fill } from "../../../lib/story/timeline";
 
 interface Props {
-  wire: Fill["wire"];
-  label: string | Array<{ text: string; span: Span }>;
+  wire: Fill["wire"] | 5;
+  labels: Array<{ text: string; in: StepId[] }>;
+  step?: number;
 }
 
-const { wire, label } = Astro.props;
-const mine = FILLS.filter((fill) => fill.wire === wire);
+const { wire, labels, step } = Astro.props;
+const reading = (fill: Fill) => fill.lane === "look" || fill.lane === "read";
+const mine = FILLS.filter((fill) => (wire === 5 ? fill.wire === 4 && reading(fill) : fill.wire === wire && !(wire === 4 && reading(fill))));
 const outbound = (fill: Fill) => fill.lane === "send" || fill.lane === "look";
-const send = mine.filter(outbound);
-const back = mine.filter((fill) => !outbound(fill));
 ---
 
-<div class="wire" data-wire={wire}>
-  {
-    typeof label === "string" ? (
-      <span class="mono label">{label}</span>
-    ) : (
-      <span class="label swap">
-        {label.map((item) => (
-          <span class="mono cue" style={cue(item.span.at, item.span.out)}>
-            {item.text}
-          </span>
-        ))}
-      </span>
-    )
-  }
-  <span class="lane send">{send.map((fill) => <span class:list={["fill", fill.lane]} style={run(fill.at, fill.d, fill.out)} />)}</span>
-  <span class="lane back">{back.map((fill) => <span class:list={["fill", fill.lane]} style={run(fill.at, fill.d, fill.out)} />)}</span>
+<div class:list={["wire", { down: wire === 5 }]} data-wire={wire}>
+  <span class="label swap">{labels.map((label) => <span class="mono" {...shown(label.in, step)}>{label.text}</span>)}</span>
+  <span class="lane send">{mine.filter(outbound).map((fill) => <span class:list={["fill", fill.lane]} style={run(fill.at, fill.d, fill.out)} />)}</span>
+  <span class="lane back">{mine.filter((fill) => !outbound(fill)).map((fill) => <span class:list={["fill", fill.lane]} style={run(fill.at, fill.d, fill.out)} />)}</span>
 </div>
 
 <style>
   .wire {
     position: relative;
     flex: none;
-    height: 72px;
+    height: 22px;
   }
 
   .label {
     position: absolute;
-    left: calc(50% + 22px);
+    left: calc(50% + 16px);
     top: 50%;
     transform: translateY(-50%);
     color: var(--text-2);
@@ -53,7 +41,7 @@ const back = mine.filter((fill) => !outbound(fill));
   .lane {
     position: absolute;
     width: 2px;
-    background: var(--node);
+    background: var(--border);
   }
 
   .lane::after {
@@ -61,29 +49,29 @@ const back = mine.filter((fill) => !outbound(fill));
     position: absolute;
     left: -3px;
     width: 8px;
-    height: 8px;
-    background: var(--node);
+    height: 7px;
+    background: var(--border);
   }
 
   .send {
-    left: calc(50% - 9px);
-    top: 10px;
-    bottom: 16px;
+    left: calc(50% - 7px);
+    top: 2px;
+    bottom: 8px;
   }
 
   .back {
-    left: calc(50% + 7px);
-    top: 16px;
-    bottom: 10px;
+    left: calc(50% + 5px);
+    top: 8px;
+    bottom: 2px;
   }
 
   .send::after {
-    bottom: -7px;
+    bottom: -6px;
     clip-path: polygon(0 0, 100% 0, 50% 100%);
   }
 
   .back::after {
-    top: -7px;
+    top: -6px;
     clip-path: polygon(50% 0, 100% 100%, 0 100%);
   }
 
@@ -114,60 +102,61 @@ const back = mine.filter((fill) => !outbound(fill));
     background: var(--ok);
   }
 
-  @media (orientation: landscape) and (min-width: 900px) {
-    .wire {
+  @media (min-width: 1024px) {
+    .wire:not(.down) {
       align-self: stretch;
-      width: 112px;
       height: auto;
     }
 
-    .label {
+    .wire:not(.down) .label {
       left: 50%;
-      top: calc(50% - 30px);
+      top: calc(50% - 24px);
       transform: translateX(-50%);
     }
 
-    .lane {
+    .wire:not(.down) .lane {
       width: auto;
       height: 2px;
     }
 
-    .lane::after {
+    .wire:not(.down) .lane::after {
       top: -3px;
+      width: 7px;
+      height: 8px;
     }
 
-    .send {
-      top: calc(50% - 9px);
+    .wire:not(.down) .send {
+      top: calc(50% - 7px);
       bottom: auto;
-      left: 10px;
-      right: 16px;
-    }
-
-    .back {
-      top: calc(50% + 7px);
-      bottom: auto;
-      left: 16px;
+      left: 4px;
       right: 10px;
     }
 
-    .send::after {
+    .wire:not(.down) .back {
+      top: calc(50% + 5px);
+      bottom: auto;
+      left: 10px;
+      right: 4px;
+    }
+
+    .wire:not(.down) .send::after {
       left: auto;
-      right: -7px;
+      right: -6px;
       bottom: auto;
       clip-path: polygon(0 0, 100% 50%, 0 100%);
     }
 
-    .back::after {
-      left: -7px;
+    .wire:not(.down) .back::after {
+      left: -6px;
       clip-path: polygon(100% 0, 0 50%, 100% 100%);
     }
 
-    .fill {
+    .wire:not(.down) .fill {
       transform-origin: left center;
       transform: scaleX(var(--p));
     }
 
-    .back .fill {
+    .wire:not(.down) .back .fill {
       transform-origin: right center;
     }
   }

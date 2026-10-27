@@ -1,64 +1,57 @@
 ---
 import type { StoryFacts } from "../../../lib/story/facts";
 import { nb } from "../../../lib/story/facts";
-import { cue } from "../../../lib/story/script";
-import { HUB, type Span } from "../../../lib/story/timeline";
+import { PLACED, lit, shown, type StepId } from "../../../lib/story/script";
+import { HUB } from "../../../lib/story/timeline";
 
 interface Props {
   facts: StoryFacts;
+  step?: number;
 }
 
-const { facts } = Astro.props;
-const shown = (span: Span) => cue(span.at, span.out);
+const { facts, step } = Astro.props;
+const cancel = `${facts.cancel.target[0].toUpperCase()}${facts.cancel.target.slice(1)} waits for a person`;
 const rules = [
-  { text: `Nozzle up to ${facts.nozzle.max}`, span: HUB.nozzle },
-  { text: `Bed up to ${facts.bed.max}`, span: HUB.bed },
-  { text: `${facts.cancel.target[0].toUpperCase()}${facts.cancel.target.slice(1)} waits for a person`, span: HUB.cancel },
+  { text: `Nozzle up to ${facts.nozzle.max}`, in: HUB.nozzle },
+  { text: `Bed up to ${facts.bed.max}`, in: HUB.bed },
+  { text: cancel, in: HUB.cancel },
+];
+const named = new Set<StepId>([...HUB.nozzle, ...HUB.bed, ...HUB.cancel, ...HUB.asked]);
+const now = [
+  ...rules.filter((rule) => rule.in !== HUB.cancel),
+  { text: cancel, in: HUB.asked },
+  { text: facts.confirmed, in: PLACED.map((item) => item.id).filter((id) => !named.has(id)) },
 ];
 ---
 
-<div class="station" data-cam="hub">
-  <div class="station-head">
-    <p class="station-name">OpenHAL hub</p>
-    <p class="station-note">Runs on your computer or a Pi</p>
+<div class="node" data-cam="hub" {...lit("hub", step)}>
+  <div class="node-head">
+    <p class="node-name">OpenHAL hub</p>
+    <p class="node-note mono">{facts.file}</p>
   </div>
-  <div class="file">
-    <p class="mono file-name">{facts.file}</p>
-    <ul class="rules">
-      {
-        rules.map((rule) => (
-          <li class="rule">
-            <span class="rule-mark cue" style={shown(rule.span)} />
-            <span class="rule-text">{nb(rule.text)}</span>
-          </li>
-        ))
-      }
-    </ul>
-    <p class="file-confirmed">{facts.confirmed}</p>
+  <ul class="rules wide-only">
+    {
+      rules.map((rule) => (
+        <li class="rule">
+          <span class="rule-mark" {...shown(rule.in, step)} />
+          <span class="rule-text">{nb(rule.text)}</span>
+        </li>
+      ))
+    }
+  </ul>
+  <div class="swap wide-only">
+    <p class="confirmed" {...shown(PLACED.map((item) => item.id).filter((id) => !HUB.asked.includes(id)), step)}>{facts.confirmed}</p>
+    <div class="asked" {...shown(HUB.asked, step)}>
+      <p class="mono asked-what">{facts.cancel.target} <span class="asked-on">on {facts.printer.id}</span></p>
+      <p class="status confirm">confirmation required</p>
+    </div>
   </div>
-  <div class="asked cue" style={shown(HUB.asked)}>
-    <p class="mono asked-what">{facts.cancel.target} <span class="asked-on">on {facts.printer.id}</span></p>
-    <p class="asked-who">Asked by the agent</p>
-    <p class="status confirm">confirmation required</p>
-  </div>
+  <p class="swap compact-only">
+    {now.map((line) => <span {...shown(line.in, step)}>{nb(line.text)}</span>)}
+  </p>
 </div>
 
 <style>
-  .file {
-    display: grid;
-    gap: 10px;
-    padding: 14px;
-    background: var(--bg);
-    border: 1px solid var(--node);
-    border-radius: 4px;
-  }
-
-  .file-name,
-  .file-confirmed {
-    color: var(--text-2);
-    font-size: var(--t-legend);
-  }
-
   .rules {
     list-style: none;
     margin: 0;
@@ -69,8 +62,8 @@ const rules = [
 
   .rule {
     position: relative;
-    margin-inline: -8px;
-    padding: 4px 8px;
+    margin-inline: -6px;
+    padding: 3px 6px;
   }
 
   .rule-mark {
@@ -85,11 +78,16 @@ const rules = [
     position: relative;
   }
 
+  .confirmed {
+    color: var(--text-2);
+    font-size: var(--t-legend);
+  }
+
   .asked {
     display: grid;
     gap: 2px;
-    padding: 10px 14px;
-    border: 1.5px dashed var(--node);
+    padding: 4px 8px;
+    border: 1.5px dashed currentColor;
     border-radius: 4px;
   }
 
@@ -102,12 +100,7 @@ const rules = [
     font-weight: 400;
   }
 
-  .asked-who {
-    color: var(--text-2);
-  }
-
   .asked .status {
-    margin-top: 4px;
     white-space: normal;
   }
 </style>

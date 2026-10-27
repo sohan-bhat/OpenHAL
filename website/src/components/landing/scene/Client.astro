@@ -1,80 +1,95 @@
 ---
 import type { StoryFacts } from "../../../lib/story/facts";
-import { nb } from "../../../lib/story/facts";
-import { cue } from "../../../lib/story/script";
-import { CLIENT, type Span } from "../../../lib/story/timeline";
+import { ASKED, nb } from "../../../lib/story/facts";
+import { lit, shown } from "../../../lib/story/script";
+import { AGENT } from "../../../lib/story/timeline";
 import { arrowSvg } from "../../../lib/trace-html.mjs";
 
 interface Props {
   facts: StoryFacts;
+  step?: number;
 }
 
-const { facts } = Astro.props;
-const shown = (span: Span) => cue(span.at, span.out);
-const asks = [facts.look, facts.bed, facts.nozzle, facts.look, facts.pause, facts.cancel];
-const image = { kind: "ok", name: "result", text: facts.camera.image, mono: true };
+const { facts, step } = Astro.props;
+const asks = [
+  { ask: facts.look, in: AGENT.asks.look },
+  { ask: facts.bed, in: AGENT.asks.bed },
+  { ask: facts.nozzle, in: AGENT.asks.nozzle },
+  { ask: facts.loose, in: AGENT.asks.loose },
+  { ask: facts.pause, in: AGENT.asks.pause },
+  { ask: facts.cancel, in: AGENT.asks.cancel },
+];
 const hears = [
-  image,
-  { kind: "ok", name: facts.bed.status, text: `${facts.bed.target} ${facts.bed.value}`, mono: true },
-  { kind: "blocked", name: facts.nozzle.refusal.name, text: facts.nozzle.refusal.reason, mono: false },
-  image,
-  { kind: "ok", name: facts.pause.status, text: facts.pause.target, mono: true },
-  { kind: "confirm", name: facts.cancel.status, text: "confirmation required", mono: false },
+  { in: AGENT.hears.look, kind: "ok", name: "result", text: facts.camera.image, mono: true },
+  { in: AGENT.hears.bed, kind: "ok", name: facts.bed.status, text: "", mono: true },
+  { in: AGENT.hears.nozzle, kind: "blocked", name: facts.nozzle.refusal.name, text: "", mono: false },
+  { in: AGENT.hears.loose, kind: "ok", name: "result", text: facts.camera.image, mono: true },
+  { in: AGENT.hears.pause, kind: "ok", name: facts.pause.status, text: "", mono: true },
+  { in: AGENT.hears.cancel, kind: "confirm", name: facts.cancel.status, text: "", mono: false },
 ];
 ---
 
-<div class="station" data-cam="client">
-  <div class="station-head">
-    <p class="station-name">Agent</p>
-    <p class="station-note">Claude, Cursor or any MCP client</p>
+<div class="node" data-cam="client" {...lit("client", step)}>
+  <div class="node-head">
+    <p class="node-name">Agent</p>
+    <p class="node-note wide-only">Claude, Cursor or any MCP client</p>
   </div>
-  <div class="exchange">
-    <div class="swap">
-      {
-        asks.map((ask, index) => (
-          <div class="said cue" style={shown(CLIENT.asks[index])}>
-            <Fragment set:html={arrowSvg("out")} />
-            <div class="said-body">
-              <p class="mono said-method">{ask.method}</p>
-              <p class="mono said-arg">{ask.target}</p>
-              {ask.value && <p class="figure">{nb(ask.value)}</p>}
-            </div>
-          </div>
-        ))
-      }
+  <div class="swap">
+    <div class="person" {...shown(AGENT.person, step)}>
+      <p class="who">You</p>
+      <p class="person-text">“{ASKED}”</p>
     </div>
-    <div class="swap">
-      {
-        hears.map((answer, index) => (
-          <div class="said cue" style={shown(CLIENT.hears[index])}>
-            <Fragment set:html={arrowSvg("in")} />
-            <div class="said-body">
-              <p class:list={["mono", "status", answer.kind]}>{answer.name}</p>
-              <p class:list={["said-reason", { mono: answer.mono }]}>{nb(answer.text)}</p>
-            </div>
+    {
+      asks.map(({ ask, in: ids }) => (
+        <div class="said" {...shown(ids, step)}>
+          <Fragment set:html={arrowSvg("out")} />
+          <p class="said-body mono">
+            <span class="said-method">{ask.method}</span> <span class="said-arg">{nb([ask.target, ask.value].filter(Boolean).join(" "))}</span>
+          </p>
+        </div>
+      ))
+    }
+  </div>
+  <div class="swap">
+    {
+      hears.map((answer) => (
+        <div class="said" {...shown(answer.in, step)}>
+          <Fragment set:html={arrowSvg("in")} />
+          <div class="said-body">
+            <p class:list={["mono", "status", answer.kind]}>{answer.name}</p>
+            {answer.text && <p class:list={["said-reason", { mono: answer.mono }]}>{nb(answer.text)}</p>}
           </div>
-        ))
-      }
-    </div>
+        </div>
+      ))
+    }
   </div>
 </div>
 
 <style>
-  .exchange {
+  .person {
     display: grid;
-    gap: var(--s-4);
+    gap: 2px;
+  }
+
+  .who {
+    color: var(--text-2);
+    font-size: var(--t-legend);
+  }
+
+  .person-text {
+    font-weight: 700;
   }
 
   .said {
     display: grid;
     grid-template-columns: 18px minmax(0, 1fr);
-    column-gap: 10px;
+    column-gap: 8px;
     align-items: start;
   }
 
   .said :global(.trace-arrow) {
     margin-top: 6px;
-    color: var(--text);
+    color: currentColor;
   }
 
   .said-body {
@@ -89,7 +104,7 @@ const hears = [
   }
 
   .said-arg {
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   .said .status {
