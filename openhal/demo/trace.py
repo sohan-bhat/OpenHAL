@@ -38,10 +38,13 @@ def compact(value: Any) -> str:
 
 
 def wrapped(head: str, payload: Any) -> list[str]:
-    """`head` and the payload as compact JSON, wrapped at commas to WIDTH under the payload's start."""
+    """`head` and the payload as compact JSON, wrapped at commas to WIDTH under the payload's start.
+
+    A head as long as the label column, such as `→ hal/confirmations/approve`, gets one space.
+    """
     pieces = compact(payload).split(", ")
     out: list[str] = []
-    line = head.ljust(LABEL)
+    line = head.ljust(LABEL) if len(head) < LABEL else head + " "
     fresh = True
     for index, piece in enumerate(pieces):
         text = piece + ("," if index < len(pieces) - 1 else "")
@@ -118,12 +121,24 @@ def celsius(quantity: dict[str, Any]) -> str:
 
 
 def outcome(record: dict[str, Any]) -> str:
-    """One sentence saying what the demo shows, with every number from the record."""
+    """Two sentences saying what the demo shows, with every number and name from the record."""
     exchanges = {entry["id"]: entry for entry in record["exchanges"]}
     bed = exchanges["bed-warmer"]["bed_target"]
     refused = exchanges["nozzle-too-hot"]["error"]["data"]
+    approved = exchanges["owner-approves"]
+    person = str(approved["by"]).partition(":")[2]
     return (
         f"You'll see the agent warm the bed from {celsius(bed['before'])} to {celsius(bed['after'])}, "
-        f"have a {celsius(refused['requested'])} nozzle refused at the {celsius(refused['limit'])} limit, "
-        "pause the print when it comes loose and wait for a person to approve the cancel."
+        f"have a {celsius(refused['requested'])} nozzle refused at the {celsius(refused['limit'])} limit "
+        "and pause the print when the camera shows the print has come loose. "
+        f"The {person} then approves the cancel, and the printer's state becomes {approved['printer']['state']}."
+    )
+
+
+def counts(record: dict[str, Any]) -> str:
+    """What the audit log holds, as `6 requests, 1 refused, 1 confirmed by a person`."""
+    found = record["audit"]["counts"]
+    return (
+        f"{found['requests']} requests, {found['refused']} refused, "
+        f"{found['confirmed_by_a_person']} confirmed by a person"
     )
