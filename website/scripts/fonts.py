@@ -125,6 +125,7 @@ def main() -> None:
     for face in FACES:
         data, cmap, original = build(face, codepoints)
         (OUT / face.target).write_bytes(data)
+        kind = "woff2" if face.weights[0] == face.weights[1] else "woff2-variations"
         manifest.append(
             {
                 "family": face.family,
@@ -146,7 +147,7 @@ def main() -> None:
                     f"  font-style: {face.style};",
                     "  font-display: swap;",
                     "  font-weight: 200 800;",
-                    f'  src: url("../fonts/{face.target}") format("{"woff2" if face.weights[0] == face.weights[1] else "woff2-variations"}");',
+                    f'  src: url("../fonts/{face.target}") format("{kind}");',
                     f"  unicode-range: {ranges(cmap)};",
                     "}",
                 ]
