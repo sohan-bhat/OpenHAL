@@ -1,12 +1,56 @@
-"""`openhal log`, the audit log."""
+"""`openhal log`, the audit log.
+
+`cells()`, `table()` and `lines()` lay out entries the way `openhal log` prints them. The demo uses
+the same three, so the audit lines in docs/demo/scenario.yaml are what this command prints.
+"""
 
 from __future__ import annotations
 
+import io
+from collections.abc import Iterable, Mapping
+from typing import Final
+
 import typer
+from rich.console import Console
 from rich.markup import escape
 from rich.table import Table
 
 from openhal.cli._common import EXIT_FAILED, console, handled, hub, print_json, styled, when
+from openhal.client.models import AuditEntry
+
+COLUMNS: Final = ("seq", "time", "event", "who", "target", "status", "message")
+WIDE: Final = 240
+"""The width `lines()` lays the table out at, so no row wraps."""
+
+
+def cells(entry: AuditEntry) -> dict[str, str]:
+    """One entry as the text of each column, by column name."""
+    target = ".".join(part for part in (entry.device, (entry.target or "").split(":")[-1]) if part)
+    message = entry.details.get("message") or entry.code or ""
+    return {
+        "seq": str(entry.seq),
+        "time": when(entry.at),
+        "event": entry.event,
+        "who": entry.principal,
+        "target": target,
+        "status": entry.status or "",
+        "message": str(message),
+    }
+
+
+def table(rows: Iterable[Mapping[str, str]]) -> Table:
+    """The table `openhal log` prints, with the status word in its color."""
+    shown = Table(*COLUMNS, box=None, pad_edge=False)
+    for row in rows:
+        shown.add_row(*(styled(row[name]) if name == "status" else escape(row[name]) for name in COLUMNS))
+    return shown
+
+
+def lines(rows: Iterable[Mapping[str, str]]) -> list[str]:
+    """The same table as plain text, one string per printed line, without color."""
+    buffer = io.StringIO()
+    Console(file=buffer, width=WIDE, color_system=None, highlight=False).print(table(rows))
+    return [line.rstrip() for line in buffer.getvalue().splitlines()]
 
 
 def register(app: typer.Typer) -> None:
@@ -41,17 +85,4 @@ def register(app: typer.Typer) -> None:
         if not entries:
             console.print("No entries match.")
             return
-        table = Table("seq", "time", "event", "who", "target", "status", "message", box=None, pad_edge=False)
-        for entry in entries:
-            target = ".".join(part for part in (entry.device, (entry.target or "").split(":")[-1]) if part)
-            message = entry.details.get("message") or entry.code or ""
-            table.add_row(
-                str(entry.seq),
-                when(entry.at),
-                escape(entry.event),
-                escape(entry.principal),
-                escape(target),
-                styled(entry.status),
-                escape(str(message)),
-            )
-        console.print(table)
+        console.print(table(cells(entry) for entry in entries))
