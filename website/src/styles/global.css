@@ -111,6 +111,13 @@ p {
   padding-top: var(--s-5);
 }
 
+.home-width {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: var(--s-4);
+}
+
 @media (min-width: 1024px) {
   .column {
     padding-top: var(--s-6);

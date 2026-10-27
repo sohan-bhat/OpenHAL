@@ -23,15 +23,17 @@ const more = [
 ---
 
 <Base title={`${PRODUCT_NAME}. ${HOME_TITLE}`} description={HOME_TITLE} bare>
-  <section class="wrap column hero" aria-labelledby="home-title">
+  <section class="home-width hero" aria-labelledby="home-title">
     <h1 id="home-title" class="hero-mark">{PRODUCT_NAME}</h1>
     <p class="hero-pitch">{PITCH}</p>
     <a class="button hero-go" href="#try">Get started</a>
   </section>
 
-  <Story />
+  <div class="home-width">
+    <Story after="safe" />
+  </div>
 
-  <section class="wrap column part" aria-labelledby="safe-title">
+  <section id="safe" class="home-width part after-story" aria-labelledby="safe-title">
     <h2 id="safe-title">Why it's safe</h2>
     <ul class="points">
       {
@@ -45,7 +47,7 @@ const more = [
     </ul>
   </section>
 
-  <section class="wrap column part" aria-labelledby="works-title">
+  <section class="home-width part" aria-labelledby="works-title">
     <h2 id="works-title">What it works with</h2>
     <p class="summary lede">
       {tested} {tested === 1 ? "driver" : "drivers"} {statusWord("implemented")}
@@ -67,7 +69,7 @@ const more = [
     <p class="onward"><a href="/drivers/">All {total} drivers</a></p>
   </section>
 
-  <section id="try" class="wrap column part" aria-labelledby="try-title">
+  <section id="try" class="home-width part" aria-labelledby="try-title">
     <h2 id="try-title">Try it</h2>
     <p class="lede">You need uv and git. Nothing touches hardware.</p>
     <div class="prose quickstart">
@@ -76,7 +78,7 @@ const more = [
     <p class="onward">It plays the same story in your terminal. <a href="/spec/playground/">Try it in your browser</a></p>
   </section>
 
-  <section class="wrap column part" aria-labelledby="more-title">
+  <section class="home-width part" aria-labelledby="more-title">
     <h2 id="more-title">Read more</h2>
     <ul class="more">
       {
@@ -96,7 +98,7 @@ const more = [
     display: grid;
     justify-items: start;
     padding-top: var(--s-7);
-    padding-bottom: var(--s-4);
+    padding-bottom: var(--s-7);
   }
 
   .hero-mark {
@@ -129,6 +131,10 @@ const more = [
   .part h2 {
     font-size: var(--t-h1);
     line-height: 1.15;
+  }
+
+  .part.after-story {
+    padding-top: var(--s-6);
   }
 
   .lede {
@@ -246,12 +252,6 @@ const more = [
 
     .more {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .hero-mark {
-      font-size: min((100vw - 340px) / 4.2, 184px);
     }
   }
 
