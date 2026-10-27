@@ -1,7 +1,8 @@
 """The message log the Inspector reads. The last 2,000 JSON-RPC messages, in and out, on every transport.
 
 Tokens are never stored. `hal/initialize` params have `token` redacted, and any text shaped like an
-OpenHAL token is replaced wherever it appears, including in messages that failed to parse.
+OpenHAL token is replaced wherever it appears, including in messages that failed to parse. An image
+reading is kept as its description without the base64 `data`, the way the audit log keeps it.
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ REDACTED: Final = "[redacted]"
 RAW_LIMIT: Final = 4096
 
 _TOKEN_TEXT: Final = re.compile(re.escape(TOKEN_PREFIX) + r"[A-Za-z0-9_\-]+")
+_IMAGE_KEYS: Final = frozenset({"mimeType", "bytes", "width", "height", "data"})
 
 Direction = Literal["in", "out"]
 Listener = Callable[[dict[str, Any]], None]
@@ -30,6 +32,8 @@ def _scrub(value: Any) -> Any:
     if isinstance(value, str):
         return _TOKEN_TEXT.sub(REDACTED, value)
     if isinstance(value, dict):
+        if value.keys() == _IMAGE_KEYS:
+            return {key: _scrub(item) for key, item in value.items() if key != "data"}
         return {key: REDACTED if key == "token" else _scrub(item) for key, item in value.items()}
     if isinstance(value, list):
         return [_scrub(item) for item in value]

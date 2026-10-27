@@ -77,8 +77,8 @@ def test_the_size_cap_names_the_limit_and_the_settings_to_lower() -> None:
     assert "width, height or jpeg_quality" in reason
 
 
-async def test_hal_read_sends_the_image_and_the_log_keeps_only_its_shape(
-    transport: Connect, tokens: dict[str, str], hub: Hub, camera: dict[str, bytes]
+async def test_hal_read_sends_the_image_and_the_logs_keep_only_its_shape(
+    transport: Connect, base_url: str, tokens: dict[str, str], hub: Hub, camera: dict[str, bytes]
 ) -> None:
     async with transport(tokens["reader"]) as rpc:
         await rpc.initialize()
@@ -96,6 +96,12 @@ async def test_hal_read_sends_the_image_and_the_log_keeps_only_its_shape(
     assert logged.body["details"]["value"] == {"mimeType": "image/png", "bytes": len(frame), "width": 64, "height": 48}
     assert base64.b64encode(frame).decode("ascii") not in json.dumps(logged.body)
     assert hub.kernel.audit.verify() == (True, None)
+    async with httpx.AsyncClient(base_url=base_url, headers={"Authorization": f"Bearer {tokens['human']}"}) as http:
+        messages = (await http.get("/v1/rpc/log")).json()
+    results = [entry["message"].get("result") for entry in messages if entry["direction"] == "out"]
+    sent = [result for result in results if isinstance(result, dict) and result.get("channel") == "frame"]
+    assert sent[-1]["value"] == images.describe(frame)
+    assert base64.b64encode(frame).decode("ascii") not in json.dumps(messages)
 
 
 async def test_a_frame_over_the_cap_is_refused_with_its_reason(
