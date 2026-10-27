@@ -5,6 +5,7 @@ import { fromHtml } from "hast-util-from-html";
 import { createMermaidRenderer } from "mermaid-isomorphic";
 import { visit } from "unist-util-visit";
 import { REPO_ROOT } from "../spec-meta.mjs";
+import { fontless, themedDiagram } from "./diagram-theme.mjs";
 
 const FONT = "Atkinson Hyperlegible Next";
 const MONO = "Atkinson Hyperlegible Mono";
@@ -126,12 +127,12 @@ export function rehypeDiagrams() {
     for (const block of blocks.reverse()) {
       const redraw = redrawFor(block.source);
       if (redraw) {
-        const html =
-          `<figure class="diagram house" role="group" aria-label="${redraw.title.replace(/"/g, "&quot;")}">` +
-          `<div class="diagram-scroll">` +
-          `<div class="diagram-light">${scopedSvg(redraw.light, `${redraw.name}-l`)}</div>` +
-          `<div class="diagram-dark">${scopedSvg(redraw.dark, `${redraw.name}-d`)}</div>` +
-          `</div></figure>`;
+        const themed = themedDiagram(redraw.light, redraw.dark);
+        const body = themed
+          ? scopedSvg(themed, redraw.name)
+          : `<div class="diagram-light">${scopedSvg(fontless(redraw.light), `${redraw.name}-l`)}</div>` +
+            `<div class="diagram-dark">${scopedSvg(fontless(redraw.dark), `${redraw.name}-d`)}</div>`;
+        const html = `<figure class="diagram house" role="group" aria-label="${redraw.title.replace(/"/g, "&quot;")}"><div class="diagram-scroll">${body}</div></figure>`;
         block.parent.children.splice(block.index, 1, ...fromHtml(html, { fragment: true }).children);
         continue;
       }
