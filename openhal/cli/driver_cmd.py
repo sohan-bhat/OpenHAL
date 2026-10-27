@@ -1,8 +1,8 @@
 """`openhal driver`, the driver SDK: list drivers, run the conformance suite, scaffold a new driver.
 
-New drivers start with an `x-` name and the status "experimental". They keep it until they pass the
-conformance suite and a hardware test, and a maintainer adds the plain name to the spec's known
-drivers.
+New drivers start with an `x-` name and the status "experimental", and keep the status until the
+driver passes the conformance suite and a hardware test and a maintainer adds the plain name to the
+spec's known drivers.
 """
 
 from __future__ import annotations

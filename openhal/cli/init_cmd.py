@@ -149,7 +149,7 @@ def _devices(
         kind = "from the device library" if offer.source == "library" else "described by the device"
         console.print(f"found          {escape(where)} ({escape(offer.driver)}, {kind})")
         explicit = True if (offer.driver, offer.address) in known else None
-        if not _choose(mode, explicit, "Add it as a read-only device file?", True):
+        if not _choose(mode, explicit, "Add the device as a read-only device file?", True):
             continue
         path = devices.save(offer, devices_dir, existing)
         added += 1
@@ -157,7 +157,7 @@ def _devices(
     for offer in found.unknown:
         console.print(
             f"unknown        {escape(offer.label)} at {escape(offer.address)} ({escape(offer.driver)}). "
-            f"Describe it with openhal writer start --driver {escape(offer.driver)}"
+            f"Describe the device with openhal writer start --driver {escape(offer.driver)}"
         )
     for kept in found.kept:
         console.print(f"kept           {escape(kept)}, it has a device file already")
@@ -296,7 +296,7 @@ def _next_steps(sample_path: Path | None, running: bool, has_agent_token: bool, 
     hub = (
         "Check the hub with openhal status"
         if running
-        else f"Start the hub with {DAEMON_NAME}, then check it with openhal status"
+        else f"Start the hub with {DAEMON_NAME}, then check the hub with openhal status"
     )
     if has_agent_token:
         clients = ["Add openhal to your MCP client with the setup above"]

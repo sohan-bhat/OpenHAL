@@ -24,7 +24,7 @@ Most commands take `--json` and then print JSON on stdout instead of tables.
 | 3 | The hub is not running |
 | 4 | Token problem, missing or not accepted |
 
-## Commands only a person may run
+## Commands that need a person
 
 `unlock`, `confirm approve`, `routine enable`, `routine run`, `routine approve`, `writer interview`, `writer finish` and `file confirm` need the human token. With `confirm.require_tty: true` (the default) they also need an interactive terminal and a typed phrase, read from the terminal itself rather than standard input. A script or an agent that runs shell commands as you can't pipe the phrase in. `--phrase` passes the phrase on the command line, and is accepted only when `confirm.require_tty` is false.
 
@@ -221,7 +221,7 @@ openhal routine delete ID [--yes]
 openhal routine approve ID --device DEVICE [--phrase approve]
 ```
 
-`new` stores a routine, always disabled. The kind comes from the file suffix unless given. `enable` prints the routine and its dry run first, and refuses if the dry run does not pass. `run` runs it once now. `approve` signs an approval that lets this exact routine content drive a high hazard device. Any change to the routine voids it.
+`new` stores a routine, always disabled. The kind comes from the file suffix unless given. `enable` prints the routine and its dry run first, and refuses if the dry run does not pass. `run` runs the routine once now. `approve` signs an approval that lets this exact routine content drive a high hazard device. Any change to the routine voids the approval.
 
 A YAML routine looks like this. It checks the soil every hour and waters for 20 s when it is dry.
 

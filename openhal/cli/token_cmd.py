@@ -2,8 +2,8 @@
 
 Token commands use the hub's token routes when the hub has them. When the hub is not running, or is
 older and has no token routes, they work on the hub database in the config folder directly, the same
-way `openhal init` creates the first human token. Only the person who owns the config folder can do
-that, because it is readable by its owner alone.
+way `openhal init` creates the first human token. The config folder is readable by its owner alone, so
+working on the database directly takes the owner's account.
 """
 
 from __future__ import annotations
@@ -37,12 +37,12 @@ def _note_local(reason: str) -> None:
 @app.command()
 @handled
 def create(
-    name: str = typer.Option(..., "--name", "-n", help="Who uses it, for example claude or cursor."),
+    name: str = typer.Option(..., "--name", "-n", help="Who uses the token, for example claude or cursor."),
     agent: bool = typer.Option(True, "--agent/--human", help="An agent token (default) or a human token."),
     scope: str = typer.Option("read", "--scope", "-s", help="read, control_low or control_medium. Agents only."),
     as_json: bool = typer.Option(False, "--json", help="Print JSON."),
 ) -> None:
-    """Create a token and print it once. The hub keeps only its hash."""
+    """Create a token and print the token once. The hub keeps only the token's hash."""
     if scope not in SCOPES:
         raise ValueError(f"--scope must be one of {', '.join(SCOPES)}.")
     kind = "agent" if agent else "human"
@@ -72,7 +72,9 @@ def create(
         f"Created {escape(created.kind)} token {escape(created.token_id)} for {escape(created.name)}, "
         f"scope {escape(created.scope)}."
     )
-    console.print("This is the only time it is shown. Store it in your MCP client config as OPENHAL_TOKEN.")
+    console.print(
+        "This is the only time the token is shown. Store the token in your MCP client config as OPENHAL_TOKEN."
+    )
     typer.echo(created.token)
 
 
@@ -129,7 +131,7 @@ def list_tokens(
 @app.command()
 @handled
 def revoke(token_id: str = typer.Argument(..., help="The token id from openhal token list.")) -> None:
-    """Revoke a token. Clients using it get 401 from then on."""
+    """Revoke a token. Clients using the token get 401 from then on."""
     try:
         with hub() as client:
             client.revoke_token(token_id)
@@ -155,7 +157,7 @@ def register(root: typer.Typer) -> None:
             code = client.new_pairing_code()
             url = client.url
         console.print(
-            f"Open {escape(url)}/ and enter this code. It works once and expires in {code.expires_in_s:.0f} s."
+            f"Open {escape(url)}/ and enter this code. The code works once and expires in {code.expires_in_s:.0f} s."
         )
         typer.echo(code.code)
         if not code.code.isdigit():

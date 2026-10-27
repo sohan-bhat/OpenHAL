@@ -107,7 +107,7 @@ def new(
     file: Path = typer.Option(..., "--file", "-f", exists=True, dir_okay=False, help="The routine source."),  # noqa: B008
     kind: str = typer.Option(None, "--kind", help="yaml or python. Taken from the file suffix when left out."),
 ) -> None:
-    """Store a routine. It starts disabled. Dry run it, then enable it."""
+    """Store a routine. A new routine stays disabled until you dry run and enable the routine."""
     chosen = kind or ("python" if file.suffix == ".py" else "yaml")
     if chosen not in ("yaml", "python"):
         raise ValueError("--kind must be yaml or python.")
@@ -203,5 +203,5 @@ def approve(
     console.print(
         f"[green]approved[/green]  {escape(routine_id)} on {escape(device)} "
         f"for sha256 {escape(approval.sha256 or '')}. "
-        "Any change to the routine voids it."
+        "Any change to the routine voids the approval."
     )
