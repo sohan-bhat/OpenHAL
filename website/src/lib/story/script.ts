@@ -1,12 +1,12 @@
 /**
  * The landing story as a list of steps, in vh of scroll. The whole diagram stays in view at one
- * size, and each step lights the stations it is about while the others rest. A caption and the
- * state it describes change together at a step's first scroll position and hold until its last.
+ * size, and each step lights every station its message passes while the others rest. A caption and
+ * the state it describes change together at a step's first scroll position and hold until its last.
  * Within a step only the wires move, drawing the message out and its answer back. Scrolling back
  * plays it in reverse.
  */
 
-export type StepId = "intro" | "ask" | "look" | "warm" | "hot" | "loose" | "pause" | "cancel" | "wake" | "end";
+export type StepId = "intro" | "ask" | "look" | "warm" | "hot" | "loose" | "pause" | "cancel" | "approve" | "end";
 
 export type Station = "client" | "hub" | "kernel" | "driver" | "printer" | "camera";
 
@@ -26,14 +26,14 @@ export const CAMERA = "(prefers-reduced-motion: no-preference) and (min-height: 
 export const STEPS: readonly Step[] = [
   { id: "intro", length: 20, lit: [] },
   { id: "ask", length: 44, lit: ["client"] },
-  { id: "look", length: 50, lit: ["client", "driver", "camera"] },
-  { id: "warm", length: 50, lit: ["hub", "kernel", "printer"] },
+  { id: "look", length: 50, lit: ["client", "hub", "kernel", "driver", "camera"] },
+  { id: "warm", length: 50, lit: ["client", "hub", "kernel", "driver", "printer"] },
   { id: "hot", length: 50, lit: ["client", "hub", "kernel"] },
-  { id: "loose", length: 50, lit: ["client", "driver", "camera"] },
-  { id: "pause", length: 50, lit: ["kernel", "driver", "printer"] },
+  { id: "loose", length: 50, lit: ["client", "hub", "kernel", "driver", "camera"] },
+  { id: "pause", length: 50, lit: ["client", "hub", "kernel", "driver", "printer"] },
   { id: "cancel", length: 50, lit: ["client", "hub", "kernel"] },
-  { id: "wake", length: 44, lit: ["hub", "printer", "camera"] },
-  { id: "end", length: 36, lit: ["client", "hub", "kernel", "driver", "printer", "camera"] },
+  { id: "approve", length: 50, lit: ["hub", "kernel", "driver", "printer"] },
+  { id: "end", length: 40, lit: ["client", "hub", "kernel", "driver", "printer", "camera"] },
 ];
 
 export interface Placed extends Step {

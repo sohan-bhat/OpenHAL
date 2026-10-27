@@ -2,7 +2,7 @@
 import type { StoryFacts } from "../../../lib/story/facts";
 import { storyTrace } from "../../../lib/story/facts";
 import { PLACED, shown, type StepId } from "../../../lib/story/script";
-import { traceItemsHtml } from "../../../lib/trace-html.mjs";
+import { traceLinesHtml } from "../../../lib/story/trace";
 import "../../../styles/trace.css";
 
 interface Props {
@@ -13,10 +13,7 @@ interface Props {
 
 const { facts, step, only } = Astro.props;
 const trace = storyTrace(facts);
-const entries = PLACED.filter((item) => trace[item.id] && (!only || item.id === only)).map((item) => ({
-  id: item.id,
-  html: traceItemsHtml(trace[item.id]!.map((line) => (line.kind === "request" || line.kind === "result" ? { ...line, params: {}, result: {} } : line))),
-}));
+const entries = PLACED.filter((item) => trace[item.id] && (!only || item.id === only)).map((item) => ({ id: item.id, html: traceLinesHtml(trace[item.id]!) }));
 ---
 
 <div class="trace story-trace" {...(only ? {} : shown(entries.map((entry) => entry.id), step))}>

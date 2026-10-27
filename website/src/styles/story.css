@@ -272,6 +272,14 @@
   font-style: normal;
 }
 
+.story-trace .outcome-result.pending {
+  color: var(--confirm);
+}
+
+.story-trace .outcome-result.blocked {
+  color: var(--blocked);
+}
+
 .story-snap .story-trace .swap > *,
 .step-words .story-trace .swap > * {
   grid-area: auto;
