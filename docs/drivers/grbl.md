@@ -53,7 +53,7 @@ There is no raw G-code action, on purpose. A raw line would step around every li
 - Status comes from the `?` realtime byte. Reads within `status_age` share one report so a page of channels costs one query.
 - Work and machine positions are converted with the `WCO` offset. When a report has no `WCO` the driver reads `$#` and `$G` once.
 - Motion lines are answered with `ok` when they are queued. `jog` and `move` then poll until the machine is idle and answer `done`, or answer `started` after `action_wait`.
-- `$H` blocks the line until homing ends. If it takes longer than `action_wait` the action answers `started` and the `ok` is collected in the background.
+- `$H` blocks the line until homing ends. If homing takes longer than `action_wait` the action answers `started` and the `ok` is collected in the background.
 - `ALARM:N` fails the command in flight. After a hard or soft limit GRBL ignores everything but a reset, and the driver refuses lines until one is sent.
 - The banner `Grbl 1.1h ['$' for help]` means the board reset. Commands in flight fail.
 

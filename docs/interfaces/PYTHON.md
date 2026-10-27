@@ -44,7 +44,7 @@ asyncio.run(main())
 | `token` | `OPENHAL_TOKEN`, then `$OPENHAL_HOME/human.token` (default `~/.openhal/human.token`) |
 | `home` | `OPENHAL_HOME`, then `~/.openhal` |
 
-`Client(..., use_human_token_file=False)` never falls back to the human token file. Use it for anything that acts for an agent. The client ignores proxy environment variables, so a token is never sent through a proxy.
+`Client(..., use_human_token_file=False)` never falls back to the human token file. Use `use_human_token_file=False` for anything that acts for an agent. The client ignores proxy environment variables, so a token is never sent through a proxy.
 
 ## Exceptions
 

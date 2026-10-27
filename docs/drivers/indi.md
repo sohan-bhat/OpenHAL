@@ -103,7 +103,7 @@ hazard: medium
 ## Known limitations
 
 - Images (BLOBs) are not downloaded.
-- Manual motion (TELESCOPE_MOTION_NS and WE) is not a convention. Map it as a generic switch only with tight interlocks.
+- Manual motion (TELESCOPE_MOTION_NS and WE) is not a convention. Map manual motion as a generic switch only with tight interlocks.
 - A property the server deletes after connect fails its reads until the server defines it again.
 - Discovery only checks the local server. Name remote servers in a device file.
 

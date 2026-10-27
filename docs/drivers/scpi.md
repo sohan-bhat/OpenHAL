@@ -26,7 +26,7 @@ The `scpi` driver talks to programmable test instruments over VISA. Bench suppli
 |---|---|---|
 | `query` | read | Query to send, such as `MEAS:VOLT? CH1` |
 | `set` | write | Setting template. `{value}` for every type, `{on_off}` (ON or OFF) for bool channels |
-| `get` | write | Readback query. Without it a read returns the last value sent, or unknown before the first write |
+| `get` | write | Readback query. Without a readback query a read returns the last value sent, or unknown before the first write |
 | `command` | action | Template with the action's argument names as placeholders |
 | `parse`, `scale`, `offset`, `unit`, `on`, `off`, `lookup` | read, write | As in the serial driver (docs/drivers/serial.md) |
 

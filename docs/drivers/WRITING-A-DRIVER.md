@@ -59,7 +59,7 @@ Rules.
 8. **Safe state.** Set `DriverInfo.safe_state_support` to `"native"` if the protocol has its own emergency behavior (GRBL feed hold, outputs off), implement `_safe_state`, and say in the docs what it does. If the protocol can't guarantee a safe state, say so in the docs page and in the example device file's `safe_state_note`.
 9. **Bridges** (Home Assistant, ESPHome, ROS 2) expose only the entities the user selected in the device file, and the device file's limits apply even when the bridged system has its own.
 10. **No secrets in device files.** Parameters that need a secret take an environment variable name (`token_env: HA_TOKEN`).
-11. **Optional dependencies** go in a `pyproject.toml` extra named after the driver. Import them inside `driver.py`, never in `__init__.py`.
+11. **Optional dependencies** go in a `pyproject.toml` extra named after the driver. Import the optional dependencies inside `driver.py`, never in `__init__.py`.
 
 ## Tests
 

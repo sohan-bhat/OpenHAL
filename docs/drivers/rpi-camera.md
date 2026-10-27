@@ -22,7 +22,7 @@ uv pip install -e .
 rpicam-hello --list-cameras
 ```
 
-`rpicam-hello --list-cameras` should list your module. If it doesn't, check the ribbon cable and, on older OS images, the `camera_auto_detect=1` line in `/boot/firmware/config.txt`.
+`rpicam-hello --list-cameras` should list your module. If the module isn't listed, check the ribbon cable and, on older OS images, the `camera_auto_detect=1` line in `/boot/firmware/config.txt`.
 
 ## Parameters
 

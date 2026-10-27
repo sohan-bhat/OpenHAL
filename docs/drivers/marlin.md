@@ -43,7 +43,7 @@ There is no raw G-code action, on purpose. A raw command would step around every
 - After opening the port the driver waits up to `settle` for the `start` banner that most boards print after the reset on open, then sends `M110 N0`.
 - Every command carries a line number and an XOR checksum (`N12 M104 T0 S200.0*93`). On `Resend` the driver sends the requested lines again and ignores the extra `ok` that Marlin sends with the request.
 - Commands in flight are tracked in order and resolved by `ok`. `echo:busy: processing` keeps a command alive past `timeout`.
-- M115 is read on connect. When it reports `Cap:AUTOREPORT_TEMP:1` the driver turns on `M155 S<autoreport>` and reads temperatures from the reports, so reads keep working during long moves.
+- M115 is read on connect. When the M115 answer reports `Cap:AUTOREPORT_TEMP:1` the driver turns on `M155 S<autoreport>` and reads temperatures from the reports, so reads keep working during long moves.
 - `home` waits up to `action_wait`. If the printer is still busy it returns `started` and the `ok` is collected in the background. The hub's driver timeout is 10 s, which is shorter than many homing moves.
 - `start` in the middle of a session means the board reset. Commands in flight fail, the numbering restarts, and heaters are off.
 - `Error:Printer halted` means the firmware stopped itself. The driver reports itself disconnected until the printer is reset and reconnected.

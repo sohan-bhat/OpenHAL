@@ -71,7 +71,7 @@ An action named otherwise picks its operation with `map: { operation: move }`.
 
 ## Why the driver has its own SOAP client
 
-onvif-zeep-async (MIT, maintained) was checked first. Importing it configures the root logger, creating a camera removes `http_proxy` and `https_proxy` from the process environment, and it turns TLS certificate checks off for every camera. Those side effects are wrong inside a long-running hub, so the driver uses about 250 lines of its own SOAP, WS-Security and WS-Discovery code on httpx and defusedxml.
+onvif-zeep-async (MIT, maintained) was checked first. Importing onvif-zeep-async configures the root logger, creating a camera removes `http_proxy` and `https_proxy` from the process environment, and it turns TLS certificate checks off for every camera. Those side effects are wrong inside a long-running hub, so the driver uses about 250 lines of its own SOAP, WS-Security and WS-Discovery code on httpx and defusedxml.
 
 ## Example
 

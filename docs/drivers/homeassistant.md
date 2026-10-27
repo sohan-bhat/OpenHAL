@@ -52,7 +52,7 @@ Both send the long-lived access token from the environment variable named in `to
 
 1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[homeassistant] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. In Home Assistant, open your profile, Security, and create a long-lived access token. A non-admin user that can see only the needed entities is the safest choice.
-3. Export it, for example `export HA_TOKEN=...`, where the hub runs.
+3. Export the token, for example `export HA_TOKEN=...`, where the hub runs.
 4. Start from `openhal/drivers/homeassistant/examples/office-climate.hal.yaml`, or from `describe()`.
 5. Validate with `openhal file validate`, then confirm the limits by hand.
 

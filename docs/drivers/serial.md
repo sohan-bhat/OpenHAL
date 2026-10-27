@@ -26,7 +26,7 @@ The `serial` driver talks to any device with a line-based text protocol over a s
 1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[serial] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. Find the port with `openhal discover` or `python -m serial.tools.list_ports -v`.
 3. Write a device file. Each read channel needs a `map` with `query` or `listen`. Each write channel and action needs a `map` with `command`.
-4. Validate it with `openhal file validate my-device.hal.yaml`.
+4. Validate the file with `openhal file validate my-device.hal.yaml`.
 5. Confirm the limits by hand (spec section 12). Until then the device loads read-only.
 
 ## Parameters
@@ -50,7 +50,7 @@ The `serial` driver talks to any device with a line-based text protocol over a s
 | `query` | read | Line to send. The next line that is not a stream line is the reply |
 | `listen` | read | Regex for lines the device sends on its own. The latest match is the value |
 | `command` | write, action | Template to send. Writes use `{value}`, actions use their argument names |
-| `get` | write | Readback query. Without it a read returns the last value sent, and unknown (null) before the first write |
+| `get` | write | Readback query. Without a readback query a read returns the last value sent, and unknown (null) before the first write |
 | `parse` | read, write | Regex for the reply. Group `value`, else group 1, else the whole match |
 | `expect` | write, action | Regex the reply must match. Without `expect` or `error` the driver doesn't wait for a reply |
 | `error` | write, action | Regex that marks a refusal, reported as a failed command |

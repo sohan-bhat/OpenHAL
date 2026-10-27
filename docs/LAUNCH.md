@@ -49,7 +49,7 @@ Drafts only. Nothing on this page has been posted, and the owner posts each draf
 The demo shows the hub refusing a command, so someone will post "I'm sorry Dave, I'm afraid I can't do that" in the first ten minutes. The plan is to take it well and turn it toward the design.
 
 1. Never make the joke first. Not in a title, a post, the README, the site or an image. DESIGN.md bans 2001 references in the design.
-2. Answer it once per thread, briefly, then answer the next technical question.
+2. Answer the joke once per thread, briefly, then answer the next technical question.
 3. Never use the red eye, "Daisy" or an ominous voice, even in a reply.
 4. If the name keeps pulling threads away from the protocol, that is input for NEEDS_HUMAN.md item 1, which lists rename options.
 

@@ -67,7 +67,7 @@ actions:
 - The driver only changes the registers and byte sequences that the device file's control channels and actions list. Connecting changes nothing. Configuration a chip needs before it measures, such as starting conversions, goes in an action so it passes through the safety kernel.
 - Values are rounded to the field's raw step, and the reading a command returns shows the value actually sent. A value the field can't hold fails the command and nothing is sent. Nothing is clamped.
 - A control channel without `state` reads as the last value sent, or no value before the first command.
-- `health()` reads the first read channel. Make it a register that is safe to read often, not one that clears on read.
+- `health()` reads the first read channel. Make the first read channel a register that is safe to read often, not one that clears on read.
 - Transactions on one device run one at a time. Other devices on the same bus are separate device files, and the kernel's i2c-dev locking keeps their transactions apart.
 
 ## Examples

@@ -85,7 +85,7 @@ Bit channels can't be written, because changing one bit needs a read-modify-writ
 
 ## Hazard default and safe state
 
-The default hazard is medium, because Modbus often drives motors, heaters and valves. Raise it to high for drives and anything that can injure. Modbus has no emergency behavior of its own, so `safe_state_support` is `file`, and the hub applies the device file's `safe_state` through ordinary writes, which work only while the device answers. Wire hardware stops for anything dangerous.
+The default hazard is medium, because Modbus often drives motors, heaters and valves. Raise the hazard to high for drives and anything that can injure. Modbus has no emergency behavior of its own, so `safe_state_support` is `file`, and the hub applies the device file's `safe_state` through ordinary writes, which work only while the device answers. Wire hardware stops for anything dangerous.
 
 ## Sources
 

@@ -49,7 +49,7 @@ actions:
 | Key | Default | Meaning |
 |---|---|---|
 | `id` | required | The frame identifier |
-| `extended` | `true` above 0x7FF | Use a 29-bit identifier. Set it to `true` for low ids on 29-bit buses such as J1939 or VESC |
+| `extended` | `true` above 0x7FF | Use a 29-bit identifier. Set `extended` to `true` for low ids on 29-bit buses such as J1939 or VESC |
 | `byte`, `length` | `0`, `1` | Where the value starts and how many bytes it spans, 1 to 8 |
 | `endian` | `big` | Byte order, `big` or `little` |
 | `signed` | `false` | Two's complement |

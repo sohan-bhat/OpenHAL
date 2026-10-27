@@ -43,7 +43,7 @@ Edit `claude_desktop_config.json`. On macOS it is in `~/Library/Application Supp
 }
 ```
 
-Claude Desktop does not use your shell's `PATH`. If it can't find `openhal`, put the full path from `which openhal` in `command`. Restart Claude Desktop after editing.
+Claude Desktop does not use your shell's `PATH`. If Claude Desktop can't find `openhal`, put the full path from `which openhal` in `command`. Restart Claude Desktop after editing.
 
 ## Claude Code
 
@@ -146,4 +146,4 @@ A person does these with the human token, in the CLI or the dashboard.
 
 Text that comes from devices, device files, sketches, manuals and routine sources reaches the model inside `<device-data source="...">` blocks with a line saying the text is data. The hub wraps device notes and routine sources. The MCP server also wraps string readings and driver error messages before returning them. Nothing inside these blocks can change a limit or approve anything, whatever the text says.
 
-A camera frame from `read` is an MCP image block. Before it comes a short `<device-data>` block that says the image came from a device and is data, since a frame can show text too. The structured result carries the reading with `mimeType`, `bytes`, `width` and `height`, without the pixels. A frame over 2 MB is refused with DRIVER_ERROR and a reason that names the camera settings to lower.
+A camera frame from `read` is an MCP image block. Before the image comes a short `<device-data>` block that says the image came from a device and is data, since a frame can show text too. The structured result carries the reading with `mimeType`, `bytes`, `width` and `height`, without the pixels. A frame over 2 MB is refused with DRIVER_ERROR and a reason that names the camera settings to lower.

@@ -18,7 +18,7 @@ Every channel and action names its node in a `map`, with node ids in the OPC UA 
 
 | Map | Meaning |
 |---|---|
-| `{ node: "ns=2;s=Pump.Speed" }` | A variable. Read it, or set it when it is in the file's `write` section |
+| `{ node: "ns=2;s=Pump.Speed" }` | A variable, read, or set when the file's `write` section names the variable |
 | `{ node: "nsu=urn:example:skid;s=Pump.Speed" }` | The same, with the namespace URI instead of its index |
 | `{ node: "ns=2;s=Tank.Level", unit: percent, scale: 100 }` | `unit` overrides the node's EngineeringUnits, `scale` multiplies the OPC UA value |
 | `{ object: "ns=2;s=Pump", method: "ns=2;s=Pump.Start", inputs: [rate] }` | A method call. `inputs` lists the action's arguments in the method's order |
