@@ -28,7 +28,7 @@ h1{margin-top:44px;font-size:${size}px;line-height:1.12;font-weight:700;letter-s
 .trace{margin-top:auto;background:#f4f5f7;border:1px solid #dadde2;border-radius:10px;padding:26px 30px;font-family:"Atkinson Hyperlegible Mono";font-size:22px;line-height:1.6;display:grid;grid-template-columns:30px 1fr;column-gap:14px;row-gap:6px;align-items:baseline}
 .trace svg{width:22px;height:12px;color:#15181c;align-self:center}
 .method{color:#1d5fb4;font-weight:700;margin-right:22px}
-.error{color:#b42318;font-weight:700}.result{color:#1e7a44;font-weight:700}
+.error{color:#a14034;font-weight:700}.result{color:#3c754f;font-weight:700}
 .syn-key,.syn-punct{color:#4f5661}.syn-str{color:#15181c}.syn-num{color:#1d5fb4}
 .reason{grid-column:2;color:#15181c;font-size:20px}
 </style></head><body>
