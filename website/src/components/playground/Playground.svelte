@@ -448,7 +448,7 @@
                 <dd class="mono">{effectiveHazard(file)}</dd>
               </div>
               <div>
-                <dt>Limits<InfoMark topic="confirmed limits" text="A person read this device file and confirmed the limits in it. The kernel checks every command against the confirmed limits." href="/docs/concepts/" /></dt>
+                <dt>Limits<InfoMark topic="confirmed limits" text="A person read this device file and confirmed the file's limits. The kernel checks every command against the confirmed limits." href="/docs/concepts/" /></dt>
                 <dd>{#if missing.length}<span class="status unverified">unconfirmed</span>{:else}<span class="status ok">confirmed</span>{/if}</dd>
               </div>
             {/if}

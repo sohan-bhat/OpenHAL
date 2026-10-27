@@ -38,6 +38,6 @@ export function specSidebar(pages: SpecPage[], hrefFor: (page: SpecPage) => stri
   return [
     { name: "", items },
     ...(summaries.length ? [{ name: "All versions", items: summaries }] : []),
-    { name: "Try it", items: [{ title: "Playground", href: "/spec/playground/" }] },
+    { name: "Try the protocol", items: [{ title: "Playground", href: "/spec/playground/" }] },
   ];
 }

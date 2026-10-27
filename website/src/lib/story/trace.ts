@@ -29,7 +29,7 @@ function auditHtml(caption: string, rows: AuditRow[]): string {
   const body = rows
     .map((row) => `<tr>${COLUMNS.map((column) => `<td class="audit-${column}${column === "status" ? ` ${row.tone}` : ""}">${escapeHtml(String(row[column]))}</td>`).join("")}</tr>`)
     .join("");
-  return `<li class="audit"><table class="audit-log"><caption class="visually-hidden">Audit log, newest first, as ${escapeHtml(caption)} prints it</caption><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></li>`;
+  return `<li class="audit"><table class="audit-log"><caption class="visually-hidden">Audit log, newest first, from ${escapeHtml(caption)}</caption><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></li>`;
 }
 
 const noteHtml = (text: string, keep = false) =>
