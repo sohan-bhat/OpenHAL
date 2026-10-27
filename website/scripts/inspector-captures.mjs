@@ -43,7 +43,7 @@ async function waitFor(check, what, tries = 200, gap = 100) {
   throw new Error(`Timed out waiting for ${what}.`);
 }
 
-function rpc(token) {
+function rpc(token, name) {
   const socket = new WebSocket(`ws://127.0.0.1:${port}/rpc`);
   const waiting = new Map();
   let next = 1;
@@ -67,7 +67,7 @@ function rpc(token) {
   return {
     async start() {
       await opened;
-      const hello = await call("hal/initialize", { protocolVersion: "2026-10-24", clientInfo: { name: "bench-agent", version: "1.0.0" }, token });
+      const hello = await call("hal/initialize", { protocolVersion: "2026-10-24", clientInfo: { name, version: "1.0.0" }, token });
       if (hello.error) throw new Error(hello.error.message);
       socket.send(JSON.stringify({ jsonrpc: "2.0", method: "hal/initialized" }));
     },
@@ -76,28 +76,39 @@ function rpc(token) {
   };
 }
 
-async function reading(state, channel) {
-  const response = await fetch(`${state.url}/v1/devices/plant-waterer`, { headers: { Authorization: `Bearer ${state.humanToken}` } });
+async function reading(state, device, channel) {
+  const response = await fetch(`${state.url}/v1/devices/${device}`, { headers: { Authorization: `Bearer ${state.humanToken}` } });
   const view = await response.json();
   return view.read?.[channel]?.value;
 }
 
+async function show(state, frame) {
+  const response = await fetch(`${state.url}/_harness/printer-cam/show/${frame}`, { method: "POST" });
+  if (!response.ok) throw new Error(`The simulated camera could not show ${frame}.`);
+}
+
+function expectAnswer(answer, check, what) {
+  if (!check(answer)) throw new Error(`${what} The hub answered ${JSON.stringify(answer).slice(0, 300)}`);
+}
+
 async function scenario(state) {
-  const water = (seconds) => ({ device: "plant-waterer", action: "water", args: { duration: { value: seconds, unit: "s" } } });
-  await waitFor(async () => (await reading(state, "soil_moisture")) !== undefined, "the first soil reading");
-  const agent = rpc(state.agentToken);
+  await fetch(`${state.url}/_harness/printer/print`, { method: "POST" });
+  await show(state, "first-layer");
+  await waitFor(async () => (await reading(state, "printer", "state")) === "printing", "the printer to report printing");
+  const agent = rpc(state.printToken, "print-watcher");
   await agent.start();
-  const tooLong = await agent.call("hal/action", water(120));
-  if (tooLong.error?.data?.name !== "LIMIT_EXCEEDED") throw new Error("The 120 s watering was not refused with LIMIT_EXCEEDED.");
-  await fetch(`${state.url}/_harness/plant-waterer/drain`, { method: "POST" });
-  await waitFor(async () => (await reading(state, "tank")) === "empty", "an empty tank");
-  const empty = await agent.call("hal/action", water(20));
-  if (empty.error?.data?.name !== "INTERLOCK_BLOCKED") throw new Error("The empty tank did not block the pump.");
-  await fetch(`${state.url}/_harness/plant-waterer/refill`, { method: "POST" });
-  await waitFor(async () => (await reading(state, "tank")) === "ok", "a refilled tank");
-  const watered = await agent.call("hal/action", water(20));
-  if (watered.result?.status !== "done") throw new Error("The 20 s watering did not run.");
-  await waitFor(async () => (await reading(state, "soil_moisture")) === 46, "soil moisture to reach 46 %");
+  const look = { device: "printer-cam", channel: "frame" };
+  expectAnswer(await agent.call("hal/read", look), (answer) => answer.result?.value?.bytes === 19409, "The first frame was not the first-layer drawing.");
+  await agent.call("hal/read", { device: "printer", channel: "bed_target" });
+  await sleep(1100);
+  const warmer = { device: "printer", channel: "bed_target", value: 70, unit: "degC" };
+  expectAnswer(await agent.call("hal/write", warmer), (answer) => answer.result?.status === "done", "The bed did not warm to 70 degC.");
+  const hotter = { device: "printer", channel: "extruder_target", value: 300, unit: "degC" };
+  expectAnswer(await agent.call("hal/write", hotter), (answer) => answer.error?.data?.name === "LIMIT_EXCEEDED", "The 300 degC nozzle was not refused with LIMIT_EXCEEDED.");
+  await show(state, "come-loose");
+  expectAnswer(await agent.call("hal/read", look), (answer) => answer.result?.value?.bytes === 23567, "The second frame was not the come-loose drawing.");
+  expectAnswer(await agent.call("hal/action", { device: "printer", action: "pause" }), (answer) => answer.result?.status === "done", "The print did not pause.");
+  expectAnswer(await agent.call("hal/action", { device: "printer", action: "cancel" }), (answer) => answer.result?.status === "pending", "The cancel did not wait for a person.");
   agent.close();
 }
 
@@ -117,6 +128,14 @@ async function webp(page, png, quality) {
   );
 }
 
+async function box(locator, pad = 12) {
+  const rect = await locator.boundingBox();
+  if (!rect) throw new Error("A capture's element is not on screen.");
+  const x = Math.max(0, Math.floor(rect.x - pad));
+  const y = Math.max(0, Math.floor(rect.y - pad));
+  return { x, y, w: Math.min(WIDTH - x, Math.ceil(rect.width + 2 * pad)), h: Math.min(HEIGHT - y, Math.ceil(rect.height + 2 * pad)) };
+}
+
 async function capture(browser, state, theme) {
   const context = await browser.newContext({ viewport: { width: WIDTH, height: HEIGHT }, colorScheme: theme, reducedMotion: "reduce" });
   await context.addCookies([{ name: "openhal_session", value: state.humanToken, url: state.url, httpOnly: true, sameSite: "Strict" }]);
@@ -127,13 +146,34 @@ async function capture(browser, state, theme) {
     await sleep(600);
   };
   const shots = {};
-  await page.goto(`${state.url}/#/devices/plant-waterer`);
-  await page.getByRole("heading", { name: "Arduino plant waterer", level: 1 }).waitFor();
+  const crops = {};
+  await page.goto(`${state.url}/#/devices/printer`);
+  await page.getByRole("heading", { name: "Klipper 3D printer", level: 1 }).waitFor();
   await page.locator("dl.hub.wide").getByText(`127.0.0.1:${port}`).waitFor();
+  await page.locator("main tr").filter({ hasText: "state" }).getByText("paused").waitFor();
   await settle();
   shots.device = await page.screenshot();
+  crops.device = await box(page.locator("article.device"), 16);
+
+  await page.goto(`${state.url}/#/devices/printer-cam`);
+  await page.getByRole("main").getByRole("img", { name: /^Demo frame from Printer camera/ }).waitFor();
+  await settle();
+  shots.camera = await page.screenshot();
+  crops.camera = await box(page.locator("main section").filter({ has: page.locator("#frames-title") }), 16);
+
+  await page.goto(`${state.url}/#/confirmations`);
+  const cancel = page.getByRole("main").getByRole("listitem").filter({ hasText: "asks to run cancel" }).first();
+  await cancel.getByRole("combobox", { name: "Show a camera" }).selectOption("printer-cam/frame");
+  await cancel.getByRole("img", { name: /^Demo frame from Printer camera/ }).waitFor();
+  await page.locator("#pending-title").evaluate((title) => window.scrollTo(0, window.scrollY + title.getBoundingClientRect().top - 130));
+  await settle();
+  shots.confirmations = await page.screenshot();
+  crops.confirmations = await box(cancel, 12);
+
+  await page.goto(`${state.url}/#/devices/printer`);
+  await page.getByRole("heading", { name: "Klipper 3D printer", level: 1 }).waitFor();
   await page.getByRole("button", { name: "Message log", exact: true }).click();
-  const request = page.locator('li[data-kind="request"]').filter({ hasText: "plant-waterer" }).first();
+  const request = page.locator('li[data-kind="request"]').filter({ hasText: "printer-cam" }).first();
   await request.waitFor();
   await request.evaluate((row) => {
     const scroller = row.closest(".scroller");
@@ -141,25 +181,59 @@ async function capture(browser, state, theme) {
   });
   await settle();
   shots.log = await page.screenshot();
-  await page.goto(`${state.url}/#/devices/plant-waterer`);
+  crops.log = await box(page.locator("section.log"), 0);
+
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.getByRole("button", { name: /STOP/ }).click();
   await page.getByRole("button", { name: "UNLOCK" }).waitFor();
   await settle();
   shots.stopped = await page.screenshot();
+  crops.stopped = await box(page.getByRole("status").filter({ hasText: "error -32014 STOPPED" }), 0);
   await page.getByRole("button", { name: "UNLOCK" }).click();
   await page.getByRole("dialog").getByLabel("Phrase").fill("unlock");
   await page.getByRole("dialog").getByRole("button", { name: "Unlock", exact: true }).click();
   await page.getByRole("button", { name: /STOP/ }).waitFor();
   await context.close();
-  return shots;
+  return { shots, crops };
 }
+
+const SHOTS = [
+  {
+    file: "inspector-device",
+    caption: "The printer",
+    alt: "The Inspector's device pane for the simulated Klipper 3D printer, paused, with its temperatures and extruder_target limited to 0 °C to 260 °C",
+  },
+  {
+    file: "inspector-camera",
+    caption: "The camera frame",
+    alt: "The Inspector's camera pane with the latest demo frame, a line drawing of the print knocked over on the bed, image/jpeg, 640 × 480, 24 KB",
+  },
+  {
+    file: "inspector-confirmations",
+    caption: "The pending cancel",
+    alt: "The Inspector's pending cancel. The agent print-watcher asks to run cancel on Klipper 3D printer, which can't be resumed, so it waits for a person, with the camera's frame beside Approve and run cancel and Reject",
+  },
+  {
+    file: "inspector-log",
+    caption: "The message log",
+    alt: "The Inspector's message log with hal/read results shown as image/jpeg 640 by 480 descriptions, hal/write answered by error -32010 LIMIT_EXCEEDED for a 300 °C nozzle, and the cancel answered pending",
+  },
+  {
+    file: "inspector-stopped",
+    caption: "Stopped",
+    alt: "The Inspector's stop banner, saying every command is refused with error -32014 STOPPED until a person lifts the stop with UNLOCK",
+  },
+];
 
 async function main() {
   await checkPort();
   if (port !== DEFAULT_PORT) console.warn(`The captures will show the hub at 127.0.0.1:${port}, not its default address.`);
   rmSync(statePath, { force: true });
-  const server = spawn(python, ["-m", "tests.inspector.serve", "--port", String(port), "--state", statePath], { cwd: repo, stdio: ["ignore", "ignore", "inherit"] });
+  const server = spawn(python, ["dashboard/e2e/print_hub.py", "--only-print", "--port", String(port), "--state", statePath], {
+    cwd: repo,
+    env: { ...process.env, PYTHONPATH: repo },
+    stdio: ["ignore", "ignore", "inherit"],
+  });
   try {
     await waitFor(() => existsSync(statePath), "the harness state file", 300);
     const state = JSON.parse(readFileSync(statePath, "utf8"));
@@ -167,7 +241,13 @@ async function main() {
     await scenario(state);
     const browser = await chromium.launch();
     const raw = {};
-    for (const theme of ["light", "dark"]) raw[theme] = await capture(browser, state, theme);
+    let crops = null;
+    for (const theme of ["light", "dark"]) {
+      if (theme === "dark") await scenario(state);
+      const taken = await capture(browser, state, theme);
+      raw[theme] = taken.shots;
+      crops ??= taken.crops;
+    }
     const page = await browser.newPage();
     mkdirSync(out, { recursive: true });
     let quality = 0.8;
@@ -186,7 +266,9 @@ async function main() {
     for (const file of files) writeFileSync(file.path, file.data);
     await browser.close();
     const total = files.reduce((sum, file) => sum + file.data.length, 0);
-    writeFileSync(manifest, `${JSON.stringify({ width: WIDTH, height: HEIGHT, quality: Number(quality.toFixed(1)), bytes: total }, null, 2)}\n`);
+    const shots = SHOTS.map((shot) => ({ ...shot, crop: crops[shot.file.replace("inspector-", "")] }));
+    const record = { width: WIDTH, height: HEIGHT, quality: Number(quality.toFixed(1)), bytes: total, shots };
+    writeFileSync(manifest, `${JSON.stringify(record, null, 2)}\n`);
     console.log(`Wrote ${files.length} captures, ${Math.round(total / 1024)} KB at quality ${quality.toFixed(1)}.`);
   } finally {
     if (server.pid) process.kill(server.pid);
