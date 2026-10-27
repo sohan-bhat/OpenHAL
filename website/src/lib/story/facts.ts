@@ -5,9 +5,9 @@ import { loadScenario, type Exchange, type Scenario } from "../scenario";
 import { REPO_ROOT } from "../spec-meta.mjs";
 import { reasonLines } from "../trace-html.mjs";
 import { PLACED, type StepId } from "./script";
-import type { Tone, TraceLine } from "./trace";
+import type { AuditRow, Tone, TraceLine } from "./trace";
 
-export type { TraceLine } from "./trace";
+export type { AuditRow, TraceLine } from "./trace";
 
 export interface Refusal {
   name: string;
@@ -71,6 +71,7 @@ export const TOLD: Partial<Record<StepId, keyof typeof IDS>> = {
 };
 
 export interface StoryFacts {
+  agent: string;
   printer: { id: string; name: string; driver: string; readings: Reading[] };
   camera: { id: string; channel: string; driver: string; image: string };
   file: string;
@@ -83,7 +84,7 @@ export interface StoryFacts {
   cancel: Ask & { status: string; rule: string };
   approve: Ask & { device: string; status: string; approved: string };
   kernel: Record<StepId, KernelView>;
-  audit: { counts: string };
+  audit: { counts: string; command: string; rows: AuditRow[] };
 }
 
 interface Limit {
@@ -213,8 +214,18 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
   const approved = String(need(field(approve, "kernel")?.approved_by, `approver of ${IDS.approve}`));
   const audit = need((record as Record<string, any>).audit, "audit log");
   const counts = Object.entries(need(audit.counts as Record<string, number>, "audit counts")).map(([key, count]) => `${count} ${key.replaceAll("_", " ")}`);
+  const rows: AuditRow[] = need(audit.entries as Array<Record<string, any>>, "audit entries").map((entry) => ({
+    seq: Number(entry.seq),
+    event: String(entry.event),
+    who: String(entry.who),
+    target: String(entry.target),
+    status: String(entry.status),
+    tone: TONES[String(entry.status)] ?? "plain",
+  }));
   const approvedTarget = String(need(approve.result?.target, `target of ${IDS.approve}`));
+  const agent = String(need((record as Record<string, any>).principals?.agent, "agent principal"));
   return {
+    agent,
     printer: { id: printer.id, name, driver: printer.driver, readings },
     camera: { id: webcamDevice.id, channel: String(params(look).channel), driver: webcamDevice.driver, image: imageText(look) },
     file: printer.file,
@@ -240,7 +251,7 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
       approved: `approved by ${named(approved)}`,
     },
     kernel: Object.fromEntries(PLACED.map((item) => [item.id, kernelView(told(item.id), item.id)])) as Record<StepId, KernelView>,
-    audit: { counts: counts.join(", ") },
+    audit: { counts: counts.join(", "), command: String(audit.printed_with), rows },
   };
 }
 
@@ -279,6 +290,9 @@ export function storyTrace(facts: StoryFacts): Partial<Record<StepId, TraceLine[
     pause: [...out(facts.pause), answer(facts.pause.status)],
     cancel: [...out(facts.cancel), answer(facts.cancel.status)],
     approve: [...out({ ...facts.approve, target: `${facts.approve.target} on ${facts.approve.device}` }), answer(facts.approve.status)],
-    end: [{ kind: "note", text: facts.audit.counts }],
+    end: [
+      { kind: "note", text: facts.audit.counts, keep: true },
+      { kind: "audit", caption: facts.audit.command, rows: facts.audit.rows },
+    ],
   };
 }

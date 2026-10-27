@@ -30,7 +30,7 @@ describe("the story's steps", () => {
 
   it("show every piece in steps that exist", () => {
     const ids = new Set(STEPS.map((item) => item.id));
-    const lists = [AGENT.person, ...Object.values(AGENT.asks), ...Object.values(AGENT.hears), ...Object.values(HUB), ...Object.values(DRIVER), ...Object.values(CAMERA), ...Object.values(WIRES), TRIPS.map((trip) => trip.id)];
+    const lists = [AGENT.person, AGENT.logged, ...Object.values(AGENT.asks), ...Object.values(AGENT.hears), ...Object.values(HUB), ...Object.values(DRIVER), ...Object.values(CAMERA), ...Object.values(WIRES), TRIPS.map((trip) => trip.id)];
     for (const list of lists) for (const id of list) expect(ids.has(id)).toBe(true);
   });
 
@@ -128,6 +128,7 @@ describe("the story's words and numbers", () => {
     expect(`action:${facts.approve.target}`).toBe(approve.result!.target);
     expect(facts.approve.approved).toBe(`approved by ${named(approve.kernel.approved_by)}`);
     expect(facts.approve.note).toBe(approve.before);
+    expect(facts.agent).toBe((record.record as Record<string, any>).principals.agent);
     const described = record.record.devices!.find((item) => item.id === bed.request.params.device)!;
     expect(facts.file).toBe(described.file);
     expect(facts.printer.driver).toBe(described.driver);
@@ -171,8 +172,17 @@ describe("the story's words and numbers", () => {
     expect(facts.kernel.approve.verdict.text).toBe("granted");
   });
 
-  it("end on the audit log's counts", () => {
+  it("end on the audit log the hub printed", () => {
     expect(facts.audit.counts).toBe(`${audit.counts.requests} requests, ${audit.counts.refused} refused, ${audit.counts.confirmed_by_a_person} confirmed by a person`);
+    expect(facts.audit.command).toBe(audit.printed_with);
+    expect(facts.audit.rows.map(({ seq, event, who, target, status }) => ({ seq, event, who, target, status }))).toEqual(audit.entries.map(({ message, ...rest }: Record<string, unknown>) => rest));
+    expect(facts.audit.rows.find((row) => row.event === "confirm")!.who).toBe(approve.by);
+    expect(facts.audit.rows.find((row) => row.status === "blocked")!.tone).toBe("blocked");
+    expect(facts.audit.rows.find((row) => row.status === "pending")!.tone).toBe("pending");
+    for (const line of audit.lines.slice(1) as string[]) {
+      const [seq] = line.split(/\s+/);
+      expect(facts.audit.rows.map((row) => String(row.seq))).toContain(seq);
+    }
   });
 
   it("take the limits from printer.hal.yaml, which match what the hub described", () => {
@@ -231,7 +241,8 @@ describe("the story's words and numbers", () => {
     expect(trace.cancel).toContainEqual({ kind: "result", text: "pending", tone: "pending" });
     expect(trace.warm).toContainEqual({ kind: "result", text: "done", tone: "ok" });
     expect(trace.approve).toContainEqual({ kind: "request", method: "hal/confirmations/approve", text: `${facts.approve.target} on ${facts.approve.device}` });
-    expect(trace.end).toEqual([{ kind: "note", text: facts.audit.counts }]);
+    expect(trace.end).toContainEqual({ kind: "note", text: facts.audit.counts, keep: true });
+    expect(trace.end).toContainEqual({ kind: "audit", caption: audit.printed_with, rows: facts.audit.rows });
   });
 
   it("read as short plain sentences that follow the copy rules", () => {

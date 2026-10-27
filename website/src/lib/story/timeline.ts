@@ -27,6 +27,7 @@ const reads: StepId[] = ["look", "loose"];
 /** Which steps show each piece of the scene, by station. A piece shows for the whole of each step it names. */
 export const AGENT = {
   person: ["ask"] as StepId[],
+  logged: ["end"] as StepId[],
   asks: {
     look: ["look"] as StepId[],
     bed: ["warm"] as StepId[],

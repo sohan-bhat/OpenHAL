@@ -280,6 +280,70 @@
   color: var(--blocked);
 }
 
+.story-trace li.audit {
+  container-type: inline-size;
+}
+
+.story-trace li.audit > table {
+  grid-column: 2;
+}
+
+.audit-log {
+  width: auto;
+  font-family: var(--font-mono);
+  font-size: inherit;
+  line-height: 1.35;
+}
+
+.audit-log th,
+.audit-log td {
+  padding: 0 var(--s-4) 0 0;
+  border: 0;
+  text-align: left;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+.audit-log th {
+  color: var(--text-2);
+  font-size: inherit;
+  font-weight: 400;
+}
+
+.audit-log td.audit-status {
+  font-weight: 700;
+}
+
+.audit-log .audit-status.ok {
+  color: var(--ok);
+}
+
+.audit-log .audit-status.pending {
+  color: var(--confirm);
+}
+
+.audit-log .audit-status.blocked {
+  color: var(--blocked);
+}
+
+.story[data-camera] .audit-log tbody tr:nth-child(n + 7) {
+  display: none;
+}
+
+@media (min-width: 1200px) {
+  .story[data-camera]:not([data-short]) .audit-log tbody tr:nth-child(n + 7) {
+    display: table-row;
+  }
+}
+
+@container (max-width: 470px) {
+  .audit-log .audit-target,
+  .audit-log thead,
+  .audit-log tbody tr:nth-child(n + 7) {
+    display: none;
+  }
+}
+
 .story-snap .story-trace .swap > *,
 .step-words .story-trace .swap > * {
   grid-area: auto;
@@ -485,7 +549,7 @@
     gap: 2px;
   }
 
-  .story[data-camera] .story-scene .story-trace li.note:not(:only-child) {
+  .story[data-camera] .story-scene .story-trace li.note:not(:only-child, .keep) {
     display: none;
   }
 }

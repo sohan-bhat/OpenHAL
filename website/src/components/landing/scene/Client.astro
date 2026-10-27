@@ -39,6 +39,10 @@ const hears = [
       <p class="who">You</p>
       <p class="person-text">“{ASKED}”</p>
     </div>
+    <div class="person" {...shown(AGENT.logged, step)}>
+      <p class="who">Logged as</p>
+      <p class="person-text mono">{facts.agent}</p>
+    </div>
     {
       asks.map(({ ask, in: ids }) => (
         <div class="said" {...shown(ids, step)}>
@@ -68,6 +72,7 @@ const hears = [
 <style>
   .person {
     display: grid;
+    align-content: start;
     gap: 2px;
   }
 
