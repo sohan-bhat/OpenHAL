@@ -21,7 +21,7 @@ Three elements carry the identity. The flow diagram heads the README, the messag
 
 ### The animated flow diagram
 
-A clean flowchart of one command, left to right. AI client, then OpenHAL hub (with the Device files that feed the kernel), then Safety kernel, then Driver, then Arduino plant waterer. A branch from the kernel goes down to a Blocked node, `INTERLOCK_BLOCKED: tank empty`. Connector labels in the mono face read `hal/action`, `check`, `grant` and `command`, and a thin return line reads `reading`.
+A clean flowchart of one command, left to right. Agent, then OpenHAL hub (with the Device files that feed the kernel), then Safety kernel, then Driver, then 3D printer (Klipper through Moonraker). A branch from the kernel goes down to a Blocked node, `LIMIT_EXCEEDED: nozzle 300 °C`. Connector labels in the mono face read `hal/write`, `check`, `grant` and `command`, and a thin return line reads `reading`.
 
 - Rounded rectangles with 1.5 px strokes and 6 px corners, every node 112 by 88 on a grid, with every wire level. Orthogonal connectors with right-angle turns only, one arrowhead style, no crossings.
 - The Safety kernel and Driver nodes each say what they do in a short line, and the blocked code sits under the Blocked node.
@@ -34,11 +34,11 @@ A clean flowchart of one command, left to right. AI client, then OpenHAL hub (wi
 A two-column trace of a request and the hub's answer, the way a protocol spec shows an exchange. It appears in the README as a code block, in the Playground, in the spec and docs, in the Inspector's message log and in social images.
 
 ```
-→ hal/action  { "device": "plant-waterer", "action": "water",
-                "args": { "duration": { "value": 120, "unit": "s" } } }
+→ hal/write   { "device": "printer", "channel": "extruder_target",
+                "value": 300, "unit": "degC" }
 ← error -32010 LIMIT_EXCEEDED
-  water duration 120 s exceeds the limit of 30 s
-  (plant-waterer.hal.yaml, confirmed by owner 2026-10-24)
+  extruder_target 300 degC exceeds the limit of 260 degC
+  (printer.hal.yaml, confirmed by owner 2026-10-24)
 ```
 
 - **Direction column.** An arrow pointing right for client to hub, left for hub to client, and a dashed left arrow for notifications, in the text color. Atkinson Hyperlegible Mono has no arrow glyphs, so the arrows are drawn as small inline SVGs in the house diagram style (1.5 px stroke, 6 px filled head), never typed characters. Plain text renditions in a font that has arrows, such as the README code block, use `→` and `←`. CLI output uses `->` and `<-`.
@@ -48,20 +48,20 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
 
 ### The landing story
 
-The website's home page tells the canonical scenario as one pinned scene. A camera moves along the real path, AI client, OpenHAL hub with the device file, Safety kernel, Driver and Arduino plant waterer, and each step is one short caption with the real codes in small mono where they help. The kernel ticks its checks in order and says LIMIT_EXCEEDED, then INTERLOCK_BLOCKED with the pump held off, then granted as soil moisture climbs from 31 % to 46 %. Every number comes from docs/demo/scenario.yaml. With reduced motion or no script it is a static list of the same steps. The motion is pattern 4 under Motion. Source in website/src/components/landing/.
+The website's home page tells the canonical scenario as one pinned scene. A camera moves along the real path, Agent, OpenHAL hub with the device files, Safety kernel, Driver and the 3D printer with its webcam, and each step is one short caption with the real codes in small mono where they help. The webcam panel shows what the agent sees. The bed warms from 60 °C to 70 °C, the kernel ticks its checks and refuses a 300 °C nozzle with LIMIT_EXCEEDED, the agent pauses the print when it comes loose, and the cancel waits for a person. Every number comes from docs/demo/scenario.yaml. With reduced motion or no script it is a static list of the same steps. The motion is pattern 4 under Motion. Source in website/src/components/landing/.
 
 ## Canonical demo scenario
 
 The main example is a task only an agent can do. A timer or an IoT rule can water a plant. Only an agent can watch a print on a camera, judge what is going wrong and act, so the main example is the 3D print babysitter (examples/print-babysitter/). The owner chose it on 2026-10-26.
 
-Every example value in the README, website, Inspector screenshots, docs and social images comes from one file, `docs/demo/scenario.yaml`, written by `uv run openhal demo --record docs/demo/scenario.yaml` from a real run of the hub against simulated devices. There are two. `printer` is a Klipper 3D printer reached through Moonraker, with `state`, `extruder_temp`, `bed_temp` and `progress` readings, `extruder_target` limited to 260 °C and `bed_target` limited to 110 °C, both rate limited, and the actions `pause`, `resume` and `cancel`, where cancel waits for a person. `printer-cam` is a USB camera watching the bed. The limits were confirmed by owner on 2026-10-24.
+Every example value in the README, website, Inspector screenshots, docs and social images comes from one file, `docs/demo/scenario.yaml`, written by `uv run openhal demo --record docs/demo/scenario.yaml` from a real run of the hub against simulated devices. There are two. `printer` is a Klipper 3D printer reached through Moonraker, with `state`, `extruder_temp`, `bed_temp` and `progress` readings, `extruder_target` limited to 260 °C and `bed_target` limited to 110 °C, both rate limited, and the actions `pause`, `resume` and `cancel`, where cancel waits for a person. `printer-cam` is the printer's webcam watching the bed, read as snapshots over HTTP the way crowsnest serves it on a Klipper printer (the `http` driver). The limits were confirmed by owner on 2026-10-24.
 
 The story. Someone starts a long print and asks an agent to keep an eye on it.
-1. The agent reads a camera frame and sees a corner of the first layer lifting.
+1. The agent reads a camera frame, an image Reading (ADR 0015), and sees a corner of the first layer lifting.
 2. It raises `bed_target` from 60 °C to 70 °C. That is inside the limit, so it is done.
 3. It also asks for a 300 °C nozzle. The kernel answers `LIMIT_EXCEEDED`, because the limit is 260 °C.
 4. Later the camera shows the print has come loose. The agent pauses the print, which is done straight away.
-5. It asks to cancel. Cancelling can't be undone, so the hub queues it and answers pending until a person decides.
+5. It asks to cancel. Cancelling can't be undone, so `cancel` is `confirm-each-time`, and the hub queues it and answers pending until a person decides.
 
 Tests check that the file is still what the hub answers and that every surface matches it. Demo values are labeled as demo data where shown.
 
@@ -71,14 +71,14 @@ The Arduino plant waterer (examples/plant-waterer/) stays as the Arduino example
 
 | Surface, feature or state | How the theme expresses it |
 |---|---|
-| Home page | The text wordmark, the one sentence and Get started, the landing story of the plant waterer, why it's safe in three points, device families from the catalog, the three-command quickstart with a link to the Playground, and links to the spec and the docs |
+| Home page | The text wordmark, the one sentence and Get started, the landing story of the print babysitter, why it's safe in three points, device families from the catalog, the three-command quickstart with a link to the Playground, and links to the spec and the docs |
 | Spec pages | Dated version in the URL and a switcher, numbered sections, MUST, SHOULD and MAY, outline, anchors, previous and next, "Edit on GitHub" |
 | Schema reference | Generated tables of every message, type and field, monospace names |
-| Error codes | The registry table, the message trace with `error`, code and name in the blocked red with its shape |
-| Granted write | `result` in the granted green with its shape |
-| Confirmation required | Amber with the half-circle shape and the words "confirmation required" |
+| Error codes | The registry table, the message trace with `error`, code and name in the blocked red as plain text |
+| Granted write | `result` in the granted green |
+| Confirmation required | The words "confirmation required" in amber |
 | Stopped | The blocked red, the word "stopped", the STOP control turning into UNLOCK |
-| Unverified driver or device | Gray with a dashed outline and the word "unverified" |
+| Unverified driver or device | The word "unverified" in gray |
 | Drivers and Device Library | Datasheet-style tables with conformance level, status and hazard default |
 | Playground | A spec-style editor and the message trace for each attempted command, labeled as an in-browser demo |
 | Inspector | Device list, device pane and message log as JSON-RPC traces |
@@ -104,14 +104,14 @@ Cool neutrals with one accent. Status colors only for meaning.
 | `--text-2` | `#4F5661` | `#A0A7B1` | Secondary text, JSON keys |
 | `--accent` | `#1D5FB4` | `#7DB2F0` | Links, active navigation, method names, the logo |
 
-| Status | Light | Dark | Shape and word |
+| Status | Light | Dark | How it shows |
 |---|---|---|---|
-| ok, granted | `#1E7A44` | `#5BC58A` | the word alone in green, "granted", "ok" or "connected". No dot |
-| confirmation required | `#8A5A00` text on `#FFF3CC` | `#E8B341` | half circle, "confirmation required" |
-| blocked, stopped | `#B42318` | `#F07068` | circle with bar, "blocked" or "stopped" |
-| unverified | `#636A75` | `#8B93A0` | dashed outline, "unverified" |
+| ok, granted | `#3C754F` | `#72B88E` | the word in green, "granted", "ok" or "connected" |
+| confirmation required | `#8A5A00` | `#E8B341` | the words "confirmation required" in amber |
+| blocked, stopped | `#A14034` | `#D57A72` | the word in red, "blocked" or "stopped" |
+| unverified | `#636A75` | `#8B93A0` | the word "unverified" in gray |
 
-Every pair passes WCAG AA for its text size. Status never appears as color alone. These three shapes are the only status shapes, and ok has none. Neutral states (disabled, started, running, connecting, no confirmation) show their word without a shape. Dashed outlines mean unverified or an agent and nothing else. Simulated devices, demo data, data blocks and empty states sit on a surface fill, and disabled controls are flat surface gray.
+Every pair passes WCAG AA for its text size on `--bg` and `--surface`. A status always shows as its word, so it never relies on color alone. No status has a dot, circle, shape or icon beside it, and a status, error code or verdict never sits in a box with a colored border or a tinted background. It is plain text, in mono for codes. The owner had the green and red dulled slightly on 2026-10-26. Neutral states (disabled, started, running, connecting, no confirmation) show their word in the text colors. Dashed rules mark an agent's entries in the Inspector and nothing else. Simulated devices, demo data, data blocks and empty states sit on a surface fill, and disabled controls are flat surface gray.
 
 ### Syntax theme
 
@@ -137,9 +137,14 @@ Scale, mobile then desktop. 13/13 legend, 15/15 secondary, 16/17 body with line 
 - Borders are 1 px `--border`, radius at most 6 px, no shadows.
 - Every spec page has anchor links on headings, copy buttons on code, previous and next links, "Edit on GitHub", and the spec version in the URL.
 
+## Information marks
+
+Pages show the one thing a person needs and keep the depth one tap away. A term or control that needs explaining gets a small information mark, a lowercase i in a 16 px circle in `--text-2`, right after it. Tapping or clicking it, or pressing Enter on it, opens a short popover of one to three sentences with an optional "Read more" link into the docs, and Escape or a click outside closes it. It is a real button with an accessible name ("About hazard"), never hover-only, and the popover keeps AA contrast in both themes. Use it instead of a paragraph above the control. At most one per row, and never on every label.
+
 ## Wordmark
 
 - **Wordmark, no logo.** The brand is the name, OpenHAL, set in Atkinson Hyperlegible Next at weight 800 with tracking at -0.06 em, in `--text`. There is no logo shape. Where a square is needed (favicon, app icons) the initials OH are set the same way. Built by tools/readme/build.py into docs/assets/wordmark-{light,dark}.svg, mark-{light,dark}.svg (the initials) and favicon.svg, which the README and the website read. The Inspector sets the same wordmark in its header.
+- **HAL spelled out, on the landing hero only.** Under the letters H, A and L of the large hero wordmark sit three small labels, hardware, agent and layer, lowercase in `--text-2` at the legend size, each centered under its letter. They are hidden from screen readers, which read OpenHAL, and the long name Open Hardware Agent Layer is in the page's metadata. The header wordmark, icons and the README stay plain.
 - Original. It never imitates MCP's, Anthropic's or any other logo.
 
 ## Diagrams
@@ -164,16 +169,21 @@ The dashboard is the OpenHAL Inspector, a protocol inspector.
 - **Stop control.** Large and always visible in the header, in the blocked red with its word, never styled like other buttons.
 - **Agent requests and human confirmations look different.** Agent entries carry the client's name and a dashed rule, which stays dashed whatever the outcome, red when blocked. Human decisions sit on a solid surface.
 - **Commands say what a click does.** A command that needs a person's confirmation reads "Confirm and run X" or "Confirm and set X". A read-only device shows its limits without live controls. A device's own safe-state action is never a primary button, since STOP in the header covers every device.
-- **Where STOP can't be sent** (an unpaired browser, a hub that is offline), a panel with a 2 px blocked outline and a red title takes STOP's place and says why, and what still keeps devices safe.
+- **Where STOP can't be sent** (an unpaired browser, a hub that is offline), a panel on the surface fill with no colored border takes STOP's place. Its title is in the blocked red, and it says why and what still keeps devices safe.
+- **Buttons are controls, not status.** STOP keeps its solid blocked red fill. No other control has a red outline, so UNLOCK uses the standard secondary button with its word in the blocked red.
 - **Kernel reasons outside the trace** read as prose, with identifiers and conditions set in mono.
 
 ## Motion
 
-Four patterns, nothing else.
+Six patterns, nothing else.
 1. The flowing connectors in the flow diagram.
 2. A message appearing in the trace or log. A 120 ms fade, 4 px rise.
 3. A status change. A 120 ms cross-fade.
-4. The landing story. A stage pins under the header while the page scrolls normally, and the scroll position drives a camera that pans and zooms along the plant waterer's path. Each piece changes with that position, using transforms and opacity only, and a piece finishes leaving before the one replacing it arrives. Scrolling back plays it in reverse. Nothing moves on its own, so it is not scroll-jacking, parallax or fade-in on scroll. The soil moisture readout steps from 31 % to 46 % as a live reading, not a counter. The owner asked for this motion on 2026-10-25, which is its justification under Banned by default.
+4. The landing story. A stage pins under the header while the page scrolls normally, and the scroll position drives a camera that pans and zooms along the print babysitter's path. Each piece changes with that position, using transforms and opacity only, and a piece finishes leaving before the one replacing it arrives. Scrolling back plays it in reverse. Nothing moves on its own, so it is not scroll-jacking, parallax or fade-in on scroll. The bed temperature readout steps from 60 °C to 70 °C as a live reading, not a counter. The owner asked for this motion on 2026-10-25, which is its justification under Banned by default.
+5. The nav highlight. The blue highlight behind the current top-level item slides to the item a person clicks, as one shape moving between positions, about 240 ms with an ease out. It never bounces or stretches.
+6. The page transition. A page change moves the content sideways in the direction of travel through the nav, with the header and its highlight held still. Going to an item further right, the old content slides 24 px left and fades as the new content wipes in from the right with a clip-path, and going left mirrors it. About 260 ms in all. It is not a fade, a rise or a scale, so it stays distinct from the owner's other sites. Built on cross-document view transitions, so a browser without them changes pages instantly. The owner asked for patterns 5 and 6 on 2026-10-26.
+
+Smooth scrolling on the landing page. Wheel and trackpad scrolling eases on the home page so the story glides, the owner's request on 2026-10-26. It is on by default, a small "Smooth scrolling" switch near the story turns it off and remembers the choice per browser, and it is off under `prefers-reduced-motion`. It only eases the native scroll. The scrollbar, keyboard, anchor links, find in page and touch scrolling behave as usual, there is no snapping, and the speed is the person's own.
 
 With `prefers-reduced-motion: reduce`, nothing moves.
 
@@ -187,6 +197,7 @@ With `prefers-reduced-motion: reduce`, nothing moves.
 - State plainly that OpenHAL is not affiliated with Anthropic or MHS.
 - No em dashes or en dashes, and no colons or semicolons in running prose.
 - No exclamation marks.
+- Say "agent", not "AI". The agent pauses the print. Keep "AI" only where "agent" alone would be unclear, as in "AI agents" in the one-line description.
 
 ## Banned
 
@@ -214,7 +225,9 @@ Honesty
 Safety semantics
 - Red used decoratively. Red means blocked, stopped or danger, and nothing else.
 - Yellow and black hazard stripes or ISO 7010 symbols as decoration. They only appear next to real hazards.
-- Status shown by color alone. Always pair it with an icon, a label or a shape.
+- Status shown by color alone. Always show its word.
+- A dot, circle, shape or icon beside a status word, including the old circle with a bar for blocked and the half circle for confirmation.
+- A status, error code or verdict inside a box with a colored border or a tinted background. Show it as plain text, in mono for codes.
 - A stop control that is hidden, collapsed, small or styled like a normal button.
 - Any UI where an agent action and a human confirmation look the same.
 
@@ -278,10 +291,10 @@ Dashboard
 - Charts without axes or labeled scales.
 
 Motion and interaction
-- Scroll-jacking, parallax, scroll-triggered fade-in on every section.
+- Scroll-jacking, parallax, scroll-triggered fade-in on every section. The landing page's smooth scrolling under Motion is the one exception, since it only eases the native scroll and can be turned off.
 - Typewriter text effects, counting-up numbers.
 - Custom cursors, cursor trails, magnetic buttons.
-- More than the four motion patterns above. Any animation that doesn't communicate a state change.
+- More than the six motion patterns above. Any animation that doesn't communicate a state change.
 
 Copy
 - Banned words: unlock (except the literal control after a stop), seamless, supercharge, elevate, effortless, empower, revolutionary, next-generation, cutting-edge, game-changer, magic, harness, unleash, journey, "Welcome to", "the future of".
@@ -299,7 +312,7 @@ The repository README follows this structure, in this order, left-aligned.
 2. Two neutral badges, the license and CI.
 3. The animated flow diagram, directly under the badges.
 4. Quickstart. Three commands in one code block, then one line on what you'll see, generated from the scenario.
-5. The message trace, the three exchanges of the canonical scenario, as a code block generated from the scenario (`uv run python -m openhal.demo.readme`).
+5. The message trace, the six exchanges of the canonical scenario, as a code block generated from the scenario (`uv run python -m openhal.demo.readme`).
 6. "What it does", three bullets.
 7. Supported devices. Status as a sentence, "v0.1, in development. Every driver passes the conformance suite on a simulator.", then a table generated from drivers/catalog.json with driver, devices covered, status and hazard default.
 8. Safety model, at most five bullets, linking to docs/SAFETY.md.
@@ -320,4 +333,4 @@ Run these on every screen before calling it done.
 
 1. **Swap.** Put another product's name on it. If it still fits, revise.
 2. **Thumbnail.** Blur a screenshot to 200 px wide. It should still read as a specification with message exchanges.
-3. **Memory.** What does a visitor remember ten minutes later? It should be the landing story's two refusals, LIMIT_EXCEEDED and INTERLOCK_BLOCKED, and the pump held off while the tank is empty.
+3. **Memory.** What does a visitor remember ten minutes later? It should be the agent spotting the failed print on the camera, the 300 °C nozzle refused with LIMIT_EXCEEDED, and the cancel waiting for a person.

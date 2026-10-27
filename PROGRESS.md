@@ -11,7 +11,7 @@ Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5
 - scenario-printer. The 3D print babysitter becomes the canonical scenario, with the plant waterer kept as the Arduino example (BRIEF-scenario-printer.md).
 - website-6. The landing story and site for the 3D print babysitter (BRIEF-website-6.md), merged with scenario-printer before either reaches main.
 
-Queued. inspector-5, the Inspector's demo data and captures for the printer, once the scenario record lands.
+- inspector-5. Camera frames, the pending cancel, demo data and captures for the print babysitter (BRIEF-inspector-5.md).
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
@@ -38,7 +38,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - No logo. On 2026-10-25 the owner asked for a text wordmark like REA's, so the brand is OpenHAL set tight at weight 800, with the initials OH for icons.
 - The safety red team suite (100 tests) merged, and its four findings RT-01 to RT-04 fixed. docs/SAFETY-REPORT.md.
 - Driver SDK commands (`openhal driver new`, `driver test`, `driver list`).
-- M11. All sixteen planned drivers are built to the Tier 1 standard and pass conformance on simulators (batch 3 grbl, alpaca, indi, ros2, opcua, sila2, pylabrobot, lerobot, and batch 4 onvif, bambu, can, knx, matter, pi-i2c-spi, upnp, zigbee-zwave). 35 drivers in all.
+- M11. All sixteen planned drivers are built to the Tier 1 standard and pass conformance on simulators (batch 3 grbl, alpaca, indi, ros2, opcua, sila2, pylabrobot, lerobot, and batch 4 onvif, bambu, can, knx, matter, pi-i2c-spi, upnp, zigbee-zwave). 34 device drivers in all, plus the mock reference driver.
 - The protocol website and the Inspector, all three design critique rounds, merged. WebKit browser tests could not run on this Mac (every WebKit page load stalls here) and still need a run elsewhere.
 - Full-level conformance checks for actions. openhal-firmware declares full and runs them against the compiled PlantWaterer sketch.
 - Code comments removed from all Python and C++ code.
