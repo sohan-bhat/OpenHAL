@@ -193,7 +193,7 @@ With `prefers-reduced-motion: reduce`, nothing moves.
 ## Copy voice
 
 - Formal and exact, like a good specification.
-- Short declarative sentences.
+- Plain declarative sentences of mixed length, joined with "because", "but", "so" or "when" where the ideas connect.
 - Defined terms capitalized on first use and linked to the glossary (Hub, Device File, Safety Kernel, Driver, Grant, Conformance Level).
 - No hype. Marketing pages use the same voice as the spec.
 - "Open protocol" and "specification", never "standard".
