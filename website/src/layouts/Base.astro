@@ -75,7 +75,11 @@ const speculation = JSON.stringify({
     </main>
     <Footer />
     <script>
-      if (!HTMLScriptElement.supports?.("speculationrules")) void import("../lib/prefetch-intent").then(({ prefetchOnIntent }) => prefetchOnIntent());
+      import { searchDialog } from "../components/search";
+      import { prefetchOnIntent } from "../lib/prefetch-intent";
+
+      searchDialog();
+      if (!HTMLScriptElement.supports?.("speculationrules")) prefetchOnIntent();
 
       function commandsOf(figure: HTMLElement, text: string): string {
         if (figure.dataset.language !== "sh" || !/^\$ /m.test(text)) return text;

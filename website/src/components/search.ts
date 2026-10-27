@@ -36,10 +36,13 @@ const LIMIT = 8;
 const CHECKED = 24;
 
 /**
- * Wires the site search inside its dialog, which the page's own small script opens. Loads the
- * Pagefind index at once, so the first query is quick, and runs whatever is already typed.
+ * Wires the site search dialog. Its buttons and Ctrl K or Cmd K open it, Escape, its close button
+ * and a click outside close it. The Pagefind index loads when a person points at a search button or
+ * opens the dialog, so a page that is only read never fetches it.
  */
-export function wireSearch(dialog: HTMLDialogElement): void {
+export function searchDialog(): void {
+  const dialog = document.querySelector<HTMLDialogElement>("#site-search");
+  if (!dialog) return;
   const input = dialog.querySelector<HTMLInputElement>("[data-search-input]");
   const list = dialog.querySelector<HTMLOListElement>("[data-search-results]");
   const status = dialog.querySelector<HTMLElement>("[data-search-status]");
@@ -159,7 +162,10 @@ export function wireSearch(dialog: HTMLDialogElement): void {
   dialog.addEventListener("keydown", (event) => {
     const all = links();
     const at = all.indexOf(document.activeElement as HTMLAnchorElement);
-    if (event.key === "ArrowDown" && all.length) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      dialog.close();
+    } else if (event.key === "ArrowDown" && all.length) {
       event.preventDefault();
       all[Math.min(at + 1, all.length - 1)].focus();
     } else if (event.key === "ArrowUp" && at !== -1) {
@@ -170,6 +176,27 @@ export function wireSearch(dialog: HTMLDialogElement): void {
       input.focus();
     }
   });
-  void load();
-  if (input.value) void run(input.value);
+  function open() {
+    if (!dialog || !input) return;
+    if (!dialog.open) dialog.showModal();
+    input.focus();
+    input.select();
+    void load();
+  }
+
+  for (const button of document.querySelectorAll<HTMLElement>("[data-search-open]")) {
+    button.addEventListener("click", open);
+    button.addEventListener("pointerenter", () => void load(), { once: true });
+  }
+  document.addEventListener("keydown", (event) => {
+    if ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      if (dialog.open) dialog.close();
+      else open();
+    }
+  });
+  dialog.querySelector("[data-search-close]")?.addEventListener("click", () => dialog.close());
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) dialog.close();
+  });
 }
