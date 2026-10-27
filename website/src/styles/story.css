@@ -421,7 +421,7 @@
 
 @media (min-width: 1024px) {
   .story-scene {
-    grid-template-columns: minmax(0, 1fr) clamp(240px, 25%, 296px);
+    grid-template-columns: minmax(0, 1fr) clamp(240px, 25%, 320px);
     column-gap: clamp(var(--s-6), 5vw, var(--s-8));
     align-items: start;
   }
