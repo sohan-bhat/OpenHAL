@@ -92,7 +92,7 @@ Expected. `state UP` on the first line, and `can state ERROR-ACTIVE` with `bitra
 candump -tz can0
 ```
 
-Expected. With the VESC powered, frames with ids `00000901`, `00001001` and `00001B01` repeat about every 20 ms. Stop it with Ctrl-C.
+Expected. With the VESC powered, frames with ids `00000901`, `00001001` and `00001B01` repeat about every 20 ms. Stop the capture with Ctrl-C.
 
 ### 3. The device file validates
 

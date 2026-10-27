@@ -110,7 +110,7 @@ Expected. `ceiling_light` follows the switch.
 
 Unplug the interface's network cable and run step 3.
 
-Expected. `DriverError` or `TimeoutError` saying the interface did not accept a connection. Plug it back in, wait a few seconds, and run step 3. The device reads normally.
+Expected. `DriverError` or `TimeoutError` saying the interface did not accept a connection. Plug the interface back in, wait a few seconds, and run step 3. The device reads normally.
 
 ## Steps that change the device
 

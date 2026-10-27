@@ -107,7 +107,7 @@ Expected. `key_1 = True` if the device sent a report since the driver connected,
 
 Run step 4, unplug the device, and run it again.
 
-Expected. The second run fails with `DriverError` saying no HID interfaces match. Plug it back in and step 4 works again.
+Expected. The second run fails with `DriverError` saying no HID interfaces match. Plug the device back in and step 4 works again.
 
 ## Write steps
 

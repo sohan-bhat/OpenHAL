@@ -76,7 +76,7 @@ read fan_speed 0.0 percent
 health Health(connected=True, detail='voron', ...)
 ```
 
-Temperatures match Mainsail or Fluidd. Run it once with `transport: http` and once with `transport: websocket`. Paste both outputs into the report.
+Temperatures match Mainsail or Fluidd. Run the probe once with `transport: http` and once with `transport: websocket`. Paste both outputs into the report.
 
 ## Step 4. Network loss (read-only)
 
@@ -126,7 +126,7 @@ Expected. Mainsail shows a bed target of 35. After `openhal stop` the target is 
 
 ## Step 8. Klipper's own limit is reported (optional)
 
-Do this step only when the bed's `max_temp` in printer.cfg is below the file's limit (110 in the example). Look it up first, for example 100. Then ask for a value between the two, such as 105.
+Do this step only when the bed's `max_temp` in printer.cfg is below the file's limit (110 in the example). Look up the bed's `max_temp` first, for example 100. Then ask for a value between the two, such as 105.
 
 ```
 uv run openhal write voron.bed_target "105 degC"

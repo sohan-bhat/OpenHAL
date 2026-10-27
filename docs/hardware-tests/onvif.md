@@ -122,7 +122,7 @@ Expected. The proposal lists pan, tilt, zoom, move, stop, home and goto_preset w
 
 Run step 3 with a wrong password (`CAMERA_PASSWORD=wrong uv run python hwtest.py my-camera.hal.yaml read`), then unplug the camera's network cable and run it again.
 
-Expected. The first fails with `DriverError` saying the camera refused the credentials. The second fails with `DriverError` saying the camera could not be reached, or `TimeoutError`. Plug it back in and run step 3. The device reads normally.
+Expected. The first fails with `DriverError` saying the camera refused the credentials. The second fails with `DriverError` saying the camera could not be reached, or `TimeoutError`. Plug the camera back in and run step 3. The device reads normally.
 
 ## Steps that change the device
 

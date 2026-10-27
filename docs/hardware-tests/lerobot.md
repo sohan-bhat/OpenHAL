@@ -51,7 +51,7 @@ Set `port` and `robot_id`. Expected. `valid ./arm.hal.yaml (so101, high hazard, 
 uv run python probe.py ./arm.hal.yaml
 ```
 
-Expected. No calibration prompt appears and the arm doesn't move. While the probe runs the arm holds its pose, because torque is on. When it ends the arm goes limp, because close() turns torque off. Then change `robot_id` to a name you never calibrated and run it again. Expected. `... isn't calibrated. Run lerobot-calibrate --robot.type=so101_follower ...`. Put the id back.
+Expected. No calibration prompt appears and the arm doesn't move. While the probe runs the arm holds its pose, because torque is on. When the probe ends the arm goes limp, because close() turns torque off. Then change `robot_id` to a name you never calibrated and run the probe again. Expected. `... isn't calibrated. Run lerobot-calibrate --robot.type=so101_follower ...`. Put the id back.
 
 ## Step 3. Joint readings (assumption 3)
 

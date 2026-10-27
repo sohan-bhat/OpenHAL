@@ -1,6 +1,6 @@
 # Hardware tests
 
-Every driver passes its conformance suite against a simulator. These plans are how a person checks a driver and its device file on a real device. Run them in the order below. Nothing here runs in CI, and nothing here should run on hardware you don't own.
+Every driver passes its conformance suite against a simulator. These plans are how a person checks a driver and its device file on a real device. Run the plans in the order below. Nothing here runs in CI, and nothing here should run on hardware you don't own.
 
 ## Order
 
@@ -99,7 +99,7 @@ bash docs/hardware-tests/hub.sh start
 | `bash docs/hardware-tests/hub.sh kill` | Stop it with SIGKILL, so it can send nothing on its way out |
 | `bash docs/hardware-tests/hub.sh status` | Say whether it runs |
 
-A plan that stops a command while it runs uses a second terminal. Open it in the checkout and run `export OPENHAL_HOME="$PWD/openhal-test"` there first.
+A plan that stops a command while it runs uses a second terminal. Open the second terminal in the checkout and run `export OPENHAL_HOME="$PWD/openhal-test"` there first.
 
 ### Confirming limits
 

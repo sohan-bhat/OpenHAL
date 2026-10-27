@@ -112,7 +112,7 @@ Expected. The read shows `transport_state`, `volume` matching the Sonos app and 
 
 Unplug the speaker and run the read.
 
-Expected. `DriverError` or `TimeoutError` saying the description could not be fetched. Plug it in, wait until the app sees it, and read again. The device reads normally.
+Expected. `DriverError` or `TimeoutError` saying the description could not be fetched. Plug the speaker in, wait until the app sees the speaker, and read again. The device reads normally.
 
 ## Steps that change the device
 

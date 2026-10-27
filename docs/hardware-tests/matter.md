@@ -115,13 +115,13 @@ Expected. The first prints the server URL and node. The read shows `active_power
 
 Unplug the plug from the wall, wait until the server's frontend shows it unavailable, and run the read again.
 
-Expected. The connect works, then the reads fail with `DriverError` saying the node is unavailable. Plug it back in, wait until it shows available, and read again. The device reads normally.
+Expected. The connect works, then the reads fail with `DriverError` saying the node is unavailable. Plug the device back in, wait until the node shows available, and read again. The device reads normally.
 
 ### 6. Server loss
 
 Stop the Matter Server and run the read.
 
-Expected. `DriverError` saying the Matter Server could not be opened. Start it again.
+Expected. `DriverError` saying the Matter Server could not be opened. Start the Matter Server again.
 
 ## Steps that change the device
 

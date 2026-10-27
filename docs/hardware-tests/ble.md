@@ -98,7 +98,7 @@ Expected. `match.ble_services` with `181a`, read channels such as `temperature` 
 uv run python hwtest.py my-sensor.hal.yaml read
 ```
 
-Expected. A `temperature` and `humidity` close to a reference thermometer, `pressure` near your local air pressure in hPa, `battery` in percent, and `health Health(connected=True, ...)`. A channel that only notifies and has not sent anything yet shows `None`. Run it again after a minute and it should show values.
+Expected. A `temperature` and `humidity` close to a reference thermometer, `pressure` near your local air pressure in hPa, `battery` in percent, and `health Health(connected=True, ...)`. A channel that only notifies and has not sent anything yet shows `None`. Run the step again after a minute, and the channel should show a value.
 
 ### 5. Out of range
 

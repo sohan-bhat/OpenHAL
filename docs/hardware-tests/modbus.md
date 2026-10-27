@@ -75,7 +75,7 @@ Find the adapter (`ls /dev/ttyUSB*` on Linux, `ls /dev/cu.usbserial*` on macOS),
 mbpoll -m rtu -b 2400 -P none -a 1 -t 3:float -0 -r 0 -c 1 -1 /dev/ttyUSB0
 ```
 
-Expected. One line such as `[0]: 231.4`. If it times out, check the wiring, baud rate, parity and unit id before going on.
+Expected. One line such as `[0]: 231.4`. If mbpoll times out, check the wiring, baud rate, parity and unit id before going on.
 
 ### 2. The device file validates
 

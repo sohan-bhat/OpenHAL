@@ -125,13 +125,13 @@ Expected. `power` close to `0.0 W`, `energy` matching Z-Wave JS UI's meter value
 
 Stop the broker (`sudo systemctl stop mosquitto`) and run step 3, then stop Z-Wave JS UI's server and run step 5.
 
-Expected. Each fails with `DriverError` saying the broker or zwave-js-server could not be reached. Start them again and run steps 3 and 5. Both devices read normally.
+Expected. Each fails with `DriverError` saying the broker or zwave-js-server could not be reached. Start the broker and zwave-js-server again and run steps 3 and 5. Both devices read normally.
 
 ### 7. An offline bulb
 
 Switch the bulb off at the wall and wait until the Zigbee2MQTT frontend shows it offline (its availability timeout, 10 minutes by default for mains devices). Run step 3.
 
-Expected. The values read as before, from the last report, and the health line says the bulb is offline in Zigbee2MQTT. Switch it on again.
+Expected. The values read as before, from the last report, and the health line says the bulb is offline in Zigbee2MQTT. Switch the bulb on again.
 
 ## Steps that change the device
 

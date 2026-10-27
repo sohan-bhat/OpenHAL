@@ -109,7 +109,7 @@ Expected. `board` is your Pi model and `pin_factory` is `auto` (connecting picks
 uv run python hwtest.py my-gpio.hal.yaml read
 ```
 
-Run it once with the button released and once while holding it. Expected. `button = False`, then `button = True`, and `led = False` both times, because connecting starts the LED output inactive. `pinctrl get 27` shows `hi` released and `lo` pressed.
+Run the command once with the button released and once while holding the button. Expected. `button = False`, then `button = True`, and `led = False` both times, because connecting starts the LED output inactive. `pinctrl get 27` shows `hi` released and `lo` pressed.
 
 ### 5. The stop button helper
 

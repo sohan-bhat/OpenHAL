@@ -107,7 +107,7 @@ uv run openhal token create --name hwtest-agent --scope control_medium --json | 
 uv run openhal --token-file "$OPENHAL_HOME/hwtest-agent.token" action bench-psu.set_ch1 volts="1 V" amps="0.01 A"
 ```
 
-Expected. `pending needs_confirmation  Waiting for a human to approve action:set_ch1 on bench-psu.` and a line with the request id. The front panel doesn't change yet. Approve it with that id, then do the same for the output switch.
+Expected. `pending needs_confirmation  Waiting for a human to approve action:set_ch1 on bench-psu.` and a line with the request id. The front panel doesn't change yet. Approve the request with that id, then do the same for the output switch.
 
 ```
 uv run openhal confirm list

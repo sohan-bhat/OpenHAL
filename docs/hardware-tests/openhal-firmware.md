@@ -6,7 +6,7 @@ This plan checks the openhal-firmware driver and the OpenHAL Arduino library on 
 
 - An Arduino Uno and its USB cable. An ESP32 works too, with the pins in brackets.
 - An LED with a 330 ohm resistor from pin 6 (ESP32 pin 25) to ground, in place of a strip.
-- Optional. A potentiometer or a light sensor divider on A1 (ESP32 pin 34). Without it `ambient_light` reads noise.
+- Optional. A potentiometer or a light sensor divider on A1 (ESP32 pin 34). Without one of these, `ambient_light` reads noise.
 - arduino-cli, or the Arduino IDE.
 - A checkout of this repository with the openhal-firmware extra, `uv sync --extra openhal-firmware`.
 

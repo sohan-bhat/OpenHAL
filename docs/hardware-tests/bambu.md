@@ -107,7 +107,7 @@ uv run python -c "import asyncio; from openhal.drivers.bambu.driver import Bambu
 uv run python hwtest.py my-printer.hal.yaml identify
 ```
 
-Expected. The first lists the printer with its serial number, model code and `mode` `lan`, or an empty list if no announcement came within 3 seconds. Run it again a few times before you call it a failure. The second prints the serial number and the address.
+Expected. The first lists the printer with its serial number, model code and `mode` `lan`, or an empty list if no announcement came within 3 seconds. Run the first command a few more times before you count the step as failed. The second prints the serial number and the address.
 
 ### 5. Read every channel
 

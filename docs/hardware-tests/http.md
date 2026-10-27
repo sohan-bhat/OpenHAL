@@ -102,7 +102,7 @@ Expected. `power = 0.0 W`, a `voltage` close to your mains voltage, a `plug_temp
 
 Unplug the device from the wall, then run step 4 again.
 
-Expected. `DriverError` that names the URL and says the device is not reachable, within about 3 seconds (the `timeout`). Plug it back in, wait for it to rejoin the network and run step 4 again. The device should read normally.
+Expected. `DriverError` that names the URL and says the device is not reachable, within about 3 seconds (the `timeout`). Plug the device back in, wait for the device to rejoin the network and run step 4 again. The device should read normally.
 
 ### 6. Describe (only if your device serves an OpenAPI document)
 

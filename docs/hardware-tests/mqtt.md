@@ -74,7 +74,7 @@ asyncio.run(main(*sys.argv[1:]))
 mosquitto_sub -h 192.168.1.10 -u openhal -P "$MQTT_PASSWORD" -v -t 'stat/bench_plug/#' -t 'tele/bench_plug/#' -W 330
 ```
 
-Expected. A retained `stat/bench_plug/POWER OFF` (or `ON`) at once, and a `tele/bench_plug/SENSOR` JSON message within the telemetry period (300 s by default, `TelePeriod 10` makes it faster). Stop it with Ctrl-C.
+Expected. A retained `stat/bench_plug/POWER OFF` (or `ON`) at once, and a `tele/bench_plug/SENSOR` JSON message within the telemetry period (300 s by default, `TelePeriod 10` makes the messages come faster). Stop the subscription with Ctrl-C.
 
 ### 2. The device file validates
 

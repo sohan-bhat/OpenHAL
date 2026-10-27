@@ -92,7 +92,7 @@ Within three seconds of starting it, turn knob 1 and hit pad 1. Expected. Propos
 
 ### 4. Read every channel
 
-The test script reads right after connecting, before any control has moved, so this step uses a small loop instead. Save it as `midiread.py`.
+The test script reads right after connecting, before any control has moved, so this step uses a small loop instead. Save the loop as `midiread.py`.
 
 ```python
 import asyncio
@@ -120,7 +120,7 @@ Run `uv run python midiread.py` and turn knob 1 slowly from left to right, then 
 
 Run `uv run python hwtest.py my-pads.hal.yaml read`, which ends with a health line, then unplug the controller and run it again.
 
-Expected. The first run ends with `health Health(connected=True, ...)`. The second run fails with a `DriverError` saying no MIDI input port matches and listing the ports there are. Plug it back in and the first command works again.
+Expected. The first run ends with `health Health(connected=True, ...)`. The second run fails with a `DriverError` saying no MIDI input port matches and listing the ports there are. Plug the controller back in and the first command works again.
 
 ## Write steps
 

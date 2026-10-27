@@ -46,7 +46,7 @@ Connecting subscribes to the read topics and advertises the publish topics. Adve
 uv run python -m websockets ws://<robot>:9090
 ```
 
-Expected. `Connected to ws://<robot>:9090.` Close it with Ctrl-D. If it fails, check that rosbridge is running and the port is open.
+Expected. `Connected to ws://<robot>:9090.` Close the session with Ctrl-D. If the connection fails, check that rosbridge is running and the port is open.
 
 ## Step 2. Validate the device file (read-only)
 

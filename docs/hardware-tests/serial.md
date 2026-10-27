@@ -5,7 +5,7 @@ This plan checks the serial driver on a real board. The plan starts with read-on
 ## What you need
 
 - An Arduino Uno or any board that runs the sketch below, with its USB cable.
-- Optional. A TMP36 sensor on A0, an LED on pin 13 (the onboard LED is fine) and a small 5 V fan through a logic-level MOSFET on pin 9. Without them the readings are just noise and the outputs drive nothing.
+- Optional. A TMP36 sensor on A0, an LED on pin 13 (the onboard LED is fine) and a small 5 V fan through a logic-level MOSFET on pin 9. Without these parts the readings are just noise and the outputs drive nothing.
 - A checkout of this repository with the serial extra, `uv sync --extra serial`.
 
 ## The test sketch
@@ -124,7 +124,7 @@ The temperature is about 20 to 30 with a TMP36 and arbitrary without one. If a r
 
 ## Step 4. Unplug during a read (read-only)
 
-Run the probe in a loop and unplug the cable while it runs. Plug it back in after five seconds.
+Run the probe in a loop and unplug the cable while it runs. Plug the cable back in after five seconds.
 
 ```
 while true; do uv run python probe.py ./fan-board.hal.yaml; sleep 1; done
