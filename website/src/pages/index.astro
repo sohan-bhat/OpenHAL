@@ -24,6 +24,7 @@ const spelled = [
   { letter: "A", word: "[agent]" },
   { letter: "L", word: "[layer]" },
 ].map((item) => ({ ...item, at: PRODUCT_NAME.lastIndexOf(item.letter) }));
+const after = "safe";
 const site = JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: PRODUCT_NAME, alternateName: PRODUCT_LONG_NAME, url: new URL("/", Astro.site).href });
 const more = [
   { href: "/spec/latest/", title: "Read the specification", text: "Every message, error and rule, in dated versions." },
@@ -34,6 +35,7 @@ const more = [
 <Base title={`${PRODUCT_NAME}. ${HOME_TITLE}`} description={HOME_TITLE} bare>
   <Fragment slot="head">
     <meta name="application-name" content={PRODUCT_NAME} />
+    <link rel="expect" href={`#${after}`} blocking="render" />
     <script type="application/ld+json" set:html={site} />
   </Fragment>
   <section class="home-width hero" aria-labelledby="home-title">
@@ -48,10 +50,10 @@ const more = [
   </section>
 
   <div class="home-width">
-    <Story after="safe" lead={heroSpell} />
+    <Story after={after} lead={heroSpell} />
   </div>
 
-  <section id="safe" class="home-width part after-story" aria-labelledby="safe-title">
+  <section id={after} class="home-width part after-story" aria-labelledby="safe-title">
     <h2 id="safe-title">Safety model</h2>
     <ul class="points">
       {
