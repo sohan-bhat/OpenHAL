@@ -4,7 +4,7 @@ Most devices need a [Device File](glossary:device-file) and no new code. This tu
 
 ## Pick a driver
 
-A device file names one [Driver](glossary:driver). [Drivers](/drivers/) lists each one and its status. If no driver speaks your device's protocol, see [Build a driver](build-a-driver.md).
+A device file names one [Driver](glossary:driver), and [Drivers](/drivers/) lists each driver with its status. If no driver speaks your device's protocol, see [Build a driver](build-a-driver.md).
 
 ## Describe the device
 
@@ -49,7 +49,7 @@ The [playground](/spec/playground/) runs the same schema in the browser.
 
 ## Confirm the limits
 
-A person confirms the limits at a terminal. Read each limit before you type `confirm`.
+A person confirms the limits at a terminal, so read each limit before you type `confirm`.
 
 ```sh tested
 $ uv run openhal file confirm led-strip.hal.yaml --by owner
@@ -60,7 +60,7 @@ The file now records who confirmed it, the date and a hash of the limits.
 
 ## Test it
 
-Copy the file into `~/.openhal/devices/` and restart the hub. Read every channel, then try each change at its smallest value. Run `uv run openhal stop` and check the device reached its safe state. Record what you tested in `provenance.verification`.
+Copy the file into `~/.openhal/devices/`, restart the hub, read every channel and then try each change at the change's smallest value. Run `uv run openhal stop`, check that the device reached its safe state, and record what you tested in `provenance.verification`.
 
 | Status | Meaning |
 |---|---|
@@ -70,4 +70,4 @@ Copy the file into `~/.openhal/devices/` and restart the hub. Read every channel
 
 ## Share it
 
-Open a pull request that adds the file under `library/`, one file per device model. Files there are CC0. The [Device Library](/library/) lists each file with its badge.
+Open a pull request that adds the file under `library/`, one file per device model, where every file is CC0. The [Device Library](/library/) lists each file with its badge.

@@ -4,7 +4,7 @@ OpenHAL is an open protocol between agents and hardware. This page defines the p
 
 ## Hub
 
-The [Hub](glossary:hub) is one process on your computer or a Raspberry Pi. The hub owns every device. Clients talk to the hub with JSON-RPC 2.0 messages over a WebSocket or stdio, or through the MCP server, which maps onto the same methods.
+The [Hub](glossary:hub) is one process on your computer or a Raspberry Pi, and the hub owns every device. Clients talk to the hub with JSON-RPC 2.0 messages over a WebSocket or stdio, or through the MCP server, which maps onto the same methods.
 
 ## Device files
 
@@ -17,7 +17,7 @@ A file is read-only until a person confirms its limits. A limit a tool suggests 
 
 ## Safety kernel
 
-The [Safety Kernel](glossary:safety-kernel) decides every command, from every client, in a fixed order. The kernel checks units, range, step, rate of change, interlocks, the token's scope and confirmation, and stops at the first failure. The kernel is plain code with no model in it. A value the kernel can't trust counts as unsafe.
+The [Safety Kernel](glossary:safety-kernel) evaluates every command, from every client, in a fixed order. The kernel checks units, range, step, rate of change, interlocks, the token's scope and confirmation, and stops at the first failure. The kernel is plain code with no model in it, and an unknown value, such as a stale reading, counts as unsafe.
 
 ## Drivers and grants
 
@@ -25,7 +25,7 @@ A [Driver](glossary:driver) speaks one protocol, such as SCPI or Moonraker. A dr
 
 ## Errors
 
-A refused command is a JSON-RPC error with a stable code and name.
+A refused command returns a JSON-RPC error with a stable code and name.
 
 | Code | Name | Meaning |
 |---|---|---|
@@ -40,11 +40,11 @@ The specification lists every code.
 
 ## Principals and hazard classes
 
-Every request comes from a principal. A person uses the human token. An agent uses an agent token with a scope, `read`, `control_low` or `control_medium`. A device file sets its hazard class, `low`, `medium` or `high`. Every change to a high hazard device waits for a person.
+Every request comes from a principal. A person uses the human token, and an agent uses an agent token with a scope of `read`, `control_low` or `control_medium`. A device file sets its hazard class to `low`, `medium` or `high`, and every change to a high hazard device waits for a person.
 
 ## Conformance levels
 
-Hubs and drivers declare a [Conformance Level](glossary:conformance-level). Core covers discovery and reads. Control adds changes and stop. Full adds actions, routines and confirmations.
+Hubs and drivers declare a [Conformance Level](glossary:conformance-level). Core covers discovery and reads, Control adds changes and stop, and Full adds actions, routines and confirmations.
 
 ## What OpenHAL doesn't do
 

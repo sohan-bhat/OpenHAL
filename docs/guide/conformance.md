@@ -1,6 +1,6 @@
 # Conformance suite
 
-Every driver in the repository passes the same battery of checks before it ships. The suite runs the driver inside a real kernel, against its own mock or simulator, and watches the point where the driver talks to the protocol. Watching that point is how the suite proves a blocked command never reaches the device.
+Every driver in the repository passes the same battery of checks before it ships. The suite runs the driver inside a real kernel, against the driver's own mock or simulator, and monitors the point where the driver talks to the protocol, which is how the suite proves that a blocked command never reaches the device.
 
 ## What the suite checks
 
@@ -26,7 +26,7 @@ The suite tests the driver's declared [Conformance Level](glossary:conformance-l
 
 ## Run it
 
-The suite runs as part of the normal tests. Every driver package with a `conformance.py` is picked up on its own.
+The suite runs as part of the normal tests, and every driver package with a `conformance.py` is picked up automatically.
 
 ```sh tested
 $ uv run pytest tests/conformance -q
@@ -103,8 +103,8 @@ def case() -> ConformanceCase:
     )
 ```
 
-The plant waterer has no control channel, so the four checks that need one are skipped and the report says why. The other 11 pass. The case should use a device file that looks like the real device, with real units and limits, so the suite exercises the same conversions the hardware will see. The [driver contract](../drivers/WRITING-A-DRIVER.md) has every rule.
+The plant waterer has no control channel, so the four checks that need one are skipped, the report says why, and the other 11 pass. The case should use a device file that looks like the real device, with real units and limits, so the suite exercises the same conversions the hardware will see. The [driver contract](../drivers/WRITING-A-DRIVER.md) has every rule.
 
 ## Passing is not verified
 
-Conformance runs against a simulator. A driver that passes is marked implemented in the catalog, and is marked verified once a person runs the driver's hardware test plan on a real device and files a report.
+Because conformance runs against a simulator, a driver that passes is marked implemented in the catalog, and the driver is marked verified only once a person runs the driver's hardware test plan on a real device and files a report.

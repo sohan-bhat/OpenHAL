@@ -1,6 +1,6 @@
 # Create a routine
 
-A routine is an automation that runs on the [Hub](glossary:hub) without a model. Triggers say when the routine runs. Steps say what the routine does. Every change a step makes goes through the [Safety Kernel](glossary:safety-kernel), like any other command.
+A routine is an automation that runs on the [Hub](glossary:hub) without a model. The routine's triggers set when the routine runs and the routine's steps set what the routine does, and every change a step makes goes through the [Safety Kernel](glossary:safety-kernel) like any other command.
 
 ## Start the hub
 
@@ -27,7 +27,7 @@ steps:
 
 ## Store it and dry run it
 
-A new routine starts disabled. A dry run checks every command in every branch against the current state, and nothing reaches the device.
+A new routine starts disabled, and a dry run checks every command in every branch against the current state without sending anything to the device.
 
 ```sh tested
 $ uv run openhal routine new morning-water --file morning-water.yaml
@@ -39,7 +39,7 @@ dry run passes
 
 ## Enable the routine
 
-A person enables the routine with the human token and the typed phrase `enable`. The hub runs the dry run again first.
+A person enables the routine with the human token and the typed phrase `enable`, and the hub runs the dry run again before enabling the routine.
 
 ```sh tested
 $ uv run openhal routine enable morning-water
