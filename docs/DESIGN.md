@@ -169,11 +169,13 @@ The dashboard is the OpenHAL Inspector, a protocol inspector.
 
 ## Motion
 
-Four patterns, nothing else.
+Six patterns, nothing else.
 1. The flowing connectors in the flow diagram.
 2. A message appearing in the trace or log. A 120 ms fade, 4 px rise.
 3. A status change. A 120 ms cross-fade.
 4. The landing story. A stage pins under the header while the page scrolls normally, and the scroll position drives a camera that pans and zooms along the print babysitter's path. Each piece changes with that position, using transforms and opacity only, and a piece finishes leaving before the one replacing it arrives. Scrolling back plays it in reverse. Nothing moves on its own, so it is not scroll-jacking, parallax or fade-in on scroll. The bed temperature readout steps from 60 °C to 70 °C as a live reading, not a counter. The owner asked for this motion on 2026-10-25, which is its justification under Banned by default.
+5. The nav highlight. The blue highlight behind the current top-level item slides to the item a person clicks, as one shape moving between positions, about 240 ms with an ease out. It never bounces or stretches.
+6. The page transition. A page change moves the content sideways in the direction of travel through the nav, with the header and its highlight held still. Going to an item further right, the old content slides 24 px left and fades as the new content wipes in from the right with a clip-path, and going left mirrors it. About 260 ms in all. It is not a fade, a rise or a scale, so it stays distinct from the owner's other sites. Built on cross-document view transitions, so a browser without them changes pages instantly. The owner asked for patterns 5 and 6 on 2026-10-26.
 
 With `prefers-reduced-motion: reduce`, nothing moves.
 
@@ -282,7 +284,7 @@ Motion and interaction
 - Scroll-jacking, parallax, scroll-triggered fade-in on every section.
 - Typewriter text effects, counting-up numbers.
 - Custom cursors, cursor trails, magnetic buttons.
-- More than the four motion patterns above. Any animation that doesn't communicate a state change.
+- More than the six motion patterns above. Any animation that doesn't communicate a state change.
 
 Copy
 - Banned words: unlock (except the literal control after a stop), seamless, supercharge, elevate, effortless, empower, revolutionary, next-generation, cutting-edge, game-changer, magic, harness, unleash, journey, "Welcome to", "the future of".
