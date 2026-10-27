@@ -1,3 +1,4 @@
+import captures from "../data/inspector-captures.json";
 import { storyFacts, type StoryFacts } from "./story/facts";
 
 export interface Shot {
@@ -7,8 +8,16 @@ export interface Shot {
   alt: string;
 }
 
-/** The Inspector page's screenshots, each with the words that say what it shows, from the record. */
-export function inspectorShots(facts: StoryFacts = storyFacts()): Shot[] {
+const listed = (captures as { shots?: Shot[] }).shots;
+
+/**
+ * The Inspector page's screenshots, each with the words that say what it shows. The capture
+ * script's own list in inspector-captures.json wins when it has one, since the script knows what
+ * each image holds. Otherwise the page shows the device, the message log and the stop, described
+ * with the record's numbers.
+ */
+export function inspectorShots(facts: StoryFacts = storyFacts(), shots: Shot[] | undefined = listed): Shot[] {
+  if (shots?.length) return shots;
   return [
     {
       file: "inspector-device",
