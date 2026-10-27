@@ -29,9 +29,9 @@ Node ids may be numeric (`i=2258`), string (`s=...`), GUID (`g=...`) or opaque (
 
 - connect() checks every node the file names. Variables must exist, variables in the `write` section must be writable for this user, and methods must exist with as many inputs as the map lists. Anything else stops the connect with a reason.
 - Units come from each variable's EngineeringUnits, by UNECE code (`CEL`, `KPA`, `RPM`, `P1` and about 45 others) or its display name. A channel whose unit can't be converted from the node's unit is refused on connect, so a degF node can't be read as degC by mistake.
-- Reads check the status code. Bad fails the read, and Uncertain marks the reading suspect. A reading outside the channel's `range` is also suspect.
+- Reads check the status code, so Bad fails the read and Uncertain marks the reading suspect, and a reading outside the channel's `range` is also suspect.
 - A change sends a Variant of the node's own data type. Integer nodes refuse values that aren't whole or don't fit the type, and nothing is sent.
-- Method arguments go out as the method's input types. OPC UA arguments carry no units, so the value is sent in the argument's declared unit.
+- Method arguments go out as the method's input types, and because OPC UA arguments carry no units, the value is sent in the argument's declared unit.
 
 ## Safe state
 
@@ -39,7 +39,7 @@ OPC UA has no general stop, so the driver has no native safe state. Give the dev
 
 ## Discovery
 
-`openhal discover` asks `opc.tcp://127.0.0.1:4840`, the usual local discovery server, for the servers it knows, with FindServers. Discovery never reads or changes a variable.
+`openhal discover` calls FindServers on `opc.tcp://127.0.0.1:4840`, the usual local discovery server, to list the servers registered there, and discovery never reads or changes a variable.
 
 ## Setup
 
@@ -81,14 +81,14 @@ hazard: medium
 
 ## Known limitations
 
-- Subscriptions are not used. Each read is one request, and the hub's polling sets the rate.
+- Subscriptions are not used, so each read is one request and the hub's polling sets the rate.
 - Arrays, structures and enumerated data types beyond String and the numeric and Boolean types are not mapped.
-- describe proposes 0 to 0 limits for numeric changes when the server has no EURange, so nothing moves until a person sets real limits.
+- When the server has no EURange, describe proposes limits of 0 to 0 for numeric changes, so nothing moves until a person sets real limits.
 - asyncua is LGPL-3.0, installed as a separate package and not modified or copied.
 
 ## Hazard defaults
 
-`medium`. PLCs drive pumps, heaters, valves and motors. Raise the file's hazard to `high` for anything that can injure, and keep the PLC's own interlocks and e-stop circuit in place, because the device file adds limits and does not replace them.
+The default hazard is `medium`, because PLCs drive pumps, heaters, valves and motors. Raise the file's hazard to `high` for anything that can injure, and keep the PLC's own interlocks and e-stop circuit in place, because the device file adds limits and does not replace them.
 
 ## Sources
 

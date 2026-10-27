@@ -11,12 +11,12 @@ An open-source protocol for AI agents to control hardware.
   <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="docs/diagrams/flow-narrow-dark.svg">
   <source media="(max-width: 600px)" srcset="docs/diagrams/flow-narrow-light.svg">
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/flow-dark.svg">
-  <img src="docs/diagrams/flow-light.svg" width="900" alt="OpenHAL flow. An agent sends hal/write to the hub. The safety kernel checks the command against the device file's limits. An allowed command gets a grant and goes through the driver to the 3D printer, and the reading comes back to the agent. A 300 °C nozzle is blocked with LIMIT_EXCEEDED because the limit is 260 °C.">
+  <img src="docs/diagrams/flow-light.svg" width="900" alt="OpenHAL flow. An agent sends hal/write to the hub. The safety kernel checks the command against the device file's limits. An allowed command gets a grant and goes through the driver to the 3D printer, and the reading comes back to the agent. Because the nozzle limit is 260 °C, a request for a nozzle temperature of 300 °C is blocked with LIMIT_EXCEEDED.">
 </picture>
 
 ## Quickstart
 
-You need [uv](https://docs.astral.sh/uv/) and git. Nothing touches hardware.
+You need [uv](https://docs.astral.sh/uv/) and git, and nothing in the demo touches hardware.
 
 ```
 git clone https://github.com/sohan-bhat/OpenHAL
@@ -69,7 +69,7 @@ You'll see the agent warm the bed from 60 °C to 70 °C, have a 300 °C nozzle r
 ```
 <!-- trace:end -->
 
-An agent keeps an eye on a long 3D print. The agent watches the camera, judges what is going wrong and acts, and the safety kernel checks every command against the limits a person confirmed. The owner approves the cancel, the kernel checks the cancel again, and the printer's state becomes cancelled. The trace is a real run of the hub against a simulated [printer and camera](examples/print-babysitter/), recorded in [docs/demo/scenario.yaml](docs/demo/scenario.yaml). The camera frames are line drawings, and `REQUEST_ID` stands in for the hub's random request id.
+In this trace an agent keeps an eye on a long 3D print, and the agent watches the camera, judges what is going wrong and acts while the safety kernel checks every command against the limits a person confirmed. The owner approves the cancel, the kernel checks the cancel again, and the printer's state becomes cancelled. The trace is a real run of the hub against a simulated [printer and camera](examples/print-babysitter/), recorded in [docs/demo/scenario.yaml](docs/demo/scenario.yaml). The camera frames are line drawings, and `REQUEST_ID` stands in for the hub's random request id.
 
 ## Install
 
@@ -82,7 +82,7 @@ openhal init
 
 ## What OpenHAL does
 
-- **One device file format.** A `.hal.yaml` file says what a device can read and do, with units and limits a person confirmed.
+- **One device file format.** A `.hal.yaml` file describes what a device can read and do, with units and limits a person confirmed.
 - **One safety kernel.** Every command is checked for range, rate, interlocks and confirmation before any driver can act.
 - **Drivers for whole device families.** One SCPI driver covers bench instruments and one Moonraker driver covers Klipper printers.
 
@@ -134,10 +134,10 @@ v0.1, in development. Every driver passes the conformance suite on a simulator.
 - A device file stays read-only until a person confirms its limits, and nothing an agent proposes counts as a confirmation.
 - Every hardware change needs a single-use grant the kernel issues for that exact command.
 - Unknown values never pass a check, so a stale or missing reading blocks the command.
-- One stop puts every device in its safe state and refuses every command until a person unlocks.
+- One stop puts every device in its safe state, and the hub refuses every command until a person lifts the stop.
 - Every decision goes into a hash-chained audit log.
 
-Details in [docs/SAFETY.md](docs/SAFETY.md).
+[docs/SAFETY.md](docs/SAFETY.md) has the details.
 
 ## Relationship to Anthropic's MHS
 
@@ -149,4 +149,4 @@ Build a driver with [the driver guide](docs/drivers/WRITING-A-DRIVER.md) and run
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+OpenHAL is licensed under Apache-2.0, and the full text is in [LICENSE](LICENSE).

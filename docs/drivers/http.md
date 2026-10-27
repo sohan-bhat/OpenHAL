@@ -1,12 +1,12 @@
 # http driver
 
-The http driver talks to devices that expose a local HTTP API. Every request it sends comes from the device file. Read channels name a request and where the value sits in the response. Write channels and actions name a request and a body or query template. With an OpenAPI 3 document, `describe()` proposes the channels for you.
+The http driver talks to devices that expose a local HTTP API, and every request the driver sends comes from the device file. Read channels name a request and where the value sits in the response, and write channels and actions name a request and a body or query template. With an OpenAPI 3 document, `describe()` proposes the channels for you.
 
 ## What it supports
 
 - Read channels of type number, bool, string, enum and image, from JSON bodies (with a JSON path) or plain text bodies.
 - Write channels of type number, bool, string and enum, sent as a JSON body, a query string or a path segment, with GET, POST, PUT, PATCH or DELETE.
-- Read-back for write channels through a `state` request. Without one, reading a write channel returns the last value the driver sent, or no value before the first write.
+- Read-back for write channels through a `state` request. Without a `state` request, reading a write channel returns the last value the driver sent, or no value before the first write.
 - Actions whose arguments fill the same templates.
 - A bearer token or API key from an environment variable.
 - `describe()` from an OpenAPI 3 JSON document.
@@ -30,14 +30,14 @@ httpx is also part of the hub extra, so a hub install already has it.
 | `auth_header` | `Authorization` | Header that carries the token |
 | `auth_scheme` | `Bearer` | Prefix before the token. Use `""` for a bare API key header |
 | `verify_tls` | `true` | Check HTTPS certificates |
-| `health` | `/` | Path fetched with GET for connect and the heartbeat. Any HTTP answer counts as alive |
+| `health` | `/` | Path fetched with GET for connect and the heartbeat. Any HTTP response counts as alive |
 | `identify` | none | Path fetched with GET by `identify()`. Scalar fields of the JSON reply become identity fields |
 | `openapi` | none | Path of an OpenAPI 3 JSON document for `describe()` |
-| `max_response_bytes` | `1048576` | Larger answers are refused |
+| `max_response_bytes` | `1048576` | Larger responses are refused |
 
 ## Channel maps
 
-Read channels.
+A read channel's map takes these keys.
 
 ```yaml
 read:
@@ -57,7 +57,7 @@ read:
 | `on`, `off` | common words | Words that mean true and false for bool channels |
 | `scale`, `offset` | `1`, `0` | channel value = device value × scale + offset |
 
-Write channels.
+A write channel's map takes these keys.
 
 ```yaml
 write:
@@ -98,19 +98,19 @@ Units come from an `x-unit` property where the document has one, otherwise `dime
 
 ## Errors
 
-- No answer within `timeout` raises `TimeoutError`.
+- No response within `timeout` raises `TimeoutError`.
 - Connection failures, HTTP status 400 and above, bodies that are not JSON when JSON is expected, missing JSON fields, numbers that are not numbers and enum values outside the list raise `DriverError` with the request and what to check.
 
 ## Limitations
 
-- No login flows (session cookies, digest auth, OAuth). Devices that need them are not supported yet.
-- No streaming or server-sent events. Values are read on request or by polling with `every`.
-- No discovery. mDNS discovery belongs to the hub.
-- Each read channel sends its own request, so channels that share an endpoint fetch it once each.
+- The driver has no login flows (session cookies, digest auth, OAuth), so devices that need a login flow are not supported yet.
+- The driver has no streaming or server-sent events, so values are read on request or by polling with `every`.
+- The driver has no discovery, because mDNS discovery belongs to the hub.
+- Each read channel sends its own request, so channels that share an endpoint fetch the endpoint once each.
 
 ## Hazard default and safe state
 
-The default hazard is medium, because an HTTP API can switch anything. HTTP has no protocol-level emergency behavior, so `safe_state_support` is `file`. The hub applies the device file's `safe_state` through ordinary writes, and that only works while the device answers.
+The default hazard is medium, because an HTTP API can switch anything. HTTP has no protocol-level emergency behavior, so `safe_state_support` is `file`. The hub applies the device file's `safe_state` through ordinary writes, and that only works while the device responds.
 
 ## Sources
 

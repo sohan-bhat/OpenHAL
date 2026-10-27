@@ -8,7 +8,7 @@ The upnp driver reads and controls UPnP devices through their SOAP actions, usin
 - Control channels that call an action with `{value}` in one argument, read back through a `state` map.
 - Actions that call any SOAP action, with the action's arguments placed by `{name}`.
 - A check on connect that every service, action, argument and output exists, and that types and enum values match the device's service descriptions.
-- `discover()` sends one SSDP M-SEARCH, which only asks devices to announce themselves.
+- `discover()` sends one SSDP M-SEARCH, which only requests that devices announce themselves.
 - `describe()` proposes channels from the Get and Set actions and the actions without outputs.
 
 ## Setup
@@ -17,7 +17,7 @@ The upnp driver reads and controls UPnP devices through their SOAP actions, usin
 uv tool install --compile-bytecode "openhal-hub[upnp] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-Find the device's description URL with `discover()` or the device's documentation. Sonos speakers serve it at `http://<speaker>:1400/xml/device_description.xml`.
+Find the device's description URL with `discover()` or the device's documentation. Sonos speakers serve the description at `http://<speaker>:1400/xml/device_description.xml`.
 
 ## Parameters
 
@@ -61,26 +61,26 @@ Arguments are converted to their state variable's type before each call, so `Spe
 
 ## How reads and commands behave
 
-- A read calls its action every time. Devices answer queries quickly, and GENA event subscriptions aren't used.
+- Because devices respond to queries quickly and GENA event subscriptions aren't used, a read calls its action every time.
 - A control channel without `state` reads as the last value sent, or no value before the first command.
 - A SOAP fault becomes `DriverError` with the UPnP error code and description, such as 501 Action Failed or 701 Transition not available.
 - `health()` fetches the description again, which is a plain HTTP GET.
 
 ## Example
 
-`openhal/drivers/upnp/examples/sonos-speaker.hal.yaml` reads a Sonos speaker's transport state, sets its volume up to 40 % and its mute, and plays, pauses and stops it.
+`openhal/drivers/upnp/examples/sonos-speaker.hal.yaml` reads a Sonos speaker's transport state, sets the speaker's volume, up to 40 %, and mute, and plays, pauses and stops the speaker.
 
 ## Errors
 
 - A description that can't be fetched or parsed raises `DriverError` naming the location.
 - A map whose service, action, arguments or output don't match the device, or whose type or enum values don't, fails the connect with `DriverError` that lists what the device has.
-- A device that doesn't answer raises `TimeoutError` or `DriverError` and reports itself disconnected until it answers again.
+- A device that doesn't respond raises `TimeoutError` or `DriverError` and reports itself disconnected until the device responds again.
 
 ## Limitations
 
-- No GENA eventing, so values are polled.
-- No UPnP Device Protection or HTTPS client certificates.
-- No ContentDirectory browsing helpers. ContentDirectory actions work like any other, but the DIDL-Lite results come back as text.
+- The driver has no GENA eventing, so values are polled.
+- The driver doesn't support UPnP Device Protection or HTTPS client certificates.
+- The driver has no ContentDirectory browsing helpers, so ContentDirectory actions work like any other action and the DIDL-Lite results come back as text.
 
 ## Hazard default and safe state
 

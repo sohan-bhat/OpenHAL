@@ -1,8 +1,8 @@
 # Errors
 
-The normative error registry is in [spec/2026-10-24/safety.md](2026-10-24/safety.md#error-registry). This page summarizes it.
+The normative error registry is in [spec/2026-10-24/safety.md](2026-10-24/safety.md#error-registry), and this page summarizes the registry.
 
-A blocked or failed command is a JSON-RPC error. `error.code` is the number, `error.message` is the reason, and `error.data.name` is the registry name that Clients branch on. Numbers are stable across versions and never reused.
+A blocked or failed command returns a JSON-RPC error. `error.code` is the number, `error.message` is the reason, and `error.data.name` is the registry name that Clients branch on. Numbers are stable across versions and never reused.
 
 | Code | Name |
 |---|---|

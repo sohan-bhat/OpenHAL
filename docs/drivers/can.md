@@ -6,9 +6,9 @@ The can driver reads signals out of CAN bus frames and sends frames as commands 
 
 - Classic CAN with 11-bit and 29-bit identifiers, and CAN FD with up to 64 data bytes.
 - Read channels of type number, bool and enum, decoded from any byte range or bit range, big or little endian, signed or unsigned, with scale, offset and a device unit.
-- Control channels that place a value in a frame and send it. Several of them can share one frame.
+- Control channels that place a value in a frame and send the frame, where several channels can share one frame.
 - Actions that send a fixed frame, with action arguments placed in it.
-- `describe()` listens for a moment and proposes one read channel per frame id it sees.
+- `describe()` listens to the bus for a moment and proposes one read channel per frame id it receives.
 - `discover()` lists SocketCAN interfaces that are up and sends nothing.
 
 ## Setup
@@ -55,7 +55,7 @@ actions:
 | `signed` | `false` | Two's complement |
 | `bit`, `bits` | `0`, the rest | The bit range inside those bytes, counted from the least significant bit |
 | `scale`, `offset` | `1`, `0` | device value = raw × scale + offset |
-| `unit` | the channel unit | The unit the device value is in. It is converted to the channel unit |
+| `unit` | the channel unit | The unit the device value is in, which the driver converts to the channel unit |
 | `on`, `off` | `1`, `0` | Raw values for bool channels |
 | `lookup` | none | Raw numbers to enum values, such as `{ 0: coast, 1: eco }` |
 | `data` | zeros | Command and action frames. The bytes the rest of the frame carries |
@@ -67,10 +67,10 @@ A change starts from the last payload the driver sent with that id, so changing 
 
 ## How reads and commands behave
 
-- CAN only broadcasts. A background thread keeps the newest frame per id, and a read decodes it with the time it arrived. An id that hasn't been seen since connecting reads as no value, which the kernel treats as unknown. Reads never put anything on the bus.
-- Values are rounded to the field's raw step, and the reading a command returns shows the value actually sent. A value the field can't hold fails the command and nothing is sent. Nothing is clamped.
-- A successful send means the controller put the frame on the bus, which doesn't prove the node acted. Use a `state` map or a read channel to see that.
-- Frames are never queued or retried. A failed send fails the command.
+- Because CAN only broadcasts, a background thread keeps the newest frame per id, and a read decodes that frame with the time the frame arrived. An id that hasn't been received since connecting reads as no value, which the kernel treats as unknown, and reads never put anything on the bus.
+- Values are rounded to the field's raw step, and the reading a command returns shows the value actually sent. A value the field can't hold fails the command, and nothing is sent or clamped.
+- A successful send means the controller put the frame on the bus, which doesn't prove the node acted, so use a `state` map or a read channel to check whether the node acted.
+- Frames are never queued or retried, so a failed send fails the command.
 
 ## Example
 
@@ -85,18 +85,18 @@ A change starts from the last payload the driver sent with that id, so changing 
 
 ## Limitations
 
-- Raw signals only. CANopen SDO and NMT, J1939 multi-frame transport and ISO-TP are not handled, so values that need a request and reply protocol can't be read. The periodic PDOs and PGNs of those protocols can.
-- No DBC file import. Make the maps from the node's documentation or DBC file by hand.
-- No remote frames.
+- The driver reads raw signals only. CANopen SDO and NMT, J1939 multi-frame transport and ISO-TP are not handled, so values that need a request and reply protocol can't be read, but the periodic PDOs and PGNs of those protocols can be read.
+- The driver has no DBC file import, so make the maps from the node's documentation or DBC file by hand.
+- Remote frames are not supported.
 - Fields are at most 8 bytes long.
 
 ## Hazard default and safe state
 
-The default hazard is medium, because CAN nodes are usually motor drives, battery systems and actuators. CAN has no emergency behavior of its own, so `safe_state_support` is `file`. The hub sends the device file's safe state frames like any other frame, which needs the bus and the node to be up. Most drives stop on their own when command frames stop arriving. Configure that timeout on the node, because it is the real fallback when the hub or the bus fails.
+The default hazard is medium, because CAN nodes are usually motor drives, battery systems and actuators. CAN has no emergency behavior of its own, so `safe_state_support` is `file`. The hub sends the device file's safe state frames like any other frame, which needs the bus and the node to be up. Most drives stop on their own when command frames stop arriving, and because that timeout is the real fallback when the hub or the bus fails, configure the timeout on the node.
 
 ## License note
 
-python-can is licensed LGPL-3.0. OpenHAL uses it unmodified as an optional dependency and copies none of its code.
+python-can is licensed LGPL-3.0, and OpenHAL uses python-can unmodified as an optional dependency and copies none of its code.
 
 ## Sources
 

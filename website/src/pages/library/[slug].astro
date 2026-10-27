@@ -61,7 +61,7 @@ function argText(name: string, spec: ArgSpec): string {
                     <span class="limits">
                       <span class="status unverified">unconfirmed</span>
                       {entry.suggested.length > 0 ? (
-                        <span>The library suggests limits for <span class="mono">{entry.suggested.join(", ")}</span>, and no person has confirmed those limits yet.</span>
+                        <span>The library file holds suggested limits for <span class="mono">{entry.suggested.join(", ")}</span>, and no person has confirmed those limits yet.</span>
                       ) : entry.writes + entry.actions === 0 ? (
                         <span>This file has read channels only, so nothing in the file changes the device.</span>
                       ) : (

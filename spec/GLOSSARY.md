@@ -1,6 +1,6 @@
 # Glossary
 
-The normative definitions are in [spec/2026-10-24/index.md](2026-10-24/index.md#terminology). Defined terms are capitalized wherever they appear.
+The normative definitions are in [spec/2026-10-24/index.md](2026-10-24/index.md#terminology), and defined terms are capitalized wherever they appear.
 
 | Term | Definition |
 |---|---|

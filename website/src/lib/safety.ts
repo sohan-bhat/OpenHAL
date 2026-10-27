@@ -31,10 +31,10 @@ function firstSentence(text: string): string {
 
 const PLAIN: Record<string, string> = {
   "One path": "Every command from every client goes through the same kernel.",
-  Deterministic: "The kernel is plain code with no model, so the same command in the same state gets the same answer.",
+  Deterministic: "The kernel is plain code with no model, so the same command in the same state gets the same decision.",
   "Limits come from humans": "A person sets every limit in the device file, and an agent may tighten a limit for its own session.",
   "Stop works": "One stop puts every device in its safe state, and the stop holds until a person lifts the stop.",
-  "Fail closed": "Anything unexpected blocks the command.",
+  "Fail closed": "An unexpected error inside the kernel blocks the command.",
   "Everything is recorded": "Every command and decision goes into a tamper-evident log.",
 };
 

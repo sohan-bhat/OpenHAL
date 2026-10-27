@@ -24,17 +24,17 @@ The `octoprint` driver talks to printers that OctoPrint controls, through OctoPr
 | `home` (arg `axes` x, y, z, xy or all) | action | `POST /api/printer/printhead` with `command: home` |
 | `pause`, `resume`, `cancel` | action | `POST /api/job` |
 
-Other names need a `map`. `{ heater: tool1 }` (or `tool0` to `tool9`, `bed`, `chamber`) with `field: actual` or `field: target` for reads, and `{ heater: tool1 }` or `{ fan: 1 }` for writes. Actions take `{ command: home }` and so on under another name.
+Other names need a `map`, such as `{ heater: tool1 }` (or `tool0` to `tool9`, `bed`, `chamber`) with `field: actual` or `field: target` for reads, and `{ heater: tool1 }` or `{ fan: 1 }` for writes. Actions take `{ command: home }` and so on under another name.
 
 Temperatures are degC on the wire and converted to the channel unit both ways.
 
 ## How the protocol is handled
 
-- The API key comes from the environment variable named in `token_env` (default `OCTOPRINT_API_KEY`) and is sent as `X-Api-Key`. A missing variable fails the connect before any request. A 403 says the key was refused.
-- OctoPrint answers 409 when the printer isn't connected or the operation doesn't fit the current state. The driver turns that into an error that says the printer can't do this now, and `state` reads `offline`.
-- `health()` reads `/api/printer`. A printer that isn't operational counts as disconnected.
+- The API key comes from the environment variable named in `token_env` (default `OCTOPRINT_API_KEY`) and is sent as `X-Api-Key`. A missing variable fails the connect before any request, and a 403 means the key was refused.
+- OctoPrint returns 409 when the printer isn't connected or the operation doesn't fit the current state. The driver turns that into an error that says the printer can't do this now, and `state` reads `offline`.
+- `health()` reads `/api/printer`, and a printer that isn't operational counts as disconnected.
 - OctoPrint has no fan read, so `fan_speed` reads back the last value this driver sent, and unknown before the first write or after a failed one.
-- Homing is queued by OctoPrint and the request returns at once, so the action answers `queued`.
+- Homing is queued by OctoPrint and the request returns at once, so the action returns `queued`.
 
 ## Setup
 
@@ -80,12 +80,12 @@ hazard: medium
 
 - File upload, selection and starting prints are not exposed.
 - The fan speed can't be read from the printer, and a fan change made on the printer's own display isn't seen.
-- Proposals from `describe()` use placeholder heater maxima (250, 100 and 60 degC), because printer profiles don't record the maxima. Lower the maxima to your printer's real limits.
-- The driver can't see the printer's firmware thermal protection, which remains the last line of defense.
+- Because printer profiles don't record heater maxima, proposals from `describe()` use placeholder heater maxima (250, 100 and 60 degC), so lower the maxima to your printer's real limits.
+- The driver can't check the printer's firmware thermal protection, which remains the last line of defense.
 
 ## Hazard defaults
 
-`medium`. Heaters and moving axes can burn or pinch. Keep `confirm: confirm` on the hotend target and on `home`.
+The default hazard is `medium`, because heaters and moving axes can burn or pinch, so keep `confirm: confirm` on the hotend target and on `home`.
 
 ## Sources
 

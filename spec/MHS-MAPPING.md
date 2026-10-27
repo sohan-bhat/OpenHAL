@@ -2,7 +2,7 @@
 
 Anthropic's Model Hardware Standard (MHS) entered a closed research preview on 2026-08-27. As of 2026-10-24 there is no public specification, schema, SDK or license (docs/research/SOURCES.md). This document maps every OpenHAL concept to what is publicly known about MHS, lists what is unknown, and describes the adapter OpenHAL will ship once a spec is published.
 
-OpenHAL is not a rival standard. It uses the same read and write model and the same idea of a reference file, so that MHS devices and drivers can be used through OpenHAL and OpenHAL device files can be exported to MHS.
+OpenHAL is not a rival standard. OpenHAL uses the same read and write model and the same idea of a reference file, so MHS devices and drivers can be used through OpenHAL and OpenHAL device files can be exported to MHS.
 
 ## What maps
 

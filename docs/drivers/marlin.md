@@ -36,22 +36,22 @@ Other names need a `map`.
 
 Temperatures are converted from degC to the channel unit and back, so a `degF` channel works. Fan percent maps to the PWM byte as `round(percent * 255 / 100)`.
 
-There is no raw G-code action, on purpose. A raw command would step around every limit in the device file.
+Because a raw command would bypass every limit in the device file, the driver deliberately has no raw G-code action.
 
 ## How the protocol is handled
 
 - After opening the port the driver waits up to `settle` for the `start` banner that most boards print after the reset on open, then sends `M110 N0`.
 - Every command carries a line number and an XOR checksum (`N12 M104 T0 S200.0*93`). On `Resend` the driver sends the requested lines again and ignores the extra `ok` that Marlin sends with the request.
-- Commands in flight are tracked in order and resolved by `ok`. `echo:busy: processing` keeps a command alive past `timeout`.
-- M115 is read on connect. When the M115 answer reports `Cap:AUTOREPORT_TEMP:1` the driver turns on `M155 S<autoreport>` and reads temperatures from the reports, so reads keep working during long moves.
-- `home` waits up to `action_wait`. If the printer is still busy it returns `started` and the `ok` is collected in the background. The hub's driver timeout is 10 s, which is shorter than many homing moves.
-- `start` in the middle of a session means the board reset. Commands in flight fail, the numbering restarts, and heaters are off.
-- `Error:Printer halted` means the firmware stopped itself. The driver reports itself disconnected until the printer is reset and reconnected.
+- Commands in flight are tracked in order and resolved by `ok`, and `echo:busy: processing` keeps a command alive past `timeout`.
+- The driver reads M115 on connect, and when the M115 response reports `Cap:AUTOREPORT_TEMP:1` the driver turns on `M155 S<autoreport>` and reads temperatures from the reports, so reads keep working during long moves.
+- Because the hub's driver timeout of 10 s is shorter than many homing moves, `home` waits up to `action_wait`, and if the printer is still busy `home` returns `started` and the `ok` is collected in the background.
+- `start` in the middle of a session means the board reset, so commands in flight fail, the numbering restarts, and heaters are off.
+- `Error:Printer halted` means the firmware stopped itself, so the driver reports itself disconnected until the printer is reset and reconnected.
 
 ## Setup
 
 1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[marlin] @ git+https://github.com/sohan-bhat/OpenHAL"`.
-2. Close any other program that holds the port (OctoPrint, Pronterface, a slicer). The driver opens the port exclusively.
+2. Because the driver opens the port exclusively, close any other program that holds the port (OctoPrint, Pronterface, a slicer).
 3. Start from `openhal/drivers/marlin/examples/ender-3-v2.hal.yaml`, set `match.usb` or the port path, and set limits that fit your printer.
 4. Validate with `openhal file validate`, then confirm the limits by hand.
 
@@ -91,15 +91,15 @@ hazard: medium
 
 ## Known limitations
 
-- Fan speed can't be read back. A read returns the last value this driver sent, or unknown before the first write.
-- Pause, resume and cancel only act on prints started from the printer's SD card. A print streamed by a host program has to be paused by that program.
-- Moves other than homing are not exposed. Streaming G-code files is out of scope for this driver.
+- Fan speed can't be read back, so a read returns the last value this driver sent, or unknown before the first write.
+- Pause, resume and cancel only act on prints started from the printer's SD card, so a print streamed by a host program has to be paused by that program.
+- Moves other than homing are not exposed, and streaming G-code files is out of scope for this driver.
 - Multi-extruder printers need a `map` with `temperature: T1` or `heater: T1` for the second hotend.
-- The firmware's own thermal protection is the real last line of defense. The driver can't tell whether it is enabled.
+- The firmware's own thermal protection is the real last line of defense, and the driver can't tell whether that protection is enabled.
 
 ## Hazard defaults
 
-`medium`. Heaters and moving axes can burn or pinch. Keep `confirm: confirm` on the hotend target and on `home`.
+The default hazard is `medium`, because heaters and moving axes can burn or pinch, so keep `confirm: confirm` on the hotend target and on `home`.
 
 ## Sources
 

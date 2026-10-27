@@ -1,10 +1,10 @@
 # openhal-firmware
 
-Boards running the OpenHAL Arduino library (`firmware/arduino/OpenHAL`). The board describes its readings, outputs and actions, enforces its own limits and falls to its safe state when heartbeats stop. Protocol in `spec/FIRMWARE-PROTOCOL.md`.
+The openhal-firmware driver talks to boards running the OpenHAL Arduino library (`firmware/arduino/OpenHAL`). The board describes its readings, outputs and actions, enforces its own limits and falls to its safe state when heartbeats stop, and the protocol is in `spec/FIRMWARE-PROTOCOL.md`.
 
 ## Device file
 
-The plant waterer from [examples/plant-waterer/](../../examples/plant-waterer/), for a real Uno.
+This device file is the plant waterer from [examples/plant-waterer/](../../examples/plant-waterer/), for a real Uno.
 
 ```yaml
 device: Arduino plant waterer
@@ -43,17 +43,17 @@ Install the optional dependency with `uv pip install "openhal-hub[openhal-firmwa
 ## Behavior
 
 - Connect sends `HELLO`, checks the protocol version, reads `DESC`, and starts a heartbeat at a third of the board's timeout.
-- Reads use a streamed `EVT` value if it is less than 5 s old, otherwise `READ`.
-- Channel changes send `WRITE` and return the value the board applied. Actions send `ACT` with every argument in the board's unit. A board refusal (`ERR limit`, `ERR interlock`) becomes a DriverError, and the kernel marks what the command touched unknown until a readback.
-- `safe_state_support` is native. A stop sends `SAFE` and the kernel also applies the device file's safe state.
-- `describe()` turns `DESC` into device file sections. Every limit is marked suggested, so the file stays read-only until a person confirms it.
+- Reads use a streamed `EVT` value when the value is less than 5 s old, and send `READ` otherwise.
+- Channel changes send `WRITE` and return the value the board applied, and actions send `ACT` with every argument in the board's unit. A board refusal (`ERR limit`, `ERR interlock`) becomes a DriverError, and the kernel marks what the command touched unknown until a readback.
+- `safe_state_support` is native, so a stop sends `SAFE` and the kernel also applies the device file's safe state.
+- `describe()` turns `DESC` into device file sections with every limit marked suggested, so the file stays read-only until a person confirms the file.
 - Discovery only probes ports whose USB vendor id is Arduino, WCH CH340, Silicon Labs CP210x, Espressif, Adafruit or FTDI, and only sends `HELLO`.
 
 ## Quirks
 
-- Many boards reset when the port opens. Use `boot_s` or the first `HELLO` times out.
-- A sketch that registers channels wrongly (`misconfigured()`) answers every `WRITE` and `ACT` with `ERR busy misconfigured`. Reads still work.
-- On an ESP32 the USB CDC port may enumerate under Espressif (303a) or a bridge chip id. Both are probed.
+- Because many boards reset when the port opens, set `boot_s`, or the first `HELLO` times out.
+- A sketch that registers channels wrongly (`misconfigured()`) returns `ERR busy misconfigured` for every `WRITE` and `ACT`, but reads still work.
+- On an ESP32 the USB CDC port may enumerate under Espressif (303a) or a bridge chip id, so discovery probes both.
 
 ## Tests
 

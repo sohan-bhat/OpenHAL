@@ -1,20 +1,20 @@
 # Build a driver
 
-A [Driver](glossary:driver) speaks one protocol. Most devices need only a [Device File](glossary:device-file) for an existing driver. Build a driver when no existing driver speaks your device's protocol. This tutorial builds a driver for a simulated bench lamp and runs the conformance suite on the driver.
+A [Driver](glossary:driver) speaks one protocol, and most devices need only a [Device File](glossary:device-file) for an existing driver, so build a driver only when no existing driver speaks your device's protocol. This tutorial builds a driver for a simulated bench lamp and runs the conformance suite on the driver.
 
 ## The contract
 
 1. A driver implements `connect`, `read` and `_write`, and never overrides `write`, `action`, `safe_state`, `attach` or `_consume`. The base class consumes the kernel's [Grant](glossary:grant), then calls `_write`.
-2. Values arrive checked and in the channel's unit. A driver converts only to what the protocol needs.
+2. Values arrive checked and in the channel's unit, so a driver converts only to what the protocol needs.
 3. `discover` and `identify` send only read-only commands.
-4. A failure raises `DriverError` that says what happened and what to try. A driver never returns a made-up value.
+4. A failure raises a `DriverError` whose message says what happened and what to try, and a driver never returns a made-up value.
 5. Every limit that `describe` proposes is marked `suggested`.
 
 The [driver contract](../../drivers/WRITING-A-DRIVER.md) has the full rules.
 
 ## The driver
 
-The lamp takes a duty byte from 0 to 255. The channel is in percent, so `_write` converts.
+The lamp takes a duty byte from 0 to 255, and because the channel is in percent, `_write` converts the value.
 
 ```python tested file=lamp.py
 from openhal.drivers.base import Driver, DriverError, DriverInfo, Health, Reading
@@ -90,14 +90,14 @@ assert report.ok
 x-lamp: 11 passed, 0 failed, 1 skipped
 ```
 
-The suite sends 160 % and checks that the kernel blocks it before `_write` runs. The skipped check needs a hook that slows the device down. [Conformance](../conformance.md) lists every check.
+The suite sends a brightness of 160 % and checks that the kernel blocks the value before `_write` runs. The skipped check needs a hook that slows the device down, and [Conformance](../conformance.md) lists every check.
 
 ## Add it to the repository
 
-A driver in the repository is a package under `openhal/drivers/<name>/` with the driver, its simulator, a conformance case, a catalog entry, an example device file, tests and a docs page. The suite picks up every case.
+A driver in the repository is a package under `openhal/drivers/<name>/` with the driver, its simulator, a conformance case, a catalog entry, an example device file, tests and a docs page, and the suite picks up every case.
 
 ```sh tested
 $ uv run pytest tests/conformance -q -k mock
 ```
 
-Passing marks a driver tested on simulator. A person running the driver's hardware test plan on a real device marks the driver verified.
+Passing the suite marks a driver tested on simulator, and a person running the driver's hardware test plan on a real device marks the driver verified.

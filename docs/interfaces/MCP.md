@@ -1,6 +1,6 @@
 # MCP server
 
-`openhal mcp` is a stdio MCP server. An agent's MCP client starts the server as a subprocess, and the server forwards every tool call to the hub's local API with an agent token. The server makes no safety decisions. The hub's kernel checks every write and action, and the tool returns the kernel's answer as is.
+`openhal mcp` is a stdio MCP server. An agent's MCP client starts the server as a subprocess, and the server forwards every tool call to the hub's local API with an agent token. The server makes no safety decisions, because the hub's kernel checks every write and action, and the tool returns the kernel's result unchanged.
 
 ## Before you start
 
@@ -12,13 +12,13 @@
 openhal token create --agent --scope control_low --name claude
 ```
 
-The token is printed once. Scopes are `read` (reads only), `control_low` (low hazard devices) and `control_medium` (low and medium hazard devices). High hazard devices never run on an agent's word. Every write to one waits for a person.
+The token is printed once. Scopes are `read` (reads only), `control_low` (low hazard devices) and `control_medium` (low and medium hazard devices). Every write and action on a high hazard device waits for a person, whatever the agent token's scope.
 
-Give each client its own token, so the audit log shows which one did what and you can revoke one without the others.
+Give each client its own token, so the audit log shows which client did what and you can revoke one client's token without the others.
 
 ## Token
 
-The server reads its token from the `OPENHAL_TOKEN` environment variable, or from a file given with `--token-file`. The server never reads `~/.openhal/human.token`, and refuses to run with a human token, because the hub treats a human's command as already confirmed. An agent always needs its own agent token.
+The server reads its token from the `OPENHAL_TOKEN` environment variable, or from a file given with `--token-file`. Because the hub treats a human's command as already confirmed, the server never reads `~/.openhal/human.token` and refuses to run with a human token, so an agent always needs its own agent token.
 
 A token file keeps the token out of client config files that may be synced or shared.
 
@@ -29,7 +29,7 @@ chmod 600 ~/.openhal/claude.token
 
 ## Claude Desktop
 
-Edit `claude_desktop_config.json`. On macOS it is in `~/Library/Application Support/Claude/`, on Windows in `%APPDATA%\Claude\`.
+Edit `claude_desktop_config.json`, which is in `~/Library/Application Support/Claude/` on macOS and in `%APPDATA%\Claude\` on Windows.
 
 ```json
 {
@@ -43,7 +43,7 @@ Edit `claude_desktop_config.json`. On macOS it is in `~/Library/Application Supp
 }
 ```
 
-Claude Desktop does not use your shell's `PATH`. If Claude Desktop can't find `openhal`, put the full path from `which openhal` in `command`. Restart Claude Desktop after editing.
+Because Claude Desktop does not use your shell's `PATH`, put the full path from `which openhal` in `command` when Claude Desktop can't find `openhal`, and restart Claude Desktop after editing the file.
 
 ## Claude Code
 
@@ -51,13 +51,13 @@ Claude Desktop does not use your shell's `PATH`. If Claude Desktop can't find `o
 claude mcp add openhal --scope user -e OPENHAL_TOKEN=ohal_... -- openhal mcp
 ```
 
-Or with a token file.
+You can also pass a token file.
 
 ```sh
 claude mcp add openhal --scope user -- openhal mcp --token-file ~/.openhal/claude.token
 ```
 
-Run `claude mcp list` to check it connects.
+Run `claude mcp list` to check that the OpenHAL server connects.
 
 ## Cursor
 
@@ -86,13 +86,13 @@ Add the server to `~/.cursor/mcp.json` for every project, or `.cursor/mcp.json` 
 
 ## When the hub is not running
 
-On start, `openhal mcp` checks the hub. If nothing answers, it starts `openhald` in the background once (output goes to `~/.openhal/openhald.log`) and waits up to 8 seconds. With `--no-start`, or if the start fails, the server still runs, and every tool answers with an error that says the hub is not running and how to start it. Messages for people go to stderr, never to stdout, which carries the MCP protocol.
+On start, `openhal mcp` checks the hub. If the hub doesn't respond, `openhal mcp` starts `openhald` in the background once (output goes to `~/.openhal/openhald.log`) and waits up to 8 seconds. With `--no-start`, or if the start fails, the server still runs, and every tool returns an error that says the hub is not running and how to start the hub. Because stdout carries the MCP protocol, messages for people go to stderr and never to stdout.
 
 ## Tools
 
 The list and input schemas live in `openhal/mcp/tools.py`. Every tool has a description written for models, typed inputs and typed outputs. Values carry their unit, and blocked decisions carry a stable code, a message and the limit that blocked them.
 
-Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)). `write` takes `value` 60 and `unit` `%`. Action arguments and session limits take `{"value": 2, "unit": "s"}`. A number sent as one string such as `"60 %"` comes back blocked with UNIT_INVALID and the shape to use.
+Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)), so `write` takes `value` 60 and `unit` `%`, and action arguments and session limits take `{"value": 2, "unit": "s"}`. A number sent as one string such as `"60 %"` comes back blocked with UNIT_INVALID and the shape to use.
 
 | Tool | What it does |
 |---|---|
@@ -101,8 +101,8 @@ Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)
 | `describe_device` | Channels with units and limits, actions, interlocks, watchdog, safe state, latest values, notes |
 | `read` | Read one channel now. A camera frame comes back as an image |
 | `read_many` | Read up to 100 channels. Images come without their pixels |
-| `write` | Ask the kernel to set a channel. Returns done, blocked or pending |
-| `action` | Ask the kernel to run an action |
+| `write` | Request a channel change, which the kernel checks. Returns done, blocked or pending |
+| `action` | Request an action, which the kernel checks |
 | `dry_run` | Check one write or action without running it |
 | `plan_check` | Check a list of steps in order without running any |
 | `stop_all` | Emergency stop. Every device goes to its safe state |
@@ -112,7 +112,7 @@ Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)
 | `get_routine` | One routine with source and history |
 | `draft_routine` | Store a routine. Every new routine starts disabled |
 | `run_routine_dry` | Dry run a routine step by step |
-| `enable_routine` | Ask to enable. Refused unless the owner allowed agents to enable low hazard routines |
+| `enable_routine` | Request to enable a routine. Refused unless the owner allowed agents to enable low hazard routines |
 | `disable_routine` | Disable a routine |
 | `get_audit_log` | Audit entries, newest first |
 | `list_drivers` | Installed drivers and bridges |
@@ -134,7 +134,7 @@ Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)
 
 ## What needs a person
 
-A person does these with the human token, in the CLI or the dashboard.
+Only a person with the human token can do the following, in the CLI or the dashboard.
 
 - Approve or reject a request that waits for confirmation (`openhal confirm approve`)
 - Unlock after a stop (`openhal unlock`)
@@ -144,6 +144,6 @@ A person does these with the human token, in the CLI or the dashboard.
 
 ## Device text is data
 
-Text that comes from devices, device files, sketches, manuals and routine sources reaches the model inside `<device-data source="...">` blocks with a line saying the text is data. The hub wraps device notes and routine sources. The MCP server also wraps string readings and driver error messages before returning them. Nothing inside these blocks can change a limit or approve anything, whatever the text says.
+Text that comes from devices, device files, sketches, manuals and routine sources reaches the model inside `<device-data source="...">` blocks with a line saying the text is data. The hub wraps device notes and routine sources, and the MCP server also wraps string readings and driver error messages before returning them. Nothing inside these blocks can change a limit or approve anything, whatever the text says.
 
-A camera frame from `read` is an MCP image block. Before the image comes a short `<device-data>` block that says the image came from a device and is data, since a frame can show text too. The structured result carries the reading with `mimeType`, `bytes`, `width` and `height`, without the pixels. A frame over 2 MB is refused with DRIVER_ERROR and a reason that names the camera settings to lower.
+A camera frame from `read` is an MCP image block. Because a frame can show text too, a short `<device-data>` block that says the image came from a device and is data comes before the image. The structured result carries the reading with `mimeType`, `bytes`, `width` and `height`, without the pixels. A frame over 2 MB is refused with DRIVER_ERROR and a reason that names the camera settings to lower.

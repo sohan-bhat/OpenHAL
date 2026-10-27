@@ -17,6 +17,7 @@ const { driver, entry } = Astro.props as { driver: Driver; entry: Awaited<Return
 const rendered = entry ? await render(entry) : null;
 const Content = rendered?.Content;
 const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+const listed = (items: string[]) => (items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}` : items.join(""));
 const newDocUrl = `${REPOSITORY_URL}/new/${DEFAULT_BRANCH}/docs/drivers?filename=${driver.name}.md`;
 const rows: Array<[string, string]> = [
   ["Tier", TIER_NAMES[driver.tier] ?? String(driver.tier)],
@@ -30,7 +31,7 @@ const rows: Array<[string, string]> = [
 
 <DocShell
   title={driver.name}
-  description={`The ${driver.name} driver. ${driver.protocols.join(", ")}.`}
+  description={`The ${driver.name} driver uses ${listed(driver.protocols)}.`}
   repo={entry ? entry.id : undefined}
   headings={rendered?.headings ?? []}
   sidebar={driversSidebar()}

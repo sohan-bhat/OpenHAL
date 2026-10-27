@@ -1,6 +1,6 @@
 # Versioning
 
-OpenHAL uses two version schemes. Neither follows the software's version.
+OpenHAL uses two version schemes, and neither scheme follows the software's version.
 
 ## Specification versions are dated
 
@@ -15,7 +15,7 @@ The first version is [2026-10-24](2026-10-24/index.md), a draft.
 
 ## The device file format uses semantic versioning
 
-A Device File's `openhal` field names the format version it was written for, such as `"0.1"`. Each dated specification says which format version it defines. 2026-10-24 defines format 0.1.
+A Device File's `openhal` field names the format version it was written for, such as `"0.1"`. Each dated specification states which format version it defines, and 2026-10-24 defines format 0.1.
 
 | Change | Meaning |
 |---|---|

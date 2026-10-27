@@ -11,7 +11,7 @@
 
 <div class="trace log" tabindex="0" aria-label="Message log, newest first">
   {#if exchanges.length === 0}
-    <p class="empty">No messages yet. Send a request to see the hub's answer.</p>
+    <p class="empty">No messages are logged yet, so send a request to see the hub's response.</p>
   {:else}
     <ol class="exchanges">
       {#each exchanges as exchange (exchange.key)}

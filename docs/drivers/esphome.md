@@ -28,9 +28,9 @@ The `esphome` driver talks to ESPHome devices over the native API, the same prot
 | select | write | enum | `select_command` |
 | button | action | no arguments | `button_command` |
 
-Binding. A channel binds to the entity whose object id is the channel name. A name ending in `_brightness`, `_speed` or `_preset` binds to the entity named by the rest. `map: { object_id: pump_seconds, attribute: state }` sets both explicitly. Bindings are checked against the device's entity list on every connect, and a missing entity fails the connect with the list of entities the device has.
+A channel binds to the entity whose object id is the channel name, and a name ending in `_brightness`, `_speed` or `_preset` binds to the entity named by the rest of the name. `map: { object_id: pump_seconds, attribute: state }` sets both explicitly. Bindings are checked against the device's entity list on every connect, and a missing entity fails the connect with the list of entities the device has.
 
-Writes are verified. Native API commands have no acknowledgement, so after each command the driver waits up to `timeout` for the state update that shows the new value. A device that doesn't report it fails the write, and a later read shows what the device really reports. Fan speeds snap to the nearest supported level, and the write's reading is the speed the fan really runs at.
+Because native API commands have no acknowledgement, the driver verifies each write by waiting up to `timeout` after the command for the state update that shows the new value. A device that doesn't report the new value fails the write, and a later read shows what the device really reports. Fan speeds snap to the nearest supported level, and the write's reading is the speed the fan really runs at.
 
 `match.esphome` holds glob patterns for device info fields such as `name` and `model`, checked on connect.
 
@@ -38,7 +38,7 @@ Writes are verified. Native API commands have no acknowledgement, so after each 
 
 1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[esphome] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. Give the node an `api:` block in its YAML. With `encryption: key: ...`, put the same base64 key in an environment variable such as `PLANT_PSK` and set `noise_psk_env`.
-3. Prefer failsafes on the node itself, for example an `on_turn_on` automation that turns a pump off after a delay, or `api: reboot_timeout`. The hub can't see them, so mention them in `safe_state_note`.
+3. Prefer failsafes on the node itself, for example an `on_turn_on` automation that turns a pump off after a delay, or `api: reboot_timeout`. Because the hub can't detect those failsafes, mention them in `safe_state_note`.
 4. Start from `openhal/drivers/esphome/examples/plant-waterer.hal.yaml` or from `describe()`.
 5. Validate with `openhal file validate`, then confirm the limits by hand.
 
@@ -80,7 +80,7 @@ hazard: low
 
 ## Hazard defaults
 
-`low`. Most nodes switch lights, fans, pumps and relays at low voltage. A relay that switches mains to a heater deserves `medium` or `high` in the device file.
+The default hazard is `low`, because most nodes switch lights, fans, pumps and relays at low voltage, but a relay that switches mains to a heater deserves `medium` or `high` in the device file.
 
 ## Sources
 

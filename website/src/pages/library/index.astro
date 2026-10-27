@@ -24,7 +24,7 @@ const channels = (entry: { reads: number; writes: number; actions: number }) =>
   pager={false}
 >
   <div slot="after-title" class="ledes">
-    <p>Device files for specific models, shared under CC0. A hub that finds a known device starts from its file here.</p>
+    <p>The Device Library holds device files for specific models, shared under CC0, and a hub that finds a known device starts from that device's file here.</p>
     <p>A library file loads read-only until a person confirms its limits. <a href="/docs/library/">How the library works</a></p>
   </div>
 
@@ -66,7 +66,7 @@ const channels = (entry: { reads: number; writes: number; actions: number }) =>
               </tbody>
             </table>
           </div>
-          <p class="empty muted" data-empty hidden>No device file matches. Clear the search to see every file.</p>
+          <p class="empty muted" data-empty hidden>No device file matches the search, so clear the search to see every file.</p>
         </>
       ) : (
         <p class="empty">

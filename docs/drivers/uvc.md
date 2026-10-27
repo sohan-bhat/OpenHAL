@@ -15,7 +15,7 @@ The uvc driver captures frames from USB webcams and other cameras the operating 
 uv tool install --compile-bytecode "openhal-hub[uvc] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-The wheel is about 35 MB and bundles OpenCV and its codecs. On Linux, your user needs to be in the `video` group to open `/dev/video*`. On macOS, the terminal or app running the hub asks for camera permission the first time it opens a camera.
+The wheel is about 35 MB and bundles OpenCV and its codecs. On Linux, your user needs to be in the `video` group to open `/dev/video*`. On macOS, macOS prompts for camera permission the first time the terminal or app running the hub opens a camera.
 
 ## Parameters
 
@@ -29,7 +29,7 @@ The wheel is about 35 MB and bundles OpenCV and its codecs. On Linux, your user 
 | `flush_frames` | `1` | Frames grabbed and dropped before each capture, so a read never returns an old buffered frame |
 | `timeout` | `5 s` | Deadline for opening and for each capture |
 
-The requested size and rate are requests. Cameras use the nearest mode they support, and the `width`, `height` and `fps` properties report what the camera chose.
+The requested size and rate are only requests, because cameras use the nearest mode they support, and the `width`, `height` and `fps` properties report the mode the camera uses.
 
 ## Channels
 
@@ -40,7 +40,7 @@ read:
   fps: { unit: Hz, map: { property: fps } }
 ```
 
-Image channels need no map. Number channels need `map: { property: <name> }`. The hub doesn't poll image channels during the snapshot it takes on connect, so a frame is only captured when someone asks for one.
+Image channels need no map, but number channels need `map: { property: <name> }`. The hub doesn't poll image channels during the snapshot it takes on connect, so a frame is only captured when a client requests one.
 
 ## Example
 
@@ -49,20 +49,20 @@ Image channels need no map. Number channels need `map: { property: <name> }`. Th
 ## Errors and health
 
 - A camera that won't open (missing, busy in another app, no permission) raises `DriverError`.
-- A capture that returns no frame raises `DriverError` and marks the camera as failed, which the next heartbeat reports, so the hub reopens it.
+- A capture that returns no frame raises `DriverError` and marks the camera as failed, which the next heartbeat reports, so the hub reopens the camera.
 - No frame within `timeout` raises `TimeoutError`.
-- `health()` grabs one frame and reports the camera as disconnected if it can't.
+- `health()` grabs one frame and reports the camera as disconnected if no frame arrives.
 
 ## Limitations
 
-- No camera controls. Exposure, focus, zoom and pan are left as the camera sets them.
-- No video streams or recording, only single frames on request.
-- `discover()` only works on Linux. On macOS and Windows, cameras are opened by index.
-- Camera indexes can change when cameras are plugged in a different order. On Linux, a `/dev/v4l/by-id/...` path is stable.
+- The driver has no camera controls, so exposure, focus, zoom and pan stay as the camera sets them.
+- The driver captures only single frames on request, with no video streams or recording.
+- `discover()` only works on Linux, so on macOS and Windows cameras are opened by index.
+- Camera indexes can change when cameras are plugged in a different order, but on Linux a `/dev/v4l/by-id/...` path is stable.
 
 ## Hazard default and safe state
 
-The default hazard is low and the driver has no write channels, so `safe_state_support` is `none` and there is nothing to put in a safe state. Frames can show people and private spaces, so point cameras with care and tell people they are there.
+The default hazard is low and the driver has no write channels, so `safe_state_support` is `none` and there is nothing to put in a safe state. Frames can show people and private spaces, so point cameras with care and tell people the cameras are there.
 
 ## Sources
 

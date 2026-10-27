@@ -4,7 +4,7 @@ The modbus driver reads and writes Modbus RTU devices on a serial line (usually 
 
 ## What it supports
 
-- All four tables. Coils and discrete inputs map to bool channels. Holding and input registers map to number, bool and enum channels.
+- All four tables, where coils and discrete inputs map to bool channels and holding and input registers map to number, bool and enum channels.
 - Formats `uint16`, `int16`, `uint32`, `int32` and `float32`, with configurable word order and byte order.
 - Writes to coils (function 5) and holding registers (function 6, or 16 for 32-bit values and for devices that only accept 16).
 - Single bits of a register as read-only bool channels.
@@ -30,7 +30,7 @@ For RTU you need a USB to RS-485 adapter and the bus wired A to A and B to B, wi
 | `parity` | `N` | RTU only. `N`, `E` or `O` |
 | `stopbits` | `1` | RTU only |
 | `bytesize` | `8` | RTU only |
-| `timeout` | `1 s` | How long to wait for each answer |
+| `timeout` | `1 s` | How long to wait for each response |
 | `retries` | `1` | Extra attempts after a timeout |
 | `word_order` | `big` | Default order of the two registers of 32-bit values. `big` sends the high word first |
 | `byte_order` | `big` | Default byte order inside each register. Only a few devices need `little` |
@@ -63,7 +63,7 @@ write:
 
 Writes compute raw = (value - offset) / scale and round integer formats to the nearest whole number. The reading the driver returns shows the value it really sent, so `42.47 %` with `scale: 0.1` is sent as 425 and reported as 42.5 %. Set `step` on the channel to the register's resolution and the kernel rejects values that would be rounded.
 
-Bit channels can't be written, because changing one bit needs a read-modify-write that could race with the device or another master.
+Because changing one bit needs a read-modify-write that could race with the device or another master, bit channels can't be written.
 
 ## Example
 
@@ -71,21 +71,21 @@ Bit channels can't be written, because changing one bit needs a read-modify-writ
 
 ## Errors and health
 
-- No answer within `timeout`, after `retries`, raises `TimeoutError` with a hint about the unit id, wiring, baud rate and parity.
+- No response within `timeout`, after `retries`, raises `TimeoutError` with a hint about the unit id, wiring, baud rate and parity.
 - Modbus exception responses raise `DriverError` naming the exception, for example illegal data address.
 - A NaN float, an enum raw value outside the map, or a value that doesn't fit the register format raises `DriverError`.
-- `health()` reads the first mapped channel, because a TCP socket or a serial port stays open after the device behind it dies. Three failed transactions in a row also report the device as disconnected.
+- Because a TCP socket or a serial port stays open after the device behind it dies, `health()` reads the first mapped channel, and three failed transactions in a row also report the device as disconnected.
 
 ## Limitations
 
-- No discovery. Scanning unit ids would send requests to devices nobody configured.
-- No strings, 64-bit values or file records.
+- Because scanning unit ids would send requests to devices nobody configured, the driver has no discovery.
+- The driver doesn't support strings, 64-bit values or file records.
 - Modbus devices don't describe their registers, so `describe()` only returns the unit id and any identification objects.
-- The driver is the only master it knows about. Don't run it on a bus with another master.
+- The driver doesn't coordinate with other masters, so don't run the driver on a bus with another master.
 
 ## Hazard default and safe state
 
-The default hazard is medium, because Modbus often drives motors, heaters and valves. Raise the hazard to high for drives and anything that can injure. Modbus has no emergency behavior of its own, so `safe_state_support` is `file`, and the hub applies the device file's `safe_state` through ordinary writes, which work only while the device answers. Wire hardware stops for anything dangerous.
+The default hazard is medium, because Modbus often drives motors, heaters and valves. Raise the hazard to high for drives and anything that can injure. Modbus has no emergency behavior of its own, so `safe_state_support` is `file`, and the hub applies the device file's `safe_state` through ordinary writes, which work only while the device responds. Wire hardware stops for anything dangerous.
 
 ## Sources
 

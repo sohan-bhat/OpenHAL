@@ -1,6 +1,6 @@
 # Python library
 
-`openhal.client` is a sync and an async client of the hub's local API v1. Scripts, the CLI and the MCP server all use the client. The client makes no safety decisions. The hub's kernel decides every command, and a blocked command comes back as a `Decision`, not as an exception.
+`openhal.client` is a sync and an async client of the hub's local API v1, and scripts, the CLI and the MCP server all use the client. The client makes no safety decisions, because the hub's kernel checks every command, and a blocked command comes back as a `Decision` rather than as an exception.
 
 ```sh
 uv pip install "openhal-hub @ git+https://github.com/sohan-bhat/OpenHAL"
@@ -19,7 +19,7 @@ with connect() as hub:
     print(reading.value, reading.unit)
 ```
 
-`connect()` asks the hub who you are straight away, so a wrong address or token fails at once with a clear exception. Pass `check=False` to skip that.
+`connect()` calls `/v1/whoami` on the hub straight away, so a wrong address or token fails at once with a clear exception, and `check=False` skips that call.
 
 The async client has the same methods.
 
@@ -44,19 +44,19 @@ asyncio.run(main())
 | `token` | `OPENHAL_TOKEN`, then `$OPENHAL_HOME/human.token` (default `~/.openhal/human.token`) |
 | `home` | `OPENHAL_HOME`, then `~/.openhal` |
 
-`Client(..., use_human_token_file=False)` never falls back to the human token file. Use `use_human_token_file=False` for anything that acts for an agent. The client ignores proxy environment variables, so a token is never sent through a proxy.
+`Client(..., use_human_token_file=False)` never falls back to the human token file, so pass `use_human_token_file=False` for anything that acts for an agent. The client ignores proxy environment variables, so a token is never sent through a proxy.
 
 ## Exceptions
 
-All derive from `openhal.client.OpenHALError`, which has `message`, `status_code` and `detail`.
+All of these exceptions derive from `openhal.client.OpenHALError`, which has `message`, `status_code` and `detail`.
 
 | Exception | When |
 |---|---|
-| `HubNotRunning` | Nothing answers at the hub address. The message says how to start it |
+| `HubNotRunning` | No hub responds at the hub address. The message says how to start the hub |
 | `Unauthorized` | No token, or the hub does not accept it. The message says where the token came from |
 | `NotFound` | Unknown device, channel, request, routine or session |
 | `NotSupported` | The hub is older and has no such route. A subclass of `NotFound` |
-| `Refused` | The hub refused, for example an agent token asking to approve, or a request that is no longer pending |
+| `Refused` | The hub refused, for example an agent token trying to approve, or a request that is no longer pending |
 | `BadRequest` | The hub could not read the request, or a wrong unlock phrase |
 | `HubError` | The hub failed or timed out |
 
@@ -73,7 +73,7 @@ All derive from `openhal.client.OpenHALError`, which has `message`, `status_code
 | `limit` | The limit that blocked it, with its unit |
 | `request_id` | Set when a person has to approve |
 
-`decision.ok` is true for done and allowed. `decision.pending` is true when it waits for a person.
+`decision.ok` is true for done and allowed, and `decision.pending` is true when the request waits for a person.
 
 ```python
 decision = hub.write("printer", "extruder_target", 300, "degC")
@@ -83,7 +83,7 @@ elif decision.pending:
     print("approve with openhal confirm approve", decision.request_id)
 ```
 
-The 300 degC nozzle prints `above_max {'max': 260.0, 'unit': 'degC'}`. A `cancel` of the print is pending, since a person approves each one.
+The request for a nozzle temperature of 300 degC prints `above_max {'max': 260.0, 'unit': 'degC'}`. Because a person approves each cancel, a `cancel` of the print comes back pending.
 
 ## Images
 
@@ -128,7 +128,7 @@ Every method exists on `Client` and, as a coroutine, on `AsyncClient`.
 
 `Write` and `Action` are the kernel's command models, exported from `openhal.client`. A plain dict with `device` and `channel` and `value`, or `device` and `action` and `args`, works too.
 
-`ramp_to` moves a channel to a target in steps that each pass its `max_change_per_s`, waiting `interval_s` before each step, with `margin` of the allowed change per step. The kernel still checks every step, and the ramp stops at the first step the kernel does not accept. `ramp_to` returns every decision. The LED strip from [Add a device](../guide/tutorials/add-a-device.md) allows 40 %/s on `brightness`.
+`ramp_to` moves a channel to a target in steps that each pass its `max_change_per_s`, waiting `interval_s` before each step, with `margin` of the allowed change per step. The kernel still checks every step, the ramp stops at the first step the kernel does not accept, and `ramp_to` returns every decision. The LED strip from [Add a device](../guide/tutorials/add-a-device.md) lets `brightness` change by at most 40 %/s.
 
 ```python
 for decision in hub.ramp_to("led-strip", "brightness", 80, "%"):
@@ -144,7 +144,7 @@ for decision in hub.ramp_to("led-strip", "brightness", 80, "%"):
 | `approve(request_id)` | `POST /v1/confirmations/{id}/approve` (human) |
 | `reject(request_id, reason="")` | `POST /v1/confirmations/{id}/reject` (human) |
 
-The library never prompts. A script with the human token can approve, which is why the human token file is readable by its owner only. The CLI adds the terminal and typed phrase checks of ADR 0012.
+The library never prompts, and because a script with the human token can approve, the human token file is readable by its owner only. The CLI adds the terminal and typed phrase checks of ADR 0012.
 
 ### Audit log
 
@@ -174,7 +174,7 @@ The library never prompts. A script with the human token can approve, which is w
 | `delete_routine(id)` | `DELETE /v1/routines/{id}` (human) |
 | `approve_routine(id, device)` | `POST /v1/routines/{id}/approve` (human) |
 
-`Routine.source` is wrapped in a device-data block for models. `Routine.source_raw` is the plain text.
+`Routine.source` is wrapped in a device-data block for models, and `Routine.source_raw` is the plain text.
 
 ### Driver writer
 
@@ -215,4 +215,4 @@ async with AsyncClient() as hub:
 
 ## Models
 
-Every answer is a pydantic model from `openhal.client.models` that keeps fields it does not know, so a newer hub does not break an older client. Timestamps named `at`, `started_at` and `finished_at` are Unix seconds. The `created_at` and `expires_at` of a confirmation request use the hub's monotonic clock and only mean something relative to each other.
+Every response is a pydantic model from `openhal.client.models` that keeps unknown fields, so a newer hub does not break an older client. Timestamps named `at`, `started_at` and `finished_at` are Unix seconds. The `created_at` and `expires_at` of a confirmation request use the hub's monotonic clock and only mean something relative to each other.
