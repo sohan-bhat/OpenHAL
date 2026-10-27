@@ -38,7 +38,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - No logo. On 2026-10-25 the owner asked for a text wordmark like REA's, so the brand is OpenHAL set tight at weight 800, with the initials OH for icons.
 - The safety red team suite (100 tests) merged, and its four findings RT-01 to RT-04 fixed. docs/SAFETY-REPORT.md.
 - Driver SDK commands (`openhal driver new`, `driver test`, `driver list`).
-- M11. All sixteen planned drivers are built to the Tier 1 standard and pass conformance on simulators (batch 3 grbl, alpaca, indi, ros2, opcua, sila2, pylabrobot, lerobot, and batch 4 onvif, bambu, can, knx, matter, pi-i2c-spi, upnp, zigbee-zwave). 35 drivers in all.
+- M11. All sixteen planned drivers are built to the Tier 1 standard and pass conformance on simulators (batch 3 grbl, alpaca, indi, ros2, opcua, sila2, pylabrobot, lerobot, and batch 4 onvif, bambu, can, knx, matter, pi-i2c-spi, upnp, zigbee-zwave). 34 device drivers in all, plus the mock reference driver.
 - The protocol website and the Inspector, all three design critique rounds, merged. WebKit browser tests could not run on this Mac (every WebKit page load stalls here) and still need a run elsewhere.
 - Full-level conformance checks for actions. openhal-firmware declares full and runs them against the compiled PlantWaterer sketch.
 - Code comments removed from all Python and C++ code.

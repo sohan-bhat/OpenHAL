@@ -67,11 +67,11 @@
   --text-2: #4f5661;
   --accent: #1d5fb4;
 
-  /* Status, light. Only for meaning, always with a word or shape. */
-  --ok: #1e7a44;
+  /* Status, light. Only for meaning, always as its word. */
+  --ok: #3c754f;
   --confirm: #8a5a00;
   --confirm-bg: #fff3cc;
-  --blocked: #b42318;
+  --blocked: #a14034;
   --unverified: #636a75;
 
   /* Syntax theme */
@@ -140,10 +140,10 @@
     --text: #e7eaee;
     --text-2: #a0a7b1;
     --accent: #7db2f0;
-    --ok: #5bc58a;
+    --ok: #72b88e;
     --confirm: #e8b341;
     --confirm-bg: #2b2210;
-    --blocked: #f07068;
+    --blocked: #d57a72;
     --unverified: #8b93a0;
   }
 }
@@ -155,10 +155,10 @@
   --text: #e7eaee;
   --text-2: #a0a7b1;
   --accent: #7db2f0;
-  --ok: #5bc58a;
+  --ok: #72b88e;
   --confirm: #e8b341;
   --confirm-bg: #2b2210;
-  --blocked: #f07068;
+  --blocked: #d57a72;
   --unverified: #8b93a0;
 }
 
