@@ -80,7 +80,7 @@ openhal init
 
 `openhal init` sets up the hub, adds every device the hub finds as a read-only file and prints the setup for Claude Desktop, Claude Code or Cursor. [The install guide](docs/guide/install.md) covers pipx, the background service and Raspberry Pi.
 
-## What it does
+## What OpenHAL does
 
 - **One device file format.** A `.hal.yaml` file says what a device can read and do, with units and limits a person confirmed.
 - **One safety kernel.** Every command is checked for range, rate, interlocks and confirmation before any driver can act.
