@@ -89,6 +89,38 @@ test.describe("the landing story", () => {
     expect(new Set(sizes).size).toBe(1);
   });
 
+  test("keeps every word inside its card", async ({ page }) => {
+    for (const form of [{ width: 1440, height: 900 }, { width: 1200, height: 800 }, { width: 1100, height: 900 }, { width: 768, height: 1024 }, { width: 390, height: 844 }]) {
+      await page.setViewportSize(form);
+      await page.goto("/");
+      await expect(page.locator("[data-story]")).toHaveAttribute("data-ready", "");
+      for (const item of PLACED) {
+        await storyTime(page, item.from + item.length / 2);
+        const spills = await page.evaluate(() => {
+          const out: string[] = [];
+          for (const card of document.querySelectorAll<HTMLElement>(".story-scene .node, .story-scene .story-trace")) {
+            const box = card.getBoundingClientRect();
+            const style = getComputedStyle(card);
+            const left = box.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft) - 1;
+            const right = box.right - parseFloat(style.borderRightWidth) - parseFloat(style.paddingRight) + 1;
+            const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+            for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+              const parent = text.parentElement!;
+              if (!text.textContent!.trim() || parent.closest("[data-in]:not([data-on]), .visually-hidden") || !parent.getClientRects().length) continue;
+              const range = document.createRange();
+              range.selectNodeContents(text);
+              for (const rect of range.getClientRects()) {
+                if (rect.width > 1 && (rect.left < left || rect.right > right)) out.push(`${card.dataset.cam ?? "trace"}: ${text.textContent!.trim()}`);
+              }
+            }
+          }
+          return out;
+        });
+        expect(spills, `${form.width}x${form.height} ${item.id}`).toEqual([]);
+      }
+    }
+  });
+
   test("changes each caption and the state it describes at the same moment", async ({ page }) => {
     await page.goto("/");
     for (const item of COUNTED) {

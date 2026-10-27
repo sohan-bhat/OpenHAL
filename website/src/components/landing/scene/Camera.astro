@@ -17,7 +17,7 @@ const frames = [
 ---
 
 <div class="node webcam" data-cam="camera" {...lit("camera", step)}>
-  <p class="webcam-head"><span class="node-name">Webcam</span> <span class="mono">{facts.camera.id}</span></p>
+  <p class="webcam-head"><span class="node-name">Webcam</span> <span class="mono wide-only">{facts.camera.id}</span><span class="demo compact-only">Demo frame</span></p>
   <div class="frame swap">
     {
       frames.map(({ frame, span, marked }) => (
@@ -33,7 +33,7 @@ const frames = [
       <span {...shown(CAMERA.corner, step)}><span class="seen-who">Seen</span> corner lifting</span>
       <span {...shown(CAMERA.off, step)}><span class="seen-who">Seen</span> print loose</span>
     </p>
-    <p class="demo">Demo frame</p>
+    <p class="demo wide-only">Demo frame</p>
   </div>
 </div>
 

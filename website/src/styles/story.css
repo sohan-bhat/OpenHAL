@@ -383,7 +383,12 @@
   }
 }
 
-@media screen and (max-width: 1023.98px) {
+@media screen and (max-width: 1199.98px) {
+  .story[data-camera] .story-stage {
+    max-width: 600px;
+    margin-inline: auto;
+  }
+
   .story[data-camera] .story-scene {
     grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
     grid-template-areas: "client client" "w1 w1" "hub hub" "w2 w2" "kernel kernel" "w3 w3" "driver driver" "w4 w5" "printer camera" "trace trace";
@@ -397,8 +402,7 @@
 
   .story[data-camera] .story-scene .node-note,
   .story[data-camera] .story-scene .wide-only,
-  .story[data-camera] .story-scene .said-reason,
-  .story[data-camera] .story-scene .webcam-head .mono {
+  .story[data-camera] .story-scene .said-reason {
     display: none;
   }
 
@@ -416,7 +420,6 @@
   .story[data-camera] .story-scene :is([data-cam="hub"], [data-cam="driver"]) .compact-only {
     text-align: right;
   }
-
 
   .story[data-camera] .story-scene .figure {
     font-size: 18px;
@@ -446,7 +449,7 @@
   }
 }
 
-@media screen and (min-width: 1024px) {
+@media screen and (min-width: 1200px) {
   .story[data-camera] .story-stage {
     gap: var(--s-4);
     padding-block: var(--s-2);
@@ -459,7 +462,7 @@
   }
 
   .story[data-camera] .story-scene {
-    grid-template-columns: 182fr 64px 190fr 64px 180fr 64px 170fr 64px 170fr;
+    grid-template-columns: 202fr 64px 190fr 64px 180fr 64px 170fr 64px 150fr;
     grid-template-rows: auto 24px auto;
     grid-template-areas:
       "client w1 hub w2 kernel w3 driver w4 printer"
