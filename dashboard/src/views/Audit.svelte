@@ -210,10 +210,6 @@
     border-left-color: var(--blocked);
   }
 
-  .entry.human.blocked {
-    border-left-color: var(--blocked);
-  }
-
   .key {
     position: absolute;
     width: 1px;

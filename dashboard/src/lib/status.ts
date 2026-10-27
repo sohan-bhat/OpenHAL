@@ -6,12 +6,6 @@ export interface StatusWord {
   detail?: string;
 }
 
-const SHAPED: Tone[] = ["confirm", "blocked", "unverified"];
-
-export function hasShape(tone: Tone): boolean {
-  return SHAPED.includes(tone);
-}
-
 export function verificationStatus(status: string): StatusWord {
   if (status === "verified-on-hardware") return { tone: "ok", label: "verified on hardware" };
   if (status === "tested-reads") return { tone: "unverified", label: "commands unverified", detail: "reads tested" };

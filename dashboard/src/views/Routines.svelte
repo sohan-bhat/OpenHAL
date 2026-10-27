@@ -290,13 +290,7 @@
   }
 
   .result {
-    padding: var(--s-2) var(--s-3);
-    background: var(--surface);
-    border-left: 3px solid var(--ok);
-  }
-
-  .result.blocked {
-    border-left-color: var(--blocked);
+    margin: 0;
   }
 
   .block {

@@ -339,7 +339,7 @@ textarea {
 
 .problem {
   padding: var(--s-2) var(--s-3);
-  border-left: 3px solid var(--blocked);
+  border-radius: var(--radius);
   background: var(--surface);
 }
 

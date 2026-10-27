@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { hasShape, type Tone } from "../lib/status";
+  import type { Tone } from "../lib/status";
 
   let {
     tone,
@@ -8,38 +8,16 @@
   }: { tone: Tone; label: string; compact?: boolean } = $props();
 </script>
 
-<span class="status fade-status {tone}" class:compact class:plain={!hasShape(tone)} data-tone={tone}>
-  {#if hasShape(tone)}
-    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
-      {#if tone === "confirm"}
-        <circle cx="6" cy="6" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5" />
-        <path d="M6 1.25a4.75 4.75 0 0 0 0 9.5z" fill="currentColor" />
-      {:else if tone === "blocked"}
-        <circle cx="6" cy="6" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5" />
-        <path d="M3 6h6" stroke="currentColor" stroke-width="2" />
-      {:else}
-        <circle cx="6" cy="6" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 1.6" />
-      {/if}
-    </svg>
-  {/if}
-  <span class="word">{label}</span>
-</span>
+<span class="status fade-status {tone}" class:compact data-tone={tone}>{label}</span>
 
 <style>
   .status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    width: fit-content;
+    display: inline;
     max-width: 100%;
     font-size: var(--t-label);
     font-weight: 700;
     line-height: 1.2;
     color: var(--text-2);
-  }
-
-  .status svg {
-    flex: none;
   }
 
   .ok {
@@ -56,17 +34,10 @@
 
   .unverified {
     color: var(--unverified);
-    padding: 1px 6px;
-    border: 1px dashed currentColor;
-    border-radius: var(--radius);
     white-space: nowrap;
   }
 
-  .plain {
-    color: var(--text-2);
-  }
-
-  .compact .word {
+  .compact {
     font-weight: 400;
   }
 </style>
