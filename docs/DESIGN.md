@@ -137,6 +137,10 @@ Scale, mobile then desktop. 13/13 legend, 15/15 secondary, 16/17 body with line 
 - Borders are 1 px `--border`, radius at most 6 px, no shadows.
 - Every spec page has anchor links on headings, copy buttons on code, previous and next links, "Edit on GitHub", and the spec version in the URL.
 
+## Information marks
+
+Pages show the one thing a person needs and keep the depth one tap away. A term or control that needs explaining gets a small information mark, a lowercase i in a 16 px circle in `--text-2`, right after it. Tapping or clicking it, or pressing Enter on it, opens a short popover of one to three sentences with an optional "Read more" link into the docs, and Escape or a click outside closes it. It is a real button with an accessible name ("About hazard"), never hover-only, and the popover keeps AA contrast in both themes. Use it instead of a paragraph above the control. At most one per row, and never on every label.
+
 ## Wordmark
 
 - **Wordmark, no logo.** The brand is the name, OpenHAL, set in Atkinson Hyperlegible Next at weight 800 with tracking at -0.06 em, in `--text`. There is no logo shape. Where a square is needed (favicon, app icons) the initials OH are set the same way. Built by tools/readme/build.py into docs/assets/wordmark-{light,dark}.svg, mark-{light,dark}.svg (the initials) and favicon.svg, which the README and the website read. The Inspector sets the same wordmark in its header.
