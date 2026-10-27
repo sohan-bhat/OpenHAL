@@ -64,6 +64,18 @@ export function stepAt(t: number): number {
   return found < 0 ? PLACED.length - 1 : found;
 }
 
+/** Each value a piece takes, with the steps that show it, from one value for every step. */
+export function runs(values: Record<StepId, string>): Array<{ text: string; in: StepId[] }> {
+  const out: Array<{ text: string; in: StepId[] }> = [];
+  for (const item of PLACED) {
+    const text = values[item.id];
+    const found = out.find((entry) => entry.text === text);
+    if (found) found.in.push(item.id);
+    else out.push({ text, in: [item.id] });
+  }
+  return out;
+}
+
 /** The steps given, as the data-in and data-lit attributes list them. */
 export const steps = (ids: readonly StepId[]): string => ids.map((id) => step(id).index).join(" ");
 

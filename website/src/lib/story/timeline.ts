@@ -64,14 +64,6 @@ export const DRIVER = {
   waiting: ["intro", "ask", "hot", "cancel", "end"] as StepId[],
 };
 
-export const PRINTER = {
-  before: ["intro", "ask", "look"] as StepId[],
-  after: span("warm"),
-  printing: span("intro", "loose"),
-  paused: ["pause", "cancel"] as StepId[],
-  cancelled: span("approve"),
-};
-
 export const CAMERA = {
   lifting: span("intro", "hot"),
   loose: span("loose"),

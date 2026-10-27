@@ -40,6 +40,12 @@ export interface KernelView {
   verdict: Verdict;
 }
 
+export interface Reading {
+  name: string;
+  word: boolean;
+  at: Record<StepId, string>;
+}
+
 export const ASKED = "Keep an eye on my print tonight.";
 
 /** The exchanges of docs/demo/scenario.yaml the story tells, by their ids in the record. */
@@ -65,7 +71,7 @@ export const TOLD: Partial<Record<StepId, keyof typeof IDS>> = {
 };
 
 export interface StoryFacts {
-  printer: { id: string; name: string; driver: string };
+  printer: { id: string; name: string; driver: string; readings: Reading[] };
   camera: { id: string; channel: string; driver: string; image: string };
   file: string;
   confirmed: string;
@@ -75,7 +81,7 @@ export interface StoryFacts {
   nozzle: Ask & { channel: string; max: string; refusal: Refusal };
   pause: Ask & { status: string };
   cancel: Ask & { status: string; rule: string };
-  approve: Ask & { device: string; status: string; approved: string; state: string };
+  approve: Ask & { device: string; status: string; approved: string };
   kernel: Record<StepId, KernelView>;
   audit: { counts: string };
 }
@@ -189,12 +195,27 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
   const write = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: String(params(exchange).channel), value: amount(params(exchange).value, params(exchange).unit), note: note(exchange) });
   const act = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: String(params(exchange).action), value: "", note: note(exchange) });
   const read = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: `${params(exchange).device} ${params(exchange).channel}`, value: "", note: note(exchange) });
+  const viewed = exchanges.filter((exchange) => field(exchange, "printer"));
+  const viewAt = (step: StepId): Record<string, any> => {
+    const own = told(step);
+    if (own) return need(field(own, "printer"), `printer view after ${own.id}`);
+    const next = PLACED.slice(PLACED.findIndex((item) => item.id === step)).map((item) => told(item.id)).find(Boolean);
+    return field(next ?? viewed[viewed.length - 1], "printer") ?? {};
+  };
+  const readingAt = (what: string, pick: (view: Record<string, any>) => string | undefined): Record<StepId, string> =>
+    Object.fromEntries(PLACED.map((item) => [item.id, need(pick(viewAt(item.id)), `${what} for the story's ${item.id} step`)])) as Record<StepId, string>;
+  const quantity = (key: string) => (view: Record<string, any>) => (view[key] ? amount(view[key].value, view[key].unit) : undefined);
+  const readings: Reading[] = [
+    { name: "Nozzle", word: false, at: readingAt("the nozzle temperature", quantity("extruder_temp")) },
+    { name: "Bed target", word: false, at: readingAt("the bed target", quantity(bedChannel)) },
+    { name: "State", word: true, at: readingAt("the printer state", (view) => view.state) },
+  ];
   const approved = String(need(field(approve, "kernel")?.approved_by, `approver of ${IDS.approve}`));
   const audit = need((record as Record<string, any>).audit, "audit log");
   const counts = Object.entries(need(audit.counts as Record<string, number>, "audit counts")).map(([key, count]) => `${count} ${key.replaceAll("_", " ")}`);
   const approvedTarget = String(need(approve.result?.target, `target of ${IDS.approve}`));
   return {
-    printer: { id: printer.id, name, driver: printer.driver },
+    printer: { id: printer.id, name, driver: printer.driver, readings },
     camera: { id: webcamDevice.id, channel: String(params(look).channel), driver: webcamDevice.driver, image: imageText(look) },
     file: printer.file,
     confirmed: `confirmed by ${printer.confirmed.by} ${printer.confirmed.at}`,
@@ -217,7 +238,6 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
       note: note(approve),
       status: statusOf(approve),
       approved: `approved by ${named(approved)}`,
-      state: String(need(field(approve, "printer")?.state, `printer state after ${IDS.approve}`)),
     },
     kernel: Object.fromEntries(PLACED.map((item) => [item.id, kernelView(told(item.id), item.id)])) as Record<StepId, KernelView>,
     audit: { counts: counts.join(", ") },
@@ -236,7 +256,7 @@ export function storyLines(facts: StoryFacts): Record<StepId, string> {
     loose: "Later, a webcam frame shows the print has come loose.",
     pause: "The agent pauses the print at once.",
     cancel: "Cancelling can't be undone, so the hub asks you first.",
-    approve: `You approve the ${facts.approve.target}. The kernel rechecks, and the print is ${facts.approve.state}.`,
+    approve: `You approve the ${facts.approve.target}. The kernel rechecks, and the print is ${facts.printer.readings.find((reading) => reading.word)!.at.approve}.`,
     end: "Every command to every device takes this path.",
   };
 }

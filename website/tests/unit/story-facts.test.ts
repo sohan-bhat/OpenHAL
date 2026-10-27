@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { IDS, TOLD, amount, humane, nb, named, readDeviceFile, storyFacts, storyLines, storyTrace } from "../../src/lib/story/facts";
 import { COUNTED, PLACED, STEPS, TOTAL, step, stepAt, type StepId } from "../../src/lib/story/script";
-import { AGENT, CAMERA, DRIVER, FILLS, HUB, PRINTER, TRIPS, WIRES, stations } from "../../src/lib/story/timeline";
+import { AGENT, CAMERA, DRIVER, FILLS, HUB, TRIPS, WIRES, stations } from "../../src/lib/story/timeline";
 import type { Exchange, Scenario } from "../../src/lib/scenario";
 import { SCENARIO_PATH, scenarioFrom } from "../../src/lib/scenario-data.mjs";
 
@@ -30,7 +30,7 @@ describe("the story's steps", () => {
 
   it("show every piece in steps that exist", () => {
     const ids = new Set(STEPS.map((item) => item.id));
-    const lists = [AGENT.person, ...Object.values(AGENT.asks), ...Object.values(AGENT.hears), ...Object.values(HUB), ...Object.values(DRIVER), ...Object.values(PRINTER), ...Object.values(CAMERA), ...Object.values(WIRES), TRIPS.map((trip) => trip.id)];
+    const lists = [AGENT.person, ...Object.values(AGENT.asks), ...Object.values(AGENT.hears), ...Object.values(HUB), ...Object.values(DRIVER), ...Object.values(CAMERA), ...Object.values(WIRES), TRIPS.map((trip) => trip.id)];
     for (const list of lists) for (const id of list) expect(ids.has(id)).toBe(true);
   });
 
@@ -128,7 +128,6 @@ describe("the story's words and numbers", () => {
     expect(`action:${facts.approve.target}`).toBe(approve.result!.target);
     expect(facts.approve.approved).toBe(`approved by ${named(approve.kernel.approved_by)}`);
     expect(facts.approve.note).toBe(approve.before);
-    expect(facts.approve.state).toBe(approve.printer.state);
     const described = record.record.devices!.find((item) => item.id === bed.request.params.device)!;
     expect(facts.file).toBe(described.file);
     expect(facts.printer.driver).toBe(described.driver);
@@ -138,10 +137,17 @@ describe("the story's words and numbers", () => {
     expect(facts.camera.image).toBe(`${look.result!.value.mimeType} ${look.result!.value.width}\u00a0×\u00a0${look.result!.value.height}`);
   });
 
-  it("show the printer's state in the order the record changes it", () => {
-    for (const id of PRINTER.paused) expect(told(record, id).printer.state).toBe("paused");
-    expect(PRINTER.cancelled[0]).toBe("approve");
-    expect(told(record, "approve").printer.state).toBe(facts.approve.state);
+  it("show the printer as the hub saw it after each step's request", () => {
+    const [nozzleRow, bedRow, stateRow] = facts.printer.readings;
+    for (const item of PLACED.filter((entry) => TOLD[entry.id])) {
+      const view = told(record, item.id).printer;
+      expect(nozzleRow.at[item.id]).toBe(amount(view.extruder_temp.value, view.extruder_temp.unit));
+      expect(bedRow.at[item.id]).toBe(amount(view.bed_target.value, view.bed_target.unit));
+      expect(stateRow.at[item.id]).toBe(view.state);
+    }
+    expect(stateRow.at.approve).toBe("cancelled");
+    expect(stateRow.at.end).toBe(stateRow.at.approve);
+    expect(bedRow.at.ask).toBe(bedRow.at.look);
   });
 
   it("show the kernel's checks and grant in the record's words", () => {
@@ -192,6 +198,7 @@ describe("the story's words and numbers", () => {
     const approved = byId(changed, IDS.approve) as Record<string, any>;
     approved.kernel.approved_by = "human:alex";
     approved.printer.state = "standby";
+    approved.printer.extruder_temp.value = 30;
     const counts = (changed.record as Record<string, any>).audit.counts;
     counts.requests = 9;
     (byId(changed, IDS.look) as Record<string, any>).kernel.logged = [41];
@@ -203,8 +210,9 @@ describe("the story's words and numbers", () => {
     expect(storyLines(other).warm).toContain(nb("75 °C"));
     expect(JSON.stringify(storyTrace(other).hot)).toContain(nb("290 °C"));
     expect(other.approve.approved).toBe("approved by alex");
-    expect(other.approve.state).toBe("standby");
+    expect(other.printer.readings[2].at.approve).toBe("standby");
     expect(storyLines(other).approve).toContain("standby");
+    expect(other.printer.readings[0].at.end).toBe("30 °C");
     expect(other.audit.counts).toMatch(/^9 requests/);
     expect(other.kernel.look.checks).toContainEqual({ name: "Audit log", word: "entry 41" });
   });
