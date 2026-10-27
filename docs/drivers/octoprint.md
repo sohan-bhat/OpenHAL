@@ -1,6 +1,6 @@
 # octoprint driver
 
-The `octoprint` driver talks to printers that OctoPrint controls, through OctoPrint's REST API. It reads temperatures, the printer state and job progress, sets heater targets and the part fan, and runs homing and job control. Channel names match the moonraker driver where the API allows it.
+The `octoprint` driver talks to printers that OctoPrint controls, through OctoPrint's REST API. The driver reads temperatures, the printer state and job progress, sets heater targets and the part fan, and runs homing and job control. Channel names match the moonraker driver where the API allows it.
 
 | | |
 |---|---|
@@ -40,7 +40,7 @@ Temperatures are degC on the wire and converted to the channel unit both ways.
 
 1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[octoprint] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. In OctoPrint, open Settings, Application Keys, and create a key for OpenHAL. A user with the Control permission is enough.
-3. Export it, for example `export OCTOPRINT_API_KEY=...`, in the environment the hub runs in.
+3. Export the key, for example `export OCTOPRINT_API_KEY=...`, in the environment the hub runs in.
 4. Start from `openhal/drivers/octoprint/examples/prusa-mk3s-octopi.hal.yaml`.
 5. Validate with `openhal file validate`, then confirm the limits by hand.
 
@@ -80,8 +80,8 @@ hazard: medium
 
 - File upload, selection and starting prints are not exposed.
 - The fan speed can't be read from the printer, and a fan change made on the printer's own display isn't seen.
-- Proposals from `describe()` use placeholder heater maxima (250, 100 and 60 degC), because printer profiles don't record them. Lower them to your printer's real limits.
-- The driver can't see the printer's firmware thermal protection. It remains the last line of defense.
+- Proposals from `describe()` use placeholder heater maxima (250, 100 and 60 degC), because printer profiles don't record the maxima. Lower the maxima to your printer's real limits.
+- The driver can't see the printer's firmware thermal protection, which remains the last line of defense.
 
 ## Hazard defaults
 

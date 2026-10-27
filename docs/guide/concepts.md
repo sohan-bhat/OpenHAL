@@ -1,10 +1,10 @@
 # Concepts
 
-OpenHAL is an open protocol between agents and hardware. This page defines its parts.
+OpenHAL is an open protocol between agents and hardware. This page defines the protocol's parts.
 
 ## Hub
 
-The [Hub](glossary:hub) is one process on your computer or a Raspberry Pi. It owns every device. Clients talk to it with JSON-RPC 2.0 messages over a WebSocket or stdio, or through the MCP server, which maps onto the same methods.
+The [Hub](glossary:hub) is one process on your computer or a Raspberry Pi. The hub owns every device. Clients talk to the hub with JSON-RPC 2.0 messages over a WebSocket or stdio, or through the MCP server, which maps onto the same methods.
 
 ## Device files
 
@@ -13,15 +13,15 @@ Each device has a [Device File](glossary:device-file) that lists what can be rea
 ```yaml tested include=examples/print-babysitter/printer.hal.yaml
 ```
 
-A file is read-only until a person confirms its limits. Tools may suggest limits. They can never confirm them.
+A file is read-only until a person confirms its limits. A limit a tool suggests stays a suggestion until a person confirms the limit.
 
 ## Safety kernel
 
-The [Safety Kernel](glossary:safety-kernel) decides every command, from every client, in a fixed order. It checks units, range, step, rate of change, interlocks, the token's scope and confirmation, and stops at the first failure. It is plain code with no model in it. A value it can't trust counts as unsafe.
+The [Safety Kernel](glossary:safety-kernel) decides every command, from every client, in a fixed order. The kernel checks units, range, step, rate of change, interlocks, the token's scope and confirmation, and stops at the first failure. The kernel is plain code with no model in it. A value the kernel can't trust counts as unsafe.
 
 ## Drivers and grants
 
-A [Driver](glossary:driver) speaks one protocol, such as SCPI or Moonraker. It can change hardware only with a [Grant](glossary:grant), a single-use permission the kernel issues for one exact command.
+A [Driver](glossary:driver) speaks one protocol, such as SCPI or Moonraker. A driver changes hardware only with a [Grant](glossary:grant), a single-use permission the kernel issues for one exact command.
 
 ## Errors
 
@@ -48,4 +48,4 @@ Hubs and drivers declare a [Conformance Level](glossary:conformance-level). Core
 
 ## What OpenHAL doesn't do
 
-It can't make firmware obey, and it doesn't replace e-stops, enclosures or interlocks wired in hardware.
+OpenHAL leaves firmware in charge of each device and doesn't replace e-stops, enclosures or interlocks wired in hardware.

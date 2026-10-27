@@ -1,10 +1,10 @@
 # Build a driver
 
-A [Driver](glossary:driver) speaks one protocol. Most devices need only a [Device File](glossary:device-file) for an existing driver. Build one when none speaks your device's protocol. This tutorial builds one for a simulated bench lamp and runs the conformance suite on it.
+A [Driver](glossary:driver) speaks one protocol. Most devices need only a [Device File](glossary:device-file) for an existing driver. Build a driver when no existing driver speaks your device's protocol. This tutorial builds a driver for a simulated bench lamp and runs the conformance suite on the driver.
 
 ## The contract
 
-1. A driver implements `connect`, `read` and `_write`. It never overrides `write`, `action`, `safe_state`, `attach` or `_consume`. The base class consumes the kernel's [Grant](glossary:grant), then calls `_write`.
+1. A driver implements `connect`, `read` and `_write`, and never overrides `write`, `action`, `safe_state`, `attach` or `_consume`. The base class consumes the kernel's [Grant](glossary:grant), then calls `_write`.
 2. Values arrive checked and in the channel's unit. A driver converts only to what the protocol needs.
 3. `discover` and `identify` send only read-only commands.
 4. A failure raises `DriverError` that says what happened and what to try. A driver never returns a made-up value.
@@ -100,4 +100,4 @@ A driver in the repository is a package under `openhal/drivers/<name>/` with the
 $ uv run pytest tests/conformance -q -k mock
 ```
 
-Passing marks a driver tested on simulator. It counts as verified only after a person runs its hardware test plan on a real device.
+Passing marks a driver tested on simulator. A person running the driver's hardware test plan on a real device marks the driver verified.

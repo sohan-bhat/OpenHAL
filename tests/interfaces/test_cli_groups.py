@@ -79,7 +79,7 @@ def test_routine_commands(split: SyncHub, tmp_path: Path, terminal: list[str], m
     terminal.append("approve")
     code, out = run("routine", "approve", "keep-cool", "--device", "heater")
     assert code == 0, out
-    assert "voids it" in out
+    assert "voids the approval" in out
     code, out = run("routine", "show", "keep-cool", "--json")
     assert json.loads(out)["id"] == "keep-cool"
     code, out = run("routine", "delete", "keep-cool", "--yes")

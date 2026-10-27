@@ -1,6 +1,6 @@
 # Hardware test plan, pi-i2c-spi driver
 
-This plan checks the pi-i2c-spi driver on a Raspberry Pi with a TMP102 breakout on I2C, and optionally an MCP3008 on SPI. It uses the example files. Any register-mapped chip works the same way.
+This plan checks the pi-i2c-spi driver on a Raspberry Pi with a TMP102 breakout on I2C, and optionally an MCP3008 on SPI. The plan uses the example files. Any register-mapped chip works the same way.
 
 Run every step on the Pi from the repository checkout. [README.md](README.md) has the setup and rules every plan shares. Wire with the Pi powered off.
 
@@ -15,7 +15,7 @@ Run every step on the Pi from the repository checkout. [README.md](README.md) ha
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does. `set` waits one second first, because the kernel measures the first change's rate from the moment the device connected.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|set CHANNEL VALUE|action NAME [ARG=VALUE ...]|stop"""
@@ -124,7 +124,7 @@ Expected. `potentiometer` follows the knob from about `0.0 V` to `3.3 V`. Unused
 
 Power the Pi off, disconnect the TMP102's SDA wire, power on and run step 4 again.
 
-Expected. `DriverError` saying nothing acknowledged at `i2c-1 address 0x48`, with the i2cdetect hint. Power off, reconnect the wire, power on and run step 4. It reads normally.
+Expected. `DriverError` saying nothing acknowledged at `i2c-1 address 0x48`, with the i2cdetect hint. Power off, reconnect the wire, power on and run step 4. The device reads normally.
 
 ## Steps that change the device
 
@@ -136,7 +136,7 @@ Read the file and decide the limits are right. Then confirm them yourself.
 uv run openhal file confirm my-tmp102.hal.yaml
 ```
 
-It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-tmp102.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-tmp102.hal.yaml` then says `writable`.
 
 ### 8. The smallest safe change
 

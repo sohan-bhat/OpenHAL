@@ -1,6 +1,6 @@
 # Hardware test plan for the moonraker driver
 
-This plan checks the Moonraker driver on a real Klipper printer. It starts with read-only checks and ends with the smallest safe writes. Stay next to the printer for every write step. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the Moonraker driver on a real Klipper printer. The plan starts with read-only checks and ends with the smallest safe writes. Stay next to the printer for every write step. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -11,7 +11,7 @@ This plan checks the Moonraker driver on a real Klipper printer. It starts with 
 
 ## The read-only probe
 
-Save this as `probe.py`. It connects, identifies the printer, prints the driver's proposal and reads every channel. It holds no kernel grant, so it can't change the printer. With `transport: websocket` connecting also subscribes to the objects the file uses, which changes nothing on the printer.
+Save this as `probe.py`. The probe connects, identifies the printer, prints the driver's proposal and reads every channel. The probe holds no kernel grant, so the probe can't change the printer. With `transport: websocket` connecting also subscribes to the objects the file uses, which changes nothing on the printer.
 
 ```python
 import asyncio, json, sys
@@ -76,7 +76,7 @@ read fan_speed 0.0 percent
 health Health(connected=True, detail='voron', ...)
 ```
 
-Temperatures match Mainsail or Fluidd. Run it once with `transport: http` and once with `transport: websocket`. Paste both outputs into the report.
+Temperatures match Mainsail or Fluidd. Run the probe once with `transport: http` and once with `transport: websocket`. Paste both outputs into the report.
 
 ## Step 4. Network loss (read-only)
 
@@ -126,7 +126,7 @@ Expected. Mainsail shows a bed target of 35. After `openhal stop` the target is 
 
 ## Step 8. Klipper's own limit is reported (optional)
 
-Do this step only when the bed's `max_temp` in printer.cfg is below the file's limit (110 in the example). Look it up first, for example 100. Then ask for a value between the two, such as 105.
+Do this step only when the bed's `max_temp` in printer.cfg is below the file's limit (110 in the example). Look up the bed's `max_temp` first, for example 100. Then ask for a value between the two, such as 105.
 
 ```
 uv run openhal write voron.bed_target "105 degC"

@@ -1,6 +1,6 @@
 # alpaca driver
 
-The `alpaca` driver talks to astronomy devices through ASCOM Alpaca, the REST form of ASCOM. It covers telescope mounts, focusers, cameras, switches and power boxes, and domes, and finds Alpaca servers with the Alpaca UDP discovery broadcast.
+The `alpaca` driver talks to astronomy devices through ASCOM Alpaca, the REST form of ASCOM. The driver covers telescope mounts, focusers, cameras, switches and power boxes, and domes, and finds Alpaca servers with the Alpaca UDP discovery broadcast.
 
 | | |
 |---|---|
@@ -60,7 +60,7 @@ Telescopes and domes get AbortSlew, focusers Halt and cameras AbortExposure, on 
 ## Setup
 
 1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[alpaca] @ git+https://github.com/sohan-bhat/OpenHAL"`.
-2. Start the Alpaca server. That is ASCOM Remote for ASCOM drivers on Windows, or the device's own server.
+2. Start the Alpaca server, which is ASCOM Remote for ASCOM drivers on Windows, or the device's own server.
 3. Start from `openhal/drivers/alpaca/examples/eq-mount.hal.yaml`, set the host, port and device number, and set limits for your site.
 4. Run `openhal file validate`, then confirm the limits by hand.
 

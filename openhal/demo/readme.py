@@ -2,9 +2,10 @@
 
     uv run python -m openhal.demo.readme
 
-Rewrites the text between `<!-- trace:start -->` and `<!-- trace:end -->`, and between
-`<!-- outcome:start -->` and `<!-- outcome:end -->`, in every page listed in PAGES.
-tests/docs/test_scenario_docs.py fails when a page differs from what this would write.
+Rewrites the text between `<!-- trace:start -->` and `<!-- trace:end -->`, between
+`<!-- outcome:start -->` and `<!-- outcome:end -->`, and between `<!-- audit:start -->` and
+`<!-- audit:end -->`, in every page listed in PAGES. A page leaves out the blocks it has no
+markers for. tests/docs/test_scenario_docs.py fails when a page differs from what this would write.
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ def blocks(record: dict[str, Any]) -> dict[str, str]:
     return {
         "trace": "```\n" + trace.text(record) + "```",
         "outcome": trace.outcome(record),
+        "audit": "```\n" + "\n".join(record["audit"]["lines"]) + "\n```\n\n" + trace.counts(record) + ".",
     }
 
 

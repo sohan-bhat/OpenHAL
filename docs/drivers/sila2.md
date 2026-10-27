@@ -39,7 +39,7 @@ Every channel and action names its SiLA feature in a `map`. The client loads eac
 
 ## Safe state
 
-SiLA has no general stop command, and the core features have none either, so the driver has no native safe state. Give the device file a `safe_state` with the device's own stop commands and safe setpoints. They run in order on every stop.
+SiLA has no general stop command, and the core features have none either, so the driver has no native safe state. Give the device file a `safe_state` with the device's own stop commands and safe setpoints. The safe state's steps run in order on every stop.
 
 ## Discovery
 

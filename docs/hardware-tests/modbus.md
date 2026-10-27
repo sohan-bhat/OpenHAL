@@ -14,7 +14,7 @@ Run every step from the repository checkout. [README.md](README.md) has the setu
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|write CHANNEL VALUE|stop"""
@@ -69,13 +69,13 @@ asyncio.run(main(*sys.argv[1:]))
 
 ### 1. The bus answers
 
-Find the adapter (`ls /dev/ttyUSB*` on Linux, `ls /dev/cu.usbserial*` on macOS), then read the voltage register with mbpoll. This is function 4, a read.
+Find the adapter (`ls /dev/ttyUSB*` on Linux, `ls /dev/cu.usbserial*` on macOS), then read the voltage register with mbpoll, which uses function 4, a read.
 
 ```sh
 mbpoll -m rtu -b 2400 -P none -a 1 -t 3:float -0 -r 0 -c 1 -1 /dev/ttyUSB0
 ```
 
-Expected. One line such as `[0]: 231.4`. If it times out, check the wiring, baud rate, parity and unit id before going on.
+Expected. One line such as `[0]: 231.4`. If mbpoll times out, check the wiring, baud rate, parity and unit id before going on.
 
 ### 2. The device file validates
 
@@ -105,7 +105,7 @@ Expected. `voltage` matching mbpoll from step 1 and the meter's display, a `freq
 
 Unplug the A and B wires from the meter, then run step 4 again.
 
-Expected. A `TimeoutError` that says the device didn't answer and suggests checking the unit id, wiring, baud rate and parity, after about 2 seconds. Reconnect the wires and run step 4 again. It reads normally.
+Expected. A `TimeoutError` that says the device didn't answer and suggests checking the unit id, wiring, baud rate and parity, after about 2 seconds. Reconnect the wires and run step 4 again. The device reads normally.
 
 ## Write steps
 
@@ -121,7 +121,7 @@ safe_state: { relay_1: false }
 hazard: low
 ```
 
-Run step 4 with `my-relay.hal.yaml` first. It should print `relay_1 = False` (or `True` if it was on).
+Run step 4 with `my-relay.hal.yaml` first. The script should print `relay_1 = False` (or `True` if the relay was on).
 
 ### 6. Confirm the limits
 
@@ -131,7 +131,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-relay.hal.yaml
 ```
 
-It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-relay.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-relay.hal.yaml` then says `writable`.
 
 ### 7. The smallest safe write
 

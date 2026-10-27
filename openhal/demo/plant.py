@@ -1,8 +1,8 @@
 """The Arduino plant waterer (examples/plant-waterer/), the example `openhal demo --full` runs.
 
-It is the lowest hazard example, so it also runs the driver writer tutorial, the first hardware
-test and the sample `openhal init` installs. The simulated board runs `SPEED` times faster than
-real time, so a 20 s watering takes half a second.
+The plant waterer is the lowest hazard example, so the plant waterer also runs the driver writer
+tutorial, the first hardware test and the sample `openhal init` installs. The simulated board runs
+`SPEED` times faster than real time, so a 20 s watering takes half a second.
 """
 
 from __future__ import annotations

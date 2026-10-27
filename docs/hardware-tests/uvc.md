@@ -13,7 +13,7 @@ Run every step from the repository checkout. [README.md](README.md) has the setu
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|write CHANNEL VALUE|stop"""
@@ -119,13 +119,13 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-Expected. A line such as `142311 bytes 1280.0 720.0`, and `frame.jpg` shows what the camera sees right now, not an older frame. Run it twice while moving something in view to check.
+Expected. A line such as `142311 bytes 1280.0 720.0`, and `frame.jpg` shows what the camera sees right now, not an older frame. Run the command twice while moving something in view to check.
 
 ### 5. Unplug handling
 
 Run `uv run python hwtest.py my-camera.hal.yaml read` to see `health Health(connected=True, ...)`. Then unplug the camera and run it again.
 
-Expected. A `DriverError` saying the camera could not be opened. Plug it back in and the command works again. If the camera came back under a different index or device number, use a `/dev/v4l/by-id/` path on Linux.
+Expected. A `DriverError` saying the camera could not be opened. Plug the camera back in and the command works again. If the camera came back under a different index or device number, use a `/dev/v4l/by-id/` path on Linux.
 
 ## If something fails
 

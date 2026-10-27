@@ -1,6 +1,6 @@
 # moonraker driver
 
-The `moonraker` driver talks to Klipper printers through Moonraker, the API server behind Mainsail and Fluidd. It reads printer objects (heaters, sensors, fans, print state, toolhead), sets heater targets and fan speeds with Klipper G-code, and runs homing and print control.
+The `moonraker` driver talks to Klipper printers through Moonraker, the API server behind Mainsail and Fluidd. The driver reads printer objects (heaters, sensors, fans, print state, toolhead), sets heater targets and fan speeds with Klipper G-code, and runs homing and print control.
 
 | | |
 |---|---|

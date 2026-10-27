@@ -26,7 +26,7 @@ hazard: low
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|write CHANNEL VALUE|stop"""
@@ -109,7 +109,7 @@ Expected. `board` is your Pi model and `pin_factory` is `auto` (connecting picks
 uv run python hwtest.py my-gpio.hal.yaml read
 ```
 
-Run it once with the button released and once while holding it. Expected. `button = False`, then `button = True`, and `led = False` both times, because connecting starts the LED output inactive. `pinctrl get 27` shows `hi` released and `lo` pressed.
+Run the command once with the button released and once while holding the button. Expected. `button = False`, then `button = True`, and `led = False` both times, because connecting starts the LED output inactive. `pinctrl get 27` shows `hi` released and `lo` pressed.
 
 ### 5. The stop button helper
 
@@ -146,7 +146,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-gpio.hal.yaml
 ```
 
-It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-gpio.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-gpio.hal.yaml` then says `writable`.
 
 ### 7. The smallest safe write
 

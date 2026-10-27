@@ -80,7 +80,7 @@ def approve(
     request_id: str = typer.Argument(..., help="The request id."),
     phrase: str = typer.Option(None, "--phrase", help="Only when confirm.require_tty is false."),
 ) -> None:
-    """Approve a request. The kernel checks it again against the current state before it runs."""
+    """Approve a request. The kernel checks the request again against the current state before the command runs."""
     with hub() as client:
         request = client.confirmation(request_id)
         _print_request(request)

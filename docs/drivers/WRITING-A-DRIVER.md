@@ -55,11 +55,11 @@ Rules.
 4. **Discovery and identification send only documented read-only commands**, with short timeouts, and never open a port another process holds.
 5. **`read` returns values in the channel's declared unit**, with `Reading.unit` set for numeric channels.
 6. **Errors raise `DriverError`** with a message that says what happened and what to try next. Timeouts may raise `TimeoutError`. Never swallow an error and return a fake value.
-7. **`describe()`** maps whatever the protocol exposes (SCPI queries, Modbus registers, GATT characteristics, Home Assistant entities, ROS topics, OPC UA nodes, Moonraker objects) into device file sections. It returns a mapping with any of `device`, `match`, `read`, `write`, `actions` and `notes`. Every limit it proposes is marked `suggested: true`. Limits are never confirmed by a driver.
+7. **`describe()`** maps whatever the protocol exposes (SCPI queries, Modbus registers, GATT characteristics, Home Assistant entities, ROS topics, OPC UA nodes, Moonraker objects) into device file sections. `describe()` returns a mapping with any of `device`, `match`, `read`, `write`, `actions` and `notes`. Every limit `describe()` proposes is marked `suggested: true`. Limits are never confirmed by a driver.
 8. **Safe state.** Set `DriverInfo.safe_state_support` to `"native"` if the protocol has its own emergency behavior (GRBL feed hold, outputs off), implement `_safe_state`, and say in the docs what it does. If the protocol can't guarantee a safe state, say so in the docs page and in the example device file's `safe_state_note`.
 9. **Bridges** (Home Assistant, ESPHome, ROS 2) expose only the entities the user selected in the device file, and the device file's limits apply even when the bridged system has its own.
 10. **No secrets in device files.** Parameters that need a secret take an environment variable name (`token_env: HA_TOKEN`).
-11. **Optional dependencies** go in a `pyproject.toml` extra named after the driver. Import them inside `driver.py`, never in `__init__.py`.
+11. **Optional dependencies** go in a `pyproject.toml` extra named after the driver. Import the optional dependencies inside `driver.py`, never in `__init__.py`.
 
 ## Tests
 
@@ -95,7 +95,7 @@ Rules.
 
 ## Tutorial
 
-The scaffold is a complete driver of about 80 lines that talks to an in-memory simulator. It passes the conformance suite before you change anything. You then replace the simulator transport with the real protocol, one method at a time, and keep the suite passing.
+The scaffold is a complete driver of about 80 lines that talks to an in-memory simulator, and the scaffold passes the conformance suite before you change anything. You then replace the simulator transport with the real protocol, one method at a time, and keep the suite passing.
 
 1. **Scaffold it** from an OpenHAL checkout.
 
@@ -103,7 +103,7 @@ The scaffold is a complete driver of about 80 lines that talks to an in-memory s
    uv run openhal driver new acme-pump --title "Acme pump"
    ```
 
-   This writes `openhal/drivers/x_acme_pump/` (driver, simulator, conformance case, catalog entry and an example device file), `tests/drivers/x_acme_pump/`, `docs/drivers/x-acme-pump.md` and `docs/hardware-tests/x-acme-pump.md`. New drivers are named `x-...` and marked experimental.
+   The command creates `openhal/drivers/x_acme_pump/` (driver, simulator, conformance case, catalog entry and an example device file), `tests/drivers/x_acme_pump/`, `docs/drivers/x-acme-pump.md` and `docs/hardware-tests/x-acme-pump.md`. New drivers are named `x-...` and marked experimental.
 
 2. **Run the conformance suite.**
 

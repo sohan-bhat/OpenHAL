@@ -1,6 +1,6 @@
 # mqtt driver
 
-The mqtt driver reads devices that publish their state on MQTT topics and controls devices that take commands on topics, through a broker such as Mosquitto. It uses paho-mqtt and MQTT 3.1.1. Each channel's map names the state topic, the command topic and how the payload is written, so Tasmota, Zigbee2MQTT, ESPHome, Shelly and homemade boards all work without device-specific code.
+The mqtt driver reads devices that publish their state on MQTT topics and controls devices that take commands on topics, through a broker such as Mosquitto. The driver uses paho-mqtt and MQTT 3.1.1. Each channel's map names the state topic, the command topic and how the payload is written, so Tasmota, Zigbee2MQTT, ESPHome, Shelly and homemade boards all work without device-specific code.
 
 ## What it supports
 
@@ -72,7 +72,7 @@ A write channel without a `state` topic reads back the last value the driver sen
 
 - MQTT only pushes. The driver subscribes to every state topic and keeps the newest message per topic, and a read returns it with the time it arrived. A topic that has had no message since connecting reads as no value (`None`), which the kernel treats as unknown.
 - Commands are never queued. A write while the broker is down fails, and paho's automatic reconnect is off so nothing is replayed later on a new connection. The hub's heartbeat reconnects with a fresh client.
-- A QoS 1 command waits for the broker's PUBACK. Without it the write fails with `TimeoutError` and the driver drops the connection, so the broker can't deliver the command late. A PUBACK proves the broker has the message, not that the device acted. Watch the state topic for that.
+- A QoS 1 command waits for the broker's PUBACK. Without the PUBACK the write fails with `TimeoutError` and the driver drops the connection, so the broker can't deliver the command late. A PUBACK proves the broker has the message, not that the device acted. Watch the state topic for that.
 
 ## Example
 

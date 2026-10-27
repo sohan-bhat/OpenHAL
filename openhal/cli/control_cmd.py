@@ -67,7 +67,9 @@ def _command(client: Client, target: str, rest: list[str]) -> dict[str, Any]:
         types = {arg: str(spec.get("type", "number")) for arg, spec in view.actions[name].args.items()}
         return {"kind": "action", "device": device, "action": name, "args": parse_pairs(rest, types)}
     known = sorted([*view.write, *view.actions])
-    raise ValueError(f"{device} has no control channel or action {name!r}. It has {', '.join(known) or 'none'}.")
+    raise ValueError(
+        f"{device} has no control channel or action {name!r}. {device} offers {', '.join(known) or 'none'}."
+    )
 
 
 def register(app: typer.Typer) -> None:
@@ -120,7 +122,9 @@ def register(app: typer.Typer) -> None:
         with hub() as client:
             view = client.device(device)
             if name not in view.actions:
-                raise ValueError(f"{device} has no action {name!r}. It has {', '.join(view.actions) or 'none'}.")
+                raise ValueError(
+                    f"{device} has no action {name!r}. {device} offers {', '.join(view.actions) or 'none'}."
+                )
             types = {arg: str(spec.get("type", "number")) for arg, spec in view.actions[name].args.items()}
             decision = client.action(device, name, parse_pairs(args or [], types))
         print_json(decision) if as_json else print_decision(decision)

@@ -1,6 +1,6 @@
 # Launch drafts
 
-Drafts only. Nothing on this page has been posted, and only the owner posts. Every claim comes from the repository on 2026-10-25. Check each one again on the day.
+Drafts only. Nothing on this page has been posted, and the owner posts each draft. Every claim comes from the repository on 2026-10-25. Check each claim again on the day.
 
 ## Before any post
 
@@ -20,19 +20,19 @@ Drafts only. Nothing on this page has been posted, and only the owner posts. Eve
 
 **Text.**
 
-> OpenHAL is an open protocol and a local hub that sit between an AI agent and real devices. Every command goes through a safety kernel that checks it against limits a person confirmed. Only then does the driver get a single-use grant to act.
+> OpenHAL is an open protocol and a local hub that sit between an AI agent and real devices. Every command goes through a safety kernel that checks the command against limits a person confirmed, and a command that passes gives the driver a single-use grant to act.
 >
-> The demo is an agent keeping an eye on a long 3D print, against a simulated Klipper printer and its camera. It needs only git and uv.
+> The demo is an agent keeping an eye on a long 3D print, against a simulated Klipper printer and its camera. The demo needs only git and uv.
 >
 >     git clone https://github.com/sohan-bhat/OpenHAL
 >     cd OpenHAL
 >     uv run openhal demo
 >
-> You'll see the agent read camera frames and warm the bed from 60 °C to 70 °C. The hub refuses its 300 °C nozzle at the 260 °C limit, and when the print comes loose the agent pauses it and asks to cancel, which waits for a person.
+> You'll see the agent read camera frames and warm the bed from 60 °C to 70 °C. The hub refuses the agent's 300 °C nozzle at the 260 °C limit. When the print comes loose the agent pauses the print and asks to cancel, the owner approves the cancel, and the printer's state becomes cancelled.
 >
-> How it works.
+> How OpenHAL works.
 >
-> - Each device has a .hal.yaml file with its readings, controls, units and limits. It loads read-only until a person confirms the limits, and nothing an agent sends can confirm them.
+> - Each device has a .hal.yaml file with the device's readings, controls, units and limits. The file loads read-only until a person confirms the limits, and nothing an agent sends counts as a confirmation.
 > - The kernel checks range, rate of change, interlocks, watchdog budgets and confirmation in a fixed order, with no model in the loop. A stale or unknown reading blocks the command.
 > - One stop puts every device in its safe state and refuses everything until a person runs openhal unlock.
 > - Every decision goes into a hash-chained audit log.
@@ -49,7 +49,7 @@ Drafts only. Nothing on this page has been posted, and only the owner posts. Eve
 The demo shows the hub refusing a command, so someone will post "I'm sorry Dave, I'm afraid I can't do that" in the first ten minutes. The plan is to take it well and turn it toward the design.
 
 1. Never make the joke first. Not in a title, a post, the README, the site or an image. DESIGN.md bans 2001 references in the design.
-2. Answer it once per thread, briefly, then answer the next technical question.
+2. Answer the joke once per thread, briefly, then answer the next technical question.
 3. Never use the red eye, "Daisy" or an ominous voice, even in a reply.
 4. If the name keeps pulling threads away from the protocol, that is input for NEEDS_HUMAN.md item 1, which lists rename options.
 
@@ -57,7 +57,7 @@ Prepared replies.
 
 | Comment | Reply |
 |---|---|
-| "I'm sorry Dave, I'm afraid I can't do that." | Fair. This one tells you why. The error names the limit, the file and who confirmed it, and openhal stop always works. |
+| "I'm sorry Dave, I'm afraid I can't do that." | Fair. OpenHAL tells you why. The error names the limit, the file and who confirmed it, and openhal stop always works. |
 | "Why call it HAL?" | Hardware agent layer, the layer between agents and hardware. It nods to the old embedded term hardware abstraction layer, as in STM32 HAL or Android HAL. We knew about the other HAL when we picked it. |
 | "Open the pod bay doors." | There's no pod bay door driver yet. If there were, the doors would stay read-only until a person confirmed their limits. |
 | "What could possibly go wrong?" | A lot, which is why the kernel fails closed, unknown readings block commands and an agent can never lift a stop. docs/SAFETY.md also lists what it doesn't guarantee. |
@@ -103,11 +103,11 @@ Prepared replies.
 
 **Body.**
 
-> I've been building OpenHAL, an open protocol and local hub between AI agents and hardware. It has drivers for Marlin over USB, for OctoPrint, for Klipper through Moonraker, and for Bambu Lab printers on the LAN in Developer Mode, which never contacts Bambu Cloud.
+> I've been building OpenHAL, an open protocol and local hub between AI agents and hardware. OpenHAL has drivers for Marlin over USB, for OctoPrint, for Klipper through Moonraker, and for Bambu Lab printers on the LAN in Developer Mode, which never contacts Bambu Cloud.
 >
 > Each printer gets a device file with its limits. The Ender-3 V2 example caps the hotend at 240 °C and the bed at 90 °C, limits how fast targets can rise, needs your confirmation for any hotend target and for homing, and refuses to home while an SD print runs. A stop sets every heater target and the part fan to 0. The file stays read-only until you confirm it yourself.
 >
-> Everything is tested on simulators, including a Marlin simulator that checks line numbers and checksums over a real pseudo-terminal. It has not touched a real printer yet. The hardware test plans start read-only, then try the part fan, then a 35 °C bed target, and homing is optional.
+> Everything is tested on simulators, including a Marlin simulator that checks line numbers and checksums over a real pseudo-terminal. OpenHAL has not touched a real printer yet. The hardware test plans start read-only, then try the part fan, then a 35 °C bed target, and homing is optional.
 >
 > If you'd run docs/hardware-tests/marlin.md or octoprint.md on a printer you know well, I'd be grateful for the report, especially anything that surprised you.
 >
@@ -119,11 +119,11 @@ Prepared replies.
 
 **Body.**
 
-> OpenHAL is an open hub between AI agents and hardware. Its moonraker driver speaks Moonraker's JSON-RPC over HTTP and WebSocket, reads printer objects, and can draft a device file from what Moonraker reports, with every limit marked suggested until you confirm it.
+> OpenHAL is an open hub between AI agents and hardware. The moonraker driver speaks Moonraker's JSON-RPC over HTTP and WebSocket, reads printer objects, and can draft a device file from what Moonraker reports, with every limit marked suggested until you confirm it.
 >
-> Klipper's own limits still apply. The device file adds its own, such as a 110 °C bed cap on the Voron 2.4 example, a rate limit on heater targets, confirmation for the hotend and for homing, and no homing while printing. Whichever limit is lower wins, and a refusal names the limit and who confirmed it. The API key comes from an environment variable, never from the file.
+> Klipper's own limits still apply. The device file adds limits of its own, such as a 110 °C bed cap on the Voron 2.4 example, a rate limit on heater targets, confirmation for the hotend and for homing, and no homing while printing. Whichever limit is lower wins, and a refusal names the limit and who confirmed it. The API key comes from an environment variable, never from the file.
 >
-> It's tested against a Moonraker simulator with a real local WebSocket server. It hasn't run against a real Klipper install yet. docs/hardware-tests/moonraker.md is read-only for the first four steps, then sets the part fan to 20 % and the bed to 35 °C.
+> The driver is tested against a Moonraker simulator with a real local WebSocket server, and hasn't run against a real Klipper install yet. docs/hardware-tests/moonraker.md is read-only for the first four steps, then sets the part fan to 20 % and the bed to 35 °C.
 >
 > Reports from Voron, RatRig, K1 or Sovol owners would help most.
 >
@@ -155,16 +155,16 @@ Prepared replies.
 
 **Body.**
 
-> OpenHAL is an open hub that sits between AI agents and hardware and checks every command against limits you confirmed. It runs on a Pi or a laptop.
+> OpenHAL is an open hub that sits between AI agents and hardware and checks every command against limits you confirmed. The hub runs on a Pi or a laptop.
 >
 > - rpi-gpio drives relays and LEDs and reads buttons, reed switches and limit switches through gpiozero.
 > - rpi-camera captures stills through picamera2 and never changes the camera.
 > - pi-i2c-spi reads and sets chips such as the TMP102, MCP3008 and MCP4921.
-> - A helper in rpi-gpio watches a push button on a GPIO input and calls the hub's stop, which puts every device in its safe state until a person lifts it. It doesn't replace an e-stop that cuts power.
+> - A helper in rpi-gpio watches a push button on a GPIO input and calls the hub's stop, which puts every device in its safe state until a person lifts the stop. The button doesn't replace an e-stop that cuts power.
 >
 > One detail I'd like checked on real boards. When the hub exits, gpiozero releases the pins, and an active-low relay board without a pull-up can switch on. The docs say to fit a pull resistor so a released pin means off.
 >
-> It's tested against gpiozero's mock pin factory and fakes of picamera2, smbus2 and spidev. It hasn't run on a real Pi yet. If you have a Pi 4 or 5 with an LED and a button, docs/hardware-tests/rpi-gpio.md is the plan.
+> The Pi drivers are tested against gpiozero's mock pin factory and fakes of picamera2, smbus2 and spidev, and haven't run on a real Pi yet. If you have a Pi 4 or 5 with an LED and a button, docs/hardware-tests/rpi-gpio.md is the plan.
 >
 > https://github.com/sohan-bhat/OpenHAL
 
@@ -174,13 +174,13 @@ Prepared replies.
 
 **Body.**
 
-> I know how that title sounds, so here is what it does and doesn't do.
+> I know how that title sounds, so here is what OpenHAL does and doesn't do.
 >
-> OpenHAL is an open hub between AI agents and hardware. Its alpaca driver covers ASCOM Alpaca mounts, focusers, cameras, power boxes and domes, and its indi driver covers INDI mounts, focusers and cameras. In the example files every slew waits for a person each time, and a slew needs the mount unparked, tracking and not already slewing. A stop aborts slews, halts focusers and aborts exposures, and the examples turn tracking off as well. Nothing parks the mount unless your file says so.
+> OpenHAL is an open hub between AI agents and hardware. The alpaca driver covers ASCOM Alpaca mounts, focusers, cameras, power boxes and domes, and the indi driver covers INDI mounts, focusers and cameras. In the example files every slew waits for a person each time, and a slew needs the mount unparked, tracking and not already slewing. A stop aborts slews, halts focusers and aborts exposures, and the examples turn tracking off as well. Nothing parks the mount unless your file says so.
 >
 > Both drivers are tested against an Alpaca server simulator and an INDI server simulator speaking the XML protocol. Before real gear, the most useful report would be a run against ASCOM's Alpaca simulators or INDI's telescope simulator. After that, the hardware plans try abort, tracking on and off, and one short slew of a few degrees.
 >
-> It isn't meant to run a night unattended. It's meant to let an assistant read the mount and the focuser and propose a slew you approve.
+> OpenHAL lets an assistant read the mount and the focuser and propose a slew you approve, while you stay with the telescope.
 >
 > https://github.com/sohan-bhat/OpenHAL
 
@@ -190,11 +190,11 @@ Prepared replies.
 
 **Body.**
 
-> OpenHAL is an open hub between AI agents and hardware. Its midi driver uses mido and python-rtmidi to read knobs, faders and pads, and to send notes and control changes that light pad LEDs, move motorised faders and set synth parameters.
+> OpenHAL is an open hub between AI agents and hardware. The midi driver uses mido and python-rtmidi to read knobs, faders and pads, and to send notes and control changes that light pad LEDs, move motorised faders and set synth parameters.
 >
 > Each control is a channel with a range and an optional rate limit, so an agent can sweep a filter but can't jump the volume to full. A stop sends the values your file names as safe. Everything is logged, so you can see what the agent asked for and when.
 >
-> It's tested against a fake mido backend with a simulated pad controller. It hasn't run against a real controller yet. The example is an Akai LPD8, and docs/hardware-tests/midi.md lights one pad and then stops.
+> The driver is tested against a fake mido backend with a simulated pad controller, and hasn't run against a real controller yet. The example is an Akai LPD8, and docs/hardware-tests/midi.md lights one pad and then stops.
 >
 > If you try it with something more interesting than pads, I'd like to hear what the device file looked like.
 >
@@ -206,16 +206,16 @@ Prepared replies.
 
 **Body.**
 
-> I'm building OpenHAL, an open protocol and local hub between AI agents and instruments. Anthropic's Model Hardware Standard covers similar ground but is invite-only. OpenHAL isn't affiliated with it and plans to stay compatible once it has a public spec.
+> I'm building OpenHAL, an open protocol and local hub between AI agents and instruments. Anthropic's Model Hardware Standard covers similar ground but is invite-only. OpenHAL isn't affiliated with MHS and plans to stay compatible once MHS has a public spec.
 >
 > Drivers cover SCPI bench instruments through PyVISA, SiLA 2 devices, OPC UA servers including LADS, and liquid handlers through PyLabRobot (Hamilton STAR and STARlet, Tecan Freedom EVO, Opentrons OT-2).
 >
-> - A liquid handler is high hazard, so every action waits for a person each time, and no agent token can approve it.
+> - A liquid handler is high hazard, so every action waits for a person each time, and approving an action takes the human token.
 > - Volumes, temperatures and speeds are checked against limits a person confirmed, with units converted before the comparison.
 > - A stop cancels running operations and moves nothing, because any move on a deck can spill or crash a tip.
 > - Every request, refusal and approval goes into a hash-chained audit log.
 >
-> It's tested against PyLabRobot's chatterbox backend, the sila2 package's own server, an asyncua server and pyvisa-sim. It doesn't replace your SOPs.
+> The drivers are tested against PyLabRobot's chatterbox backend, the sila2 package's own server, an asyncua server and pyvisa-sim. OpenHAL doesn't replace your SOPs.
 >
 > The smallest useful test is docs/hardware-tests/scpi.md on a bench supply, which sets 1 V at 10 mA with nothing connected.
 >

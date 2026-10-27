@@ -12,9 +12,9 @@ Today 34 drivers pass the conformance suite on simulators.
 
 ## 2. Next drivers
 
-Every driver in `drivers/planned.json` and the coverage plan ([COVERAGE.md](drivers/COVERAGE.md)) is built. What remains for them is hardware verification.
+Every driver in `drivers/planned.json` and the coverage plan ([COVERAGE.md](drivers/COVERAGE.md)) is built. What remains for those drivers is hardware verification.
 
-These are proposed next. Each speaks a protocol no current driver covers, and each serves makers, teaching labs or small labs.
+The drivers below are proposed next. Each speaks a protocol no current driver covers, and each serves makers, teaching labs or small labs.
 
 | Driver | Protocol | Covers | Hazard default |
 |---|---|---|---|
@@ -27,11 +27,11 @@ These are proposed next. Each speaks a protocol no current driver covers, and ea
 | `mavlink` | MAVLink 2 through pymavlink | ArduPilot and PX4 rovers, boats and drones | high |
 | `ur-dashboard` | Universal Robots Dashboard Server and RTDE | UR collaborative arms | high |
 
-Many devices need only a device file on an existing driver. WLED and Shelly devices fit the `http` driver, and Philips Hue fits `matter` or `homeassistant`. Those go to the device library, not into new drivers.
+Many devices need only a device file on an existing driver. WLED and Shelly devices fit the `http` driver, and Philips Hue fits `matter` or `homeassistant`. Those devices go to the device library, not into new drivers.
 
 ## 3. Windows support
 
-The hub runs on macOS and Linux, and CI runs on Ubuntu. These parts stop it on Windows.
+The hub runs on macOS and Linux, and CI runs on Ubuntu. The parts below stop the hub on Windows.
 
 - `openhal/hub/locks.py` locks device ports with `fcntl`, which Windows lacks.
 - `openhal/cli/_tty.py` reads typed phrases from `/dev/tty`. Windows needs the console device `CONIN$`.
@@ -65,7 +65,7 @@ The starter library ships in the repository under `library/` and inside the whee
 
 ## 6. Vendor app protocol learning
 
-Some devices have an interface but no description, and only the vendor's app knows the commands. The idea from the research is to record the app's traffic to a device the person owns and draft a device file from it. This needs a legal review before any code is written. The Bambu Lab terms note in docs/drivers/bambu.md shows why.
+Some devices have an interface but no description, and only the vendor's app knows the commands. The idea from the research is to record the app's traffic to a device the person owns and draft a device file from it. The idea needs a legal review before any code is written. The Bambu Lab terms note in docs/drivers/bambu.md shows why.
 
 - Passive capture only, on the person's own device and network.
 - Never break encryption, get around authentication or impersonate vendor software or a vendor cloud.

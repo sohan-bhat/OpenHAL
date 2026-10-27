@@ -1,6 +1,6 @@
 # Hardware test plan for the firmata driver
 
-This plan checks the Firmata driver on a real board. It starts with read-only checks and ends with the smallest safe writes. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the Firmata driver on a real board. The plan starts with read-only checks and ends with the smallest safe writes. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -11,7 +11,7 @@ This plan checks the Firmata driver on a real board. It starts with read-only ch
 
 ## The read-only probe
 
-Save this as `probe.py`. It connects, identifies the firmware, prints the driver's proposal for the board and reads every channel. It holds no kernel grant, so it can't write anything. Connecting does set the read pins to input mode and turns on reporting, which drives nothing.
+Save this as `probe.py`. The probe connects, identifies the firmware, prints the driver's proposal for the board and reads every channel. The probe holds no kernel grant, so the probe can't write anything. Connecting does set the read pins to input mode and turns on reporting, which drives nothing.
 
 ```python
 import asyncio, json, sys

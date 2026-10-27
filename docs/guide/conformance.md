@@ -1,8 +1,8 @@
 # Conformance suite
 
-Every driver in the repository passes the same battery of checks before it ships. The suite runs the driver inside a real kernel, against its own mock or simulator, and watches the point where the driver talks to the protocol. That is how it proves a blocked command never reaches the device.
+Every driver in the repository passes the same battery of checks before it ships. The suite runs the driver inside a real kernel, against its own mock or simulator, and watches the point where the driver talks to the protocol. Watching that point is how the suite proves a blocked command never reaches the device.
 
-## What it checks
+## What the suite checks
 
 The suite tests the driver's declared [Conformance Level](glossary:conformance-level) and nothing above it. Checks above that level are skipped, and the report names the reason.
 
@@ -32,14 +32,14 @@ The suite runs as part of the normal tests. Every driver package with a `conform
 $ uv run pytest tests/conformance -q
 ```
 
-`openhal driver test` runs it for one driver and prints each check. The mock driver declares Control, so the three Full checks are skipped.
+`openhal driver test` runs the suite for one driver and prints each check. The mock driver declares Control, so the three Full checks are skipped.
 
 ```sh tested
 $ uv run openhal driver test mock
 12 passed, 3 skipped, 0 failed
 ```
 
-You can also run it from Python against one driver's case and read the report.
+You can also run the suite from Python against one driver's case and read the report.
 
 ```python tested
 import asyncio
@@ -56,7 +56,7 @@ assert report.ok
 
 ## Add a case for your driver
 
-A driver supplies one `ConformanceCase` in `openhal/drivers/<name>/conformance.py`. It holds a confirmed device file, a factory that builds the driver against its simulator, and optional hooks that break the connection or slow the device down, so the disconnect and timeout checks mean something. This case runs the openhal-firmware driver against the simulated plant waterer.
+A driver supplies one `ConformanceCase` in `openhal/drivers/<name>/conformance.py`. The case holds a confirmed device file, a factory that builds the driver against its simulator, and optional hooks that break the connection or slow the device down, so the disconnect and timeout checks mean something. This case runs the openhal-firmware driver against the simulated plant waterer.
 
 ```python tested
 from openhal.conformance import ConformanceCase
@@ -107,4 +107,4 @@ The plant waterer has no control channel, so the four checks that need one are s
 
 ## Passing is not verified
 
-Conformance runs against a simulator. A driver that passes is marked implemented in the catalog. It becomes verified only after a person runs its hardware test plan on a real device and files a report.
+Conformance runs against a simulator. A driver that passes is marked implemented in the catalog, and is marked verified once a person runs the driver's hardware test plan on a real device and files a report.

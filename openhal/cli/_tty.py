@@ -1,4 +1,4 @@
-"""Typed confirmation phrases for commands only a person may run (ADR 0012).
+"""Typed confirmation phrases for the commands that need a person (ADR 0012).
 
 With `confirm.require_tty: true` (the default), these commands need an interactive terminal and
 read the phrase from the terminal itself, not from standard input. A program that runs shell

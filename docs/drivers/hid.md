@@ -1,6 +1,6 @@
 # hid driver
 
-The hid driver reads input reports from USB HID devices and sends output and feature reports to them, through hidapi. It suits macropads, knobs, foot switches, status lights and homemade HID gadgets whose report layout is documented. `describe()` reads the device's report descriptor and proposes channels from it.
+The hid driver reads input reports from USB HID devices and sends output and feature reports to them, through hidapi. The driver suits macropads, knobs, foot switches, status lights and homemade HID gadgets whose report layout is documented. `describe()` reads the device's report descriptor and proposes channels from it.
 
 ## What it supports
 

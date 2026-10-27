@@ -1,6 +1,6 @@
 # 3D print babysitter
 
-The canonical OpenHAL example. Someone starts a long print on a Klipper printer and asks an agent to keep an eye on it. The agent watches the printer's camera, judges what is going wrong and acts. The hub's safety kernel decides every command, inside limits a person confirmed. A timer or an IoT rule can't do this job, since it takes looking at the print.
+The canonical OpenHAL example. Someone starts a long print on a Klipper printer and asks an agent to keep an eye on the print. The agent watches the printer's camera, judges what is going wrong and acts. The hub's safety kernel decides every command, inside limits a person confirmed.
 
 ## What the hub sees
 
@@ -22,7 +22,7 @@ A person confirms these before the hub accepts any command. The files here were 
 - The nozzle target stays at or below 260 °C and the bed target at or below 110 °C.
 - The nozzle target changes by at most 50 °C per second, and the bed target by at most 20 °C per second.
 - Pause needs a running print, and resume needs a paused one.
-- Cancelling can't be undone, so every cancel waits for a person to approve it.
+- Cancelling can't be undone, so every cancel waits for a person's approval.
 - Heating is refused while the printer reports an error.
 - The safe state turns both heaters off.
 - If the hub loses the printer, the print keeps running and Klipper's own heater checks stay on.
@@ -38,19 +38,21 @@ A person confirms these before the hub accepts any command. The files here were 
 5. pauses the print, which is done straight away,
 6. and asks to cancel, which waits for a person.
 
+The owner then approves the cancel with the human token. The kernel checks the cancel again and grants the cancel, the driver sends the cancel to the printer, and the printer's state becomes cancelled. The hub's audit log holds 6 requests, 1 refused and 1 confirmed by a person.
+
 [docs/demo/scenario.yaml](../../docs/demo/scenario.yaml) records what the hub answered.
 
 ## Demo frames
 
-The simulated camera shows two demo frames. They are line drawings, not photos. [openhal/demo/frames.py](../../openhal/demo/frames.py) draws them.
+The simulated camera shows two demo frames, line drawings that [openhal/demo/frames.py](../../openhal/demo/frames.py) draws.
 
 | First frame | Later frame |
 |---|---|
-| ![A line drawing of a print on the bed with one corner lifting off it](frames/first-layer.jpg) | ![A line drawing of the print knocked over and filament piling up under the nozzle](frames/come-loose.jpg) |
+| ![A line drawing of a print on the bed with one corner lifting off the bed](frames/first-layer.jpg) | ![A line drawing of the print knocked over and filament piling up under the nozzle](frames/come-loose.jpg) |
 
 ## Files
 
-| File | What it is |
+| File | Purpose |
 |---|---|
 | `printer.hal.yaml` | The printer, a Klipper printer reached through Moonraker |
 | `printer-cam.hal.yaml` | A USB camera on the printer's host, served by crowsnest and read through the http driver |

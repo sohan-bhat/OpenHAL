@@ -1,6 +1,6 @@
 # Hardware test plan for the octoprint driver
 
-This plan checks the OctoPrint driver against a real OctoPrint server with a printer attached. It starts with read-only checks and ends with the smallest safe writes. Stay next to the printer for every write step. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the OctoPrint driver against a real OctoPrint server with a printer attached. The plan starts with read-only checks and ends with the smallest safe writes. Stay next to the printer for every write step. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -10,7 +10,7 @@ This plan checks the OctoPrint driver against a real OctoPrint server with a pri
 
 ## The read-only probe
 
-Save this as `probe.py`. It connects, identifies the server, prints the driver's proposal and reads every channel. It holds no kernel grant, so it can't change the printer.
+Save this as `probe.py`. The probe connects, identifies the server, prints the driver's proposal and reads every channel. The probe holds no kernel grant, so the probe can't change the printer.
 
 ```python
 import asyncio, json, sys
