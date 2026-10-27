@@ -136,6 +136,7 @@
 }
 
 .story .fill {
+  --t: 0;
   --p: clamp(0, (var(--t) - var(--at)) / var(--d), 1);
   --gone: clamp(0, (var(--t) - var(--out) + var(--f)) / var(--f), 1);
 }
@@ -405,10 +406,6 @@
     flex-direction: column;
     pointer-events: none;
     user-select: none;
-  }
-
-  .story[data-camera]:not([data-ready]) .story-scene {
-    visibility: hidden;
   }
 
   .story[data-camera] .story-list {

@@ -1,4 +1,5 @@
-const KEY = "openhal:smooth-scroll";
+/** Where this browser remembers the Smooth scrolling choice. */
+export const KEY = "openhal:smooth-scroll";
 
 function stored(): string | null {
   try {

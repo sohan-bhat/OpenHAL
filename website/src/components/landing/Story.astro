@@ -1,6 +1,6 @@
 ---
 import { storyFacts, storyLines, storyTrace } from "../../lib/story/facts";
-import { CAMERA, COUNTED, TOTAL, shown, type StepId } from "../../lib/story/script";
+import { CAMERA, COUNTED, TOTAL, shown, step as placed, type StepId } from "../../lib/story/script";
 import "../../styles/story.css";
 import Camera from "./scene/Camera.astro";
 import Client from "./scene/Client.astro";
@@ -9,12 +9,14 @@ import Kernel from "./scene/Kernel.astro";
 import Printer from "./scene/Printer.astro";
 import Scene from "./scene/Scene.astro";
 import Trace from "./scene/Trace.astro";
+import { KEY } from "./smooth-switch";
 
 interface Props {
   after: string;
 }
 
 const { after } = Astro.props;
+const first = placed("intro").index;
 const facts = storyFacts();
 const lines = storyLines(facts);
 const trace = storyTrace(facts);
@@ -30,6 +32,19 @@ const snaps: Partial<Record<StepId, typeof Client>> = {
 };
 const camera = `(() => {
   const story = document.currentScript.previousElementSibling;
+  const toggle = story.querySelector("[data-smooth]");
+  if (toggle) {
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let stored = null;
+    try {
+      stored = localStorage.getItem(${JSON.stringify(KEY)});
+    } catch {}
+    toggle.setAttribute("aria-checked", String(!reduce && stored !== "off"));
+    toggle.disabled = reduce;
+    toggle.removeAttribute("data-wait");
+    toggle.removeAttribute("tabindex");
+    toggle.removeAttribute("aria-hidden");
+  }
   if (!matchMedia(${JSON.stringify(CAMERA)}).matches) return;
   story.setAttribute("data-camera", "");
   const stage = story.querySelector(".story-stage");
@@ -45,7 +60,7 @@ const camera = `(() => {
       <div class="story-band">
         <div class="story-meta">
           <p class="story-count" aria-hidden="true" data-pagefind-ignore="all">
-            <span {...shown(["intro"])}>{COUNTED.length} steps</span>
+            <span {...shown(["intro"], first)}>{COUNTED.length} steps</span>
             {COUNTED.map((item, index) => <span {...shown([item.id])}>{index + 1} / {COUNTED.length}</span>)}
           </p>
           <a class="story-skip" href={`#${after}`}>Skip the demo</a>
@@ -55,14 +70,14 @@ const camera = `(() => {
           </button>
         </div>
         <div class="story-heads">
-          <h2 id="story-title" class="story-title" {...shown(["intro"])}>{lines.intro}</h2>
+          <h2 id="story-title" class="story-title" {...shown(["intro"], first)}>{lines.intro}</h2>
           <div class="story-notes" aria-hidden="true" data-pagefind-ignore="all">
             {COUNTED.map((item) => <p class="story-note" {...shown([item.id])}>{lines[item.id]}</p>)}
           </div>
         </div>
       </div>
       <div data-pagefind-ignore="all">
-        <Scene facts={facts} />
+        <Scene facts={facts} step={first} />
       </div>
     </div>
     <div class="story-runway" style={`height: ${TOTAL}vh`} aria-hidden="true"></div>

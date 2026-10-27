@@ -12,9 +12,10 @@ import Wire from "./Wire.astro";
 
 interface Props {
   facts: StoryFacts;
+  step?: number;
 }
 
-const { facts } = Astro.props;
+const { facts, step } = Astro.props;
 const leg = (command: string) => [
   { text: command, in: WIRES.command },
   { text: "read", in: WIRES.read },
@@ -22,16 +23,16 @@ const leg = (command: string) => [
 ---
 
 <div class="story-scene" aria-hidden="true">
-  <Client facts={facts} />
-  <Wire wire={1} labels={[]} />
-  <Hub facts={facts} />
-  <Wire wire={2} labels={leg("check")} />
-  <Kernel facts={facts} />
-  <Wire wire={3} labels={leg("grant")} />
-  <Driver facts={facts} />
-  <Wire wire={4} labels={[{ text: "command", in: WIRES.command }]} />
-  <Printer facts={facts} />
-  <Wire wire={5} labels={[{ text: facts.camera.driver, in: [...WIRES.command, ...WIRES.read] }]} />
-  <Camera facts={facts} />
-  <Trace facts={facts} />
+  <Client facts={facts} step={step} />
+  <Wire wire={1} labels={[]} step={step} />
+  <Hub facts={facts} step={step} />
+  <Wire wire={2} labels={leg("check")} step={step} />
+  <Kernel facts={facts} step={step} />
+  <Wire wire={3} labels={leg("grant")} step={step} />
+  <Driver facts={facts} step={step} />
+  <Wire wire={4} labels={[{ text: "command", in: WIRES.command }]} step={step} />
+  <Printer facts={facts} step={step} />
+  <Wire wire={5} labels={[{ text: facts.camera.driver, in: [...WIRES.command, ...WIRES.read] }]} step={step} />
+  <Camera facts={facts} step={step} />
+  <Trace facts={facts} step={step} />
 </div>
