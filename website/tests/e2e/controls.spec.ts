@@ -50,6 +50,7 @@ test.describe("site chrome", () => {
     await page.locator(".desktop-nav").getByRole("link", { name: "Device Library", exact: true }).click();
     await expect(page).toHaveURL(/\/library\/$/);
     expect(await turn()).toBe("forward");
+    await page.waitForTimeout(500);
     await page.locator(".desktop-nav").getByRole("link", { name: "Specification", exact: true }).click();
     await expect(page).toHaveURL(/\/spec\//);
     expect(await turn()).toBe("backward");
