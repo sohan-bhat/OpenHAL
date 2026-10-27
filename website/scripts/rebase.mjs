@@ -32,7 +32,7 @@ export function rebase(text) {
     })
     .replace(new RegExp(`url\\((["']?)/(?!/)${notBase}`, "g"), `url($1${base}/`)
     .replace(new RegExp(`(["'\`])/_astro/`, "g"), `$1${base}/_astro/`)
-    .replace(new RegExp(`"(src|start_url|scope)":\\s*"/(?!/)${notBase}`, "g"), `"$1": "${base}/`)
+    .replace(new RegExp(`"(src|start_url|scope|href_matches)":\\s*"/(?!/)${notBase}`, "g"), `"$1": "${base}/`)
     .replace(new RegExp(`${host.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/${notBase}`, "g"), `${host}${base}/`);
 }
 

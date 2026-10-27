@@ -22,6 +22,11 @@ const fullTitle = bare ? title : `${title} | ${PRODUCT_NAME}`;
 const canonical = new URL(canonicalPath ?? Astro.url.pathname, Astro.site);
 const image = new URL(ogPath(Astro.url.pathname), Astro.site);
 const indexed = search && !noindex && canonical.pathname === new URL(Astro.url.pathname, Astro.site).pathname;
+const away = "[download], [target='_blank'], [rel~='external'], a[href^='#'], a[href*='/pagefind/'], a[href*='/captures/'], a[href*='/og/']";
+const speculation = JSON.stringify({
+  prerender: [{ source: "document", where: { and: [{ href_matches: "/*" }, { not: { selector_matches: `${away}, a[href*='/spec/playground/']` } }] }, eagerness: "moderate" }],
+  prefetch: [{ source: "document", where: { and: [{ href_matches: "/*" }, { not: { selector_matches: away } }] }, eagerness: "moderate" }],
+});
 ---
 
 <!doctype html>
@@ -103,6 +108,7 @@ const indexed = search && !noindex && canonical.pathname === new URL(Astro.url.p
       })();
     </script>
     <link rel="preload" href={atkinson} as="font" type="font/woff2" crossorigin />
+    <script type="speculationrules" is:inline set:html={speculation} />
     <meta property="og:type" content={type} />
     <meta property="og:site_name" content={PRODUCT_NAME} />
     <meta property="og:title" content={title} />
@@ -123,6 +129,8 @@ const indexed = search && !noindex && canonical.pathname === new URL(Astro.url.p
     </main>
     <Footer />
     <script>
+      if (!HTMLScriptElement.supports?.("speculationrules")) void import("../lib/prefetch-intent").then(({ prefetchOnIntent }) => prefetchOnIntent());
+
       function commandsOf(figure: HTMLElement, text: string): string {
         if (figure.dataset.language !== "sh" || !/^\$ /m.test(text)) return text;
         return text
