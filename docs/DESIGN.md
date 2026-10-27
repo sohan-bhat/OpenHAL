@@ -177,6 +177,8 @@ Six patterns, nothing else.
 5. The nav highlight. The blue highlight behind the current top-level item slides to the item a person clicks, as one shape moving between positions, about 240 ms with an ease out. It never bounces or stretches.
 6. The page transition. A page change moves the content sideways in the direction of travel through the nav, with the header and its highlight held still. Going to an item further right, the old content slides 24 px left and fades as the new content wipes in from the right with a clip-path, and going left mirrors it. About 260 ms in all. It is not a fade, a rise or a scale, so it stays distinct from the owner's other sites. Built on cross-document view transitions, so a browser without them changes pages instantly. The owner asked for patterns 5 and 6 on 2026-10-26.
 
+Smooth scrolling on the landing page. Wheel and trackpad scrolling eases on the home page so the story glides, the owner's request on 2026-10-26. It is on by default, a small "Smooth scrolling" switch near the story turns it off and remembers the choice per browser, and it is off under `prefers-reduced-motion`. It only eases the native scroll. The scrollbar, keyboard, anchor links, find in page and touch scrolling behave as usual, there is no snapping, and the speed is the person's own.
+
 With `prefers-reduced-motion: reduce`, nothing moves.
 
 ## Copy voice
@@ -281,7 +283,7 @@ Dashboard
 - Charts without axes or labeled scales.
 
 Motion and interaction
-- Scroll-jacking, parallax, scroll-triggered fade-in on every section.
+- Scroll-jacking, parallax, scroll-triggered fade-in on every section. The landing page's smooth scrolling under Motion is the one exception, since it only eases the native scroll and can be turned off.
 - Typewriter text effects, counting-up numbers.
 - Custom cursors, cursor trails, magnetic buttons.
 - More than the six motion patterns above. Any animation that doesn't communicate a state change.
