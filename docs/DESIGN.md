@@ -172,6 +172,8 @@ The dashboard is the OpenHAL Inspector, a protocol inspector.
 - **Where STOP can't be sent** (an unpaired browser, a hub that is offline), a panel on the surface fill with no colored border takes STOP's place. Its title is in the blocked red, and it says why and what still keeps devices safe.
 - **Buttons are controls, not status.** STOP keeps its solid blocked red fill. No other control has a red outline, so UNLOCK uses the standard secondary button with its word in the blocked red.
 - **Kernel reasons outside the trace** read as prose, with identifiers and conditions set in mono.
+- **Camera frames are device data.** An image channel shows its latest frame at its own size, labeled demo frame when it comes from a simulator, with its format, size and read time in small mono. A frame is never a link target and nothing on the page acts on what it shows. The message log and the audit log show an image result as its description, never its bytes.
+- **A pending request shows the camera a person picks.** No Device File links a camera to the device it watches yet, so Confirmations shows a request's own camera when it has one and otherwise offers "Show a camera". The browser keeps that pick for the device.
 
 ## Motion
 
