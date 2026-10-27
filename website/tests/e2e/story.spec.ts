@@ -36,6 +36,13 @@ const lit = (page: Page) => page.evaluate(() => [...document.querySelectorAll<HT
 
 const at = (selector: string) => `.story-scene ${selector}`;
 
+const FORMS = [
+  { width: 1440, height: 900, short: false },
+  { width: 1366, height: 641, short: true },
+  { width: 1100, height: 900, short: false },
+  { width: 390, height: 664, short: true },
+];
+
 const states: Record<Exclude<StepId, "intro">, Array<[string, string]>> = {
   ask: [[at("[data-cam=client] .person"), ASKED]],
   look: [
@@ -71,26 +78,49 @@ test.describe("the landing story", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
   test("pins the whole diagram, centered, at one size", async ({ page }) => {
-    await page.goto("/");
-    const story = page.locator("[data-story]");
-    await expect(story).toHaveAttribute("data-camera", "");
-    await expect(story).toHaveAttribute("data-ready", "");
-    const sizes: string[] = [];
-    for (const item of COUNTED) {
-      await storyTime(page, item.from + item.length / 2);
-      const box = await page.locator(".story-stage").boundingBox();
-      const header = await page.locator(".site-header").evaluate((el) => el.getBoundingClientRect().height);
-      expect(box!.y).toBeGreaterThanOrEqual(header - 1);
-      expect(box!.y + box!.height).toBeLessThanOrEqual(900 + 1);
-      expect(Math.abs(box!.y - header - (900 - box!.y - box!.height))).toBeLessThan(4);
-      sizes.push(JSON.stringify(await page.locator(".story-scene [data-cam]").evaluateAll((items) => items.map((el) => [el.getBoundingClientRect().x, el.getBoundingClientRect().width]))));
-      expect(await page.locator(".story-scene").evaluate((el) => getComputedStyle(el).transform)).toBe("none");
+    for (const form of FORMS) {
+      await page.setViewportSize(form);
+      await page.goto("/");
+      const story = page.locator("[data-story]");
+      await expect(story).toHaveAttribute("data-camera", "");
+      await expect(story).toHaveAttribute("data-ready", "");
+      if (form.short) await expect(story).toHaveAttribute("data-short", "");
+      else await expect(story).not.toHaveAttribute("data-short");
+      const sizes: string[] = [];
+      for (const item of COUNTED) {
+        await storyTime(page, item.from + item.length / 2);
+        const box = await page.locator(".story-stage").boundingBox();
+        const header = await page.locator(".site-header").evaluate((el) => el.getBoundingClientRect().height);
+        const where = `${form.width}x${form.height} ${item.id}`;
+        expect(box!.y, where).toBeGreaterThanOrEqual(header - 1);
+        expect(box!.y + box!.height, where).toBeLessThanOrEqual(form.height + 1);
+        expect(Math.abs(box!.y - header - (form.height - box!.y - box!.height)), where).toBeLessThan(4);
+        sizes.push(JSON.stringify(await page.locator(".story-scene [data-cam]").evaluateAll((items) => items.map((el) => [el.getBoundingClientRect().x, el.getBoundingClientRect().width]))));
+        expect(await page.locator(".story-scene").evaluate((el) => getComputedStyle(el).transform)).toBe("none");
+      }
+      expect(new Set(sizes).size).toBe(1);
     }
-    expect(new Set(sizes).size).toBe(1);
+  });
+
+  test("drops the trace from the short stage on a phone and keeps every station", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 664 });
+    await page.goto("/");
+    await expect(page.locator("[data-story]")).toHaveAttribute("data-short", "");
+    await expect(page.locator(".story-scene .story-trace")).toBeHidden();
+    await expect(page.locator(".story-scene [data-cam]")).toHaveCount(6);
+    for (const node of await page.locator(".story-scene [data-cam]").all()) await expect(node).toBeVisible();
+  });
+
+  test("is the list on a screen too short for the short stage", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    await page.goto("/");
+    await expect(page.locator("[data-story]")).not.toHaveAttribute("data-camera");
+    await expect(page.locator(".story-list > li")).toHaveCount(COUNTED.length);
+    await expect(page.locator(".story-list .story-snap").first()).toBeVisible();
   });
 
   test("keeps every word inside its card", async ({ page }) => {
-    for (const form of [{ width: 1440, height: 900 }, { width: 1200, height: 800 }, { width: 1100, height: 900 }, { width: 768, height: 1024 }, { width: 390, height: 844 }]) {
+    for (const form of [...FORMS, { width: 1200, height: 800 }, { width: 768, height: 1024 }, { width: 375, height: 667 }]) {
       await page.setViewportSize(form);
       await page.goto("/");
       await expect(page.locator("[data-story]")).toHaveAttribute("data-ready", "");
@@ -171,7 +201,7 @@ test.describe("the landing story", () => {
   });
 
   test("keeps every word on the stage at 13 px or more", async ({ page }) => {
-    for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    for (const viewport of [{ width: 1440, height: 900 }, { width: 1366, height: 641 }, { width: 390, height: 844 }, { width: 390, height: 664 }]) {
       await page.setViewportSize(viewport);
       await page.goto("/");
       await storyTime(page, PLACED[PLACED.length - 1].from + 10);

@@ -109,6 +109,17 @@
   display: none;
 }
 
+.story-probe {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100vh;
+  height: 100svh;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .story-stage [data-in],
 .story-snap [data-in] {
   opacity: 0.999;
@@ -402,7 +413,8 @@
 
   .story[data-camera] .story-scene .node-note,
   .story[data-camera] .story-scene .wide-only,
-  .story[data-camera] .story-scene .said-reason {
+  .story[data-camera] .story-scene .said-reason,
+  .story[data-camera][data-short] .story-scene > .story-trace {
     display: none;
   }
 
@@ -461,6 +473,12 @@
     line-height: 1.25;
   }
 
+  .story[data-camera][data-short] .story-title,
+  .story[data-camera][data-short] .story-note {
+    font-size: var(--t-h3);
+    max-width: none;
+  }
+
   .story[data-camera] .story-scene {
     grid-template-columns: 202fr 64px 190fr 64px 180fr 64px 170fr 64px 150fr;
     grid-template-rows: auto 24px auto;
@@ -481,6 +499,18 @@
   .story[data-camera] .story-scene > [data-cam="camera"] {
     justify-self: end;
     width: min(100%, 320px);
+  }
+
+  .story[data-camera][data-short] .story-scene > [data-cam="camera"] {
+    width: min(100%, 240px);
+  }
+
+  .story[data-camera][data-short] .story-scene .webcam .wide-only {
+    display: none;
+  }
+
+  .story[data-camera][data-short] .story-scene .webcam .compact-only {
+    display: inline;
   }
 
   .story[data-camera] .story-scene > .story-trace {

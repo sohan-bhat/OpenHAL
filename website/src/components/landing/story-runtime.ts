@@ -44,14 +44,18 @@ function held(spans: Array<[number, number]>, t: number): number {
  * as data-step on the story and as data-on on every piece and station that shows in it, so a
  * caption and its state change together. story.css cross-fades them, the leaving piece first. The
  * wire fills read the point as --t, set only on the fills that change, so a scroll frame touches
- * nothing else. Without this script, with reduced motion or on a screen too short for the stage,
- * the story is the list of steps after the runway.
+ * nothing else. The fit is measured against the small viewport, read from a 100svh probe, so a
+ * phone that hides its toolbars while scrolling changes nothing. A stage too tall for it tries its
+ * short form, data-short, which drops the trace on a phone and shrinks the caption and the webcam
+ * on a laptop. Without this script, with reduced motion or on a screen too short for both, the
+ * story is the list of steps after the runway.
  */
 export function story(root: HTMLElement): void {
   const stage = root.querySelector<HTMLElement>(".story-stage");
   const runway = root.querySelector<HTMLElement>(".story-runway");
   if (!stage || !runway) return;
   const header = document.querySelector<HTMLElement>(".site-header");
+  const probe = root.querySelector<HTMLElement>(".story-probe");
   const pieces = tracks(stage);
   const states: State[] = Array.from(stage.querySelectorAll<HTMLElement>("[data-in], [data-lit]")).map((el) => ({
     el,
@@ -88,6 +92,7 @@ export function story(root: HTMLElement): void {
     current = -1;
     root.removeAttribute("data-camera");
     root.removeAttribute("data-ready");
+    root.removeAttribute("data-short");
     delete root.dataset.step;
     pieces.forEach((piece) => {
       piece.last = "";
@@ -100,9 +105,12 @@ export function story(root: HTMLElement): void {
     root.setAttribute("data-camera", "");
     const pin = header?.offsetHeight ?? 0;
     root.style.setProperty("--pin", `${pin}px`);
+    const view = probe?.offsetHeight || window.innerHeight;
+    root.removeAttribute("data-short");
+    if (stage.offsetHeight > view - pin) root.setAttribute("data-short", "");
     const height = stage.offsetHeight;
-    if (height > window.innerHeight - pin) return off();
-    const top = Math.max(pin, Math.round((window.innerHeight + pin - height) / 2));
+    if (height > view - pin) return off();
+    const top = Math.max(pin, Math.round((view + pin - height) / 2));
     root.style.setProperty("--top", `${top}px`);
     let y = 0;
     for (let el: HTMLElement | null = root; el; el = el.offsetParent as HTMLElement | null) y += el.offsetTop;

@@ -30,7 +30,12 @@ const snaps: Partial<Record<StepId, typeof Client>> = {
 };
 const camera = `(() => {
   const story = document.currentScript.previousElementSibling;
-  if (matchMedia(${JSON.stringify(CAMERA)}).matches) story.setAttribute("data-camera", "");
+  if (!matchMedia(${JSON.stringify(CAMERA)}).matches) return;
+  story.setAttribute("data-camera", "");
+  const stage = story.querySelector(".story-stage");
+  const room = story.querySelector(".story-probe").offsetHeight - (document.querySelector(".site-header")?.offsetHeight ?? 0);
+  if (stage.offsetHeight > room) story.setAttribute("data-short", "");
+  if (stage.offsetHeight > room) story.removeAttribute("data-camera"), story.removeAttribute("data-short");
 })();`;
 ---
 
@@ -60,6 +65,7 @@ const camera = `(() => {
       </div>
     </div>
     <div class="story-runway" style={`height: ${TOTAL}vh`} aria-hidden="true"></div>
+    <span class="story-probe" aria-hidden="true"></span>
     <ol class="story-list" role="list">
       {
         COUNTED.map((item) => {
