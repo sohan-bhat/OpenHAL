@@ -29,10 +29,18 @@
   const pending = $derived(inspector.confirmations.filter((request) => request.status === "pending"));
   const decided = $derived(recent.filter((request) => request.status !== "pending").slice(0, 20));
 
+  let watching = false;
   $effect(() => {
     void inspector.auditTick;
-    void load();
+    if (watching) void load();
+    watching = true;
   });
+
+  const settle = inspector.hold();
+  void Promise.race([
+    Promise.all([load(), inspector.loadViews()]),
+    new Promise((resolve) => setTimeout(resolve, 1500)),
+  ]).then(() => settle());
 
   async function load() {
     try {
