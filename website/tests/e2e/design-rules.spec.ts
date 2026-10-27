@@ -16,7 +16,7 @@ async function statusProblems(page: Page): Promise<string[]> {
       probe.style.color = root.getPropertyValue(name).trim();
       return getComputedStyle(probe).color;
     };
-    const tones = ["--ok", "--blocked", "--confirm", "--unverified", "--confirm-bg"].map(resolve);
+    const tones = ["--ok", "--blocked", "--confirm", "--unverified"].map(resolve);
     probe.remove();
     const plain = new Set(["rgba(0, 0, 0, 0)", "transparent", resolve("--bg"), resolve("--surface")]);
     const problems: string[] = [];

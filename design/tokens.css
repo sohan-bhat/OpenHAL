@@ -70,7 +70,6 @@
   /* Status, light. Only for meaning, always as its word. */
   --ok: #3c754f;
   --confirm: #8a5a00;
-  --confirm-bg: #fff3cc;
   --blocked: #a14034;
   --unverified: #636a75;
 
@@ -142,7 +141,6 @@
     --accent: #7db2f0;
     --ok: #72b88e;
     --confirm: #e8b341;
-    --confirm-bg: #2b2210;
     --blocked: #d57a72;
     --unverified: #8b93a0;
   }
@@ -157,7 +155,6 @@
   --accent: #7db2f0;
   --ok: #72b88e;
   --confirm: #e8b341;
-  --confirm-bg: #2b2210;
   --blocked: #d57a72;
   --unverified: #8b93a0;
 }

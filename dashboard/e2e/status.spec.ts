@@ -11,8 +11,6 @@ async function offenders(page: Page, view: string): Promise<string[]> {
       return getComputedStyle(probe).color;
     };
     const status = new Set(["--ok", "--confirm", "--blocked", "--unverified"].map(color));
-    probe.style.backgroundColor = "var(--confirm-bg)";
-    const tint = getComputedStyle(probe).backgroundColor;
     probe.remove();
     const name = (element: Element) =>
       `${element.tagName.toLowerCase()}.${[...element.classList].join(".")} "${(element.textContent ?? "").trim().slice(0, 40)}"`;
@@ -38,7 +36,7 @@ async function offenders(page: Page, view: string): Promise<string[]> {
         if (side === "Left" && kind === "dashed" && element.matches(".agent")) continue;
         problems.push(`${name(element)} has a status colored ${side.toLowerCase()} border`);
       }
-      if (status.has(style.backgroundColor) || style.backgroundColor === tint) problems.push(`${name(element)} has a status background`);
+      if (status.has(style.backgroundColor)) problems.push(`${name(element)} has a status background`);
     }
     return problems;
   });
