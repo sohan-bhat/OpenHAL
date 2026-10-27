@@ -2,7 +2,8 @@
 
 The README and the docs quickstart show the recorded trace exactly. Every page that names a printer
 value (the 260 degC and 110 degC limits, their rates, the 300 degC nozzle, the bed from 60 degC to
-70 degC, the reason and the confirmation) names the recorded one. Pages about the Arduino plant
+70 degC, the reason, the confirmation, the audit log's counts and the printer's state after the
+owner's approval) names the recorded one. Pages about the Arduino plant
 waterer name the values of its mock device file and of docs/demo/e2e.yaml, which `openhal demo
 --full` records. The desk fan stays in spec/examples/, and user-facing copy says command or change
 instead of write or layer.
@@ -58,6 +59,15 @@ def test_pages_match_the_recorded_scenario(page: Path) -> None:
     text = page.read_text(encoding="utf-8")
     assert readme.synced(text, RECORD) == text, "Run uv run python -m openhal.demo.readme"
     assert "<!-- trace:start -->\n```" in text
+    assert "# the owner approves the cancel\n→ hal/confirmations/approve" in text
+
+
+def test_the_docs_quickstart_ends_with_the_audit_log() -> None:
+    text = (ROOT / "docs" / "QUICKSTART.md").read_text(encoding="utf-8")
+    block = text[text.index("<!-- audit:start -->") : text.index("<!-- audit:end -->")]
+    assert "\n".join(RECORD["audit"]["lines"]) in block
+    assert "6 requests, 1 refused, 1 confirmed by a person." in block
+    assert "`TIME` stands in for the time of each entry." in text
 
 
 def test_the_readme_runs_in_order() -> None:
@@ -155,8 +165,16 @@ def printer_facts() -> dict[str, tuple[str, ...]]:
     asked = shown(refused["requested"]["value"])
     warmer = scenario.exchange(RECORD, "bed-warmer")["bed_target"]
     citation = rf"\({re.escape(printer['file'])}, confirmed by (\S+) (\d{{4}}-\d{{2}}-\d{{2}})\)"
+    counts = RECORD["audit"]["counts"]
+    approved = scenario.exchange(RECORD, "owner-approves")
     d = DEGREES
     return {
+        r"(\d+) requests, (\d+) refused,? (?:and )?(\d+) confirmed by a person": (
+            str(counts["requests"]),
+            str(counts["refused"]),
+            str(counts["confirmed_by_a_person"]),
+        ),
+        r"printer's state becomes (\w+)": (approved["printer"]["state"],),
         r"extruder_target (\d+) degC exceeds the limit of (\d+) degC": (asked, shown(refused["limit"]["value"])),
         citation: (printer["confirmed"]["by"], printer["confirmed"]["at"]),
         rf"(?:bed|`?bed_target`?) from (\d+){d} to (\d+){d}": (

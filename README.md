@@ -25,7 +25,7 @@ uv run openhal demo
 ```
 
 <!-- outcome:start -->
-You'll see the agent warm the bed from 60 °C to 70 °C, have a 300 °C nozzle refused at the 260 °C limit, pause the print when it comes loose and wait for a person to approve the cancel.
+You'll see the agent warm the bed from 60 °C to 70 °C, have a 300 °C nozzle refused at the 260 °C limit and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.
 <!-- outcome:end -->
 
 ## Message trace
@@ -42,13 +42,14 @@ You'll see the agent warm the bed from 60 °C to 70 °C, have a 300 °C nozzle r
                 "value": 70, "unit": "degC" }
 ← result      { "status": "done" }
 
+# a hotter nozzle might help the corner stick
 → hal/write   { "device": "printer", "channel": "extruder_target",
                 "value": 300, "unit": "degC" }
 ← error -32010 LIMIT_EXCEEDED
   extruder_target 300 degC exceeds the limit of 260 degC
   (printer.hal.yaml, confirmed by owner 2026-10-24)
 
-# later
+# later the agent checks the print again
 → hal/read    { "device": "printer-cam", "channel": "frame" }
 ← result      { "value": { "mimeType": "image/jpeg", "bytes": 23567,
                 "width": 640, "height": 480, "data": "…" } }
@@ -61,10 +62,14 @@ You'll see the agent warm the bed from 60 °C to 70 °C, have a 300 °C nozzle r
 → hal/action  { "device": "printer", "action": "cancel" }
 ← result      { "status": "pending", "requestId": "REQUEST_ID",
                 "expiresInS": 300 }
+
+# the owner approves the cancel
+→ hal/confirmations/approve { "requestId": "REQUEST_ID" }
+← result      { "status": "done" }
 ```
 <!-- trace:end -->
 
-An agent keeps an eye on a long 3D print. It looks at the camera, judges what is going wrong and acts, and the safety kernel keeps it inside the limits a person confirmed. The trace is a real run of the hub against a simulated [printer and camera](examples/print-babysitter/), recorded in [docs/demo/scenario.yaml](docs/demo/scenario.yaml). The camera frames are line drawings, and `REQUEST_ID` stands in for the hub's random request id.
+An agent keeps an eye on a long 3D print. The agent watches the camera, judges what is going wrong and acts, and the safety kernel checks every command against the limits a person confirmed. The owner approves the cancel, the kernel checks the cancel again, and the printer's state becomes cancelled. The trace is a real run of the hub against a simulated [printer and camera](examples/print-babysitter/), recorded in [docs/demo/scenario.yaml](docs/demo/scenario.yaml). The camera frames are line drawings, and `REQUEST_ID` stands in for the hub's random request id.
 
 ## Install
 
@@ -73,7 +78,7 @@ uv tool install --compile-bytecode git+https://github.com/sohan-bhat/OpenHAL
 openhal init
 ```
 
-`openhal init` sets up the hub, adds the devices it finds as read-only files and prints the setup for Claude Desktop, Claude Code or Cursor. [The install guide](docs/guide/install.md) covers pipx, the background service and Raspberry Pi.
+`openhal init` sets up the hub, adds every device the hub finds as a read-only file and prints the setup for Claude Desktop, Claude Code or Cursor. [The install guide](docs/guide/install.md) covers pipx, the background service and Raspberry Pi.
 
 ## What it does
 
@@ -126,8 +131,8 @@ v0.1, in development. Every driver passes the conformance suite on a simulator.
 
 ## Safety model
 
-- A device file stays read-only until a person confirms its limits, and nothing an agent proposes can confirm them.
-- Drivers can only change hardware with a single-use grant the kernel issues for that exact command.
+- A device file stays read-only until a person confirms its limits, and nothing an agent proposes counts as a confirmation.
+- Every hardware change needs a single-use grant the kernel issues for that exact command.
 - Unknown values never pass a check, so a stale or missing reading blocks the command.
 - One stop puts every device in its safe state and refuses every command until a person unlocks.
 - Every decision goes into a hash-chained audit log.
@@ -136,7 +141,7 @@ Details in [docs/SAFETY.md](docs/SAFETY.md).
 
 ## Relationship to Anthropic's MHS
 
-Anthropic's Model Hardware Standard is a limited research preview for invited labs, and OpenHAL is not affiliated with it or with Anthropic. OpenHAL is an open protocol you can use today, and we plan to stay compatible with MHS as it opens up ([mapping](spec/MHS-MAPPING.md)).
+Anthropic's Model Hardware Standard is a limited research preview for invited labs, and OpenHAL is not affiliated with MHS or with Anthropic. OpenHAL is an open protocol you can use today, and we plan to stay compatible with MHS as MHS opens up ([mapping](spec/MHS-MAPPING.md)).
 
 ## Contributing
 
