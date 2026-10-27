@@ -25,7 +25,7 @@ export const DOC_SUMMARIES: Record<string, string> = {
   "/docs/tutorials/create-a-routine/": "Automate a device with triggers and steps that the kernel checks.",
   "/docs/library/": "How the hub matches a device to a library file and how a person confirms it.",
   "/docs/conformance/": "The checks every driver passes before it ships.",
-  "/docs/safety/": "What the hub guarantees, how it enforces it, and what it does not cover.",
+  "/docs/safety/": "What the hub guarantees, how the kernel enforces each guarantee, and what OpenHAL does not cover.",
   "/docs/architecture/": "One hub process, one deterministic kernel, and the thin clients around them.",
   "/docs/cli/": "Every openhal command, its options and its exit codes.",
   "/docs/mcp/": "The tools and prompts the MCP server gives an agent.",

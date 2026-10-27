@@ -39,7 +39,7 @@ const rows: Array<[string, string]> = [
   <p slot="after-title" class="statuses">
     {
       isReference(driver) ? (
-        <span class="muted">The reference driver. It runs device files in memory, so the driver counts leave it out.</span>
+        <span class="muted">The reference driver runs device files in memory and is left out of the driver counts.</span>
       ) : (
         <span class={`status ${statusClass(driver.status)}`}>{statusWord(driver.status)}</span>
       )

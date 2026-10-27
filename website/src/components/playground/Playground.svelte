@@ -448,14 +448,14 @@
                 <dd class="mono">{effectiveHazard(file)}</dd>
               </div>
               <div>
-                <dt>Limits<InfoMark topic="confirmed limits" text="A person read this device file and confirmed its limits. An agent can't loosen them." href="/docs/concepts/" /></dt>
+                <dt>Limits<InfoMark topic="confirmed limits" text="A person read this device file and confirmed the limits in it. The kernel checks every command against the confirmed limits." href="/docs/concepts/" /></dt>
                 <dd>{#if missing.length}<span class="status unverified">unconfirmed</span>{:else}<span class="status ok">confirmed</span>{/if}</dd>
               </div>
             {/if}
           </dl>
           {#if pending.length}
             <div class="waiting">
-              <p class="waiting-head">Waiting for a person<InfoMark topic="pending" text="The hub answered pending. It holds a request it can't run on its own, such as a cancel that can't be undone, until a person approves or rejects it." /></p>
+              <p class="waiting-head">Waiting for a person<InfoMark topic="pending" text="The hub answered pending. A request that needs a person, such as a cancel that can't be undone, waits here until a person approves or rejects the request." /></p>
               <ul>
                 {#each pending as request (request.requestId)}
                   <li>
@@ -480,7 +480,7 @@
               </form>
             {:else}
               <button type="button" class="stop" onclick={stopAll} disabled={!kernel}>Stop</button>
-              <p class="muted">Any client may stop. Only a person may lift it.</p>
+              <p class="muted">Any client may send a stop. Lifting the stop takes a person's token.</p>
             {/if}
           </div>
         </aside>
@@ -539,7 +539,7 @@
             <form class="request" onsubmit={(event) => { event.preventDefault(); send(); }}>
               <div class="fields">
                 <div class="field">
-                  <span class="legend as-label"><label for="pg-as">As</label><InfoMark topic="who is asking" text="Each client signs in with a token. An agent's token sets which hazards it may touch, and only a person's token can approve or lift a stop." href="/docs/concepts/" /></span>
+                  <span class="legend as-label"><label for="pg-as">As</label><InfoMark topic="who is asking" text="Each client signs in with a token. An agent's token sets which hazards the agent may touch. Approving a request or lifting a stop takes a person's token." href="/docs/concepts/" /></span>
                   <select id="pg-as" bind:value={clientKey}>
                     {#each CLIENTS as item (item.key)}
                       <option value={item.key}>{item.label}</option>
@@ -586,7 +586,7 @@
                 </form>
               {:else}
                 <button type="button" class="stop" onclick={stopAll} disabled={!kernel}>Stop</button>
-                <p class="muted">Any client may stop. Only a person may lift it.</p>
+                <p class="muted">Any client may send a stop. Lifting the stop takes a person's token.</p>
               {/if}
             </div>
             {#if pending.length}
@@ -624,7 +624,7 @@
             {#if Object.keys(file.write).length}
               <div class="table-wrap stack">
                 <table>
-                  <caption class="legend">Channels it can change</caption>
+                  <caption class="legend">Channels the device can change</caption>
                   <thead>
                     <tr><th scope="col">Channel</th><th scope="col">Value</th><th scope="col">Min</th><th scope="col">Max</th><th scope="col">Rate per s</th><th scope="col">Confirm</th></tr>
                   </thead>
@@ -672,8 +672,8 @@
             {/if}
             {#if companions.length}
               <p class="muted note">
-                Also loaded, because this file's interlocks name them.
-                {#each companions as other, index (other.id)}{index ? ", " : ""}<code>{other.id}</code>{/each}.
+                This file's interlocks name
+                {#each companions as other, index (other.id)}{index ? ", " : ""}<code>{other.id}</code>{/each}, so the Playground loads those devices too.
               </p>
             {/if}
           {:else}
