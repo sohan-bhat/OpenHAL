@@ -5,7 +5,7 @@ The onvif driver reads an ONVIF camera's identity and stream addresses and moves
 ## What it supports
 
 - Device information (manufacturer, model, firmware, serial number, hardware id) and the chosen profile's name, RTSP stream URI and snapshot URI, as text channels read on connect.
-- Pan, tilt and zoom positions as number channels, and `moving` as a bool. As control channels, pan, tilt and zoom move the camera there with AbsoluteMove.
+- Pan, tilt and zoom positions as number channels, and `moving` as a bool. As control channels, pan, tilt and zoom move the camera to the given position with AbsoluteMove.
 - Actions for ContinuousMove (`move`), RelativeMove (`step`), AbsoluteMove (`go_to`), presets (`goto_preset`), the home position (`home`) and `stop`.
 - A native safe state that stops pan, tilt and zoom.
 - `discover()` sends one WS-Discovery Probe for network video transmitters.
@@ -17,7 +17,7 @@ The onvif driver reads an ONVIF camera's identity and stream addresses and moves
 uv tool install --compile-bytecode "openhal-hub[onvif] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-Turn ONVIF on in the camera's web interface and create an ONVIF user. Put its password in an environment variable, `export CAMERA_PASSWORD=...`. Keep the camera's clock on NTP. The driver corrects for clock drift, but some cameras log every request with a wrong time.
+Turn ONVIF on in the camera's web interface and create an ONVIF user. Put the user's password in an environment variable, `export CAMERA_PASSWORD=...`. Keep the camera's clock on NTP, because the driver corrects for clock drift but some cameras log every request with a wrong time.
 
 ## Parameters
 
@@ -64,33 +64,33 @@ An action named otherwise picks its operation with `map: { operation: move }`.
 
 ## How reads and commands behave
 
-- Identity and URIs are read once on connect. URIs are only reported, never opened by the driver.
-- Position reads call GetStatus. Changing one axis reads the others first, so they stay where they are.
-- The kernel checks every argument against the device file. `move` and `step` can still carry the camera past a position limit, because the kernel checks speeds and distances, not where they end up. Keep `duration` short, and set the camera's own PTZ limits as well.
+- Identity and URIs are read once on connect, and the driver only reports the URIs and never opens them.
+- Position reads call GetStatus, and changing one axis reads the other axes first, so the other axes stay where they are.
+- The kernel checks every argument against the device file, but because the kernel checks speeds and distances rather than end positions, `move` and `step` can still carry the camera past a position limit. Keep `duration` short, and set the camera's own PTZ limits as well.
 - Faults from the camera become `DriverError` with the ONVIF subcode and reason, such as `ter:NoToken` for a missing preset.
 
 ## Why the driver has its own SOAP client
 
-onvif-zeep-async (MIT, maintained) was checked first. Importing onvif-zeep-async configures the root logger, creating a camera removes `http_proxy` and `https_proxy` from the process environment, and it turns TLS certificate checks off for every camera. Those side effects are wrong inside a long-running hub, so the driver uses about 250 lines of its own SOAP, WS-Security and WS-Discovery code on httpx and defusedxml.
+onvif-zeep-async (MIT, maintained) was checked first. Importing onvif-zeep-async configures the root logger, creating a camera removes `http_proxy` and `https_proxy` from the process environment, and the library turns TLS certificate checks off for every camera. Those side effects are wrong inside a long-running hub, so the driver uses about 250 lines of its own SOAP, WS-Security and WS-Discovery code on httpx and defusedxml.
 
 ## Example
 
-`openhal/drivers/onvif/examples/ptz-camera.hal.yaml` reads a Hikvision PTZ camera's stream URIs and moves it within limits, with two presets.
+`openhal/drivers/onvif/examples/ptz-camera.hal.yaml` reads a Hikvision PTZ camera's stream URIs and moves the camera within limits, with two presets.
 
 ## Errors
 
-- A camera that can't be reached, refused credentials, a missing password variable and a missing profile raise `DriverError` that says what to check. A file that uses PTZ with a profile that has none fails the connect.
-- A reply that isn't SOAP raises `DriverError`. A camera that doesn't answer raises `TimeoutError`.
+- A camera that can't be reached, refused credentials, a missing password variable and a missing profile raise `DriverError` that says what to check. A file that uses PTZ with a profile that has no PTZ fails the connect.
+- A reply that isn't SOAP raises `DriverError`, and a camera that doesn't respond raises `TimeoutError`.
 
 ## Limitations
 
-- No events, imaging settings, recording or audio. No Media2 (ver20 media) service, so Profile T cameras are used through their Media1 service.
-- No HTTP digest authentication, only WS-Security UsernameToken, which ONVIF requires.
+- The driver doesn't support events, imaging settings, recording or audio, and because the driver has no Media2 (ver20 media) service, Profile T cameras are used through their Media1 service.
+- The driver supports only WS-Security UsernameToken, which ONVIF requires, and no HTTP digest authentication.
 - `https` uses normal certificate checks, so cameras with self-signed certificates need plain `http` on a trusted network.
 
 ## Hazard default and safe state
 
-The default hazard is low, because a camera's motors are small. `safe_state_support` is `native`. A hub stop sends Stop for pan, tilt and zoom on the profile in use, and the camera holds its position.
+The default hazard is low, because a camera's motors are small. `safe_state_support` is `native`, so a hub stop sends Stop for pan, tilt and zoom on the profile in use, and the camera holds its position.
 
 ## Sources
 

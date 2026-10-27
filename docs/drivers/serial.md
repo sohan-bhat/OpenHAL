@@ -1,6 +1,6 @@
 # serial driver
 
-The `serial` driver talks to any device with a line-based text protocol over a serial port. The driver has no command set of its own. Every query, reply pattern and command template comes from the device file, so one driver covers Arduino sketches, RS-232 instruments and sensor modules alike.
+The `serial` driver talks to any device with a line-based text protocol over a serial port. The driver has no command set of its own, and every query, reply pattern and command template comes from the device file, so one driver covers Arduino sketches, RS-232 instruments and sensor modules alike.
 
 | | |
 |---|---|
@@ -18,16 +18,16 @@ The `serial` driver talks to any device with a line-based text protocol over a s
 - Write channels of every type, with an optional readback query (`map.get`).
 - Actions whose arguments fill a command template.
 - Unit conversion between the device's unit and the channel unit, plus a linear `scale` and `offset` for raw counts.
-- Discovery that lists serial ports with their USB ids. Listing never opens a port.
+- Discovery that lists serial ports with their USB ids without opening any port.
 - `port: auto`, which picks the one listed port whose USB id matches `match.usb` (and `match.serial_number` if given).
 
 ## Setup
 
 1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[serial] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. Find the port with `openhal discover` or `python -m serial.tools.list_ports -v`.
-3. Write a device file. Each read channel needs a `map` with `query` or `listen`. Each write channel and action needs a `map` with `command`.
+3. Write a device file, where each read channel needs a `map` with `query` or `listen` and each write channel and action needs a `map` with `command`.
 4. Validate the file with `openhal file validate my-device.hal.yaml`.
-5. Confirm the limits by hand (spec section 12). Until then the device loads read-only.
+5. Confirm the limits by hand (spec section 12), because until then the device loads read-only.
 
 ## Parameters
 
@@ -85,14 +85,14 @@ hazard: low
 
 ## Known limitations
 
-- One command and one reply line at a time. Multi-line replies and binary protocols need a dedicated driver.
-- Replies are matched by order. A device that answers out of order or sends unrelated chatter that no `listen` pattern covers will confuse the driver. Add a `listen` pattern for the chatter.
-- Regexes run with Python `re` and lines are cut at 4096 characters. There is no per-match timeout.
-- The protocol has no safe state of its own. Always give the device file a `safe_state`, and prefer firmware that falls back to a safe output when the host goes quiet.
+- The driver handles one command and one reply line at a time, so multi-line replies and binary protocols need a dedicated driver.
+- Because replies are matched by order, a device that replies out of order or sends unrelated chatter that no `listen` pattern covers makes the driver match the wrong reply, so add a `listen` pattern for the chatter.
+- Regexes run with Python `re` with no per-match timeout, and lines are cut at 4096 characters.
+- Because the protocol has no safe state of its own, always give the device file a `safe_state`, and prefer firmware that falls back to a safe output when the host stops sending commands.
 
 ## Hazard defaults
 
-The driver reports `medium`, because it can drive anything. Set `hazard` in the device file to what the device really is.
+The driver reports a default hazard of `medium`, because the driver can drive anything, so set `hazard` in the device file to what the device really is.
 
 ## Sources
 

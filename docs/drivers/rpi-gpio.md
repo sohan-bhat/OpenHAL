@@ -1,6 +1,6 @@
 # rpi-gpio driver
 
-The rpi-gpio driver drives Raspberry Pi GPIO pins through gpiozero. Digital outputs for relays and LEDs, digital inputs for buttons and switches, PWM for fans and dimmers, and servo pulses. Pins are named in the device file, and channels use those names. The package also has `watch_stop_button`, which turns a GPIO input into a physical stop button for the hub.
+The rpi-gpio driver drives Raspberry Pi GPIO pins through gpiozero, with digital outputs for relays and LEDs, digital inputs for buttons and switches, PWM for fans and dimmers, and servo pulses. Pins are named in the device file, and channels use those names. The package also has `watch_stop_button`, which turns a GPIO input into a physical stop button for the hub.
 
 ## What it supports
 
@@ -11,7 +11,7 @@ The rpi-gpio driver drives Raspberry Pi GPIO pins through gpiozero. Digital outp
 | write, number in `percent` or `dimensionless` | PWM output | duty cycle, 0 to 100 % or 0 to 1 |
 | write, number in an angle unit, map `mode: servo` | servo | angle |
 
-Write channels read back the state gpiozero holds (on or off, the duty cycle, the angle). A servo that has not been moved since connecting reads as no value, because it gets no pulse until the first write.
+Write channels read back the state gpiozero holds (on or off, the duty cycle, the angle). Because a servo gets no pulse until the first write, a servo that has not been moved since connecting reads as no value.
 
 ## Setup
 
@@ -35,11 +35,11 @@ Your user needs to be in the `gpio` group. Off a Pi, set `pin_factory: mock` to 
 | `on_connect` | `off` | `off` starts digital outputs inactive. `keep` leaves them at whatever level the pin has |
 | `pin_factory` | `auto` | `auto`, `lgpio`, `rpigpio`, `pigpio`, `native` or `mock` |
 
-Pins are BCM GPIO numbers 0 to 27, not header pin numbers. GPIO 17 is header pin 11. A pin named in `pins` but not used by a channel is allowed, which is how a stop button pin is declared.
+Pins are BCM GPIO numbers 0 to 27 rather than header pin numbers, so GPIO 17 is header pin 11. A pin named in `pins` but not used by a channel is allowed, which is how a stop button pin is declared.
 
 ## Channel maps
 
-The map is optional. Without one, a channel uses the pin with its own name.
+The map is optional, and without a map a channel uses the pin with the channel's own name.
 
 ```yaml
 connect: { rpi-gpio: { heat_mat: 17, fan: 18, vent: 12, door_closed: 22 }, active_high: false }
@@ -61,9 +61,9 @@ write:
 | `min_angle`, `max_angle` | `-90`, `90` | The servo's angle range in degrees |
 | `min_pulse_ms`, `max_pulse_ms`, `frame_ms` | `1`, `2`, `20` | Servo pulse widths and frame |
 
-Inputs take their active level from the pull resistor. With a pull-up, a button wired to ground reads true when pressed. With a pull-down, a signal that drives the pin high reads true. With `pull: none`, `active_high` decides.
+Inputs take their active level from the pull resistor, so with a pull-up a button wired to ground reads true when pressed, and with a pull-down a signal that drives the pin high reads true. With `pull: none`, `active_high` sets the active level.
 
-The driver checks at load time that PWM limits fit 0 to 100 % (or 0 to 1) and that servo limits fit `min_angle` to `max_angle`, so the file can't ask for something the pin can't do.
+The driver checks at load time that PWM limits fit 0 to 100 % (or 0 to 1) and that servo limits fit `min_angle` to `max_angle`, so the file can't request something the pin can't do.
 
 ## The stop button
 
@@ -75,9 +75,9 @@ button = watch_stop_button(27, kernel_stop, loop=asyncio.get_running_loop())
 button.close()
 ```
 
-`watch_stop_button(pin, on_press, *, pull_up=True, active_state=None, bounce_s=0.05, loop=None, pin_factory=None)` calls `on_press` every time the button on BCM `pin` is pressed. With `loop`, the call runs on that event loop, and a coroutine function runs as a task there. Without `loop`, the call runs on gpiozero's thread. `watch_stop_button` never touches an output. `RpiGpioDriver.stop_button_pin()` returns the number of a `stop_button` pin named in `pins` but not used by a channel, so the hub can find the pin in a device file. The hub wires up the stop button, and the driver doesn't call `watch_stop_button` on its own.
+`watch_stop_button(pin, on_press, *, pull_up=True, active_state=None, bounce_s=0.05, loop=None, pin_factory=None)` calls `on_press` every time the button on BCM `pin` is pressed. With `loop`, the call runs on that event loop, and a coroutine function runs as a task there. Without `loop`, the call runs on gpiozero's thread, and `watch_stop_button` never touches an output. `RpiGpioDriver.stop_button_pin()` returns the number of a `stop_button` pin named in `pins` but not used by a channel, so the hub can find the pin in a device file. The hub wires up the stop button, and the driver doesn't call `watch_stop_button` on its own.
 
-A GPIO stop button only asks the hub to stop. Keep a hardware e-stop that cuts power on anything that can hurt someone.
+Because a GPIO stop button only sends a stop request to the hub, keep a hardware e-stop that cuts power on anything that can hurt someone.
 
 ## Example
 
@@ -91,15 +91,15 @@ A GPIO stop button only asks the hub to stop. Keep a hardware e-stop that cuts p
 
 ## Limitations
 
-- No analog inputs. The Pi has no ADC, so use an ADC board through another driver.
-- No I2C, SPI or one-wire.
-- Software PWM through lgpio jitters at high frequencies. Use GPIO 12, 13, 18 or 19 for hardware PWM where it matters.
+- Because the Pi has no ADC, the driver has no analog inputs, so use an ADC board through another driver.
+- The driver doesn't handle I2C, SPI or one-wire.
+- Because software PWM through lgpio jitters at high frequencies, use GPIO 12, 13, 18 or 19 for hardware PWM where the timing matters.
 
 ## Hazard default and safe state
 
 The default hazard is low, because a GPIO pin drives 3.3 V at a few milliamps. What a pin switches can be anything, so set the hazard in the device file from what the relay or transistor drives. GPIO has no emergency behavior, so `safe_state_support` is `file`, and the hub applies the device file's `safe_state` with ordinary writes.
 
-When the driver closes or the hub exits, gpiozero releases the pins and the pin library usually turns them into inputs, so they stop being driven. An active-low relay board without a pull-up on its input can then switch on. Fit a pull resistor so a released pin means off, and say so in the device file's `safe_state_note`.
+When the driver closes or the hub exits, gpiozero releases the pins and the pin library usually turns them into inputs, so they stop being driven. An active-low relay board without a pull-up on its input can then switch on, so fit a pull resistor that makes a released pin mean off, and say so in the device file's `safe_state_note`.
 
 ## Sources
 

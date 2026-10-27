@@ -1,6 +1,6 @@
 # pylabrobot driver
 
-The `pylabrobot` driver runs liquid handlers through PyLabRobot. Picking up tips, aspirating, dispensing and transferring are actions, and on a high hazard device each one waits for a person to confirm it.
+The `pylabrobot` driver runs liquid handlers through PyLabRobot. Picking up tips, aspirating, dispensing and transferring are actions, and on a high hazard device each action waits for a person to confirm the action.
 
 | | |
 |---|---|
@@ -27,9 +27,9 @@ The `pylabrobot` driver runs liquid handlers through PyLabRobot. Picking up tips
 | `aspirate`, `dispense` (args `well`, `volume`) | action | `aspirate`, `dispense` with the same volume in every well |
 | `transfer` (args `source`, `target`, `volume`) | action | `aspirate` then `dispense` |
 
-An action under another name takes `map: { op: aspirate }`. There are no channels that change, because every motion is an action.
+An action under another name takes `map: { op: aspirate }`. Because every motion is an action, the driver has no channels that change.
 
-Tip spots and wells are addressed as `<resource>:<spot>` or `<resource>:<first>:<last>`, such as `tips:A1` or `plate:A1:H1`. Give address arguments a `pattern` or an enum of allowed addresses, so the kernel refuses anything else before PyLabRobot sees it. Volumes are converted to uL.
+Tip spots and wells are addressed as `<resource>:<spot>` or `<resource>:<first>:<last>`, such as `tips:A1` or `plate:A1:H1`. Give address arguments a `pattern` or an enum of allowed addresses, so the kernel refuses anything else before PyLabRobot receives the address. Volumes are converted to uL.
 
 ## The deck
 
@@ -44,19 +44,19 @@ connect:
     - { name: plate, resource: cor_96_wellplate_360uL_Fb, rails: 9 }
 ```
 
-`resource` is the name of a resource factory in `pylabrobot.resources`. Hamilton and Tecan decks place by `rails`, the Opentrons deck by `slot`. connect() checks every address the file names against the deck.
+`resource` is the name of a resource factory in `pylabrobot.resources`. Hamilton and Tecan decks place by `rails`, and the Opentrons deck places by `slot`. connect() checks every address the file names against the deck.
 
 ## How it works
 
 - connect() builds the deck and the LiquidHandler and checks the file, but doesn't move anything. PyLabRobot's `setup()` homes the channels, so it runs as the `initialize` action under the kernel, unless `setup_on_connect: true`.
-- PyLabRobot checks tips and tracked volumes before anything moves. A refusal such as `TooLittleLiquidError` or `HasTipError` fails the action and nothing was sent.
-- An operation longer than `action_wait` answers `started` and finishes in the background. The next action waits for it.
-- If an operation fails while it runs, the tip and volume model may no longer match the deck. Reads are then marked suspect until `initialize` runs again.
-- Tracked volumes are PyLabRobot's model of what was pipetted, not a measurement. Every well starts empty unless `volumes` says otherwise.
+- PyLabRobot checks tips and tracked volumes before anything moves, so a refusal such as `TooLittleLiquidError` or `HasTipError` fails the action before anything is sent.
+- An operation longer than `action_wait` returns `started` and finishes in the background, and the next action waits for that operation to finish.
+- When an operation fails while it runs, the tip and volume model may no longer match the deck, so reads are marked suspect until `initialize` runs again.
+- Tracked volumes are PyLabRobot's model of what was pipetted rather than a measurement, and every well starts empty unless `volumes` sets another volume.
 
 ## Safe state
 
-A stop cancels running operations. The instrument finishes the firmware command it is executing, then stops. The driver moves nothing to make the deck safe, because any move on a liquid handler can spill or crash a tip. Keep the instrument's own cover interlock closed.
+A stop cancels running operations, and the instrument finishes the firmware command it is executing and then stops. Because any move on a liquid handler can spill or crash a tip, the driver moves nothing to make the deck safe, so keep the instrument's own cover interlock closed.
 
 ## Setup
 
@@ -90,7 +90,7 @@ A stop cancels running operations. The instrument finishes the firmware command 
 
 ## Hazard defaults
 
-`high`. Channels move fast across the deck, tips can crash, and liquids can be hazardous. The kernel asks a person for every action, and the example keeps `confirm-each-time` on each one.
+The default hazard is `high`, because channels move fast across the deck, tips can crash, and liquids can be hazardous. Every action waits for a person's approval, and the example keeps `confirm-each-time` on each action.
 
 ## Sources
 

@@ -2,18 +2,18 @@
 
 The rpi-camera driver captures JPEG frames from Raspberry Pi camera modules on the CSI connector, through picamera2 and libcamera, and reads the per-frame metadata libcamera reports, such as light level and exposure time. The driver is read-only and never changes camera controls.
 
-This driver has only been tested against a fake Picamera2 class, because picamera2 installs only on Raspberry Pi OS. docs/hardware-tests/rpi-camera.md lists what a person has to check on a real Pi.
+Because picamera2 installs only on Raspberry Pi OS, this driver has only been tested against a fake Picamera2 class, and docs/hardware-tests/rpi-camera.md lists what a person has to check on a real Pi.
 
 ## What it supports
 
 - `image` read channels, one JPEG frame per read.
-- Number read channels from libcamera metadata. `Lux`, `ExposureTime`, `AnalogueGain`, `DigitalGain`, `ColourTemperature`, `SensorTemperature`, `FrameDuration`, `FocusFoM` and `LensPosition`.
+- Number read channels from the libcamera metadata fields `Lux`, `ExposureTime`, `AnalogueGain`, `DigitalGain`, `ColourTemperature`, `SensorTemperature`, `FrameDuration`, `FocusFoM` and `LensPosition`.
 - Still or video configurations, with an optional frame size.
 - `discover()` and `identify()` list attached modules without opening them.
 
 ## Setup
 
-picamera2 comes from apt on Raspberry Pi OS Bookworm or later, not from pip, because it needs the system libcamera bindings. There is no `rpi-camera` pip extra for that reason.
+Because picamera2 needs the system libcamera bindings, picamera2 comes from apt on Raspberry Pi OS Bookworm or later rather than from pip, so there is no `rpi-camera` pip extra.
 
 ```sh
 sudo apt install -y python3-picamera2
@@ -44,11 +44,11 @@ read:
   exposure: { unit: ms, map: { metadata: ExposureTime } }
 ```
 
-Metadata channels report the unit libcamera uses (`lux`, `us` for times, `K`, `degC`, `dimensionless` for gains and figures of merit). The kernel converts a reading into the channel's unit when they differ, so `exposure` above reads in milliseconds.
+Metadata channels report the unit libcamera uses (`lux`, `us` for times, `K`, `degC`, `dimensionless` for gains and figures of merit). The kernel converts a reading into the channel's unit when the units differ, so `exposure` above reads in milliseconds.
 
 ## How it works
 
-The driver opens and starts the camera once on connect and keeps it running, so each capture takes one frame time rather than a full camera start. Only one process can hold a camera, so a second hub or a `rpicam-*` app running at the same time makes connect fail with "Device or resource busy". A capture or metadata request that fails marks the camera as failed, the next heartbeat reports it, and the hub reopens it.
+The driver opens and starts the camera once on connect and keeps it running, so each capture takes one frame time rather than a full camera start. Only one process can hold a camera, so a second hub or a `rpicam-*` app running at the same time makes connect fail with "Device or resource busy". A capture or metadata request that fails marks the camera as failed, the next heartbeat reports the failure, and the hub reopens the camera.
 
 ## Example
 
@@ -63,9 +63,9 @@ The driver opens and starts the camera once on connect and keeps it running, so 
 
 ## Limitations
 
-- No camera controls (exposure, gain, focus, white balance) and no video recording.
-- One capture at a time per camera.
-- Only tested against the fake until the hardware test plan has been run.
+- The driver has no camera controls (exposure, gain, focus, white balance) and no video recording.
+- The driver takes one capture at a time per camera.
+- The driver is only tested against the fake until the hardware test plan has been run.
 
 ## Hazard default and safe state
 
