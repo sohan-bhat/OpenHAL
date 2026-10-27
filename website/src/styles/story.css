@@ -454,8 +454,8 @@
     top: var(--top, var(--pin));
     z-index: 1;
     display: grid;
-    gap: var(--s-4);
-    padding-block: var(--s-3) 0;
+    gap: var(--s-3);
+    padding-block: var(--s-1) 0;
     background: var(--bg);
   }
 
@@ -472,11 +472,11 @@
   }
 
   .story[data-camera] .story-heads {
-    --lines: 2;
-    --leading: 1.3;
+    --lines: 4;
+    --leading: 1.35;
     min-height: calc(var(--lines) * var(--leading) * 1em);
-    font-size: 18px;
-    font-weight: 700;
+    font-size: 16px;
+    font-weight: 500;
     line-height: var(--leading);
   }
 
@@ -495,15 +495,15 @@
     font-size: inherit;
     font-weight: inherit;
     line-height: inherit;
-    max-width: 38ch;
-    text-wrap: balance;
+    max-width: 62ch;
+  }
+
+  .story[data-camera] .story-title {
+    font-weight: 700;
   }
 
   .story[data-camera] .story-scene {
-    display: flex;
-    flex-direction: column;
-    pointer-events: none;
-    user-select: none;
+    margin-top: 0;
   }
 
   .story[data-camera] .story-list {
@@ -516,5 +516,43 @@
     clip: rect(0 0 0 0);
     white-space: nowrap;
     border: 0;
+  }
+}
+
+@media screen and (max-width: 379.98px) {
+  .story[data-camera] .story-heads {
+    font-size: 15px;
+  }
+}
+
+@media screen and (min-width: 640px) {
+  .story[data-camera] .story-stage {
+    gap: var(--s-4);
+    padding-block: var(--s-3) 0;
+  }
+
+  .story[data-camera] .story-heads {
+    --lines: 3;
+    font-size: 19px;
+  }
+}
+
+@media screen and (min-width: 1024px) {
+  .story[data-camera] .story-heads {
+    --lines: 2;
+    --leading: 1.3;
+    font-size: 24px;
+  }
+}
+
+@media screen and (min-width: 1024px) and (min-height: 820px) {
+  .story[data-camera] .story-stage {
+    gap: var(--s-5);
+    padding-block: var(--s-4) 0;
+  }
+
+  .story[data-camera] .seq {
+    --gap: 10px;
+    --arrow: 18px;
   }
 }
