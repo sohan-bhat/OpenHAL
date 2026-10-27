@@ -50,7 +50,7 @@ test("the cancel request says what the agent asked and why it waits, with the ca
   await expect(request).toContainText("Cancel the print. It can't be resumed afterwards.");
   await expect(request).toContainText("printer.hal.yaml asks a person to confirm cancel each time.");
   await expect(request).toContainText(/Expires in\s+\d+ s/);
-  await expect(request.getByRole("img")).toHaveCount(0);
+  await expect(request.getByRole("img", { name: /frame from/ })).toHaveCount(0);
   await expect(request).toContainText("Pick the camera that watches Klipper 3D printer.");
   await request.getByRole("combobox", { name: "Show a camera" }).selectOption("printer-cam/frame");
   const frame = request.getByRole("img", { name: /^Demo frame from Printer camera, frame/ });

@@ -155,6 +155,10 @@ test("Keep stopped closes the UNLOCK dialog and the hub stays stopped", async ({
 });
 
 test("the audit log filters, and verifies its hash chain", async ({ page }) => {
+  const agent = await AgentClient.connect("audit-filter-agent", hubState().printToken);
+  await agent.write("printer", "extruder_target", 300, "degC");
+  await agent.call("hal/action", { device: "printer", action: "pause" });
+  agent.close();
   await page.goto("/#/audit");
   const entries = page.locator("li.entry");
   await expect(entries.first()).toBeVisible();
