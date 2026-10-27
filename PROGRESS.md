@@ -8,10 +8,11 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- scenario-printer. The 3D print babysitter becomes the canonical scenario, with the plant waterer kept as the Arduino example (BRIEF-scenario-printer.md).
 - website-6. The landing story and site for the 3D print babysitter (BRIEF-website-6.md), merged with scenario-printer before either reaches main.
 
-- inspector-5. Camera frames, the pending cancel, demo data and captures for the print babysitter (BRIEF-inspector-5.md).
+Finished, waiting to merge with website-6.
+- scenario-printer (tip 0b268b3). The 3D print babysitter becomes the canonical scenario, with the plant waterer kept as the Arduino example (BRIEF-scenario-printer.md).
+- inspector-5 (tip 6c815d7, with scenario-printer merged). Camera frames, the pending cancel with a camera the person picks, status words with no shapes or boxes, and captures on the print babysitter (BRIEF-inspector-5.md).
 
 Queued. website-7, the speed round (BRIEF-website-7.md), once scenario-printer, website-6 and inspector-5 merge.
 
