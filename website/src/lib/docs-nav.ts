@@ -45,9 +45,18 @@ export function navTitle(title: string): string {
   return SHORT[title] ?? title;
 }
 
+/** Pages outside docs/ that the Docs section lists, since the main navigation leaves them out. */
+export const TOOLS: SideGroup = {
+  name: "SDKs and Inspector",
+  items: [
+    { title: "SDKs", href: "/sdks/", summary: "The Python SDK for the hub protocol, with its API reference." },
+    { title: "Inspector", href: "/inspector/", summary: "The hub's dashboard, with every device and every message, and STOP." },
+  ],
+};
+
 export async function docsSidebar(): Promise<SideGroup[]> {
   const entries = new Map((await getCollection("docs")).map((entry) => [entry.id, entry]));
-  return DOC_GROUPS.map((name) => ({
+  const groups = DOC_GROUPS.map((name) => ({
     name,
     items: FIXED_ROUTES.filter((item) => item.group === name && entries.has(item.repo)).map((item) => ({
       title: navTitle(docTitle(entries.get(item.repo)!)),
@@ -55,4 +64,7 @@ export async function docsSidebar(): Promise<SideGroup[]> {
       summary: DOC_SUMMARIES[item.route],
     })),
   })).filter((group) => group.items.length > 0);
+  const reference = groups.findIndex((group) => group.name === "Reference");
+  groups.splice(reference < 0 ? groups.length : reference + 1, 0, TOOLS);
+  return groups;
 }
