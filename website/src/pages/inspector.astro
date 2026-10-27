@@ -1,13 +1,10 @@
 ---
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import captures from "../data/inspector-captures.json";
+import InspectorShots from "../components/InspectorShots.astro";
 import DocShell from "../layouts/DocShell.astro";
+import { presentShots } from "../lib/inspector-crops";
 import { inspectorShots } from "../lib/inspector-shots";
 
-const SHOTS = inspectorShots();
-const present = (name: string) => existsSync(join(process.cwd(), "public", "captures", `${name}.webp`));
-const shots = SHOTS.filter((item) => present(`${item.file}-light`) && present(`${item.file}-dark`));
+const shots = presentShots(inspectorShots());
 const sidebar = [
   {
     name: "",
@@ -18,8 +15,6 @@ const sidebar = [
     ],
   },
 ];
-const frameStyle = (crop: { x: number; y: number; w: number; h: number }) =>
-  `--x: ${crop.x}; --y: ${crop.y}; --w: ${crop.w}; --h: ${crop.h}; --full-w: ${captures.width}; --full-h: ${captures.height}`;
 ---
 
 <DocShell title="Inspector" description="The OpenHAL Inspector shows every device and every message, and stops every device in one click." sidebar={sidebar} section="Inspector" wide>
@@ -57,94 +52,5 @@ const frameStyle = (crop: { x: number; y: number; w: number; h: number }) =>
       )
     }
   </div>
-  {
-    shots.map((item) => (
-      <figure class="shot">
-        <div class="shot-scroll" data-shot-scroll data-label={item.caption}>
-          <div class="shot-frame" style={frameStyle(item.crop)}>
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset={`/captures/${item.file}-dark.webp`} type="image/webp" />
-              <img src={`/captures/${item.file}-light.webp`} width={captures.width} height={captures.height} alt={item.alt} loading="lazy" decoding="async" />
-            </picture>
-          </div>
-        </div>
-        <figcaption>
-          <span>{item.caption}</span>
-          <a class="full full-light" href={`/captures/${item.file}-light.webp`}>Open the whole screen</a>
-          <a class="full full-dark" href={`/captures/${item.file}-dark.webp`}>Open the whole screen</a>
-        </figcaption>
-      </figure>
-    ))
-  }
+  <InspectorShots shots={shots} />
 </DocShell>
-
-<script>
-  const frames = new ResizeObserver((entries) => {
-    for (const entry of entries) {
-      const scroll = entry.target as HTMLElement;
-      if (scroll.scrollWidth > scroll.clientWidth + 1) {
-        scroll.tabIndex = 0;
-        scroll.setAttribute("role", "region");
-        scroll.setAttribute("aria-label", `${scroll.dataset.label ?? "Screenshot"}, scrolls sideways`);
-      } else {
-        scroll.removeAttribute("tabindex");
-        scroll.removeAttribute("role");
-        scroll.removeAttribute("aria-label");
-      }
-    }
-  });
-  for (const scroll of document.querySelectorAll<HTMLElement>("[data-shot-scroll]")) frames.observe(scroll);
-</script>
-
-<style>
-  .shot {
-    margin: var(--s-5) 0 0;
-    display: grid;
-    gap: var(--s-2);
-  }
-
-  .shot-scroll {
-    container-type: inline-size;
-    overflow-x: auto;
-  }
-
-  .shot-frame {
-    position: relative;
-    overflow: hidden;
-    width: clamp(calc(var(--w) * 0.85px), 100cqw, calc(var(--w) * 1px));
-    aspect-ratio: var(--w) / var(--h);
-    border: var(--rule);
-    border-radius: var(--radius);
-  }
-
-  .shot-frame img {
-    position: absolute;
-    max-width: none;
-    width: calc(var(--full-w) / var(--w) * 100%);
-    height: auto;
-    left: calc(var(--x) / var(--w) * -100%);
-    top: calc(var(--y) / var(--h) * -100%);
-  }
-
-  .shot figcaption {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-1) var(--s-4);
-    font-size: var(--t-small);
-    color: var(--text-2);
-  }
-
-  .full-dark {
-    display: none;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .full-light {
-      display: none;
-    }
-
-    .full-dark {
-      display: inline;
-    }
-  }
-</style>

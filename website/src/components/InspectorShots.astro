@@ -1,0 +1,114 @@
+---
+import { FORMATS, capturePath, cropPath, cropSizes, cropSrcset, cropWidths } from "../lib/inspector-crops";
+import type { Shot } from "../lib/inspector-shots";
+
+interface Props {
+  shots: Shot[];
+}
+
+const { shots } = Astro.props;
+const frameStyle = (crop: Shot["crop"]) => `--w: ${crop.w}; --h: ${crop.h}`;
+---
+
+{
+  shots.map((item) => {
+    const widths = cropWidths(item.crop);
+    const sizes = cropSizes(item.crop);
+    return (
+      <figure class="shot">
+        <div class="shot-scroll" data-shot-scroll data-label={item.caption}>
+          <div class="shot-frame" style={frameStyle(item.crop)}>
+            <picture>
+              {FORMATS.map(({ format, type }) => (
+                <source media="(prefers-color-scheme: dark)" srcset={cropSrcset(item, "dark", format)} sizes={sizes} type={type} />
+              ))}
+              {FORMATS.map(({ format, type }) => (
+                <source srcset={cropSrcset(item, "light", format)} sizes={sizes} type={type} />
+              ))}
+              <img
+                src={cropPath(item.file, "light", widths[widths.length - 1], "webp")}
+                width={item.crop.w}
+                height={item.crop.h}
+                alt={item.alt}
+                loading="lazy"
+                decoding="async"
+              />
+            </picture>
+          </div>
+        </div>
+        <figcaption>
+          <span>{item.caption}</span>
+          <a class="full full-light" href={capturePath(item.file, "light")}>Open the whole screen</a>
+          <a class="full full-dark" href={capturePath(item.file, "dark")}>Open the whole screen</a>
+        </figcaption>
+      </figure>
+    );
+  })
+}
+
+<script>
+  const frames = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      const scroll = entry.target as HTMLElement;
+      if (scroll.scrollWidth > scroll.clientWidth + 1) {
+        scroll.tabIndex = 0;
+        scroll.setAttribute("role", "region");
+        scroll.setAttribute("aria-label", `${scroll.dataset.label ?? "Screenshot"}, scrolls sideways`);
+      } else {
+        scroll.removeAttribute("tabindex");
+        scroll.removeAttribute("role");
+        scroll.removeAttribute("aria-label");
+      }
+    }
+  });
+  for (const scroll of document.querySelectorAll<HTMLElement>("[data-shot-scroll]")) frames.observe(scroll);
+</script>
+
+<style>
+  .shot {
+    margin: var(--s-5) 0 0;
+    display: grid;
+    gap: var(--s-2);
+  }
+
+  .shot-scroll {
+    container-type: inline-size;
+    overflow-x: auto;
+  }
+
+  .shot-frame {
+    overflow: hidden;
+    width: clamp(calc(var(--w) * 0.85px), 100cqw, calc(var(--w) * 1px));
+    aspect-ratio: var(--w) / var(--h);
+    border: var(--rule);
+    border-radius: var(--radius);
+  }
+
+  .shot-frame img {
+    width: 100%;
+    max-width: none;
+    height: auto;
+  }
+
+  .shot figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-1) var(--s-4);
+    font-size: var(--t-small);
+    color: var(--text-2);
+  }
+
+  .full-dark {
+    display: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .full-light {
+      display: none;
+    }
+
+    .full-dark {
+      display: inline;
+    }
+  }
+</style>
