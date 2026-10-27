@@ -336,10 +336,6 @@
     text-align: right;
   }
 
-  .story[data-camera] .story-scene .verdict-box {
-    min-height: 28px;
-    padding: 2px 8px;
-  }
 
   .story[data-camera] .story-scene .figure {
     font-size: 18px;

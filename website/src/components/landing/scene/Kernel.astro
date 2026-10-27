@@ -48,7 +48,7 @@ const verdictClass = (kind: string) => ({ blocked: "status blocked mono", grante
   <div class="swap verdict">
     {
       verdicts.map((verdict) => (
-        <p class:list={["verdict-box", verdict.kind]} {...shown(verdict.in, step)}>
+        <p class:list={["verdict-line", verdict.kind]} {...shown(verdict.in, step)}>
           <span class={verdictClass(verdict.kind)}>{verdict.text}</span>
         </p>
       ))
@@ -90,31 +90,13 @@ const verdictClass = (kind: string) => ({ blocked: "status blocked mono", grante
     color: var(--text-2);
   }
 
-  .verdict-box {
+  .verdict-line {
     display: flex;
     align-items: center;
-    min-height: 34px;
-    padding: 4px 8px;
-    background: var(--bg);
-    border: 1.5px solid var(--border);
-    border-radius: 4px;
+    min-height: 24px;
   }
 
-  .verdict-box .status {
-    white-space: normal;
-  }
-
-  .verdict-box.blocked {
-    border-color: var(--blocked);
-    background: color-mix(in srgb, var(--blocked) 8%, var(--bg));
-  }
-
-  .verdict-box.granted {
-    border-color: var(--accent);
-  }
-
-  .verdict-box.confirm {
-    border-color: var(--confirm);
-    background: var(--confirm-bg);
+  .verdict-line .status {
+    font-size: var(--t-small);
   }
 </style>
