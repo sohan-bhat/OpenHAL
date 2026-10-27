@@ -422,6 +422,11 @@
     font-size: 18px;
   }
 
+  .story[data-camera] .story-scene .verdict {
+    justify-items: end;
+    text-align: right;
+  }
+
   .story[data-camera] .story-scene .wire {
     height: 16px;
   }
