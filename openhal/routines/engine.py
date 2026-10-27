@@ -391,14 +391,14 @@ class RoutineEngine:
             scope: Scope = "control_medium"
         elif principal.kind == "agent":
             if not self.settings.agent_enable_low_hazard:
-                raise RoutineError("Only a human can enable routines on this hub.")
+                raise RoutineError("Enabling a routine on this hub takes a human principal.")
             if record.kind != "yaml":
-                raise RoutineError("Only a human can enable a Python routine.")
+                raise RoutineError("Enabling a Python routine takes a human principal.")
             if self.max_hazard(record) != "low" or SCOPE_RANK[principal.scope] < SCOPE_RANK["control_low"]:
                 raise RoutineError("Agents may only enable routines that touch low hazard devices.")
             scope = "control_low"
         else:
-            raise RoutineError("Only a human can enable this routine.")
+            raise RoutineError("Enabling this routine takes a human principal.")
         record.enabled = True
         record.enabled_by = principal.label
         record.enabled_scope = scope
@@ -422,7 +422,7 @@ class RoutineEngine:
 
     def delete(self, principal: Principal, routine_id: str) -> None:
         if principal.kind != "human":
-            raise RoutineError("Only a human can delete a routine.")
+            raise RoutineError("Deleting a routine takes a human principal.")
         record = self.get(routine_id)
         self._cancel(routine_id)
         del self.records[routine_id]
@@ -490,7 +490,7 @@ class RoutineEngine:
         """Run a routine now and wait for it to finish."""
         record = self.get(routine_id)
         if by is not None and by.kind != "human":
-            raise RoutineError("Only a human can run a routine by hand.")
+            raise RoutineError("Running a routine by hand takes a human principal.")
         if self.kernel.stopped:
             raise RoutineError("The hub is stopped.")
         if routine_id in self._running:

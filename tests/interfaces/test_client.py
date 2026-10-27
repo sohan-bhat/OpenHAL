@@ -112,7 +112,7 @@ async def test_confirmations_tighten_and_stop(async_transport: httpx.ASGITranspo
         assert pending.request_id
         assert [request.id for request in await agent.confirmations()] == [pending.request_id]
         assert (await agent.confirmation(pending.request_id)).status == "pending"
-        with pytest.raises(Refused, match="Only a human"):
+        with pytest.raises(Refused, match="This request takes a human principal"):
             await agent.approve(pending.request_id)
         approved = await human.approve(pending.request_id)
         assert approved.status == "done"

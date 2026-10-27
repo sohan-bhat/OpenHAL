@@ -172,7 +172,7 @@ export const ERROR_REGISTRY: RegistryEntry[] = [
       has(data, "device")
         ? `This token's scope doesn't cover ${data.device}`
         : has(data, "method")
-          ? `Only a human can call ${data.method}`
+          ? `Calling ${data.method} takes a human principal`
           : "This token's scope doesn't cover this method",
   },
   { code: -32004, name: "UNKNOWN_TARGET", kernelCodes: ["unknown_target"], meaning: "No such device, channel or action", template: unknownTarget },

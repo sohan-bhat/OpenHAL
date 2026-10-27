@@ -88,7 +88,7 @@ class FakeHub:
 
     @staticmethod
     def _human(who: Who) -> tuple[int, Any] | None:
-        return None if who.kind == "human" else (403, {"detail": "Only a human can do this."})
+        return None if who.kind == "human" else (403, {"detail": "This request takes a human principal."})
 
     def _session(self, session_id: str) -> dict[str, Any]:
         if session_id not in self.sessions:

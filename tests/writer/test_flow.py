@@ -102,7 +102,7 @@ async def test_unknown_board_to_confirmed_file(client: httpx.AsyncClient, hub: H
         f"/v1/writer/sessions/{session['id']}/answers", json={"answers": answers}, headers=bearer(agent)
     )
     assert refused.status_code == 403
-    assert "Only a person" in refused.json()["detail"]
+    assert "Answering the limits interview takes a human principal" in refused.json()["detail"]
 
     answered = (
         await client.post(

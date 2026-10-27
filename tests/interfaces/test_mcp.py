@@ -173,7 +173,7 @@ async def test_routines_discovery_and_writer(
     assert [item.id for item in await tools.list_routines()] == ["keep-cool"]
     assert (await tools.get_routine("keep-cool")).source.startswith("<device-data")
     assert (await tools.run_routine_dry("keep-cool")).ok
-    with pytest.raises(ToolError, match="Only a human"):
+    with pytest.raises(ToolError, match="Enabling a routine on this hub takes a human principal"):
         await tools.enable_routine("keep-cool")
     assert (await tools.disable_routine("keep-cool")).enabled is False
     assert (await tools.list_devices())[0].id == "desk-fan", "real routes still reach the real hub"
