@@ -66,14 +66,6 @@ const speculation = JSON.stringify({
     <meta property="og:image:alt" content={`${title}. ${PRODUCT_NAME}`} />
     <meta name="twitter:card" content="summary_large_image" />
     <slot name="head" />
-  </head>
-  <body>
-    <a class="skip-link" href="#main">Skip to content</a>
-    <Header />
-    <main id="main" tabindex="-1" data-pagefind-body={indexed ? "" : undefined}>
-      <slot />
-    </main>
-    <Footer />
     <script>
       import { searchDialog } from "../components/search";
       import { prefetchOnIntent } from "../lib/prefetch-intent";
@@ -133,5 +125,13 @@ const speculation = JSON.stringify({
       });
       for (const wrap of document.querySelectorAll<HTMLElement>(".table-wrap, .diagram-scroll")) scrolling.observe(wrap);
     </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Header />
+    <main id="main" tabindex="-1" data-pagefind-body={indexed ? "" : undefined}>
+      <slot />
+    </main>
+    <Footer />
   </body>
 </html>
