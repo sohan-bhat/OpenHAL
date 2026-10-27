@@ -134,7 +134,7 @@ Not used or not working. The draw.io plugin and Mermaid CLI weren't needed, sinc
 
 ## The first hardware test
 
-The Arduino plant waterer, following examples/plant-waterer/TEST-PLAN.md. It is the cheapest complete rig and runs the whole path, and the pump stays unplugged from its supply until step 11.
+The Arduino plant waterer, following examples/plant-waterer/TEST-PLAN.md. The plant waterer is the cheapest complete rig and runs the whole path, and the pump stays unplugged from its supply until step 11.
 
 1. Wire an Arduino Uno with a capacitive soil sensor on A0, a float switch from pin 4 to GND and a 5 V relay module on pin 7. The pump's power goes through the relay contacts, never through the Arduino.
 2. Flash examples/plant-waterer/plant-waterer.ino with the arduino-cli commands in the plan.
@@ -152,9 +152,9 @@ The Arduino plant waterer, following examples/plant-waterer/TEST-PLAN.md. It is 
 5. ADR 0016. Values travel as a number and a unit apart on the wire, while device files and routines keep quantity strings like `30 s`.
 6. A person's own command counts as their confirmation. Agents need `control_medium` to ask for high hazard commands, which always wait for a person.
 7. The plant waterer's mock file and the print babysitter's printer file ship confirmed by owner so the demos can run. The real board's file and every copy `openhal init` makes are unconfirmed.
-8. A dangling reference to an unregistered device blocks every command on that device until it is fixed (review finding F17). It is strict and will surprise people during setup.
+8. A dangling reference to an unregistered device blocks every command on that device until someone fixes the reference (review finding F17). The rule is strict and will surprise people during setup.
 9. LGPL dependencies (zeroconf, python-can) are used unmodified. No code is copied from copyleft projects.
-10. The bambu driver ships after the owner's review of Bambu Lab's terms. It stays LAN only and never contacts Bambu Cloud.
+10. The bambu driver ships after the owner's review of Bambu Lab's terms. The driver stays LAN only and never contacts Bambu Cloud.
 
 ## With one more week
 

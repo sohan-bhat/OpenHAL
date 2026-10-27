@@ -26,7 +26,7 @@ The `scpi` driver talks to programmable test instruments over VISA. Bench suppli
 |---|---|---|
 | `query` | read | Query to send, such as `MEAS:VOLT? CH1` |
 | `set` | write | Setting template. `{value}` for every type, `{on_off}` (ON or OFF) for bool channels |
-| `get` | write | Readback query. Without it a read returns the last value sent, or unknown before the first write |
+| `get` | write | Readback query. Without a readback query a read returns the last value sent, or unknown before the first write |
 | `command` | action | Template with the action's argument names as placeholders |
 | `parse`, `scale`, `offset`, `unit`, `on`, `off`, `lookup` | read, write | As in the serial driver (docs/drivers/serial.md) |
 
@@ -49,7 +49,7 @@ Every proposed write and action is `suggested: true` and carries rated limits at
 
 ## Setup
 
-1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[scpi] @ git+https://github.com/sohan-bhat/OpenHAL"`. It brings pyusb and pyserial for the USB-TMC and serial transports. USB-TMC also needs the system libusb library.
+1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[scpi] @ git+https://github.com/sohan-bhat/OpenHAL"`. The extra brings pyusb and pyserial for the USB-TMC and serial transports. USB-TMC also needs the system libusb library.
 2. On Linux, give your user access to the USB device (a udev rule for the vendor id).
 3. Find the resource with `python -m pyvisa info` and `python -c "import pyvisa; print(pyvisa.ResourceManager('@py').list_resources())"`.
 4. Start from `openhal/drivers/scpi/examples/rigol-dp832.hal.yaml`, or from the driver's `describe()` output.

@@ -1,6 +1,6 @@
 # homeassistant driver
 
-The `homeassistant` driver is a bridge. It exposes a few Home Assistant entities that the device file selects as one OpenHAL device, so the safety kernel's limits, interlocks and confirmations apply to them. Everything else in the Home Assistant instance stays out of reach.
+The `homeassistant` driver is a bridge. The driver exposes a few Home Assistant entities that the device file selects as one OpenHAL device, so the safety kernel's limits, interlocks and confirmations apply to them. Everything else in the Home Assistant instance stays out of reach.
 
 | | |
 |---|---|
@@ -52,7 +52,7 @@ Both send the long-lived access token from the environment variable named in `to
 
 1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[homeassistant] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. In Home Assistant, open your profile, Security, and create a long-lived access token. A non-admin user that can see only the needed entities is the safest choice.
-3. Export it, for example `export HA_TOKEN=...`, where the hub runs.
+3. Export the token, for example `export HA_TOKEN=...`, where the hub runs.
 4. Start from `openhal/drivers/homeassistant/examples/office-climate.hal.yaml`, or from `describe()`.
 5. Validate with `openhal file validate`, then confirm the limits by hand.
 

@@ -206,8 +206,8 @@
   <header class="section">
     <h1>Driver writer</h1>
     <p class="muted">
-      Turns an unknown device into a Device File. A draft never confirms a limit. Only your answers in the limits
-      interview do.
+      Turns an unknown device into a Device File. A draft suggests limits, and your answers in the limits interview
+      confirm the limits.
     </p>
   </header>
 
@@ -288,7 +288,7 @@
     {#if session.status === "drafting"}
       <section class="section" aria-labelledby="propose-title">
         <h2 id="propose-title">Propose a draft</h2>
-        <p class="muted">Paste a Device File draft, for example one your AI wrote from the manual. Every limit in it stays suggested.</p>
+        <p class="muted">Paste a Device File draft, for example one your agent wrote from the manual. Every limit in the draft stays suggested.</p>
         <form onsubmit={propose} class="stack">
           <label class="field"><span>Draft YAML</span><textarea bind:value={proposal} rows="12" spellcheck="false"></textarea></label>
           <div><button class="button primary" type="submit" disabled={busy || !proposal.trim()}>Propose the draft</button></div>

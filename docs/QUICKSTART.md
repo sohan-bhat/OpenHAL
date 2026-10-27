@@ -1,6 +1,6 @@
 # Quickstart
 
-## See it work
+## See the demo
 
 ```
 git clone https://github.com/sohan-bhat/OpenHAL
@@ -9,10 +9,10 @@ uv run openhal demo
 ```
 
 <!-- outcome:start -->
-You'll see the agent warm the bed from 60 °C to 70 °C, have a 300 °C nozzle refused at the 260 °C limit, pause the print when it comes loose and wait for a person to approve the cancel.
+You'll see the agent warm the bed from 60 °C to 70 °C, have a 300 °C nozzle refused at the 260 °C limit and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.
 <!-- outcome:end -->
 
-The demo starts a hub with a simulated Klipper [printer and its camera](../examples/print-babysitter/), connects as an agent over the hub protocol and keeps an eye on a print. It reads camera frames, warms the bed, asks for a nozzle over the limit, pauses the print when it comes loose and asks to cancel. Nothing touches hardware. The printer runs on a Moonraker simulator, the camera frames are line drawings, and the hub's safety kernel decides every command as it would for a real printer.
+The demo starts a hub with a simulated Klipper [printer and its camera](../examples/print-babysitter/), and connects an agent over the hub protocol to keep an eye on a print. The agent reads camera frames, warms the bed, asks for a nozzle over the limit, pauses the print and asks to cancel. The owner approves the cancel with the human token over the same protocol, well inside the hub's five minute window. Nothing touches hardware. The printer runs on a Moonraker simulator, the camera frames are line drawings, and the hub's safety kernel decides every command as the kernel would for a real printer.
 
 <!-- trace:start -->
 ```
@@ -26,13 +26,14 @@ The demo starts a hub with a simulated Klipper [printer and its camera](../examp
                 "value": 70, "unit": "degC" }
 ← result      { "status": "done" }
 
+# a hotter nozzle might help the corner stick
 → hal/write   { "device": "printer", "channel": "extruder_target",
                 "value": 300, "unit": "degC" }
 ← error -32010 LIMIT_EXCEEDED
   extruder_target 300 degC exceeds the limit of 260 degC
   (printer.hal.yaml, confirmed by owner 2026-10-24)
 
-# later
+# later the agent checks the print again
 → hal/read    { "device": "printer-cam", "channel": "frame" }
 ← result      { "value": { "mimeType": "image/jpeg", "bytes": 23567,
                 "width": 640, "height": 480, "data": "…" } }
@@ -45,13 +46,35 @@ The demo starts a hub with a simulated Klipper [printer and its camera](../examp
 → hal/action  { "device": "printer", "action": "cancel" }
 ← result      { "status": "pending", "requestId": "REQUEST_ID",
                 "expiresInS": 300 }
+
+# the owner approves the cancel
+→ hal/confirmations/approve { "requestId": "REQUEST_ID" }
+← result      { "status": "done" }
 ```
 <!-- trace:end -->
 
+The demo ends with the hub's audit log, newest first. `TIME` stands in for the time of each entry.
+
+<!-- audit:start -->
+```
+seq  time  event    who           target                   status   message
+13   TIME  action   agent:claude  printer.cancel           done     Done. cancel ran.
+12   TIME  confirm  human:owner   printer.cancel           done
+11   TIME  action   agent:claude  printer.cancel           pending  Waiting for a human to approve action:cancel on printer.
+10   TIME  action   agent:claude  printer.pause            done     Done. pause ran.
+9    TIME  read     agent:claude  printer-cam.frame        done
+8    TIME  write    agent:claude  printer.extruder_target  blocked  Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.
+7    TIME  write    agent:claude  printer.bed_target       done     Done. bed_target is now 70 degC.
+6    TIME  read     agent:claude  printer-cam.frame        done
+```
+
+6 requests, 1 refused, 1 confirmed by a person.
+<!-- audit:end -->
+
 ## Run your own hub
 
-1. `uv run openhal init` creates the config folder, your human token and `devices/plant-waterer.hal.yaml`, the same simulated plant waterer.
-2. Read its limits, then run `uv run openhal file confirm` on that file. It loads read-only until you do.
+1. `uv run openhal init` creates the config folder, your human token and `devices/plant-waterer.hal.yaml`, the simulated Arduino plant waterer.
+2. Read the file's limits, then run `uv run openhal file confirm` on the file. The hub loads the file read-only until you confirm the limits.
 3. `uv run openhald` starts the hub on `127.0.0.1:7420`.
 4. `uv run openhal token create --agent --scope control_low --name claude` makes a token for your agent. [MCP setup](interfaces/MCP.md) has the config for each client.
 

@@ -179,7 +179,7 @@
                   <div><dt class="label">limit</dt><dd class="mono">{ask.limit}</dd></div>
                 {/if}
                 <div>
-                  <dt class="label">why it waits</dt>
+                  <dt class="label">why the request waits</dt>
                   <dd><Reason text={ask.why} code={[ask.file ?? "", ask.target].filter(Boolean)} /></dd>
                 </div>
                 {#if dry.tone !== "pending"}
@@ -248,7 +248,7 @@
                   Approve and {ask.verb} {ask.target}
                 </button>
               </div>
-              <p class="muted small">The Safety Kernel checks every limit again before it runs.</p>
+              <p class="muted small">The Safety Kernel checks every limit again before the command runs.</p>
               <div class="buttons">
                 <label class="field reason">
                   <span>Reason to reject, optional</span>

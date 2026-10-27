@@ -1,6 +1,6 @@
 # Hardware test plan for the sila2 driver
 
-This plan checks the SiLA 2 driver on a real SiLA 2 device. It starts with read-only checks and ends with the smallest safe change. Use an empty device for the change steps, with no plate, sample or liquid, and stay next to it. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the SiLA 2 driver on a real SiLA 2 device. The plan starts with read-only checks and ends with the smallest safe change. Use an empty device for the change steps, with no plate, sample or liquid, and stay next to it. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -10,7 +10,7 @@ This plan checks the SiLA 2 driver on a real SiLA 2 device. It starts with read-
 
 ## The read-only probe
 
-Save this as `probe.py`. It connects, identifies the server and reads every channel. It holds no kernel grant, so it can't change anything.
+Save this as `probe.py`. The probe connects, identifies the server and reads every channel. The probe holds no kernel grant, so the probe can't change anything.
 
 ```python
 import asyncio, json, sys
@@ -38,7 +38,7 @@ async def main(path):
 asyncio.run(main(sys.argv[1]))
 ```
 
-Connecting asks SiLAService for the implemented features and their definitions, and subscribes to the observable properties the file names. It changes nothing.
+Connecting asks SiLAService for the implemented features and their definitions, and subscribes to the observable properties the file names, and changes nothing.
 
 ## Step 1. Discovery (read-only)
 

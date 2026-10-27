@@ -1,6 +1,6 @@
 # Hardware test plan, http driver
 
-This plan checks the http driver against a real device with a local HTTP API. It starts with read-only checks and ends with the smallest safe write. It was written for a Shelly Plus Plug S with nothing plugged into it, and works the same way for any device you describe in a device file.
+This plan checks the http driver against a real device with a local HTTP API. The plan starts with read-only checks and ends with the smallest safe write. The plan was written for a Shelly Plus Plug S with nothing plugged into it, and works the same way for any device you describe in a device file.
 
 Never plug a load into the device while you run the write steps. Run every step from the repository checkout. [README.md](README.md) has the setup and rules every plan shares.
 
@@ -13,7 +13,7 @@ Never plug a load into the device while you run the write steps. Run every step 
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|write CHANNEL VALUE|stop"""
@@ -102,7 +102,7 @@ Expected. `power = 0.0 W`, a `voltage` close to your mains voltage, a `plug_temp
 
 Unplug the device from the wall, then run step 4 again.
 
-Expected. `DriverError` that names the URL and says the device is not reachable, within about 3 seconds (the `timeout`). Plug it back in, wait for it to rejoin the network and run step 4 again. It should read normally.
+Expected. `DriverError` that names the URL and says the device is not reachable, within about 3 seconds (the `timeout`). Plug the device back in, wait for the device to rejoin the network and run step 4 again. The device should read normally.
 
 ### 6. Describe (only if your device serves an OpenAPI document)
 
@@ -126,7 +126,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-plug.hal.yaml
 ```
 
-It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-plug.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-plug.hal.yaml` then says `writable`.
 
 ### 8. The smallest safe write
 

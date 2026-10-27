@@ -1,7 +1,6 @@
 ---
 import type { StoryFacts } from "../../../lib/story/facts";
-import { lit, shown } from "../../../lib/story/script";
-import { KERNEL, type Word } from "../../../lib/story/timeline";
+import { PLACED, lit, shown, type StepId } from "../../../lib/story/script";
 
 interface Props {
   facts: StoryFacts;
@@ -9,18 +8,32 @@ interface Props {
 }
 
 const { facts, step } = Astro.props;
-const names = ["Units", "Range", "Rate", "Interlocks", "Confirmation"];
-const checks = names.map((name, index) => ({
-  name,
-  marks: KERNEL.passes.flatMap((pass) => (pass.words[index] ? [{ in: pass.in, word: pass.words[index] }] : [])),
-}));
-const verdicts = [
-  { in: KERNEL.waiting, kind: "idle", text: "Waiting for a command" },
-  { in: KERNEL.granted, kind: "granted", text: "granted" },
-  { in: KERNEL.blocked, kind: "blocked", text: facts.nozzle.refusal.name },
-  { in: KERNEL.confirm, kind: "confirm", text: "confirmation required" },
-];
-const markClass = (word: Word) => ({ ok: "status ok", blocked: "status blocked", required: "status confirm", "not needed": "quiet" })[word];
+const ids = PLACED.map((item) => item.id);
+const grouped = <T,>(pick: (id: StepId) => T | undefined, key: (value: T) => string) => {
+  const out = new Map<string, { value: T; in: StepId[] }>();
+  for (const id of ids) {
+    const value = pick(id);
+    if (value === undefined) continue;
+    const entry = out.get(key(value)) ?? { value, in: [] };
+    entry.in.push(id);
+    out.set(key(value), entry);
+  }
+  return [...out.values()];
+};
+const list = (reading: boolean) => {
+  const steps = ids.filter((id) => facts.kernel[id].reading === reading);
+  const names = [...new Set(steps.flatMap((id) => facts.kernel[id].checks.map((check) => check.name)))];
+  return {
+    in: reading ? steps : ids.filter((id) => !facts.kernel[id].reading),
+    checks: names.map((name) => ({
+      name,
+      marks: grouped((id) => (steps.includes(id) ? facts.kernel[id].checks.find((check) => check.name === name)?.word : undefined), (word) => word),
+    })),
+  };
+};
+const lists = [list(false), list(true)];
+const verdicts = grouped((id) => facts.kernel[id].verdict, (verdict) => `${verdict.kind} ${verdict.text}`);
+const markClass = (word: string) => ({ ok: "status ok", blocked: "status blocked", required: "status confirm", issued: "status ok" })[word] ?? "quiet";
 const verdictClass = (kind: string) => ({ blocked: "status blocked mono", granted: "status ok", confirm: "status confirm" })[kind] ?? "quiet";
 ---
 
@@ -29,27 +42,31 @@ const verdictClass = (kind: string) => ({ blocked: "status blocked mono", grante
     <p class="node-name">Safety kernel</p>
     <p class="node-note wide-only">Checks in order</p>
   </div>
-  <ol class="checks wide-only">
+  <div class="swap wide-only">
     {
-      checks.map((check) => (
-        <li>
-          <span>{check.name}</span>
-          <span class="swap check-mark">
-            {check.marks.map((mark) => (
-              <span class={markClass(mark.word)} {...shown(mark.in, step)}>
-                {mark.word}
+      lists.map((list) => (
+        <ol class="checks" {...shown(list.in, step)}>
+          {list.checks.map((check) => (
+            <li>
+              <span>{check.name}</span>
+              <span class="swap check-mark">
+                {check.marks.map((mark) => (
+                  <span class={markClass(mark.value)} {...shown(mark.in, step)}>
+                    {mark.value}
+                  </span>
+                ))}
               </span>
-            ))}
-          </span>
-        </li>
+            </li>
+          ))}
+        </ol>
       ))
     }
-  </ol>
+  </div>
   <div class="swap verdict">
     {
       verdicts.map((verdict) => (
-        <p class:list={["verdict-line", verdict.kind]} {...shown(verdict.in, step)}>
-          <span class={verdictClass(verdict.kind)}>{verdict.text}</span>
+        <p class:list={["verdict-line", verdict.value.kind]} {...shown(verdict.in, step)}>
+          <span class={verdictClass(verdict.value.kind)}>{verdict.value.text}</span>
         </p>
       ))
     }
@@ -62,6 +79,7 @@ const verdictClass = (kind: string) => ({ blocked: "status blocked mono", grante
     margin: 0;
     padding: 0;
     display: grid;
+    align-content: start;
   }
 
   .checks li {

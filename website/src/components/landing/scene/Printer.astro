@@ -1,8 +1,7 @@
 ---
 import type { StoryFacts } from "../../../lib/story/facts";
-import { amount, nb } from "../../../lib/story/facts";
-import { lit, shown } from "../../../lib/story/script";
-import { PRINTER } from "../../../lib/story/timeline";
+import { nb } from "../../../lib/story/facts";
+import { lit, runs, shown } from "../../../lib/story/script";
 
 interface Props {
   facts: StoryFacts;
@@ -10,14 +9,7 @@ interface Props {
 }
 
 const { facts, step } = Astro.props;
-const bed = [
-  { in: PRINTER.before, text: nb(amount(facts.bed.before, facts.bed.unit)) },
-  { in: PRINTER.after, text: nb(amount(facts.bed.after, facts.bed.unit)) },
-];
-const states = [
-  { in: PRINTER.printing, text: "printing" },
-  { in: PRINTER.paused, text: "paused" },
-];
+const readings = facts.printer.readings.map((reading) => ({ ...reading, values: runs(reading.at) }));
 ---
 
 <div class="node" data-cam="printer" {...lit("printer", step)}>
@@ -26,16 +18,18 @@ const states = [
     <p class="node-note">Simulated</p>
   </div>
   <div class="readings">
-    <div class="reading">
-      <p class="reading-name">Bed</p>
-      <p class="swap figure value">
-        {bed.map((reading) => <span {...shown(reading.in, step)}>{reading.text}</span>)}
-      </p>
-    </div>
-    <div class="reading">
-      <p class="reading-name">State</p>
-      <p class="swap value word">{states.map((state) => <span {...shown(state.in, step)}>{state.text}</span>)}</p>
-    </div>
+    {
+      readings.map((reading) => (
+        <div class="reading">
+          <p class="reading-name">{reading.name}</p>
+          <p class:list={["swap", "value", reading.word ? "word" : "figure"]}>
+            {reading.values.map((value) => (
+              <span {...shown(value.in, step)}>{nb(value.text)}</span>
+            ))}
+          </p>
+        </div>
+      ))
+    }
   </div>
 </div>
 
@@ -46,10 +40,11 @@ const states = [
   }
 
   .reading {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
-    gap: var(--s-2);
+    justify-content: space-between;
+    column-gap: var(--s-2);
   }
 
   .reading-name {
@@ -57,7 +52,9 @@ const states = [
   }
 
   .value {
+    margin-left: auto;
     justify-items: end;
+    text-align: right;
   }
 
   .word {

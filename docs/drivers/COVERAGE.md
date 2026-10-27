@@ -1,10 +1,10 @@
 # Driver coverage
 
-Status of every driver and bridge. The machine-readable version is `drivers/catalog.json`, and the website renders it as the supported devices page. It started as the plan in M0. The status column follows the catalog, and a test keeps them in step.
+Status of every driver and bridge. The machine-readable version is `drivers/catalog.json`, and the website renders the catalog as the supported devices page. This page started as the plan in M0. The status column follows the catalog, and a test keeps the column and the catalog in step.
 
 Status values are planned, tested on simulator (the driver passes the conformance suite against its simulator) and verified on hardware (a hardware test report exists).
 
-Device estimates are rough orders of magnitude with the reasoning given. They are not marketing numbers and the website shows them with their reasoning.
+Device estimates are rough orders of magnitude with the reasoning given. The estimates are not marketing numbers, and the website shows each estimate with its reasoning.
 
 ## Tier 1
 

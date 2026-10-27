@@ -1,8 +1,9 @@
 """`openhal demo`, an agent babysitting a 3D print against a real hub, with nothing to set up.
 
-The plain demo connects as an agent to a hub with a simulated Klipper printer and its camera, and
-sends six requests (openhal/demo/scenario.py). `--full` runs the whole system end to end with the
-Arduino plant waterer (openhal/demo/e2e.py).
+The plain demo connects an agent and the owner to a hub with a simulated Klipper printer and its
+camera. The agent sends six requests, the owner approves the cancel, and the demo prints the hub's
+audit log (openhal/demo/scenario.py). `--full` runs the whole system end to end with the Arduino
+plant waterer (openhal/demo/e2e.py).
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ from pathlib import Path
 import typer
 from rich.markup import escape
 
+from openhal.cli import log_cmd
 from openhal.cli._common import console, fail
 
 
@@ -43,7 +45,8 @@ def register(app: typer.Typer) -> None:
     ) -> None:
         """Watch an agent babysit a 3D print on a simulated Klipper printer and its camera.
 
-        The agent warms the bed, is refused a nozzle over the limit, then pauses the print and asks to cancel.
+        The agent warms the bed, is refused a nozzle over the limit, pauses the print and asks to cancel.
+        The owner approves the cancel, and the demo ends with the hub's audit log.
 
         With --full the hub starts empty and runs the whole system with the Arduino plant waterer.
 
@@ -71,6 +74,11 @@ def register(app: typer.Typer) -> None:
         if full and not real_time:
             console.print(f"[dim]The simulated board ran {speed:g} times faster than real time.[/dim]")
         if not full:
+            console.print("The demo hub's audit log, newest first")
+            for line in log_cmd.lines(result["audit"]["entries"]):
+                console.print(escape(line))
+            console.print(f"{escape(trace.counts(result))}.")
+            console.print()
             console.print("[dim]Demo data from simulated devices. The camera frames are line drawings.[/dim]")
         if record is not None:
             record.parent.mkdir(parents=True, exist_ok=True)

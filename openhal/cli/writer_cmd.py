@@ -80,7 +80,7 @@ def propose(
     session_id: str = typer.Argument(..., help="The session id."),
     file: Path = typer.Option(..., "--file", "-f", exists=True, dir_okay=False, help="A draft device file."),  # noqa: B008
 ) -> None:
-    """Send a draft device file. Every limit in it is stored as suggested until the interview."""
+    """Send a draft device file. Every limit in the draft is stored as suggested until the interview."""
     with hub() as client:
         session = client.propose(session_id, file.read_text(encoding="utf-8"))
     _print_session(session)
@@ -121,7 +121,7 @@ def interview(session_id: str = typer.Argument(..., help="The session id.")) -> 
         session = client.answer(session_id, answers)
     _print_session(session)
     if session.status == "ready":
-        console.print(f"Every limit is answered. Save it with openhal writer finish {escape(session_id)}")
+        console.print(f"Every limit is answered. Save the device file with openhal writer finish {escape(session_id)}")
 
 
 @app.command()

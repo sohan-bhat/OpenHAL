@@ -1,6 +1,6 @@
 # Create a routine
 
-A routine is an automation that runs on the [Hub](glossary:hub) without a model. Triggers say when it runs. Steps say what it does. Every change a step makes goes through the [Safety Kernel](glossary:safety-kernel), like any other command.
+A routine is an automation that runs on the [Hub](glossary:hub) without a model. Triggers say when the routine runs. Steps say what the routine does. Every change a step makes goes through the [Safety Kernel](glossary:safety-kernel), like any other command.
 
 ## Start the hub
 
@@ -11,9 +11,9 @@ $ uv run openhald &
 $ uv run openhal read plant-waterer.soil_moisture
 ```
 
-## Describe it
+## Describe the routine
 
-This routine checks the soil every hour and waters the plant for 20 seconds when it is dry.
+This routine checks the soil every hour and waters the plant for 20 seconds when the soil is dry.
 
 ```yaml tested kind=routine file=morning-water.yaml
 id: morning-water
@@ -37,9 +37,9 @@ dry run passes
   1. allowed  Allowed.
 ```
 
-## Enable it
+## Enable the routine
 
-Only a person may enable a routine, by typing the phrase `enable`. The hub runs the dry run again first.
+A person enables the routine with the human token and the typed phrase `enable`. The hub runs the dry run again first.
 
 ```sh tested
 $ uv run openhal routine enable morning-water
@@ -64,4 +64,4 @@ $ uv run openhal routine dry-run long-soak
 blocked above_max  Blocked. The duration limit is 30 s (max). Asked for 120 s.
 ```
 
-The file also caps the pump at 3 runs per hour, and a routine's runs count toward it. Over the protocol, `hal/routines/dryRun` returns the same decisions. The [routines section](../../../spec/2026-10-24/routines.md) of the specification defines triggers, steps and approvals for high hazard devices.
+The file also caps the pump at 3 runs per hour, and a routine's runs count toward the cap. Over the protocol, `hal/routines/dryRun` returns the same decisions. The [routines section](../../../spec/2026-10-24/routines.md) of the specification defines triggers, steps and approvals for high hazard devices.

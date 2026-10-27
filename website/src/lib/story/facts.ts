@@ -4,7 +4,10 @@ import { parse } from "yaml";
 import { loadScenario, type Exchange, type Scenario } from "../scenario";
 import { REPO_ROOT } from "../spec-meta.mjs";
 import { reasonLines } from "../trace-html.mjs";
-import type { StepId } from "./script";
+import { PLACED, type StepId } from "./script";
+import type { AuditRow, Tone, TraceLine } from "./trace";
+
+export type { AuditRow, TraceLine } from "./trace";
 
 export interface Refusal {
   name: string;
@@ -19,6 +22,30 @@ export interface Ask {
   note: string;
 }
 
+export interface Check {
+  name: string;
+  word: string;
+}
+
+export type VerdictKind = "idle" | "granted" | "blocked" | "confirm";
+
+export interface Verdict {
+  kind: VerdictKind;
+  text: string;
+}
+
+export interface KernelView {
+  reading: boolean;
+  checks: Check[];
+  verdict: Verdict;
+}
+
+export interface Reading {
+  name: string;
+  word: boolean;
+  at: Record<StepId, string>;
+}
+
 export const ASKED = "Keep an eye on my print tonight.";
 
 /** The exchanges of docs/demo/scenario.yaml the story tells, by their ids in the record. */
@@ -29,20 +56,35 @@ export const IDS = {
   loose: "come-loose",
   pause: "paused",
   cancel: "cancel-waits",
+  approve: "owner-approves",
 } as const;
 
+/** The exchange each step tells. The title, the ask and the ending send nothing. */
+export const TOLD: Partial<Record<StepId, keyof typeof IDS>> = {
+  look: "look",
+  warm: "bed",
+  hot: "nozzle",
+  loose: "loose",
+  pause: "pause",
+  cancel: "cancel",
+  approve: "approve",
+};
+
 export interface StoryFacts {
-  printer: { id: string; name: string; driver: string };
+  agent: string;
+  printer: { id: string; name: string; driver: string; readings: Reading[] };
   camera: { id: string; channel: string; driver: string; image: string };
   file: string;
   confirmed: string;
   look: Ask;
   loose: Ask;
   bed: Ask & { channel: string; max: string; before: number; after: number; unit: string; status: string };
-  nozzle: Ask & { channel: string; max: string; now: string; refusal: Refusal };
+  nozzle: Ask & { channel: string; max: string; refusal: Refusal };
   pause: Ask & { status: string };
-  cancel: Ask & { status: string; wait: string };
-  requests: number;
+  cancel: Ask & { status: string; rule: string };
+  approve: Ask & { device: string; status: string; approved: string };
+  kernel: Record<StepId, KernelView>;
+  audit: { counts: string; command: string; rows: AuditRow[] };
 }
 
 interface Limit {
@@ -60,7 +102,7 @@ export interface DeviceFile {
   actions: Record<string, { confirm?: string } | null>;
 }
 
-const NBSP = "\u00a0";
+const NBSP = " ";
 const UNITS: Record<string, string> = { degC: "°C", degF: "°F", percent: "%" };
 
 /** Keeps a number on the same line as its unit. */
@@ -79,28 +121,53 @@ export function amount(value: unknown, unit: unknown): string {
 /** Message text as a person reads it, with every `degC` written as `°C`. */
 export const humane = (text: string): string => text.replace(/(\d) (degC|degF|percent)\b/g, (_, digit: string, unit: string) => `${digit} ${unitText(unit)}`);
 
+/** A principal as the record names it, `human:owner`, as a person reads it, `owner`. */
+export const named = (principal: string): string => principal.slice(principal.indexOf(":") + 1);
+
+const capital = (word: string): string => `${word[0].toUpperCase()}${word.slice(1)}`;
+
 export function readDeviceFile(path = join(REPO_ROOT, "examples", "print-babysitter", "printer.hal.yaml")): DeviceFile {
   return parse(readFileSync(path, "utf8")) as DeviceFile;
 }
 
-function need<T>(found: T | undefined, what: string): T {
-  if (found === undefined) throw new Error(`docs/demo/scenario.yaml has no ${what}, which the landing story shows.`);
+function need<T>(found: T | undefined | null, what: string): T {
+  if (found === undefined || found === null) throw new Error(`docs/demo/scenario.yaml has no ${what}, which the landing story shows.`);
   return found;
 }
 
 const params = (exchange: Exchange): Record<string, any> => exchange.request.params ?? {};
 const statusOf = (exchange: Exchange): string => String(exchange.result?.status ?? "");
-
-function reading(exchange: Exchange, channel: string): { before: number; after: number; unit: string } | null {
-  const found = (exchange as Record<string, any>)[channel];
-  if (!found?.before || !found?.after) return null;
-  return { before: Number(found.before.value), after: Number(found.after.value), unit: String(found.after.unit) };
-}
+const field = (exchange: Exchange, key: string): any => (exchange as Record<string, any>)[key];
 
 function imageText(exchange: Exchange): string {
   const value = exchange.result?.value ?? exchange.result?.result?.value ?? exchange.result;
   const kind = String(value?.mimeType ?? value?.mime ?? "image");
   return value?.width && value?.height ? `${kind} ${value.width}${NBSP}×${NBSP}${value.height}` : kind;
+}
+
+const TONES: Record<string, Tone> = { done: "ok", pending: "pending", blocked: "blocked", failed: "blocked" };
+
+/** What the kernel did with a step's request, in the record's words, and the verdict it reached. */
+function kernelView(exchange: Exchange | undefined, id: string): KernelView {
+  if (!exchange) return { reading: false, checks: [], verdict: { kind: "idle", text: "Waiting for a command" } };
+  const kernel = need(field(exchange, "kernel"), `kernel record for ${id}`);
+  const checks: Check[] = Object.entries(need(kernel.checks as Record<string, string>, `kernel checks for ${id}`)).map(([name, word]) => ({ name: capital(name), word: String(word) }));
+  const reading = exchange.request.method === "hal/read";
+  if (reading) {
+    checks.push({ name: "Grant", word: String(kernel.grant) });
+    checks.push({ name: "Audit log", word: `entry ${need(kernel.logged as number[], `log entry for ${id}`).join(", ")}` });
+  }
+  const words = checks.map((check) => check.word);
+  const verdict: Verdict | undefined = exchange.error
+    ? { kind: "blocked", text: String(exchange.error.data.name) }
+    : words.includes("required")
+      ? { kind: "confirm", text: "confirmation required" }
+      : kernel.grant === "issued"
+        ? { kind: "granted", text: "granted" }
+        : reading && kernel.grant === "not needed"
+          ? { kind: "granted", text: "allowed" }
+          : undefined;
+  return { reading, checks, verdict: need(verdict, `kernel verdict for ${id}`) };
 }
 
 /** Every word and number the landing story shows, from docs/demo/scenario.yaml and the printer's device file. */
@@ -109,43 +176,82 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
   const exchanges = record.exchanges;
   const described = (id: string) => need(record.devices?.find((item) => item.id === id), `description of ${id}`);
   const byId = (id: string) => need(exchanges.find((exchange) => exchange.id === id), `exchange ${id}`);
+  const told = (step: StepId) => (TOLD[step] ? byId(IDS[TOLD[step]!]) : undefined);
   const look = byId(IDS.look);
   const loose = byId(IDS.loose);
   const bed = byId(IDS.bed);
   const nozzle = byId(IDS.nozzle);
   const pause = byId(IDS.pause);
   const cancel = byId(IDS.cancel);
+  const approve = byId(IDS.approve);
   const bedChannel = String(params(bed).channel);
   const nozzleChannel = String(params(nozzle).channel);
   const limit = (channel: string) => amount(file.write[channel]?.max, file.write[channel]?.unit);
-  const heated = need(reading(bed, bedChannel) ?? undefined, `${bedChannel} before and after`);
+  const change = need(field(bed, bedChannel), `${bedChannel} before and after`);
   const printer = described(String(params(bed).device));
   const webcamDevice = described(String(params(look).device));
-  const nozzleNow = reading(nozzle, "extruder_temp");
-  const error = nozzle.error!;
+  const error = need(nozzle.error, `error for ${IDS.nozzle}`);
   const name = typeof file.device === "string" ? file.device : file.device.name;
-  const note = (exchange: Exchange) => String(exchange.before ?? "");
+  const note = (exchange: Exchange) => String(need(exchange.before, `narration for ${exchange.id}`));
   const write = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: String(params(exchange).channel), value: amount(params(exchange).value, params(exchange).unit), note: note(exchange) });
   const act = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: String(params(exchange).action), value: "", note: note(exchange) });
   const read = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: `${params(exchange).device} ${params(exchange).channel}`, value: "", note: note(exchange) });
+  const viewed = exchanges.filter((exchange) => field(exchange, "printer"));
+  const viewAt = (step: StepId): Record<string, any> => {
+    const own = told(step);
+    if (own) return need(field(own, "printer"), `printer view after ${own.id}`);
+    const next = PLACED.slice(PLACED.findIndex((item) => item.id === step)).map((item) => told(item.id)).find(Boolean);
+    return field(next ?? viewed[viewed.length - 1], "printer") ?? {};
+  };
+  const readingAt = (what: string, pick: (view: Record<string, any>) => string | undefined): Record<StepId, string> =>
+    Object.fromEntries(PLACED.map((item) => [item.id, need(pick(viewAt(item.id)), `${what} for the story's ${item.id} step`)])) as Record<StepId, string>;
+  const quantity = (key: string) => (view: Record<string, any>) => (view[key] ? amount(view[key].value, view[key].unit) : undefined);
+  const readings: Reading[] = [
+    { name: "Nozzle", word: false, at: readingAt("the nozzle temperature", quantity("extruder_temp")) },
+    { name: "Bed target", word: false, at: readingAt("the bed target", quantity(bedChannel)) },
+    { name: "State", word: true, at: readingAt("the printer state", (view) => view.state) },
+  ];
+  const approved = String(need(field(approve, "kernel")?.approved_by, `approver of ${IDS.approve}`));
+  const audit = need((record as Record<string, any>).audit, "audit log");
+  const counts = Object.entries(need(audit.counts as Record<string, number>, "audit counts")).map(([key, count]) => `${count} ${key.replaceAll("_", " ")}`);
+  const rows: AuditRow[] = need(audit.entries as Array<Record<string, any>>, "audit entries").map((entry) => ({
+    seq: Number(entry.seq),
+    event: String(entry.event),
+    who: String(entry.who),
+    target: String(entry.target),
+    status: String(entry.status),
+    tone: TONES[String(entry.status)] ?? "plain",
+  }));
+  const approvedTarget = String(need(approve.result?.target, `target of ${IDS.approve}`));
+  const agent = String(need((record as Record<string, any>).principals?.agent, "agent principal"));
   return {
-    printer: { id: printer.id, name, driver: printer.driver },
+    agent,
+    printer: { id: printer.id, name, driver: printer.driver, readings },
     camera: { id: webcamDevice.id, channel: String(params(look).channel), driver: webcamDevice.driver, image: imageText(look) },
     file: printer.file,
     confirmed: `confirmed by ${printer.confirmed.by} ${printer.confirmed.at}`,
     look: read(look),
     loose: read(loose),
-    bed: { ...write(bed), channel: bedChannel, max: limit(bedChannel), ...heated, status: statusOf(bed) },
+    bed: { ...write(bed), channel: bedChannel, max: limit(bedChannel), before: Number(change.before.value), after: Number(change.after.value), unit: String(change.after.unit), status: statusOf(bed) },
     nozzle: {
       ...write(nozzle),
       channel: nozzleChannel,
       max: limit(nozzleChannel),
-      now: nozzleNow ? amount(nozzleNow.after, nozzleNow.unit) : "",
       refusal: { name: String(error.data.name), code: Number(error.code), reason: humane(reasonLines(String(error.message))[0]) },
     },
     pause: { ...act(pause), status: statusOf(pause) },
-    cancel: { ...act(cancel), status: statusOf(cancel), wait: "waiting for a person" },
-    requests: exchanges.length,
+    cancel: { ...act(cancel), status: statusOf(cancel), rule: `${capital(String(params(cancel).action))} waits for a person` },
+    approve: {
+      method: approve.request.method,
+      target: approvedTarget.slice(approvedTarget.indexOf(":") + 1),
+      device: String(approve.result?.device),
+      value: "",
+      note: note(approve),
+      status: statusOf(approve),
+      approved: `approved by ${named(approved)}`,
+    },
+    kernel: Object.fromEntries(PLACED.map((item) => [item.id, kernelView(told(item.id), item.id)])) as Record<StepId, KernelView>,
+    audit: { counts: counts.join(", "), command: String(audit.printed_with), rows },
   };
 }
 
@@ -154,41 +260,39 @@ export function storyLines(facts: StoryFacts): Record<StepId, string> {
   const bed = (n: number) => amount(n, facts.bed.unit);
   return {
     intro: "Watch an agent babysit a 3D print.",
-    ask: "A long print is running. You ask an agent to keep an eye on it.",
-    look: "It looks through the webcam and sees a corner of the first layer lifting.",
-    warm: nb(`It warms the bed from ${bed(facts.bed.before)} to ${bed(facts.bed.after)}. That's inside the limit.`),
-    hot: nb(`It asks for a ${facts.nozzle.value} nozzle. A person set ${facts.nozzle.max}. The kernel says no.`),
-    loose: "Later, the webcam shows the print has come loose.",
+    ask: "A long print is running. You ask an agent to watch the print.",
+    look: "The agent reads a webcam frame and sees a corner lifting.",
+    warm: nb(`The agent warms the bed from ${bed(facts.bed.before)} to ${bed(facts.bed.after)}, under the ${facts.bed.max} limit.`),
+    hot: nb(`The kernel refuses a ${facts.nozzle.value} nozzle, above your ${facts.nozzle.max} limit.`),
+    loose: "Later, a webcam frame shows the print has come loose.",
     pause: "The agent pauses the print at once.",
-    cancel: "Cancelling can't be undone, so the hub asks a person first.",
-    wake: "You wake up to a paused print. Cancelling it is your call.",
+    cancel: "Cancelling can't be undone, so the hub asks you first.",
+    approve: `You approve the ${facts.approve.target}. The kernel rechecks, and the print is ${facts.printer.readings.find((reading) => reading.word)!.at.approve}.`,
     end: "Every command to every device takes this path.",
   };
 }
 
-export type TraceLine =
-  | { kind: "note"; text: string }
-  | { kind: "request"; method: string; text: string }
-  | { kind: "result"; text: string }
-  | { kind: "error"; code: number; name: string; reason: string };
-
 /** The messages each step sends, in the message trace's shape, with numbers as a person reads them. */
 export function storyTrace(facts: StoryFacts): Partial<Record<StepId, TraceLine[]>> {
   const out = (ask: Ask): TraceLine[] => [
-    ...(ask.note ? [{ kind: "note" as const, text: ask.note }] : []),
+    { kind: "note", text: ask.note },
     { kind: "request", method: ask.method, text: nb([ask.target, ask.value].filter(Boolean).join(" ")) },
   ];
-  const image: TraceLine = { kind: "result", text: facts.camera.image };
+  const answer = (text: string): TraceLine => ({ kind: "result", text, tone: TONES[text] ?? "ok" });
+  const image: TraceLine = { kind: "result", text: facts.camera.image, tone: "ok" };
   const { refusal } = facts.nozzle;
   return {
+    ask: [{ kind: "note", text: "nothing sent to the hub yet" }],
     look: [...out(facts.look), image],
-    warm: [...out(facts.bed), { kind: "result", text: facts.bed.status }],
+    warm: [...out(facts.bed), answer(facts.bed.status)],
     hot: [...out(facts.nozzle), { kind: "error", code: refusal.code, name: refusal.name, reason: nb(refusal.reason) }],
     loose: [...out(facts.loose), image],
-    pause: [...out(facts.pause), { kind: "result", text: facts.pause.status }],
-    cancel: [...out(facts.cancel), { kind: "result", text: facts.cancel.status }],
-    ask: [{ kind: "note", text: "nothing sent to the hub yet" }],
-    wake: [{ kind: "note", text: `${facts.cancel.wait}: ${facts.cancel.target} on ${facts.printer.id}` }],
-    end: [{ kind: "note", text: `${facts.requests} requests, every one through the hub and its kernel` }],
+    pause: [...out(facts.pause), answer(facts.pause.status)],
+    cancel: [...out(facts.cancel), answer(facts.cancel.status)],
+    approve: [...out({ ...facts.approve, target: `${facts.approve.target} on ${facts.approve.device}` }), answer(facts.approve.status)],
+    end: [
+      { kind: "note", text: facts.audit.counts, keep: true },
+      { kind: "audit", caption: facts.audit.command, rows: facts.audit.rows },
+    ],
   };
 }

@@ -6,7 +6,7 @@ The Home Assistant bridge stays the other route. If Home Assistant already runs 
 
 ## Server status
 
-Checked on 2026-10-24. python-matter-server was archived in June 2026, and 8.1.2 is its final version. Its successor is matterjs-server, built on matter.js by the Open Home Foundation, which aims to keep the same WebSocket API and lists a few intentional differences. The driver uses only the documented commands both share (`start_listening`, `read_attribute`, `write_attribute`, `device_command`) and the server info and event messages. It was tested against a simulator of the python-matter-server format, not against matterjs-server.
+Checked on 2026-10-24. python-matter-server was archived in June 2026, and 8.1.2 is its final version. The successor is matterjs-server, built on matter.js by the Open Home Foundation, which aims to keep the same WebSocket API and lists a few intentional differences. The driver uses only the documented commands both share (`start_listening`, `read_attribute`, `write_attribute`, `device_command`) and the server info and event messages. The driver was tested against a simulator of the python-matter-server format, not against matterjs-server.
 
 ## What it supports
 

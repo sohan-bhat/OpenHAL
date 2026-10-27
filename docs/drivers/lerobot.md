@@ -12,7 +12,7 @@ The `lerobot` driver controls Hugging Face LeRobot arms, such as the SO-100, SO-
 | Safe state | native. Torque off on every motor |
 | Self-describe | yes, from the arm's joints and where they are now |
 
-LeRobot pulls in PyTorch, which is several gigabytes and has no wheels for some machines, such as Intel Macs. So it is not an OpenHAL extra. The driver imports it only when a device connects and explains how to install it when it is missing.
+LeRobot pulls in PyTorch, which is several gigabytes and has no wheels for some machines, such as Intel Macs. So LeRobot is not an OpenHAL extra. The driver imports it only when a device connects and explains how to install it when it is missing.
 
 ## What it supports
 
@@ -44,7 +44,7 @@ Body joints are in degrees with `use_degrees: true`, LeRobot's default, and from
 
 ## Safe state
 
-A stop turns torque off on every motor. The arm goes limp and falls under gravity. Rest it over something soft while testing, and keep the power switch within reach. The device file's own safe state steps run afterwards, and with torque off they only set registers.
+A stop turns torque off on every motor. The arm goes limp and falls under gravity. Rest the arm over something soft while testing, and keep the power switch within reach. The device file's own safe state steps run afterwards, and with torque off they only set registers.
 
 close() turns torque off too, LeRobot's `disable_torque_on_disconnect`, unless `torque_off_on_close: false`.
 

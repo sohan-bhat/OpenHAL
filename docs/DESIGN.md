@@ -48,11 +48,11 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
 
 ### The landing story
 
-The website's home page tells the canonical scenario as one pinned scene that stays whole. The diagram follows the real path, Agent, OpenHAL hub with the device files, Safety kernel, Drivers and the 3D printer with its webcam, at one size from the first step to the last. Scroll moves the story through nine steps. Each step lights the stations it uses and has one short caption, with the real codes in small mono where they help and the step's messages in a trace under the diagram. The step count reads as text ("4 / 9") beside a Skip the demo link. The webcam panel shows what the agent sees. The bed warms from 60 °C to 70 °C, the kernel ticks its checks and refuses a 300 °C nozzle with LIMIT_EXCEEDED, the agent pauses the print when the print comes loose, the cancel waits for a person, and the owner approves the cancel. The last step shows the audit log. Every number comes from docs/demo/scenario.yaml. The stations sit in one row from 1200 px and in a centered column at most 600 px wide below that. Where the whole stage doesn't fit the screen, a short stage drops the trace on phones and sets the caption on one line on laptops. Under 600 px of height, with reduced motion or with no script, the story is a static list of the same steps. The motion is pattern 4 under Motion. Source in website/src/components/landing/.
+The website's home page tells the canonical scenario as one pinned scene that stays whole, with the stage right under the header. The diagram follows the real path, Agent, OpenHAL hub with the device files, Safety kernel, Drivers and the 3D printer with its webcam, at one size from the first step to the last. Scroll moves the story through nine steps. Each step lights every station its message passes, so the hub lights on every request, and has one short caption at the top of a slot two lines tall, so a one line caption never moves the diagram. The real codes sit in small mono where they help, and the step's messages sit in a log under the diagram that reaches the bottom of the webcam panel. In the log, an answer is green when done, amber when pending or when a confirmation is required, and red for an error. The step count reads as text ("4 / 9") beside a Skip the demo link. The webcam panel shows what the agent sees, and the printer panel shows the nozzle, the bed target and the printer's state. A read passes the kernel, which checks the channel and the device, needs no grant and logs the read. The bed target goes from 60 °C to 70 °C, the kernel refuses a 300 °C nozzle with LIMIT_EXCEEDED, the agent pauses the print when the print comes loose and the cancel waits for a person. At step 8 the owner approves the cancel, the kernel checks every limit again and the printer's state reads cancelled. Step 9 shows the hub's audit log under its counts. Every word and number comes from docs/demo/scenario.yaml. The stations sit in one row from 1200 px and in a centered column at most 600 px wide below that. Where the whole stage doesn't fit the screen, a short stage drops the log on phones and sets the caption on one line on laptops. On a screen too short for the short stage, with reduced motion or with no script, the story is a static list of the same steps. The motion is pattern 4 under Motion. Source in website/src/components/landing/.
 
 ## Canonical demo scenario
 
-The main example is a task only an agent can do. A timer or an IoT rule can water a plant. Only an agent can watch a print on a camera, judge what is going wrong and act, so the main example is the 3D print babysitter (examples/print-babysitter/). The owner chose it on 2026-10-26.
+The main example is a task that needs an agent. A timer or an IoT rule waters a plant on a schedule, but watching a print on a camera, judging what is going wrong and acting takes an agent, so the main example is the 3D print babysitter (examples/print-babysitter/). The owner chose the print babysitter on 2026-10-26.
 
 Every example value in the README, website, Inspector screenshots, docs and social images comes from one file, `docs/demo/scenario.yaml`, written by `uv run openhal demo --record docs/demo/scenario.yaml` from a real run of the hub against simulated devices. There are two. `printer` is a Klipper 3D printer reached through Moonraker, with `state`, `extruder_temp`, `bed_temp` and `progress` readings, `extruder_target` limited to 260 °C and `bed_target` limited to 110 °C, both rate limited, and the actions `pause`, `resume` and `cancel`, where cancel waits for a person. `printer-cam` is the printer's webcam watching the bed, read as snapshots over HTTP the way crowsnest serves it on a Klipper printer (the `http` driver). The limits were confirmed by owner on 2026-10-24.
 
@@ -72,7 +72,7 @@ The Arduino plant waterer (examples/plant-waterer/) stays as the Arduino example
 
 | Surface, feature or state | How the theme expresses it |
 |---|---|
-| Home page | The text wordmark, the one sentence and Get started, the landing story of the print babysitter, why it's safe in three points, device families from the catalog, the three-command quickstart with a link to the Playground, and links to the spec and the docs |
+| Home page | The text wordmark, the one sentence and Get started, the landing story of the print babysitter, the safety model in three points, device families from the catalog, the three-command quickstart with a link to the Playground, and links to the spec and the docs |
 | Spec pages | Dated version in the URL and a switcher, numbered sections, MUST, SHOULD and MAY, outline, anchors, previous and next, "Edit on GitHub" |
 | Schema reference | Generated tables of every message, type and field, monospace names |
 | Error codes | The registry table, the message trace with `error`, code and name in the blocked red as plain text |
@@ -132,7 +132,7 @@ Scale, mobile then desktop. 13/13 legend, 15/15 secondary, 16/17 body with line 
 ## Layout
 
 - Documentation-first. Left sidebar navigation, a centered reading column, and an "On this page" outline on the right at 1280 px and wider.
-- One left edge. Every documentation template starts its content at the documentation column, 344 px from the left at 1440 px and 304 px from 1024 to 1360 px. The home page is the one exception, a centered column at most 1200 px wide, the owner's request on 2026-10-26.
+- One left edge. Every documentation template starts its content at the documentation column, 344 px from the left at 1440 px and 304 px from 1024 to 1360 px. The home page is the one exception, a centered column at most 1200 px wide, the owner's request on 2026-10-26. The home page's header and footer follow the home column, and documentation templates keep their header at the sidebar's edge.
 - Breakpoints 390, 768, 1024, 1280. At 390 the sidebar becomes a menu and the outline moves above the content.
 - Spacing scale 4, 8, 12, 16, 24, 32, 48, 64.
 - Borders are 1 px `--border`, radius at most 6 px, no shadows.
@@ -182,7 +182,7 @@ Six patterns, nothing else.
 1. The flowing connectors in the flow diagram.
 2. A message appearing in the trace or log. A 120 ms fade, 4 px rise.
 3. A status change. A 120 ms cross-fade.
-4. The landing story. A stage pins under the header while the page scrolls normally, and the scroll position moves the story from step to step. The diagram never pans or zooms. Stations light as a step uses them and messages travel the wires with the scroll, using transforms and opacity only, and a caption finishes leaving before the next one arrives. Scrolling back plays it in reverse. Nothing moves on its own, so it is not scroll-jacking, parallax or fade-in on scroll. The bed temperature readout steps from 60 °C to 70 °C as a live reading, not a counter. The owner asked for this motion on 2026-10-25, and on 2026-10-26 for the whole diagram in view at one zoom level, which is its justification under Banned by default.
+4. The landing story. A stage pins under the header while the page scrolls normally, and the scroll position moves the story from step to step. The diagram never pans or zooms. Stations light as a step uses them and messages travel the wires with the scroll, using transforms and opacity only, and a caption finishes leaving before the next one arrives. Scrolling back plays it in reverse. Nothing moves on its own, so it is not scroll-jacking, parallax or fade-in on scroll. The bed target readout steps from 60 °C to 70 °C as a live reading, not a counter. The owner asked for this motion on 2026-10-25, and on 2026-10-26 for the whole diagram in view at one zoom level, which is its justification under Banned by default.
 5. The nav highlight. The blue highlight behind the current top-level item slides to the item a person clicks, as one shape moving between positions, about 240 ms with an ease out. It never bounces or stretches.
 6. The page transition. A page change moves the content sideways in the direction of travel through the nav, with the header and its highlight held still. Going to an item further right, the old content slides 24 px left and fades as the new content wipes in from the right with a clip-path, and going left mirrors it. About 260 ms in all. It is not a fade, a rise or a scale, so it stays distinct from the owner's other sites. Built on cross-document view transitions, so a browser without them changes pages instantly. The owner asked for patterns 5 and 6 on 2026-10-26.
 
@@ -318,8 +318,8 @@ The repository README follows this structure, in this order, left-aligned.
 2. Two neutral badges, the license and CI.
 3. The animated flow diagram, directly under the badges.
 4. Quickstart. Three commands in one code block, then one line on what you'll see, generated from the scenario.
-5. The message trace, the six exchanges of the canonical scenario, as a code block generated from the scenario (`uv run python -m openhal.demo.readme`).
-6. "What it does", three bullets.
+5. The message trace, the seven exchanges of the canonical scenario ending with the owner's approval, as a code block generated from the scenario (`uv run python -m openhal.demo.readme`).
+6. "What OpenHAL does", three bullets.
 7. Supported devices. Status as a sentence, "v0.1, in development. Every driver passes the conformance suite on a simulator.", then a table generated from drivers/catalog.json with driver, devices covered, status and hazard default.
 8. Safety model, at most five bullets, linking to docs/SAFETY.md.
 9. Relationship to MHS, two sentences.
@@ -339,4 +339,4 @@ Run these on every screen before calling it done.
 
 1. **Swap.** Put another product's name on it. If it still fits, revise.
 2. **Thumbnail.** Blur a screenshot to 200 px wide. It should still read as a specification with message exchanges.
-3. **Memory.** What does a visitor remember ten minutes later? It should be the agent spotting the failed print on the camera, the 300 °C nozzle refused with LIMIT_EXCEEDED, and the cancel waiting for a person.
+3. **Memory.** What does a visitor remember ten minutes later? It should be the agent spotting the failed print on the camera, the 300 °C nozzle refused with LIMIT_EXCEEDED, and the owner approving the cancel.

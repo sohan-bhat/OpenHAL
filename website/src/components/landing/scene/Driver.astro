@@ -14,11 +14,10 @@ const drivers = [
   { name: facts.printer.driver, part: "printer", in: DRIVER.moonraker },
   { name: facts.camera.driver, part: "webcam", in: DRIVER.http },
 ];
-const now = [
-  { in: DRIVER.waiting.filter((id) => !DRIVER.http.includes(id)), name: "", text: "Waiting for a grant" },
-  { in: DRIVER.http, name: facts.camera.driver, text: "reads the webcam" },
-  { in: DRIVER.bed, name: facts.printer.driver, text: nb(`${facts.bed.target} ${facts.bed.value}`) },
-  { in: DRIVER.pause, name: facts.printer.driver, text: facts.pause.target },
+const grants = [
+  { in: DRIVER.bed, name: facts.printer.driver, target: facts.bed.target, value: nb(facts.bed.value) },
+  { in: DRIVER.pause, name: facts.printer.driver, target: facts.pause.target, value: "" },
+  { in: DRIVER.cancel, name: facts.printer.driver, target: facts.approve.target, value: "" },
 ];
 ---
 
@@ -41,17 +40,26 @@ const now = [
   </ul>
   <div class="swap grant wide-only">
     <p class="waiting" {...shown(DRIVER.waiting, step)}>Waiting for a grant</p>
-    <p class="mono action" {...shown(DRIVER.bed, step)}>
-      {facts.bed.target} <span class="action-value">{nb(facts.bed.value)}</span>
+    <p class="reads" {...shown(DRIVER.frame, step)}>
+      Reads <span class="mono action">{facts.camera.channel}</span>
     </p>
-    <p class="mono action" {...shown(DRIVER.pause, step)}>{facts.pause.target}</p>
+    {
+      grants.map((grant) => (
+        <p class="mono action" {...shown(grant.in, step)}>
+          {grant.target}
+          {grant.value && <span class="action-value"> {grant.value}</span>}
+        </p>
+      ))
+    }
   </div>
   <p class="swap compact-only">
+    <span {...shown(DRIVER.waiting, step)}>Waiting for a grant</span>
+    <span {...shown(DRIVER.frame, step)}><span class="mono">{facts.camera.driver}</span> reads <span class="mono">{facts.camera.channel}</span></span>
     {
-      now.map((line) => (
-        <span {...shown(line.in, step)}>
-          {line.name && <span class="mono">{line.name} </span>}
-          {line.text}
+      grants.map((grant) => (
+        <span {...shown(grant.in, step)}>
+          <span class="mono">{grant.name}</span> <span class="mono action">{grant.target}</span>
+          {grant.value && <span class="mono"> {grant.value}</span>}
         </span>
       ))
     }

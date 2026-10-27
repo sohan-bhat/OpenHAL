@@ -1,6 +1,6 @@
 # onvif driver
 
-The onvif driver reads an ONVIF camera's identity and stream addresses and moves PTZ cameras through the safety kernel. It speaks the ONVIF device, media and PTZ services itself, with a small SOAP 1.2 client and WS-Security digest authentication, so it works with the Profile S and T cameras most brands sell.
+The onvif driver reads an ONVIF camera's identity and stream addresses and moves PTZ cameras through the safety kernel. The driver speaks the ONVIF device, media and PTZ services itself, with a small SOAP 1.2 client and WS-Security digest authentication, so it works with the Profile S and T cameras most brands sell.
 
 ## What it supports
 
@@ -71,7 +71,7 @@ An action named otherwise picks its operation with `map: { operation: move }`.
 
 ## Why the driver has its own SOAP client
 
-onvif-zeep-async (MIT, maintained) was checked first. Importing it configures the root logger, creating a camera removes `http_proxy` and `https_proxy` from the process environment, and it turns TLS certificate checks off for every camera. Those side effects are wrong inside a long-running hub, so the driver uses about 250 lines of its own SOAP, WS-Security and WS-Discovery code on httpx and defusedxml.
+onvif-zeep-async (MIT, maintained) was checked first. Importing onvif-zeep-async configures the root logger, creating a camera removes `http_proxy` and `https_proxy` from the process environment, and it turns TLS certificate checks off for every camera. Those side effects are wrong inside a long-running hub, so the driver uses about 250 lines of its own SOAP, WS-Security and WS-Discovery code on httpx and defusedxml.
 
 ## Example
 

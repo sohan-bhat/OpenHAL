@@ -86,10 +86,14 @@ export function outcome(scenario = loadScenario()) {
   const exchanges = Object.fromEntries(scenario.record.exchanges.map((exchange) => [exchange.id, exchange]));
   const bed = exchanges["bed-warmer"].bed_target;
   const refused = exchanges["nozzle-too-hot"].error.data;
+  const approved = exchanges["owner-approves"];
+  const by = String(approved.by);
+  const person = by.includes(":") ? by.slice(by.indexOf(":") + 1) : "";
   return (
     `You'll see the agent warm the bed from ${celsius(bed.before)} to ${celsius(bed.after)}, ` +
-    `have a ${celsius(refused.requested)} nozzle refused at the ${celsius(refused.limit)} limit, ` +
-    "pause the print when it comes loose and wait for a person to approve the cancel."
+    `have a ${celsius(refused.requested)} nozzle refused at the ${celsius(refused.limit)} limit ` +
+    "and pause the print when the camera shows the print has come loose. " +
+    `The ${person} then approves the cancel, and the printer's state becomes ${approved.printer.state}.`
   );
 }
 

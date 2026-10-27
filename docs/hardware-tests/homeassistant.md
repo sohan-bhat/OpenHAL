@@ -1,6 +1,6 @@
 # Hardware test plan for the homeassistant driver
 
-This plan checks the Home Assistant bridge against a real Home Assistant instance. It starts with read-only checks and ends with the smallest safe writes, on a lamp. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the Home Assistant bridge against a real Home Assistant instance. The plan starts with read-only checks and ends with the smallest safe writes, on a lamp. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -11,7 +11,7 @@ This plan checks the Home Assistant bridge against a real Home Assistant instanc
 
 ## The read-only probe
 
-Save this as `probe.py`. It connects, prints the driver's proposal for the selected entities and reads every channel. It holds no kernel grant, so it can't call any service.
+Save this as `probe.py`. The probe connects, prints the driver's proposal for the selected entities and reads every channel. The probe holds no kernel grant, so the probe can't call any service.
 
 ```python
 import asyncio, json, sys

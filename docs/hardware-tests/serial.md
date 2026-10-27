@@ -1,16 +1,16 @@
 # Hardware test plan for the serial driver
 
-This plan checks the serial driver on a real board. It starts with read-only checks and ends with the smallest safe writes. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the serial driver on a real board. The plan starts with read-only checks and ends with the smallest safe writes. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
 - An Arduino Uno or any board that runs the sketch below, with its USB cable.
-- Optional. A TMP36 sensor on A0, an LED on pin 13 (the onboard LED is fine) and a small 5 V fan through a logic-level MOSFET on pin 9. Without them the readings are just noise and the outputs drive nothing.
+- Optional. A TMP36 sensor on A0, an LED on pin 13 (the onboard LED is fine) and a small 5 V fan through a logic-level MOSFET on pin 9. Without these parts the readings are just noise and the outputs drive nothing.
 - A checkout of this repository with the serial extra, `uv sync --extra serial`.
 
 ## The test sketch
 
-Upload this with the Arduino IDE. It implements the protocol in `openhal/drivers/serial/examples/arduino-fan-board.hal.yaml`.
+Upload this with the Arduino IDE. The sketch implements the protocol in `openhal/drivers/serial/examples/arduino-fan-board.hal.yaml`.
 
 ```cpp
 // OpenHAL serial driver test sketch. One command per line, one reply per line.
@@ -59,7 +59,7 @@ void loop() {
 
 ## The read-only probe
 
-Steps 2 to 4 use this script. It connects, asks for the identity, asks the driver to describe the device and reads every channel. It holds no kernel grant, so it can't write anything. Save it as `probe.py`.
+Steps 2 to 4 use this script. The probe connects, asks for the identity, asks the driver to describe the device and reads every channel. The probe holds no kernel grant, so the probe can't write anything. Save it as `probe.py`.
 
 ```python
 import asyncio, json, sys
@@ -124,7 +124,7 @@ The temperature is about 20 to 30 with a TMP36 and arbitrary without one. If a r
 
 ## Step 4. Unplug during a read (read-only)
 
-Run the probe in a loop and unplug the cable while it runs. Plug it back in after five seconds.
+Run the probe in a loop and unplug the cable while it runs. Plug the cable back in after five seconds.
 
 ```
 while true; do uv run python probe.py ./fan-board.hal.yaml; sleep 1; done

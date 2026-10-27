@@ -1,6 +1,6 @@
 # Hardware test plan for the marlin driver
 
-This plan checks the Marlin driver on a real printer. It starts with read-only checks and ends with the smallest safe writes. Stay next to the printer for every write step. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the Marlin driver on a real printer. The plan starts with read-only checks and ends with the smallest safe writes. Stay next to the printer for every write step. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -11,7 +11,7 @@ This plan checks the Marlin driver on a real printer. It starts with read-only c
 
 ## The read-only probe
 
-Save this as `probe.py`. It connects, identifies the firmware and reads every channel. It holds no kernel grant, so it can't write anything.
+Save this as `probe.py`. The probe connects, identifies the firmware and reads every channel. The probe holds no kernel grant, so the probe can't write anything.
 
 ```python
 import asyncio, json, sys

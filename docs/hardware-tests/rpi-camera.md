@@ -1,8 +1,8 @@
 # Hardware test plan, rpi-camera driver
 
-This plan checks the rpi-camera driver on a real Raspberry Pi. The driver has only run against a fake Picamera2 class so far, so this plan is how its calls get proved on hardware. Everything in it is read-only. Point the camera at something that is fine to photograph.
+This plan checks the rpi-camera driver on a real Raspberry Pi. The driver has only run against a fake Picamera2 class so far, so this plan is how the driver's calls get proved on hardware. Every step in the plan is read-only. Point the camera at something that is fine to photograph.
 
-These are the things the fake can't prove, and the steps that check each one.
+The list below names what the fake can't prove, and the step that checks each item.
 
 | What the fake assumes | Checked in step |
 |---|---|
@@ -24,7 +24,7 @@ Run every step on the Pi, from the repository checkout. [README.md](README.md) h
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|write CHANNEL VALUE|stop"""

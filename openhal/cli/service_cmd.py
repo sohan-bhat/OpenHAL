@@ -44,7 +44,7 @@ def _service(dry_run: bool = False, platform: Platform | None = None) -> Service
 
 @app.command()
 def install(dry_run: bool = DRY_RUN) -> None:
-    """Install the service and start the hub now. It starts again at every login."""
+    """Install the service and start the hub now. The hub then starts again at every login."""
     service = _service(dry_run)
     try:
         notes = service.install()
@@ -75,7 +75,7 @@ def uninstall(dry_run: bool = DRY_RUN) -> None:
 
 @app.command()
 def restart(dry_run: bool = DRY_RUN) -> None:
-    """Restart the hub, for example so it loads new device files."""
+    """Restart the hub, for example so the hub loads new device files."""
     service = _service(dry_run)
     try:
         service.restart()
@@ -87,7 +87,7 @@ def restart(dry_run: bool = DRY_RUN) -> None:
 
 @app.command()
 def status() -> None:
-    """Show whether the service is installed and running. Exits 1 if it isn't running."""
+    """Show whether the service is installed and running. Exits 1 if the service isn't running."""
     service = _service()
     state = service.status()
     console.print(f"service  {escape(str(service.path))} {'installed' if state.installed else 'not installed'}")
@@ -96,7 +96,7 @@ def status() -> None:
         console.print(f"state    {escape(state.detail)}{pid}")
     if not state.running:
         hint = "openhal service install" if not state.installed else f"openhal service restart, or {DAEMON_NAME}"
-        console.print(f"Start it with {hint}.")
+        console.print(f"Start the hub with {hint}.")
         raise typer.Exit(EXIT_FAILED)
 
 

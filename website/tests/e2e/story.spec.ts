@@ -58,42 +58,52 @@ const FORMS = [
   { width: 390, height: 664, short: true },
 ];
 
+const reading = (id: StepId, name: string) => facts.printer.readings.find((item) => item.name === name)!.at[id];
+const printer = (id: StepId): Array<[string, string]> => [
+  [at("[data-cam=printer] .reading:nth-child(1) .value > *"), nb(reading(id, "Nozzle"))],
+  [at("[data-cam=printer] .reading:nth-child(2) .value > *"), nb(reading(id, "Bed target"))],
+  [at("[data-cam=printer] .reading:nth-child(3) .value > *"), reading(id, "State")],
+  [at("[data-cam=kernel] .verdict-line"), facts.kernel[id].verdict.text],
+];
+
 const states: Record<Exclude<StepId, "intro">, Array<[string, string]>> = {
-  ask: [[at("[data-cam=client] .person"), ASKED]],
+  ask: [[at("[data-cam=client] .person"), ASKED], ...printer("ask")],
   look: [
     [at("[data-cam=client] .said"), facts.look.method],
     [at("[data-cam=camera] .seen > *"), "corner lifting"],
+    [at("[data-cam=driver] .reads"), `Reads ${facts.camera.channel}`],
+    ...printer("look"),
   ],
-  warm: [
-    [at("[data-cam=printer] .figure > *"), nb(facts.bed.value)],
-    [at("[data-cam=kernel] .verdict-line"), "granted"],
-  ],
+  warm: [[at("[data-cam=driver] .grant > *"), facts.bed.target], ...printer("warm")],
   hot: [
-    [at("[data-cam=kernel] .verdict-line"), nozzle.error.data.name],
     [at("[data-cam=client] .said"), nozzle.error.data.name],
-    [at("[data-cam=printer] .figure > *"), nb(facts.bed.value)],
+    [at("[data-cam=driver] .grant > *"), "Waiting for a grant"],
+    ...printer("hot"),
   ],
-  loose: [[at("[data-cam=camera] .seen > *"), "print loose"]],
-  pause: [
-    [at("[data-cam=printer] .word > *"), "paused"],
-    [at("[data-cam=kernel] .verdict-line"), "granted"],
-  ],
-  cancel: [
-    [at("[data-cam=kernel] .verdict-line"), "confirmation required"],
-    [at("[data-cam=client] .said"), facts.cancel.status],
-  ],
-  wake: [
-    [at("[data-cam=printer] .word > *"), "paused"],
+  loose: [
     [at("[data-cam=camera] .seen > *"), "print loose"],
+    [at("[data-cam=driver] .reads"), `Reads ${facts.camera.channel}`],
+    ...printer("loose"),
   ],
-  end: [[at("[data-cam=kernel] .verdict-line"), "confirmation required"]],
+  pause: [[at("[data-cam=driver] .grant > *"), facts.pause.target], ...printer("pause")],
+  cancel: [
+    [at("[data-cam=client] .said"), facts.cancel.status],
+    [at("[data-cam=hub] .asked .status"), "confirmation required"],
+    ...printer("cancel"),
+  ],
+  approve: [
+    [at("[data-cam=hub] .asked .status"), facts.approve.approved],
+    [at("[data-cam=driver] .grant > *"), facts.approve.target],
+    ...printer("approve"),
+  ],
+  end: [[at("[data-cam=client] .person"), facts.agent], ...printer("end")],
 };
 
 test.describe("the landing story", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
   for (const form of FORMS) {
-    test(`pins the whole diagram, centered, at one size, at ${form.width} by ${form.height}`, async ({ page }) => {
+    test(`pins the whole diagram right under the header, at one size, at ${form.width} by ${form.height}`, async ({ page }) => {
       await page.setViewportSize(form);
       await page.goto("/");
       const story = page.locator("[data-story]");
@@ -107,9 +117,10 @@ test.describe("the landing story", () => {
         const box = await page.locator(".story-stage").boundingBox();
         const header = await page.locator(".site-header").evaluate((el) => el.getBoundingClientRect().height);
         const where = `${form.width}x${form.height} ${item.id}`;
-        expect(box!.y, where).toBeGreaterThanOrEqual(header - 1);
+        expect(Math.abs(box!.y - header), where).toBeLessThan(1);
         expect(box!.y + box!.height, where).toBeLessThanOrEqual(form.height + 1);
-        expect(Math.abs(box!.y - header - (form.height - box!.y - box!.height)), where).toBeLessThan(4);
+        const band = await page.locator(".story-count").evaluate((el) => el.getBoundingClientRect().top - document.querySelector(".site-header")!.getBoundingClientRect().bottom);
+        expect(band, where).toBeLessThan(24);
         sizes.push(JSON.stringify(await page.locator(".story-scene [data-cam]").evaluateAll((items) => items.map((el) => [el.getBoundingClientRect().x, el.getBoundingClientRect().width]))));
         expect(await page.locator(".story-scene").evaluate((el) => getComputedStyle(el).transform)).toBe("none");
       }
@@ -188,15 +199,81 @@ test.describe("the landing story", () => {
     }
   });
 
-  test("shows each step's messages under the diagram in the trace's words", async ({ page }) => {
+  test("shows each step's messages under the diagram in the record's words", async ({ page }) => {
     await page.goto("/");
-    await storyTime(page, step("hot").from + 20);
-    const trace = (await shown(page, ".story-scene .story-trace ol")).join(" ");
-    expect(trace).toContain(facts.nozzle.method);
-    expect(trace).toContain(`error ${nozzle.error.code} ${nozzle.error.data.name}`);
-    expect(trace).toContain(flat(facts.nozzle.refusal.reason));
-    await storyTime(page, step("cancel").from + 20);
-    expect((await shown(page, ".story-scene .story-trace ol")).join(" ")).toContain("pending");
+    const traceAt = async (id: StepId) => {
+      await storyTime(page, step(id).from + step(id).length / 2);
+      return flat((await shown(page, ".story-scene .story-trace ol")).join(" "));
+    };
+    const hot = await traceAt("hot");
+    expect(hot).toContain(nozzle.before);
+    expect(hot).toContain(facts.nozzle.method);
+    expect(hot).toContain(`error ${nozzle.error.code} ${nozzle.error.data.name}`);
+    expect(hot).toContain(flat(facts.nozzle.refusal.reason));
+    expect(await traceAt("cancel")).toContain(`result ${facts.cancel.status}`);
+    const approve = await traceAt("approve");
+    expect(approve).toContain(byId(IDS.approve).before);
+    expect(approve).toContain(`${facts.approve.method} ${facts.approve.target} on ${facts.approve.device}`);
+    expect(await traceAt("end")).toContain(facts.audit.counts);
+    const rows = await page.locator(".story-scene .story-trace ol[data-on] .audit-log tbody tr").evaluateAll((items) => items.map((row) => [...row.children].map((cell) => cell.textContent).join(" ")));
+    expect(rows).toEqual(scenario.record.audit.entries.map((entry: any) => `${entry.seq} ${entry.event} ${entry.who} ${entry.target} ${entry.status}`));
+  });
+
+  test("colors each answer and each logged status by its outcome", async ({ page }) => {
+    await page.goto("/");
+    const token = (name: string) =>
+      page.evaluate((variable) => {
+        const probe = document.createElement("span");
+        probe.style.color = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+        document.body.append(probe);
+        const color = getComputedStyle(probe).color;
+        probe.remove();
+        return color;
+      }, name);
+    const colorAt = async (id: StepId, selector: string) => {
+      await storyTime(page, step(id).from + step(id).length / 2);
+      return page.locator(`.story-scene .story-trace ol[data-on] ${selector}`).evaluateAll((items) => items.map((el) => getComputedStyle(el).color));
+    };
+    const [ok, confirm, blocked] = [await token("--ok"), await token("--confirm"), await token("--blocked")];
+    expect(await colorAt("warm", ".outcome-result")).toEqual([ok]);
+    expect(await colorAt("cancel", ".outcome-result")).toEqual([confirm]);
+    expect(await colorAt("hot", ".outcome-error")).toEqual([blocked]);
+    expect(await colorAt("approve", ".outcome-result")).toEqual([ok]);
+    const tones: Record<string, string> = { done: ok, pending: confirm, blocked };
+    expect(await colorAt("end", "td.audit-status")).toEqual(scenario.record.audit.entries.map((entry: any) => tones[entry.status]));
+  });
+
+  for (const form of FORMS) {
+    test(`keeps every caption at the top of one slot of fixed height at ${form.width} by ${form.height}`, async ({ page }) => {
+      await page.setViewportSize(form);
+      await page.goto("/");
+      await expect(page.locator("[data-story]")).toHaveAttribute("data-ready", "");
+      const heights = new Set<number>();
+      for (const item of PLACED) {
+        await storyTime(page, item.from + item.length / 2);
+        const found = await page.evaluate(() => {
+          const heads = document.querySelector<HTMLElement>(".story-heads")!;
+          const caption = heads.querySelector<HTMLElement>("[data-on]")!.getBoundingClientRect();
+          const box = heads.getBoundingClientRect();
+          const line = parseFloat(getComputedStyle(heads).lineHeight);
+          return { top: caption.top - box.top, height: Math.round(box.height), lines: Math.round(caption.height / line), slot: Math.round(box.height / line) };
+        });
+        const where = `${form.width}x${form.height} ${item.id}`;
+        expect(Math.abs(found.top), where).toBeLessThan(1);
+        expect(found.slot, where).toBe(form.short && form.width >= 1200 ? 1 : 2);
+        expect(found.lines, where).toBeLessThanOrEqual(found.slot);
+        heights.add(found.height);
+      }
+      expect(heights.size).toBe(1);
+    });
+  }
+
+  test("makes the log as tall as the webcam panel beside it", async ({ page }) => {
+    await page.goto("/");
+    await storyTime(page, step("warm").from + 25);
+    const trace = await page.locator(".story-scene > .story-trace").boundingBox();
+    const camera = await page.locator(".story-scene [data-cam=camera]").boundingBox();
+    expect(Math.abs(trace!.y + trace!.height - (camera!.y + camera!.height))).toBeLessThan(1);
   });
 
   test("changes no layout while it plays", async ({ page, browserName }) => {

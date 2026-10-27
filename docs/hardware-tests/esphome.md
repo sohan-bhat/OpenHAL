@@ -1,6 +1,6 @@
 # Hardware test plan for the esphome driver
 
-This plan checks the ESPHome driver on a real node. It starts with read-only checks and ends with the smallest safe writes, on an LED. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
+This plan checks the ESPHome driver on a real node. The plan starts with read-only checks and ends with the smallest safe writes, on an LED. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists. [README.md](README.md) has the setup and rules every plan shares.
 
 ## What you need
 
@@ -38,7 +38,7 @@ Export the key with `export ESPHOME_TEST_PSK="<your base64 key>"`.
 
 ## The read-only probe
 
-Save this as `probe.py`. It connects, prints the device info, the driver's proposal and every channel. It holds no kernel grant, so it can't send any command.
+Save this as `probe.py`. The probe connects, prints the device info, the driver's proposal and every channel. The probe holds no kernel grant, so the probe can't send any command.
 
 ```python
 import asyncio, json, sys

@@ -60,7 +60,7 @@ def register(app: typer.Typer) -> None:
         try:
             asyncio.run(_run(url, token))
         except OSError as exc:
-            fail(f"The hub is not running at {url} ({exc}). Start it with openhald.", EXIT_NO_HUB)
+            fail(f"The hub is not running at {url} ({exc}). Start the hub with openhald.", EXIT_NO_HUB)
         except KeyboardInterrupt:
             raise typer.Exit(0) from None
         except Exception as exc:  # noqa: BLE001

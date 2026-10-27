@@ -92,8 +92,8 @@
   <header class="section">
     <h1>Routines</h1>
     <p class="muted">
-      Stored routines run as their own Principal through the Safety Kernel. A new routine starts disabled. Only a person
-      enables it.
+      Stored routines run as their own Principal through the Safety Kernel. A new routine starts disabled until a person
+      enables the routine.
     </p>
   </header>
 

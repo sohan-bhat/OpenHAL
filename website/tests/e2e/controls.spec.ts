@@ -55,7 +55,7 @@ test.describe("site chrome", () => {
     await expect(page).toHaveURL(/\/spec\//);
     expect(await turn()).toBe("backward");
     await page.goto("/");
-    await page.getByRole("link", { name: "Try it in your browser" }).click();
+    await page.getByRole("link", { name: "Send the requests in your browser" }).click();
     await expect(page).toHaveURL(/\/spec\/playground\/$/);
     expect(await turn()).toBeNull();
     await page.goBack();
@@ -64,7 +64,7 @@ test.describe("site chrome", () => {
 
   test("the overview's try section leads to the playground", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Try it in your browser" }).click();
+    await page.getByRole("link", { name: "Send the requests in your browser" }).click();
     await expect(page).toHaveURL(/\/spec\/playground\/$/);
     await expect(page.locator("h1")).toHaveText("Playground");
   });

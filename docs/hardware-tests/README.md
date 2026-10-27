@@ -1,10 +1,10 @@
 # Hardware tests
 
-Every driver passes its conformance suite against a simulator. These plans are how a person checks a driver and its device file on a real device. Run them in the order below. Nothing here runs in CI, and nothing here should run on hardware you don't own.
+Every driver passes its conformance suite against a simulator. These plans are how a person checks a driver and its device file on a real device. Run the plans in the order below. Nothing here runs in CI, and nothing here should run on hardware you don't own.
 
 ## Order
 
-1. **The plant waterer first.** It is the Arduino example and the cheapest complete rig. It runs the whole path, from discovery and a read-only file to confirmation, a blocked command, an interlock, an action, a stop and the board's own fallback, and its pump stays unplugged until the last step.
+1. **The plant waterer first.** The plant waterer is the Arduino example and the cheapest complete rig. The plant waterer plan runs the whole path, from discovery and a read-only file to confirmation, a blocked command, an interlock, an action, a stop and the board's own fallback, and its pump stays unplugged until the last step.
 2. **Read-only plans next.** These drivers can't change their device.
 3. **Low hazard plans**, ordered by what the smallest change moves. An LED or a register first, then lights and relays with nothing plugged in, then a camera's pan.
 4. **Medium hazard plans.** Low voltage first, then relays that can switch mains with no load on them, then motors, heaters and mounts.
@@ -66,7 +66,7 @@ Each plan names its extra in place of `serial`. `uv sync` installs only the extr
 
 ### On a Raspberry Pi
 
-Use Raspberry Pi OS Trixie or later. Its Python 3.13 meets OpenHAL's minimum of 3.12, and the camera's libcamera bindings and lgpio come from apt for that system Python. Make the checkout's environment on the system Python, so it sees them.
+Use Raspberry Pi OS Trixie or later. Trixie's Python 3.13 meets OpenHAL's minimum of 3.12, and the camera's libcamera bindings and lgpio come from apt for that system Python. Make the checkout's environment on the system Python, so the environment sees the bindings.
 
 ```
 sudo apt install -y python3-dev python3-lgpio python3-picamera2 i2c-tools
@@ -99,11 +99,11 @@ bash docs/hardware-tests/hub.sh start
 | `bash docs/hardware-tests/hub.sh kill` | Stop it with SIGKILL, so it can send nothing on its way out |
 | `bash docs/hardware-tests/hub.sh status` | Say whether it runs |
 
-A plan that stops a command while it runs uses a second terminal. Open it in the checkout and run `export OPENHAL_HOME="$PWD/openhal-test"` there first.
+A plan that stops a command while it runs uses a second terminal. Open the second terminal in the checkout and run `export OPENHAL_HOME="$PWD/openhal-test"` there first.
 
 ### Confirming limits
 
-Only you confirm limits. `uv run openhal file confirm` with the file's path prints every limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. The hub reads device files when it starts, so restart it after a confirmation. A changed limit makes the file read-only until you confirm it again. A command you send with your own human token counts as your confirmation, so plans that test the confirmation queue send the command with an agent token and approve it with `uv run openhal confirm approve`.
+You confirm the limits yourself. `uv run openhal file confirm` with the file's path prints every limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. The hub reads device files when the hub starts, so restart the hub after a confirmation. A changed limit makes the file read-only until you confirm the file again. A command you send with your own human token counts as your confirmation, so plans that test the confirmation queue send the command with an agent token and approve the request with `uv run openhal confirm approve`.
 
 ## Rules while testing
 

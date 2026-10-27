@@ -6,7 +6,7 @@ author: OpenHAL contributors
 draft: true
 ---
 
-An agent can read a datasheet, code a serial protocol and move a motor in an afternoon. Nothing on that path knows the limits a person would set. Nothing enforces them the same way for every client.
+An agent can read a datasheet, code a serial protocol and move a motor in an afternoon. Nothing on that path knows the limits a person would set, and nothing enforces those limits the same way for every client.
 
 ## The gap
 
@@ -14,10 +14,10 @@ Single-device tools exist for Arduino boards, 3D printers, bench instruments and
 
 ## The protocol
 
-OpenHAL is an open protocol with a dated specification. It defines two things.
+OpenHAL is an open protocol with a dated specification, and the specification defines two things.
 
-1. The [Device File](glossary:device-file). It lists what a device can read and change, the limits on each change and the safe state. A person confirms the limits. Until then the file is read-only.
-2. The hub protocol. Clients speak JSON-RPC 2.0 to one [Hub](glossary:hub). Its [Safety Kernel](glossary:safety-kernel) decides every command before a [Driver](glossary:driver) may act.
+1. The [Device File](glossary:device-file) lists what a device can read and change, the limits on each change and the safe state. A person confirms the limits, and until then the file is read-only.
+2. The hub protocol. Clients speak JSON-RPC 2.0 to one [Hub](glossary:hub), and the hub's [Safety Kernel](glossary:safety-kernel) decides every command before a [Driver](glossary:driver) may act.
 
 ```yaml tested include=examples/print-babysitter/printer.hal.yaml
 ```
@@ -33,10 +33,10 @@ A tool serves one client. A protocol lets any client, in any language, meet any 
 
 ## MHS
 
-Anthropic's Model Hardware Standard is a limited research preview for invited labs. OpenHAL is not affiliated with Anthropic or MHS. It is open source, usable today with simulators, and it plans to stay compatible.
+Anthropic's Model Hardware Standard is a limited research preview for invited labs. OpenHAL is not affiliated with Anthropic or MHS. OpenHAL is open source, usable today with simulators, and plans to stay compatible with MHS.
 
-## What it does not do
+## What OpenHAL does not do
 
-OpenHAL is not a safety system. It can't make firmware obey, and it doesn't replace e-stops, enclosures or interlocks wired in hardware. It checks each request against what a person allowed, and it stops every device on request.
+OpenHAL is not a safety system. OpenHAL can't make firmware obey, and OpenHAL doesn't replace e-stops, enclosures or interlocks wired in hardware. The hub checks each request against what a person allowed, and the hub stops every device on request.
 
 The [quickstart](/docs/quickstart/) runs the print babysitter demo and needs no hardware.

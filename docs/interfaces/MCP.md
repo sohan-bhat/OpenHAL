@@ -1,10 +1,10 @@
 # MCP server
 
-`openhal mcp` is a stdio MCP server. An agent's MCP client starts it as a subprocess, and it forwards every tool call to the hub's local API with an agent token. It makes no safety decisions. The hub's kernel checks every write and action, and the tool returns the kernel's answer as is.
+`openhal mcp` is a stdio MCP server. An agent's MCP client starts the server as a subprocess, and the server forwards every tool call to the hub's local API with an agent token. The server makes no safety decisions. The hub's kernel checks every write and action, and the tool returns the kernel's answer as is.
 
 ## Before you start
 
-1. Run `openhal init` once. It creates `~/.openhal`, the human token and a simulated sample device.
+1. Run `openhal init` once to create `~/.openhal`, the human token and a simulated sample device.
 2. Start the hub with `openhald` and check it with `openhal status`.
 3. Create an agent token for the client.
 
@@ -18,7 +18,7 @@ Give each client its own token, so the audit log shows which one did what and yo
 
 ## Token
 
-The server reads its token from the `OPENHAL_TOKEN` environment variable, or from a file given with `--token-file`. It never reads `~/.openhal/human.token`, and it refuses to run with a human token, because the hub treats a human's command as already confirmed. An agent always needs its own agent token.
+The server reads its token from the `OPENHAL_TOKEN` environment variable, or from a file given with `--token-file`. The server never reads `~/.openhal/human.token`, and refuses to run with a human token, because the hub treats a human's command as already confirmed. An agent always needs its own agent token.
 
 A token file keeps the token out of client config files that may be synced or shared.
 
@@ -43,7 +43,7 @@ Edit `claude_desktop_config.json`. On macOS it is in `~/Library/Application Supp
 }
 ```
 
-Claude Desktop does not use your shell's `PATH`. If it can't find `openhal`, put the full path from `which openhal` in `command`. Restart Claude Desktop after editing.
+Claude Desktop does not use your shell's `PATH`. If Claude Desktop can't find `openhal`, put the full path from `which openhal` in `command`. Restart Claude Desktop after editing.
 
 ## Claude Code
 
@@ -132,18 +132,18 @@ Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)
 | `set_up_device` | `description`, `unknown_id` (both optional) | Discovery, the driver writer, a draft device file and the limits interview |
 | `write_routine` | `goal` | Reading the devices, drafting a YAML routine, plan checks and a dry run, with enabling left to a person |
 
-## What an agent can't do
+## What needs a person
 
-These need a person with the human token, in the CLI or the dashboard.
+A person does these with the human token, in the CLI or the dashboard.
 
 - Approve or reject a request that waits for confirmation (`openhal confirm approve`)
 - Unlock after a stop (`openhal unlock`)
 - Loosen a limit or confirm a device file (`openhal file confirm`, the limits interview)
-- Enable a routine, unless `routines.agent_enable_low_hazard` is on and every device it touches is low hazard
+- Enable a routine, unless `routines.agent_enable_low_hazard` is on and every device the routine touches is low hazard
 - Sign a routine approval for a high hazard device
 
 ## Device text is data
 
-Text that comes from devices, device files, sketches, manuals and routine sources reaches the model inside `<device-data source="...">` blocks with a line saying it is data. The hub wraps device notes and routine sources. The MCP server also wraps string readings and driver error messages before returning them. Nothing inside these blocks can change a limit or approve anything, whatever it says.
+Text that comes from devices, device files, sketches, manuals and routine sources reaches the model inside `<device-data source="...">` blocks with a line saying the text is data. The hub wraps device notes and routine sources. The MCP server also wraps string readings and driver error messages before returning them. Nothing inside these blocks can change a limit or approve anything, whatever the text says.
 
-A camera frame from `read` is an MCP image block. Before it comes a short `<device-data>` block that says the image came from a device and is data, since a frame can show text too. The structured result carries the reading with `mimeType`, `bytes`, `width` and `height`, without the pixels. A frame over 2 MB is refused with DRIVER_ERROR and a reason that names the camera settings to lower.
+A camera frame from `read` is an MCP image block. Before the image comes a short `<device-data>` block that says the image came from a device and is data, since a frame can show text too. The structured result carries the reading with `mimeType`, `bytes`, `width` and `height`, without the pixels. A frame over 2 MB is refused with DRIVER_ERROR and a reason that names the camera settings to lower.

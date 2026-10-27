@@ -1,6 +1,6 @@
 # Connect Claude
 
-Claude reaches the [Hub](glossary:hub) through `openhal mcp`, a stdio MCP server that maps tool calls onto the hub's methods. It runs as an agent [Principal](glossary:principal) with its own token. This tutorial starts from the [quickstart](../quickstart.md), in the `OpenHAL` folder.
+Claude reaches the [Hub](glossary:hub) through `openhal mcp`, a stdio MCP server that maps tool calls onto the hub's methods. The MCP server runs as an agent [Principal](glossary:principal) with its own token. This tutorial starts from the [quickstart](../quickstart.md), in the `OpenHAL` folder.
 
 ## Create a token
 
@@ -26,11 +26,11 @@ No agent token changes a high hazard device without a person's approval. `openha
 $ claude mcp add openhal --scope user -- uv run --directory "$PWD" openhal mcp --token-file ~/.openhal/claude.token
 ```
 
-Run `claude mcp list` to check that it connects.
+Run `claude mcp list` to check that the OpenHAL server connects.
 
 ## Claude Desktop
 
-Add the server to `claude_desktop_config.json`. On macOS it is in `~/Library/Application Support/Claude/`. Use absolute paths, since Claude Desktop does not read your shell's `PATH`.
+Add the server to `claude_desktop_config.json`. On macOS the file is in `~/Library/Application Support/Claude/`. Use absolute paths, since Claude Desktop does not read your shell's `PATH`.
 
 ```json tested
 {

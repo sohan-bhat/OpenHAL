@@ -15,7 +15,7 @@ Run every step from the repository checkout. [README.md](README.md) has the setu
 
 ## The test script
 
-Save this as `hwtest.py` in the repository root. It drives the device only through the safety kernel, as the hub does.
+Save this as `hwtest.py` in the repository root. The script drives the device only through the safety kernel, as the hub does.
 
 ```python
 """Usage: uv run python hwtest.py FILE identify|describe|read|write CHANNEL VALUE|stop"""
@@ -74,7 +74,7 @@ asyncio.run(main(*sys.argv[1:]))
 uv run python -c "import asyncio; from openhal.drivers.ble.driver import BleDriver; print(*asyncio.run(BleDriver.discover()), sep='\n')"
 ```
 
-Expected. One line per advertising peripheral, with its address (a UUID on macOS) and `ble_name`. Your sensor is in the list, with `181a` in `ble_services` if it advertises the service. This only listens, it never connects.
+Expected. One line per advertising peripheral, with its address (a UUID on macOS) and `ble_name`. Your sensor is in the list, with `181a` in `ble_services` if the sensor advertises the service. The scan only listens and never connects.
 
 ### 2. The device file validates
 
@@ -98,13 +98,13 @@ Expected. `match.ble_services` with `181a`, read channels such as `temperature` 
 uv run python hwtest.py my-sensor.hal.yaml read
 ```
 
-Expected. A `temperature` and `humidity` close to a reference thermometer, `pressure` near your local air pressure in hPa, `battery` in percent, and `health Health(connected=True, ...)`. A channel that only notifies and has not sent anything yet shows `None`. Run it again after a minute and it should show values.
+Expected. A `temperature` and `humidity` close to a reference thermometer, `pressure` near your local air pressure in hPa, `battery` in percent, and `health Health(connected=True, ...)`. A channel that only notifies and has not sent anything yet shows `None`. Run the step again after a minute, and the channel should show a value.
 
 ### 5. Out of range
 
 Start step 4 and, while it runs, carry the sensor out of range or remove its battery. Then run step 4 again.
 
-Expected. A `DriverError` saying the device could not be connected (or that the read failed), and `health` reports the link dropped. Bring the sensor back and run step 4. It reads normally.
+Expected. A `DriverError` saying the device could not be connected (or that the read failed), and `health` reports the link dropped. Bring the sensor back and run step 4. The device reads normally.
 
 ## Write steps
 
@@ -120,7 +120,7 @@ safe_state: { led: false }
 hazard: low
 ```
 
-Run `uv run python hwtest.py my-led.hal.yaml read` first. It should print `led = False` (or `True`).
+Run `uv run python hwtest.py my-led.hal.yaml read` first. The script should print `led = False` (or `True`).
 
 ### 6. Confirm the limits
 
@@ -130,7 +130,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-led.hal.yaml
 ```
 
-It lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-led.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-led.hal.yaml` then says `writable`.
 
 ### 7. The smallest safe write
 
