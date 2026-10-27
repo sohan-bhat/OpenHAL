@@ -1,6 +1,6 @@
 # Website and Inspector quality
 
-Measured on 2026-10-25 by the quality workstream, at commit b29aa75 on branch worktree-agent-a93add9689c8b7b2f, on an Intel Core i7-8750H Mac with macOS 15.5. The website rows were measured again the same day by the website round 4 workstream, at commit acadaf4 on branch worktree-agent-aa39233d21696be73, on the same Mac, after the site search, the wrapped code blocks and the stacked tables landed. They were measured a third time by the website round 5 workstream, at commit 589b7d8 on branch worktree-agent-aa06f02640ce4c4c4, on the same Mac, after the house-style diagrams, the numbered spec sections, the shared left edge and the owner's text wordmark landed. The Overview row and the landing story section were measured by the landing page round, at commit 6ef60a6 on branch worktree-agent-a39e9445429fca114, on the same Mac, after the landing page was rebuilt around the scroll story. The Overview and Playground rows, the website axe rows, the layout and search lines and the landing story section were measured again by the website round 6 workstream, at commit 09c7812 on branch worktree-agent-a1c88bf95caf4733d, on the same Mac, after the story was retold around the 3D print babysitter and the Playground was rebuilt around its requests. The Inspector rows are from the first run.
+Measured on 2026-10-25 by the quality workstream, at commit b29aa75 on branch worktree-agent-a93add9689c8b7b2f, on an Intel Core i7-8750H Mac with macOS 15.5. The website rows were measured again the same day by the website round 4 workstream, at commit acadaf4 on branch worktree-agent-aa39233d21696be73, on the same Mac, after the site search, the wrapped code blocks and the stacked tables landed. They were measured a third time by the website round 5 workstream, at commit 589b7d8 on branch worktree-agent-aa06f02640ce4c4c4, on the same Mac, after the house-style diagrams, the numbered spec sections, the shared left edge and the owner's text wordmark landed. The Overview row and the landing story section were measured by the landing page round, at commit 6ef60a6 on branch worktree-agent-a39e9445429fca114, on the same Mac, after the landing page was rebuilt around the scroll story. The Overview and Playground rows, the website axe rows, the layout and search lines and the landing story section were measured again by the website round 6 workstream, at commit 09c7812 on branch worktree-agent-a1c88bf95caf4733d, on the same Mac, after the story was retold around the 3D print babysitter and the Playground was rebuilt around its requests. The Inspector rows were measured again by the Inspector round 5 workstream, at commit 6c815d7 on branch worktree-agent-abb87dd02b08d1eaf, on the same Mac, on a test hub with the print babysitter's simulators, after camera frames, the pending cancel and status words with no shapes landed.
 
 ## Tools
 
@@ -26,15 +26,15 @@ pnpm exec astro preview --host 127.0.0.1 --port 4391
 OPENHAL_PREVIEW_URL=http://127.0.0.1:4391 node scripts/lighthouse.mjs LIGHTHOUSE_BIN "/,/spec/playground/" mobile,desktop OUTDIR
 ```
 
-The Inspector, from the build the hub serves, on the mock hub with the simulated plant waterer.
+The Inspector, from the build the hub serves, on a test hub with the simulated printer and its camera beside the plant waterer, the curing heater and the bench lamp.
 
 ```text
 cd dashboard
 pnpm build
 cd ..
-uv run python -m tests.inspector.serve --port 7492 --state STATE.json
+PYTHONPATH=. uv run python dashboard/e2e/print_hub.py --port 7492 --state STATE.json
 cd dashboard
-node scripts/lighthouse.mjs LIGHTHOUSE_BIN STATE.json "#/devices/plant-waterer,#/settings" mobile,desktop OUTDIR
+node scripts/lighthouse.mjs LIGHTHOUSE_BIN STATE.json "#/devices/printer,#/confirmations" mobile,desktop OUTDIR
 ```
 
 Both scripts print each score and the audits that lost points. The Inspector script signs in with the human token from the state file. The pairing page was measured with a state file whose token is not a session.
@@ -68,16 +68,20 @@ Gzipped, the home page's HTML is 14.7 KB, which holds 3.5 KB of inline script an
 
 | Page | Path | Mobile perf | Mobile a11y | Mobile best practices | Mobile SEO | Desktop perf | Desktop a11y | Desktop best practices | Desktop SEO |
 |---|---|---|---|---|---|---|---|---|---|
-| Device, plant waterer | `#/devices/plant-waterer` | 95 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
-| Device, curing heater | `#/devices/curing-heater` | 95 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
-| Device, read-only bench lamp | `#/devices/bench-lamp` | 95 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
-| Confirmations | `#/confirmations` | 93 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
-| Audit log | `#/audit` | 94 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
-| Routines | `#/routines` | 94 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
-| Routine detail | `#/routines/water-when-dry` | 94 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
-| Driver writer | `#/writer` | 93 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
-| Settings | `#/settings` | 93 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
-| Pairing page | `#/pair` | 95 | 100 | 96 | 100 | 100 | 100 | 96 | 100 |
+| Device, printer | `#/devices/printer` | 96 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Device, printer camera | `#/devices/printer-cam` | 97 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Device, plant waterer | `#/devices/plant-waterer` | 98 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Device, curing heater | `#/devices/curing-heater` | 97 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Device, read-only bench lamp | `#/devices/bench-lamp` | 98 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Confirmations, with the pending cancel | `#/confirmations` | 93 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Audit log | `#/audit` | 98 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Routines | `#/routines` | 95 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Routine detail | `#/routines/water-when-dry` | 98 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Driver writer | `#/writer` | 98 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Settings | `#/settings` | 98 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Pairing page | `#/pair` | 99 | 100 | 96 | 100 | 100 | 100 | 96 | 100 |
+
+Confirmations scored 94, 93 and 93 over three runs on a phone, and the table gives the median.
 
 ## What was fixed
 
@@ -89,7 +93,7 @@ Gzipped, the home page's HTML is 14.7 KB, which holds 3.5 KB of inline script an
 
 ## What is left, and why
 
-- **Inspector performance on a phone is 93 to 95.** The hub serves the Inspector uncompressed and with `cache-control: no-store` on hashed assets, which is in openhal/hub, not in the Inspector. Behind a gzip proxy on loopback the same build scores 99 on the device, settings and writer views. The fix proposed for the hub is Starlette's `GZipMiddleware` and a long cache lifetime for `/assets/`.
+- **Inspector performance on a phone is 93 to 99.** Confirmations with a pending cancel is the lowest view at 93, and Routines is next at 95. The hub now gzips the Inspector and caches its hashed assets, which lifted most views from 93 to 95 into the high 90s.
 - **The pairing page scores 96 in best practices.** The hub answers `/v1/whoami` with 401 when a browser is not paired, and Chrome logs every 401 as a console error. Answering 200 with a paired flag would clear it, also in openhal/hub.
 - **The 404 was measured at /404.html.** An unknown address answers with status 404, which Lighthouse's SEO category counts against any page by design.
 
@@ -102,9 +106,11 @@ Rules from the tags wcag2a, wcag2aa, wcag21a and wcag21aa, with axe 4.14.0.
 | Website | Every page in the sitemap (114 pages), /spec/latest/ and the 404, in the light and dark themes, at 1280 by 720 in Chromium | 0 |
 | Website | At 390 px in both themes, the open phone menu, the open section menu and version switcher, the playground after a refused write with an information mark and the request builder open, empty driver and library filters, the landing story halfway through its scroll and as the list reduced motion shows, and the site search opened from its icon button with results | 0 |
 | Website | At 1280 by 800 in both themes, the site search dialog opened with Ctrl K and showing results for LIMIT_EXCEEDED | 0 |
-| Inspector | At 1440 and 390 px in both themes, in Chromium, and at 1440 px in Firefox. Each device (the plant waterer, the curing heater, the read-only bench lamp), confirmations with a pending request, the audit log, routines and a dry run, the driver writer and its limits interview, settings, the hidden log, the stopped state, the UNLOCK dialog, pairing and the offline page | 0 |
+| Inspector | At 1440 and 390 px in both themes, in Chromium, and at 1440 px in Firefox. Each device (the printer, the printer camera with its frame, the plant waterer, the curing heater, the read-only bench lamp), confirmations with the pending cancel and its camera frame, the message log with an expanded frame result, the audit log, routines and a dry run, the driver writer and its limits interview, settings, the hidden log, the stopped state, the UNLOCK dialog, pairing and the offline page | 0 |
 
 Round 5 ran the website rows again on its own build, with the house-style diagrams, the Inspector crops and the text wordmark, and found 0 violations in 239 checks. The landing page round ran them again on its own build and found 0 violations in 239 checks. Round 6 ran them on its own build and found 0 violations in 236 axe runs, the 116 pages in both themes and the phone and search dialog states.
+
+The Inspector's status test, dashboard/e2e/status.spec.ts, fails when a status word has an icon, glyph or shape beside it, or when anything other than STOP has a status colored border or background. It runs on every view in both themes, in Chromium and Firefox. The website's design rules test, website/tests/e2e/design-rules.spec.ts, checks the same on eight pages that show statuses, the home page, the Playground, the drivers and library pages, the error codes, the quickstart, the Inspector page and the Moonraker driver.
 
 The sweep found and fixed these.
 
