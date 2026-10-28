@@ -8,7 +8,6 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- website-9. The landing story without boxes, drawn as a sequence diagram with the webcam's line drawing, and the home page's copy to the owner's writing rules (BRIEF-website-9.md).
 - website-10. One header on every page, so nothing in the header moves on Overview, and a collapsible sidebar that slides back in on hover near the left edge (BRIEF-website-10.md).
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
@@ -55,6 +54,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - The hub's own messages follow the owner's copy rules (copy-messages, merged 2026-10-27). Each human-only refusal is one plain sentence such as "Approving a request takes a human principal.", with every code, field and check unchanged, and the Playground mirrors the new words.
 - The speed round (website-7, merged 2026-10-27). Pages send 31 to 73 % of their old weight, largest paint on a phone is 147 to 378 ms sooner, blocking time is 0 everywhere and desktop scores 100 on every page. Fonts are subset, inline diagrams carry no fonts and follow the theme in one SVG, the Inspector crops are responsive AVIF and WebP, pages prerender on hover, search snippets skip code, and a budget test guards every template (docs/verification/ui.md).
 - Every page except the home page and every repo doc the site renders follow the owner's writing rules (site-copy, merged 2026-10-27).
+- The landing story without boxes and the wordmark sequence (website-9, merged 2026-10-27). Scroll brings the wordmark down and walks through H, A and L with a short brief for each part, then the story plays as a sequence diagram with four lifelines, one arrow per request and the webcam's line drawing, and every caption follows the owner's writing rules.
 
 ## Next
 
