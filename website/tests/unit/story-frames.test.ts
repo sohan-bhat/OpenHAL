@@ -39,4 +39,20 @@ describe("the webcam frames on the landing page", () => {
     expect(drawn(FRAMES.lifting)).toContain(nozzles[0]);
     expect(drawn(FRAMES.loose)).toContain(nozzles[1]);
   });
+
+  it("are line drawings that fill a shape only with the page's background, to hide what is behind the shape", () => {
+    for (const frame of Object.values(FRAMES)) for (const item of frame.items) expect(["none", "bg"]).toContain(item.fill);
+  });
+
+  it("mark the lifted corner and the loose print as what the agent notices, and never the toolhead or the bed", () => {
+    const seen = (frame: (typeof FRAMES)[keyof typeof FRAMES]) => frame.items.filter((item) => item.seen).map((item) => item.d).join(" ");
+    const corner = points(body("_first_layer")).filter((point) => seen(FRAMES.lifting).includes(point));
+    expect(corner.length).toBeGreaterThan(0);
+    for (const point of points(body("_bed"))) {
+      expect(seen(FRAMES.lifting)).not.toContain(point);
+      expect(seen(FRAMES.loose)).not.toContain(point);
+    }
+    expect(FRAMES.loose.items.filter((item) => item.seen).length).toBeGreaterThan(FRAMES.lifting.items.filter((item) => item.seen).length);
+    for (const frame of Object.values(FRAMES)) expect(frame.items.filter((item) => item.fill === "bg" && !item.seen).length).toBe(3);
+  });
 });
