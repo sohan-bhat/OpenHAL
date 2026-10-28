@@ -1,13 +1,17 @@
 ---
 import { PITCH, PRODUCT_NAME } from "../../config/brand";
+import { storyFacts } from "../../lib/story/facts";
 import { CAMERA, during } from "../../lib/story/script";
-import { AWAY, FALLS, LEAVES, LOW, PARTS, SLIDE, TOTAL, briefSpan, fading, stepSpan } from "../../lib/story/wordmark";
+import { storySequence } from "../../lib/story/timeline";
+import { AWAY, DROP, FALL, FALLS, LEAVES, LOW, PARTS, TOTAL, briefSpan, fading } from "../../lib/story/wordmark";
+import Sequence from "./scene/Sequence.astro";
 
 interface Props {
   spell: string;
 }
 
 const { spell } = Astro.props;
+const sequence = storySequence(storyFacts());
 const letters = [...PRODUCT_NAME].map((letter, at) => {
   const fade = fading(PRODUCT_NAME, at);
   const part = PARTS.find((item) => PRODUCT_NAME.lastIndexOf(item.letter) === at);
@@ -29,24 +33,30 @@ const mode = `(() => {
   aria-labelledby="home-title"
   data-sequence
   data-total={TOTAL}
-  style={`--at: 0; --d: ${TOTAL}; --away: ${AWAY}; --falls: ${FALLS}; --leaves: ${LEAVES}; --low: ${LOW}; --to-a: ${stepSpan(1)[0]}; --to-l: ${stepSpan(2)[0]}; --slide-time: ${SLIDE}`}
+  style={`--at: 0; --d: ${TOTAL}; --away: ${AWAY}; --falls: ${FALLS}; --leaves: ${LEAVES}; --drop: ${DROP}; --fall: ${FALL}; --low: ${LOW}`}
 >
   <div class="hero-stage">
-    <div class="hero-name" data-spell>
-      <h1 id="home-title" class="hero-mark">{PRODUCT_NAME}</h1>
-      <span class="hero-letters" aria-hidden="true">
-        {letters.map((item) => <span data-letter={item.part} style={item.style}>{item.letter}</span>)}
-      </span>
-      <p class="hero-spell" aria-hidden="true">
-        {spelled.map((item) => <span data-at={item.at}>{item.word}</span>)}
-      </p>
+    <div class="hero-main">
+      <div class="hero-name" data-spell>
+        <h1 id="home-title" class="hero-mark">{PRODUCT_NAME}</h1>
+        <span class="hero-letters" aria-hidden="true">
+          {letters.map((item) => <span data-letter={item.part} style={item.style}>{item.letter}</span>)}
+        </span>
+        <p class="hero-spell" aria-hidden="true">
+          {spelled.map((item) => <span data-at={item.at}>{item.word}</span>)}
+        </p>
+      </div>
+      <p class="hero-pitch hero-leaves">{PITCH}</p>
+      <a class="button hero-go hero-leaves" href="#try" {...during([[0, LEAVES]])}>Get started</a>
     </div>
-    <p class="hero-pitch hero-leaves">{PITCH}</p>
-    <a class="button hero-go hero-leaves" href="#try" {...during([[0, LEAVES]])}>Get started</a>
+    <span class="hero-slot" aria-hidden="true"></span>
+    <div class="hero-demo" aria-hidden="true" data-pagefind-ignore="all">
+      <Sequence sequence={sequence} still />
+    </div>
     <div class="hero-briefs" aria-hidden="true" data-pagefind-ignore="all">
       {
         PARTS.map((part, index) => (
-          <div class="hero-brief" {...during([briefSpan(index)])}>
+          <div class="hero-brief" data-letter={part.letter} {...during([briefSpan(index)])}>
             <p class="brief-label">{part.label}</p>
             <p class="brief-text">{part.brief}</p>
           </div>
@@ -70,7 +80,6 @@ const mode = `(() => {
 </section>
 <script is:inline set:html={`${mode}${spell}`} />
 
-
 <style>
   .hero {
     --t: 0;
@@ -80,9 +89,15 @@ const mode = `(() => {
 
   .hero-stage {
     display: grid;
-    justify-items: start;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
     padding-top: var(--s-7);
     padding-bottom: var(--s-7);
+  }
+
+  .hero-main {
+    display: grid;
+    justify-items: start;
   }
 
   .hero-mark,
@@ -100,7 +115,9 @@ const mode = `(() => {
 
   .hero-letters,
   .hero-briefs,
-  .hero-runway {
+  .hero-runway,
+  .hero-slot,
+  .hero-demo {
     display: none;
   }
 
@@ -110,7 +127,7 @@ const mode = `(() => {
     visibility: hidden;
     pointer-events: none;
     color: var(--text-2);
-    font-size: var(--t-legend);
+    font-size: clamp(13px, calc(min(21vw, 184px) * 0.095), 17px);
     line-height: 1;
   }
 
@@ -137,6 +154,12 @@ const mode = `(() => {
     margin-top: var(--s-6);
     min-height: 48px;
     padding: 0 var(--s-5);
+  }
+
+  .hero-demo {
+    width: 100%;
+    pointer-events: none;
+    user-select: none;
   }
 
   .hero-list {
@@ -178,6 +201,30 @@ const mode = `(() => {
     }
   }
 
+  @media (min-width: 1200px) {
+    .hero-stage {
+      grid-template-columns: auto minmax(0, 1fr);
+      column-gap: var(--s-8);
+    }
+
+    .hero-main {
+      grid-area: 1 / 1;
+    }
+
+    .hero-demo {
+      display: grid;
+      grid-area: 1 / 2;
+      align-self: stretch;
+      justify-self: end;
+      max-width: 600px;
+      margin-top: var(--s-2);
+    }
+
+    .hero-slot {
+      grid-area: 2 / 1 / 3 / 3;
+    }
+  }
+
   @media screen {
     .hero[data-camera] .hero-stage {
       position: sticky;
@@ -188,8 +235,25 @@ const mode = `(() => {
       background: var(--bg);
     }
 
-    .hero[data-camera] .hero-runway {
+    .hero[data-camera] .hero-runway,
+    .hero[data-camera] .hero-slot {
       display: block;
+    }
+
+    .hero[data-camera] .hero-demo {
+      display: grid;
+    }
+
+    .hero[data-camera] .hero-slot {
+      height: var(--band);
+      margin-top: var(--s-6);
+    }
+
+    .hero[data-camera] .hero-demo {
+      --gone: clamp(0, var(--t) / var(--drop), 1);
+      margin-top: var(--s-4);
+      transform: translateY(calc(var(--fall) * 100svh * var(--gone) * (0.6 + 0.4 * var(--gone))));
+      opacity: min(0.999, calc(1 - var(--gone)));
     }
 
     .hero[data-camera] .hero-mark {
@@ -213,11 +277,7 @@ const mode = `(() => {
     }
 
     .hero[data-camera] .hero-name {
-      --slide: calc(
-        var(--slide-a, 0px) * clamp(0, (var(--t) - var(--to-a, 100000)) / var(--slide-time, 1), 1) +
-          (var(--slide-l, 0px) - var(--slide-a, 0px)) * clamp(0, (var(--t) - var(--to-l, 100000)) / var(--slide-time, 1), 1)
-      );
-      transform: translate(calc(-1 * var(--slide)), calc(var(--down, 0px) * clamp(0, (var(--t) - var(--falls)) / (var(--away) - var(--falls)), 1)));
+      transform: translateY(calc(var(--down, 0px) * clamp(0, (var(--t) - var(--falls)) / (var(--away) - var(--falls)), 1)));
     }
 
     .hero[data-camera] .hero-spell {
@@ -249,7 +309,7 @@ const mode = `(() => {
       right: 0;
       display: grid;
       gap: var(--s-2);
-      max-width: 36em;
+      max-width: 34em;
       opacity: 0.999;
       transition: opacity var(--motion-status) linear;
     }
@@ -280,11 +340,17 @@ const mode = `(() => {
     }
   }
 
+  @media screen and (min-width: 1200px) {
+    .hero[data-camera] .hero-demo {
+      margin-top: var(--s-2);
+    }
+  }
+
   @media screen and (min-width: 1024px) {
     .hero[data-camera] .hero-brief {
       left: var(--anchor, 0px);
       right: auto;
-      width: min(36em, calc(100% - var(--anchor, 0px)));
+      width: min(30em, 100%);
     }
 
     .hero[data-camera] .hero-brief .brief-label {

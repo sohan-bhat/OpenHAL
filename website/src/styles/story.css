@@ -1,6 +1,10 @@
+.hero,
+.story {
+  --band: 32px;
+}
+
 .story {
   --pin: 61px;
-  --lifeline: color-mix(in srgb, var(--text-2) 38%, var(--bg));
 }
 
 .story-band {
@@ -12,6 +16,7 @@
   display: flex;
   align-items: baseline;
   gap: var(--s-4);
+  min-height: var(--band);
 }
 
 .story-count {
@@ -316,10 +321,25 @@
   --p: 1;
 }
 
+.seq.still {
+  --over: 5px;
+  --edge: 20px;
+  --under: 4px;
+  --arrow: 7px;
+  --tail: 4px;
+  --pad: 4px;
+  font-size: var(--t-legend);
+  line-height: 1.2;
+}
+
+.seq.still .seq-head {
+  font-size: var(--t-legend);
+}
+
 .cam {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.75fr);
-  grid-template-areas: "readings frame" "readings note";
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1fr);
+  grid-template-areas: "frame readings" "note readings" "seen seen";
   align-content: start;
   align-items: center;
   column-gap: var(--s-4);
@@ -578,6 +598,10 @@
   .story[data-camera] .story-heads {
     font-size: 15px;
   }
+
+  .story-meta {
+    gap: var(--s-3);
+  }
 }
 
 @media screen and (min-width: 640px) {
@@ -598,18 +622,6 @@
     --leading: 1.3;
     font-size: 24px;
   }
-}
-
-@media screen and (min-width: 1024px) and (min-height: 820px) {
-  .story[data-camera] .story-stage {
-    gap: var(--s-5);
-    padding-block: var(--s-4) var(--s-5);
-  }
-
-  .story[data-camera] .seq {
-    --gap: 10px;
-    --arrow: 18px;
-  }
 
   .story[data-camera] .story-scene {
     grid-template-rows: minmax(0, 1fr);
@@ -619,4 +631,34 @@
   .story[data-camera] .cam {
     align-self: start;
   }
+}
+
+@media screen and (min-width: 1024px) and (min-height: 820px) {
+  .story[data-camera] .story-stage {
+    gap: var(--s-5);
+    padding-block: var(--s-4) var(--s-5);
+  }
+
+  .story[data-camera] .seq {
+    --arrow: 16px;
+  }
+}
+
+.story[data-lifted] .story-stage {
+  z-index: 2;
+  background: none;
+  pointer-events: none;
+}
+
+.story:not([data-camera])[data-lifted] .story-stage {
+  position: relative;
+}
+
+.story[data-lifted] .story-meta {
+  pointer-events: auto;
+}
+
+.story[data-lifted] .story-scene,
+.story[data-lifted="band"] .story-heads {
+  visibility: hidden;
 }

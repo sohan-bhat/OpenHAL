@@ -2,6 +2,7 @@
 import { getEntry, render } from "astro:content";
 import { transformWithEsbuild } from "vite";
 import heroSpellSource from "../components/landing/hero-spell.js?raw";
+import openingSource from "../components/landing/opening.ts?raw";
 import Story from "../components/landing/Story.astro";
 import Wordmark from "../components/landing/Wordmark.astro";
 import { PRODUCT_LONG_NAME, PRODUCT_NAME } from "../config/brand";
@@ -11,6 +12,19 @@ import { HOME_TITLE } from "../lib/pages";
 import "../styles/prose.css";
 
 const heroSpell = (await transformWithEsbuild(heroSpellSource, "hero-spell.js", { minify: true })).code.trim();
+const firstFrame = `
+const hero = document.querySelector("[data-sequence]");
+const runway = hero && hero.querySelector(".hero-runway");
+const opening = hero && runway ? measure(hero) : null;
+if (hero && runway && opening) {
+  let top = 0;
+  for (let node = hero; node; node = node.offsetParent) top += node.offsetTop;
+  const total = Number(hero.dataset.total) || 1;
+  const start = top - (document.querySelector(".site-header")?.offsetHeight ?? 0);
+  const y = window.scrollY;
+  place(opening, Math.min(total, Math.max(0, ((y - start) * total) / Math.max(1, runway.offsetHeight))), y);
+}`;
+const openingScript = (await transformWithEsbuild(`${openingSource}\n${firstFrame}`, "opening.ts", { minify: true, format: "iife" })).code.trim();
 const quickstart = await getEntry("snippets", "quickstart");
 const { Content: Quickstart } = await render(quickstart!);
 const groups = driverGroups();
@@ -39,6 +53,7 @@ const more = [
   <div class="home-width">
     <Story after={after} />
   </div>
+  <script is:inline set:html={openingScript} />
 
   <section id={after} class="home-width part after-story" aria-labelledby="safe-title">
     <h2 id="safe-title">Safety model</h2>
@@ -105,7 +120,7 @@ const more = [
   import { smoothSwitch } from "../components/landing/smooth-switch";
   import { wordmark } from "../components/landing/wordmark-runtime";
 
-  for (const root of document.querySelectorAll<HTMLElement>("[data-sequence]")) scene(root, { stage: ".hero-stage", runway: ".hero-runway", layout: wordmark(root) });
+  for (const root of document.querySelectorAll<HTMLElement>("[data-sequence]")) scene(root, { stage: ".hero-stage", runway: ".hero-runway", ...wordmark(root) });
   for (const root of document.querySelectorAll<HTMLElement>("[data-story]")) scene(root, { stage: ".story-stage", runway: ".story-runway", fits: true });
   for (const toggle of document.querySelectorAll<HTMLButtonElement>("[data-smooth]")) smoothSwitch(toggle);
 </script>
