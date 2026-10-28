@@ -170,7 +170,7 @@ test.describe("the version picker", () => {
   test("links each version to its spec from other pages and to the same section from a spec page", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/docs/");
-    const latest = (await page.locator(".version-button .mono").textContent())!.trim();
+    const latest = /\d{4}-\d{2}-\d{2}/.exec((await page.locator(".version-button").textContent())!)![0];
     await expect(page.locator("#version-menu a[aria-current]")).toHaveAttribute("href", `/spec/${latest}/`);
     await expect(page.locator("#version-menu a[aria-current]")).toHaveAttribute("aria-current", "true");
     await page.goto(SPEC);
