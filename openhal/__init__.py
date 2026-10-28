@@ -1,4 +1,4 @@
-"""OpenHAL, an open hardware agent layer, the layer between AI agents and hardware.
+"""OpenHAL, an open hardware abstraction layer between AI agents and hardware.
 
 The public Python library lives here. Most users import `openhal` to connect to a running hub
 or to run an embedded hub for scripts and tests.

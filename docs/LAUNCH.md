@@ -58,7 +58,7 @@ Prepared replies.
 | Comment | Reply |
 |---|---|
 | "I'm sorry Dave, I'm afraid I can't do that." | Fair. OpenHAL tells you why. The error names the limit, the file and who confirmed it, and openhal stop always works. |
-| "Why call it HAL?" | Hardware agent layer, the layer between agents and hardware. It nods to the old embedded term hardware abstraction layer, as in STM32 HAL or Android HAL. We knew about the other HAL when we picked it. |
+| "Why call it HAL?" | HAL stands for hardware abstraction layer, the embedded systems term for one interface over many kinds of hardware, as in STM32 HAL or Android HAL, and OpenHAL brings that layer to AI agents. We knew about the other HAL when we picked the name. |
 | "Open the pod bay doors." | There's no pod bay door driver yet. If there were, the doors would stay read-only until a person confirmed their limits. |
 | "What could possibly go wrong?" | A lot, which is why the kernel fails closed, unknown readings block commands and an agent can never lift a stop. docs/SAFETY.md also lists what it doesn't guarantee. |
 
