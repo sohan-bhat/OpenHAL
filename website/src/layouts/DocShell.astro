@@ -1,10 +1,12 @@
 ---
 import type { MarkdownHeading } from "astro";
+import { transformWithEsbuild } from "vite";
 import "../styles/prose.css";
 import "../styles/trace.css";
 import { editUrl } from "../config/site";
 import type { SideGroup } from "../lib/nav-types";
 import Base from "./Base.astro";
+import sidebarSource from "./sidebar.js?raw";
 
 interface Props {
   title: string;
@@ -28,12 +30,20 @@ const index = flat.findIndex((item) => item.href === path);
 const prev = pager && index > 0 ? flat[index - 1] : null;
 const next = pager && index !== -1 && index < flat.length - 1 ? flat[index + 1] : null;
 const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+const sidebarScript = (await transformWithEsbuild(sidebarSource, "sidebar.js", { minify: true, format: "esm" })).code.trim();
 ---
 
 <Base title={title} description={description} canonical={canonical} noindex={noindex} mono={mono}>
   <div class:list={["wrap", "shell", { wide }]}>
     <aside class="sidebar" aria-label={section} data-pagefind-ignore="all">
-      <nav class="side-desktop" aria-label={`${section} pages`}>
+      <div class="side-sheet"></div>
+      <div class="side-edge"></div>
+      <button type="button" class="side-toggle" aria-controls="side-nav" aria-expanded="true" aria-label="Hide the sidebar">
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false">
+          <path d="M3.75 2.75h8.5a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2h-8.5a2 2 0 0 1-2-2v-6.5a2 2 0 0 1 2-2ZM6.25 3v10"></path>
+        </svg>
+      </button>
+      <nav class="side-desktop" id="side-nav" aria-label={`${section} pages`}>
         <slot name="sidebar-top" />
         {
           sidebar.map((group) => (
@@ -91,6 +101,7 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
         </nav>
       </details>
     </aside>
+    <script type="module" is:inline set:html={sidebarScript} />
 
     <article class="content">
       <header class="page-head">
@@ -181,8 +192,29 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
     padding: 0;
   }
 
-  .side-desktop {
+  .side-desktop,
+  .side-sheet,
+  .side-edge,
+  .side-toggle {
     display: none;
+  }
+
+  .side-toggle {
+    place-items: center;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    color: var(--text-2);
+    background: none;
+    border: 1px solid color-mix(in srgb, var(--text-2) 60%, var(--border));
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+
+  .side-toggle:hover {
+    color: var(--text);
+    border-color: var(--accent);
   }
 
   .side-menu > summary {
@@ -367,6 +399,7 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
 
   @media (min-width: 1024px) {
     .shell {
+      --edge: max(var(--s-4), 50vw - 664px);
       grid-template-columns: var(--sidebar) minmax(0, 1fr);
       gap: var(--s-7);
       padding-top: var(--s-6);
@@ -376,16 +409,85 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
       display: none;
     }
 
-    .side-desktop {
-      display: block;
-    }
-
     .sidebar {
       position: sticky;
       top: 76px;
+      z-index: 15;
       align-self: start;
+      display: flex;
+      flex-direction: column;
+      gap: var(--s-4);
       max-height: calc(100dvh - 92px);
+    }
+
+    .side-desktop {
+      display: block;
+      width: var(--sidebar);
+      min-height: 0;
       overflow-y: auto;
+    }
+
+    [data-sidebar] .side-toggle {
+      display: grid;
+    }
+
+    .side-sheet {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: -1;
+      width: calc(var(--edge) + var(--sidebar) + var(--s-5));
+      background: var(--bg);
+      border-right: var(--rule);
+      translate: -100%;
+    }
+
+    [data-sidebar="hidden"] .sidebar {
+      width: 32px;
+    }
+
+    [data-sidebar="hidden"] .side-edge {
+      display: block;
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: var(--s-4);
+    }
+
+    [data-sidebar="hidden"] .shell > :is(.content, .outline) {
+      translate: calc(0px - var(--sidebar));
+    }
+
+    [data-sidebar="hidden"]:not([data-peek]) .side-desktop {
+      translate: calc(-100% - var(--edge) - var(--s-5));
+      visibility: hidden;
+    }
+
+    [data-peek] .side-sheet {
+      display: block;
+      translate: none;
+    }
+
+    [data-peek][data-sidebar="shown"] .side-sheet {
+      border-color: transparent;
+    }
+  }
+
+  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    [data-moving] :is(.shell > .content, .outline, .side-desktop, .side-sheet) {
+      transition:
+        translate 200ms var(--ease),
+        visibility 0s 200ms,
+        display 200ms allow-discrete;
+    }
+
+    [data-moving][data-peek] .side-desktop,
+    [data-moving][data-sidebar="shown"] .side-desktop {
+      transition-delay: 0s;
+    }
+
+    @starting-style {
+      [data-peek] .side-sheet {
+        translate: -100%;
+      }
     }
   }
 

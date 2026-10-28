@@ -1,5 +1,10 @@
 if (/mac|iphone|ipad/i.test(navigator.userAgentData?.platform || navigator.platform || "")) document.documentElement.classList.add("apple");
 (() => {
+  const data = document.documentElement.dataset;
+  data.sidebar = "shown";
+  try {
+    if (localStorage["openhal:sidebar"] == "hidden") data.sidebar = "hidden";
+  } catch {}
   const key = "openhal:page-turn";
   let clicked = null;
   const section = (links, url) => {

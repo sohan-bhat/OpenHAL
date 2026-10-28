@@ -189,6 +189,10 @@ p {
     padding-top: var(--s-6);
     padding-inline-start: calc(var(--s-4) + var(--sidebar) + var(--s-7));
   }
+
+  :root[data-sidebar="hidden"] .column {
+    padding-inline-start: calc(var(--s-4) + var(--s-7));
+  }
 }
 
 .visually-hidden {
