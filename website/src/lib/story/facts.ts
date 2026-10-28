@@ -5,9 +5,6 @@ import { loadScenario, type Exchange, type Scenario } from "../scenario";
 import { REPO_ROOT } from "../spec-meta.mjs";
 import { reasonLines } from "../trace-html.mjs";
 import { PLACED, type StepId } from "./script";
-import type { AuditRow, Tone, TraceLine } from "./trace";
-
-export type { AuditRow, TraceLine } from "./trace";
 
 export interface Refusal {
   name: string;
@@ -22,31 +19,37 @@ export interface Ask {
   note: string;
 }
 
-export interface Check {
-  name: string;
-  word: string;
-}
-
-export type VerdictKind = "idle" | "granted" | "blocked" | "confirm";
-
-export interface Verdict {
-  kind: VerdictKind;
-  text: string;
-}
-
-export interface KernelView {
-  reading: boolean;
-  checks: Check[];
-  verdict: Verdict;
-}
-
 export interface Reading {
   name: string;
   word: boolean;
   at: Record<StepId, string>;
 }
 
-export const ASKED = "Keep an eye on my print tonight.";
+export type Tone = "ok" | "confirm" | "blocked";
+
+/** The lifelines of the sequence diagram, left to right. */
+export type Lifeline = "owner" | "agent" | "hub" | "printer";
+
+export const LIFELINES: readonly Lifeline[] = ["owner", "agent", "hub", "printer"];
+
+export interface Answer {
+  text: string;
+  tone: Tone;
+}
+
+/** One arrow of the sequence diagram, from the lifeline that sends it to the lifeline it reaches, with the answer at its end. */
+export interface Said {
+  from: Lifeline;
+  to: Lifeline;
+  label: string;
+  answer?: Answer;
+}
+
+/** The steps that send something, every counted step but the ending. */
+export type Sending = Exclude<StepId, "intro" | "end">;
+
+/** What the owner asks the agent, the one message that is not a request to the hub. */
+export const ASKED = "watch my print";
 
 /** The exchanges of docs/demo/scenario.yaml the story tells, by their ids in the record. */
 export const IDS = {
@@ -59,7 +62,7 @@ export const IDS = {
   approve: "owner-approves",
 } as const;
 
-/** The exchange each step tells. The title, the ask and the ending send nothing. */
+/** The exchange each step tells. The title, the ask and the ending send nothing to the hub. */
 export const TOLD: Partial<Record<StepId, keyof typeof IDS>> = {
   look: "look",
   warm: "bed",
@@ -72,8 +75,9 @@ export const TOLD: Partial<Record<StepId, keyof typeof IDS>> = {
 
 export interface StoryFacts {
   agent: string;
+  owner: string;
   printer: { id: string; name: string; driver: string; readings: Reading[] };
-  camera: { id: string; channel: string; driver: string; image: string };
+  camera: { id: string; channel: string; driver: string };
   file: string;
   confirmed: string;
   look: Ask;
@@ -81,16 +85,10 @@ export interface StoryFacts {
   bed: Ask & { channel: string; max: string; before: number; after: number; unit: string; status: string };
   nozzle: Ask & { channel: string; max: string; refusal: Refusal };
   pause: Ask & { status: string };
-  cancel: Ask & { status: string; rule: string };
+  cancel: Ask & { status: string };
   approve: Ask & { device: string; status: string; approved: string };
-  kernel: Record<StepId, KernelView>;
-  audit: { counts: string; command: string; rows: AuditRow[] };
-}
-
-interface Limit {
-  unit?: string;
-  min?: number;
-  max?: number;
+  said: Record<Sending, Said[]>;
+  audit: { counts: string; requests: number; refused: number; confirmed: number };
 }
 
 export interface DeviceFile {
@@ -98,7 +96,7 @@ export interface DeviceFile {
   id: string;
   connect: Record<string, unknown>;
   read: Record<string, { unit?: string }>;
-  write: Record<string, Limit>;
+  write: Record<string, { unit?: string; min?: number; max?: number }>;
   actions: Record<string, { confirm?: string } | null>;
 }
 
@@ -124,8 +122,6 @@ export const humane = (text: string): string => text.replace(/(\d) (degC|degF|pe
 /** A principal as the record names it, `human:owner`, as a person reads it, `owner`. */
 export const named = (principal: string): string => principal.slice(principal.indexOf(":") + 1);
 
-const capital = (word: string): string => `${word[0].toUpperCase()}${word.slice(1)}`;
-
 export function readDeviceFile(path = join(REPO_ROOT, "examples", "print-babysitter", "printer.hal.yaml")): DeviceFile {
   return parse(readFileSync(path, "utf8")) as DeviceFile;
 }
@@ -138,45 +134,17 @@ function need<T>(found: T | undefined | null, what: string): T {
 const params = (exchange: Exchange): Record<string, any> => exchange.request.params ?? {};
 const statusOf = (exchange: Exchange): string => String(exchange.result?.status ?? "");
 const field = (exchange: Exchange, key: string): any => (exchange as Record<string, any>)[key];
+const verb = (exchange: Exchange): string => exchange.request.method.slice(exchange.request.method.lastIndexOf("/") + 1);
 
-function imageText(exchange: Exchange): string {
-  const value = exchange.result?.value ?? exchange.result?.result?.value ?? exchange.result;
-  const kind = String(value?.mimeType ?? value?.mime ?? "image");
-  return value?.width && value?.height ? `${kind} ${value.width}${NBSP}×${NBSP}${value.height}` : kind;
-}
-
-const TONES: Record<string, Tone> = { done: "ok", pending: "pending", blocked: "blocked", failed: "blocked" };
-
-/** What the kernel did with a step's request, in the record's words, and the verdict it reached. */
-function kernelView(exchange: Exchange | undefined, id: string): KernelView {
-  if (!exchange) return { reading: false, checks: [], verdict: { kind: "idle", text: "Waiting for a command" } };
-  const kernel = need(field(exchange, "kernel"), `kernel record for ${id}`);
-  const checks: Check[] = Object.entries(need(kernel.checks as Record<string, string>, `kernel checks for ${id}`)).map(([name, word]) => ({ name: capital(name), word: String(word) }));
-  const reading = exchange.request.method === "hal/read";
-  if (reading) {
-    checks.push({ name: "Grant", word: String(kernel.grant) });
-    checks.push({ name: "Audit log", word: `entry ${need(kernel.logged as number[], `log entry for ${id}`).join(", ")}` });
-  }
-  const words = checks.map((check) => check.word);
-  const verdict: Verdict | undefined = exchange.error
-    ? { kind: "blocked", text: String(exchange.error.data.name) }
-    : words.includes("required")
-      ? { kind: "confirm", text: "confirmation required" }
-      : kernel.grant === "issued"
-        ? { kind: "granted", text: "granted" }
-        : reading && kernel.grant === "not needed"
-          ? { kind: "granted", text: "allowed" }
-          : undefined;
-  return { reading, checks, verdict: need(verdict, `kernel verdict for ${id}`) };
-}
+const TONES: Record<string, Tone> = { done: "ok", pending: "confirm", blocked: "blocked", failed: "blocked" };
 
 /** Every word and number the landing story shows, from docs/demo/scenario.yaml and the printer's device file. */
 export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile = readDeviceFile()): StoryFacts {
-  const record = scenario.record;
+  const record = scenario.record as Scenario["record"] & Record<string, any>;
   const exchanges = record.exchanges;
   const described = (id: string) => need(record.devices?.find((item) => item.id === id), `description of ${id}`);
   const byId = (id: string) => need(exchanges.find((exchange) => exchange.id === id), `exchange ${id}`);
-  const told = (step: StepId) => (TOLD[step] ? byId(IDS[TOLD[step]!]) : undefined);
+  const told = (id: StepId) => (TOLD[id] ? byId(IDS[TOLD[id]!]) : undefined);
   const look = byId(IDS.look);
   const loose = byId(IDS.loose);
   const bed = byId(IDS.bed);
@@ -184,12 +152,15 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
   const pause = byId(IDS.pause);
   const cancel = byId(IDS.cancel);
   const approve = byId(IDS.approve);
+  const principals = need(record.principals as Record<string, string> | undefined, "principals");
+  const agent = need(principals.agent, "agent principal");
+  const person = need(principals.person, "person principal");
   const bedChannel = String(params(bed).channel);
   const nozzleChannel = String(params(nozzle).channel);
   const limit = (channel: string) => amount(file.write[channel]?.max, file.write[channel]?.unit);
   const change = need(field(bed, bedChannel), `${bedChannel} before and after`);
   const printer = described(String(params(bed).device));
-  const webcamDevice = described(String(params(look).device));
+  const webcam = described(String(params(look).device));
   const error = need(nozzle.error, `error for ${IDS.nozzle}`);
   const name = typeof file.device === "string" ? file.device : file.device.name;
   const note = (exchange: Exchange) => String(need(exchange.before, `narration for ${exchange.id}`));
@@ -197,10 +168,12 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
   const act = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: String(params(exchange).action), value: "", note: note(exchange) });
   const read = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: `${params(exchange).device} ${params(exchange).channel}`, value: "", note: note(exchange) });
   const viewed = exchanges.filter((exchange) => field(exchange, "printer"));
-  const viewAt = (step: StepId): Record<string, any> => {
-    const own = told(step);
+  const viewAt = (id: StepId): Record<string, any> => {
+    const own = told(id);
     if (own) return need(field(own, "printer"), `printer view after ${own.id}`);
-    const next = PLACED.slice(PLACED.findIndex((item) => item.id === step)).map((item) => told(item.id)).find(Boolean);
+    const next = PLACED.slice(PLACED.findIndex((item) => item.id === id))
+      .map((item) => told(item.id))
+      .find(Boolean);
     return field(next ?? viewed[viewed.length - 1], "printer") ?? {};
   };
   const readingAt = (what: string, pick: (view: Record<string, any>) => string | undefined): Record<StepId, string> =>
@@ -211,23 +184,46 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
     { name: "Bed target", word: false, at: readingAt("the bed target", quantity(bedChannel)) },
     { name: "State", word: true, at: readingAt("the printer state", (view) => view.state) },
   ];
-  const approved = String(need(field(approve, "kernel")?.approved_by, `approver of ${IDS.approve}`));
-  const audit = need((record as Record<string, any>).audit, "audit log");
-  const counts = Object.entries(need(audit.counts as Record<string, number>, "audit counts")).map(([key, count]) => `${count} ${key.replaceAll("_", " ")}`);
-  const rows: AuditRow[] = need(audit.entries as Array<Record<string, any>>, "audit entries").map((entry) => ({
-    seq: Number(entry.seq),
-    event: String(entry.event),
-    who: String(entry.who),
-    target: String(entry.target),
-    status: String(entry.status),
-    tone: TONES[String(entry.status)] ?? "plain",
-  }));
+  const audit = need(record.audit as Record<string, any> | undefined, "audit log");
+  const counted = need(audit.counts as Record<string, number> | undefined, "audit counts");
+  const logged = new Map<number, string>(need(audit.entries as Array<Record<string, any>> | undefined, "audit entries").map((entry) => [Number(entry.seq), String(entry.status)]));
+  const lifeline = (principal: string): Lifeline => {
+    if (principal === agent) return "agent";
+    if (principal === person) return "owner";
+    throw new Error(`docs/demo/scenario.yaml has a request from ${principal}, who has no lifeline in the landing story.`);
+  };
+  const answer = (exchange: Exchange): Answer => {
+    if (exchange.error) return { text: String(exchange.error.data.name), tone: "blocked" };
+    const status = statusOf(exchange) || need(logged.get(Number(field(exchange, "kernel")?.logged?.[0])), `audit status of ${exchange.id}`);
+    return { text: status, tone: need(TONES[status], `a tone for the status ${status}`) };
+  };
+  const label = (exchange: Exchange): string => {
+    const asked = params(exchange);
+    if (asked.channel !== undefined && asked.value !== undefined) return nb(`${asked.channel} ${amount(asked.value, asked.unit)}`);
+    if (asked.action !== undefined) return String(asked.action);
+    return [verb(exchange), asked.channel].filter(Boolean).join(" ");
+  };
+  const said = (exchange: Exchange): Said[] => {
+    const from = lifeline(String(exchange.by));
+    const reply = answer(exchange);
+    const stops = Boolean(exchange.error) || reply.text === "pending";
+    const target = String(exchange.result?.target ?? "");
+    if (!target) return [{ from, to: stops ? "hub" : "printer", label: label(exchange), answer: reply }];
+    return [
+      { from, to: "hub", label: verb(exchange) },
+      { from: "hub", to: stops ? "hub" : "printer", label: target.slice(target.indexOf(":") + 1), answer: reply },
+    ];
+  };
+  const sending = Object.fromEntries(
+    PLACED.filter((item) => TOLD[item.id]).map((item) => [item.id, said(told(item.id)!)]),
+  ) as Record<Exclude<Sending, "ask">, Said[]>;
   const approvedTarget = String(need(approve.result?.target, `target of ${IDS.approve}`));
-  const agent = String(need((record as Record<string, any>).principals?.agent, "agent principal"));
+  const approvedBy = String(need(field(approve, "kernel")?.approved_by, `approver of ${IDS.approve}`));
   return {
     agent,
+    owner: named(person),
     printer: { id: printer.id, name, driver: printer.driver, readings },
-    camera: { id: webcamDevice.id, channel: String(params(look).channel), driver: webcamDevice.driver, image: imageText(look) },
+    camera: { id: webcam.id, channel: String(params(look).channel), driver: webcam.driver },
     file: printer.file,
     confirmed: `confirmed by ${printer.confirmed.by} ${printer.confirmed.at}`,
     look: read(look),
@@ -240,7 +236,7 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
       refusal: { name: String(error.data.name), code: Number(error.code), reason: humane(reasonLines(String(error.message))[0]) },
     },
     pause: { ...act(pause), status: statusOf(pause) },
-    cancel: { ...act(cancel), status: statusOf(cancel), rule: `${capital(String(params(cancel).action))} waits for a person` },
+    cancel: { ...act(cancel), status: statusOf(cancel) },
     approve: {
       method: approve.request.method,
       target: approvedTarget.slice(approvedTarget.indexOf(":") + 1),
@@ -248,51 +244,36 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
       value: "",
       note: note(approve),
       status: statusOf(approve),
-      approved: `approved by ${named(approved)}`,
+      approved: `approved by ${named(approvedBy)}`,
     },
-    kernel: Object.fromEntries(PLACED.map((item) => [item.id, kernelView(told(item.id), item.id)])) as Record<StepId, KernelView>,
-    audit: { counts: counts.join(", "), command: String(audit.printed_with), rows },
+    said: { ask: [{ from: "owner", to: "agent", label: ASKED }], ...sending },
+    audit: {
+      counts: Object.entries(counted)
+        .map(([key, count]) => `${count} ${key.replaceAll("_", " ")}`)
+        .join(", "),
+      requests: need(counted.requests, "count of requests"),
+      refused: need(counted.refused, "count of refusals"),
+      confirmed: need(counted.confirmed_by_a_person, "count of requests a person confirmed"),
+    },
   };
 }
 
-/** What the story says at each step, in plain words. */
+/** What the story says at each step, one sentence each, in the record's words. */
 export function storyLines(facts: StoryFacts): Record<StepId, string> {
-  const bed = (n: number) => amount(n, facts.bed.unit);
+  const frame = facts.camera.channel;
+  const state = facts.printer.readings.find((reading) => reading.word)!.at.approve;
   return {
-    intro: "Watch an agent babysit a 3D print.",
-    ask: "A long print is running. You ask an agent to watch the print.",
-    look: "The agent reads a webcam frame and sees a corner lifting.",
-    warm: nb(`The agent warms the bed from ${bed(facts.bed.before)} to ${bed(facts.bed.after)}, under the ${facts.bed.max} limit.`),
-    hot: nb(`The kernel refuses a ${facts.nozzle.value} nozzle, above your ${facts.nozzle.max} limit.`),
-    loose: "Later, a webcam frame shows the print has come loose.",
-    pause: "The agent pauses the print at once.",
-    cancel: "Cancelling can't be undone, so the hub asks you first.",
-    approve: `You approve the ${facts.approve.target}. The kernel rechecks, and the print is ${facts.printer.readings.find((reading) => reading.word)!.at.approve}.`,
-    end: "Every command to every device takes this path.",
-  };
-}
-
-/** The messages each step sends, in the message trace's shape, with numbers as a person reads them. */
-export function storyTrace(facts: StoryFacts): Partial<Record<StepId, TraceLine[]>> {
-  const out = (ask: Ask): TraceLine[] => [
-    { kind: "note", text: ask.note },
-    { kind: "request", method: ask.method, text: nb([ask.target, ask.value].filter(Boolean).join(" ")) },
-  ];
-  const answer = (text: string): TraceLine => ({ kind: "result", text, tone: TONES[text] ?? "ok" });
-  const image: TraceLine = { kind: "result", text: facts.camera.image, tone: "ok" };
-  const { refusal } = facts.nozzle;
-  return {
-    ask: [{ kind: "note", text: "nothing sent to the hub yet" }],
-    look: [...out(facts.look), image],
-    warm: [...out(facts.bed), answer(facts.bed.status)],
-    hot: [...out(facts.nozzle), { kind: "error", code: refusal.code, name: refusal.name, reason: nb(refusal.reason) }],
-    loose: [...out(facts.loose), image],
-    pause: [...out(facts.pause), answer(facts.pause.status)],
-    cancel: [...out(facts.cancel), answer(facts.cancel.status)],
-    approve: [...out({ ...facts.approve, target: `${facts.approve.target} on ${facts.approve.device}` }), answer(facts.approve.status)],
-    end: [
-      { kind: "note", text: facts.audit.counts, keep: true },
-      { kind: "audit", caption: facts.audit.command, rows: facts.audit.rows },
-    ],
+    intro: "An agent watches a 3D print through the OpenHAL hub.",
+    ask: `The ${facts.owner} starts a long print and asks an agent to watch the print.`,
+    look: `When the agent reads a ${frame} from the printer's webcam, the ${frame} shows that ${facts.bed.note}.`,
+    warm: nb(`Because a bed target of ${facts.bed.value} is inside the ${facts.owner}'s limit of ${facts.bed.max}, the hub forwards the agent's request to the printer.`),
+    hot: nb(
+      `Because a nozzle temperature of ${facts.nozzle.value} is above the ${facts.owner}'s limit of ${facts.nozzle.max} in ${facts.file}, the hub refuses the agent's request and returns ${facts.nozzle.refusal.name}.`,
+    ),
+    loose: `When the agent reads the webcam again later, the ${frame} shows that ${facts.pause.note}.`,
+    pause: `Because pausing needs no confirmation in ${facts.file}, the hub forwards the agent's ${facts.pause.target} request to the printer at once.`,
+    cancel: `Because ${facts.cancel.note}, the hub holds the agent's ${facts.cancel.target} request until a person approves or rejects the request.`,
+    approve: `When ${facts.approve.note}, the hub sends the ${facts.approve.target} to the printer and the printer's state changes to ${state}.`,
+    end: `Because every request passes through the hub, the audit log holds ${facts.audit.requests} requests, with ${facts.audit.refused} refused and ${facts.audit.confirmed} confirmed by a person.`,
   };
 }

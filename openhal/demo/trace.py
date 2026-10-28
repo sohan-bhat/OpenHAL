@@ -128,9 +128,9 @@ def outcome(record: dict[str, Any]) -> str:
     approved = exchanges["owner-approves"]
     person = str(approved["by"]).partition(":")[2]
     return (
-        f"You'll see the agent warm the bed from {celsius(bed['before'])} to {celsius(bed['after'])}, "
-        f"have a {celsius(refused['requested'])} nozzle refused at the {celsius(refused['limit'])} limit "
-        "and pause the print when the camera shows the print has come loose. "
+        f"You'll see the agent raise the bed target from {celsius(bed['before'])} to {celsius(bed['after'])}, "
+        f"have a request for a nozzle temperature of {celsius(refused['requested'])} refused at the nozzle limit of "
+        f"{celsius(refused['limit'])} and pause the print when the camera shows the print has come loose. "
         f"The {person} then approves the cancel, and the printer's state becomes {approved['printer']['state']}."
     )
 

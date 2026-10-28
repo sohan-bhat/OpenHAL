@@ -3,7 +3,8 @@ import { getEntry, render } from "astro:content";
 import { transformWithEsbuild } from "vite";
 import heroSpellSource from "../components/landing/hero-spell.js?raw";
 import Story from "../components/landing/Story.astro";
-import { PITCH, PRODUCT_LONG_NAME, PRODUCT_NAME } from "../config/brand";
+import Wordmark from "../components/landing/Wordmark.astro";
+import { PRODUCT_LONG_NAME, PRODUCT_NAME } from "../config/brand";
 import Base from "../layouts/Base.astro";
 import { driverCounts, driverGroups, statusWord } from "../lib/catalog";
 import { HOME_TITLE } from "../lib/pages";
@@ -19,16 +20,11 @@ const points = [
   { title: "One STOP", text: "One command puts every device in its safe state, and the devices stay stopped until a person lifts the stop." },
   { title: "Everything logged", text: "Every request, refusal, stop and confirmation goes into an append-only audit log." },
 ];
-const spelled = [
-  { letter: "H", word: "[hardware]" },
-  { letter: "A", word: "[agent]" },
-  { letter: "L", word: "[layer]" },
-].map((item) => ({ ...item, at: PRODUCT_NAME.lastIndexOf(item.letter) }));
 const after = "safe";
 const site = JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: PRODUCT_NAME, alternateName: PRODUCT_LONG_NAME, url: new URL("/", Astro.site).href });
 const more = [
-  { href: "/spec/latest/", title: "Read the specification", text: "Every message, error and rule, in dated versions." },
-  { href: "/docs/", title: "Read the docs", text: "Guides for the hub, device files and drivers." },
+  { href: "/spec/latest/", title: "Read the specification", text: "The specification defines every message, error and rule in dated versions." },
+  { href: "/docs/", title: "Read the docs", text: "The docs explain how to run the hub, create device files and add drivers." },
 ];
 ---
 
@@ -38,19 +34,10 @@ const more = [
     <link rel="expect" href={`#${after}`} blocking="render" />
     <script type="application/ld+json" set:html={site} />
   </Fragment>
-  <section class="home-width hero" aria-labelledby="home-title">
-    <div class="hero-name" data-spell>
-      <h1 id="home-title" class="hero-mark">{PRODUCT_NAME}</h1>
-      <p class="hero-spell" aria-hidden="true">
-        {spelled.map((item) => <span data-at={item.at}>{item.word}</span>)}
-      </p>
-    </div>
-    <p class="hero-pitch">{PITCH}</p>
-    <a class="button hero-go" href="#try">Get started</a>
-  </section>
+  <Wordmark spell={heroSpell} />
 
   <div class="home-width">
-    <Story after={after} lead={heroSpell} />
+    <Story after={after} />
   </div>
 
   <section id={after} class="home-width part after-story" aria-labelledby="safe-title">
@@ -70,7 +57,7 @@ const more = [
   <section class="home-width part" aria-labelledby="works-title">
     <h2 id="works-title">What OpenHAL works with</h2>
     <p class="summary lede">
-      {tested} {tested === 1 ? "driver" : "drivers"} {statusWord("implemented")}
+      OpenHAL has {tested} {tested === 1 ? "driver" : "drivers"} {statusWord("implemented")}, in these device families.
     </p>
     <ul class="families">
       {
@@ -91,7 +78,7 @@ const more = [
 
   <section id="try" class="home-width part" aria-labelledby="try-title">
     <h2 id="try-title">Run the demo</h2>
-    <p class="lede">You need uv and git. The demo runs on simulated devices.</p>
+    <p class="lede">Because the demo runs on simulated devices, the demo needs only uv and git.</p>
     <div class="prose quickstart">
       <Quickstart />
     </div>
@@ -113,61 +100,17 @@ const more = [
   </section>
 </Base>
 
+<script>
+  import { scene } from "../components/landing/scene-runtime";
+  import { smoothSwitch } from "../components/landing/smooth-switch";
+  import { wordmark } from "../components/landing/wordmark-runtime";
+
+  for (const root of document.querySelectorAll<HTMLElement>("[data-sequence]")) scene(root, { stage: ".hero-stage", runway: ".hero-runway", layout: wordmark(root) });
+  for (const root of document.querySelectorAll<HTMLElement>("[data-story]")) scene(root, { stage: ".story-stage", runway: ".story-runway", fits: true });
+  for (const toggle of document.querySelectorAll<HTMLButtonElement>("[data-smooth]")) smoothSwitch(toggle);
+</script>
+
 <style>
-  .hero {
-    display: grid;
-    justify-items: start;
-    padding-top: var(--s-7);
-    padding-bottom: var(--s-7);
-  }
-
-  .hero-mark {
-    margin-left: -0.04em;
-    font-size: min(21vw, 184px);
-    font-weight: 800;
-    letter-spacing: -0.06em;
-    line-height: 0.95;
-  }
-
-  .hero-name {
-    position: relative;
-  }
-
-  .hero-spell {
-    position: absolute;
-    inset: 0;
-    visibility: hidden;
-    pointer-events: none;
-    color: var(--text-2);
-    font-size: var(--t-legend);
-    line-height: 1;
-  }
-
-  .hero-spell[data-placed] {
-    visibility: visible;
-  }
-
-  .hero-spell span {
-    position: absolute;
-    left: 0;
-    top: 0;
-    transform: translate(calc(var(--x, 0px) - 50%), var(--y, 0px));
-    white-space: nowrap;
-  }
-
-  .hero-pitch {
-    max-width: 22ch;
-    margin-top: var(--s-6);
-    font-size: var(--t-h2);
-    line-height: 1.3;
-  }
-
-  .hero-go {
-    margin-top: var(--s-6);
-    min-height: 48px;
-    padding: 0 var(--s-5);
-  }
-
   .part {
     display: grid;
     gap: var(--s-5);
@@ -279,10 +222,6 @@ const more = [
   }
 
   @media (min-width: 768px) {
-    .hero {
-      padding-top: var(--s-8);
-    }
-
     .part {
       padding-top: calc(var(--s-8) + var(--s-6));
     }

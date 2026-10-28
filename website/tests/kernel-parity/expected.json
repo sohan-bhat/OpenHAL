@@ -3577,7 +3577,7 @@
     "inline:waterer": "d5491ef1e63f99b656de01fece078affd4644e65df0356f690f4c69a07488ccb"
   },
   "scenario": {
-    "outcome": "You'll see the agent warm the bed from 60 °C to 70 °C, have a 300 °C nozzle refused at the 260 °C limit and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.",
+    "outcome": "You'll see the agent raise the bed target from 60 °C to 70 °C, have a request for a nozzle temperature of 300 °C refused at the nozzle limit of 260 °C and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.",
     "lines": [
       "# the agent checks the first layer",
       "→ hal/read    { \"device\": \"printer-cam\", \"channel\": \"frame\" }",

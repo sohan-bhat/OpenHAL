@@ -180,8 +180,9 @@ def test_the_trace_shows_every_exchange() -> None:
 
 def test_the_outcome_names_the_recorded_numbers() -> None:
     assert trace.outcome(RECORD) == (
-        "You'll see the agent warm the bed from 60 °C to 70 °C, have a 300 °C nozzle refused at the 260 °C limit "
-        "and pause the print when the camera shows the print has come loose. "
+        "You'll see the agent raise the bed target from 60 °C to 70 °C, have a request for a nozzle temperature of "
+        "300 °C refused at the nozzle limit of 260 °C and pause the print when the camera shows the print has come "
+        "loose. "
         "The owner then approves the cancel, and the printer's state becomes cancelled."
     )
 

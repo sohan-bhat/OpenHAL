@@ -9,10 +9,10 @@ uv run openhal demo
 ```
 
 <!-- outcome:start -->
-You'll see the agent warm the bed from 60 °C to 70 °C, have a 300 °C nozzle refused at the 260 °C limit and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.
+You'll see the agent raise the bed target from 60 °C to 70 °C, have a request for a nozzle temperature of 300 °C refused at the nozzle limit of 260 °C and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.
 <!-- outcome:end -->
 
-The demo starts a hub with a simulated Klipper [printer and its camera](../examples/print-babysitter/), and connects an agent over the hub protocol to keep an eye on a print. The agent reads camera frames, warms the bed, asks for a nozzle over the limit, pauses the print and asks to cancel. The owner approves the cancel with the human token over the same protocol, well inside the hub's five minute window. Nothing touches hardware. The printer runs on a Moonraker simulator, the camera frames are line drawings, and the hub's safety kernel decides every command as the kernel would for a real printer.
+The demo starts a hub with a simulated Klipper [printer and its camera](../examples/print-babysitter/) and connects an agent over the hub protocol to watch a print. The agent reads camera frames, raises the bed target, requests a nozzle temperature above the nozzle limit, which the hub refuses, pauses the print and requests a cancel. Because a cancel can't be undone, the cancel waits until the owner approves the request with the human token over the same protocol, well inside the hub's five minute window. The demo sends nothing to hardware, because the printer runs on a Moonraker simulator and the camera frames are line drawings, but the hub's safety kernel checks every command exactly as the kernel would for a real printer.
 
 <!-- trace:start -->
 ```

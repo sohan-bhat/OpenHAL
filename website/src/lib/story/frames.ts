@@ -1,22 +1,28 @@
 /**
  * The webcam's two demo frames as SVG paths, on the same 640 by 480 grid, with the same points and
  * in the same drawing order as openhal/demo/frames.py, which draws the JPEGs the simulated webcam
- * serves. The site draws them as vectors so they follow the light and dark themes, and shows the
- * part below y 120, where both frames draw. Each frame also has the box the agent marks.
+ * serves. The site draws them as lines that follow the light and dark themes, and shows the part
+ * below y 120, where both frames draw. A shape that hides what is behind it is filled with the
+ * page's own background. The parts marked seen are what the agent notices in the frame.
  */
 
 type Point = [number, number];
 
-export type Fill = "surface" | "bg" | "none";
+export type Fill = "bg" | "none";
+
+export interface Ink {
+  d: string;
+  fill: Fill;
+  seen: boolean;
+}
 
 export interface Frame {
-  items: Array<{ d: string; fill: Fill }>;
-  mark: { x: number; y: number; width: number; height: number };
+  items: Ink[];
 }
 
 const path = (points: Point[], closed = false) => `M${points.map(([x, y]) => `${+x.toFixed(1)} ${+y.toFixed(1)}`).join(" L")}${closed ? " Z" : ""}`;
-const shape = (points: Point[], fill: Fill = "surface") => ({ d: path(points, true), fill });
-const line = (points: Point[]) => ({ d: path(points), fill: "none" as const });
+const shape = (points: Point[], fill: Fill = "none", seen = false): Ink => ({ d: path(points, true), fill, seen });
+const line = (points: Point[], seen = false): Ink => ({ d: path(points), fill: "none", seen });
 
 const bed = [
   shape([[150, 250], [490, 250], [590, 420], [50, 420]]),
@@ -47,33 +53,31 @@ function lifting(): Frame {
     items: [
       ...bed,
       shape([frontLeft, bend, bendLow, [214, 377]]),
-      shape([bend, corner, cornerLow, bendLow]),
+      shape([bend, corner, cornerLow, bendLow], "none", true),
       shape([[232, 332], [400, 332], corner, bend, frontLeft]),
-      { d: path([bendLow, cornerLow, [428, 377]], true), fill: "bg" as const },
-      line([bendLow, [428, 377], cornerLow]),
+      shape([bendLow, cornerLow, [428, 377]], "bg", true),
+      line([bendLow, [428, 377], cornerLow], true),
       ...toolhead([262, 326]),
     ],
-    mark: { x: 324, y: 310, width: 130, height: 82 },
   };
 }
 
 function loose(): Frame {
   const nozzle: Point = [262, 250];
-  const nest = ([[34, 1.6, 0.4], [26, 1.3, 2.1], [40, 1.1, 4.0], [20, 1.8, 1.0]] as const).map(([radius, turns, start]) => line(strand([262, 348], radius, turns, start)));
+  const nest = ([[34, 1.6, 0.4], [26, 1.3, 2.1], [40, 1.1, 4.0], [20, 1.8, 1.0]] as const).map(([radius, turns, start]) => line(strand([262, 348], radius, turns, start), true));
   return {
     items: [
       ...bed,
-      shape([[372, 318], [452, 296], [500, 368], [420, 392]]),
-      shape([[420, 392], [500, 368], [500, 382], [420, 406]]),
-      shape([[372, 318], [420, 392], [420, 406], [372, 332]]),
-      line([[395, 307], [444, 380]]),
-      line([[412, 302], [461, 375]]),
-      line([[430, 298], [479, 371]]),
+      shape([[372, 318], [452, 296], [500, 368], [420, 392]], "none", true),
+      shape([[420, 392], [500, 368], [500, 382], [420, 406]], "none", true),
+      shape([[372, 318], [420, 392], [420, 406], [372, 332]], "none", true),
+      line([[395, 307], [444, 380]], true),
+      line([[412, 302], [461, 375]], true),
+      line([[430, 298], [479, 371]], true),
       ...toolhead(nozzle),
-      line([nozzle, [258, 268], [266, 286], [256, 304], [264, 322], [258, 338]]),
+      line([nozzle, [258, 268], [266, 286], [256, 304], [264, 322], [258, 338]], true),
       ...nest,
     ],
-    mark: { x: 358, y: 282, width: 156, height: 138 },
   };
 }
 

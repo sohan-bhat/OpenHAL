@@ -1,0 +1,49 @@
+---
+import { nb } from "../../../lib/story/facts";
+import { FRAMES } from "../../../lib/story/frames";
+import { during } from "../../../lib/story/script";
+import type { Sequence } from "../../../lib/story/timeline";
+
+interface Props {
+  sequence: Sequence;
+}
+
+const { sequence } = Astro.props;
+const frames = (["lifting", "loose"] as const).map((name) => ({ name, frame: FRAMES[name], shows: sequence.frames[name], seen: sequence.seen[name] }));
+---
+
+<div class="cam">
+  <div class="cam-frame">
+    {
+      frames.map(({ frame, shows, seen }) => (
+        <svg {...during(shows)} viewBox="0 120 640 360" aria-hidden="true" focusable="false">
+          {frame.items.map((item) => (
+            <path class:list={["ink", `fill-${item.fill}`]} d={item.d} />
+          ))}
+          <g class="seen" {...during(seen)}>
+            {frame.items
+              .filter((item) => item.seen)
+              .map((item) => (
+                <path class:list={["ink", `fill-${item.fill}`]} d={item.d} />
+              ))}
+          </g>
+        </svg>
+      ))
+    }
+  </div>
+  <p class="cam-note">Webcam, demo frame</p>
+  <dl class="readings">
+    {
+      sequence.readings.map((reading) => (
+        <div class="reading">
+          <dt>{reading.name}</dt>
+          <dd class:list={["value", { word: reading.word }]}>
+            {reading.values.map((value) => (
+              <span {...during(value.spans)}>{nb(value.text)}</span>
+            ))}
+          </dd>
+        </div>
+      ))
+    }
+  </dl>
+</div>

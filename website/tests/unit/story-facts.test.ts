@@ -1,19 +1,20 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { IDS, TOLD, amount, humane, nb, named, readDeviceFile, storyFacts, storyLines, storyTrace } from "../../src/lib/story/facts";
-import { COUNTED, PLACED, STEPS, TOTAL, step, stepAt, type StepId } from "../../src/lib/story/script";
-import { AGENT, CAMERA, DRIVER, FILLS, HUB, TRIPS, WIRES, stations } from "../../src/lib/story/timeline";
+import { ASKED, IDS, LIFELINES, TOLD, amount, humane, nb, named, readDeviceFile, storyFacts, storyLines, type Sending } from "../../src/lib/story/facts";
+import { COUNTED, NEVER, PLACED, STEPS, TOTAL, during, step, stepAt, type StepId } from "../../src/lib/story/script";
+import { drawing, storySequence } from "../../src/lib/story/timeline";
 import type { Exchange, Scenario } from "../../src/lib/scenario";
 import { SCENARIO_PATH, scenarioFrom } from "../../src/lib/scenario-data.mjs";
 
 const scenarioFile = process.env.OPENHAL_SCENARIO ?? fileURLToPath(new URL(`../../../${SCENARIO_PATH}`, import.meta.url));
 const recorded = readFileSync(scenarioFile, "utf8");
 const fresh = () => scenarioFrom(recorded) as Scenario;
-const byId = (scenario: Scenario, id: string) => scenario.record.exchanges.find((exchange) => exchange.id === id)!;
+const byId = (scenario: Scenario, id: string) => scenario.record.exchanges.find((exchange) => exchange.id === id)! as Exchange & Record<string, any>;
 const quantity = (exchange: Exchange) => amount(exchange.request.params.value, exchange.request.params.unit);
-const index = (id: StepId) => step(id).index;
-const told = (scenario: Scenario, id: StepId) => byId(scenario, IDS[TOLD[id]!]) as Exchange & Record<string, any>;
+const told = (scenario: Scenario, id: StepId) => byId(scenario, IDS[TOLD[id]!]);
+const sending = COUNTED.filter((item) => item.id !== "end").map((item) => item.id as Sending);
+const at = (spans: ReadonlyArray<readonly [number, number]>, t: number) => spans.some(([start, end]) => t >= start && t < end);
 
 describe("the story's steps", () => {
   it("run one after another, and the visitor counts every one after the title", () => {
@@ -28,114 +29,127 @@ describe("the story's steps", () => {
     expect(stepAt(TOTAL + 50)).toBe(PLACED.length - 1);
   });
 
-  it("show every piece in steps that exist", () => {
-    const ids = new Set(STEPS.map((item) => item.id));
-    const lists = [AGENT.person, AGENT.logged, ...Object.values(AGENT.asks), ...Object.values(AGENT.hears), ...Object.values(HUB), ...Object.values(DRIVER), ...Object.values(CAMERA), ...Object.values(WIRES), TRIPS.map((trip) => trip.id)];
-    for (const list of lists) for (const id of list) expect(ids.has(id)).toBe(true);
-  });
-
-  it("light every station a message passes, the hub on every request", () => {
-    for (const trip of TRIPS) expect([...step(trip.id).lit].sort(), trip.id).toEqual(stations(trip).sort());
-    for (const item of PLACED.filter((entry) => TOLD[entry.id])) {
-      expect(TRIPS.map((trip) => trip.id)).toContain(item.id);
-      expect(item.lit).toContain("hub");
-      expect(item.lit).toContain("kernel");
-    }
-    expect(step("ask").lit).toEqual(["client"]);
-    expect([...step("end").lit].sort()).toEqual(["camera", "client", "driver", "hub", "kernel", "printer"]);
-  });
-
-  it("take each message as far as the record says it went", () => {
-    const record = fresh();
-    for (const trip of TRIPS) {
-      const exchange = told(record, trip.id);
-      const reading = exchange.request.method === "hal/read";
-      expect(trip.out === "look", trip.id).toBe(reading);
-      expect(trip.wires.includes(4), trip.id).toBe(reading || (exchange.printer_received ?? []).length > 0);
-      expect(trip.wires[0] === 1, trip.id).toBe(String(exchange.by).startsWith("agent:"));
-      expect(trip.back === "blocked", trip.id).toBe(Boolean(exchange.error));
-      expect(trip.back === "pending", trip.id).toBe(exchange.result?.status === "pending");
-    }
-  });
-
-  it("show a read passing the kernel with no grant, and a driver waiting only for commands", () => {
-    const record = fresh();
-    for (const id of DRIVER.frame) {
-      expect(told(record, id).request.method).toBe("hal/read");
-      expect(told(record, id).kernel.grant).toBe("not needed");
-      expect(DRIVER.waiting).not.toContain(id);
-    }
-    for (const id of [...DRIVER.bed, ...DRIVER.pause, ...DRIVER.cancel]) expect(told(record, id).kernel.grant).toBe("issued");
-    for (const id of DRIVER.waiting) expect(TOLD[id] ? told(record, id).kernel.grant : "none").toBe("none");
-  });
-
-  it("draw each message inside its own step, leaving before the next one draws", () => {
-    for (const fill of FILLS) {
-      const owner = PLACED[stepAt(fill.at)];
-      expect(fill.at + fill.d).toBeLessThanOrEqual(owner.to);
-      expect(fill.out).toBe(owner.to);
-    }
-    const lanes = new Map<string, typeof FILLS>();
-    for (const fill of FILLS) {
-      const key = `${fill.wire} ${fill.lane === "send" || fill.lane === "look" ? "out" : "back"}`;
-      lanes.set(key, [...(lanes.get(key) ?? []), fill]);
-    }
-    for (const fills of lanes.values()) {
-      const sorted = [...fills].sort((a, b) => a.at - b.at);
-      for (let i = 1; i < sorted.length; i++) expect(sorted[i - 1].out).toBeLessThanOrEqual(sorted[i].at);
-    }
-  });
-
   it("tell the record in order", () => {
     const order = PLACED.filter((item) => TOLD[item.id]).map((item) => IDS[TOLD[item.id]!]);
     expect(order).toEqual(fresh().record.exchanges.map((exchange) => exchange.id));
-    expect(index("warm")).toBeLessThan(index("hot"));
-    expect(index("cancel")).toBeLessThan(index("approve"));
-    expect(index("approve")).toBeLessThan(index("end"));
+  });
+
+  it("mark each piece for the first frame and for the static story", () => {
+    expect(during([[0, 20]])).toEqual({ "data-in": "0 20", "data-on": "", "data-end": undefined });
+    expect(during([[300, NEVER]])).toEqual({ "data-in": `300 ${NEVER}`, "data-on": undefined, "data-end": "" });
+  });
+});
+
+describe("the sequence diagram", () => {
+  const facts = storyFacts();
+  const sequence = storySequence(facts);
+  const record = fresh();
+  const row = (id: Sending) => sequence.rows.find((item) => item.id === id)!;
+
+  it("has one row for every step that sends something, in story order", () => {
+    expect(sequence.rows.map((item) => item.id)).toEqual(sending);
+  });
+
+  it("takes each request as far as the record says it went", () => {
+    for (const id of sending.filter((item) => TOLD[item])) {
+      const exchange = told(record, id);
+      const said = facts.said[id];
+      const last = said[said.length - 1];
+      const stopped = Boolean(exchange.error) || exchange.result?.status === "pending";
+      expect(last.to, id).toBe(stopped ? "hub" : "printer");
+      expect(said[0].from, id).toBe(String(exchange.by).startsWith("human:") ? "owner" : "agent");
+      expect(row(id).legs[0].to, id).toBe(said[0].from === "agent" || said[0].from === "owner" ? "hub" : said[0].to);
+      expect(row(id).legs.at(-1)!.to, id).toBe(last.to);
+      expect(last.answer!.text, id).toBe(exchange.error ? exchange.error.data.name : String(exchange.result?.status ?? "done"));
+      expect(last.answer!.tone, id).toBe(exchange.error ? "blocked" : exchange.result?.status === "pending" ? "confirm" : "ok");
+    }
+    expect(facts.said.ask).toEqual([{ from: "owner", to: "agent", label: ASKED }]);
+  });
+
+  it("draws every leg between neighbouring points of the route, the hub on the way to the printer", () => {
+    for (const item of sequence.rows) {
+      for (const leg of item.legs) expect(LIFELINES.indexOf(leg.to)).toBeGreaterThan(LIFELINES.indexOf(leg.from));
+      for (const leg of item.legs.filter((entry) => entry.to === "printer")) expect(leg.from).toBe("hub");
+    }
+  });
+
+  it("shows a row's label first, then draws its legs one after another, then shows its answer, all inside its own step", () => {
+    for (const item of sequence.rows) {
+      const { from, to } = step(item.id);
+      expect(item.words[0].shows).toBeGreaterThanOrEqual(from);
+      for (const [index, leg] of item.legs.entries()) {
+        expect(leg.lands).toBe(leg.at + leg.d);
+        if (index > 0) expect(leg.at).toBeGreaterThan(item.legs[index - 1].lands);
+      }
+      expect(item.legs[0].at).toBeGreaterThan(item.words[0].shows);
+      for (const words of item.words.filter((entry) => entry.answer)) expect(words.answers).toBeGreaterThan(item.lands);
+      expect(Math.max(...item.words.map((words) => words.answers))).toBeLessThan(to);
+      expect(item.live[0]).toBe(item.words[0].shows);
+    }
+  });
+
+  it("holds the pending request at the hub until the owner's approval lands there", () => {
+    const cancel = row("cancel");
+    const approve = row("approve");
+    expect(cancel.held).toEqual([cancel.lands, approve.legs[0].lands]);
+    expect(cancel.live).toEqual([cancel.words[0].shows, step("cancel").to]);
+    expect(drawing(cancel)).toEqual([cancel.live[0], cancel.lands]);
+    expect(drawing(approve)).toEqual(approve.live);
+    expect(approve.legs[0].from).toBe("owner");
+    expect(approve.legs[1].at).toBeGreaterThan(approve.legs[0].lands);
+    expect(sequence.rows.filter((item) => item.held).map((item) => item.id)).toEqual(["cancel"]);
+  });
+
+  it("changes the printer's readings when the request that changed them lands", () => {
+    const value = (name: string, t: number) => sequence.readings.find((reading) => reading.name === name)!.values.find((entry) => at(entry.spans, t))!.text;
+    const reading = (name: string, id: StepId) => facts.printer.readings.find((entry) => entry.name === name)!.at[id];
+    expect(value("Bed target", row("warm").lands)).toBe(reading("Bed target", "look"));
+    expect(value("Bed target", row("warm").lands + 1)).toBe(reading("Bed target", "warm"));
+    expect(value("State", row("pause").lands + 1)).toBe(reading("State", "pause"));
+    expect(value("State", row("approve").lands)).toBe(reading("State", "cancel"));
+    expect(value("State", TOTAL)).toBe(reading("State", "end"));
+    expect(value("Nozzle", TOTAL)).toBe(reading("Nozzle", "end"));
+    for (const entry of sequence.readings) {
+      for (let t = 0; t < TOTAL; t += 0.5) expect(entry.values.filter((item) => at(item.spans, t)).length, `${entry.name} at ${t}`).toBe(1);
+    }
+  });
+
+  it("shows the frame each read returned from the moment the read lands, and marks what the agent noticed", () => {
+    const look = row("look");
+    const loose = row("loose");
+    expect(sequence.frames.lifting).toEqual([[0, loose.lands + 1]]);
+    expect(sequence.frames.loose).toEqual([[loose.lands + 1, NEVER]]);
+    expect(sequence.seen.lifting).toEqual([[look.lands + 1, step("look").to]]);
+    expect(sequence.seen.loose).toEqual([[loose.lands + 1, step("loose").to]]);
   });
 });
 
 describe("the story's words and numbers", () => {
   const facts = storyFacts();
   const record = fresh();
-  const look = byId(record, IDS.look);
   const bed = byId(record, IDS.bed);
   const nozzle = byId(record, IDS.nozzle);
   const pause = byId(record, IDS.pause);
   const cancel = byId(record, IDS.cancel);
-  const approve = byId(record, IDS.approve) as Exchange & Record<string, any>;
+  const approve = byId(record, IDS.approve);
   const audit = (record.record as Record<string, any>).audit;
   const printer = readDeviceFile();
 
   it("come from the recorded scenario", () => {
-    expect(facts.look.method).toBe(look.request.method);
-    expect(facts.camera.id).toBe(look.request.params.device);
-    expect(facts.bed.target).toBe(bed.request.params.channel);
-    expect(facts.bed.value).toBe(quantity(bed));
-    expect(facts.bed.status).toBe(bed.result!.status);
-    expect(facts.bed.note).toBe(bed.before);
-    expect(facts.nozzle.value).toBe(quantity(nozzle));
-    expect(facts.nozzle.note).toBe(nozzle.before);
+    expect(facts.said.look[0].label).toBe(`read ${byId(record, IDS.look).request.params.channel}`);
+    expect(facts.said.warm[0].label).toBe(nb(`${bed.request.params.channel} ${quantity(bed)}`));
+    expect(facts.said.hot[0].label).toBe(nb(`${nozzle.request.params.channel} ${quantity(nozzle)}`));
+    expect(facts.said.pause[0].label).toBe(pause.request.params.action);
+    expect(facts.said.cancel[0].label).toBe(cancel.request.params.action);
+    expect(facts.said.approve.map((said) => said.label)).toEqual([approve.request.method.split("/").pop(), String(approve.result!.target).split(":")[1]]);
     expect(facts.nozzle.refusal.name).toBe(nozzle.error!.data.name);
     expect(facts.nozzle.refusal.code).toBe(nozzle.error!.code);
     expect(facts.nozzle.refusal.reason).toBe(humane(nozzle.error!.message.slice(0, nozzle.error!.message.indexOf(" ("))));
-    expect(facts.pause.target).toBe(pause.request.params.action);
-    expect(facts.pause.status).toBe(pause.result!.status);
-    expect(facts.cancel.target).toBe(cancel.request.params.action);
     expect(facts.cancel.status).toBe(cancel.result!.status);
-    expect(facts.approve.method).toBe(approve.request.method);
-    expect(facts.approve.status).toBe(approve.result!.status);
-    expect(`action:${facts.approve.target}`).toBe(approve.result!.target);
     expect(facts.approve.approved).toBe(`approved by ${named(approve.kernel.approved_by)}`);
-    expect(facts.approve.note).toBe(approve.before);
-    expect(facts.agent).toBe((record.record as Record<string, any>).principals.agent);
-    const described = record.record.devices!.find((item) => item.id === bed.request.params.device)!;
-    expect(facts.file).toBe(described.file);
-    expect(facts.printer.driver).toBe(described.driver);
-    expect(facts.camera.driver).toBe(record.record.devices!.find((item) => item.id === look.request.params.device)!.driver);
-    expect(facts.confirmed).toBe(`confirmed by ${described.confirmed.by} ${described.confirmed.at}`);
-    expect([facts.bed.before, facts.bed.after]).toEqual([(bed as any)[facts.bed.channel].before.value, (bed as any)[facts.bed.channel].after.value]);
-    expect(facts.camera.image).toBe(`${look.result!.value.mimeType} ${look.result!.value.width}\u00a0×\u00a0${look.result!.value.height}`);
+    expect(facts.owner).toBe(named((record.record as Record<string, any>).principals.person));
+    expect(facts.audit).toMatchObject({ requests: audit.counts.requests, refused: audit.counts.refused, confirmed: audit.counts.confirmed_by_a_person });
+    expect([facts.bed.before, facts.bed.after]).toEqual([bed[facts.bed.channel].before.value, bed[facts.bed.channel].after.value]);
   });
 
   it("show the printer as the hub saw it after each step's request", () => {
@@ -147,42 +161,7 @@ describe("the story's words and numbers", () => {
       expect(stateRow.at[item.id]).toBe(view.state);
     }
     expect(stateRow.at.approve).toBe("cancelled");
-    expect(stateRow.at.end).toBe(stateRow.at.approve);
     expect(bedRow.at.ask).toBe(bedRow.at.look);
-  });
-
-  it("show the kernel's checks and grant in the record's words", () => {
-    for (const item of PLACED) {
-      const view = facts.kernel[item.id];
-      if (!TOLD[item.id]) {
-        expect(view.verdict.text).toBe("Waiting for a command");
-        continue;
-      }
-      const kernel = told(record, item.id).kernel;
-      for (const [name, word] of Object.entries(kernel.checks as Record<string, string>)) expect(view.checks).toContainEqual({ name: `${name[0].toUpperCase()}${name.slice(1)}`, word });
-      if (view.reading) {
-        expect(view.checks).toContainEqual({ name: "Grant", word: kernel.grant });
-        expect(view.checks).toContainEqual({ name: "Audit log", word: `entry ${kernel.logged.join(", ")}` });
-        expect(view.verdict).toEqual({ kind: "granted", text: "allowed" });
-      }
-    }
-    expect(facts.kernel.hot.verdict).toEqual({ kind: "blocked", text: nozzle.error!.data.name });
-    expect(facts.kernel.cancel.verdict).toEqual({ kind: "confirm", text: "confirmation required" });
-    expect(facts.kernel.approve.checks.find((check) => check.name === "Confirmation")!.word).toBe("ok");
-    expect(facts.kernel.approve.verdict.text).toBe("granted");
-  });
-
-  it("end on the audit log the hub printed", () => {
-    expect(facts.audit.counts).toBe(`${audit.counts.requests} requests, ${audit.counts.refused} refused, ${audit.counts.confirmed_by_a_person} confirmed by a person`);
-    expect(facts.audit.command).toBe(audit.printed_with);
-    expect(facts.audit.rows.map(({ seq, event, who, target, status }) => ({ seq, event, who, target, status }))).toEqual(audit.entries.map(({ message, ...rest }: Record<string, unknown>) => rest));
-    expect(facts.audit.rows.find((row) => row.event === "confirm")!.who).toBe(approve.by);
-    expect(facts.audit.rows.find((row) => row.status === "blocked")!.tone).toBe("blocked");
-    expect(facts.audit.rows.find((row) => row.status === "pending")!.tone).toBe("pending");
-    for (const line of audit.lines.slice(1) as string[]) {
-      const [seq] = line.split(/\s+/);
-      expect(facts.audit.rows.map((row) => String(row.seq))).toContain(seq);
-    }
   });
 
   it("take the limits from printer.hal.yaml, which match what the hub described", () => {
@@ -193,68 +172,82 @@ describe("the story's words and numbers", () => {
     }
     expect(facts.nozzle.max).toBe(amount(printer.write[facts.nozzle.channel].max, printer.write[facts.nozzle.channel].unit));
     expect(facts.bed.max).toBe(amount(printer.write[facts.bed.channel].max, printer.write[facts.bed.channel].unit));
-    expect(facts.printer.driver).toBe("moonraker");
-    expect(facts.camera.driver).toBe("http");
     expect(printer.actions[facts.cancel.target]).toMatchObject({ confirm: expect.any(String) });
+    expect(printer.actions[facts.pause.target]?.confirm).toBeUndefined();
   });
 
   it("follow the record when it changes", () => {
     const changed = fresh();
+    const record = changed.record as Record<string, any>;
     byId(changed, IDS.nozzle).request.params.value = 290;
-    byId(changed, IDS.nozzle).before = "a hotter nozzle might help";
-    const warmed = byId(changed, IDS.bed);
-    warmed.request.params.value = 75;
-    (warmed as Record<string, any>)[warmed.request.params.channel].after.value = 75;
-    const approved = byId(changed, IDS.approve) as Record<string, any>;
-    approved.kernel.approved_by = "human:alex";
-    approved.printer.state = "standby";
-    approved.printer.extruder_temp.value = 30;
-    const counts = (changed.record as Record<string, any>).audit.counts;
-    counts.requests = 9;
-    (byId(changed, IDS.look) as Record<string, any>).kernel.logged = [41];
+    byId(changed, IDS.nozzle).error!.data.name = "OUT_OF_RANGE";
+    byId(changed, IDS.bed).request.params.value = 75;
+    byId(changed, IDS.bed).bed_target.after.value = 75;
+    for (const exchange of changed.record.exchanges as Array<Record<string, any>>) if (exchange.printer?.bed_target.value === 70) exchange.printer.bed_target.value = 75;
+    byId(changed, IDS.cancel).before = "a cancelled print can't be resumed";
+    byId(changed, IDS.approve).before = "the operator approves the cancel";
+    byId(changed, IDS.approve).printer.state = "standby";
+    byId(changed, IDS.approve).printer.extruder_temp.value = 30;
+    byId(changed, IDS.approve).by = "human:operator";
+    record.principals.person = "human:operator";
+    record.audit.counts.requests = 9;
     const other = storyFacts(changed, readDeviceFile());
-    expect(other.nozzle.value).toBe("290 °C");
-    expect(storyLines(other).hot).toContain(nb("290 °C"));
-    expect(storyTrace(other).hot).toContainEqual({ kind: "note", text: "a hotter nozzle might help" });
-    expect(other.bed.value).toBe("75 °C");
-    expect(storyLines(other).warm).toContain(nb("75 °C"));
-    expect(JSON.stringify(storyTrace(other).hot)).toContain(nb("290 °C"));
-    expect(other.approve.approved).toBe("approved by alex");
-    expect(other.printer.readings[2].at.approve).toBe("standby");
-    expect(storyLines(other).approve).toContain("standby");
+    const lines = storyLines(other);
+    const sequence = storySequence(other);
+    expect(other.said.hot[0]).toEqual({ from: "agent", to: "hub", label: nb("extruder_target 290 °C"), answer: { text: "OUT_OF_RANGE", tone: "blocked" } });
+    expect(lines.hot).toContain(nb("a nozzle temperature of 290 °C"));
+    expect(lines.hot).toContain("returns OUT_OF_RANGE.");
+    expect(other.said.warm[0].label).toBe(nb("bed_target 75 °C"));
+    expect(lines.warm).toContain(nb("a bed target of 75 °C"));
+    expect(sequence.readings[1].values.map((value) => value.text)).toEqual(["60 °C", "75 °C"]);
+    expect(lines.cancel).toMatch(/^Because a cancelled print can't be resumed, /);
+    expect(lines.approve).toMatch(/^When the operator approves the cancel, /);
+    expect(lines.approve).toContain("standby");
+    expect(lines.ask).toMatch(/^The operator /);
+    expect(sequence.heads).toEqual({ owner: "Operator", agent: "Agent", hub: "OpenHAL hub", printer: "Printer" });
+    expect(other.said.approve[0].from).toBe("owner");
     expect(other.printer.readings[0].at.end).toBe("30 °C");
-    expect(other.audit.counts).toMatch(/^9 requests/);
-    expect(other.kernel.look.checks).toContainEqual({ name: "Audit log", word: "entry 41" });
+    expect(lines.end).toContain("9 requests");
+  });
+
+  it("stop a refused bed target at the hub when the record says the hub refused it", () => {
+    const changed = fresh();
+    const warmed = byId(changed, IDS.bed);
+    warmed.error = { code: -32010, message: "bed_target 70 degC exceeds the limit of 60 degC (printer.hal.yaml, confirmed by owner 2026-10-24)", data: { name: "LIMIT_EXCEEDED" } };
+    delete warmed.result;
+    const sequence = storySequence(storyFacts(changed, readDeviceFile()));
+    const row = sequence.rows.find((item) => item.id === "warm")!;
+    expect(row.legs.map((leg) => [leg.from, leg.to])).toEqual([["agent", "hub"]]);
+    expect(row.words[0].answer).toEqual({ text: "LIMIT_EXCEEDED", tone: "blocked" });
   });
 
   it("follow the device file when a person changes a limit", () => {
     const tighter = readDeviceFile();
     tighter.write[facts.nozzle.channel].max = 250;
-    expect(storyLines(storyFacts(fresh(), tighter)).hot).toContain(nb("250 °C"));
+    expect(storyLines(storyFacts(fresh(), tighter)).hot).toContain(nb("limit of 250 °C"));
   });
 
-  it("give every counted step a trace in the record's words, each result in its outcome's color", () => {
-    const trace = storyTrace(facts);
-    for (const item of COUNTED) expect(trace[item.id]?.length).toBeGreaterThan(0);
-    for (const item of PLACED.filter((entry) => TOLD[entry.id])) expect(trace[item.id]![0]).toEqual({ kind: "note", text: told(record, item.id).before });
-    expect(trace.hot).toContainEqual({ kind: "error", code: nozzle.error!.code, name: nozzle.error!.data.name, reason: nb(facts.nozzle.refusal.reason) });
-    expect(trace.cancel).toContainEqual({ kind: "result", text: "pending", tone: "pending" });
-    expect(trace.warm).toContainEqual({ kind: "result", text: "done", tone: "ok" });
-    expect(trace.approve).toContainEqual({ kind: "request", method: "hal/confirmations/approve", text: `${facts.approve.target} on ${facts.approve.device}` });
-    expect(trace.end).toContainEqual({ kind: "note", text: facts.audit.counts, keep: true });
-    expect(trace.end).toContainEqual({ kind: "audit", caption: audit.printed_with, rows: facts.audit.rows });
-  });
-
-  it("read as short plain sentences that follow the copy rules", () => {
-    for (const line of Object.values(storyLines(facts))) {
-      expect(line).toMatch(/[.]$/);
-      expect(line).not.toMatch(/[;:!–—]/);
-      expect(line).not.toMatch(/\bAI\b/);
-      expect(line).not.toMatch(/\b(it|them|they|that's)\b/i);
-      expect(line).not.toMatch(/\bonly\b|morning|wake/i);
-      expect(line.split(/\s+/).length).toBeLessThanOrEqual(16);
+  it("read as one plain sentence each, written to the owner's rules", () => {
+    for (const [id, line] of Object.entries(storyLines(facts))) {
+      const words = line.replace(/ /g, " ");
+      expect(words, id).toMatch(/^[A-Z].*[.]$/);
+      expect(words.slice(0, -1), id).not.toMatch(/[.?!]\s/);
+      expect(words, id).not.toMatch(/[;:!–—]/);
+      expect(words, id).not.toMatch(/\bAI\b/);
+      expect(words, id).not.toMatch(/\b(it|its|them|they|that's)\b/i);
+      expect(words, id).not.toMatch(/\b(hub|kernel|OpenHAL)\b[^,.]*\b(says?|asks?|steps? in|wants?|decides?|thinks?|knows?|sees?)\b/);
+      expect(words, id).not.toMatch(/\ba \d+ °C (nozzle|bed)\b/);
+      if (/\bbecause\b/i.test(words)) expect(words, id).toMatch(/^Because /);
+      expect(words.split(/\s+/).length, id).toBeLessThanOrEqual(32);
     }
-    expect(nb("warm to 70 °C")).toBe("warm to 70\u00a0°C");
+    expect(nb("warm to 70 °C")).toBe("warm to 70 °C");
     expect(humane("extruder_target 300 degC exceeds the limit of 260 degC")).toBe("extruder_target 300 °C exceeds the limit of 260 °C");
+  });
+
+  it("end on the audit log's counts", () => {
+    const end = storyLines(facts).end;
+    expect(end).toContain(`${audit.counts.requests} requests`);
+    expect(end).toContain(`${audit.counts.refused} refused`);
+    expect(end).toContain(`${audit.counts.confirmed_by_a_person} confirmed by a person`);
   });
 });
