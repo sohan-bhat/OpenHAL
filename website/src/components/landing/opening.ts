@@ -25,7 +25,8 @@ export interface Opening {
   title: boolean;
   /** How much of the stage shows from its top while it is lifted, the step count's row and the title where the title shows. */
   keep: number;
-  last: string;
+  /** What the stage shows now, which a fresh measurement does not know, so its first placement always writes. */
+  last: string | null;
 }
 
 function pageTop(el: HTMLElement): number {
@@ -58,7 +59,7 @@ export function measure(hero: HTMLElement): Opening | null {
     drop: parseFloat(hero.style.getPropertyValue("--drop")) || 1,
     title,
     keep: Math.ceil((title ? below : meta.getBoundingClientRect().bottom - top) + 8),
-    last: "",
+    last: null,
   };
 }
 

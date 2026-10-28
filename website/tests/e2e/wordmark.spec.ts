@@ -155,6 +155,23 @@ test.describe("the wordmark sequence", () => {
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });
 
+  test("puts the story's stage back in its place when the page measures again after the drop", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("[data-story]")).toHaveAttribute("data-lifted", /^(band|title)$/);
+    await page.evaluate(() => {
+      const hero = document.querySelector<HTMLElement>("[data-sequence]")!;
+      let y = 0;
+      for (let node: HTMLElement | null = hero; node; node = node.offsetParent as HTMLElement | null) y += node.offsetTop;
+      window.dispatchEvent(new Event("resize"));
+      window.scrollTo({ top: y + hero.querySelector<HTMLElement>(".hero-runway")!.offsetHeight + 300, behavior: "instant" });
+    });
+    await settle(page);
+    await settle(page);
+    await expect(page.locator("[data-story]")).not.toHaveAttribute("data-lifted");
+    expect(await page.locator(".story-stage").evaluate((el) => [el.style.transform, el.style.opacity, el.style.clipPath])).toEqual(["", "", ""]);
+    await expect(page.locator(".story-stage")).toBeInViewport();
+  });
+
   test("lands at the top with the whole hero at full strength when the wheel scrolls up past the top", async ({ page, browserName }) => {
     test.skip(browserName !== "chromium", "wheel timing is checked in one engine");
     await page.goto("/");
