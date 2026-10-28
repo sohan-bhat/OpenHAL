@@ -76,7 +76,7 @@ Actions are named `pause`, `resume` and `stop`, or map to one with `map: { comma
 ## How reads and commands behave
 
 - After connecting, the driver requests a full report once. X1 printers then send full reports and P1 and A1 printers send only what changed, so the driver merges every report into one state. A field the printer hasn't sent reads as no value.
-- Commands go out at QoS 1 and wait for the broker's acknowledgement. When the printer responds with a result, a failure becomes a `DriverError` with the printer's reason. Because some firmware doesn't respond to every command, a missing response is not an error, so read `state` to see what happened.
+- Commands go out at QoS 1 and wait for the broker's acknowledgement. When the printer responds with a result, a failure becomes a `DriverError` with the printer's reason. Some firmware doesn't respond to every command, so a missing response is not an error, and reading `state` shows what happened.
 - Commands are never queued, and without an acknowledgement the driver drops the connection, so a command can't arrive late.
 - Because Bambu Lab printers push their state and P1 printers are known to struggle with frequent full status requests, the driver doesn't poll.
 

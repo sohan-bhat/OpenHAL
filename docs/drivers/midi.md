@@ -56,7 +56,7 @@ write:
 
 ## How reads work
 
-Because MIDI controllers push messages when something moves and can't be queried for a knob's position, a read returns the newest value received since the driver connected, stamped with the time the value arrived. Until the control is first moved, a read returns no value (`None`), which the kernel treats as unknown. Because controllers don't report LED or parameter state, write channels report the last value the driver sent.
+Because MIDI controllers push messages when something moves and can't be queried for a knob's position, a read returns the newest value received since the driver connected, stamped with the time the value arrived. Until the control is first moved, a read returns no value (`None`), which the kernel treats as unknown. Controllers don't report LED or parameter state, so write channels report the last value the driver sent.
 
 ## Example
 
