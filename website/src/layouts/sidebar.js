@@ -2,7 +2,7 @@ const data = document.documentElement.dataset;
 const key = "openhal:sidebar";
 const button = document.querySelector(".side-toggle");
 const aside = button.parentElement;
-const nav = button.nextElementSibling;
+const nav = aside.querySelector("nav");
 let timer;
 let settle;
 const hidden = () => data.sidebar == "hidden";
@@ -63,6 +63,6 @@ addEventListener("keydown", (event) => {
     peek(0);
   }
 });
-addEventListener("pageshow", (event) => event.persisted && sync());
+onpageshow = (event) => event.persisted && sync();
 document.onprerenderingchange = sync;
 name();

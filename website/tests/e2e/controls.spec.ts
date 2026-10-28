@@ -139,7 +139,7 @@ test.describe("documentation chrome", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/docs/quickstart/");
     await page.locator(".side-menu summary").first().click();
-    await page.locator(".side-menu").first().getByRole("link", { name: "FAQ" }).click();
+    await page.locator("#side-nav").getByRole("link", { name: "FAQ" }).click();
     await expect(page).toHaveURL(/\/docs\/faq\/$/);
     await page.goto("/docs/quickstart/");
     await page.locator(".outline-mobile summary").click();

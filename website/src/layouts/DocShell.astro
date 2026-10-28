@@ -38,11 +38,14 @@ const sidebarScript = (await transformWithEsbuild(sidebarSource, "sidebar.js", {
     <aside class="sidebar" aria-label={section} data-pagefind-ignore="all">
       <div class="side-sheet"></div>
       <div class="side-edge"></div>
-      <button type="button" class="side-toggle" aria-controls="side-nav" aria-expanded="true" aria-label="Hide the sidebar">
-        <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false">
+      <button type="button" class="side-toggle" aria-controls="side-nav">
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
           <path d="M3.75 2.75h8.5a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2h-8.5a2 2 0 0 1-2-2v-6.5a2 2 0 0 1 2-2ZM6.25 3v10"></path>
         </svg>
       </button>
+      <details class="side-menu">
+        <summary>{section} pages</summary>
+      </details>
       <nav class="side-desktop" id="side-nav" aria-label={`${section} pages`}>
         <slot name="sidebar-top" />
         {
@@ -54,13 +57,25 @@ const sidebarScript = (await transformWithEsbuild(sidebarSource, "sidebar.js", {
                   <li class={item.depth === 2 ? "nested" : undefined}>
                     {item.href ? (
                       <a href={item.href} aria-current={item.href === path ? "page" : undefined}>
-                        {item.number && <span class="num mono">{item.number}</span>}
-                        <span>{item.title}</span>
+                        {item.number ? (
+                          <Fragment>
+                            <span class="num mono">{item.number}</span>
+                            <span>{item.title}</span>
+                          </Fragment>
+                        ) : (
+                          item.title
+                        )}
                       </a>
                     ) : (
                       <span class="side-label">
-                        {item.number && <span class="num mono">{item.number}</span>}
-                        <span>{item.title}</span>
+                        {item.number ? (
+                          <Fragment>
+                            <span class="num mono">{item.number}</span>
+                            <span>{item.title}</span>
+                          </Fragment>
+                        ) : (
+                          item.title
+                        )}
                       </span>
                     )}
                   </li>
@@ -70,36 +85,6 @@ const sidebarScript = (await transformWithEsbuild(sidebarSource, "sidebar.js", {
           ))
         }
       </nav>
-      <details class="side-menu">
-        <summary>{section} pages</summary>
-        <nav aria-label={`${section} pages`}>
-          <slot name="sidebar-top-mobile" />
-          {
-            sidebar.map((group) => (
-              <div class="group">
-                {group.name && <p class="legend">{group.name}</p>}
-                <ul>
-                  {group.items.map((item) => (
-                    <li class={item.depth === 2 ? "nested" : undefined}>
-                      {item.href ? (
-                        <a href={item.href} aria-current={item.href === path ? "page" : undefined}>
-                          {item.number && <span class="num mono">{item.number}</span>}
-                          <span>{item.title}</span>
-                        </a>
-                      ) : (
-                        <span class="side-label">
-                          {item.number && <span class="num mono">{item.number}</span>}
-                          <span>{item.title}</span>
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))
-          }
-        </nav>
-      </details>
     </aside>
     <script type="module" is:inline set:html={sidebarScript} />
 
@@ -233,11 +218,14 @@ const sidebarScript = (await transformWithEsbuild(sidebarSource, "sidebar.js", {
     border-bottom-right-radius: 0;
   }
 
-  .side-menu > nav {
-    padding: var(--s-2) var(--s-3) var(--s-3);
-    border: var(--rule);
-    border-top: 0;
-    border-radius: 0 0 var(--radius) var(--radius);
+  @media (max-width: 1023px) {
+    .side-menu[open] + nav {
+      display: block;
+      padding: var(--s-2) var(--s-3) var(--s-3);
+      border: var(--rule);
+      border-top: 0;
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
   }
 
   .group + .group {
@@ -254,25 +242,24 @@ const sidebarScript = (await transformWithEsbuild(sidebarSource, "sidebar.js", {
     font-weight: 400;
   }
 
-  .group a {
-    display: flex;
-    gap: var(--s-2);
-    padding: var(--s-1) var(--s-2);
-    border-radius: 4px;
-    color: var(--text-2);
-    text-decoration: none;
-    font-size: var(--t-small);
-    line-height: 1.45;
-  }
-
+  .group a,
   .side-label {
     display: flex;
     gap: var(--s-2);
     padding: var(--s-1) var(--s-2);
-    color: var(--text);
     font-size: var(--t-small);
-    font-weight: 700;
     line-height: 1.45;
+  }
+
+  .group a {
+    border-radius: 4px;
+    color: var(--text-2);
+    text-decoration: none;
+  }
+
+  .side-label {
+    color: var(--text);
+    font-weight: 700;
   }
 
   .group a:hover {

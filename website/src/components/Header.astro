@@ -50,7 +50,7 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
                 data-match={link.external ? undefined : relative(link.match)}
               >
                 {current(link.match) && <span class="nav-pill" aria-hidden="true" />}
-                <span class="nav-text">{link.label}</span>
+                {link.label}
               </a>
             </li>
           ))
