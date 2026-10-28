@@ -1,113 +1,48 @@
 ---
+import { specPages } from "../lib/spec";
 import { readVersions } from "../lib/spec-meta.mjs";
+import { type VersionRow, versionRows } from "../lib/versions";
 
 interface Props {
-  current: string;
-  slug: string;
-  available: Record<string, string[]>;
+  menu?: boolean;
 }
 
-const { current, slug, available } = Astro.props;
+const { menu = false } = Astro.props;
 const { versions, latest } = readVersions();
-const noteOf = (item: { latest?: boolean; status?: string | null }) => [item.latest ? "latest" : "", item.status ?? ""].filter(Boolean).join(", ");
-const target = (version: string) => {
-  const slugs = available[version] ?? [];
-  return slugs.includes(slug) ? (slug ? `/spec/${version}/${slug}/` : `/spec/${version}/`) : `/spec/${version}/`;
-};
+const path = Astro.url.pathname;
+const { current, rows } = versionRows(path, versions, latest, await specPages());
+const mark = (row: VersionRow) => (row.current ? (row.href === path ? "page" : "true") : undefined);
 ---
 
-<details class="switcher">
-  <summary>
-    <span class="label">Version</span>
-    <span class="mono">{current}</span>
-    {current === latest && <span class="muted">latest</span>}
-    <span class="change">
-      <svg class="chevron" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
-        <polyline points="2.5,4.5 6,8 9.5,4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
-      </svg>
-    </span>
-  </summary>
-  <ul>
-    {
-      versions.map((item) => (
-        <li>
-          <a href={target(item.version)} aria-current={item.version === current ? "page" : undefined}>
-            <span class="mono">{item.version}</span>
-            {noteOf(item) && <span class="muted">{noteOf(item)}</span>}
+{
+  current &&
+    (menu ? (
+      <div class="versions">
+        <p class="legend">Specification version</p>
+        {rows.map((row) => (
+          <a href={row.href} aria-current={mark(row)}>
+            <span>{row.version}</span>
+            {row.note && <span class="muted">{row.note}</span>}
           </a>
-        </li>
-      ))
-    }
-  </ul>
-</details>
-
-<style>
-  .switcher {
-    margin-bottom: var(--s-4);
-    border: 1px solid color-mix(in srgb, var(--text-2) 60%, var(--border));
-    border-radius: var(--radius);
-  }
-
-  summary {
-    display: flex;
-    align-items: center;
-    gap: var(--s-2);
-    min-height: 40px;
-    padding: 0 var(--s-3);
-    cursor: pointer;
-    font-size: var(--t-small);
-    font-weight: 700;
-    white-space: nowrap;
-    list-style: none;
-  }
-
-  summary::-webkit-details-marker {
-    display: none;
-  }
-
-  summary:hover {
-    background: var(--surface);
-  }
-
-  .change {
-    display: inline-flex;
-    align-items: center;
-    margin-left: auto;
-    color: var(--text);
-  }
-
-  .switcher[open] .chevron {
-    transform: rotate(180deg);
-  }
-
-  ul {
-    list-style: none;
-    margin: 0;
-    padding: var(--s-1) var(--s-2) var(--s-2);
-    border-top: var(--rule);
-  }
-
-  a {
-    display: flex;
-    gap: var(--s-2);
-    align-items: center;
-    padding: var(--s-1) var(--s-2);
-    border-radius: 4px;
-    color: var(--text);
-    text-decoration: none;
-  }
-
-  a[aria-current="page"] {
-    color: var(--accent);
-    font-weight: 700;
-  }
-
-  .label {
-    color: var(--text-2);
-    font-weight: 600;
-  }
-
-  summary .muted {
-    font-weight: 400;
-  }
-</style>
+        ))}
+      </div>
+    ) : (
+      <Fragment>
+        <button type="button" class="version-button" popovertarget="version-menu" aria-expanded="false">
+          <span class="visually-hidden">Specification version </span>
+          {current}
+          <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2.5 4.5 6 8l3.5-3.5"></path>
+          </svg>
+        </button>
+        <div id="version-menu" class="versions" popover>
+          {rows.map((row) => (
+            <a href={row.href} aria-current={mark(row)}>
+              <span>{row.version}</span>
+              {row.note && <span class="muted">{row.note}</span>}
+            </a>
+          ))}
+        </div>
+      </Fragment>
+    ))
+}

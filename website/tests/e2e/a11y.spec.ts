@@ -44,7 +44,7 @@ for (const scheme of ["light", "dark"] as const) {
 
       await page.goto("/spec/2026-10-24/basic/messages/");
       await page.locator(".side-menu summary").first().click();
-      await page.locator(".switcher summary:visible").first().click();
+      await page.locator(".mobile-nav summary").click();
       problems.push(...(await violations(page)).map((item) => `spec menus ${item}`));
 
       await page.goto("/spec/playground/");
