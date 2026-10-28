@@ -652,6 +652,7 @@
 
 .story[data-lifted] .story-stage {
   z-index: 2;
+  will-change: transform, opacity;
 }
 
 .story:not([data-camera])[data-lifted] .story-stage {

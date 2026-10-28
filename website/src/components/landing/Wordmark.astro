@@ -254,6 +254,7 @@ const mode = `(() => {
       margin-top: var(--s-4);
       transform: translateY(calc(var(--fall) * 100svh * var(--gone) * (0.6 + 0.4 * var(--gone))));
       opacity: min(0.999, calc(1 - var(--gone)));
+      will-change: transform, opacity;
     }
 
     .hero[data-camera] .hero-mark {
