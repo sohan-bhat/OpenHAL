@@ -61,7 +61,7 @@ uv run --no-project --with fonttools==4.67.0 --with brotli python website/script
 
 | Page | Path | Mobile perf | Mobile a11y | Mobile best practices | Mobile SEO | Desktop perf | Desktop a11y | Desktop best practices | Desktop SEO |
 |---|---|---|---|---|---|---|---|---|---|
-| Overview | `/` | 99 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Overview | `/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Spec page (Messages) | `/spec/2026-10-24/basic/messages/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Schema reference | `/spec/2026-10-24/schema/` | 99 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Playground | `/spec/playground/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
