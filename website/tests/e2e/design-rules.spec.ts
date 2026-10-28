@@ -100,10 +100,10 @@ test.describe("the hero", () => {
     });
   }
 
-  test("names the site Open Hardware Agent Layer in its metadata", async ({ page }) => {
+  test("names the site Open Hardware Abstraction Layer in its metadata", async ({ page }) => {
     await page.goto("/");
     const site = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent())!);
-    expect(site.alternateName).toBe("Open Hardware Agent Layer");
+    expect(site.alternateName).toBe("Open Hardware Abstraction Layer");
     expect(site.name).toBe("OpenHAL");
   });
 });
