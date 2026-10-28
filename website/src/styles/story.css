@@ -649,19 +649,8 @@
 
 .story[data-lifted] .story-stage {
   z-index: 2;
-  background: none;
-  pointer-events: none;
 }
 
 .story:not([data-camera])[data-lifted] .story-stage {
   position: relative;
-}
-
-.story[data-lifted] .story-meta {
-  pointer-events: auto;
-}
-
-.story[data-lifted] .story-scene,
-.story[data-lifted="band"] .story-heads {
-  visibility: hidden;
 }

@@ -59,6 +59,14 @@ const inkOf = (page: Page) =>
     return { baseline: box.top + (box.height - metrics.fontBoundingBoxAscent - metrics.fontBoundingBoxDescent) / 2 + metrics.fontBoundingBoxAscent };
   });
 
+/** Whether a person pointing at the middle of an element reaches the element, which a clip or a cover would stop. */
+const reached = (page: Page, selector: string) =>
+  page.locator(selector).first().evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    const hit = document.elementFromPoint(box.left + Math.min(24, box.width / 2), box.top + box.height / 2);
+    return Boolean(hit && el.contains(hit));
+  });
+
 const settle = (page: Page) => page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
 test.describe("the wordmark sequence", () => {
@@ -98,15 +106,16 @@ test.describe("the wordmark sequence", () => {
       await expect(page.locator(".story-count > [data-on]")).toHaveText(/^\d+ steps$/);
       await expect(page.getByRole("link", { name: "Skip the demo" })).toBeInViewport();
       await expect(page.locator(".hero-demo .seq-head").first()).toBeInViewport();
-      const title = page.locator(".story-title");
+      expect(await reached(page, ".story-skip")).toBe(true);
+      expect(await reached(page, ".story-scene .seq-head")).toBe(false);
       if (viewport.width >= 1200) {
         expect(demo.x).toBeGreaterThan(go.x + go.width);
         expect(demo.y + demo.height).toBeLessThan(meta.y);
-        await expect(title).toBeInViewport();
-        await expect(title).toBeVisible();
+        await expect(page.locator(".story-title")).toBeInViewport();
+        expect(await reached(page, ".story-heads")).toBe(true);
       } else {
         expect(demo.y).toBeGreaterThan(meta.y + meta.height);
-        await expect(title).toBeHidden();
+        expect(await reached(page, ".story-heads")).toBe(false);
       }
       const toggle = page.getByRole("switch", { name: "Smooth scrolling" });
       await expect(toggle).toBeInViewport();
