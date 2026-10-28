@@ -1,9 +1,11 @@
 /**
  * The wordmark sequence right after the hero, measured in vh of scroll like the landing story. The
  * first scroll drops the demo's opening away, the one-line description and Get started leave, and
- * the wordmark comes down, then one step each for H, A and L. In a step the current letter keeps
- * full strength and every other letter fades, while the whole word stays where it is inside the
- * column. A brief under the current letter says what the part means.
+ * the wordmark comes down and moves right until H stands where L stands at rest, then one step
+ * each for H, A and L. In a step the current letter keeps full strength and every other letter
+ * fades, and between letters the whole word slides left, the owner's idea, so each current letter
+ * lands on the same spot and the word ends at rest under L, never past either edge of the column.
+ * A brief under that spot says what the part means.
  */
 
 import { NEVER, type Span } from "./script";

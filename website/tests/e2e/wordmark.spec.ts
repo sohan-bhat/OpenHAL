@@ -211,18 +211,22 @@ test.describe("the wordmark sequence", () => {
   });
 
   for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720 }, { width: 1024, height: 768 }]) {
-    test(`lights one letter at a time with its brief right under the letter, and keeps the whole word in the column, at ${viewport.width} by ${viewport.height}`, async ({ page }) => {
+    test(`lights one letter at a time on one spot, slides the word left between letters and keeps the word in the column, at ${viewport.width} by ${viewport.height}`, async ({ page }) => {
       await page.setViewportSize(viewport);
       await page.goto("/");
       const edge = await column(page);
       const resting = await letters(page);
+      const spots: number[] = [];
+      const starts: number[] = [];
       for (const [index, part] of PARTS.entries()) {
         await heroTime(page, settled(index));
         const shown = await letters(page);
         const at = PRODUCT_NAME.lastIndexOf(part.letter);
         const where = `${viewport.width} ${part.letter}`;
         for (const [position, item] of shown.entries()) expect(item.opacity, `${where} step, ${item.letter}`).toBeCloseTo(position === at ? 1 : LOW, 2);
-        for (const [position, item] of shown.entries()) expect(Math.abs(item.left - resting[position].left), `${where} ${item.letter}`).toBeLessThan(1);
+        spots.push(shown[at].left);
+        starts.push(shown[0].left);
+        expect(Math.abs(shown[at].left - resting[PRODUCT_NAME.lastIndexOf("L")].left), `${where} lands where L rests`).toBeLessThan(1);
         expect(shown[0].left, where).toBeGreaterThanOrEqual(edge.left - 8);
         expect(shown[shown.length - 1].right, where).toBeLessThanOrEqual(edge.right + 1);
         expect(await brief(page)).toEqual([`${part.label} ${part.brief}`]);
@@ -235,6 +239,34 @@ test.describe("the wordmark sequence", () => {
         expect(box.x + box.width, where).toBeLessThanOrEqual(edge.right + 1);
         expect(box.y + box.height, where).toBeLessThanOrEqual(viewport.height);
       }
+      expect(Math.max(...spots) - Math.min(...spots)).toBeLessThan(1);
+      expect(starts[1]).toBeLessThan(starts[0] - 20);
+      expect(starts[2]).toBeLessThan(starts[1] - 20);
+      expect(Math.abs(starts[2] - resting[0].left)).toBeLessThan(1);
+    });
+  }
+
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720 }, { width: 1024, height: 768 }, { width: 768, height: 1024 }, { width: 390, height: 844 }, { width: 360, height: 700 }]) {
+    test(`keeps every letter inside the column all the way through the sequence and only ever slides left between letters, at ${viewport.width} by ${viewport.height}`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await page.goto("/");
+      const edge = await column(page);
+      let left = Infinity;
+      for (let t = AWAY; t <= TOTAL; t += 1.5) {
+        await heroTime(page, t);
+        const shown = await letters(page);
+        const where = `${viewport.width} at ${t}`;
+        expect(shown[0].left, where).toBeGreaterThanOrEqual(edge.left - 8);
+        expect(shown[shown.length - 1].right, where).toBeLessThanOrEqual(edge.right + 1);
+        expect(shown[0].left, where).toBeLessThanOrEqual(left + 0.5);
+        left = shown[0].left;
+      }
+      const spots: number[] = [];
+      for (const [index, part] of PARTS.entries()) {
+        await heroTime(page, settled(index));
+        spots.push((await letters(page))[PRODUCT_NAME.lastIndexOf(part.letter)].left);
+      }
+      expect(Math.max(...spots) - Math.min(...spots)).toBeLessThan(1);
     });
   }
 
