@@ -90,7 +90,7 @@ test.describe("the hero", () => {
           return { letter: text.textContent!.charAt(at), word: label.textContent, off: Math.abs(middle - center), under, size: parseFloat(getComputedStyle(label).fontSize), below: box.top - glyph.top };
         });
       });
-      expect(offsets.map((item) => `${item.letter} ${item.word}`)).toEqual(["H [hardware]", "A [agent]", "L [layer]"]);
+      expect(offsets.map((item) => `${item.letter} ${item.word}`)).toEqual(["H [hardware]", "A [abstraction]", "L [layer]"]);
       for (const item of offsets) {
         expect(item.under).toBe(true);
         if (width >= 768) expect(item.off).toBeLessThan(1.5);
@@ -100,10 +100,10 @@ test.describe("the hero", () => {
     });
   }
 
-  test("names the site Open Hardware Agent Layer in its metadata", async ({ page }) => {
+  test("names the site Open Hardware Abstraction Layer in its metadata", async ({ page }) => {
     await page.goto("/");
     const site = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent())!);
-    expect(site.alternateName).toBe("Open Hardware Agent Layer");
+    expect(site.alternateName).toBe("Open Hardware Abstraction Layer");
     expect(site.name).toBe("OpenHAL");
   });
 });

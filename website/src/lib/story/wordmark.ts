@@ -20,13 +20,13 @@ export const PARTS: readonly Part[] = [
   {
     letter: "H",
     label: "[hardware]",
-    brief:
-      "The hardware is any device OpenHAL controls, such as a Klipper 3D printer, a bench power supply or an Arduino board. Each device has a device file that lists the device's channels and the limits a person confirmed.",
+    brief: "The hardware is any device OpenHAL controls. Each device has a device file that lists the device's channels and the limits a person confirmed.",
   },
   {
     letter: "A",
-    label: "[agent]",
-    brief: "The agent, such as Claude in Claude Desktop, Claude Code or Cursor, sends requests to the hub over MCP or the hub protocol to read a device or change a device.",
+    label: "[abstraction]",
+    brief:
+      "A hardware abstraction layer gives every device the same interface, so an agent reads and changes a 3D printer, a bench power supply or an Arduino board with the same few requests, and the device file and the driver handle the differences.",
   },
   {
     letter: "L",

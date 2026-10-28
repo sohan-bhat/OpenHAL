@@ -8,7 +8,7 @@ const current = (t: number) => letters.map((_, at) => strength(fading(PRODUCT_NA
 describe("the wordmark sequence", () => {
   it("spells H, A and L in the order the word has them, under the hero's labels", () => {
     expect(PARTS.map((part) => part.letter)).toEqual(["H", "A", "L"]);
-    expect(PARTS.map((part) => part.label)).toEqual(["[hardware]", "[agent]", "[layer]"]);
+    expect(PARTS.map((part) => part.label)).toEqual(["[hardware]", "[abstraction]", "[layer]"]);
     const places = PARTS.map((part) => PRODUCT_NAME.lastIndexOf(part.letter));
     expect([...places].sort((a, b) => a - b)).toEqual(places);
     expect(TOTAL).toBe(AWAY + 3 * STEP);
