@@ -200,6 +200,9 @@
 .seq .label {
   display: grid;
   min-width: 0;
+}
+
+.seq .label > * {
   margin-inline: -3px;
   padding-inline: 3px;
   background: var(--bg);
