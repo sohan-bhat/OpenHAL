@@ -337,6 +337,35 @@ exchanges:
     bed_target:
       value: 70.0
       unit: degC
+  cooling:
+  - after:
+      value: 30.0
+      unit: s
+    printer:
+      state: cancelled
+      extruder_temp:
+        value: 154.65
+        unit: degC
+      extruder_target:
+        value: 215.0
+        unit: degC
+      bed_target:
+        value: 70.0
+        unit: degC
+  - after:
+      value: 60.0
+      unit: s
+    printer:
+      state: cancelled
+      extruder_temp:
+        value: 113.17
+        unit: degC
+      extruder_target:
+        value: 215.0
+        unit: degC
+      bed_target:
+        value: 70.0
+        unit: degC
   masked:
   - requestId
 audit:

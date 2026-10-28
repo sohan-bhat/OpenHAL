@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,7 @@ from openhal.cli import log_cmd
 from openhal.cli.main import app
 from openhal.demo import scenario, trace
 from openhal.demo.scenario import exchange
+from openhal.drivers.moonraker.simulator import AMBIENT_C, COOLING_S
 from openhal.spec import load
 
 RECORD = scenario.read()
@@ -123,9 +125,39 @@ def test_the_printer_panel_shows_the_nozzle_at_each_step() -> None:
     assert states == ["printing"] * 4 + ["paused", "paused", "cancelled"]
     for entry in RECORD["exchanges"]:
         assert set(entry["printer"]) == set(scenario.PANEL)
-        assert entry["printer"]["extruder_temp"] == entry["printer"]["extruder_target"] == nozzle
-    bed = [entry["printer"]["bed_target"]["value"] for entry in RECORD["exchanges"]]
-    assert bed == [60] + [70] * 6
+        assert entry["printer"]["extruder_temp"] == nozzle, "the nozzle starts to cool once the cancel has run"
+    held = RECORD["exchanges"][:-1]
+    assert all(entry["printer"]["extruder_target"] == nozzle for entry in held)
+    assert [entry["printer"]["bed_target"]["value"] for entry in held] == [60] + [70] * 5
+
+
+def test_the_nozzle_cools_after_the_owner_approves_the_cancel() -> None:
+    approved = exchange(RECORD, "owner-approves")
+    cooling = approved["cooling"]
+    assert [item["after"] for item in cooling] == [{"value": seconds, "unit": "s"} for seconds in scenario.COOLED_FOR_S]
+    nozzle = [approved["printer"]["extruder_temp"]["value"]]
+    for item in cooling:
+        assert set(item["printer"]) == set(scenario.PANEL)
+        assert item["printer"]["state"] == "cancelled"
+        assert item["printer"]["extruder_temp"]["unit"] == "degC"
+        nozzle.append(item["printer"]["extruder_temp"]["value"])
+        cooled = AMBIENT_C + (scenario.NOZZLE_PRINTING - AMBIENT_C) * math.exp(
+            -item["after"]["value"] / COOLING_S["extruder"]
+        )
+        assert nozzle[-1] == pytest.approx(cooled, abs=0.01)
+    assert nozzle == sorted(set(nozzle), reverse=True)
+    assert nozzle[0] == scenario.NOZZLE_PRINTING > nozzle[-1] > AMBIENT_C
+
+
+def test_the_hub_reads_the_targets_again_only_when_the_cancel_lists_them() -> None:
+    """Without `effects` on the cancel, the hub shows the targets it read last, though Klipper set them to 0."""
+    file = load(scenario.example(scenario.FOLDER, scenario.FILES[scenario.DEVICE]))
+    read_again = set(file.actions["cancel"].effects)
+    held = exchange(RECORD, "cancel-waits")["printer"]
+    approved = exchange(RECORD, "owner-approves")
+    for panel in [approved["printer"], *(item["printer"] for item in approved["cooling"])]:
+        for channel in ("extruder_target", "bed_target"):
+            assert panel[channel] == ({"value": 0, "unit": "degC"} if channel in read_again else held[channel])
 
 
 def test_the_audit_log_holds_the_story() -> None:
