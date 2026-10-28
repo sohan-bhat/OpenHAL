@@ -8,9 +8,7 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- website-10. One header on every page, so nothing in the header moves on Overview, a collapsible sidebar that slides back in on hover near the left edge, and the spec version picker as a compact menu at the header's top right (BRIEF-website-10.md).
 - website-11. The top of the home page and the drop into the wordmark sequence (BRIEF-website-11.md), plus the owner's review: Hardware Abstraction Layer labels, the Run the demo block, the lifeline order with reply arrows, the webcam labels, the nine captions and a miniature diagram in the hero.
-- scenario-cooling. The Moonraker simulator turns the heaters off on a cancel the way Klipper's common CANCEL_PRINT macro does, so the recorded story shows the nozzle cooling (BRIEF-scenario-cooling.md).
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
@@ -57,6 +55,8 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - The speed round (website-7, merged 2026-10-27). Pages send 31 to 73 % of their old weight, largest paint on a phone is 147 to 378 ms sooner, blocking time is 0 everywhere and desktop scores 100 on every page. Fonts are subset, inline diagrams carry no fonts and follow the theme in one SVG, the Inspector crops are responsive AVIF and WebP, pages prerender on hover, search snippets skip code, and a budget test guards every template (docs/verification/ui.md).
 - Every page except the home page and every repo doc the site renders follow the owner's writing rules (site-copy, merged 2026-10-27).
 - The landing story without boxes and the wordmark sequence (website-9, merged 2026-10-27). Scroll brings the wordmark down and walks through H, A and L with a short brief for each part, then the story plays as a sequence diagram with four lifelines, one arrow per request and the webcam's line drawing, and every caption follows the owner's writing rules.
+- One header on every page, a collapsible sidebar and the version picker in the header (website-10, merged 2026-10-27). The header and footer use the 1360 px container everywhere, every documentation sidebar hides with a button and slides back in on hover at the left edge, and the spec version picker is a compact menu after GitHub.
+- The nozzle cools after the cancel (scenario-cooling, merged 2026-10-27). The Moonraker simulator runs Klipper's CANCEL_PRINT macro, which turns the heaters off, and the record follows the nozzle from 215 °C to 154.65 °C after 30 s and 113.17 °C after 60 s on a deterministic clock.
 
 ## Next
 
@@ -66,6 +66,8 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - Packaging proposals. A `self_describing` flag in DriverInfo. Lazy imports so `openhal mcp` starts faster. Intel Mac installs need `--no-build` while cryptography and zeroconf ship Apple Silicon wheels only.
 - Handoff proposals still open. The GRBL simulator stays idle after a hold where real GRBL 1.1 reports Hold:0. The driver scaffold's hardware test template should match docs/hardware-tests/README.md. Expected outputs in the plans quote kernel codes, so they change if the CLI moves to registry names.
 - Speed round proposals. A size-adjusted mono fallback in design/tokens.css so pages can drop the mono preload, the header wordmark inlined as SVG, a lighter first story() call, and the service worker for hashed /_astro/ files, which is the owner's call.
+- Owner decision. Adding `effects: [extruder_target, bed_target]` to the print babysitter's cancel would let the hub read the 0 °C targets after a cancel, but the change alters the limits hash, so the owner would confirm printer.hal.yaml again (scenario-cooling report).
+- Website budgets on documentation pages have under 1 % headroom after the sidebar and the version picker, so the docs rows in budget.spec.ts need a small new baseline at the next change (website-10 report).
 - A kernel parity case that tries approve, reject and unlock as an agent and records each message, so the Playground's three permission messages are checked against the hub (copy-messages report).
 - Inspector proposals (inspector-5 report). Fold dashboard/e2e/print_hub.py into tests/inspector so the ruff and mypy gates cover it. A camera to device link in the Device File (`watches: [printer]`), so Confirmations shows the right camera without the picker. A read of the cached latest frame without a new snapshot. RFC 3339 times in /v1/confirmations instead of monotonic ones. `img-src 'self' data:` in any future Content-Security-Policy.
 - Owner decisions. Whether `openhal init` keeps the plant waterer as its sample, which the Python SDK snippet follows. Whether an action whose approval can't hurt, like cancel on a paused printer, gets a confirmation window long enough to wake up to, since the reference expiry is 5 minutes and the hub allows at most an hour.
