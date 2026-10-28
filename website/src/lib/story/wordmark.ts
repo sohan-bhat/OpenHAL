@@ -26,7 +26,7 @@ export const PARTS: readonly Part[] = [
     letter: "A",
     label: "[abstraction]",
     brief:
-      "A hardware abstraction layer gives every device the same interface, so an agent reads and changes a 3D printer, a bench power supply or an Arduino board with the same few requests, and the device file and the driver handle the differences.",
+      "A hardware abstraction layer gives every device the same interface, so an agent reads and changes a 3D printer, a bench power supply or an Arduino board with the same few requests while the device file and the driver handle the differences.",
   },
   {
     letter: "L",
