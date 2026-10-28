@@ -258,22 +258,22 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
   };
 }
 
-/** What the story says at each step, one sentence each, in the record's words. */
+/**
+ * What the story says at each step, the owner's nine captions from 2026-10-27, with every value
+ * from the record and the device file. Each caption reads on its own screen, in at most two
+ * sentences, and speaks to the person who owns the printer.
+ */
 export function storyLines(facts: StoryFacts): Record<StepId, string> {
-  const frame = facts.camera.channel;
-  const state = facts.printer.readings.find((reading) => reading.word)!.at.approve;
   return {
     intro: "An agent watches a 3D print through the OpenHAL hub.",
-    ask: `The ${facts.owner} starts a long print and asks an agent to watch the print.`,
-    look: `When the agent reads a ${frame} from the printer's webcam, the ${frame} shows that ${facts.bed.note}.`,
-    warm: nb(`Because a bed target of ${facts.bed.value} is inside the ${facts.owner}'s limit of ${facts.bed.max}, the hub forwards the agent's request to the printer.`),
-    hot: nb(
-      `Because a nozzle temperature of ${facts.nozzle.value} is above the ${facts.owner}'s limit of ${facts.nozzle.max} in ${facts.file}, the hub refuses the agent's request and returns ${facts.nozzle.refusal.name}.`,
-    ),
-    loose: `When the agent reads the webcam again later, the ${frame} shows that ${facts.pause.note}.`,
-    pause: `Because pausing needs no confirmation in ${facts.file}, the hub forwards the agent's ${facts.pause.target} request to the printer at once.`,
-    cancel: `Because ${facts.cancel.note}, the hub holds the agent's ${facts.cancel.target} request until a person approves or rejects the request.`,
-    approve: `When ${facts.approve.note}, the hub sends the ${facts.approve.target} to the printer and the printer's state changes to ${state}.`,
-    end: `Because every request passes through the hub, the audit log holds ${facts.audit.requests} requests, with ${facts.audit.refused} refused and ${facts.audit.confirmed} confirmed by a person.`,
+    ask: "You start a long print and ask an agent to watch it.",
+    look: "The agent checks the webcam and sees a corner of the first layer lifting.",
+    warm: nb(`The agent raises the bed to ${facts.bed.value}. Your limit is ${facts.bed.max}, so the hub lets the request through.`),
+    hot: nb(`The agent also tries a nozzle temperature of ${facts.nozzle.value} to help the print stick. Your limit is ${facts.nozzle.max}, so the hub refuses.`),
+    loose: "Later, the webcam shows the print has come loose.",
+    pause: "The agent pauses the print. Pausing is safe, so no one has to approve it.",
+    cancel: "Cancelling can't be undone, so the hub holds the request until you approve it.",
+    approve: `You approve, and the hub sends the ${facts.approve.target} to the printer.`,
+    end: `The audit log records all ${facts.audit.requests} requests, including the refusal and your approval.`,
   };
 }

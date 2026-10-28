@@ -196,18 +196,13 @@ describe("the story's words and numbers", () => {
     const sequence = storySequence(other);
     expect(other.said.hot[0]).toEqual({ from: "agent", to: "hub", label: nb("extruder_target 290 °C"), answer: { text: "OUT_OF_RANGE", tone: "blocked" } });
     expect(lines.hot).toContain(nb("a nozzle temperature of 290 °C"));
-    expect(lines.hot).toContain("returns OUT_OF_RANGE.");
     expect(other.said.warm[0].label).toBe(nb("bed_target 75 °C"));
-    expect(lines.warm).toContain(nb("a bed target of 75 °C"));
+    expect(lines.warm).toContain(nb("raises the bed to 75 °C"));
     expect(sequence.readings[1].values.map((value) => value.text)).toEqual(["60 °C", "75 °C"]);
-    expect(lines.cancel).toMatch(/^Because a cancelled print can't be resumed, /);
-    expect(lines.approve).toMatch(/^When the operator approves the cancel, /);
-    expect(lines.approve).toContain("standby");
-    expect(lines.ask).toMatch(/^The operator /);
     expect(sequence.heads).toEqual({ owner: "Operator", agent: "Agent", hub: "OpenHAL hub", printer: "Printer" });
     expect(other.said.approve[0].from).toBe("owner");
     expect(other.printer.readings[0].at.end).toBe("30 °C");
-    expect(lines.end).toContain("9 requests");
+    expect(lines.end).toContain("all 9 requests");
   });
 
   it("stop a refused bed target at the hub when the record says the hub refused it", () => {
@@ -224,30 +219,49 @@ describe("the story's words and numbers", () => {
   it("follow the device file when a person changes a limit", () => {
     const tighter = readDeviceFile();
     tighter.write[facts.nozzle.channel].max = 250;
-    expect(storyLines(storyFacts(fresh(), tighter)).hot).toContain(nb("limit of 250 °C"));
+    expect(storyLines(storyFacts(fresh(), tighter)).hot).toContain(nb("Your limit is 250 °C"));
   });
 
-  it("read as one plain sentence each, written to the owner's rules", () => {
+  it("are the owner's nine captions, with the record's values", () => {
+    expect(Object.values(storyLines(facts)).map((line) => line.replace(/ /g, " "))).toEqual([
+      "An agent watches a 3D print through the OpenHAL hub.",
+      "You start a long print and ask an agent to watch it.",
+      "The agent checks the webcam and sees a corner of the first layer lifting.",
+      "The agent raises the bed to 70 °C. Your limit is 110 °C, so the hub lets the request through.",
+      "The agent also tries a nozzle temperature of 300 °C to help the print stick. Your limit is 260 °C, so the hub refuses.",
+      "Later, the webcam shows the print has come loose.",
+      "The agent pauses the print. Pausing is safe, so no one has to approve it.",
+      "Cancelling can't be undone, so the hub holds the request until you approve it.",
+      "You approve, and the hub sends the cancel to the printer.",
+      "The audit log records all 6 requests, including the refusal and your approval.",
+    ]);
+  });
+
+  it("read in at most two plain sentences each, written to the owner's rules", () => {
+    const opening: string[] = [];
     for (const [id, line] of Object.entries(storyLines(facts))) {
       const words = line.replace(/ /g, " ");
+      const sentences = words.split(/(?<=[.?!])\s+/);
+      opening.push(...sentences.map((sentence) => sentence.split(" ")[0]));
       expect(words, id).toMatch(/^[A-Z].*[.]$/);
-      expect(words.slice(0, -1), id).not.toMatch(/[.?!]\s/);
+      expect(sentences.length, id).toBeLessThanOrEqual(2);
       expect(words, id).not.toMatch(/[;:!–—]/);
       expect(words, id).not.toMatch(/\bAI\b/);
-      expect(words, id).not.toMatch(/\b(it|its|them|they|that's)\b/i);
+      for (const sentence of sentences) expect(sentence, id).not.toMatch(/^(It|Its|They|Them|That's)\b/);
       expect(words, id).not.toMatch(/\b(hub|kernel|OpenHAL)\b[^,.]*\b(says?|asks?|steps? in|wants?|decides?|thinks?|knows?|sees?)\b/);
       expect(words, id).not.toMatch(/\ba \d+ °C (nozzle|bed)\b/);
-      if (/\bbecause\b/i.test(words)) expect(words, id).toMatch(/^Because /);
       expect(words.split(/\s+/).length, id).toBeLessThanOrEqual(32);
     }
+    expect(opening.filter((word) => word === "Because" || word === "When").length).toBeLessThanOrEqual(1);
     expect(nb("warm to 70 °C")).toBe("warm to 70 °C");
     expect(humane("extruder_target 300 degC exceeds the limit of 260 degC")).toBe("extruder_target 300 °C exceeds the limit of 260 °C");
   });
 
-  it("end on the audit log's counts", () => {
+  it("end on the audit log's count of requests, the refusal and the approval", () => {
     const end = storyLines(facts).end;
-    expect(end).toContain(`${audit.counts.requests} requests`);
-    expect(end).toContain(`${audit.counts.refused} refused`);
-    expect(end).toContain(`${audit.counts.confirmed_by_a_person} confirmed by a person`);
+    expect(end).toContain(`all ${audit.counts.requests} requests`);
+    expect(audit.counts.refused).toBe(1);
+    expect(audit.counts.confirmed_by_a_person).toBe(1);
+    expect(end).toContain("the refusal and your approval");
   });
 });
