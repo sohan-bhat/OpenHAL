@@ -1,7 +1,7 @@
 ---
 import { PITCH, PRODUCT_NAME } from "../../config/brand";
 import { storyFacts } from "../../lib/story/facts";
-import { CAMERA, during } from "../../lib/story/script";
+import { CAMERA, drawn, during } from "../../lib/story/script";
 import { storySequence } from "../../lib/story/timeline";
 import { AWAY, DROP, FALL, FALLS, LEAVES, LOW, PARTS, TOTAL, briefSpan, fading } from "../../lib/story/wordmark";
 import Sequence from "./scene/Sequence.astro";
@@ -33,24 +33,24 @@ const mode = `(() => {
   aria-labelledby="home-title"
   data-sequence
   data-total={TOTAL}
-  style={`--at: 0; --d: ${TOTAL}; --away: ${AWAY}; --falls: ${FALLS}; --leaves: ${LEAVES}; --drop: ${DROP}; --fall: ${FALL}; --low: ${LOW}`}
+  style={`--away: ${AWAY}; --falls: ${FALLS}; --leaves: ${LEAVES}; --drop: ${DROP}; --fall: ${FALL}; --low: ${LOW}`}
 >
   <div class="hero-stage">
     <div class="hero-main">
-      <div class="hero-name" data-spell>
-        <h1 id="home-title" class="hero-mark">{PRODUCT_NAME}</h1>
-        <span class="hero-letters" aria-hidden="true">
+      <div class="hero-name" data-spell style={drawn(FALLS, AWAY - FALLS)}>
+        <h1 id="home-title" class="hero-mark" style={drawn(0, 1)}>{PRODUCT_NAME}</h1>
+        <span class="hero-letters" aria-hidden="true" style={drawn(0, TOTAL)}>
           {letters.map((item) => <span data-letter={item.part} style={item.style}>{item.letter}</span>)}
         </span>
-        <p class="hero-spell" aria-hidden="true">
+        <p class="hero-spell" aria-hidden="true" style={drawn(0, LEAVES)}>
           {spelled.map((item) => <span data-at={item.at}>{item.word}</span>)}
         </p>
       </div>
-      <p class="hero-pitch hero-leaves">{PITCH}</p>
-      <a class="button hero-go hero-leaves" href="#try" {...during([[0, LEAVES]])}>Get started</a>
+      <p class="hero-pitch hero-leaves" style={drawn(0, LEAVES)}>{PITCH}</p>
+      <a class="button hero-go hero-leaves" href="#try" style={drawn(0, LEAVES)} {...during([[0, LEAVES]])}>Get started</a>
     </div>
     <span class="hero-slot" aria-hidden="true"></span>
-    <div class="hero-demo" aria-hidden="true" data-pagefind-ignore="all">
+    <div class="hero-demo" aria-hidden="true" data-pagefind-ignore="all" style={drawn(0, DROP)}>
       <Sequence sequence={sequence} still />
     </div>
     <div class="hero-briefs" aria-hidden="true" data-pagefind-ignore="all">
