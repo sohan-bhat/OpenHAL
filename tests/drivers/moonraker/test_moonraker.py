@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import math
 from collections.abc import AsyncIterator
 
 import pytest
 
 from openhal.drivers.base import DriverError
 from openhal.drivers.moonraker.driver import MoonrakerDriver
-from openhal.drivers.moonraker.simulator import MoonrakerSim
+from openhal.drivers.moonraker.simulator import CANCEL_PRINT, COOLING_S, KlipperState, MoonrakerSim
 from openhal.spec import loads
 from openhal.spec.loader import from_data
 from tests.drivers.serial.kit import WHO, Bench, assert_done, assert_failed, eventually
@@ -156,6 +157,50 @@ async def test_native_safe_state_turns_heaters_off() -> None:
     assert sim.state.objects["extruder"]["target"] == 0.0
     assert sim.state.objects["heater_generic enclosure"]["target"] == 0.0
     assert sim.klippy_state == "ready"
+    await bench.close()
+
+
+async def test_a_cancel_turns_the_heaters_off_and_a_pause_keeps_them() -> None:
+    sim = MoonrakerSim()
+    bench = await http_bench(sim).connect()
+    objects = sim.state.objects
+    assert_done(await bench.write("extruder_target", "215 degC"))
+    assert_done(await bench.write("bed_target", "60 degC"))
+    assert_done(await bench.write("fan_speed", "50 %"))
+    objects["print_stats"]["state"] = "printing"
+    assert_done(await bench.act("pause"))
+    assert (objects["extruder"]["target"], objects["heater_bed"]["target"]) == (215.0, 60.0)
+    sent = list(sim.state.gcode)
+    assert_done(await bench.act("cancel"))
+    assert objects["print_stats"]["state"] == "cancelled"
+    assert (objects["extruder"]["target"], objects["heater_bed"]["target"], objects["fan"]["speed"]) == (0, 0, 0)
+    assert (await bench.read("extruder_target")).value == 0.0
+    assert sim.state.gcode == sent, "the macro's lines are Klipper's, not G-code the driver sent"
+    assert CANCEL_PRINT == ("TURN_OFF_HEATERS", "M106 S0")
+    await bench.close()
+
+
+async def test_heaters_cool_toward_the_room_on_the_clock_they_follow() -> None:
+    now = [0.0]
+    sim = MoonrakerSim(KlipperState(lambda: now[0]))
+    nozzle, bed = sim.state.objects["extruder"], sim.state.objects["heater_bed"]
+    nozzle.update({"temperature": 215.0, "target": 0.0})
+    bed.update({"temperature": 70.0, "target": 0.0})
+    bench = await http_bench(sim).connect()
+    assert (await bench.read("extruder_temp")).value == 215.0
+    assert (await bench.read("extruder_temp")).value == 215.0, "a clock that hasn't moved changes nothing"
+    now[0] = 1.0
+    assert 1.0 < 215.0 - (await bench.read("extruder_temp")).value < 5.0
+    now[0] = 60.0
+    cooled = sim.state.ambient + (215.0 - sim.state.ambient) * math.exp(-60.0 / COOLING_S["extruder"])
+    assert (await bench.read("extruder_temp")).value == round(cooled, 2) == 113.17
+    assert 60.0 < bed["temperature"] < 70.0
+    nozzle["target"] = 100.0
+    now[0] = 600.0
+    assert (await bench.read("extruder_temp")).value == 100.0, "a heater holds a lower target once it gets there"
+    nozzle["target"] = 200.0
+    now[0] = 605.0
+    assert (await bench.read("extruder_temp")).value == 200.0, "a heater warms to its target within seconds"
     await bench.close()
 
 

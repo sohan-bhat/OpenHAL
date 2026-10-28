@@ -25,8 +25,9 @@ end the owner reads the audit log with `hal/audit/query`, and the record keeps t
 as `openhal log` prints them.
 
 `openhal demo --record` writes the result to docs/demo/scenario.yaml, and the README, the docs and
-the website take every number from that file. Times, image pixels and the hub's random request id
-are left out, so two runs give the same file.
+the website take every number from that file. The simulated printer runs on a story clock that
+moves only when the story moves it, and times, image pixels and the hub's random request id are
+left out, so two runs give the same file.
 """
 
 from __future__ import annotations
@@ -53,7 +54,7 @@ from openhal.cli import log_cmd
 from openhal.client.models import AuditEntry
 from openhal.demo.webcam import SimulatedWebcam, Webcam
 from openhal.drivers.moonraker.driver import MoonrakerDriver
-from openhal.drivers.moonraker.simulator import MoonrakerSim
+from openhal.drivers.moonraker.simulator import KlipperState, MoonrakerSim
 from openhal.hub.api import create_app
 from openhal.hub.config import HubConfig
 from openhal.hub.hub import Hub
@@ -74,7 +75,7 @@ NOZZLE_PRINTING: Final = 215.0
 BED_WARMER: Final = 70
 NOZZLE_ASKED: Final = 300
 PANEL: Final = ("state", "extruder_temp", "extruder_target", "bed_target")
-"""The printer channels the panel shows. The simulated bed warms with the clock, so bed_temp is left out."""
+"""The printer channels the panel shows. The landing story shows the bed target, so bed_temp is left out."""
 COMMANDS: Final = frozenset(
     {
         "printer.gcode.script",
@@ -150,15 +151,33 @@ class SimulatedPrinter(MoonrakerDriver):
         return True
 
 
+class StoryClock:
+    """The simulated printer's clock. Time on the clock passes only when the story moves the clock on.
+
+    The hub reads the printer on its own schedule, so a printer that followed the wall clock would
+    report a different temperature on every run. On this clock every run reports the same one.
+    """
+
+    def __init__(self) -> None:
+        self.now = 0.0
+
+    def __call__(self) -> float:
+        return self.now
+
+    def advance(self, seconds: float) -> None:
+        self.now += seconds
+
+
 class PrinterSim(MoonrakerSim):
-    """The Moonraker simulator on a host named printer, as printer.hal.yaml expects.
+    """The Moonraker simulator on a host named printer, as printer.hal.yaml expects, on a story clock.
 
     `commands` keeps every command the printer received, G-code as its text and the print
     controls by their Moonraker method.
     """
 
     def __init__(self) -> None:
-        super().__init__()
+        self.clock = StoryClock()
+        super().__init__(KlipperState(self.clock))
         self.commands: list[str] = []
 
     async def call(self, method: str, params: dict[str, Any] | None = None) -> Any:

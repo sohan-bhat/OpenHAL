@@ -9,6 +9,16 @@ webhooks, configfile, virtual_sdcard and a chamber sensor) and runs the G-code t
 - `await sim.start_websocket()` serves `/websocket` on 127.0.0.1 with real JSON-RPC 2.0, including
   `printer.objects.subscribe` and `notify_status_update` notifications.
 
+Heaters. A heater below its target warms to the target within a few seconds. A heater above its
+target, or with its target at 0, cools toward `ambient` by Newton's law of cooling, at the rate
+COOLING_S gives each heater. Klipper reports temperatures rounded to two decimals, and so does the
+simulator. The heaters follow `clock`, which is `time.monotonic` unless the caller passes a clock of
+its own, such as the demo's story clock (openhal/demo/scenario.py).
+
+Print controls. A pause keeps the heaters as they are. A cancel first runs the G-code of the
+CANCEL_PRINT macro that Mainsail and Fluidd ship, TURN_OFF_HEATERS and M106 S0, so every heater
+target and the part fan go to 0 and the heaters cool.
+
 Faults. `latency_s`, `klippy_state` ("ready", "shutdown", "startup", "disconnected"), `fail_http` (every HTTP
 request raises a connection error), `fail_next` (only the next N do), `malformed` (answer with
 invalid JSON) and `drop_websockets()`.
@@ -20,11 +30,26 @@ import asyncio
 import contextlib
 import copy
 import json
+import math
 import time
-from typing import Any
+from collections.abc import Callable
+from typing import Any, Final
 from urllib.parse import parse_qsl
 
 import httpx
+
+AMBIENT_C: Final = 22.0
+"""The temperature of the room the simulated printer stands in, in degC."""
+HEATING_PER_S: Final = 0.8
+"""The share of the gap to its target that a warming heater closes each second."""
+COOLING_S: Final = {"extruder": 80.0, "heater_bed": 600.0, "heater_generic enclosure": 900.0}
+"""Each heater's time constant for Newton's law of cooling, in seconds.
+
+With its heater off, a hotend whose heatsink fan runs falls from 215 degC to about 113 degC in a
+minute, and a heated bed at 70 degC falls to about 40 degC in ten minutes.
+"""
+CANCEL_PRINT: Final = ("TURN_OFF_HEATERS", "M106 S0")
+"""The G-code the CANCEL_PRINT macro that Mainsail and Fluidd ship runs before Klipper's own cancel."""
 
 
 class RpcError(Exception):
@@ -35,7 +60,7 @@ class RpcError(Exception):
 
 
 class KlipperState:
-    def __init__(self) -> None:
+    def __init__(self, clock: Callable[[], float] = time.monotonic) -> None:
         self.objects: dict[str, dict[str, Any]] = {
             "webhooks": {"state": "ready", "state_message": "Printer is ready"},
             "extruder": {"temperature": 22.0, "target": 0.0, "power": 0.0},
@@ -57,16 +82,36 @@ class KlipperState:
         }
         self.gcode: list[str] = []
         self.home_time_s = 0.0
-        self._last = time.monotonic()
+        self.ambient = AMBIENT_C
+        self.clock = clock
+        self._last = clock()
 
     def step(self) -> None:
-        now = time.monotonic()
-        dt = min(now - self._last, 5.0)
+        """Move every heater on to the clock's time. A clock that hasn't moved changes nothing."""
+        now = self.clock()
+        elapsed = now - self._last
+        if elapsed <= 0:
+            return
         self._last = now
-        for name in ("extruder", "heater_bed", "heater_generic enclosure"):
+        for name, cooling_s in COOLING_S.items():
             heater = self.objects[name]
-            goal = heater["target"] if heater["target"] > 0 else 22.0
-            heater["temperature"] += (goal - heater["temperature"]) * min(1.0, 0.8 * dt)
+            heater["temperature"] = self._heated(heater["temperature"], heater["target"], elapsed, cooling_s)
+
+    def _heated(self, temperature: float, target: float, elapsed: float, cooling_s: float) -> float:
+        if target > temperature:
+            return temperature + (target - temperature) * min(1.0, HEATING_PER_S * elapsed)
+        cooled = self.ambient + (temperature - self.ambient) * math.exp(-elapsed / cooling_s)
+        return max(cooled, target) if target > 0 else cooled
+
+    def reported(self, name: str) -> dict[str, Any] | None:
+        """One printer object as Klipper reports it, with its temperature rounded to two decimals."""
+        obj = self.objects.get(name)
+        if obj is None:
+            return None
+        shown = copy.deepcopy(obj)
+        if isinstance(shown.get("temperature"), float):
+            shown["temperature"] = round(shown["temperature"], 2)
+        return shown
 
     def heater(self, name: str) -> dict[str, Any]:
         for key in (name, f"heater_generic {name}"):
@@ -85,6 +130,9 @@ class KlipperState:
         if not line:
             return
         self.gcode.append(line)
+        await self._command(line)
+
+    async def _command(self, line: str) -> None:
         words = line.split()
         code = words[0].upper()
         params = {key.upper(): value for key, _, value in (word.partition("=") for word in words[1:]) if value}
@@ -127,7 +175,11 @@ class KlipperState:
         else:
             raise RpcError(400, f'Unknown command:"{code}"')
 
-    def print_control(self, action: str) -> str:
+    async def print_control(self, action: str) -> str:
+        """Pause, resume or cancel the print. A cancel runs CANCEL_PRINT first, the way Klipper runs the macro.
+
+        `gcode` keeps only what the driver sent, so the macro's lines are left out of it.
+        """
         stats = self.objects["print_stats"]
         if action == "pause":
             if stats["state"] != "printing":
@@ -140,6 +192,8 @@ class KlipperState:
         elif action == "cancel":
             if stats["state"] not in ("printing", "paused"):
                 raise RpcError(400, "Print is not in progress")
+            for line in CANCEL_PRINT:
+                await self._command(line)
             stats["state"] = "cancelled"
         return "ok"
 
@@ -174,11 +228,11 @@ class MoonrakerSim:
         self.state.step()
         status: dict[str, Any] = {}
         for name, fields in objects.items():
-            obj = self.state.objects.get(name)
+            obj = self.state.reported(name)
             if obj is None:
                 continue
-            status[name] = copy.deepcopy(obj if not fields else {k: v for k, v in obj.items() if k in fields})
-        return {"eventtime": time.monotonic(), "status": status}
+            status[name] = obj if not fields else {k: v for k, v in obj.items() if k in fields}
+        return {"eventtime": self.state.clock(), "status": status}
 
     async def call(self, method: str, params: dict[str, Any] | None = None) -> Any:
         params = params or {}
@@ -206,7 +260,7 @@ class MoonrakerSim:
         if method in ("printer.print.pause", "printer.print.resume", "printer.print.cancel"):
             if self.klippy_state != "ready":
                 raise RpcError(503, "Klippy is not ready")
-            return self.state.print_control(method.rsplit(".", 1)[1])
+            return await self.state.print_control(method.rsplit(".", 1)[1])
         if method == "printer.emergency_stop":
             self.klippy_state = "shutdown"
             return "ok"
@@ -307,7 +361,7 @@ class MoonrakerSim:
         for connection, objects in list(self._subscriptions.items()):
             status = self._query(objects)["status"]
             await self._send(
-                connection, {"jsonrpc": "2.0", "method": "notify_status_update", "params": [status, time.monotonic()]}
+                connection, {"jsonrpc": "2.0", "method": "notify_status_update", "params": [status, self.state.clock()]}
             )
 
     async def drop_websockets(self) -> None:
