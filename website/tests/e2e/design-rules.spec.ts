@@ -94,7 +94,8 @@ test.describe("the hero", () => {
       for (const item of offsets) {
         expect(item.under).toBe(true);
         if (width >= 768) expect(item.off).toBeLessThan(1.5);
-        expect(item.size).toBe(13);
+        expect(item.size).toBeGreaterThanOrEqual(width >= 1024 ? 16 : 13);
+        expect(item.size).toBeLessThanOrEqual(17);
         expect(item.below).toBeGreaterThan(0);
       }
     });

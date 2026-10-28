@@ -22,6 +22,10 @@ export interface Scene {
   fits?: boolean;
   /** Measurements a scene takes from its own layout before it plays, given the header's height. */
   layout?: (pin: number) => void;
+  /** Moves what the scene drives outside its own root, given the story time and the scroll position, each time the scene updates. */
+  play?: (t: number, y: number) => void;
+  /** Puts back what `play` moved, when the scene stops playing. */
+  rest?: () => void;
 }
 
 function read(el: HTMLElement, name: string): number {
@@ -72,7 +76,9 @@ export function scene(root: HTMLElement, options: Scene): void {
   const update = () => {
     frameId = 0;
     if (!on) return;
-    const t = Math.min(total, Math.max(0, (window.scrollY - start) / unit));
+    const y = window.scrollY;
+    const t = Math.min(total, Math.max(0, (y - start) / unit));
+    options.play?.(t, y);
     for (const state of states) {
       const now = within(state.spans, t);
       if (now !== state.on) state.el.toggleAttribute("data-on", (state.on = now));
@@ -85,6 +91,7 @@ export function scene(root: HTMLElement, options: Scene): void {
 
   const off = () => {
     on = false;
+    options.rest?.();
     root.removeAttribute("data-camera");
     root.removeAttribute("data-ready");
     for (const piece of pieces) {
