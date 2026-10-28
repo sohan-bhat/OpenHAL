@@ -100,7 +100,7 @@ export function scene(root: HTMLElement, options: Scene): void {
     root.style.setProperty("--pin", `${pin}px`);
     options.layout?.(pin);
     const view = probe?.offsetHeight || window.innerHeight;
-    if (options.fits && stage.offsetHeight > view - pin) return off();
+    if (options.fits && stage.offsetHeight > view - pin + 1) return off();
     root.style.setProperty("--top", `${pin}px`);
     let y = 0;
     for (let el: HTMLElement | null = root; el; el = el.offsetParent as HTMLElement | null) y += el.offsetTop;

@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { SCENARIO_PATH, scenarioFrom } from "../../src/lib/scenario-data.mjs";
 import { IDS, nb, storyFacts, storyLines, type Lifeline, type Sending } from "../../src/lib/story/facts";
 import { COUNTED, PLACED, TOTAL, step, type StepId } from "../../src/lib/story/script";
-import { storySequence } from "../../src/lib/story/timeline";
+import { SEEN, storySequence } from "../../src/lib/story/timeline";
 
 const scenarioFile = process.env.OPENHAL_SCENARIO ?? fileURLToPath(new URL(`../../../${SCENARIO_PATH}`, import.meta.url));
 const scenario = scenarioFrom(readFileSync(scenarioFile, "utf8")) as any;
@@ -15,6 +15,9 @@ const nozzle = scenario.record.exchanges.find((exchange: any) => exchange.id ===
 const flat = (text: string) => text.replace(/\s+/g, " ").trim();
 const rows = sequence.rows;
 const row = (id: Sending) => rows.find((item) => item.id === id)!;
+const answers = (t = Infinity) => rows.flatMap((item) => (item.reply && t >= item.reply.shows ? [item.reply.answer.text] : []));
+const readingAt = (index: number, t: number) => sequence.readings[index].values.find((value) => value.spans.some(([start, end]) => t >= start && t < end))!.text;
+const rowShown = (index: number, t: number) => (sequence.readings[index].shown ?? [[0, Infinity]]).some(([start, end]) => t >= start && t < end);
 
 async function storyTime(page: Page, t: number): Promise<void> {
   await page.evaluate(
@@ -45,19 +48,30 @@ const lifelines = (page: Page) =>
     Object.fromEntries([...document.querySelectorAll<HTMLElement>(".story-scene .lifeline")].map((el) => [el.dataset.line!, el.getBoundingClientRect().left + el.getBoundingClientRect().width / 2])),
   ) as Promise<Record<Lifeline, number>>;
 
-/** Where each drawn leg of a row starts and where its arrowhead's tip is, counting only what shows. */
-const legsOf = (page: Page, id: Sending) =>
-  page.evaluate((name) => {
-    const seen = (el: Element) => {
-      for (let node: Element | null = el; node && !node.classList.contains("story-scene"); node = node.parentElement) if (Number(getComputedStyle(node).opacity) < 0.9) return false;
-      return true;
-    };
-    return [...document.querySelectorAll<HTMLElement>(`.story-scene .leg[data-row="${name}"]`)].map((leg) => {
-      const line = leg.querySelector<HTMLElement>(".stroke .line")!.getBoundingClientRect();
-      const head = leg.querySelector<HTMLElement>(".stroke .head")!;
-      return { start: line.left, end: line.right, tip: head.getBoundingClientRect().right, head: seen(head), color: getComputedStyle(leg.querySelector(".stroke")!).color };
-    });
-  }, id);
+/** Where each drawn leg of a row starts and where its arrowhead's tip is, counting only what shows, for its request legs or its dashed reply. */
+const legsOf = (page: Page, id: Sending, kind: "leg" | "reply" = "leg") =>
+  page.evaluate(
+    ([name, part]) => {
+      const seen = (el: Element) => {
+        for (let node: Element | null = el; node && !node.classList.contains("story-scene"); node = node.parentElement) if (Number(getComputedStyle(node).opacity) < 0.9) return false;
+        return true;
+      };
+      return [...document.querySelectorAll<HTMLElement>(`.story-scene .${part}[data-row="${name}"]`)].map((leg) => {
+        const back = leg.classList.contains("back");
+        const box = leg.getBoundingClientRect();
+        const head = leg.querySelector<HTMLElement>(".stroke .head")!.getBoundingClientRect();
+        const line = leg.querySelector<HTMLElement>(".stroke .line")!;
+        return {
+          start: back ? box.right : box.left,
+          tip: back ? head.left : head.right,
+          head: seen(leg.querySelector(".stroke .head")!),
+          dashed: getComputedStyle(line).backgroundImage.includes("gradient"),
+          color: getComputedStyle(leg.querySelector(".stroke")!).color,
+        };
+      });
+    },
+    [id, kind] as const,
+  );
 
 const tokens = (page: Page) =>
   page.evaluate(() => {
@@ -114,8 +128,9 @@ test.describe("the landing story", () => {
     await page.goto("/");
     await expect(page.locator("[data-story]")).not.toHaveAttribute("data-camera");
     await expect(page.locator(".story-list > li")).toHaveCount(COUNTED.length);
+    await page.locator(".story-list").scrollIntoViewIfNeeded();
     await expect(page.locator(".story-scene")).toBeVisible();
-    expect(await shown(page, ".story-scene .answer")).toEqual(rows.flatMap((item) => item.words.filter((words) => words.answer).map((words) => words.answer!.text)));
+    expect(await shown(page, ".story-scene .answer")).toEqual(answers());
   });
 
   test("opens with its title, how many steps follow and four empty lifelines", async ({ page }) => {
@@ -140,12 +155,13 @@ test.describe("the landing story", () => {
         const where = `${id} at ${t}`;
         expect(await shown(page, ".story-note"), where).toEqual([flat(nb(lines[id]))]);
         expect(await shown(page, ".story-count > *"), where).toEqual([`${index + 1} / ${COUNTED.length}`]);
-        const answered = rows.flatMap((entry) => entry.words.filter((words) => words.answer && t >= words.answers).map((words) => words.answer!.text));
-        expect(await shown(page, ".story-scene .answer"), where).toEqual(answered);
+        expect(await shown(page, ".story-scene .answer"), where).toEqual(answers(t));
         if (mine) expect(await shown(page, `.story-scene .say[data-row="${id}"] .label .live`), where).toEqual(mine.words.filter((words) => t >= words.shows).map((words) => flat(nb(words.label))));
-      }
-      for (const [position, reading] of facts.printer.readings.entries()) {
-        expect(await shown(page, `.story-scene .reading:nth-child(${position + 1}) .value > *`), `${id} ${reading.name}`).toEqual([flat(nb(reading.at[id]))]);
+        for (const [position, reading] of facts.printer.readings.entries()) {
+          const visible = rowShown(position, t);
+          expect(await shown(page, `.story-scene .reading:nth-child(${position + 1})`), `${where} ${reading.name}`).toHaveLength(visible ? 1 : 0);
+          if (visible) expect(await shown(page, `.story-scene .reading:nth-child(${position + 1}) .value > *`), `${where} ${reading.name}`).toEqual([flat(nb(readingAt(position, t)))]);
+        }
       }
     }
   });
@@ -153,6 +169,9 @@ test.describe("the landing story", () => {
   test("stops a refused request and the held cancel at the hub's lifeline, and takes the others to the printer's", async ({ page }) => {
     await page.goto("/");
     const x = await lifelines(page);
+    expect(Object.keys(x)).toEqual(["agent", "owner", "hub", "printer"]);
+    const spacing = [x.owner - x.agent, x.hub - x.owner, x.printer - x.hub];
+    expect(Math.max(...spacing) - Math.min(...spacing)).toBeLessThan(2);
     for (const item of rows) {
       await storyTime(page, step(item.id).to - 1);
       const legs = await legsOf(page, item.id);
@@ -162,11 +181,54 @@ test.describe("the landing story", () => {
         expect(Math.abs(legs[index].start - x[leg.from]), where).toBeLessThan(2);
         expect(Math.abs(legs[index].tip - x[leg.to]), where).toBeLessThan(2);
         expect(legs[index].head, where).toBe(true);
+        expect(legs[index].dashed, where).toBe(false);
       }
       const last = item.legs[item.legs.length - 1].to;
       expect(last, item.id).toBe(item.id === "hot" || item.id === "cancel" ? "hub" : item.id === "ask" ? "agent" : "printer");
     }
     expect(row("approve").legs[0].from).toBe("owner");
+  });
+
+  test("answers every request with a dashed arrow back to the lifeline that sent the request", async ({ page }) => {
+    await page.goto("/");
+    const x = await lifelines(page);
+    const color = await tokens(page);
+    for (const item of rows.filter((entry) => entry.reply)) {
+      const reply = item.reply!;
+      await storyTime(page, step(item.id).to - 1);
+      const [drawn] = await legsOf(page, item.id, "reply");
+      expect(Math.abs(drawn.start - x[reply.from]), item.id).toBeLessThan(2);
+      expect(Math.abs(drawn.tip - x[reply.to]), item.id).toBeLessThan(2);
+      expect(drawn.head, item.id).toBe(true);
+      expect(drawn.dashed, item.id).toBe(true);
+      expect(await shown(page, `.story-scene .reply[data-row="${item.id}"] .answer`), item.id).toEqual([reply.answer.text]);
+      const live = await page.locator(`.story-scene .reply[data-row="${item.id}"] .stroke.live`).evaluate((el) => getComputedStyle(el).color);
+      expect(live, item.id).toBe(color[reply.answer.tone]);
+    }
+    expect(row("hot").reply).toMatchObject({ from: "hub", to: "agent" });
+  });
+
+  test("passes the agent's arrows over the owner's lifeline through a gap", async ({ page }) => {
+    await page.goto("/");
+    const x = await lifelines(page);
+    const crossing = rows.filter((item) => item.legs.some((leg) => leg.over !== undefined));
+    expect(crossing.length).toBeGreaterThan(0);
+    for (const item of crossing) {
+      const leg = item.legs.find((entry) => entry.over !== undefined)!;
+      await storyTime(page, leg.at + 0.2);
+      const before = await page.locator(`.story-scene .leg[data-row="${item.id}"] .over`).first().evaluate((el) => Number(getComputedStyle(el).opacity));
+      expect(before, item.id).toBeLessThan(0.1);
+      await storyTime(page, step(item.id).to - 1);
+      const gaps = await page.locator(`.story-scene :is(.leg, .reply)[data-row="${item.id}"] .over`).evaluateAll((items) =>
+        items.map((el) => ({ middle: el.getBoundingClientRect().left + el.getBoundingClientRect().width / 2, opacity: Number(getComputedStyle(el).opacity), background: getComputedStyle(el).backgroundColor })),
+      );
+      const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+      for (const gap of gaps) {
+        expect(Math.abs(gap.middle - x.owner), item.id).toBeLessThan(2);
+        expect(gap.opacity, item.id).toBeGreaterThan(0.9);
+        expect(gap.background, item.id).toBe(bg);
+      }
+    }
   });
 
   test("draws the current arrow in the accent, holds the cancel in amber and settles every earlier arrow", async ({ page }) => {
@@ -204,10 +266,10 @@ test.describe("the landing story", () => {
     await page.goto("/");
     await storyTime(page, TOTAL - 1);
     const color = await tokens(page);
-    const answers = await page.locator(".story-scene .answer").evaluateAll((items) => items.map((el) => ({ text: el.textContent!.trim(), color: getComputedStyle(el).color, children: el.children.length })));
-    const expected = rows.flatMap((item) => item.words.filter((words) => words.answer).map((words) => ({ text: words.answer!.text, color: color[words.answer!.tone], children: 0 })));
-    expect(answers).toEqual(expected);
-    expect(answers.map((answer) => answer.text)).toContain(nozzle.error.data.name);
+    const found = await page.locator(".story-scene .answer").evaluateAll((items) => items.map((el) => ({ text: el.textContent!.trim(), color: getComputedStyle(el).color, children: el.children.length })));
+    const expected = rows.flatMap((item) => (item.reply ? [{ text: item.reply.answer.text, color: color[item.reply.answer.tone], children: 0 }] : []));
+    expect(found).toEqual(expected);
+    expect(found.map((answer) => answer.text)).toContain(nozzle.error.data.name);
   });
 
   for (const scheme of ["light", "dark"] as const) {
@@ -245,15 +307,18 @@ test.describe("the landing story", () => {
       await storyTime(page, TOTAL - 1);
       const x = await lifelines(page);
       const spills: string[] = [];
+      const within = (rects: Array<[number, number]>, a: Lifeline, b: Lifeline, what: string) => {
+        for (const [left, right] of rects) if (left < Math.min(x[a], x[b]) - 1 || right > Math.max(x[a], x[b]) + 1) spills.push(`${viewport.width} ${what}`);
+      };
+      const rectsOf = (selector: string, nth: number) =>
+        page.locator(selector).nth(nth).evaluate((el) => {
+          const out: Array<[number, number]> = [];
+          for (const part of el.querySelectorAll(".quiet, .answer")) for (const rect of part.getClientRects()) out.push([rect.left, rect.right]);
+          return out;
+        });
       for (const item of rows) {
-        for (const [index, words] of item.words.entries()) {
-          const rects = await page.locator(`.story-scene .say[data-row="${item.id}"]`).nth(index).evaluate((el) => {
-            const out: Array<[number, number]> = [];
-            for (const part of el.querySelectorAll(".quiet, .answer")) for (const rect of part.getClientRects()) out.push([rect.left, rect.right]);
-            return out;
-          });
-          for (const [left, right] of rects) if (left < x[words.from] - 1 || right > x[words.to] + 1) spills.push(`${viewport.width} ${item.id} ${words.label}`);
-        }
+        for (const [index, words] of item.words.entries()) within(await rectsOf(`.story-scene .say[data-row="${item.id}"]`, index), words.from, words.to, `${item.id} ${words.label}`);
+        if (item.reply) within(await rectsOf(`.story-scene .reply[data-row="${item.id}"]`, 0), item.reply.from, item.reply.to, `${item.id} ${item.reply.answer.text}`);
       }
       expect(spills).toEqual([]);
     }
@@ -263,20 +328,49 @@ test.describe("the landing story", () => {
     await page.goto("/");
     const frames = () => page.locator(".story-scene .cam-frame > svg").evaluateAll((items) => items.map((el) => Number(getComputedStyle(el).opacity) > 0.9));
     const seen = () => page.locator(".story-scene .cam-frame .seen").evaluateAll((items) => items.map((el) => Number(getComputedStyle(el).opacity) > 0.9));
+    const said = () => shown(page, ".story-scene .cam-seen > *");
+    await storyTime(page, step("ask").to - 1);
+    expect(await frames()).toEqual([true, false, false]);
+    expect(await said()).toEqual([]);
     await storyTime(page, row("look").lands - 1);
-    expect(await frames()).toEqual([true, false]);
+    expect(await frames()).toEqual([true, false, false]);
     expect(await seen()).toEqual([false, false]);
     await storyTime(page, row("look").lands + 2);
+    expect(await frames()).toEqual([false, true, false]);
     expect(await seen()).toEqual([true, false]);
+    expect(await said()).toEqual([SEEN.lifting]);
+    await storyTime(page, step("hot").to - 1);
+    expect(await said()).toEqual([SEEN.lifting]);
     await storyTime(page, row("loose").lands - 1);
-    expect(await frames()).toEqual([true, false]);
+    expect(await frames()).toEqual([false, true, false]);
     expect(await seen()).toEqual([false, false]);
     await storyTime(page, row("loose").lands + 2);
-    expect(await frames()).toEqual([false, true]);
+    expect(await frames()).toEqual([false, false, true]);
     expect(await seen()).toEqual([false, true]);
+    expect(await said()).toEqual([SEEN.loose]);
     await storyTime(page, TOTAL - 1);
-    expect(await frames()).toEqual([false, true]);
+    expect(await frames()).toEqual([false, false, true]);
+    expect(await said()).toEqual([SEEN.loose]);
     await expect(page.locator(".story-scene .cam-note")).toHaveText("Webcam, demo frame");
+  });
+
+  test("cools the nozzle after the cancel lands and leaves the stale bed target out without moving the panel", async ({ page }) => {
+    await page.goto("/");
+    const approve = row("approve");
+    const panel = () => page.locator(".story-scene .readings").evaluate((el) => [...el.children].map((child) => Math.round(child.getBoundingClientRect().top)));
+    await storyTime(page, approve.lands - 1);
+    const before = await panel();
+    expect(await shown(page, ".story-scene .reading:nth-child(2)")).toHaveLength(1);
+    await storyTime(page, approve.lands + 2);
+    expect(await shown(page, ".story-scene .reading:nth-child(1) .value > *")).toEqual([flat(nb(facts.printer.readings[0].at.approve))]);
+    expect(await shown(page, ".story-scene .reading:nth-child(2)")).toEqual([]);
+    expect(await shown(page, ".story-scene .reading:nth-child(3) .value > *")).toEqual([facts.printer.readings[2].at.approve]);
+    await storyTime(page, step("approve").to - 1);
+    expect(await shown(page, ".story-scene .reading:nth-child(1) .value > *")).toEqual([flat(nb(facts.printer.readings[0].cooling[0]))]);
+    await storyTime(page, TOTAL - 1);
+    expect(await shown(page, ".story-scene .reading:nth-child(1) .value > *")).toEqual([flat(nb(facts.printer.readings[0].at.end))]);
+    expect(await shown(page, ".story-scene .reading:nth-child(2)")).toEqual([]);
+    expect(await panel()).toEqual(before);
   });
 
   for (const form of FORMS) {
@@ -296,7 +390,7 @@ test.describe("the landing story", () => {
         });
         const where = `${form.width}x${form.height} ${item.id}`;
         expect(Math.abs(found.top), where).toBeLessThan(1);
-        expect(found.slot, where).toBe(form.width >= 1024 ? 2 : form.width >= 640 ? 3 : 4);
+        expect(found.slot, where).toBe(form.width >= 640 ? 2 : 3);
         expect(found.lines, where).toBeLessThanOrEqual(found.slot);
         heights.add(found.height);
       }
@@ -356,8 +450,9 @@ test.describe("the landing story", () => {
     for (const item of rows) {
       const legs = await legsOf(page, item.id);
       for (const [index, leg] of item.legs.entries()) expect(Math.abs(legs[index].tip - x[leg.to]), item.id).toBeLessThan(2);
+      if (item.reply) expect(Math.abs((await legsOf(page, item.id, "reply"))[0].tip - x[item.reply.to]), item.id).toBeLessThan(2);
     }
-    expect(await shown(page, ".story-scene .answer")).toEqual(rows.flatMap((item) => item.words.filter((words) => words.answer).map((words) => words.answer!.text)));
+    expect(await shown(page, ".story-scene .answer")).toEqual(answers());
     expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
   });
 

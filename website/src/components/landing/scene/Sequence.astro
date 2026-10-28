@@ -1,50 +1,59 @@
 ---
 import { LIFELINES, nb, type Lifeline } from "../../../lib/story/facts";
 import { NEVER, drawn, during, type Span } from "../../../lib/story/script";
-import { drawing, type Sequence } from "../../../lib/story/timeline";
+import { drawing, type Leg, type Sequence } from "../../../lib/story/timeline";
 
 interface Props {
   sequence: Sequence;
+  /** Draws the whole exchange as the story ends, with nothing that moves, for the hero's small copy. */
+  still?: boolean;
 }
 
-const { sequence } = Astro.props;
+const { sequence, still = false } = Astro.props;
 const TONES = { ok: "ok", confirm: "confirm", blocked: "blocked" } as const;
 const at = (name: Lifeline) => `grid-column: ${name} / span 1`;
 const across = (from: Lifeline, to: Lifeline) => `grid-column: ${from} / ${to}`;
 const from = (span: Span, start: number): Span => [Math.max(span[0], start), span[1]];
-const template = `grid-template-rows: auto var(--under) repeat(${sequence.rows.length}, auto var(--arrow)) var(--tail)`;
+const shown = (spans: Span[]) => (still ? {} : during(spans));
+const moves = (leg: Leg) => [still ? "" : drawn(leg.at, leg.d), leg.over === undefined ? "" : `--across: ${leg.over * 100}%; --cross: ${leg.back ? 1 - leg.over : leg.over}`].filter(Boolean).join("; ");
+const backward = (a: Lifeline, b: Lifeline) => LIFELINES.indexOf(b) < LIFELINES.indexOf(a);
+let line = 3;
+const rows = sequence.rows.map((item) => {
+  const placed = { item, label: line, arrow: line + 1, reply: line + 2 };
+  line += item.reply ? 3 : 2;
+  return placed;
+});
+const template = `grid-template-rows: auto var(--under) ${sequence.rows.map((item) => `minmax(auto, 1fr) var(--arrow)${item.reply ? " auto" : ""}`).join(" ")} var(--tail)`;
 ---
 
-<div class="seq" style={template}>
+<div class:list={["seq", { still }]} style={template}>
   {LIFELINES.map((name) => <p class="seq-head" style={`${at(name)}; grid-row: 1`}>{sequence.heads[name]}</p>)}
   {LIFELINES.map((name) => <span class="lifeline" data-line={name} style={at(name)} />)}
   {
-    sequence.rows.map((item, index) => (
+    rows.map(({ item, label, arrow, reply }) => (
       <Fragment>
         {item.words.map((words) => (
-          <p class:list={["say", { plain: !words.mono }]} data-row={item.id} style={`${across(words.from, words.to)}; grid-row: ${3 + index * 2}`}>
+          <p class:list={["say", { plain: !words.mono, back: backward(words.from, words.to) }]} data-row={item.id} style={`${across(words.from, words.to)}; grid-row: ${label}`}>
             <span class="label">
-              <span class="quiet" {...during([[words.shows, NEVER]])}>{nb(words.label)}</span>
-              <span class="live" {...during([from(item.live, words.shows)])}>{nb(words.label)}</span>
+              <span class="quiet" {...shown([[words.shows, NEVER]])}>{nb(words.label)}</span>
+              {!still && <span class="live" {...during([from(item.live, words.shows)])}>{nb(words.label)}</span>}
             </span>
-            {words.answer && (
-              <span class:list={["answer", "status", TONES[words.answer.tone]]} {...during([[words.answers, NEVER]])}>
-                {words.answer.text}
-              </span>
-            )}
           </p>
         ))}
         {item.legs.map((leg) => (
-          <span class="leg" data-row={item.id} style={`${across(leg.from, leg.to)}; grid-row: ${4 + index * 2}; ${drawn(leg.at, leg.d)}`}>
+          <span class:list={["leg", { back: leg.back }]} data-row={item.id} style={`${across(leg.from, leg.to)}; grid-row: ${arrow}; ${moves(leg)}`}>
+            {leg.over !== undefined && <span class="over" />}
             <span class="stroke">
               <span class="line" />
-              <span class="head" {...during([[leg.lands, NEVER]])} />
+              <span class="head" {...shown([[leg.lands, NEVER]])} />
             </span>
-            <span class="stroke live" {...during([from(drawing(item), leg.at)])}>
-              <span class="line" />
-              <span class="head" {...during([[leg.lands, NEVER]])} />
-            </span>
-            {item.held && leg === item.legs[item.legs.length - 1] && (
+            {!still && (
+              <span class="stroke live" {...during([from(drawing(item), leg.at)])}>
+                <span class="line" />
+                <span class="head" {...during([[leg.lands, NEVER]])} />
+              </span>
+            )}
+            {!still && item.held && leg === item.legs[item.legs.length - 1] && (
               <span class="stroke held" {...during([item.held])}>
                 <span class="line" />
                 <span class="head" />
@@ -52,6 +61,24 @@ const template = `grid-template-rows: auto var(--under) repeat(${sequence.rows.l
             )}
           </span>
         ))}
+        {item.reply && (
+          <p class="reply back" data-row={item.id} style={`${across(item.reply.from, item.reply.to)}; grid-row: ${reply}; ${moves(item.reply.leg)}`}>
+            {item.reply.leg.over !== undefined && <span class="over" />}
+            <span class="stroke">
+              <span class="line" />
+              <span class="head" {...shown([[item.reply.leg.lands, NEVER]])} />
+            </span>
+            {!still && (
+              <span class:list={["stroke", "live", TONES[item.reply.answer.tone]]} {...during([from(item.live, item.reply.shows)])}>
+                <span class="line" />
+                <span class="head" {...during([[item.reply.leg.lands, NEVER]])} />
+              </span>
+            )}
+            <span class:list={["answer", "status", TONES[item.reply.answer.tone]]} {...shown([[item.reply.shows, NEVER]])}>
+              {item.reply.answer.text}
+            </span>
+          </p>
+        )}
       </Fragment>
     ))
   }
