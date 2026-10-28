@@ -24,6 +24,12 @@ knows, so reading the panel sends nothing to the printer and adds nothing to the
 end the owner reads the audit log with `hal/audit/query`, and the record keeps the story's entries
 as `openhal log` prints them.
 
+Klipper's CANCEL_PRINT macro turns the heaters off, so the nozzle cools after the cancel. The
+approval's exchange keeps the panel twice more under `cooling`, after the printer has cooled for
+each time in COOLED_FOR_S, and each panel waits for the hub's next reading of the nozzle. The hub
+reads the targets again only when the device file lists them in the action's `effects`, and the
+cancel in printer.hal.yaml lists none, so the panel keeps the targets the hub read last.
+
 `openhal demo --record` writes the result to docs/demo/scenario.yaml, and the README, the docs and
 the website take every number from that file. The simulated printer runs on a story clock that
 moves only when the story moves it, and times, image pixels and the hub's random request id are
@@ -76,6 +82,8 @@ BED_WARMER: Final = 70
 NOZZLE_ASKED: Final = 300
 PANEL: Final = ("state", "extruder_temp", "extruder_target", "bed_target")
 """The printer channels the panel shows. The landing story shows the bed target, so bed_temp is left out."""
+COOLED_FOR_S: Final = (30.0, 60.0)
+"""How long the printer has cooled after the owner approves the cancel when the record shows the panel again."""
 COMMANDS: Final = frozenset(
     {
         "printer.gcode.script",
@@ -254,19 +262,23 @@ class Peer:
             if message.get("method") == method and wanted(message.get("params") or {}):
                 return dict(message.get("params") or {})
 
-    async def value(self, device: str, channel: str, wanted: Any = None, *, since: float = 0.0) -> Any:
-        """Wait for the next `hal/value` of a channel read after `since`, or for one that equals `wanted`."""
-        while True:
-            message = await asyncio.wait_for(self.frames.get(), WAIT_S)
-            if "id" in message:
-                continue
-            self.notifications.append(message)
-            params = message.get("params") or {}
-            if message.get("method") != "hal/value" or params.get("device") != device:
-                continue
-            fresh = dt.datetime.fromisoformat(str(params.get("at"))).timestamp() >= since
-            if params.get("channel") == channel and fresh and (wanted is None or params.get("value") == wanted):
-                return params.get("value")
+    async def value(self, device: str, channel: str, wanted: Any = None) -> Any:
+        """Wait for the next `hal/value` of a channel, or for one that equals `wanted`."""
+        return await self.reading(device, channel, lambda value: wanted is None or value == wanted)
+
+    async def reading(self, device: str, channel: str, accept: Callable[[Any], bool]) -> Any:
+        """Wait up to WAIT_S for a `hal/value` of a channel whose value `accept` takes, and return the value."""
+        async with asyncio.timeout(WAIT_S):
+            while True:
+                message = await self.frames.get()
+                if "id" in message:
+                    continue
+                self.notifications.append(message)
+                params = message.get("params") or {}
+                if message.get("method") != "hal/value" or params.get("device") != device:
+                    continue
+                if params.get("channel") == channel and accept(params.get("value")):
+                    return params.get("value")
 
     async def close(self) -> None:
         self._reader.cancel()
@@ -337,6 +349,7 @@ def _exchange(
     frame: str | None = None,
     bed_target: dict[str, Any] | None = None,
     printer_received: list[str] | None = None,
+    cooling: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """One exchange in the record's order. `kernel` stays empty until the audit log is read."""
     entry: dict[str, Any] = {"id": name, "by": by.label, "before": BEFORE[name]}
@@ -350,6 +363,8 @@ def _exchange(
     if printer_received is not None:
         entry["printer_received"] = printer_received
     entry["printer"] = printer
+    if cooling is not None:
+        entry["cooling"] = cooling
     return entry
 
 
@@ -438,7 +453,10 @@ def _action(name: str) -> dict[str, Any]:
 
 
 class Story:
-    """The seven exchanges, each with the commands the printer received and the panel afterwards."""
+    """The seven exchanges, each with the commands the printer received and the panel afterwards.
+
+    After the approval the story clock moves on, and the record shows the panel while the nozzle cools.
+    """
 
     def __init__(
         self, agent: Peer, person: Peer, panel: Panel, sim: PrinterSim, webcam: Webcam, connected: float
@@ -450,6 +468,7 @@ class Story:
         self.webcam = webcam
         self.connected = connected
         self.requested_by = ""
+        self.cooled_for = 0.0
 
     async def _send(self, peer: Peer, request: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
         mark = len(self.sim.commands)
@@ -495,6 +514,7 @@ class Story:
         approved, cancelling = await self._send(person, approve)
         await agent.value(DEVICE, "state", "cancelled")
         at_cancel = await panel.read()
+        cooling = [await self._cooled(seconds) for seconds in COOLED_FOR_S]
 
         bed_target = {"before": at_first["bed_target"], "after": after}
         return [
@@ -504,8 +524,24 @@ class Story:
             _exchange("come-loose", agent, look, second, at_loose, frame=_frame(FRAMES[1])),
             _exchange("paused", agent, pause, paused, at_pause, printer_received=pausing),
             _exchange("cancel-waits", agent, cancel, waiting, at_wait, printer_received=held),
-            _exchange("owner-approves", person, approve, approved, at_cancel, printer_received=cancelling),
+            _exchange(
+                "owner-approves", person, approve, approved, at_cancel, printer_received=cancelling, cooling=cooling
+            ),
         ]
+
+    async def _cooled(self, seconds: float) -> dict[str, Any]:
+        """The panel once the printer has cooled for `seconds` since the approval and the hub has read the nozzle.
+
+        The story clock moves on, and the agent waits for the hub's next reading of a cooler nozzle,
+        so the panel shows what the hub read at that moment.
+        """
+        nozzle = (await self.panel.read())["extruder_temp"]["value"]
+        self.sim.clock.advance(seconds - self.cooled_for)
+        self.cooled_for = seconds
+        await self.agent.reading(
+            DEVICE, "extruder_temp", lambda value: isinstance(value, int | float) and value < nozzle
+        )
+        return {"after": {"value": seconds, "unit": "s"}, "printer": await self.panel.read()}
 
 
 def _frame(name: str) -> str:
