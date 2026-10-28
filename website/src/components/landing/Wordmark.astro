@@ -42,7 +42,7 @@ const mode = `(() => {
         <span class="hero-letters" aria-hidden="true" style={drawn(0, TOTAL)}>
           {letters.map((item) => <span data-letter={item.part} style={item.style}>{item.letter}</span>)}
         </span>
-        <p class="hero-spell" aria-hidden="true" style={drawn(0, LEAVES)}>
+        <p class="hero-spell" aria-hidden="true" style={drawn(0, LEAVES / 2)}>
           {spelled.map((item) => <span data-at={item.at}>{item.word}</span>)}
         </p>
       </div>
@@ -281,7 +281,7 @@ const mode = `(() => {
     }
 
     .hero[data-camera] .hero-spell {
-      opacity: min(0.999, calc(1 - clamp(0, var(--t) / var(--leaves), 1)));
+      opacity: min(0.999, calc(1 - clamp(0, var(--t) * 2 / var(--leaves), 1)));
     }
 
     .hero[data-camera] .hero-leaves {
