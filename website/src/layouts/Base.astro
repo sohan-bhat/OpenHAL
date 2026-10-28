@@ -68,9 +68,11 @@ const speculation = JSON.stringify({
     <slot name="head" />
     <script>
       import { searchDialog } from "../components/search";
+      import { versionMenu } from "../components/version-menu";
       import { prefetchOnIntent } from "../lib/prefetch-intent";
 
       searchDialog();
+      versionMenu();
       if (!HTMLScriptElement.supports?.("speculationrules")) prefetchOnIntent();
 
       function commandsOf(figure: HTMLElement, text: string): string {

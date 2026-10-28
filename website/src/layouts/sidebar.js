@@ -41,7 +41,7 @@ button.onclick = () => {
   name();
 };
 button.onkeydown = (event) => {
-  const first = nav.querySelector("a,summary");
+  const first = nav.querySelector("a");
   if (event.key == "Tab" && !event.shiftKey && hidden() && !("peek" in data) && first) {
     event.preventDefault();
     peek(1);

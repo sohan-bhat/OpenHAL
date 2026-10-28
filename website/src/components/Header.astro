@@ -4,6 +4,7 @@ import { PRODUCT_NAME } from "../config/brand";
 import { navLinks } from "../config/site";
 import { wordmarkWidth } from "../lib/brand-mark";
 import SearchDialog from "./SearchDialog.astro";
+import VersionSwitcher from "./VersionSwitcher.astro";
 
 const published = (await getCollection("blog")).some((post) => !post.data.draft);
 const links = navLinks(published);
@@ -57,6 +58,7 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
         }
       </ul>
     </nav>
+    <VersionSwitcher />
     <details class="mobile-nav">
       <summary>Menu</summary>
       <nav aria-label="Main">
@@ -71,6 +73,7 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
             ))
           }
         </ul>
+        <VersionSwitcher menu />
       </nav>
     </details>
   </div>
@@ -125,7 +128,8 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
     gap: var(--s-1);
   }
 
-  .desktop-nav a {
+  .desktop-nav a,
+  .version-button {
     display: block;
     padding: var(--s-2) 10px;
     border-radius: var(--radius);
@@ -136,7 +140,9 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
     white-space: nowrap;
   }
 
-  .desktop-nav a:hover {
+  .desktop-nav a:hover,
+  .version-button:hover,
+  .version-button[aria-expanded="true"] {
     color: var(--text);
     background: var(--surface);
   }
@@ -273,6 +279,60 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
     font-weight: 700;
   }
 
+  .version-button {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 0;
+    font-family: inherit;
+    line-height: inherit;
+    cursor: pointer;
+  }
+
+  #version-menu {
+    inset: 56px max(var(--s-4), 50vw - 664px) auto auto;
+    margin: 0;
+    padding: var(--s-1);
+    color: var(--text);
+    background: var(--bg);
+    border: var(--rule);
+    border-radius: var(--radius);
+  }
+
+  .versions a {
+    display: flex;
+    gap: var(--s-3);
+    align-items: baseline;
+    padding: 6px var(--s-3);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: var(--t-small);
+    font-weight: 400;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .versions a:hover {
+    background: var(--surface);
+  }
+
+  .versions a[aria-current] {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+    font-weight: 400;
+  }
+
+  .mobile-nav .versions {
+    margin-top: var(--s-2);
+    padding-top: var(--s-2);
+    border-top: var(--rule);
+  }
+
+  .mobile-nav .legend {
+    padding: 0 var(--s-3) var(--s-1);
+  }
+
   @media (min-width: 1180px) {
     .site-header .bar {
       gap: var(--s-4);
@@ -282,7 +342,8 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
       display: block;
     }
 
-    .search-field {
+    .search-field,
+    .version-button {
       display: inline-flex;
     }
 

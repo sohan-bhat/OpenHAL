@@ -47,7 +47,6 @@ const sidebarScript = (await transformWithEsbuild(sidebarSource, "sidebar.js", {
         <summary>{section} pages</summary>
       </details>
       <nav class="side-desktop" id="side-nav" aria-label={`${section} pages`}>
-        <slot name="sidebar-top" />
         {
           sidebar.map((group) => (
             <div class="group">
