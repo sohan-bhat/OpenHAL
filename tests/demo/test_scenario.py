@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import time
 from pathlib import Path
 
 import pytest
@@ -147,6 +148,13 @@ def test_the_nozzle_cools_after_the_owner_approves_the_cancel() -> None:
         assert nozzle[-1] == pytest.approx(cooled, abs=0.01)
     assert nozzle == sorted(set(nozzle), reverse=True)
     assert nozzle[0] == scenario.NOZZLE_PRINTING > nozzle[-1] > AMBIENT_C
+
+
+def test_only_the_recorded_run_puts_the_printer_on_the_story_clock() -> None:
+    """The Inspector's test hub builds its printer with printing(), so its heaters warm and cool on their own."""
+    assert scenario.printing().state.clock is time.monotonic
+    clock = scenario.StoryClock()
+    assert scenario.printing(clock).state.clock is clock
 
 
 def test_the_hub_reads_the_targets_again_only_when_the_cancel_lists_them() -> None:
