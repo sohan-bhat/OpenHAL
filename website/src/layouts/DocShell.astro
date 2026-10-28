@@ -166,14 +166,16 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
   </div>
 </Base>
 
-<style>
+<style is:global>
   .shell {
     display: grid;
     gap: var(--s-5);
     padding-top: var(--s-5);
   }
 
-  ul {
+  .group ul,
+  .outline ul,
+  .outline-mobile ul {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -183,7 +185,7 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
     display: none;
   }
 
-  .side-menu summary {
+  .side-menu > summary {
     display: flex;
     align-items: center;
     min-height: 44px;
@@ -194,12 +196,12 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
     cursor: pointer;
   }
 
-  .side-menu[open] summary {
+  .side-menu[open] > summary {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
   }
 
-  .side-menu nav {
+  .side-menu > nav {
     padding: var(--s-2) var(--s-3) var(--s-3);
     border: var(--rule);
     border-top: 0;
@@ -220,7 +222,7 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
     font-weight: 400;
   }
 
-  .sidebar a {
+  .group a {
     display: flex;
     gap: var(--s-2);
     padding: var(--s-1) var(--s-2);
@@ -241,33 +243,33 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
     line-height: 1.45;
   }
 
-  .sidebar a:hover {
+  .group a:hover {
     color: var(--text);
     background: var(--surface);
   }
 
-  .sidebar a[aria-current="page"] {
+  .group a[aria-current="page"] {
     color: var(--accent);
     background: color-mix(in srgb, var(--accent) 10%, var(--bg));
     font-weight: 700;
   }
 
-  .sidebar li.nested a {
+  .group li.nested a {
     padding-left: var(--s-5);
   }
 
-  .num {
+  .group .num {
     flex: none;
     min-width: 2.2em;
     color: var(--text-2);
   }
 
-  .content,
-  .data {
+  .shell .content,
+  .shell .data {
     min-width: 0;
   }
 
-  .page-head {
+  .shell .page-head {
     padding-bottom: var(--s-4);
     margin-bottom: var(--s-5);
     border-bottom: var(--rule);
@@ -280,7 +282,7 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
     border-radius: var(--radius);
   }
 
-  .outline-mobile summary {
+  .outline-mobile > summary {
     font-weight: 700;
     cursor: pointer;
     min-height: 32px;
@@ -356,7 +358,7 @@ const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || head
     grid-column: 2;
   }
 
-  .edit {
+  .page-foot .edit {
     display: flex;
     flex-wrap: wrap;
     gap: var(--s-1) var(--s-3);

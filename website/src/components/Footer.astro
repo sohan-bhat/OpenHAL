@@ -11,14 +11,14 @@ import { REPOSITORY_URL } from "../config/site";
   </div>
 </footer>
 
-<style>
+<style is:global>
   .site-footer {
     margin-top: var(--s-8);
     border-top: var(--rule);
     padding: var(--s-5) 0 var(--s-6);
   }
 
-  .row {
+  .site-footer .row {
     display: flex;
     flex-wrap: wrap;
     gap: var(--s-2) var(--s-6);

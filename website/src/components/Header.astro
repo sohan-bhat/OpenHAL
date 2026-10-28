@@ -77,7 +77,7 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
 </header>
 <SearchDialog />
 
-<style>
+<style is:global>
   .site-header {
     view-transition-name: site-header;
     position: sticky;
@@ -87,14 +87,14 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
     border-bottom: var(--rule);
   }
 
-  .bar {
+  .site-header .bar {
     display: flex;
     align-items: center;
     gap: var(--s-2);
     min-height: 60px;
   }
 
-  .brand {
+  .site-header .brand {
     display: inline-flex;
     align-items: center;
     gap: var(--s-2);
@@ -103,12 +103,12 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
     flex: none;
   }
 
-  .wordmark,
-  .wordmark img {
+  .site-header .wordmark,
+  .site-header .wordmark img {
     display: block;
   }
 
-  ul {
+  .site-header ul {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -212,11 +212,11 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
   }
 
   .key-apple,
-  :global(html.apple) .key-other {
+  html.apple .key-other {
     display: none;
   }
 
-  :global(html.apple) .key-apple {
+  html.apple .key-apple {
     display: inline;
   }
 
@@ -274,7 +274,7 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
   }
 
   @media (min-width: 1180px) {
-    .bar {
+    .site-header .bar {
       gap: var(--s-4);
     }
 
