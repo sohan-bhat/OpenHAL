@@ -45,6 +45,27 @@ test.describe("overview", () => {
     await expect(page.locator("#try")).toContainText("The demo plays the same story in your terminal.");
   });
 
+  test("the quickstart sets its three commands one under another, and Copy copies all three", async ({ page, browserName, context }) => {
+    await page.goto("/");
+    const block = page.locator("#try figure[data-tested]");
+    const lines = await block.locator("pre .line").evaluateAll((items) =>
+      items.map((el) => {
+        const box = el.getBoundingClientRect();
+        return { top: box.top, bottom: box.bottom, height: box.height, position: getComputedStyle(el).position };
+      }),
+    );
+    expect(lines).toHaveLength(3);
+    for (const [index, line] of lines.entries()) {
+      expect(line.position).toBe("static");
+      expect(line.height).toBeGreaterThan(16);
+      if (index > 0) expect(line.top).toBeGreaterThanOrEqual(lines[index - 1].bottom - 0.5);
+    }
+    test.skip(browserName !== "chromium", "clipboard permissions are a Chromium feature here");
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await block.getByRole("button", { name: "Copy code" }).click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("git clone https://github.com/sohan-bhat/OpenHAL\ncd OpenHAL\nuv run openhal demo");
+  });
+
   test("says plainly that OpenHAL is not affiliated with MHS", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByText("not affiliated with Anthropic or MHS").first()).toBeVisible();

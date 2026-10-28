@@ -177,7 +177,7 @@
   background: var(--lifeline);
 }
 
-.say {
+.seq .say {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -189,55 +189,55 @@
   font-family: var(--font-mono);
 }
 
-.say.plain {
+.seq .say.plain {
   font-family: var(--font-text);
 }
 
-.label {
+.seq .label {
   display: grid;
   min-width: 0;
 }
 
-.label > *,
-.value > * {
+.seq .label > *,
+.cam .value > * {
   grid-area: 1 / 1;
 }
 
-.label .quiet {
+.seq .label .quiet {
   color: var(--text-2);
 }
 
-.label .live {
+.seq .label .live {
   color: var(--text);
 }
 
-.say .answer {
+.seq .say .answer {
   margin-left: auto;
   font-size: inherit;
   line-height: inherit;
 }
 
-.leg {
+.seq .leg {
   --t: 0;
   --p: clamp(0, (var(--t) - var(--at)) / var(--d), 1);
   position: relative;
   color: var(--text-2);
 }
 
-.stroke {
+.seq .stroke {
   position: absolute;
   inset: 0;
 }
 
-.stroke.live {
+.seq .stroke.live {
   color: var(--accent);
 }
 
-.stroke.held {
+.seq .stroke.held {
   color: var(--confirm);
 }
 
-.line {
+.seq .line {
   position: absolute;
   left: 0;
   right: 7px;
@@ -248,7 +248,7 @@
   transform: scaleX(var(--p));
 }
 
-.head {
+.seq .head {
   position: absolute;
   right: 0;
   top: calc(50% - 4px);
@@ -258,7 +258,7 @@
   clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
 
-.story:not([data-camera]) .leg {
+.story:not([data-camera]) .seq .leg {
   --p: 1;
 }
 
@@ -284,7 +284,7 @@
   aspect-ratio: 16 / 9;
 }
 
-.ink {
+.cam .ink {
   stroke: var(--text-2);
   stroke-width: 1.5px;
   stroke-linejoin: round;
@@ -292,16 +292,16 @@
   vector-effect: non-scaling-stroke;
 }
 
-.seen .ink {
+.cam .seen .ink {
   stroke: var(--accent);
   stroke-width: 2px;
 }
 
-.fill-none {
+.cam .fill-none {
   fill: none;
 }
 
-.fill-bg {
+.cam .fill-bg {
   fill: var(--bg);
 }
 
@@ -312,7 +312,7 @@
   line-height: 1.35;
 }
 
-.readings {
+.cam .readings {
   grid-area: readings;
   display: grid;
   gap: 2px;
@@ -321,22 +321,22 @@
   line-height: 1.4;
 }
 
-.reading {
+.cam .reading {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: var(--s-2);
 }
 
-.reading dt {
+.cam .reading dt {
   color: var(--text-2);
 }
 
-.reading dd {
+.cam .reading dd {
   margin: 0;
 }
 
-.value {
+.cam .value {
   display: grid;
   justify-items: end;
   font-family: var(--font-mono);
@@ -396,7 +396,7 @@
     line-height: 1.3;
   }
 
-  .say {
+  .seq .say {
     column-gap: var(--s-3);
   }
 
@@ -409,12 +409,12 @@
     column-gap: var(--s-6);
   }
 
-  .readings,
+  .cam .readings,
   .cam-note {
     font-size: var(--t-small);
   }
 
-  .value {
+  .cam .value {
     font-size: var(--t-body);
   }
 }
@@ -442,7 +442,7 @@
     padding-top: var(--s-1);
   }
 
-  .readings {
+  .cam .readings {
     margin-top: var(--s-3);
     gap: var(--s-1);
   }
