@@ -8,7 +8,7 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- website-11. The top of the home page and the drop into the wordmark sequence (BRIEF-website-11.md), plus the owner's review: Hardware Abstraction Layer labels, the Run the demo block, the lifeline order with reply arrows, the webcam labels, the nine captions and a miniature diagram in the hero.
+- website-11, second pass. The wordmark sequence's slide comes back, shifted so the word never crosses the column's left edge.
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
@@ -57,6 +57,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - The landing story without boxes and the wordmark sequence (website-9, merged 2026-10-27). Scroll brings the wordmark down and walks through H, A and L with a short brief for each part, then the story plays as a sequence diagram with four lifelines, one arrow per request and the webcam's line drawing, and every caption follows the owner's writing rules.
 - One header on every page, a collapsible sidebar and the version picker in the header (website-10, merged 2026-10-27). The header and footer use the 1360 px container everywhere, every documentation sidebar hides with a button and slides back in on hover at the left edge, and the spec version picker is a compact menu after GitHub.
 - The nozzle cools after the cancel (scenario-cooling, merged 2026-10-27). The Moonraker simulator runs Klipper's CANCEL_PRINT macro, which turns the heaters off, and the record follows the nozzle from 215 °C to 154.65 °C after 30 s and 113.17 °C after 60 s on a deterministic clock.
+- The home page's first screen and the owner's review (website-11, merged 2026-10-27). The hero has a small still sequence diagram and the demo's opening row, the first scroll drops both away into the wordmark sequence, the Run the demo block stacks its three commands again, the lifelines run Agent, Owner, OpenHAL hub and Printer with dashed replies, the webcam says what each frame shows, the nine captions are the owner's, the nozzle cools after the cancel and the labels read [hardware] [abstraction] [layer].
 
 ## Next
 
