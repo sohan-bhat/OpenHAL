@@ -9,10 +9,9 @@ import { KEY } from "./smooth-switch";
 
 interface Props {
   after: string;
-  lead?: string;
 }
 
-const { after, lead = "" } = Astro.props;
+const { after } = Astro.props;
 const facts = storyFacts();
 const lines = storyLines(facts);
 const sequence = storySequence(facts);
@@ -41,7 +40,7 @@ const camera = `(() => {
 ---
 
 <section class="story-section" aria-labelledby="story-title">
-  <div class="story" data-story>
+  <div class="story" data-story data-total={TOTAL}>
     <div class="story-stage">
       <div class="story-band">
         <div class="story-meta">
@@ -99,13 +98,5 @@ const camera = `(() => {
       }
     </ol>
   </div>
-  <script is:inline set:html={`${lead}${camera}`} />
+  <script is:inline set:html={camera} />
 </section>
-
-<script>
-  import { smoothSwitch } from "./smooth-switch";
-  import { story } from "./story-runtime";
-
-  for (const root of document.querySelectorAll<HTMLElement>("[data-story]")) story(root);
-  for (const toggle of document.querySelectorAll<HTMLButtonElement>("[data-smooth]")) smoothSwitch(toggle);
-</script>
