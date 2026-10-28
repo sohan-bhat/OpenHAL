@@ -13,12 +13,48 @@ const reach = (page: Page, selector: string) =>
     return { left: Math.min(...shown.map((box) => box.left)), right: Math.max(...shown.map((box) => box.right)) };
   });
 
+const chrome = (page: Page) =>
+  page.evaluate(() => {
+    const boxes = (selector: string, across = false) =>
+      [...document.querySelectorAll(selector)]
+        .filter((el) => el.getClientRects().length)
+        .map((el) => {
+          const box = el.getBoundingClientRect();
+          const x = [Math.round(box.left), Math.round(box.width)];
+          return across ? x : [...x, Math.round(box.top), Math.round(box.height)];
+        });
+    return {
+      wordmark: boxes(".site-header .wordmark img"),
+      search: boxes(".site-header .search-field, .site-header .search-button"),
+      nav: boxes(".site-header .desktop-nav li, .site-header .mobile-nav summary"),
+      footer: boxes(".site-footer .row > *", true),
+    };
+  });
+
 test.describe("the header and footer", () => {
+  for (const width of [1440, 1280, 1024]) {
+    test(`hold the wordmark, search, nav and footer in place across /, /docs/ and a spec page at ${width} px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      const seen: Record<string, Awaited<ReturnType<typeof chrome>>> = {};
+      for (const path of ["/", "/docs/", "/spec/2026-10-24/basic/messages/"]) {
+        await page.goto(path);
+        await page.evaluate(() => document.fonts.ready);
+        seen[path] = await chrome(page);
+        expect(seen[path].wordmark, path).toHaveLength(1);
+        expect(seen[path].search, path).toHaveLength(1);
+        expect(seen[path].nav.length, path).toBeGreaterThan(0);
+        expect(seen[path].footer.length, path).toBeGreaterThan(0);
+      }
+      expect(seen["/docs/"]).toEqual(seen["/"]);
+      expect(seen["/spec/2026-10-24/basic/messages/"]).toEqual(seen["/"]);
+    });
+  }
+
   for (const width of [1440, 1280, 1024, 390]) {
     test(`line up with the home page's column at ${width} px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/");
-      const column = await inner(page, ".hero");
+      const column = await inner(page, "main > .home-width");
       const bar = await reach(page, ".site-header .bar");
       expect(Math.abs(bar.left - column.left)).toBeLessThan(1);
       expect(Math.abs(bar.right - column.right)).toBeLessThan(1);

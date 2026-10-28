@@ -8,7 +8,6 @@ import SearchDialog from "./SearchDialog.astro";
 const published = (await getCollection("blog")).some((post) => !post.data.draft);
 const links = navLinks(published);
 const path = Astro.url.pathname;
-const home = path === "/";
 const matchLength = (match: string[]) =>
   Math.max(0, ...match.filter((prefix) => (prefix === "/" ? path === "/" : path.startsWith(prefix))).map((prefix) => prefix.length));
 const best = Math.max(0, ...links.map((link) => matchLength(link.match)));
@@ -17,7 +16,7 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
 ---
 
 <header class="site-header">
-  <div class:list={[home ? "home-width" : "wrap", "bar"]}>
+  <div class="wrap bar">
     <a class="brand" href="/" aria-label={`${PRODUCT_NAME} overview`}>
       <picture class="wordmark">
         <source media="(prefers-color-scheme: dark)" srcset="/brand/wordmark-dark.svg" />

@@ -101,7 +101,8 @@ p {
   --sidebar: 240px;
 }
 
-.wrap {
+.wrap,
+.home-width {
   width: 100%;
   max-width: 1360px;
   margin-inline: auto;
@@ -181,13 +182,6 @@ p {
   from {
     clip-path: inset(0 100% 0 0);
   }
-}
-
-.home-width {
-  width: 100%;
-  max-width: 1200px;
-  margin-inline: auto;
-  padding-inline: var(--s-4);
 }
 
 @media (min-width: 1024px) {
