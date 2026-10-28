@@ -40,6 +40,19 @@ describe("the webcam frames on the landing page", () => {
     expect(drawn(FRAMES.loose)).toContain(nozzles[1]);
   });
 
+  it("draw the print as it started from the first frame's own points, with the corner flat and nothing marked", () => {
+    const flat = drawn(FRAMES.printing);
+    for (const point of points(body("_bed"))) expect(flat).toContain(point);
+    for (const point of ["214 372", "232 332", "400 332", "214 377", "428 377"]) {
+      expect(drawn(FRAMES.lifting)).toContain(point);
+      expect(flat).toContain(point);
+    }
+    expect(flat).toContain("428 372");
+    expect(flat).not.toContain("438 324");
+    expect(flat).toContain("262 326");
+    expect(FRAMES.printing.items.filter((item) => item.seen)).toEqual([]);
+  });
+
   it("are line drawings that fill a shape only with the page's background, to hide what is behind the shape", () => {
     for (const frame of Object.values(FRAMES)) for (const item of frame.items) expect(["none", "bg"]).toContain(item.fill);
   });

@@ -1,9 +1,9 @@
 /**
  * The wordmark sequence right after the hero, measured in vh of scroll like the landing story. The
- * one-line description and Get started leave while the wordmark comes down, then one step each for
- * H, A and L. In a step the current letter keeps full strength, every other letter fades, and the
- * word slides left so the current letter lands where H stood. A brief under the word says what the
- * part means.
+ * first scroll drops the demo's opening away, the one-line description and Get started leave, and
+ * the wordmark comes down, then one step each for H, A and L. In a step the current letter keeps
+ * full strength and every other letter fades, while the whole word stays where it is inside the
+ * column. A brief under the current letter says what the part means.
  */
 
 import { NEVER, type Span } from "./script";
@@ -20,8 +20,7 @@ export const PARTS: readonly Part[] = [
   {
     letter: "H",
     label: "[hardware]",
-    brief:
-      "The hardware is any device OpenHAL controls, such as a Klipper 3D printer, a bench power supply or an Arduino board. Each device has a device file that lists the device's channels and the limits a person confirmed.",
+    brief: "The hardware is any device OpenHAL controls. Each device has a device file that lists the device's channels and the limits a person confirmed.",
   },
   {
     letter: "A",
@@ -39,16 +38,20 @@ export const PARTS: readonly Part[] = [
 
 /** Story time for the description and Get started to leave and the wordmark to come down. */
 export const AWAY = 24;
+/** Story time the demo's opening takes to drop away on the first scroll, the small diagram and the step count's row together. */
+export const DROP = 12;
+/** How far the demo's opening drops while the opening fades, as a share of the screen's height. */
+export const FALL = 0.22;
 /** Story time the description, Get started and the labels take to leave. */
 export const LEAVES = 10;
 /** Story time at which the wordmark starts to come down, once the description has nearly left. */
 export const FALLS = 8;
 /** Story time each letter holds the stage. */
-export const STEP = 40;
+export const STEP = 24;
 /** Story time the other letters take to fade when H starts. */
-export const DIM = 8;
-/** Story time the word takes to slide from one letter to the next. */
-export const SLIDE = 12;
+export const DIM = 6;
+/** Story time one letter takes to hand full strength to the next. */
+export const SWAP = 6;
 /** The opacity a letter fades to while another letter is current. */
 export const LOW = 0.14;
 
@@ -60,8 +63,8 @@ export function stepSpan(index: number): Span {
   return [from, index === PARTS.length - 1 ? NEVER : from + STEP];
 }
 
-/** When each brief shows, once its letter is current and the word has stopped. */
-export const briefSpan = (index: number): Span => [stepSpan(index)[0] + (index === 0 ? DIM : SLIDE), stepSpan(index)[1]];
+/** When each brief shows, once its letter has full strength. */
+export const briefSpan = (index: number): Span => [stepSpan(index)[0] + (index === 0 ? DIM : SWAP), stepSpan(index)[1]];
 
 /**
  * When a letter of the word fades and comes back, as the windows story.css reads. A letter fades
@@ -79,8 +82,8 @@ const never: [number, number] = [NEVER, 1];
 export function fading(word: string, at: number): Fading {
   const index = PARTS.findIndex((part) => word.lastIndexOf(part.letter) === at);
   if (index < 0) return { dims: [AWAY, DIM], rises: never, fades: never };
-  const rises: [number, number] = index === 0 ? never : [stepSpan(index)[0], SLIDE];
-  const fades: [number, number] = index === PARTS.length - 1 ? never : [stepSpan(index + 1)[0], SLIDE];
+  const rises: [number, number] = index === 0 ? never : [stepSpan(index)[0], SWAP];
+  const fades: [number, number] = index === PARTS.length - 1 ? never : [stepSpan(index + 1)[0], SWAP];
   return { dims: index === 0 ? fades : [AWAY, DIM], rises, fades: index === 0 ? never : fades };
 }
 

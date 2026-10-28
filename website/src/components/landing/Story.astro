@@ -35,7 +35,7 @@ const camera = `(() => {
   story.setAttribute("data-camera", "");
   const stage = story.querySelector(".story-stage");
   const room = story.querySelector(".story-probe").offsetHeight - (document.querySelector(".site-header")?.offsetHeight ?? 0);
-  if (stage.offsetHeight > room) story.removeAttribute("data-camera");
+  if (stage.offsetHeight > room + 1) story.removeAttribute("data-camera");
 })();`;
 ---
 

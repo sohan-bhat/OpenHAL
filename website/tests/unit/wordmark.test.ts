@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PRODUCT_NAME } from "../../src/config/brand";
-import { AWAY, DIM, FALLS, LEAVES, LOW, PARTS, SLIDE, STEP, TOTAL, briefSpan, fading, stepSpan, strength } from "../../src/lib/story/wordmark";
+import { AWAY, DIM, DROP, FALL, FALLS, LEAVES, LOW, PARTS, STEP, SWAP, TOTAL, briefSpan, fading, stepSpan, strength } from "../../src/lib/story/wordmark";
 
 const letters = [...PRODUCT_NAME];
 const current = (t: number) => letters.map((_, at) => strength(fading(PRODUCT_NAME, at), t));
@@ -17,14 +17,18 @@ describe("the wordmark sequence", () => {
   it("lets the description leave before the word comes down, and the word land before H lights", () => {
     expect(FALLS).toBeLessThan(LEAVES);
     expect(LEAVES).toBeLessThan(AWAY);
+    expect(DROP).toBeLessThan(AWAY);
+    expect(FALL).toBeGreaterThan(0);
+    expect(FALL).toBeLessThan(0.5);
     expect(stepSpan(0)[0]).toBe(AWAY);
+    expect(STEP).toBeLessThanOrEqual(24);
   });
 
   it("keeps every letter at full strength at rest and lights one letter in each step", () => {
     expect(current(0)).toEqual(letters.map(() => 1));
     for (const [index, part] of PARTS.entries()) {
       const [from] = stepSpan(index);
-      const settled = from + (index === 0 ? DIM : SLIDE) + 1;
+      const settled = from + (index === 0 ? DIM : SWAP) + 1;
       const shown = current(settled);
       for (const [at, letter] of letters.entries()) {
         expect(shown[at], `${part.letter} step, letter ${letter}`).toBeCloseTo(at === PRODUCT_NAME.lastIndexOf(part.letter) ? 1 : LOW, 5);
@@ -32,7 +36,7 @@ describe("the wordmark sequence", () => {
     }
   });
 
-  it("hands strength from one letter to the next while the word slides, and plays backwards the same way", () => {
+  it("hands strength from one letter to the next, and plays backwards the same way", () => {
     for (let t = 0; t <= TOTAL; t += 0.25) {
       const shown = current(t);
       for (const value of shown) {
@@ -41,13 +45,13 @@ describe("the wordmark sequence", () => {
       }
       expect(current(t)).toEqual(shown);
     }
-    const middle = stepSpan(1)[0] + SLIDE / 2;
+    const middle = stepSpan(1)[0] + SWAP / 2;
     const shown = current(middle);
     expect(shown[PRODUCT_NAME.lastIndexOf("H")]).toBeCloseTo((1 + LOW) / 2, 5);
     expect(shown[PRODUCT_NAME.lastIndexOf("A")]).toBeCloseTo((1 + LOW) / 2, 5);
   });
 
-  it("shows each brief once its letter is current and the word has stopped, one at a time", () => {
+  it("shows each brief once its letter has full strength, one at a time", () => {
     for (const [index] of PARTS.entries()) {
       const [start, end] = briefSpan(index);
       const [from, to] = stepSpan(index);

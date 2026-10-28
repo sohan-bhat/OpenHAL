@@ -1,9 +1,10 @@
 /**
  * The webcam's two demo frames as SVG paths, on the same 640 by 480 grid, with the same points and
  * in the same drawing order as openhal/demo/frames.py, which draws the JPEGs the simulated webcam
- * serves. The site draws them as lines that follow the light and dark themes, and shows the part
- * below y 120, where both frames draw. A shape that hides what is behind it is filled with the
- * page's own background. The parts marked seen are what the agent notices in the frame.
+ * serves, and the print as it started, drawn from the first frame's points before the agent reads
+ * the webcam. The site draws them as lines that follow the light and dark themes, and shows the
+ * part below y 120, where every frame draws. A shape that hides what is behind it is filled with
+ * the page's own background. The parts marked seen are what the agent notices in the frame.
  */
 
 type Point = [number, number];
@@ -47,6 +48,17 @@ function strand(center: Point, radius: number, turns: number, start: number): Po
   });
 }
 
+/**
+ * The print as it started, before the agent first reads the webcam. It is the first-layer frame
+ * with the corner still flat on the bed, where the frame's own outline of the gap meets the bed.
+ */
+function printing(): Frame {
+  const [frontLeft, frontRight, frontRightLow]: Point[] = [[214, 372], [428, 372], [428, 377]];
+  return {
+    items: [...bed, shape([frontLeft, frontRight, frontRightLow, [214, 377]]), shape([[232, 332], [400, 332], frontRight, frontLeft]), ...toolhead([262, 326])],
+  };
+}
+
 function lifting(): Frame {
   const [frontLeft, bend, bendLow, corner, cornerLow]: Point[] = [[214, 372], [340, 372], [340, 377], [438, 324], [438, 331]];
   return {
@@ -81,4 +93,4 @@ function loose(): Frame {
   };
 }
 
-export const FRAMES = { lifting: lifting(), loose: loose() };
+export const FRAMES = { printing: printing(), lifting: lifting(), loose: loose() };

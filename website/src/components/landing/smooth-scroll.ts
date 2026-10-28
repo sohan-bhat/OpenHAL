@@ -13,10 +13,12 @@ function scrollsItself(target: EventTarget | null, delta: number): boolean {
 
 /**
  * Eases wheel and trackpad scrolling of the page. Each wheel event moves a target by the person's
- * own distance, and the page glides toward it with the native scroll. Anything else that scrolls
- * the page, the scrollbar, the keyboard, an anchor link, find in page or a touch, takes over at
- * once, since the glide stops the moment the page is not where it left it. Returns a function that
- * turns it off.
+ * own distance, and the page glides toward it with the native scroll. The glide keeps its own
+ * position in fractions of a pixel, since the browser rounds the scroll to whole device pixels, so
+ * the glide always reaches its target and a scroll up past the top lands at 0. Anything else that
+ * scrolls the page, the scrollbar, the keyboard, an anchor link, find in page or a touch, takes
+ * over at once, since the glide stops the moment the page is not where it left it. Returns a
+ * function that turns it off.
  */
 export function smooth(): () => void {
   let target = window.scrollY;
@@ -27,17 +29,16 @@ export function smooth(): () => void {
   const limit = () => document.documentElement.scrollHeight - window.innerHeight;
 
   const step = (now: number) => {
-    if (Math.abs(window.scrollY - placed) > 1) {
+    if (Math.abs(window.scrollY - placed) > 1.5) {
       frame = 0;
       return;
     }
-    const dt = Math.min(0.05, (now - last) / 1000 || 1 / 60);
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)) || 1 / 60;
     last = now;
     const next = placed + (target - placed) * (1 - Math.exp(-EASE * dt));
     placed = Math.abs(target - next) < 0.5 ? target : next;
     window.scrollTo({ top: placed, behavior: "instant" });
-    placed = window.scrollY;
-    frame = placed === target || Math.abs(target - placed) < 0.5 ? 0 : requestAnimationFrame(step);
+    frame = placed === target ? 0 : requestAnimationFrame(step);
   };
 
   const wheel = (event: WheelEvent) => {

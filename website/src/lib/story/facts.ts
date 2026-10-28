@@ -23,14 +23,22 @@ export interface Reading {
   name: string;
   word: boolean;
   at: Record<StepId, string>;
+  /** What the hub read while the nozzle cooled after the approved action, before the last reading, which is the ending's. */
+  cooling: string[];
+  /** Whether the reading is a target the approved action leaves stale, since the action's effects in the device file do not list the channel. */
+  stale: boolean;
 }
 
 export type Tone = "ok" | "confirm" | "blocked";
 
-/** The lifelines of the sequence diagram, left to right. */
-export type Lifeline = "owner" | "agent" | "hub" | "printer";
+/**
+ * The lifelines of the sequence diagram, left to right and evenly spaced, the owner's order of
+ * 2026-10-27. The owner sits between the agent and the hub, so the owner's own arrows never cross
+ * the agent's lifeline, and the agent's arrows pass over the owner's.
+ */
+export type Lifeline = "agent" | "owner" | "hub" | "printer";
 
-export const LIFELINES: readonly Lifeline[] = ["owner", "agent", "hub", "printer"];
+export const LIFELINES: readonly Lifeline[] = ["agent", "owner", "hub", "printer"];
 
 export interface Answer {
   text: string;
@@ -97,7 +105,7 @@ export interface DeviceFile {
   connect: Record<string, unknown>;
   read: Record<string, { unit?: string }>;
   write: Record<string, { unit?: string; min?: number; max?: number }>;
-  actions: Record<string, { confirm?: string } | null>;
+  actions: Record<string, { confirm?: string; effects?: string[] } | null>;
 }
 
 const NBSP = " ";
@@ -168,21 +176,30 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
   const act = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: String(params(exchange).action), value: "", note: note(exchange) });
   const read = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: `${params(exchange).device} ${params(exchange).channel}`, value: "", note: note(exchange) });
   const viewed = exchanges.filter((exchange) => field(exchange, "printer"));
+  const cooled = ((field(approve, "cooling") ?? []) as Array<Record<string, any>>).map((entry) => need(entry.printer as Record<string, any> | undefined, `printer view while ${IDS.approve} cools`));
   const viewAt = (id: StepId): Record<string, any> => {
     const own = told(id);
     if (own) return need(field(own, "printer"), `printer view after ${own.id}`);
     const next = PLACED.slice(PLACED.findIndex((item) => item.id === id))
       .map((item) => told(item.id))
       .find(Boolean);
-    return field(next ?? viewed[viewed.length - 1], "printer") ?? {};
+    return (next ? field(next, "printer") : cooled[cooled.length - 1]) ?? field(viewed[viewed.length - 1], "printer") ?? {};
   };
   const readingAt = (what: string, pick: (view: Record<string, any>) => string | undefined): Record<StepId, string> =>
     Object.fromEntries(PLACED.map((item) => [item.id, need(pick(viewAt(item.id)), `${what} for the story's ${item.id} step`)])) as Record<StepId, string>;
-  const quantity = (key: string) => (view: Record<string, any>) => (view[key] ? amount(view[key].value, view[key].unit) : undefined);
+  const quantity = (key: string) => (view: Record<string, any>) => (view[key] ? amount(Math.round(Number(view[key].value)), view[key].unit) : undefined);
+  const effects = new Set(file.actions[String(approve.result?.target ?? "").slice(String(approve.result?.target ?? "").indexOf(":") + 1)]?.effects ?? []);
+  const reading = (name: string, word: boolean, what: string, pick: (view: Record<string, any>) => string | undefined, channel?: string): Reading => ({
+    name,
+    word,
+    at: readingAt(what, pick),
+    cooling: cooled.slice(0, -1).map((view) => need(pick(view), `${what} while the nozzle cools`)),
+    stale: channel !== undefined && channel in file.write && !effects.has(channel),
+  });
   const readings: Reading[] = [
-    { name: "Nozzle", word: false, at: readingAt("the nozzle temperature", quantity("extruder_temp")) },
-    { name: "Bed target", word: false, at: readingAt("the bed target", quantity(bedChannel)) },
-    { name: "State", word: true, at: readingAt("the printer state", (view) => view.state) },
+    reading("Nozzle", false, "the nozzle temperature", quantity("extruder_temp"), "extruder_temp"),
+    reading("Bed target", false, "the bed target", quantity(bedChannel), bedChannel),
+    reading("State", true, "the printer state", (view) => view.state, "state"),
   ];
   const audit = need(record.audit as Record<string, any> | undefined, "audit log");
   const counted = need(audit.counts as Record<string, number> | undefined, "audit counts");
@@ -258,22 +275,22 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
   };
 }
 
-/** What the story says at each step, one sentence each, in the record's words. */
+/**
+ * What the story says at each step, the owner's nine captions from 2026-10-27, with every value
+ * from the record and the device file. Each caption reads on its own screen, in at most two
+ * sentences, and speaks to the person who owns the printer.
+ */
 export function storyLines(facts: StoryFacts): Record<StepId, string> {
-  const frame = facts.camera.channel;
-  const state = facts.printer.readings.find((reading) => reading.word)!.at.approve;
   return {
     intro: "An agent watches a 3D print through the OpenHAL hub.",
-    ask: `The ${facts.owner} starts a long print and asks an agent to watch the print.`,
-    look: `When the agent reads a ${frame} from the printer's webcam, the ${frame} shows that ${facts.bed.note}.`,
-    warm: nb(`Because a bed target of ${facts.bed.value} is inside the ${facts.owner}'s limit of ${facts.bed.max}, the hub forwards the agent's request to the printer.`),
-    hot: nb(
-      `Because a nozzle temperature of ${facts.nozzle.value} is above the ${facts.owner}'s limit of ${facts.nozzle.max} in ${facts.file}, the hub refuses the agent's request and returns ${facts.nozzle.refusal.name}.`,
-    ),
-    loose: `When the agent reads the webcam again later, the ${frame} shows that ${facts.pause.note}.`,
-    pause: `Because pausing needs no confirmation in ${facts.file}, the hub forwards the agent's ${facts.pause.target} request to the printer at once.`,
-    cancel: `Because ${facts.cancel.note}, the hub holds the agent's ${facts.cancel.target} request until a person approves or rejects the request.`,
-    approve: `When ${facts.approve.note}, the hub sends the ${facts.approve.target} to the printer and the printer's state changes to ${state}.`,
-    end: `Because every request passes through the hub, the audit log holds ${facts.audit.requests} requests, with ${facts.audit.refused} refused and ${facts.audit.confirmed} confirmed by a person.`,
+    ask: "You start a long print and ask an agent to watch it.",
+    look: "The agent checks the webcam and sees a corner of the first layer lifting.",
+    warm: nb(`The agent raises the bed to ${facts.bed.value}. Your limit is ${facts.bed.max}, so the hub lets the request through.`),
+    hot: nb(`The agent also tries a nozzle temperature of ${facts.nozzle.value} to help the print stick. Your limit is ${facts.nozzle.max}, so the hub refuses.`),
+    loose: "Later, the webcam shows the print has come loose.",
+    pause: "The agent pauses the print. Pausing is safe, so no one has to approve it.",
+    cancel: "Cancelling can't be undone, so the hub holds the request until you approve it.",
+    approve: `You approve, and the hub sends the ${facts.approve.target} to the printer.`,
+    end: `The audit log records all ${facts.audit.requests} requests, including the refusal and your approval.`,
   };
 }
