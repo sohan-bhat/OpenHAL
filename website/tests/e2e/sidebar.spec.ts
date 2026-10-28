@@ -292,7 +292,7 @@ test.describe("the sidebar", () => {
     if (browserName === "chromium") {
       await page.locator(".desktop-nav").getByRole("link", { name: "Device Library", exact: true }).click();
       await expect(page).toHaveURL(/\/library\/$/);
-      expect(await page.evaluate(() => document.documentElement.dataset.turn ?? null)).toBe("forward");
+      await expect.poll(() => page.evaluate(() => document.documentElement.dataset.turn ?? null)).toBe("forward");
       expect(await left(page, "main h1")).toBe(104);
     }
     await expect(page.locator(".desktop-nav [aria-current] .nav-pill")).toHaveCount(1);
