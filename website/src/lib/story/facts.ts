@@ -23,14 +23,22 @@ export interface Reading {
   name: string;
   word: boolean;
   at: Record<StepId, string>;
+  /** What the hub read while the nozzle cooled after the approved action, before the last reading, which is the ending's. */
+  cooling: string[];
+  /** Whether the reading is a target the approved action leaves stale, since the action's effects in the device file do not list the channel. */
+  stale: boolean;
 }
 
 export type Tone = "ok" | "confirm" | "blocked";
 
-/** The lifelines of the sequence diagram, left to right. */
-export type Lifeline = "owner" | "agent" | "hub" | "printer";
+/**
+ * The lifelines of the sequence diagram, left to right and evenly spaced, the owner's order of
+ * 2026-10-27. The owner sits between the agent and the hub, so the owner's own arrows never cross
+ * the agent's lifeline, and the agent's arrows pass over the owner's.
+ */
+export type Lifeline = "agent" | "owner" | "hub" | "printer";
 
-export const LIFELINES: readonly Lifeline[] = ["owner", "agent", "hub", "printer"];
+export const LIFELINES: readonly Lifeline[] = ["agent", "owner", "hub", "printer"];
 
 export interface Answer {
   text: string;
@@ -97,7 +105,7 @@ export interface DeviceFile {
   connect: Record<string, unknown>;
   read: Record<string, { unit?: string }>;
   write: Record<string, { unit?: string; min?: number; max?: number }>;
-  actions: Record<string, { confirm?: string } | null>;
+  actions: Record<string, { confirm?: string; effects?: string[] } | null>;
 }
 
 const NBSP = " ";
@@ -168,21 +176,30 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
   const act = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: String(params(exchange).action), value: "", note: note(exchange) });
   const read = (exchange: Exchange): Ask => ({ method: exchange.request.method, target: `${params(exchange).device} ${params(exchange).channel}`, value: "", note: note(exchange) });
   const viewed = exchanges.filter((exchange) => field(exchange, "printer"));
+  const cooled = ((field(approve, "cooling") ?? []) as Array<Record<string, any>>).map((entry) => need(entry.printer as Record<string, any> | undefined, `printer view while ${IDS.approve} cools`));
   const viewAt = (id: StepId): Record<string, any> => {
     const own = told(id);
     if (own) return need(field(own, "printer"), `printer view after ${own.id}`);
     const next = PLACED.slice(PLACED.findIndex((item) => item.id === id))
       .map((item) => told(item.id))
       .find(Boolean);
-    return field(next ?? viewed[viewed.length - 1], "printer") ?? {};
+    return (next ? field(next, "printer") : cooled[cooled.length - 1]) ?? field(viewed[viewed.length - 1], "printer") ?? {};
   };
   const readingAt = (what: string, pick: (view: Record<string, any>) => string | undefined): Record<StepId, string> =>
     Object.fromEntries(PLACED.map((item) => [item.id, need(pick(viewAt(item.id)), `${what} for the story's ${item.id} step`)])) as Record<StepId, string>;
-  const quantity = (key: string) => (view: Record<string, any>) => (view[key] ? amount(view[key].value, view[key].unit) : undefined);
+  const quantity = (key: string) => (view: Record<string, any>) => (view[key] ? amount(Math.round(Number(view[key].value)), view[key].unit) : undefined);
+  const effects = new Set(file.actions[String(approve.result?.target ?? "").slice(String(approve.result?.target ?? "").indexOf(":") + 1)]?.effects ?? []);
+  const reading = (name: string, word: boolean, what: string, pick: (view: Record<string, any>) => string | undefined, channel?: string): Reading => ({
+    name,
+    word,
+    at: readingAt(what, pick),
+    cooling: cooled.slice(0, -1).map((view) => need(pick(view), `${what} while the nozzle cools`)),
+    stale: channel !== undefined && channel in file.write && !effects.has(channel),
+  });
   const readings: Reading[] = [
-    { name: "Nozzle", word: false, at: readingAt("the nozzle temperature", quantity("extruder_temp")) },
-    { name: "Bed target", word: false, at: readingAt("the bed target", quantity(bedChannel)) },
-    { name: "State", word: true, at: readingAt("the printer state", (view) => view.state) },
+    reading("Nozzle", false, "the nozzle temperature", quantity("extruder_temp"), "extruder_temp"),
+    reading("Bed target", false, "the bed target", quantity(bedChannel), bedChannel),
+    reading("State", true, "the printer state", (view) => view.state, "state"),
   ];
   const audit = need(record.audit as Record<string, any> | undefined, "audit log");
   const counted = need(audit.counts as Record<string, number> | undefined, "audit counts");
