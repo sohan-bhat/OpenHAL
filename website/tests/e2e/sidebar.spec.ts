@@ -303,6 +303,19 @@ test.describe("the sidebar", () => {
     await expect(page.getByRole("dialog", { name: "Search the site" })).toBeHidden();
   });
 
+  test("keeps the button in view to the end of a long page while the sidebar is hidden", async ({ page }) => {
+    await hideFirst(page);
+    await page.goto(SPEC);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(200);
+    const button = (await page.locator(".side-toggle").boundingBox())!;
+    expect(button.y).toBe(76);
+    await peek(page);
+    const nav = (await page.locator("#side-nav").boundingBox())!;
+    expect(nav.y).toBe(124);
+    expect(nav.y + nav.height).toBeLessThanOrEqual(900);
+  });
+
   test("keeps the outline's links working while the sidebar is hidden", async ({ page }) => {
     await hideFirst(page);
     await page.goto(SPEC);

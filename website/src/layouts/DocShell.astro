@@ -443,6 +443,12 @@ const sidebarScript = (await transformWithEsbuild(sidebarSource, "sidebar.js", {
 
     [data-sidebar="hidden"] .sidebar {
       width: 32px;
+      height: 32px;
+    }
+
+    [data-sidebar="hidden"] .side-desktop {
+      flex: none;
+      max-height: calc(100dvh - 140px);
     }
 
     [data-sidebar="hidden"] .side-edge {
