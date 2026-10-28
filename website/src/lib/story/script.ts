@@ -12,12 +12,7 @@ export interface Step {
   length: number;
 }
 
-/**
- * Screens tall enough that the stage may play. The height is under the shortest stage of any
- * layout with the header, so the story never turns off while a phone hides its toolbars.
- * Story.astro and the runtime still check the fit, the whole stage first and then the short one.
- */
-export const CAMERA = "(prefers-reduced-motion: no-preference) and (min-height: 600px)";
+export { CAMERA } from "./camera";
 
 export const STEPS: readonly Step[] = [
   { id: "intro", length: 20 },
