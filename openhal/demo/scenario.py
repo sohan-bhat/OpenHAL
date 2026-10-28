@@ -160,7 +160,7 @@ class SimulatedPrinter(MoonrakerDriver):
 
 
 class StoryClock:
-    """The simulated printer's clock. Time on the clock passes only when the story moves the clock on.
+    """The simulated printer's clock in the recorded run. Time passes only when the story moves the clock on.
 
     The hub reads the printer on its own schedule, so a printer that followed the wall clock would
     report a different temperature on every run. On this clock every run reports the same one.
@@ -177,15 +177,15 @@ class StoryClock:
 
 
 class PrinterSim(MoonrakerSim):
-    """The Moonraker simulator on a host named printer, as printer.hal.yaml expects, on a story clock.
+    """The Moonraker simulator on a host named printer, as printer.hal.yaml expects.
 
     `commands` keeps every command the printer received, G-code as its text and the print
-    controls by their Moonraker method.
+    controls by their Moonraker method. The heaters follow `clock`, the wall clock unless the
+    caller passes another.
     """
 
-    def __init__(self) -> None:
-        self.clock = StoryClock()
-        super().__init__(KlipperState(self.clock))
+    def __init__(self, clock: Callable[[], float] = time.monotonic) -> None:
+        super().__init__(KlipperState(clock))
         self.commands: list[str] = []
 
     async def call(self, method: str, params: dict[str, Any] | None = None) -> Any:
@@ -198,9 +198,13 @@ class PrinterSim(MoonrakerSim):
         return result
 
 
-def printing() -> PrinterSim:
-    """A simulated Klipper printer a few minutes into a long print, heaters at their targets."""
-    sim = PrinterSim()
+def printing(clock: Callable[[], float] = time.monotonic) -> PrinterSim:
+    """A simulated Klipper printer a few minutes into a long print, heaters at their targets.
+
+    The recorded run passes a StoryClock. The Inspector's test hub keeps the wall clock, so its
+    heaters warm and cool on their own.
+    """
+    sim = PrinterSim(clock)
     objects = sim.state.objects
     objects["print_stats"].update({"state": "printing", "filename": "enclosure-lid.gcode", "print_duration": 312.0})
     objects["virtual_sdcard"].update({"progress": 0.04, "is_active": True})
@@ -382,7 +386,8 @@ async def run() -> dict[str, Any]:
     """Run the scenario once and return the record, with the hub's real request id and audit times."""
     files = {device: example(FOLDER, name) for device, name in FILES.items()}
     printer, camera = load(files[DEVICE]), load(files[CAMERA])
-    sim = printing()
+    clock = StoryClock()
+    sim = printing(clock)
     webcam = Webcam({name: frame(name) for name in FRAMES}, FRAMES[0])
     with tempfile.TemporaryDirectory(prefix="openhal-demo-") as home:
         hub = Hub(HubConfig(home=Path(home)), in_memory=True)
@@ -403,7 +408,7 @@ async def run() -> dict[str, Any]:
                 ) as http,
             ):
                 devices = [await _described(agent, device) for device in FILES]
-                story = Story(agent, person, Panel(http), sim, webcam, connected)
+                story = Story(agent, person, Panel(http), sim, webcam, connected, clock)
                 exchanges = await story.run()
                 audit = await _audit(person, exchanges, story.requested_by)
         finally:
@@ -459,7 +464,14 @@ class Story:
     """
 
     def __init__(
-        self, agent: Peer, person: Peer, panel: Panel, sim: PrinterSim, webcam: Webcam, connected: float
+        self,
+        agent: Peer,
+        person: Peer,
+        panel: Panel,
+        sim: PrinterSim,
+        webcam: Webcam,
+        connected: float,
+        clock: StoryClock,
     ) -> None:
         self.agent = agent
         self.person = person
@@ -467,6 +479,7 @@ class Story:
         self.sim = sim
         self.webcam = webcam
         self.connected = connected
+        self.clock = clock
         self.requested_by = ""
         self.cooled_for = 0.0
 
@@ -536,7 +549,7 @@ class Story:
         so the panel shows what the hub read at that moment.
         """
         nozzle = (await self.panel.read())["extruder_temp"]["value"]
-        self.sim.clock.advance(seconds - self.cooled_for)
+        self.clock.advance(seconds - self.cooled_for)
         self.cooled_for = seconds
         await self.agent.reading(
             DEVICE, "extruder_temp", lambda value: isinstance(value, int | float) and value < nozzle

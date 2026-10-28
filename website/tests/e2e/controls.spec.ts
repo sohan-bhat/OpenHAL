@@ -125,11 +125,10 @@ test.describe("documentation chrome", () => {
     await expect(page.locator("h1")).toHaveText("3.3 Messages");
   });
 
-  test("the version switcher lists each dated version and opens it", async ({ page }) => {
+  test("the version picker lists each dated version and opens it", async ({ page }) => {
     await page.goto("/spec/2026-10-24/basic/messages/");
-    const switcher = page.locator(".switcher").first();
-    await switcher.locator("summary").click();
-    const version = switcher.getByRole("link").first();
+    await page.locator(".version-button").click();
+    const version = page.locator("#version-menu").getByRole("link").first();
     await expect(version).toHaveAttribute("href", /^\/spec\/\d{4}-\d{2}-\d{2}\//);
     await version.click();
     await expect(page).toHaveURL(/\/spec\/\d{4}-\d{2}-\d{2}\//);
@@ -139,7 +138,7 @@ test.describe("documentation chrome", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/docs/quickstart/");
     await page.locator(".side-menu summary").first().click();
-    await page.locator(".side-menu").first().getByRole("link", { name: "FAQ" }).click();
+    await page.locator("#side-nav").getByRole("link", { name: "FAQ" }).click();
     await expect(page).toHaveURL(/\/docs\/faq\/$/);
     await page.goto("/docs/quickstart/");
     await page.locator(".outline-mobile summary").click();

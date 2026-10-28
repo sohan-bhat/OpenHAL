@@ -73,10 +73,11 @@ test.describe("overview", () => {
 });
 
 test.describe("specification", () => {
-  test("/spec/ goes to the latest dated version, which has a version switcher", async ({ page }) => {
+  test("/spec/ goes to the latest dated version, which the header's version picker shows", async ({ page }) => {
     await page.goto("/spec/");
     await expect(page).toHaveURL(/\/spec\/latest\/$/);
-    await expect(page.locator(".switcher summary:visible").first()).toHaveText(/^\s*Version\s+\d{4}-\d{2}-\d{2}\s+latest\s*$/);
+    await expect(page.locator(".version-button")).toHaveAccessibleName(/^Specification version \d{4}-\d{2}-\d{2}$/);
+    await expect(page.locator("#version-menu a[aria-current]")).toContainText("latest");
     await page.getByRole("link", { name: "Changelog" }).first().click();
     await expect(page.locator("h1")).toHaveText(/^\d+ Changelog$/);
   });

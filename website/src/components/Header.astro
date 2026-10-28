@@ -4,11 +4,11 @@ import { PRODUCT_NAME } from "../config/brand";
 import { navLinks } from "../config/site";
 import { wordmarkWidth } from "../lib/brand-mark";
 import SearchDialog from "./SearchDialog.astro";
+import VersionSwitcher from "./VersionSwitcher.astro";
 
 const published = (await getCollection("blog")).some((post) => !post.data.draft);
 const links = navLinks(published);
 const path = Astro.url.pathname;
-const home = path === "/";
 const matchLength = (match: string[]) =>
   Math.max(0, ...match.filter((prefix) => (prefix === "/" ? path === "/" : path.startsWith(prefix))).map((prefix) => prefix.length));
 const best = Math.max(0, ...links.map((link) => matchLength(link.match)));
@@ -17,7 +17,7 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
 ---
 
 <header class="site-header">
-  <div class:list={[home ? "home-width" : "wrap", "bar"]}>
+  <div class="wrap bar">
     <a class="brand" href="/" aria-label={`${PRODUCT_NAME} overview`}>
       <picture class="wordmark">
         <source media="(prefers-color-scheme: dark)" srcset="/brand/wordmark-dark.svg" />
@@ -51,13 +51,14 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
                 data-match={link.external ? undefined : relative(link.match)}
               >
                 {current(link.match) && <span class="nav-pill" aria-hidden="true" />}
-                <span class="nav-text">{link.label}</span>
+                {link.label}
               </a>
             </li>
           ))
         }
       </ul>
     </nav>
+    <VersionSwitcher />
     <details class="mobile-nav">
       <summary>Menu</summary>
       <nav aria-label="Main">
@@ -72,13 +73,14 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
             ))
           }
         </ul>
+        <VersionSwitcher menu />
       </nav>
     </details>
   </div>
 </header>
 <SearchDialog />
 
-<style>
+<style is:global>
   .site-header {
     view-transition-name: site-header;
     position: sticky;
@@ -88,14 +90,14 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
     border-bottom: var(--rule);
   }
 
-  .bar {
+  .site-header .bar {
     display: flex;
     align-items: center;
     gap: var(--s-2);
     min-height: 60px;
   }
 
-  .brand {
+  .site-header .brand {
     display: inline-flex;
     align-items: center;
     gap: var(--s-2);
@@ -104,12 +106,12 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
     flex: none;
   }
 
-  .wordmark,
-  .wordmark img {
+  .site-header .wordmark,
+  .site-header .wordmark img {
     display: block;
   }
 
-  ul {
+  .site-header ul {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -126,7 +128,8 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
     gap: var(--s-1);
   }
 
-  .desktop-nav a {
+  .desktop-nav a,
+  .version-button {
     display: block;
     padding: var(--s-2) 10px;
     border-radius: var(--radius);
@@ -137,7 +140,9 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
     white-space: nowrap;
   }
 
-  .desktop-nav a:hover {
+  .desktop-nav a:hover,
+  .version-button:hover,
+  .version-button[aria-expanded="true"] {
     color: var(--text);
     background: var(--surface);
   }
@@ -213,11 +218,11 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
   }
 
   .key-apple,
-  :global(html.apple) .key-other {
+  html.apple .key-other {
     display: none;
   }
 
-  :global(html.apple) .key-apple {
+  html.apple .key-apple {
     display: inline;
   }
 
@@ -274,8 +279,62 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
     font-weight: 700;
   }
 
+  .version-button {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 0;
+    font-family: inherit;
+    line-height: inherit;
+    cursor: pointer;
+  }
+
+  #version-menu {
+    inset: 56px max(var(--s-4), 50vw - 664px) auto auto;
+    margin: 0;
+    padding: var(--s-1);
+    color: var(--text);
+    background: var(--bg);
+    border: var(--rule);
+    border-radius: var(--radius);
+  }
+
+  .versions a {
+    display: flex;
+    gap: var(--s-3);
+    align-items: baseline;
+    padding: 6px var(--s-3);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: var(--t-small);
+    font-weight: 400;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .versions a:hover {
+    background: var(--surface);
+  }
+
+  .versions a[aria-current] {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+    font-weight: 400;
+  }
+
+  .mobile-nav .versions {
+    margin-top: var(--s-2);
+    padding-top: var(--s-2);
+    border-top: var(--rule);
+  }
+
+  .mobile-nav .legend {
+    padding: 0 var(--s-3) var(--s-1);
+  }
+
   @media (min-width: 1180px) {
-    .bar {
+    .site-header .bar {
       gap: var(--s-4);
     }
 
@@ -283,7 +342,8 @@ const relative = (match: string[]) => match.map((prefix) => prefix.replace(/^\//
       display: block;
     }
 
-    .search-field {
+    .search-field,
+    .version-button {
       display: inline-flex;
     }
 
