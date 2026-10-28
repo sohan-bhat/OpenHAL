@@ -130,7 +130,7 @@ test.describe("the landing story", () => {
     await expect(page.locator(".story-list > li")).toHaveCount(COUNTED.length);
     await page.locator(".story-list").scrollIntoViewIfNeeded();
     await expect(page.locator(".story-scene")).toBeVisible();
-    expect(await shown(page, ".story-scene .answer")).toEqual(answers());
+    await expect.poll(() => shown(page, ".story-scene .answer")).toEqual(answers());
   });
 
   test("opens with its title, how many steps follow and four empty lifelines", async ({ page }) => {
