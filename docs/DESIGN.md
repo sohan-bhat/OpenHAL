@@ -66,7 +66,7 @@ The story. Someone starts a long print and asks an agent to keep an eye on it.
 3. Because a hotter nozzle might help the corner stick, the agent requests a nozzle temperature of 300 °C, and the kernel refuses the request with `LIMIT_EXCEEDED` because the nozzle limit is 260 °C.
 4. Later the camera shows the print has come loose. The agent pauses the print, which is done straight away.
 5. The agent asks to cancel. Cancelling can't be undone, so `cancel` is `confirm-each-time`, and the hub queues the request and answers pending.
-6. The owner approves the cancel within the hub's five minute window. The kernel checks every limit again and grants the cancel, the driver sends the cancel to the printer, and the printer's state reads cancelled. The hub's audit log then holds every request, the refusal and the person's approval.
+6. The owner approves the cancel within the hub's five minute window. The kernel checks every limit again and grants the cancel, the driver sends the cancel to the printer, and the printer's state reads cancelled. The printer's CANCEL_PRINT macro turns the heaters off, so the record then follows the nozzle as the nozzle cools for a minute. The hub's audit log then holds every request, the refusal and the person's approval.
 
 Tests check that the file is still what the hub answers and that every surface matches it. Demo values are labeled as demo data where shown.
 
@@ -136,7 +136,9 @@ Scale, mobile then desktop. 13/13 legend, 15/15 secondary, 16/17 body with line 
 ## Layout
 
 - Documentation-first. Left sidebar navigation, a centered reading column, and an "On this page" outline on the right at 1280 px and wider.
-- One left edge. Every documentation template starts its content at the documentation column, 344 px from the left at 1440 px and 304 px from 1024 to 1360 px. The home page is the one exception, a centered column at most 1200 px wide, the owner's request on 2026-10-26. The home page's header and footer follow the home column, and documentation templates keep their header at the sidebar's edge.
+- One left edge. The header and footer use the same 1360 px container on every page, so nothing in them moves when a person changes pages, and the home page's sections use that container too. Every documentation template starts its content at the documentation column, 344 px from the left at 1440 px and 304 px from 1024 to 1360 px. While the sidebar is hidden the column moves left by the sidebar's 240 px, to 104 px and 64 px, and the blog and the 404 page follow it. The owner asked for one header on every page on 2026-10-27.
+- The sidebar can hide. A small button at the top of every documentation sidebar, named "Hide the sidebar" or "Show the sidebar", hides the sidebar and stays where it is to bring the sidebar back. While the sidebar is hidden, a mouse at the window's left edge below the header slides the sidebar in over the content on the page background with a 1 px `--border` rule and no shadow, and the sidebar leaves 300 ms after the pointer does. Pressing the button while the sidebar shows this way keeps the sidebar open. The browser remembers the choice, and below 1024 px the sidebar stays a menu. The owner asked for this on 2026-10-27.
+- The specification version picker sits at the top right of the header after GitHub on every page. A small button shows the version with a chevron and opens a menu with one version to a line, the version's status in muted words and the current version in the nav's blue highlight, with rows rounded inside the menu's padding. On a spec page the picker shows that page's version and links to the same section in each other version, and on every other page the picker shows the latest version. Below 1180 px the versions sit inside the Menu. The owner asked for this on 2026-10-27.
 - Breakpoints 390, 768, 1024, 1280. At 390 the sidebar becomes a menu and the outline moves above the content.
 - Spacing scale 4, 8, 12, 16, 24, 32, 48, 64.
 - Borders are 1 px `--border`, radius at most 6 px, no shadows.
@@ -182,7 +184,7 @@ The dashboard is the OpenHAL Inspector, a protocol inspector.
 
 ## Motion
 
-Seven patterns, nothing else.
+Eight patterns, nothing else.
 1. The flowing connectors in the flow diagram.
 2. A message appearing in the trace or log. A 120 ms fade, 4 px rise.
 3. A status change. A 120 ms cross-fade.
@@ -190,6 +192,7 @@ Seven patterns, nothing else.
 5. The nav highlight. The blue highlight behind the current top-level item slides to the item a person clicks, as one shape moving between positions, about 240 ms with an ease out. It never bounces or stretches.
 6. The page transition. A page change moves the content sideways in the direction of travel through the nav, with the header and its highlight held still. Going to an item further right, the old content slides 24 px left and fades as the new content wipes in from the right with a clip-path, and going left mirrors it. About 260 ms in all. It is not a fade, a rise or a scale, so it stays distinct from the owner's other sites. Built on cross-document view transitions, so a browser without them changes pages instantly. The owner asked for patterns 5 and 6 on 2026-10-26.
 7. The wordmark sequence. Scroll brings the hero's wordmark down into a pinned stage, then each step fades every letter but the current one of H, A and L to a low opacity and slides the whole word left so the current letter lands in the same place, using transforms and opacity only. Nothing moves on its own, and scrolling back plays the sequence in reverse. The owner asked for this on 2026-10-27.
+8. The sidebar. Hiding the documentation sidebar slides the sidebar out to the left while the content and the outline move 240 px left in one 200 ms ease out, and the reading column keeps its width. Showing the sidebar plays the same motion back. While the sidebar is hidden, the sidebar slides in over the content from the window's left edge and back out after the pointer leaves. Only transforms move, a page change never replays the slide because the stored choice applies before the first paint, and with reduced motion the sidebar shows and hides without sliding. The owner asked for this on 2026-10-27.
 
 Smooth scrolling on the landing page. Wheel and trackpad scrolling eases on the home page so the story glides, the owner's request on 2026-10-26. It is on by default, a small "Smooth scrolling" switch near the story turns it off and remembers the choice per browser, and it is off under `prefers-reduced-motion`. It only eases the native scroll. The scrollbar, keyboard, anchor links, find in page and touch scrolling behave as usual, there is no snapping, and the speed is the person's own.
 
