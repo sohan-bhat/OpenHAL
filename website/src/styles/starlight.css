@@ -61,12 +61,12 @@
   --sl-shadow-lg: none;
 }
 
-:root[data-theme="light"] ::backdrop {
-  --sl-color-backdrop-overlay: rgb(21 24 28 / 0.32);
+:root[data-theme="light"] {
+  --oh-overlay: rgb(21 24 28 / 0.32);
 }
 
-:root[data-theme="dark"] ::backdrop {
-  --sl-color-backdrop-overlay: rgb(0 0 0 / 0.56);
+:root[data-theme="dark"] {
+  --oh-overlay: rgb(0 0 0 / 0.56);
 }
 
 @media (min-width: 50rem) {
@@ -108,82 +108,6 @@
 .site-title,
 .sl-skip-link {
   box-shadow: none;
-}
-
-site-search button[data-open-modal] {
-  min-height: 38px;
-  border-radius: var(--radius);
-  color: var(--text-2);
-  font-size: var(--t-small);
-}
-
-@media (min-width: 50rem) {
-  site-search button[data-open-modal] {
-    border-color: var(--oh-control-border);
-    box-shadow: var(--oh-control-ring) var(--oh-control-border);
-    background: var(--bg);
-    max-width: 260px;
-  }
-
-  site-search button[data-open-modal]:hover {
-    border-color: var(--accent);
-    box-shadow: var(--oh-control-ring) var(--accent);
-    color: var(--text);
-  }
-}
-
-@media (min-width: 1024px) and (max-width: 1139.98px) {
-  site-search button[data-open-modal] {
-    justify-content: center;
-    width: 40px;
-    padding: 0;
-  }
-
-  site-search button[data-open-modal] > :is(span, kbd) {
-    display: none;
-  }
-}
-
-site-search button[data-open-modal] > svg {
-  color: var(--accent);
-}
-
-site-search button > kbd {
-  border: 1px solid var(--border);
-  box-shadow: var(--oh-control-ring) var(--border);
-  background: var(--bg);
-  color: var(--text-2);
-  font-size: var(--t-legend);
-  font-weight: 700;
-}
-
-site-search button kbd {
-  font-family: var(--font-text);
-}
-
-site-search dialog {
-  border-radius: var(--radius);
-  border-color: var(--border);
-  background: var(--bg);
-  transform-origin: 50% 0;
-}
-
-site-search dialog::backdrop {
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-
-site-search dialog[data-opening],
-site-search dialog[data-opening]::backdrop {
-  opacity: 0;
-}
-
-site-search dialog[data-closing] {
-  pointer-events: none;
-}
-
-#starlight__search :is(.pagefind-ui__search-input, .pagefind-ui__button) {
-  box-shadow: var(--oh-control-ring) var(--pagefind-ui-border);
 }
 
 #starlight__sidebar[data-closing] {

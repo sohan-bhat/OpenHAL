@@ -52,6 +52,7 @@ export default defineConfig({
       credits: false,
       lastUpdated: false,
       pagination: true,
+      pagefind: false,
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 3 },
       customCss: ["./src/styles/global.css", "./src/styles/code.css", "./src/styles/starlight.css"],
       components: {
@@ -65,6 +66,7 @@ export default defineConfig({
         ThemeSelect: override("ThemeSelect"),
         PageTitle: override("PageTitle"),
         Footer: override("Footer"),
+        Search: override("Search"),
       },
     }),
     classScopedStyles,
