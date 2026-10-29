@@ -1,6 +1,6 @@
 ---
 import MessageTrace from "../components/MessageTrace.astro";
-import Base from "../layouts/Base.astro";
+import DocShell from "../layouts/DocShell.astro";
 import { registryByName } from "../lib/protocol";
 import { latestSpecHref } from "../lib/spec";
 
@@ -11,9 +11,8 @@ const entries = [
 ];
 ---
 
-<Base title="Page not found" description="There is no page at this address." search={false}>
-  <div class="wrap column page">
-    <h1>Page not found</h1>
+<DocShell title="Page not found" description="There is no page at this address." search={false} pager={false} wide>
+  <div class="page">
     <div data-not-found>
       <MessageTrace entries={entries} label="What happened" />
     </div>
@@ -23,7 +22,7 @@ const entries = [
       <li><a href="/docs/">Documentation</a></li>
     </ul>
   </div>
-</Base>
+</DocShell>
 
 <script>
   const payload = document.querySelector("[data-not-found] .payload");

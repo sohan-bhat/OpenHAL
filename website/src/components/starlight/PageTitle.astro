@@ -1,0 +1,32 @@
+---
+const { title, number } = Astro.locals.starlightRoute.entry.data as { title: string; number?: string };
+---
+
+<h1 id="_top">
+  {
+    number && (
+      <Fragment>
+        <span class="secno">{number}</span>{" "}
+      </Fragment>
+    )
+  }{title}
+</h1>
+
+<style>
+  h1 {
+    margin-top: var(--s-4);
+    color: var(--text);
+    font-size: var(--t-h1);
+    font-weight: 700;
+    line-height: var(--lh-heading);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .secno {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--text-2);
+    margin-right: 0.3em;
+  }
+</style>

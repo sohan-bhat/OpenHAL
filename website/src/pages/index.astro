@@ -1,18 +1,18 @@
 ---
 import { getEntry, render } from "astro:content";
-import { transformWithEsbuild } from "vite";
 import heroSpellSource from "../components/landing/hero-spell.js?raw";
 import openingSource from "../components/landing/opening.ts?raw";
 import Story from "../components/landing/Story.astro";
 import Wordmark from "../components/landing/Wordmark.astro";
 import { PRODUCT_LONG_NAME, PRODUCT_NAME } from "../config/brand";
-import Base from "../layouts/Base.astro";
+import DocShell from "../layouts/DocShell.astro";
 import { driverCounts, driverGroups, statusWord } from "../lib/catalog";
+import { inlineScript } from "../lib/inline-script";
 import { HOME_TITLE } from "../lib/pages";
 import { latestSpecHref } from "../lib/spec";
 import "../styles/prose.css";
 
-const heroSpell = (await transformWithEsbuild(heroSpellSource, "hero-spell.js", { minify: true })).code.trim();
+const heroSpell = await inlineScript(heroSpellSource, "hero-spell.js");
 const firstFrame = `
 const hero = document.querySelector("[data-sequence]");
 const runway = hero && hero.querySelector(".hero-runway");
@@ -21,11 +21,11 @@ if (hero && runway && opening) {
   let top = 0;
   for (let node = hero; node; node = node.offsetParent) top += node.offsetTop;
   const total = Number(hero.dataset.total) || 1;
-  const start = top - (document.querySelector(".site-header")?.offsetHeight ?? 0);
+  const start = top - (document.querySelector("header.header")?.offsetHeight ?? 0);
   const y = window.scrollY;
   place(opening, Math.min(total, Math.max(0, ((y - start) * total) / Math.max(1, runway.offsetHeight))), y);
 }`;
-const openingScript = (await transformWithEsbuild(`${openingSource}\n${firstFrame}`, "opening.ts", { minify: true, format: "iife" })).code.trim();
+const openingScript = await inlineScript(`${openingSource}\n${firstFrame}`, "opening.ts", { iife: true });
 const quickstart = await getEntry("snippets", "quickstart");
 const { Content: Quickstart } = await render(quickstart!);
 const groups = driverGroups();
@@ -37,18 +37,20 @@ const points = [
 ];
 const after = "safe";
 const site = JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: PRODUCT_NAME, alternateName: PRODUCT_LONG_NAME, url: new URL("/", Astro.site).href });
+const head = [
+  { tag: "title" as const, content: `${PRODUCT_NAME}. ${HOME_TITLE}` },
+  { tag: "meta" as const, attrs: { property: "og:title", content: `${PRODUCT_NAME}. ${HOME_TITLE}` } },
+  { tag: "meta" as const, attrs: { name: "application-name", content: PRODUCT_NAME } },
+  { tag: "link" as const, attrs: { rel: "expect", href: `#${after}`, blocking: "render" } },
+  { tag: "script" as const, attrs: { type: "application/ld+json" }, content: site },
+];
 const more = [
   { href: latestSpecHref(), title: "Read the specification", text: "The specification defines every message, error and rule, and each version has a number such as v0.1." },
   { href: "/docs/", title: "Read the docs", text: "The docs explain how to run the hub, create device files and add drivers." },
 ];
 ---
 
-<Base title={`${PRODUCT_NAME}. ${HOME_TITLE}`} description={HOME_TITLE} bare>
-  <Fragment slot="head">
-    <meta name="application-name" content={PRODUCT_NAME} />
-    <link rel="expect" href={`#${after}`} blocking="render" />
-    <script type="application/ld+json" set:html={site} />
-  </Fragment>
+<DocShell title={PRODUCT_NAME} description={HOME_TITLE} home head={head}>
   <Wordmark spell={heroSpell} />
 
   <div class="home-width">
@@ -114,7 +116,7 @@ const more = [
       }
     </ul>
   </section>
-</Base>
+</DocShell>
 
 <script>
   import { scene } from "../components/landing/scene-runtime";

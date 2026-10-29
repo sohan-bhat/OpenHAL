@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { FIXED_ROUTES } from "./markdown/routes.mjs";
 import type { SideGroup, SideItem } from "./nav-types";
 import type { SpecPage } from "./spec";
-import { REPO_ROOT } from "./spec-meta.mjs";
+import { REPO_ROOT, versionLabel } from "./spec-meta.mjs";
 
 export function specSummaries(): SideItem[] {
   return FIXED_ROUTES.filter((item) => item.group === "Specification" && existsSync(join(REPO_ROOT, item.repo))).map((item) => ({
@@ -36,7 +36,7 @@ export function specSidebar(pages: SpecPage[], hrefFor: (page: SpecPage) => stri
   }
   const summaries = specSummaries();
   return [
-    { name: "", items },
+    { name: pages.length ? `Specification ${versionLabel(pages[0].version)}` : "", items },
     ...(summaries.length ? [{ name: "All versions", items: summaries }] : []),
     { name: "Try the protocol", items: [{ title: "Playground", href: "/spec/playground/" }] },
   ];

@@ -8,7 +8,7 @@ const read = (path: string) => readFileSync(fileURLToPath(new URL(path, import.m
 const css = read("../../src/styles/fonts.css");
 const tokens = read("../../../design/tokens.css");
 const global = read("../../src/styles/global.css");
-const base = read("../../src/layouts/Base.astro");
+const head = read("../../src/components/starlight/Head.astro");
 
 function codepoints(range: string): Set<number> {
   const out = new Set<number>();
@@ -59,10 +59,10 @@ describe("the website's fonts", () => {
   });
 
   it("preload the subsets, the mono face only where a page asks for it", () => {
-    const preloads = [...base.matchAll(/<link rel="preload"[^>]*as="font"[^>]*>/g)].map((match) => match[0]);
+    const preloads = [...head.matchAll(/<link rel="preload"[^>]*as="font"[^>]*>/g)].map((match) => match[0]);
     expect(preloads).toHaveLength(2);
-    expect(base).toContain('from "../fonts/atkinson-hyperlegible-next-normal.woff2?url"');
-    expect(base).toContain('from "../fonts/atkinson-hyperlegible-mono-normal.woff2?url"');
-    expect(base).toContain("{mono && <link rel=\"preload\" href={atkinsonMono}");
+    expect(head).toContain('from "../../fonts/atkinson-hyperlegible-next-normal.woff2?url"');
+    expect(head).toContain('from "../../fonts/atkinson-hyperlegible-mono-normal.woff2?url"');
+    expect(head).toContain("{data.mono !== false && <link rel=\"preload\" href={atkinsonMono}");
   });
 });

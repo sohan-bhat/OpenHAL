@@ -34,7 +34,7 @@ const camera = `(() => {
   if (!matchMedia(${JSON.stringify(CAMERA)}).matches) return;
   story.setAttribute("data-camera", "");
   const stage = story.querySelector(".story-stage");
-  const room = story.querySelector(".story-probe").offsetHeight - (document.querySelector(".site-header")?.offsetHeight ?? 0);
+  const room = story.querySelector(".story-probe").offsetHeight - (document.querySelector("header.header")?.offsetHeight ?? 0);
   if (stage.offsetHeight > room + 1) story.removeAttribute("data-camera");
 })();`;
 ---

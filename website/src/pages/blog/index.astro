@@ -1,6 +1,6 @@
 ---
 import { getCollection } from "astro:content";
-import Base from "../../layouts/Base.astro";
+import DocShell from "../../layouts/DocShell.astro";
 import { sourceUrl } from "../../config/site";
 import { showDrafts } from "../../lib/drafts";
 
@@ -10,9 +10,8 @@ const posts = (await getCollection("blog"))
 const day = (date: Date) => date.toISOString().slice(0, 10);
 ---
 
-<Base title="Blog" description="Posts from the people building OpenHAL.">
-  <div class="wrap column page">
-    <h1>Blog</h1>
+<DocShell title="Blog" description="Posts from the people building OpenHAL." pager={false} wide>
+  <div class="page">
     {
       posts.length ? (
         <ol class="posts">
@@ -34,7 +33,7 @@ const day = (date: Date) => date.toISOString().slice(0, 10);
       )
     }
   </div>
-</Base>
+</DocShell>
 
 <style>
   .page {

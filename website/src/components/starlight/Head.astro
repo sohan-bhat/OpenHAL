@@ -1,0 +1,91 @@
+---
+import Default from "@astrojs/starlight/components/Head.astro";
+import atkinsonMono from "../../fonts/atkinson-hyperlegible-mono-normal.woff2?url";
+import atkinson from "../../fonts/atkinson-hyperlegible-next-normal.woff2?url";
+import pageTurnSource from "../../layouts/page-turn.js?raw";
+import { PRODUCT_NAME } from "../../config/brand";
+import { inlineScript } from "../../lib/inline-script";
+import { ogPath } from "../../lib/pages";
+
+const { entry } = Astro.locals.starlightRoute;
+const data = entry.data as { title: string; mono?: boolean };
+const image = new URL(ogPath(Astro.url.pathname), Astro.site);
+const away = "[download], [target='_blank'], [rel~='external'], a[href^='#'], a[href*='/pagefind/'], a[href*='/captures/'], a[href*='/og/']";
+const pageTurn = await inlineScript(pageTurnSource, "page-turn.js");
+const speculation = JSON.stringify({
+  prerender: [{ source: "document", where: { and: [{ href_matches: "/*" }, { not: { selector_matches: `${away}, a[href*='/spec/playground/']` } }] }, eagerness: "moderate" }],
+  prefetch: [{ source: "document", where: { and: [{ href_matches: "/*" }, { not: { selector_matches: away } }] }, eagerness: "moderate" }],
+});
+---
+
+<Default />
+<script is:inline set:html={pageTurn} />
+<link rel="preload" href={atkinson} as="font" type="font/woff2" crossorigin />
+{data.mono !== false && <link rel="preload" href={atkinsonMono} as="font" type="font/woff2" crossorigin />}
+<script type="speculationrules" is:inline set:html={speculation} />
+<meta name="theme-color" content="#fcfcfd" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0d0f12" media="(prefers-color-scheme: dark)" />
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<meta property="og:image" content={image} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={`${data.title}. ${PRODUCT_NAME}`} />
+<script>
+  import { prefetchOnIntent } from "../../lib/prefetch-intent";
+
+  if (!HTMLScriptElement.supports?.("speculationrules")) prefetchOnIntent();
+
+  function commandsOf(figure: HTMLElement, text: string): string {
+    if (figure.dataset.language !== "sh" || !/^\$ /m.test(text)) return text;
+    return text
+      .split("\n")
+      .filter((line) => line.startsWith("$ "))
+      .map((line) => line.slice(2))
+      .join("\n");
+  }
+
+  for (const figure of document.querySelectorAll<HTMLElement>("figure.code-block")) {
+    const code = figure.querySelector("pre");
+    if (!code || !navigator.clipboard) continue;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "copy-button";
+    button.textContent = "Copy";
+    button.setAttribute("aria-label", "Copy code");
+    button.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(commandsOf(figure, code.innerText.replace(/\n$/, "")));
+      button.textContent = "Copied";
+      window.setTimeout(() => (button.textContent = "Copy"), 1500);
+    });
+    figure.append(button);
+  }
+
+  function tableName(wrap: HTMLElement): string {
+    const figure = wrap.closest("figure[aria-label]")?.getAttribute("aria-label");
+    if (figure?.trim()) return figure.trim();
+    const table = wrap.querySelector("table");
+    const named = table?.getAttribute("aria-label") ?? table?.querySelector("caption")?.textContent;
+    if (named?.trim()) return named.trim();
+    let node: Element | null = wrap.previousElementSibling;
+    while (node && !/^H[1-6]$/.test(node.tagName)) node = node.previousElementSibling;
+    return node?.textContent?.trim() ? `${node.textContent.trim()} table` : "Table";
+  }
+
+  const scrolling = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      const wrap = entry.target as HTMLElement;
+      if (wrap.scrollWidth > wrap.clientWidth + 1) {
+        wrap.tabIndex = 0;
+        wrap.setAttribute("role", "region");
+        wrap.setAttribute("aria-label", tableName(wrap));
+      } else {
+        wrap.removeAttribute("tabindex");
+        wrap.removeAttribute("role");
+        wrap.removeAttribute("aria-label");
+      }
+    }
+  });
+  for (const wrap of document.querySelectorAll<HTMLElement>(".table-wrap, .diagram-scroll")) scrolling.observe(wrap);
+</script>
