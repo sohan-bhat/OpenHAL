@@ -165,6 +165,7 @@ site-search dialog {
   border-radius: var(--radius);
   border-color: var(--border);
   background: var(--bg);
+  transform-origin: 50% 0;
 }
 
 site-search dialog::backdrop {
