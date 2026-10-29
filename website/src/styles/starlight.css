@@ -169,8 +169,26 @@ site-search dialog::backdrop {
   backdrop-filter: none;
 }
 
+site-search dialog[data-opening],
+site-search dialog[data-opening]::backdrop {
+  opacity: 0;
+}
+
+site-search dialog[data-closing] {
+  pointer-events: none;
+}
+
 #starlight__search {
   --pagefind-ui-border-width: var(--oh-control-line);
+}
+
+#starlight__sidebar[data-closing] {
+  display: block;
+  pointer-events: none;
+}
+
+details[data-closing]::details-content {
+  content-visibility: visible;
 }
 
 :is(.header, .mobile-preferences) label:has(> select) {
@@ -360,8 +378,12 @@ mobile-starlight-toc .toggle {
   border-width: var(--oh-control-line);
 }
 
+:is(.sidebar-content, mobile-starlight-toc) .caret {
+  transition: transform 200ms var(--ease);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .sidebar-content .caret {
+  :is(.sidebar-content, mobile-starlight-toc) .caret {
     transition: none;
   }
 }

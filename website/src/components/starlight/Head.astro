@@ -52,12 +52,14 @@ const speculation = JSON.stringify({
     const button = document.createElement("button");
     button.type = "button";
     button.className = "copy-button";
-    button.textContent = "Copy";
     button.setAttribute("aria-label", "Copy code");
+    for (const word of ["Copy", "Copied"]) button.append(Object.assign(document.createElement("span"), { textContent: word }));
+    let timer = 0;
     button.addEventListener("click", async () => {
       await navigator.clipboard.writeText(commandsOf(figure, code.innerText.replace(/\n$/, "")));
-      button.textContent = "Copied";
-      window.setTimeout(() => (button.textContent = "Copy"), 1500);
+      button.toggleAttribute("data-copied", true);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => button.toggleAttribute("data-copied", false), 1500);
     });
     figure.append(button);
   }
