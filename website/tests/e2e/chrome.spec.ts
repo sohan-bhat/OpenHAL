@@ -261,6 +261,7 @@ test.describe("the phone menu", () => {
     await expect(page.locator("#starlight__sidebar")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.locator("#starlight__sidebar")).toBeHidden();
+    await expect(button).toBeFocused();
   });
 });
 
