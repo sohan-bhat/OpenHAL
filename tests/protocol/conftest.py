@@ -81,7 +81,7 @@ write:
   brightness: { unit: percent, min: 0, max: 100 }
 """
 
-VERSION = "2026-10-24"
+VERSION = "0.1"
 
 
 @pytest.fixture

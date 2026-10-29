@@ -111,10 +111,11 @@ def test_phrase_flag_when_tty_is_off(isolated_env: Path, cli_hub: SyncHub) -> No
 def test_status_devices_read_write(cli_hub: SyncHub) -> None:
     code, out = run("status")
     assert code == 0, out
+    assert ", spec v0.1\n" in out
     assert "you are human:owner" in out
     assert "devices 2 of 2 connected" in out
     code, out = run("status", "--json")
-    assert json.loads(out)["devices"] == 2
+    assert (json.loads(out)["devices"], json.loads(out)["protocol_version"]) == (2, "0.1")
     code, out = run("devices")
     assert "desk-fan" in out
     assert "heater" in out

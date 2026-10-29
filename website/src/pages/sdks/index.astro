@@ -8,7 +8,7 @@ const snippet = await getEntry("snippets", "python-sdk");
 const { Content: Example } = await render(snippet!);
 ---
 
-<DocShell title="SDKs" description="Client libraries for the OpenHAL hub protocol." sidebar={sdkSidebar()} section="SDKs">
+<DocShell title="SDKs" description="Client libraries for the OpenHAL hub protocol." sidebar={sdkSidebar()}>
   <p>An SDK speaks the hub protocol for you, and the hub's safety kernel still checks every command.</p>
   <div class="table-wrap">
     <table>

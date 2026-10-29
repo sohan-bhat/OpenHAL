@@ -1,0 +1,32 @@
+---
+import SocialIcons from "@astrojs/starlight/components/SocialIcons.astro";
+import ThemeSelect from "@astrojs/starlight/components/ThemeSelect.astro";
+import VersionSelect from "./VersionSelect.astro";
+---
+
+<div class="mobile-preferences sl-flex">
+  <div class="social-icons">
+    <SocialIcons />
+  </div>
+  <VersionSelect />
+  <ThemeSelect />
+</div>
+
+<style>
+  .social-icons {
+    display: flex;
+    margin-inline-end: auto;
+    gap: var(--s-4);
+    align-items: center;
+    padding-block: var(--s-4);
+  }
+
+  .mobile-preferences {
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    column-gap: var(--s-4);
+    padding: var(--s-2) 0;
+    border-top: 1px solid var(--border);
+  }
+</style>

@@ -20,9 +20,11 @@ from typer.testing import CliRunner
 
 from openhal.cli.main import app
 from openhal.demo import e2e, plant, readme, scenario
+from openhal.protocol.version import LATEST, label
 from openhal.spec import load
 
 ROOT = Path(__file__).resolve().parents[2]
+SPEC = ROOT / "spec" / label(LATEST)
 README = ROOT / "README.md"
 DESCRIPTION = "An open-source protocol for AI agents to control hardware."
 COPY = [
@@ -42,8 +44,8 @@ REFERENCE_COPY = [
     ROOT / "spec" / "FIRMWARE-PROTOCOL.md",
     ROOT / "spec" / "GLOSSARY.md",
     ROOT / "spec" / "CONFORMANCE.md",
-    *(ROOT / "spec" / "2026-10-24" / name for name in ("index.md", "architecture.md", "safety.md", "security.md")),
-    *(ROOT / "spec" / "2026-10-24" / name for name in ("device-files.md", "drivers.md", "basic/messages.md")),
+    *(SPEC / name for name in ("index.md", "architecture.md", "safety.md", "security.md")),
+    *(SPEC / name for name in ("device-files.md", "drivers.md", "basic/messages.md")),
 ]
 """Reference pages. They keep protocol and command names such as hal/write and openhal write, the
 device file's `write` section and the product name driver writer, and say command or change

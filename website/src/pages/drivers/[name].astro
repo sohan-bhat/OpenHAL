@@ -6,14 +6,14 @@ import { DEFAULT_BRANCH, REPOSITORY_URL } from "../../config/site";
 import { driversSidebar } from "../../lib/drivers-nav";
 
 export async function getStaticPaths() {
-  const docs = await getCollection("docs");
+  const docs = await getCollection("repo");
   return drivers().map((driver) => ({
     params: { name: driver.name },
     props: { driver, entry: docs.find((entry) => entry.id === `docs/drivers/${driver.name}.md`) ?? null },
   }));
 }
 
-const { driver, entry } = Astro.props as { driver: Driver; entry: Awaited<ReturnType<typeof getCollection<"docs">>>[number] | null };
+const { driver, entry } = Astro.props as { driver: Driver; entry: Awaited<ReturnType<typeof getCollection<"repo">>>[number] | null };
 const rendered = entry ? await render(entry) : null;
 const Content = rendered?.Content;
 const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
@@ -35,7 +35,6 @@ const rows: Array<[string, string]> = [
   repo={entry ? entry.id : undefined}
   headings={rendered?.headings ?? []}
   sidebar={driversSidebar()}
-  section="Drivers"
 >
   <p slot="after-title" class="statuses">
     {

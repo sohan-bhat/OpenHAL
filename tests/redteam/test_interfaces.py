@@ -16,7 +16,7 @@ from openhal.client import AsyncClient, OpenHALError
 from openhal.hub.hub import Hub
 from openhal.kernel import Action, agent, human
 from openhal.mcp import TOOL_NAMES, Tools
-from tests.protocol.conftest import Connect
+from tests.protocol.conftest import VERSION, Connect
 from tests.redteam.conftest import CliHub, Rest, Tokens, done_by_clients, run_cli, value, writes
 
 ABOVE = {"device": "desk-fan", "channel": "fan_speed", "value": 150, "unit": "%"}
@@ -150,7 +150,7 @@ async def test_protocol_refused_header_does_not_fall_back(transport: Connect, hu
     async with transport("ohal_not-a-real-token") as rpc:
         response = await rpc.request(
             "hal/initialize",
-            {"protocolVersion": "2026-10-24", "clientInfo": {"name": "x", "version": "1"}, "token": tokens.human},
+            {"protocolVersion": VERSION, "clientInfo": {"name": "x", "version": "1"}, "token": tokens.human},
         )
         assert response["error"]["data"]["name"] == "UNAUTHORIZED"
         error = await rpc.error("hal/write", OK30)

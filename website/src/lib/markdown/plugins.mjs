@@ -3,7 +3,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import GithubSlugger from "github-slugger";
 import { SKIP, visit } from "unist-util-visit";
 import { indentOf, languageOf, splitLines, tokenize } from "../highlight.mjs";
-import { REPO_ROOT, glossaryHref, numberPages, readVersions, specFiles, termAnchor } from "../spec-meta.mjs";
+import { REPO_ROOT, glossaryHref, numberPages, readVersions, specDir, specFiles, termAnchor, versionOfFolder } from "../spec-meta.mjs";
 import { fromHtml } from "hast-util-from-html";
 import { scenarioTraceHtml } from "../scenario-data.mjs";
 import { linkFor } from "./routes.mjs";
@@ -153,9 +153,9 @@ export function errorRegistry(root = REPO_ROOT) {
   const names = new Map();
   const blocked = new Set();
   if (latest) {
-    const schema = join(root, "spec", latest, "schema.json");
+    const schema = join(specDir(latest, root), "schema.json");
     if (existsSync(schema)) for (const entry of JSON.parse(readFileSync(schema, "utf8")).errors ?? []) names.set(entry.name, entry.code);
-    const safety = join(root, "spec", latest, "safety.md");
+    const safety = join(specDir(latest, root), "safety.md");
     if (existsSync(safety)) {
       for (const row of readFileSync(safety, "utf8").matchAll(/^\|\s*\d+\s*\|(.*)\|\s*$/gm)) {
         const last = row[1].split("|").pop() ?? "";
@@ -258,9 +258,10 @@ function repoPathOf(file) {
 }
 
 export function specSectionNumber(repoPath, root = REPO_ROOT) {
-  const match = /^spec\/(\d{4}-\d{2}-\d{2})\/(.+\.md)$/.exec(repoPath);
-  if (!match) return null;
-  return numberPages(specFiles(match[1], root)).get(match[2])?.number ?? null;
+  const match = /^spec\/([^/]+)\/(.+\.md)$/.exec(repoPath);
+  const version = match && versionOfFolder(match[1]);
+  if (!version) return null;
+  return numberPages(specFiles(version, root)).get(match[2])?.number ?? null;
 }
 
 export function rehypeSpecSections() {

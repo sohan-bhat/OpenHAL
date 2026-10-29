@@ -2,7 +2,7 @@
 
 ## Is OpenHAL a standard?
 
-No, OpenHAL is an open protocol with a dated specification, and anyone may implement a hub, a client or a driver against the specification.
+No, OpenHAL is an open protocol with a versioned specification, now at v0.1, and anyone may implement a hub, a client or a driver against the specification.
 
 ## Is OpenHAL a safety system?
 

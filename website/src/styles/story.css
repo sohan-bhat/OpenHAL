@@ -4,7 +4,7 @@
 }
 
 .story {
-  --pin: 61px;
+  --pin: var(--sl-nav-height, 61px);
 }
 
 .story-band {

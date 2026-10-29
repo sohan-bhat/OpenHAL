@@ -36,12 +36,11 @@ async function main(dist, rawBase) {
   const indexed = files.filter((file) => readFileSync(file, "utf8").includes("data-pagefind-body"));
   if (indexed.length === 0) fail(`No page in ${dist} is marked for search. Run astro build first.`);
 
-  const wanted = `data-src="${base}${BUNDLE}"`;
-  const wrong = files.filter((file) => {
-    const html = readFileSync(file, "utf8");
-    return html.includes('id="site-search"') && !html.includes(wanted);
-  });
-  if (wrong.length) fail(`${wrong.length} pages load the search index from somewhere other than ${base}${BUNDLE}, such as ${urlOf(wrong[0])}.`);
+  const scripts = existsSync(join(dist, "_astro")) ? readdirSync(join(dist, "_astro")).filter((name) => name.endsWith(".js")).map((name) => join(dist, "_astro", name)) : [];
+  const loaders = scripts.flatMap((file) => [...readFileSync(file, "utf8").matchAll(/[`"]((?:\/[\w.-]+)*)\/pagefind\//g)].map((match) => ({ file, prefix: match[1] })));
+  if (loaders.length === 0) fail(`No script in ${dist} loads the search index. Run astro build first.`);
+  const wrong = loaders.filter((loader) => loader.prefix !== base);
+  if (wrong.length) fail(`${wrong.length} scripts load the search index from somewhere other than ${base}/pagefind/, such as ${relative(dist, wrong[0].file)}.`);
 
   const { index, errors: created } = await pagefind.createIndex({ forceLanguage: "en" });
   if (!index) fail(`Pagefind could not start. ${created.join(" ")}`);

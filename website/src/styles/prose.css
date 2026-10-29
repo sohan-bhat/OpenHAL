@@ -23,6 +23,10 @@
   font-size: var(--t-body);
 }
 
+.prose > :is(h2, h3, h4):first-child {
+  margin-top: var(--s-5);
+}
+
 .secno {
   font-family: var(--font-mono);
   font-weight: 600;
@@ -122,18 +126,13 @@
   margin-inline: 0;
 }
 
-.prose .diagram-dark {
+.prose .diagram-dark,
+:root[data-theme="dark"] .prose .diagram-light {
   display: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  .prose .diagram-light {
-    display: none;
-  }
-
-  .prose .diagram-dark {
-    display: block;
-  }
+:root[data-theme="dark"] .prose .diagram-dark {
+  display: block;
 }
 
 @media (max-width: 599px) {

@@ -10,7 +10,7 @@
       "id": 1,
       "method": "hal/initialize",
       "params": {
-        "protocolVersion": "2026-10-24",
+        "protocolVersion": "0.1",
         "clientInfo": {
           "name": "print-watcher",
           "version": "1.0.0"
@@ -29,7 +29,7 @@
       "jsonrpc": "2.0",
       "id": 1,
       "result": {
-        "protocolVersion": "2026-10-24",
+        "protocolVersion": "0.1",
         "hubInfo": {
           "name": "openhal",
           "version": "0.1.0.dev0"

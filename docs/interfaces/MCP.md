@@ -96,7 +96,7 @@ Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)
 
 | Tool | What it does |
 |---|---|
-| `hub_status` | Hub state, stop lock, connected devices, pending confirmations |
+| `hub_status` | Hub state, protocol version, stop lock, connected devices, pending confirmations |
 | `list_devices` | Every device with hazard class, writable and connected |
 | `describe_device` | Channels with units and limits, actions, interlocks, watchdog, safe state, latest values, notes |
 | `read` | Read one channel now. A camera frame comes back as an image |

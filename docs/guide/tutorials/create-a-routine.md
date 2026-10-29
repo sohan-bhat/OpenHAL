@@ -64,4 +64,4 @@ $ uv run openhal routine dry-run long-soak
 blocked above_max  Blocked. The duration limit is 30 s (max). Asked for 120 s.
 ```
 
-The file also caps the pump at 3 runs per hour, and a routine's runs count toward the cap. Over the protocol, `hal/routines/dryRun` returns the same decisions. The [routines section](../../../spec/2026-10-24/routines.md) of the specification defines triggers, steps and approvals for high hazard devices.
+The file also caps the pump at 3 runs per hour, and a routine's runs count toward the cap. Over the protocol, `hal/routines/dryRun` returns the same decisions. The [routines section](../../../spec/v0.1/routines.md) of the specification defines triggers, steps and approvals for high hazard devices.

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { FIXED_ROUTES } from "./markdown/routes.mjs";
 import type { SideGroup, SideItem } from "./nav-types";
 import type { SpecPage } from "./spec";
-import { REPO_ROOT } from "./spec-meta.mjs";
+import { REPO_ROOT, versionLabel } from "./spec-meta.mjs";
 
 export function specSummaries(): SideItem[] {
   return FIXED_ROUTES.filter((item) => item.group === "Specification" && existsSync(join(REPO_ROOT, item.repo))).map((item) => ({
@@ -32,11 +32,11 @@ export function specSidebar(pages: SpecPage[], hrefFor: (page: SpecPage) => stri
         items.push({ title: folderTitle(folder), number: top, depth: 1 });
       }
     }
-    items.push({ title: page.slug === "" && page.depth === 1 ? "Introduction" : page.title.replace(/,? version \d{4}-\d{2}-\d{2}$/, ""), href: hrefFor(page), number: page.number, depth: page.depth });
+    items.push({ title: page.slug === "" && page.depth === 1 ? "Introduction" : page.title.replace(/,? (?:version )?v?\d+\.\d+$/, ""), href: hrefFor(page), number: page.number, depth: page.depth });
   }
   const summaries = specSummaries();
   return [
-    { name: "", items },
+    { name: pages.length ? `Specification ${versionLabel(pages[0].version)}` : "", items },
     ...(summaries.length ? [{ name: "All versions", items: summaries }] : []),
     { name: "Try the protocol", items: [{ title: "Playground", href: "/spec/playground/" }] },
   ];

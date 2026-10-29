@@ -1,508 +1,77 @@
 ---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import type { MarkdownHeading } from "astro";
-import { transformWithEsbuild } from "vite";
 import "../styles/prose.css";
 import "../styles/trace.css";
+import { PRODUCT_NAME } from "../config/brand";
 import { editUrl } from "../config/site";
 import type { SideGroup } from "../lib/nav-types";
-import Base from "./Base.astro";
-import sidebarSource from "./sidebar.js?raw";
+import { starlightSidebar } from "../lib/starlight-nav";
+
+type HeadEntry = { tag: "title" | "base" | "link" | "style" | "meta" | "script" | "noscript" | "template"; attrs?: Record<string, string | boolean | undefined>; content?: string };
 
 interface Props {
   title: string;
   description?: string;
   repo?: string;
   headings?: MarkdownHeading[];
-  sidebar: SideGroup[];
-  section: string;
+  sidebar?: SideGroup[];
   canonical?: string;
   noindex?: boolean;
   wide?: boolean;
   pager?: boolean;
   number?: string;
   mono?: boolean;
+  search?: boolean;
+  type?: "website" | "article";
+  home?: boolean;
+  head?: HeadEntry[];
 }
 
-const { title, description, repo, headings = [], sidebar, section, canonical, noindex, wide = false, pager = true, number, mono = true } = Astro.props;
-const path = Astro.url.pathname;
-const flat = sidebar.flatMap((group) => group.items).filter((item) => item.href);
-const index = flat.findIndex((item) => item.href === path);
-const prev = pager && index > 0 ? flat[index - 1] : null;
-const next = pager && index !== -1 && index < flat.length - 1 ? flat[index + 1] : null;
-const toc = wide ? [] : headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
-const sidebarScript = (await transformWithEsbuild(sidebarSource, "sidebar.js", { minify: true, format: "esm" })).code.trim();
+const { title, description, repo, headings = [], sidebar = [], canonical, noindex = false, wide = false, pager = true, number, mono = true, search = true, type = "website", home = false, head = [] } = Astro.props;
+const own = new URL(Astro.url.pathname, Astro.site);
+const canonicalUrl = new URL(canonical ?? Astro.url.pathname, Astro.site);
+const indexed = search && !noindex && canonicalUrl.pathname === own.pathname;
+const extra: HeadEntry[] = [
+  { tag: "meta", attrs: { property: "og:type", content: type } },
+  ...(canonical ? [{ tag: "link" as const, attrs: { rel: "canonical", href: canonicalUrl.href } }] : []),
+  ...(noindex ? [{ tag: "meta" as const, attrs: { name: "robots", content: "noindex" } }] : []),
+  ...head,
+];
+const frontmatter = {
+  title,
+  description,
+  template: home ? ("splash" as const) : ("doc" as const),
+  ...(home ? { hero: { title: PRODUCT_NAME } } : {}),
+  editUrl: repo ? editUrl(repo) : (false as const),
+  tableOfContents: wide || home ? (false as const) : undefined,
+  pagefind: indexed,
+  number,
+  mono,
+  head: extra,
+  ...(pager ? {} : { prev: false as const, next: false as const }),
+};
 ---
 
-<Base title={title} description={description} canonical={canonical} noindex={noindex} mono={mono}>
-  <div class:list={["wrap", "shell", { wide }]}>
-    <aside class="sidebar" aria-label={section} data-pagefind-ignore="all">
-      <div class="side-sheet"></div>
-      <div class="side-edge"></div>
-      <button type="button" class="side-toggle" aria-controls="side-nav">
-        <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-          <path d="M3.75 2.75h8.5a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2h-8.5a2 2 0 0 1-2-2v-6.5a2 2 0 0 1 2-2ZM6.25 3v10"></path>
-        </svg>
-      </button>
-      <details class="side-menu">
-        <summary>{section} pages</summary>
-      </details>
-      <nav class="side-desktop" id="side-nav" aria-label={`${section} pages`}>
-        {
-          sidebar.map((group) => (
-            <div class="group">
-              {group.name && <p class="legend">{group.name}</p>}
-              <ul>
-                {group.items.map((item) => (
-                  <li class={item.depth === 2 ? "nested" : undefined}>
-                    {item.href ? (
-                      <a href={item.href} aria-current={item.href === path ? "page" : undefined}>
-                        {item.number ? (
-                          <Fragment>
-                            <span class="num mono">{item.number}</span>
-                            <span>{item.title}</span>
-                          </Fragment>
-                        ) : (
-                          item.title
-                        )}
-                      </a>
-                    ) : (
-                      <span class="side-label">
-                        {item.number ? (
-                          <Fragment>
-                            <span class="num mono">{item.number}</span>
-                            <span>{item.title}</span>
-                          </Fragment>
-                        ) : (
-                          item.title
-                        )}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))
-        }
-      </nav>
-    </aside>
-    <script type="module" is:inline set:html={sidebarScript} />
-
-    <article class="content">
-      <header class="page-head">
-        <slot name="before-title" />
-        <h1>{number && <span class="secno">{number}</span>}{number && " "}{title}</h1>
-        <slot name="after-title" />
-      </header>
-      {
-        toc.length > 1 && (
-          <details class="outline-mobile" data-pagefind-ignore="all">
-            <summary>On this page</summary>
-            <ul>
-              {toc.map((heading) => (
-                <li class={heading.depth === 3 ? "nested" : undefined}>
-                  <a href={`#${heading.slug}`}>{heading.text}</a>
-                </li>
-              ))}
-            </ul>
-          </details>
-        )
-      }
-      <div class={wide ? "data" : "prose"}>
+<StarlightPage frontmatter={frontmatter} sidebar={starlightSidebar(sidebar)} headings={headings} hasSidebar>
+  {
+    home ? (
+      <div class="not-content oh-content oh-home" id="_top">
         <slot />
       </div>
-      <footer class="page-foot" data-pagefind-ignore="all">
+    ) : (
+      <div class:list={["not-content", "oh-content", { "oh-wide": wide }]}>
         {
-          (prev || next) && (
-            <nav class="pager" aria-label="Previous and next">
-              {prev ? (
-                <a class="prev" href={prev.href}>
-                  <span class="legend">Previous</span>
-                  <span>{prev.title}</span>
-                </a>
-              ) : (
-                <span />
-              )}
-              {next && (
-                <a class="next" href={next.href}>
-                  <span class="legend">Next</span>
-                  <span>{next.title}</span>
-                </a>
-              )}
-            </nav>
+          Astro.slots.has("after-title") && (
+            <div class="oh-lede">
+              <slot name="after-title" />
+            </div>
           )
         }
-        {
-          repo && (
-            <p class="edit">
-              <a href={editUrl(repo)} rel="noopener">
-                Edit on GitHub
-              </a>
-              <span class="muted mono">{repo}</span>
-            </p>
-          )
-        }
-      </footer>
-    </article>
-
-    {
-      toc.length > 1 && (
-        <aside class="outline" aria-label="On this page" data-pagefind-ignore="all">
-          <p class="legend">On this page</p>
-          <ul>
-            {toc.map((heading) => (
-              <li class={heading.depth === 3 ? "nested" : undefined}>
-                <a href={`#${heading.slug}`}>{heading.text}</a>
-              </li>
-            ))}
-          </ul>
-        </aside>
-      )
-    }
-  </div>
-</Base>
-
-<style is:global>
-  .shell {
-    display: grid;
-    gap: var(--s-5);
-    padding-top: var(--s-5);
+        <div class={wide ? "data" : "prose"}>
+          <slot />
+        </div>
+      </div>
+    )
   }
-
-  .group ul,
-  .outline ul,
-  .outline-mobile ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .side-desktop,
-  .side-sheet,
-  .side-edge,
-  .side-toggle {
-    display: none;
-  }
-
-  .side-toggle {
-    place-items: center;
-    flex: none;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    color: var(--text-2);
-    background: none;
-    border: 1px solid color-mix(in srgb, var(--text-2) 60%, var(--border));
-    border-radius: var(--radius);
-    cursor: pointer;
-  }
-
-  .side-toggle:hover {
-    color: var(--text);
-    border-color: var(--accent);
-  }
-
-  .side-menu > summary {
-    display: flex;
-    align-items: center;
-    min-height: 44px;
-    padding: 0 var(--s-3);
-    border: var(--rule);
-    border-radius: var(--radius);
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  .side-menu[open] > summary {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-  }
-
-  @media (max-width: 1023px) {
-    .side-menu[open] + nav {
-      display: block;
-      padding: var(--s-2) var(--s-3) var(--s-3);
-      border: var(--rule);
-      border-top: 0;
-      border-radius: 0 0 var(--radius) var(--radius);
-    }
-  }
-
-  .group + .group {
-    margin-top: var(--s-4);
-  }
-
-  .group .legend {
-    margin-bottom: var(--s-1);
-    padding: 0 var(--s-2);
-    color: var(--text);
-  }
-
-  .pager .legend {
-    font-weight: 400;
-  }
-
-  .group a,
-  .side-label {
-    display: flex;
-    gap: var(--s-2);
-    padding: var(--s-1) var(--s-2);
-    font-size: var(--t-small);
-    line-height: 1.45;
-  }
-
-  .group a {
-    border-radius: 4px;
-    color: var(--text-2);
-    text-decoration: none;
-  }
-
-  .side-label {
-    color: var(--text);
-    font-weight: 700;
-  }
-
-  .group a:hover {
-    color: var(--text);
-    background: var(--surface);
-  }
-
-  .group a[aria-current="page"] {
-    color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
-    font-weight: 700;
-  }
-
-  .group li.nested a {
-    padding-left: var(--s-5);
-  }
-
-  .group .num {
-    flex: none;
-    min-width: 2.2em;
-    color: var(--text-2);
-  }
-
-  .shell .content,
-  .shell .data {
-    min-width: 0;
-  }
-
-  .shell .page-head {
-    padding-bottom: var(--s-4);
-    margin-bottom: var(--s-5);
-    border-bottom: var(--rule);
-  }
-
-  .outline-mobile {
-    margin-bottom: var(--s-5);
-    padding: var(--s-2) var(--s-3);
-    border: var(--rule);
-    border-radius: var(--radius);
-  }
-
-  .outline-mobile > summary {
-    font-weight: 700;
-    cursor: pointer;
-    min-height: 32px;
-    display: flex;
-    align-items: center;
-  }
-
-  .outline-mobile ul,
-  .outline ul {
-    display: grid;
-    gap: var(--s-1);
-  }
-
-  .outline-mobile ul {
-    padding: var(--s-2) 0;
-  }
-
-  .outline-mobile a,
-  .outline a {
-    color: var(--text-2);
-    text-decoration: none;
-    font-size: var(--t-small);
-  }
-
-  .outline-mobile a:hover,
-  .outline a:hover {
-    color: var(--accent);
-    text-decoration: underline;
-  }
-
-  .outline-mobile li.nested,
-  .outline li.nested {
-    padding-left: var(--s-3);
-  }
-
-  .outline {
-    display: none;
-  }
-
-  .outline .legend {
-    margin-bottom: var(--s-2);
-  }
-
-  .page-foot {
-    margin-top: var(--s-8);
-    max-width: var(--measure);
-    display: grid;
-    gap: var(--s-5);
-  }
-
-  .pager {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--s-3);
-  }
-
-  .pager a {
-    display: grid;
-    gap: 2px;
-    padding: var(--s-3) var(--s-4);
-    border: var(--rule);
-    border-radius: var(--radius);
-    text-decoration: none;
-    font-weight: 700;
-  }
-
-  .pager a:hover {
-    border-color: var(--accent);
-  }
-
-  .pager .next {
-    text-align: right;
-    grid-column: 2;
-  }
-
-  .page-foot .edit {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-1) var(--s-3);
-    font-size: var(--t-small);
-  }
-
-  @media (min-width: 1024px) {
-    .shell {
-      --edge: max(var(--s-4), 50vw - 664px);
-      grid-template-columns: var(--sidebar) minmax(0, 1fr);
-      gap: var(--s-7);
-      padding-top: var(--s-6);
-    }
-
-    .side-menu {
-      display: none;
-    }
-
-    .sidebar {
-      position: sticky;
-      top: 76px;
-      z-index: 15;
-      align-self: start;
-      display: flex;
-      flex-direction: column;
-      gap: var(--s-4);
-      max-height: calc(100dvh - 92px);
-    }
-
-    .side-desktop {
-      display: block;
-      width: var(--sidebar);
-      min-height: 0;
-      overflow-y: auto;
-    }
-
-    [data-sidebar] .side-toggle {
-      display: grid;
-    }
-
-    .side-sheet {
-      position: fixed;
-      inset: 0 auto 0 0;
-      z-index: -1;
-      width: calc(var(--edge) + var(--sidebar) + var(--s-5));
-      background: var(--bg);
-      border-right: var(--rule);
-      translate: -100%;
-    }
-
-    [data-sidebar="hidden"] .sidebar {
-      width: 32px;
-      height: 32px;
-    }
-
-    [data-sidebar="hidden"] .side-desktop {
-      flex: none;
-      max-height: calc(100dvh - 140px);
-    }
-
-    [data-sidebar="hidden"] .side-edge {
-      display: block;
-      position: fixed;
-      inset: 0 auto 0 0;
-      width: var(--s-4);
-    }
-
-    [data-sidebar="hidden"] .shell > :is(.content, .outline) {
-      translate: calc(0px - var(--sidebar));
-    }
-
-    [data-sidebar="hidden"]:not([data-peek]) .side-desktop {
-      translate: calc(-100% - var(--edge) - var(--s-5));
-      visibility: hidden;
-    }
-
-    [data-peek] .side-sheet {
-      display: block;
-      translate: none;
-    }
-
-    [data-peek][data-sidebar="shown"] .side-sheet {
-      border-color: transparent;
-    }
-  }
-
-  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
-    [data-moving] :is(.shell > .content, .outline, .side-desktop, .side-sheet) {
-      transition:
-        translate 200ms var(--ease),
-        visibility 0s 200ms,
-        display 200ms allow-discrete;
-    }
-
-    [data-moving][data-peek] .side-desktop,
-    [data-moving][data-sidebar="shown"] .side-desktop {
-      transition-delay: 0s;
-    }
-
-    @starting-style {
-      [data-peek] .side-sheet {
-        translate: -100%;
-      }
-    }
-  }
-
-  @media (min-width: 1280px) {
-    .shell {
-      grid-template-columns: var(--sidebar) minmax(0, 1fr) 220px;
-    }
-
-    .shell.wide {
-      grid-template-columns: var(--sidebar) minmax(0, 1fr);
-    }
-
-    .outline {
-      display: block;
-      position: sticky;
-      top: 76px;
-      align-self: start;
-      max-height: calc(100dvh - 92px);
-      overflow-y: auto;
-    }
-
-    .outline-mobile {
-      display: none;
-    }
-  }
-</style>
+</StarlightPage>

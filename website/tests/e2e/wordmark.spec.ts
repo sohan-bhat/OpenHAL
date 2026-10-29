@@ -8,7 +8,7 @@ async function heroTime(page: Page, t: number): Promise<void> {
     const runway = hero.querySelector<HTMLElement>(".hero-runway")!;
     let y = 0;
     for (let el: HTMLElement | null = hero; el; el = el.offsetParent as HTMLElement | null) y += el.offsetTop;
-    const pin = document.querySelector<HTMLElement>(".site-header")!.offsetHeight;
+    const pin = document.querySelector<HTMLElement>("header.header")!.offsetHeight;
     window.scrollTo({ top: y - pin + (time * runway.offsetHeight) / Number(hero.dataset.total), behavior: "instant" });
   }, t);
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -198,7 +198,7 @@ test.describe("the wordmark sequence", () => {
     await page.goto("/");
     const rest = await page.locator(".hero-letters").evaluate((el) => el.getBoundingClientRect().top);
     await heroTime(page, AWAY);
-    const header = await page.locator(".site-header").evaluate((el) => el.getBoundingClientRect().bottom);
+    const header = await page.locator("header.header").evaluate((el) => el.getBoundingClientRect().bottom);
     expect(Math.abs((await page.locator(".hero-stage").boundingBox())!.y - header)).toBeLessThan(1);
     expect(await page.locator(".hero-letters").evaluate((el) => el.getBoundingClientRect().top)).toBeGreaterThan(rest + 40);
     expect(await opacity(page, ".hero-pitch")).toBe(0);
@@ -314,7 +314,7 @@ test.describe("the wordmark sequence", () => {
   test("releases the stage after L and the print babysitter story follows", async ({ page }) => {
     await page.goto("/");
     await heroTime(page, TOTAL + 60);
-    const header = await page.locator(".site-header").evaluate((el) => el.getBoundingClientRect().bottom);
+    const header = await page.locator("header.header").evaluate((el) => el.getBoundingClientRect().bottom);
     expect((await page.locator(".hero-stage").boundingBox())!.y).toBeLessThan(header - 100);
     await expect(page.locator(".story-stage")).toBeInViewport();
   });

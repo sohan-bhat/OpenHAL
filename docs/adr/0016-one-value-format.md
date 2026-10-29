@@ -24,5 +24,5 @@ A test fails if any JSON example in README.md or docs/ carries a numeric value a
 
 ## Consequences
 
-- ADR 0015 and spec/2026-10-24 use the structured form in every example, and the generated schema changes with the models.
+- ADR 0015 and spec/v0.1 use the structured form in every example, and the generated schema changes with the models.
 - Clients that sent quantity strings must send the number and unit separately. Nothing is released yet, so no compatibility shim is kept.

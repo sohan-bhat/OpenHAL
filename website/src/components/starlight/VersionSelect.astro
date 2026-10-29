@@ -1,0 +1,33 @@
+---
+import Select from "@astrojs/starlight/components/Select.astro";
+import { specPages } from "../../lib/spec";
+import { readVersions } from "../../lib/spec-meta.mjs";
+import { versionRows } from "../../lib/versions";
+
+const { versions, latest } = readVersions();
+const { current, rows } = versionRows(Astro.url.pathname, versions, latest, await specPages());
+const options = rows.map((row) => ({ label: row.label, value: row.href, selected: row.current }));
+---
+
+{
+  current && (
+    <oh-version-select>
+      <Select icon="open-book" label="Specification version" width="4.5em" options={options} />
+    </oh-version-select>
+  )
+}
+
+<script>
+  class VersionSelect extends HTMLElement {
+    constructor() {
+      super();
+      const select = this.querySelector("select");
+      if (!select) return;
+      select.addEventListener("change", () => location.assign(select.value));
+      addEventListener("pageshow", (event) => {
+        if (event.persisted) select.selectedIndex = select.querySelector<HTMLOptionElement>("option[selected]")?.index ?? 0;
+      });
+    }
+  }
+  customElements.define("oh-version-select", VersionSelect);
+</script>

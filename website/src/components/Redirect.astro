@@ -1,0 +1,27 @@
+---
+import { PRODUCT_NAME } from "../config/brand";
+
+interface Props {
+  to: string;
+  title?: string;
+}
+
+const { to, title } = Astro.props;
+const canonical = new URL(to, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title ? `${title} | ${PRODUCT_NAME}` : PRODUCT_NAME}</title>
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href={canonical} />
+    <meta http-equiv="refresh" content={`0; url=${to}`} />
+  </head>
+  <body>
+    <p>This page moved to <a href={to} data-moved>{to}</a>.</p>
+    <script is:inline>location.replace(document.querySelector("a[data-moved]").href + location.hash);</script>
+  </body>
+</html>

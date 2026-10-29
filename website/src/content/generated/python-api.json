@@ -716,7 +716,7 @@
             {
               "name": "protocol_version",
               "type": "str | None",
-              "doc": "The hub protocol version, for example 2026-10-24."
+              "doc": "The hub protocol version, for example 0.1."
             },
             {
               "name": "conformance",

@@ -1,6 +1,6 @@
 scenario: print-babysitter
 recorded_with: uv run openhal demo --record docs/demo/scenario.yaml
-protocol_version: '2026-10-24'
+protocol_version: '0.1'
 principals:
   agent: agent:claude
   person: human:owner

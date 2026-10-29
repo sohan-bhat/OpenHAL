@@ -125,7 +125,7 @@ REDRAWS = {
         "routine, applies each device's safe state, reports per device, and blocks commands until a person unlocks.",
     ),
     "spec-exchange": Redraw(
-        "spec/2026-10-24/architecture.md",
+        "spec/v0.1/architecture.md",
         0,
         "One blocked and one granted command",
         "A client requests a nozzle temperature of 300 °C, and because the nozzle maximum is 260 °C the safety "

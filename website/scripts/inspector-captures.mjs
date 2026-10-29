@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { readVersions } from "../src/lib/spec-meta.mjs";
 
 const repo = fileURLToPath(new URL("../../", import.meta.url));
 const site = fileURLToPath(new URL("../", import.meta.url));
@@ -17,6 +18,7 @@ const manifest = join(site, "src", "data", "inspector-captures.json");
 const BUDGET = 600 * 1024;
 const WIDTH = 1440;
 const HEIGHT = 900;
+const PROTOCOL_VERSION = readVersions(repo).latest;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -67,7 +69,7 @@ function rpc(token, name) {
   return {
     async start() {
       await opened;
-      const hello = await call("hal/initialize", { protocolVersion: "2026-10-24", clientInfo: { name, version: "1.0.0" }, token });
+      const hello = await call("hal/initialize", { protocolVersion: PROTOCOL_VERSION, clientInfo: { name, version: "1.0.0" }, token });
       if (hello.error) throw new Error(hello.error.message);
       socket.send(JSON.stringify({ jsonrpc: "2.0", method: "hal/initialized" }));
     },

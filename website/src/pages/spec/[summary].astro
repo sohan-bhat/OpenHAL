@@ -7,7 +7,7 @@ import { latestVersion, specPages } from "../../lib/spec";
 import { specSidebar } from "../../lib/spec-nav";
 
 export async function getStaticPaths() {
-  const entries = await getCollection("docs");
+  const entries = await getCollection("repo");
   return entries
     .map((entry) => ({ entry, route: routeFor(entry.id) }))
     .filter(({ route }) => route && /^\/spec\/[a-z-]+\/$/.test(route))
@@ -19,9 +19,9 @@ const { Content, headings, remarkPluginFrontmatter } = await render(entry);
 const title = String(remarkPluginFrontmatter.title ?? docTitle(entry));
 const latest = latestVersion();
 const pages = latest ? await specPages(latest) : [];
-const sidebar = specSidebar(pages, (item) => (item.slug ? `/spec/latest/${item.slug}/` : "/spec/latest/"));
+const sidebar = specSidebar(pages);
 ---
 
-<DocShell title={title} repo={entry.id} headings={headings} sidebar={sidebar} section="Specification">
+<DocShell title={title} repo={entry.id} headings={headings} sidebar={sidebar}>
   <Content />
 </DocShell>

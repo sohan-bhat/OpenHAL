@@ -1,6 +1,6 @@
 # Website and Inspector quality
 
-Measured on 2026-10-25 by the quality workstream, at commit b29aa75 on branch worktree-agent-a93add9689c8b7b2f, on an Intel Core i7-8750H Mac with macOS 15.5. The website rows were measured again the same day by the website round 4 workstream, at commit acadaf4 on branch worktree-agent-aa39233d21696be73, on the same Mac, after the site search, the wrapped code blocks and the stacked tables landed. They were measured a third time by the website round 5 workstream, at commit 589b7d8 on branch worktree-agent-aa06f02640ce4c4c4, on the same Mac, after the house-style diagrams, the numbered spec sections, the shared left edge and the owner's text wordmark landed. The Overview row and the landing story section were measured by the landing page round, at commit 6ef60a6 on branch worktree-agent-a39e9445429fca114, on the same Mac, after the landing page was rebuilt around the scroll story. The Overview and Playground rows, the website axe rows, the layout and search lines and the landing story section were measured again by the website round 6 workstream, at commit 09c7812 on branch worktree-agent-a1c88bf95caf4733d, on the same Mac, after the story was retold around the 3D print babysitter and the Playground was rebuilt around its requests. The Inspector rows were measured again by the Inspector round 5 workstream, at commit 6c815d7 on branch worktree-agent-abb87dd02b08d1eaf, on the same Mac, on a test hub with the print babysitter's simulators, after camera frames, the pending cancel and status words with no shapes landed. The website rows for the overview, the docs index, Messages, the Playground, Drivers, the Python reference, Architecture and the Inspector docs, the Website speed section and the budgets were measured by the website round 7 workstream, the speed round, at commit 7e2d224 on branch worktree-agent-a0772c4e790b19862, on the same Mac, after the round merged main at f921b2a, with the story that resolves and the copy round.
+Measured on 2026-10-25 by the quality workstream, at commit b29aa75 on branch worktree-agent-a93add9689c8b7b2f, on an Intel Core i7-8750H Mac with macOS 15.5. The website rows were measured again the same day by the website round 4 workstream, at commit acadaf4 on branch worktree-agent-aa39233d21696be73, on the same Mac, after the site search, the wrapped code blocks and the stacked tables landed. They were measured a third time by the website round 5 workstream, at commit 589b7d8 on branch worktree-agent-aa06f02640ce4c4c4, on the same Mac, after the house-style diagrams, the numbered spec sections, the shared left edge and the owner's text wordmark landed. The Overview row and the landing story section were measured by the landing page round, at commit 6ef60a6 on branch worktree-agent-a39e9445429fca114, on the same Mac, after the landing page was rebuilt around the scroll story. The Overview and Playground rows, the website axe rows, the layout and search lines and the landing story section were measured again by the website round 6 workstream, at commit 09c7812 on branch worktree-agent-a1c88bf95caf4733d, on the same Mac, after the story was retold around the 3D print babysitter and the Playground was rebuilt around its requests. The Inspector rows were measured again by the Inspector round 5 workstream, at commit 6c815d7 on branch worktree-agent-abb87dd02b08d1eaf, on the same Mac, on a test hub with the print babysitter's simulators, after camera frames, the pending cancel and status words with no shapes landed. The website rows for the overview, the docs index, Messages, the Playground, Drivers, the Python reference, Architecture and the Inspector docs, the Website speed section and the budgets were measured by the website round 7 workstream, the speed round, at commit 7e2d224 on branch worktree-agent-a0772c4e790b19862, on the same Mac, after the round merged main at f921b2a, with the story that resolves and the copy round. The website Lighthouse rows, the budgets, the axe rows, the layout and search lines and the Website frame section were measured by the website round 12 workstream, at commit 4c2c189 on branch worktree-agent-aff24edc3609c3d16, on the same Mac, after the documentation moved onto Astro Starlight and the specification to v0.1.
 
 ## Tools
 
@@ -8,8 +8,10 @@ Measured on 2026-10-25 by the quality workstream, at commit b29aa75 on branch wo
 |---|---|
 | Lighthouse | 13.5.0, run with `pnpm dlx lighthouse@13.5.0` |
 | Chromium | Chrome for Testing 156.0.8078.4, from Playwright 1.64.1 |
+| Firefox | Firefox 157.0, from Playwright 1.64.1 |
 | axe | @axe-core/playwright 4.14.0 |
 | Node | 22.17.1 |
+| Website | Astro 7.3.8 with Starlight 0.42.7 and Pagefind 1.5.2, from round 12 |
 
 Lighthouse ran headless with its default mobile settings (simulated slow 4G and a 4x slower CPU) and with `--preset=desktop`, against loopback servers started for the run. Port 4000 was never used.
 
@@ -22,9 +24,11 @@ The website, from a production build.
 ```text
 cd website
 pnpm build
-pnpm exec astro preview --host 127.0.0.1 --port 4391
+pnpm exec astro preview --host 127.0.0.1 --port 4391 --ignore-lock
 OPENHAL_PREVIEW_URL=http://127.0.0.1:4391 node scripts/lighthouse.mjs LIGHTHOUSE_BIN "/,/spec/playground/" mobile,desktop OUTDIR
 ```
+
+Astro 7 hands its preview server to a background process when a coding agent starts it, and `--ignore-lock` keeps the server in the foreground, where its PID is the one to stop. playwright.config.ts starts its server the same way.
 
 The Inspector, from the build the hub serves, on a test hub with the simulated printer and its camera beside the plant waterer, the curing heater and the bench lamp.
 
@@ -61,9 +65,9 @@ uv run --no-project --with fonttools==4.67.0 --with brotli python website/script
 
 | Page | Path | Mobile perf | Mobile a11y | Mobile best practices | Mobile SEO | Desktop perf | Desktop a11y | Desktop best practices | Desktop SEO |
 |---|---|---|---|---|---|---|---|---|---|
-| Overview | `/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
-| Spec page (Messages) | `/spec/2026-10-24/basic/messages/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
-| Schema reference | `/spec/2026-10-24/schema/` | 99 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Overview | `/` | 99 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Spec page (Messages) | `/spec/v0.1/basic/messages/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| Schema reference | `/spec/v0.1/schema/` | 84 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Playground | `/spec/playground/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Drivers | `/drivers/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Driver page (mock) | `/drivers/mock/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
@@ -77,6 +81,8 @@ uv run --no-project --with fonttools==4.67.0 --with brotli python website/script
 | Documentation index | `/docs/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Architecture, with seven diagrams | `/docs/architecture/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
 | Errors | `/spec/errors/` | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+
+Round 12 measured every row again on its Starlight build with Lighthouse 13.5.0, on the same Mac while other work kept its load average between 3 and 8 and once above 30. The Overview, the documentation index, Messages, Drivers, the Playground and the Python reference ran three times each on a phone and on a desktop. Every desktop run scored 100 in every category, every run scored 100 for accessibility, best practices and SEO, and every run had a layout shift of 0. On a phone the Overview scored 99 in all three runs, with its first contentful paint at 1530 ms and its largest contentful paint at 1815 ms, against 1057 to 1133 ms and 1356 to 1360 ms in round 11, since Starlight's stylesheet puts about 12 KB more CSS ahead of the first paint. Messages scored 100, 100 and 99, and the other four pages 100 in every run, with medians of 959 to 1207 ms for the first contentful paint, within 0.1 s of what the speed round measured, and 1357 to 1510 ms for the largest, 0.14 to 0.3 s later. The other pages ran once each. The four that scored under 100 on a phone ran again, the Device Library twice more, where it scored 100 both times, and the schema reference, the quickstart and the Inspector docs three times in turns with the build just before Starlight. In those turns the quickstart and the Inspector docs scored 100 every time on both builds. Their earlier runs under 100 came while the load was high, two of them during the spike. The schema reference, the largest page with 4,685 elements, 69 tables and 72 outline entries, scored 85, 84 and 82 against 78, 99 and 99 for the build before Starlight, with a median blocking time of 626 ms against 15 ms. A trace with the processor slowed four times shows its first style and layout pass at 2.2 s against 0.7 s, and Starlight's outline script scanning the page once it is idle, about 0.5 s for the outline beside the content and again for the phone's outline. On a desktop it scores 100.
 
 Mobile performance moves by a point or two between runs on this Mac. Pages that scored under 100 on the first run were measured three or four times, and the table shows the median. The rebuilt Overview scored 100 on four mobile runs, with a layout shift of 0, first contentful paint at 1.0 s, largest contentful paint at 1.4 to 1.5 s, no blocking time and 74 KB in all. Before the rebuild it scored 99, 99, 99 and 100. In round 6 the Overview scored 100 in every category on three mobile and three desktop runs, with a layout shift of 0, first contentful paint at 1.10 to 1.13 s, largest contentful paint at 1.51 to 1.59 s, no blocking time and 81 KB in all on a phone. The Playground scored 100 in every category on all six runs, with 79 KB on a phone, since its kernel loads only when a person first uses it. Messages scored 96, 100 and 99, Schema reference 99, 100 and 99, and Drivers 99, 100 and 100. The points they lose are first contentful paint at 1.1 to 1.5 s and blocking time of 70 to 210 ms under the simulated slow phone. The speed round measured the Overview, Messages, the Playground, Drivers, the Python reference, the Inspector docs, the documentation index and Architecture again, three times each on a phone and on a desktop, and their rows give the medians. Each of those pages scored 100 in every category on every desktop run and on every phone run, apart from the Overview's phone runs at 98, 99 and 100. The Overview lost those points to a first frame that Chrome drew late under Lighthouse, which Website speed describes.
 
@@ -125,7 +131,7 @@ Every after run had a layout shift of 0 and scored 100 for accessibility, best p
 | Docs index | `/docs/` | 64.8 KB | 30.9 KB |
 | Guide page | `/docs/quickstart/` | 85.1 KB | 47.8 KB |
 | Page with diagrams | `/docs/architecture/` | 125.1 KB | 51.9 KB |
-| Spec page | `/spec/2026-10-24/basic/messages/` | 76.2 KB | 51.8 KB |
+| Spec page | `/spec/v0.1/basic/messages/` | 76.2 KB | 51.8 KB |
 | Drivers | `/drivers/` | 70.3 KB | 46.0 KB |
 | Playground | `/spec/playground/` | 75.3 KB | 51.0 KB |
 | Python reference | `/sdks/python/reference/` | 71.8 KB | 47.4 KB |
@@ -146,25 +152,32 @@ Full-page screenshots of Architecture and the Inspector docs at 1440 and 390 px 
 
 ### Budgets
 
-tests/e2e/budget.spec.ts loads one page of each template in Chromium and fails when a part goes over its budget, set about 10 % over what the round's last build sends. The spec also fails when a page uses a weight a font subset lacks, preloads a face it never shows or shows a character a subset lacks, and when any page preloads a full face. Values are in KB, measured and then budget.
+tests/e2e/budget.spec.ts loads one page of each template in Chromium and fails when a part goes over its budget, set about 10 % over what the round's last build sends. The spec also fails when a page uses a weight a font subset lacks, preloads a face it never shows or shows a character a subset lacks, and when any page preloads a full face. Values are in KB, measured on round 12's last build and then budget.
 
 | Template | Page | HTML | CSS | JavaScript | Fonts |
 |---|---|---|---|---|---|
-| Home | `/` | 11.7, 16.1 | 8.0, 9.1 | 6.6, 7.3 | 26.4, 29.1 |
-| Docs index | `/docs/` | 6.1, 6.7 | 5.1, 5.6 | 3.0, 3.3 | 16.7, 18.4 |
-| Guide page | `/docs/quickstart/` | 7.4, 8.2 | 5.1, 5.6 | 3.0, 3.3 | 32.4, 35.6 |
-| Page with diagrams | `/docs/architecture/` | 17.4, 19.2 | 5.1, 5.6 | 3.0, 3.3 | 26.4, 29.1 |
-| Spec page | `/spec/2026-10-24/basic/messages/` | 17.3, 19.1 | 5.1, 5.6 | 3.0, 3.3 | 26.4, 29.1 |
-| Schema reference | `/spec/2026-10-24/schema/` | 15.1, 16.7 | 5.1, 5.6 | 3.0, 3.3 | 26.4, 29.1 |
-| Drivers | `/drivers/` | 11.5, 12.7 | 5.1, 5.6 | 3.0, 3.3 | 26.4, 29.1 |
-| Driver page | `/drivers/moonraker/` | 9.4, 10.4 | 5.1, 5.6 | 3.0, 3.3 | 26.4, 29.1 |
-| Device Library | `/library/` | 7.5, 8.3 | 5.1, 5.6 | 3.0, 3.3 | 26.4, 29.1 |
-| Library device | `/library/scpi-rigol-dp832/` | 7.6, 8.5 | 5.1, 5.6 | 3.0, 3.3 | 26.4, 29.1 |
-| Playground | `/spec/playground/` | 14.7, 16.2 | 6.9, 7.7 | 3.0, 3.3 | 26.4, 29.1 |
-| Python reference | `/sdks/python/reference/` | 12.9, 14.3 | 5.1, 5.6 | 3.0, 3.3 | 26.4, 29.1 |
-| Inspector page | `/inspector/` | 6.8, 7.5 | 5.1, 5.6 | 3.0, 3.3 | 26.4, 29.1 |
-| Blog | `/blog/` | 3.2, 3.6 | 4.1, 4.6 | 3.0, 3.3 | 26.4, 29.1 |
-| 404 | `/404.html` | 4.0, 4.5 | 4.1, 4.6 | 3.0, 3.3 | 26.4, 29.1 |
+| Home | `/` | 15.6, 17.2 | 20.1, 22.1 | 31.3, 34.5 | 25.5, 28.1 |
+| Docs index | `/docs/` | 10.0, 11.0 | 16.2, 17.8 | 29.6, 32.6 | 16.1, 17.8 |
+| Guide page | `/docs/quickstart/` | 11.6, 12.8 | 16.2, 17.8 | 29.6, 32.6 | 31.4, 34.5 |
+| Page with diagrams | `/docs/architecture/` | 21.5, 23.7 | 16.2, 17.8 | 29.6, 32.6 | 25.5, 28.1 |
+| Spec page | `/spec/v0.1/basic/messages/` | 20.8, 22.9 | 16.2, 17.8 | 29.6, 32.6 | 25.5, 28.1 |
+| Schema reference | `/spec/v0.1/schema/` | 18.3, 20.2 | 16.2, 17.8 | 29.6, 32.6 | 25.5, 28.1 |
+| Drivers | `/drivers/` | 15.1, 16.6 | 16.2, 17.8 | 28.3, 31.1 | 25.5, 28.1 |
+| Driver page | `/drivers/moonraker/` | 13.6, 15.0 | 16.2, 17.8 | 29.6, 32.6 | 25.5, 28.1 |
+| Device Library | `/library/` | 10.8, 12.0 | 16.2, 17.8 | 28.3, 31.1 | 25.5, 28.1 |
+| Library device | `/library/scpi-rigol-dp832/` | 11.4, 12.6 | 16.2, 17.8 | 28.3, 31.1 | 25.5, 28.1 |
+| Playground | `/spec/playground/` | 18.0, 19.8 | 18.0, 19.8 | 28.3, 31.1 | 25.5, 28.1 |
+| Python reference | `/sdks/python/reference/` | 17.0, 18.7 | 16.2, 17.8 | 29.6, 32.6 | 25.5, 28.1 |
+| Inspector page | `/inspector/` | 10.4, 11.5 | 16.2, 17.8 | 28.3, 31.1 | 25.5, 28.1 |
+| Blog | `/blog/` | 7.9, 8.8 | 16.2, 17.8 | 28.3, 31.1 | 25.5, 28.1 |
+| 404 | `/404.html` | 8.2, 9.1 | 16.2, 17.8 | 28.3, 31.1 | 25.5, 28.1 |
+
+Round 12 moved every page onto Astro Starlight, and these are its new baselines. Against a build of the same pages just before Starlight, measured the same way, each page sends this much more or less.
+
+- **JavaScript, 24.6 to 26.6 KB more.** Starlight loads Pagefind's search interface, 26.5 KB gzipped, once the page is idle, so the dialog opens at once. It is one file that the browser keeps across pages, it arrives after the page has painted, and the search index itself still loads only once a person opens the search. Starlight's search element and Vite's preload helper add 1.8 KB, and the outline 1.4 KB on pages that have one. The site's own module, 1.3 KB gzipped now that Starlight runs the search dialog, is inline in each page.
+- **CSS, 10.6 to 12.0 KB more.** Starlight's stylesheet carries the header, sidebar, outline, search dialog and pickers, with the site's own rules in the same file, 13.9 KB gzipped, and its print styles add 1.0 KB. Starlight's Markdown styles are left out, since the site styles its own content.
+- **HTML, 2.7 to 4.7 KB more.** Starlight's header, sidebar and outline markup, its inline icons, its small inline scripts for the theme, the search keys and the sidebar's scroll position, and the site's module.
+- **Fonts, 0.6 to 1.0 KB less.** The glyph scan skips Pagefind's interface bundle, whose other languages had put curly quotes and a single guillemet into the subsets, and the search keys use the text face, so the docs index still loads the text face alone.
 
 ### Page turns and prerendering
 
@@ -215,12 +228,13 @@ Rules from the tags wcag2a, wcag2aa, wcag21a and wcag21aa, with axe 4.14.0.
 
 | Surface | What is checked | Violations |
 |---|---|---|
-| Website | Every page in the sitemap (114 pages), /spec/latest/ and the 404, in the light and dark themes, at 1280 by 720 in Chromium | 0 |
-| Website | At 390 px in both themes, the open phone menu, the open section menu and version switcher, the playground after a refused write with an information mark and the request builder open, empty driver and library filters, the landing story halfway through its scroll and as the list reduced motion shows, and the site search opened from its icon button with results | 0 |
+| Website | Every page in the sitemap (114 pages) and the 404, in the light and dark themes, at 1280 by 720 in Chromium | 0 |
+| Website | At 390 px in both themes, the open phone menu on home and on a spec page, the spec page's outline opened, the playground after a refused write with an information mark and the request builder open, empty driver and library filters, the landing story halfway through its scroll and as the list reduced motion shows, and the site search opened from its icon button with results | 0 |
 | Website | At 1280 by 800 in both themes, the site search dialog opened with Ctrl K and showing results for LIMIT_EXCEEDED | 0 |
+| Website | At 1440 px in both themes, the header's version picker and theme picker open on a spec page, and at 900 px the section picker open on Drivers | 0 |
 | Inspector | At 1440 and 390 px in both themes, in Chromium, and at 1440 px in Firefox. Each device (the printer, the printer camera with its frame, the plant waterer, the curing heater, the read-only bench lamp), confirmations with the pending cancel and its camera frame, the message log with an expanded frame result, the audit log, routines and a dry run, the driver writer and its limits interview, settings, the hidden log, the stopped state, the UNLOCK dialog, pairing and the offline page | 0 |
 
-Round 5 ran the website rows again on its own build, with the house-style diagrams, the Inspector crops and the text wordmark, and found 0 violations in 239 checks. The landing page round ran them again on its own build and found 0 violations in 239 checks. Round 6 ran them on its own build and found 0 violations in 236 axe runs, the 116 pages in both themes and the phone and search dialog states. The speed round ran them on its last build, with main at f921b2a merged, and found 0 violations in 239 checks.
+Round 5 ran the website rows again on its own build, with the house-style diagrams, the Inspector crops and the text wordmark, and found 0 violations in 239 checks. The landing page round ran them again on its own build and found 0 violations in 239 checks. Round 6 ran them on its own build and found 0 violations in 236 axe runs, the 116 pages in both themes and the phone and search dialog states. The speed round ran them on its last build, with main at f921b2a merged, and found 0 violations in 239 checks. Round 12 ran them on its Starlight build, with the open pickers added, and found 0 violations in 256 axe runs over 239 tests.
 
 The Inspector's status test, dashboard/e2e/status.spec.ts, fails when a status word has an icon, glyph or shape beside it, or when anything other than STOP has a status colored border or background. It runs on every view in both themes, in Chromium and Firefox. The website's design rules test, website/tests/e2e/design-rules.spec.ts, checks the same on eight pages that show statuses, the home page, the Playground, the drivers and library pages, the error codes, the quickstart, the Inspector page and the Moonraker driver.
 
@@ -228,16 +242,29 @@ The sweep found and fixed these.
 
 - Wide tables on the CLI reference, the safety page and the esphome, homeassistant and opcua driver pages scrolled sideways but could not be reached from the keyboard (`scrollable-region-focusable`). A table wrapper that overflows is now a named region in the tab order, and stops being one when it fits.
 - The driver writer's Use suggested buttons had a name that did not contain their visible text (`label-content-name-mismatch`).
+- Starlight's search button showed its shortcut keys beside the word Search while its name was Search alone (`label-content-name-mismatch`). A small inline script adds the keys the button shows to its name, so it reads Search Ctrl K, or Search ⌘ K on a Mac.
 
 The tests are website/tests/e2e/a11y.spec.ts and dashboard/e2e/axe.spec.ts.
 
 ## Website layout and search
 
-- **No sideways scrolling at 390, 768 and 1440 px.** A scan of every sitemap page and the 404 at those widths found no page wider than the window. At 390 px the architecture and sequence diagrams and the Inspector screenshot crops scroll inside their own frame, which becomes focusable only while it overflows. At 1440 px only the components diagram (814 px) and the life of a command (1105 px) are wider than the 772 px reading column. tests/e2e/site.spec.ts checks the SDK pages, the playground, the messages page and a library page at 1280 px.
-- **One left edge.** On every page but home the title starts at 344 px at 1440 and at 304 px from 1024 to 1360, the column the documentation sidebar leaves. The blog, the 404 and the playground use the same column. Since round 6 home keeps its sections in one centered column at most 1200 px wide, as the owner asked, so its headings start at 136 px at 1440 and at 16 px up to 1232. The story's column layout, used below 1200 px, is at most 600 px wide and centered in it.
-- **No text under 13 px.** A scan of every text node on every page at 390, 768 and 1440 px, inline SVG labels included, found none smaller than the 13 px legend size.
+- **No sideways scrolling at 390, 768 and 1440 px.** A scan of every sitemap page and the 404 at those widths found no page wider than the window. Round 12 scanned its Starlight build at 390, 768, 1024, 1280, 1360 and 1440 px and found none either. At 390 px the architecture and sequence diagrams and the Inspector screenshot crops scroll inside their own frame, which becomes focusable only while it overflows. At 1440 px only the components diagram (814 px) and the life of a command (1105 px) are wider than the 772 px reading column. tests/e2e/site.spec.ts checks the SDK pages, the playground, the messages page and a library page at 1280 px.
+- **One left edge.** Since round 12 every page but home starts its title at 364 px at 1440, at 324 px at 1280 and 1360 and at 316 px at 1024, the column Starlight's 300 px sidebar leaves, and at 16 px at 768 and 390, where the sidebar is the menu. The blog and the 404 have no sidebar groups and keep the same column. Before round 12 the title started at 344 px at 1440 and at 304 px from 1024 to 1360. Since round 6 home keeps its sections in one centered column at most 1200 px wide, as the owner asked, so its headings start at 136 px at 1440 and at 16 px up to 1232. The story's column layout, used below 1200 px, is at most 600 px wide and centered in it.
+- **No text under 13 px.** A scan of every text node on every page at 390, 768 and 1440 px, inline SVG labels included, found none smaller than the 13 px legend size. Round 12's scan at 390, 768, 1024, 1280, 1360 and 1440 px found none either, Starlight's header, sidebar, outline and pagination included.
 - **Diagrams in the house style.** The seven Mermaid diagrams of docs/ARCHITECTURE.md and the sequence diagram of the spec's architecture section are redrawn in D2 in docs/diagrams and shown at full size in light and dark. tests/unit/diagrams.test.ts fails when a Mermaid block on the site has no current redraw.
-- **Search under /OpenHAL/.** A build was copied into a folder served as /OpenHAL/, checked for links, rebased with scripts/rebase.mjs and indexed with `node scripts/search-index.mjs DIR /OpenHAL`, as the Pages workflow does. Searching for LIMIT_EXCEEDED and for plant waterer in Chromium and Firefox found 7 and 22 pages, every result link started with /OpenHAL/, and Enter opened the first result. Round 5 repeated it on its own build, where the dialog listed 7 and 8 results with every link under /OpenHAL/ and Enter opened /OpenHAL/docs/quickstart/ and /OpenHAL/library/openhal-firmware-openhal-plant-waterer/. Round 6 repeated it, and in Chromium and Firefox the dialog listed 6 results for LIMIT_EXCEEDED and 4 for print babysitter, every link under /OpenHAL/, and Enter opened /OpenHAL/docs/quickstart/#run-the-demo and /OpenHAL/spec/playground/#pg-editor-title. The speed round repeated it on its last build. In Chromium and Firefox the dialog listed 6 results for LIMIT_EXCEEDED with every link under /OpenHAL/, the Inspector docs loaded their crops as AVIF from /OpenHAL/captures/, the speculation rules matched /OpenHAL/* and no request left /OpenHAL/. The script fails when any page would load the index from outside the base.
+- **Search under /OpenHAL/.** A build was copied into a folder served as /OpenHAL/, checked for links, rebased with scripts/rebase.mjs and indexed with `node scripts/search-index.mjs DIR /OpenHAL`, as the Pages workflow does. Searching for LIMIT_EXCEEDED and for plant waterer in Chromium and Firefox found 7 and 22 pages, every result link started with /OpenHAL/, and Enter opened the first result. Round 5 repeated it on its own build, where the dialog listed 7 and 8 results with every link under /OpenHAL/ and Enter opened /OpenHAL/docs/quickstart/ and /OpenHAL/library/openhal-firmware-openhal-plant-waterer/. Round 6 repeated it, and in Chromium and Firefox the dialog listed 6 results for LIMIT_EXCEEDED and 4 for print babysitter, every link under /OpenHAL/, and Enter opened /OpenHAL/docs/quickstart/#run-the-demo and /OpenHAL/spec/playground/#pg-editor-title. The speed round repeated it on its last build. In Chromium and Firefox the dialog listed 6 results for LIMIT_EXCEEDED with every link under /OpenHAL/, the Inspector docs loaded their crops as AVIF from /OpenHAL/captures/, the speculation rules matched /OpenHAL/* and no request left /OpenHAL/. The script fails when any page would load the index from outside the base. Round 12 repeated it on its Starlight build, where the link check found every internal link and anchor and the rebase touched 153 files. In Chromium and Firefox Starlight's search listed 13 results for LIMIT_EXCEEDED and 9 for print babysitter, every link under /OpenHAL/, and the first result opened /OpenHAL/spec/v0.1/safety/ and /OpenHAL/spec/playground/. The header's sections and the version picker pointed under /OpenHAL/, /OpenHAL/spec/2026-10-24/basic/messages/#halwrite moved to /OpenHAL/spec/v0.1/basic/messages/#halwrite, the Inspector docs loaded their crops from /OpenHAL/captures/, the speculation rules matched /OpenHAL/*, and no request left /OpenHAL/.
+
+## Website frame on Starlight
+
+On 2026-10-28 the owner asked for the sidebar, the version picker and the header to come from a popular third-party base instead of hand-built parts, and for version numbers instead of dates. Round 12 moved every page onto Astro Starlight 0.42.7, themed with design/tokens.css, and the specification from 2026-10-24 to v0.1.
+
+- **One header on every page.** The wordmark, the sections Overview, Docs, Specification, Playground, Drivers and Device Library with the current one highlighted, the search, and at the right GitHub, the specification version picker and the theme picker, on home too. From 800 to 1023 px the sections become a Section picker, from 1024 to 1139 px the search shows as its icon, and under 800 px the menu holds the sections, the page's sidebar and, at its foot, GitHub and both pickers. tests/e2e/chrome.spec.ts checks the header at each of those widths in Chromium and Firefox, the highlight's view transition, the direction of a page turn and that nothing moves while a page loads.
+- **Sidebar.** Starlight's sidebar, with a collapsible group per part of each section. The group that holds the current page is open, and the open groups and the sidebar's scroll position carry over between pages. Starlight has no way to hide the whole sidebar, and starlight-fullview-mode, the plugin that adds one, has had no release since 2025-10-04, so the hand-built hiding is gone.
+- **Version picker.** A Starlight select labeled Specification version that shows v0.1. On a spec page each version opens the same section in that version, or that version's start when it lacks the section, and on any other page the picker shows the latest version and each version opens its start. starlight-versions keeps a frozen copy of the whole site for each older version and leaves the current one without a prefix, which cannot give /spec/v0.1/ while only the specification has versions, so the picker reads spec/versions.json. In Chromium the header's pickers open as lists styled with the tokens, and other browsers show their own list.
+- **Old addresses.** Every page under /spec/2026-10-24/ and /spec/latest/ moves at once to the matching page under /spec/v0.1/, keeping the anchor, with a canonical link, noindex and a plain link to the new address. The sitemap leaves them out, and /spec/ moves to the latest version. Each of the 140 pages the build just before Starlight wrote is still written at the same address.
+- **Home.** Below the header the home page is the page from just before Starlight. Screenshots of both builds at 1440, 1024 and 390 px in both themes, at ten scroll positions from the top to the footer once the story had settled, differed in under 0.001 % of their pixels by more than 8 of 255 in any channel, and each page was as tall as before, 8415, 7778 and 8675 px. The story, wordmark and first paint tests changed only the selector for the header.
+- **Tests.** On the last build the Playwright suite had 416 passes and 1 skip in Chromium and 144 passes in Firefox, where 273 checks that run once in Chromium skip. Two of the Chromium passes, the open pickers' axe check in both themes, came on a second run, after the check got the 120 s the other axe checks have, since it ran out of 30 s while other work loaded the Mac. The unit tests had 376 passes.
+- **Asides.** No page uses Starlight's asides yet. tests/e2e/design-rules.spec.ts places a note, a tip, a caution and a danger aside on a page in both themes and checks that each sits in a 1 px `--border` box on the page background with its title in `--text` and no icon.
 
 ## Landing page story
 

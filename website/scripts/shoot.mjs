@@ -24,7 +24,7 @@ for (const scheme of schemeList.split(",")) {
             await new Promise((resolve) => setTimeout(resolve, 50));
           }
           window.scrollTo(0, 0);
-          await Promise.all([...document.images].filter((image) => !image.complete).map((image) => new Promise((resolve) => image.addEventListener("load", resolve, { once: true }))));
+          await Promise.all([...document.images].filter((image) => !image.complete && image.checkVisibility()).map((image) => new Promise((resolve) => image.addEventListener("load", resolve, { once: true }))));
         });
       }
       const name = (path.replace(/^\/|\/$/g, "").replaceAll("/", "-") || "home").replaceAll("?", "-").replaceAll("=", "-");

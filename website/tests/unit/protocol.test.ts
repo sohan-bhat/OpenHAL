@@ -8,7 +8,7 @@ import { traceText } from "../../src/lib/trace";
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const read = (path: string) => readFileSync(`${root}${path}`, "utf8");
 const adr = read("docs/adr/0015-openhal-hub-protocol.md");
-const safety = read("spec/2026-10-24/safety.md");
+const safety = read("spec/v0.1/safety.md");
 
 function adrRegistry() {
   return [...adr.matchAll(/^\| (-32\d{3}) \| ([A-Z_]+) \| ([^|]*)\|/gm)].map((match) => ({

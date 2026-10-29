@@ -62,14 +62,13 @@ const quick = [
   { label: "Cancel the print", command: command(IDS.cancel) },
 ];
 const latest = latestVersion();
-const sidebar = specSidebar(latest ? await specPages(latest) : [], (item) => (item.slug ? `/spec/latest/${item.slug}/` : "/spec/latest/"));
+const sidebar = specSidebar(latest ? await specPages(latest) : []);
 ---
 
 <DocShell
   title="Playground"
   description="Send the print babysitter's requests to a simulated printer in your browser and see the hub's response to each request."
   sidebar={sidebar}
-  section="Specification"
   wide
   pager={false}
 >

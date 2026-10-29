@@ -53,7 +53,7 @@ export function scene(root: HTMLElement, options: Scene): void {
   const runway = root.querySelector<HTMLElement>(options.runway);
   if (!stage || !runway) return;
   const total = Number(root.dataset.total) || 1;
-  const header = document.querySelector<HTMLElement>(".site-header");
+  const header = document.querySelector<HTMLElement>("header.header");
   const probe = document.querySelector<HTMLElement>(".story-probe");
   const pieces: Piece[] = [root, ...root.querySelectorAll<HTMLElement>('[style*="--at:"]')]
     .filter((el) => el.style.getPropertyValue("--at"))

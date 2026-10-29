@@ -1,0 +1,36 @@
+---
+import Select from "@astrojs/starlight/components/Select.astro";
+import type { Section } from "../../lib/sections";
+
+interface Props {
+  links: Section[];
+}
+
+const { links } = Astro.props;
+const current = links.some((link) => link.current);
+const options = [
+  ...(current ? [] : [{ label: "Sections", value: "", selected: true }]),
+  ...links.map((link) => ({ label: link.label, value: link.href, selected: link.current })),
+];
+---
+
+<oh-section-select class="oh-section-select">
+  <Select icon="list-format" label="Section" width="8.5em" options={options} />
+</oh-section-select>
+
+<script>
+  class SectionSelect extends HTMLElement {
+    constructor() {
+      super();
+      const select = this.querySelector("select");
+      if (!select) return;
+      select.addEventListener("change", () => {
+        if (select.value) location.assign(select.value);
+      });
+      addEventListener("pageshow", (event) => {
+        if (event.persisted) select.selectedIndex = select.querySelector<HTMLOptionElement>("option[selected]")?.index ?? 0;
+      });
+    }
+  }
+  customElements.define("oh-section-select", SectionSelect);
+</script>

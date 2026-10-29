@@ -1,7 +1,7 @@
 # Spec changelog
 
-Each dated version of the specification has its own changelog.
+Each version of the specification has its own changelog.
 
-- [2026-10-24](2026-10-24/changelog.md), the first draft.
+- [v0.1](v0.1/changelog.md), the first draft, dated 2026-10-24.
 
-[VERSIONING.md](VERSIONING.md) explains dated versions and the separate semantic version of the device file format.
+[VERSIONING.md](VERSIONING.md) explains the version numbers of the specification and the separate semantic version of the device file format.

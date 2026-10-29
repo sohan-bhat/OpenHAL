@@ -1,0 +1,22 @@
+---
+import Redirect from "../../../components/Redirect.astro";
+import { latestVersion, specPages } from "../../../lib/spec";
+import { DATED_NAMES } from "../../../lib/spec-meta.mjs";
+
+/** The old addresses of spec pages. /spec/latest/ and the draft's dated name send each page to its numbered address. */
+export async function getStaticPaths() {
+  const pages = await specPages();
+  const latest = latestVersion();
+  const moved = [...(latest ? [["latest", latest]] : []), ...Object.entries(DATED_NAMES)];
+  return moved.flatMap(([name, version]) => {
+    const mine = pages.filter((page) => page.version === version);
+    const routes = mine.map((page) => ({ params: { moved: name, slug: page.slug || undefined }, props: { to: page.href, title: page.title } }));
+    if (mine.length && !mine.some((page) => page.slug === "")) routes.push({ params: { moved: name, slug: undefined }, props: { to: mine[0].href, title: mine[0].title } });
+    return routes;
+  });
+}
+
+const { to, title } = Astro.props;
+---
+
+<Redirect to={to} title={title} />

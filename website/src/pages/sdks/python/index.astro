@@ -3,11 +3,11 @@ import { getEntry, render } from "astro:content";
 import DocShell from "../../../layouts/DocShell.astro";
 import { sdkSidebar } from "../../../lib/sdk-nav";
 
-const entry = await getEntry("docs", "docs/interfaces/PYTHON.md");
+const entry = await getEntry("repo", "docs/interfaces/PYTHON.md");
 if (!entry) throw new Error("docs/interfaces/PYTHON.md is missing.");
 const { Content, headings } = await render(entry);
 ---
 
-<DocShell title="Python SDK" description="The reference SDK for the OpenHAL hub protocol." repo={entry.id} headings={headings} sidebar={sdkSidebar()} section="SDKs">
+<DocShell title="Python SDK" description="The reference SDK for the OpenHAL hub protocol." repo={entry.id} headings={headings} sidebar={sdkSidebar()}>
   <Content />
 </DocShell>

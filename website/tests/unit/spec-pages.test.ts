@@ -14,14 +14,14 @@ const classes = (node: Node) => (node.properties?.className as string[] | undefi
 
 describe("spec section numbers", () => {
   it("follow the sidebar's numbering", () => {
-    expect(specSectionNumber("spec/2026-10-24/index.md")).toBe("1");
-    expect(specSectionNumber("spec/2026-10-24/basic/messages.md")).toBe("3.3");
+    expect(specSectionNumber("spec/v0.1/index.md")).toBe("1");
+    expect(specSectionNumber("spec/v0.1/basic/messages.md")).toBe("3.3");
     expect(specSectionNumber("docs/guide/quickstart.md")).toBeNull();
   });
 
   it("number h2 and h3 headings under the page's number", () => {
     const root = tree("<h2>Rules</h2><h3>One</h3><h3>Two</h3><h2>Errors</h2>");
-    rehypeSpecSections()(root, file("spec/2026-10-24/basic/messages.md"));
+    rehypeSpecSections()(root, file("spec/v0.1/basic/messages.md"));
     expect(all(root, "span").filter((node) => classes(node).includes("secno")).map(text)).toEqual(["3.3.1", "3.3.1.1", "3.3.1.2", "3.3.2"]);
   });
 });
@@ -51,7 +51,7 @@ describe("error registry in tables", () => {
 describe("glossary links", () => {
   it("link each defined term once, on its first use, outside code and headings", () => {
     const root = tree("<h2>The Hub</h2><p>A <code>Hub</code> call. The Hub owns every Device File. Hubs and the Hub again.</p>");
-    rehypeGlossaryLinks()(root, file("spec/2026-10-24/architecture.md"));
+    rehypeGlossaryLinks()(root, file("spec/v0.1/architecture.md"));
     const links = all(root, "a").map((node) => [text(node), node.properties?.href]);
     expect(links).toEqual([
       ["Hub", "/spec/glossary/#term-hub"],

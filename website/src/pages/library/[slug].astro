@@ -26,7 +26,7 @@ function argText(name: string, spec: ArgSpec): string {
 }
 ---
 
-<DocShell title={entry.title} description={`OpenHAL device file for ${entry.title}.`} repo={entry.path} sidebar={librarySidebar()} section="Device Library" wide>
+<DocShell title={entry.title} description={`OpenHAL device file for ${entry.title}.`} repo={entry.path} sidebar={librarySidebar()} wide>
   <p slot="after-title" class="meta">
     {entry.problems.length > 0 ? <span class="status blocked">invalid</span> : <VerificationBadge status={entry.verification} />}
     <code>{entry.path}</code>

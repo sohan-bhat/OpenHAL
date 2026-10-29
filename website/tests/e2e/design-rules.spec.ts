@@ -61,6 +61,53 @@ test.describe("status words", () => {
   }
 });
 
+test.describe("Starlight's asides", () => {
+  for (const scheme of ["light", "dark"] as const) {
+    test(`sit in a plain box with no tint, colored rule or icon, in the ${scheme} theme`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.goto("/docs/quickstart/");
+      const asides = await page.evaluate(() => {
+        const content = document.querySelector(".oh-content")!;
+        const probe = document.createElement("span");
+        document.body.append(probe);
+        const resolve = (name: string) => {
+          probe.style.color = `var(${name})`;
+          return getComputedStyle(probe).color;
+        };
+        const border = resolve("--border");
+        const text = resolve("--text");
+        probe.remove();
+        return ["note", "tip", "caution", "danger"].map((kind) => {
+          const aside = document.createElement("aside");
+          aside.className = `starlight-aside starlight-aside--${kind}`;
+          aside.innerHTML = `<p class="starlight-aside__title"><svg class="starlight-aside__icon" viewBox="0 0 24 24" width="16" height="16"></svg>${kind}</p><div class="starlight-aside__content"><p>Read <a href="/docs/">the docs</a>.</p></div>`;
+          content.append(aside);
+          const style = getComputedStyle(aside);
+          const sides = ["top", "right", "bottom", "left"].map((side) => {
+            const color = style.getPropertyValue(`border-${side}-color`);
+            return `${style.getPropertyValue(`border-${side}-width`)} ${color === border ? "border" : color}`;
+          });
+          const result = {
+            kind,
+            background: style.backgroundColor,
+            sides,
+            title: getComputedStyle(aside.querySelector(".starlight-aside__title")!).color === text,
+            icon: aside.querySelector(".starlight-aside__icon")!.getClientRects().length,
+          };
+          aside.remove();
+          return result;
+        });
+      });
+      for (const aside of asides) {
+        expect(aside.background, aside.kind).toBe("rgba(0, 0, 0, 0)");
+        expect(aside.sides, aside.kind).toEqual(["1px border", "1px border", "1px border", "1px border"]);
+        expect(aside.title, aside.kind).toBe(true);
+        expect(aside.icon, aside.kind).toBe(0);
+      }
+    });
+  }
+});
+
 test.describe("the hero", () => {
   for (const width of [1440, 768, 390, 360]) {
     test(`spells HAL out under its own letters at ${width} px`, async ({ page }) => {
@@ -122,9 +169,9 @@ test.describe("the search index", () => {
   test("leaves the story's state text out of the home page's entry", async ({ page }) => {
     await page.goto("/drivers/");
     await page.keyboard.press("Control+k");
-    await page.locator("#site-search-input").fill("Interlocks");
-    await expect(page.locator("[data-search-status]")).toHaveText(/match/);
-    const hrefs = await page.locator("a.search-result").evaluateAll((items) => items.map((item) => item.getAttribute("href")));
+    await page.locator("#starlight__search input").fill("Interlocks");
+    await expect(page.locator(".pagefind-ui__message")).toHaveText(/result/, { timeout: 15_000 });
+    const hrefs = await page.locator(".pagefind-ui__result-link").evaluateAll((items) => items.map((item) => item.getAttribute("href")));
     expect(hrefs.filter((href) => href === "/" || href?.startsWith("/#"))).toEqual([]);
     const ignored = await page.evaluate(async () => {
       const html = await (await fetch("/")).text();

@@ -74,7 +74,7 @@ def _session(data: Data) -> str:
 
 
 def _limit_exceeded(data: Data) -> str:
-    """The normative LIMIT_EXCEEDED templates (spec/2026-10-24/safety.md, Reason messages).
+    """The normative LIMIT_EXCEEDED templates (spec/v0.1/safety.md, Reason messages).
 
     A session limit a principal tightened names that principal and never cites the file's confirmation.
     """

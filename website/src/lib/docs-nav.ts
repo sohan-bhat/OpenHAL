@@ -55,7 +55,7 @@ export const TOOLS: SideGroup = {
 };
 
 export async function docsSidebar(): Promise<SideGroup[]> {
-  const entries = new Map((await getCollection("docs")).map((entry) => [entry.id, entry]));
+  const entries = new Map((await getCollection("repo")).map((entry) => [entry.id, entry]));
   const groups = DOC_GROUPS.map((name) => ({
     name,
     items: FIXED_ROUTES.filter((item) => item.group === name && entries.has(item.repo)).map((item) => ({

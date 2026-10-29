@@ -1,13 +1,14 @@
 ---
 import DocShell from "../../layouts/DocShell.astro";
 import { docsSidebar } from "../../lib/docs-nav";
+import { latestSpecHref } from "../../lib/spec";
 
 const sidebar = await docsSidebar();
 const idOf = (name: string) => `group-${name.toLowerCase().replace(/[^a-z]+/g, "-")}`;
 ---
 
-<DocShell title="Documentation" description="Guides, tutorials and reference for OpenHAL." sidebar={sidebar} section="Documentation" pager={false} mono={false}>
-  <p>Start with the <a href="/docs/quickstart/">quickstart</a>, then the tutorial that matches what you want to do. The <a href="/spec/latest/">specification</a> defines the protocol itself.</p>
+<DocShell title="Documentation" description="Guides, tutorials and reference for OpenHAL." sidebar={sidebar} pager={false} mono={false}>
+  <p>Start with the <a href="/docs/quickstart/">quickstart</a>, then the tutorial that matches what you want to do. The <a href={latestSpecHref()}>specification</a> defines the protocol itself.</p>
   {
     sidebar.map((group) => (
       <section class="doc-group" aria-labelledby={idOf(group.name)}>

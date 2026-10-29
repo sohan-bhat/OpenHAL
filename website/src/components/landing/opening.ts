@@ -44,7 +44,7 @@ export function measure(hero: HTMLElement): Opening | null {
   const heads = story?.querySelector<HTMLElement>(".story-heads");
   const meta = story?.querySelector<HTMLElement>(".story-meta");
   if (!story || !stage || !slot || !demo || !heads || !meta || !hero.hasAttribute("data-camera")) return null;
-  const pin = document.querySelector<HTMLElement>(".site-header")?.offsetHeight ?? 0;
+  const pin = document.querySelector<HTMLElement>("header.header")?.offsetHeight ?? 0;
   const view = document.querySelector<HTMLElement>(".story-probe")?.offsetHeight || window.innerHeight;
   const at = pin + slot.offsetTop;
   const top = stage.getBoundingClientRect().top;

@@ -14,7 +14,7 @@ Single-device tools exist for Arduino boards, 3D printers, bench instruments and
 
 ## The protocol
 
-OpenHAL is an open protocol with a dated specification, and the specification defines two things.
+OpenHAL is an open protocol with a versioned specification, and the specification defines two things.
 
 1. The [Device File](glossary:device-file) lists what a device can read and change, the limits on each change and the safe state. A person confirms the limits, and until then the file is read-only.
 2. The hub protocol lets clients speak JSON-RPC 2.0 to one [Hub](glossary:hub), and the hub's [Safety Kernel](glossary:safety-kernel) checks every command before a [Driver](glossary:driver) may act.

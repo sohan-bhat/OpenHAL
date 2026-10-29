@@ -36,7 +36,7 @@ Drafts only. Nothing on this page has been posted, and the owner posts each draf
 > - The kernel checks range, rate of change, interlocks, watchdog budgets and confirmation in a fixed order, with no model in the loop. A stale or unknown reading blocks the command.
 > - One stop puts every device in its safe state and refuses everything until a person runs openhal unlock.
 > - Every decision goes into a hash-chained audit log.
-> - The hub speaks JSON-RPC 2.0 over WebSocket and stdio, with a dated specification (2026-10-24), an error registry and three conformance levels. An MCP server, a CLI and a Python client sit on top.
+> - The hub speaks JSON-RPC 2.0 over WebSocket and stdio, with a versioned specification (v0.1), an error registry and three conformance levels. An MCP server, a CLI and a Python client sit on top.
 >
 > Where it stands. 34 drivers pass a conformance suite against simulators, including Klipper through Moonraker, Marlin, OctoPrint, SCPI instruments, Home Assistant, ESPHome, MQTT, Modbus, BLE, MIDI, Raspberry Pi GPIO and camera, ROS 2, OPC UA, SiLA 2, ASCOM Alpaca and INDI. Each has a step-by-step hardware test plan, and the plant waterer's comes first. This is v0.1, in development.
 >

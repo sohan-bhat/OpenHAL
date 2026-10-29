@@ -8,7 +8,7 @@ const sitemap = fileURLToPath(new URL("../../dist/sitemap-0.xml", import.meta.ur
 const PAGES = existsSync(sitemap)
   ? [...readFileSync(sitemap, "utf8").matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => new URL(match[1]).pathname)
   : [];
-PAGES.push("/spec/latest/", "/404.html");
+PAGES.push("/404.html");
 
 async function violations(page: Page): Promise<string[]> {
   await page.evaluate(() => document.fonts.ready);
@@ -39,13 +39,15 @@ for (const scheme of ["light", "dark"] as const) {
       const problems: string[] = [];
 
       await page.goto("/");
-      await page.locator(".mobile-nav summary").click();
+      await page.locator(".sl-menu-button").click();
       problems.push(...(await violations(page)).map((item) => `menu ${item}`));
 
-      await page.goto("/spec/2026-10-24/basic/messages/");
-      await page.locator(".side-menu summary").first().click();
-      await page.locator(".mobile-nav summary").click();
-      problems.push(...(await violations(page)).map((item) => `spec menus ${item}`));
+      await page.goto("/spec/v0.1/basic/messages/");
+      await page.locator(".sl-menu-button").click();
+      problems.push(...(await violations(page)).map((item) => `spec menu ${item}`));
+      await page.keyboard.press("Escape");
+      await page.locator("mobile-starlight-toc summary").click();
+      problems.push(...(await violations(page)).map((item) => `spec outline ${item}`));
 
       await page.goto("/spec/playground/");
       await page.getByRole("button", { name: "Set the nozzle to 300 °C" }).click();
@@ -78,9 +80,9 @@ for (const scheme of ["light", "dark"] as const) {
       await page.emulateMedia({ reducedMotion: "no-preference" });
 
       await page.goto("/");
-      await page.getByRole("button", { name: "Search", exact: true }).click();
-      await page.locator("#site-search-input").fill("print babysitter");
-      await expect(page.locator("a.search-result").first()).toBeVisible();
+      await page.getByRole("button", { name: /^Search/ }).click();
+      await page.locator("#starlight__search input").fill("print babysitter");
+      await expect(page.locator(".pagefind-ui__result-link").first()).toBeVisible({ timeout: 15_000 });
       problems.push(...(await violations(page)).map((item) => `search ${item}`));
 
       expect(problems).toEqual([]);
@@ -93,11 +95,30 @@ for (const scheme of ["light", "dark"] as const) {
     test.skip(browserName !== "chromium", "axe runs once, in Chromium");
     await page.emulateMedia({ colorScheme: scheme });
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto("/spec/2026-10-24/basic/messages/");
+    await page.goto("/spec/v0.1/basic/messages/");
     await page.keyboard.press("Control+k");
-    await page.locator("#site-search-input").fill("LIMIT_EXCEEDED");
-    await expect(page.locator("a.search-result").first()).toBeVisible();
+    await page.locator("#starlight__search input").fill("LIMIT_EXCEEDED");
+    await expect(page.locator(".pagefind-ui__result-link").first()).toBeVisible({ timeout: 15_000 });
     expect(await violations(page)).toEqual([]);
+  });
+
+  test(`the header's pickers, open, have no WCAG AA violations on a desktop and a tablet in the ${scheme} theme`, async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "axe runs once, in Chromium");
+    test.setTimeout(120_000);
+    await page.emulateMedia({ colorScheme: scheme });
+    const problems: string[] = [];
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/spec/v0.1/basic/messages/");
+    for (const picker of ["oh-version-select", "starlight-theme-select"]) {
+      await page.locator(`header.header ${picker} select`).click();
+      problems.push(...(await violations(page)).map((item) => `${picker} ${item}`));
+      await page.keyboard.press("Escape");
+    }
+    await page.setViewportSize({ width: 900, height: 900 });
+    await page.goto("/drivers/");
+    await page.locator("header.header oh-section-select select").click();
+    problems.push(...(await violations(page)).map((item) => `section picker ${item}`));
+    expect(problems).toEqual([]);
   });
 }
 

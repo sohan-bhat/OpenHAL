@@ -50,7 +50,7 @@
   },
   {
     "name": "spec-exchange",
-    "source": "spec/2026-10-24/architecture.md",
+    "source": "spec/v0.1/architecture.md",
     "index": 0,
     "mermaid": "7544133dc68eba4c",
     "title": "One blocked and one granted command"

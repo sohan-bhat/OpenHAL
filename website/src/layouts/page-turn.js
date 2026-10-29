@@ -1,12 +1,6 @@
-if (/mac|iphone|ipad/i.test(navigator.userAgentData?.platform || navigator.platform || "")) document.documentElement.classList.add("apple");
 (() => {
-  const data = document.documentElement.dataset;
   const key = "openhal:page-turn";
   let clicked;
-  data.sidebar = "shown";
-  try {
-    if (localStorage["openhal:sidebar"] == "hidden") data.sidebar = "hidden";
-  } catch {}
   const section = (links, url) => {
     const base = new URL(links[0].href).pathname;
     const path = new URL(url, location.href).pathname;
@@ -23,10 +17,10 @@ if (/mac|iphone|ipad/i.test(navigator.userAgentData?.platform || navigator.platf
     });
     return found;
   };
-  addEventListener("click", (event) => (clicked = event.target.closest?.(".desktop-nav a[data-match], .mobile-nav a")?.href), true);
+  addEventListener("click", (event) => (clicked = event.target.closest?.(".oh-sections a[data-match], .oh-menu-sections a")?.href), true);
   addEventListener("pageswap", ({ viewTransition, activation }) => {
     if (!viewTransition) return;
-    const links = [...document.querySelectorAll(".desktop-nav a[data-match]")];
+    const links = [...document.querySelectorAll(".oh-sections a[data-match]")];
     const to = activation?.entry?.url;
     const from = links.length && to && clicked == to ? section(links, location.href) : -1;
     const next = from < 0 ? -1 : section(links, to);
@@ -45,7 +39,7 @@ if (/mac|iphone|ipad/i.test(navigator.userAgentData?.platform || navigator.platf
     } catch {}
     if (turn == "forward" || turn == "backward") {
       viewTransition.types.add(turn);
-      data.turn = turn;
+      document.documentElement.dataset.turn = turn;
     } else viewTransition.skipTransition();
   });
 })();
