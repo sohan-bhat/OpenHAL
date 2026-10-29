@@ -10,8 +10,14 @@ const PAGES = existsSync(sitemap)
   : [];
 PAGES.push("/404.html");
 
+/** Waits until no part is still opening or closing, so axe measures colors at full strength. */
+async function settled(page: Page): Promise<void> {
+  await page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== "running" || animation instanceof CSSAnimation), undefined, { polling: 25 });
+}
+
 async function violations(page: Page): Promise<string[]> {
   await page.evaluate(() => document.fonts.ready);
+  await settled(page);
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   return results.violations.map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).slice(0, 4).join(", ")}`);
 }
@@ -102,22 +108,27 @@ for (const scheme of ["light", "dark"] as const) {
     expect(await violations(page)).toEqual([]);
   });
 
-  test(`the header's pickers, open, have no WCAG AA violations on a desktop and a tablet in the ${scheme} theme`, async ({ page, browserName }) => {
+  test(`the pickers, open, have no WCAG AA violations on a desktop, a tablet and a phone in the ${scheme} theme`, async ({ page, browserName }) => {
     test.skip(browserName !== "chromium", "axe runs once, in Chromium");
     test.setTimeout(120_000);
     await page.emulateMedia({ colorScheme: scheme });
     const problems: string[] = [];
+    const open = async (scope: string, kind: string) => {
+      await page.locator(`${scope} oh-picker[data-kind='${kind}'] .oh-picker-button`).click();
+      await expect(page.locator(`${scope} oh-picker[data-kind='${kind}'] .oh-picker-list`)).toBeVisible();
+      problems.push(...(await violations(page)).map((item) => `${scope} ${kind} ${item}`));
+      await page.keyboard.press("Escape");
+    };
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/spec/v0.1/basic/messages/");
-    for (const picker of ["oh-version-select", "starlight-theme-select"]) {
-      await page.locator(`header.header ${picker} select`).click();
-      problems.push(...(await violations(page)).map((item) => `${picker} ${item}`));
-      await page.keyboard.press("Escape");
-    }
+    for (const kind of ["version", "theme"]) await open("header.header", kind);
     await page.setViewportSize({ width: 900, height: 900 });
     await page.goto("/drivers/");
-    await page.locator("header.header oh-section-select select").click();
-    problems.push(...(await violations(page)).map((item) => `section picker ${item}`));
+    await open("header.header", "section");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/spec/v0.1/basic/messages/");
+    await page.locator(".sl-menu-button").click();
+    for (const kind of ["version", "theme"]) await open(".mobile-preferences", kind);
     expect(problems).toEqual([]);
   });
 }
