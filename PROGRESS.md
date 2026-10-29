@@ -8,7 +8,8 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-None running.
+- spec-semver. The specification and the hub protocol move from the dated version 2026-10-24 to semantic versions, starting at v0.1 (BRIEF-spec-semver.md).
+- website-12. The docs move to Astro Starlight, with Starlight's sidebar, a popular version picker plugin and one header on every page (BRIEF-website-12.md).
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
