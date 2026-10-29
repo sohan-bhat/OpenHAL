@@ -6,6 +6,7 @@ import { showDrafts } from "./drafts";
 import { libraryEntries } from "./library";
 import { routeFor } from "./markdown/routes.mjs";
 import { specPages } from "./spec";
+import { versionLabel } from "./spec-meta.mjs";
 
 export interface PageInfo {
   path: string;
@@ -45,7 +46,7 @@ export async function allPages(): Promise<PageInfo[]> {
     pages.push({ path: route, title: docTitle(entry), kind: route.startsWith("/sdks/") ? "SDKs" : route.startsWith("/drivers/") ? "Drivers" : "Docs" });
   }
   for (const page of await specPages()) {
-    pages.push({ path: page.href, title: page.title, kind: `Specification ${page.version}` });
+    pages.push({ path: page.href, title: page.title, kind: `Specification ${versionLabel(page.version)}` });
   }
   for (const driver of drivers()) {
     pages.push({ path: `/drivers/${driver.name}/`, title: driver.name, kind: "Drivers" });
