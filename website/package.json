@@ -17,7 +17,6 @@
     "@astrojs/starlight": "0.42.7",
     "@astrojs/starlight-tailwind": "5.0.0",
     "@astrojs/svelte": "9.0.1",
-    "@floating-ui/dom": "1.8.0",
     "@tailwindcss/vite": "4.3.3",
     "ajv": "8.20.0",
     "astro": "7.3.8",

@@ -1,15 +1,16 @@
 <script is:inline>
-  window.StarlightThemeProvider = (() => {
-    const stored = typeof localStorage !== "undefined" && localStorage.getItem("starlight-theme");
-    const theme = stored || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
-    document.documentElement.dataset.theme = theme === "light" ? "light" : "dark";
-    return {
-      updatePickers(choice = stored || "auto") {
-        for (const item of document.querySelectorAll("oh-picker[data-kind='theme'] [data-value]")) {
-          if (item.hasAttribute("role")) item.setAttribute("aria-checked", String(item.dataset.value === choice));
-          else item.toggleAttribute("data-current", item.dataset.value === choice);
-        }
-      },
-    };
+  (() => {
+    const root = document.documentElement;
+    let stored = "";
+    let sidebar = "";
+    try {
+      stored = localStorage.getItem("starlight-theme") || "";
+      sidebar = localStorage.getItem("openhal-sidebar") || "";
+    } catch {}
+    const choice = stored === "light" || stored === "dark" ? stored : "auto";
+    root.dataset.themeChoice = choice;
+    root.dataset.theme = choice === "auto" ? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark") : choice;
+    root.dataset.platform = /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform) ? "mac" : "other";
+    if (sidebar === "collapsed") root.dataset.sidebar = "collapsed";
   })();
 </script>

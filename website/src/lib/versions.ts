@@ -34,3 +34,11 @@ export function versionRows(path: string, versions: VersionEntry[], latest: stri
   }));
   return { current, label: current ? versionLabel(current) : null, rows };
 }
+
+/**
+ * True when the header shows the version as a menu, which happens on its own once
+ * spec/versions.json lists a second version. With one version it is a plain label.
+ */
+export function versionMenu(rows: VersionRow[]): boolean {
+  return rows.length > 1;
+}
