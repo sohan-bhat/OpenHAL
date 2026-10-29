@@ -19,7 +19,7 @@ const points = (code: string) =>
   [...code.replace(/_strand\([^)]*\)/g, "").replace(/for \w+ in \([^)]*\)/g, "").matchAll(/\((\d+), (\d+)\)/g)].map((match) => `${match[1]} ${match[2]}`);
 const drawn = (frame: (typeof FRAMES)[keyof typeof FRAMES]) => frame.items.map((item) => item.d).join(" ");
 
-describe("the webcam frames on the landing page", () => {
+describe("the webcam frames on the example page", () => {
   it("are the two frames the record reads, in its order", () => {
     const look = record.exchanges.find((exchange) => exchange.id === IDS.look)!;
     const loose = record.exchanges.find((exchange) => exchange.id === IDS.loose)!;
