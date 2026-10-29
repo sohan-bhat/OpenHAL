@@ -38,15 +38,11 @@ export function walkthrough(root: HTMLElement): void {
       return;
     }
     try {
-      const { animate } = await import("motion");
+      const { tween } = await import("./tween");
       if (index !== to) return;
-      playing = animate(time, target, {
-        duration: Math.min(1.2, 0.02 * (target - time)),
-        ease: "linear",
-        onUpdate: (value: number) => {
-          time = value;
-          draw(value);
-        },
+      playing = tween(time, target, Math.min(1.2, 0.02 * (target - time)), (value) => {
+        time = value;
+        draw(value);
       });
     } catch {
       time = target;

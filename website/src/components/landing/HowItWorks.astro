@@ -64,7 +64,7 @@ const mode = `(() => {
       <div class="how-top">
         <h2 id="how-title">How it works</h2>
         <div class="how-meta">
-          <p class="how-count" aria-hidden="true">
+          <p class="how-count" aria-hidden="true" data-pagefind-ignore="all">
             {steps.map((_, index) => <span>{index + 1} / {count}</span>)}
           </p>
           <a class="how-skip" href={`#${after}`}>Skip<span class="visually-hidden"> the three steps</span></a>
@@ -80,7 +80,7 @@ const mode = `(() => {
             const grid = layout(step);
             return (
               <li class="how-step">
-                <p class="how-number" aria-hidden="true">
+                <p class="how-number" aria-hidden="true" data-pagefind-ignore="all">
                   {index + 1} / {count}
                 </p>
                 <p class="how-caption">{nb(step.caption)}</p>
