@@ -39,7 +39,7 @@ export async function allPages(): Promise<PageInfo[]> {
     { path: "/blog/", title: "Blog", kind: "Blog" },
     { path: "/404/", title: "Page not found", kind: "Overview" },
   ];
-  for (const entry of await getCollection("docs")) {
+  for (const entry of await getCollection("repo")) {
     const route = routeFor(entry.id);
     if (!route || route.startsWith("/drivers/") && !route.endsWith("coverage/")) continue;
     pages.push({ path: route, title: docTitle(entry), kind: route.startsWith("/sdks/") ? "SDKs" : route.startsWith("/drivers/") ? "Drivers" : "Docs" });

@@ -7,7 +7,7 @@ import { latestVersion, specPages } from "../../lib/spec";
 import { specSidebar } from "../../lib/spec-nav";
 
 export async function getStaticPaths() {
-  const entries = await getCollection("docs");
+  const entries = await getCollection("repo");
   return entries
     .map((entry) => ({ entry, route: routeFor(entry.id) }))
     .filter(({ route }) => route && /^\/spec\/[a-z-]+\/$/.test(route))

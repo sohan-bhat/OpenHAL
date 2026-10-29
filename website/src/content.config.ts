@@ -18,7 +18,7 @@ function whenPresent(present: () => boolean, inner: Loader): Loader {
   };
 }
 
-const docs = defineCollection({
+const repo = defineCollection({
   loader: glob({ base: "..", pattern: DOC_PATTERNS, generateId: ({ entry }) => entry }),
   schema: z.object({ title: z.string().optional() }).passthrough(),
 });
@@ -47,4 +47,4 @@ const snippets = defineCollection({
   schema: z.object({ title: z.string() }),
 });
 
-export const collections = { docs, spec, blog, snippets };
+export const collections = { repo, spec, blog, snippets };

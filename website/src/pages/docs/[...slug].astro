@@ -5,7 +5,7 @@ import { docTitle, docsSidebar } from "../../lib/docs-nav";
 import { routeFor } from "../../lib/markdown/routes.mjs";
 
 export async function getStaticPaths() {
-  const entries = await getCollection("docs");
+  const entries = await getCollection("repo");
   return entries
     .map((entry) => ({ entry, route: routeFor(entry.id) }))
     .filter(({ route }) => route?.startsWith("/docs/"))

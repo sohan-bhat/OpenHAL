@@ -4,7 +4,7 @@ import DocShell from "../../layouts/DocShell.astro";
 import { docTitle } from "../../lib/docs-nav";
 import { driversSidebar } from "../../lib/drivers-nav";
 
-const entry = await getEntry("docs", "docs/drivers/COVERAGE.md");
+const entry = await getEntry("repo", "docs/drivers/COVERAGE.md");
 if (!entry) throw new Error("docs/drivers/COVERAGE.md is missing.");
 const { Content, headings, remarkPluginFrontmatter } = await render(entry);
 ---
