@@ -303,7 +303,7 @@ confirmed: { by: owner, at: 2026-10-24 }
 
 ## Versioning
 
-The Device File format uses semantic versioning, separately from this specification's dated versions and from the software.
+The Device File format uses semantic versioning, separately from the version of this specification and from the software.
 
 | Change | Meaning |
 |---|---|

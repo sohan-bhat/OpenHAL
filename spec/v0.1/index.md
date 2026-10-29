@@ -1,6 +1,6 @@
 # OpenHAL specification
 
-Version 2026-10-24. Status draft.
+Version v0.1. Status draft.
 
 ## Introduction
 
@@ -41,7 +41,7 @@ Examples, notes and diagrams are informative. Everything else is normative.
 
 ## Versions
 
-Versions of this specification are dated `YYYY-MM-DD`. Each version lives in `spec/<version>/`. The Device File format carries its own version number in the file's `openhal` field ([Device files](device-files.md#versioning)). This version of the specification defines Device File format 0.1.
+Versions of this specification are numbered `MAJOR.MINOR`, such as `0.1`, and people see them with a leading v, as v0.1. Each version lives in `spec/v<version>/`, and [VERSIONING.md](../VERSIONING.md) explains what the numbers mean. The Device File format carries its own version number in the file's `openhal` field ([Device files](device-files.md#versioning)). This version of the specification defines Device File format 0.1.
 
 ## Terminology
 

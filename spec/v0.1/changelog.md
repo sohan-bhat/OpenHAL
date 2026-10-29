@@ -1,13 +1,19 @@
 # Changelog
 
-## 2026-10-24 (draft)
+## v0.1 (draft)
 
-The first draft of the OpenHAL specification.
+The first draft of the OpenHAL specification, dated 2026-10-24.
+
+### Version numbers
+
+- On 2026-10-28 the draft dated 2026-10-24 became v0.1, because versions are now numbered `MAJOR.MINOR` ([ADR 0017](../../docs/adr/0017-version-numbers.md)). The requirements did not change.
+- `hal/initialize` negotiates `0.1`. A `protocolVersion` that is not in the form `MAJOR.MINOR`, such as a date, gets `INVALID_PARAMS` (-32602) with a reason that names the supported versions.
+- The draft moved from its dated folder to `spec/v0.1/`.
 
 ### Hub protocol
 
 - JSON-RPC 2.0 messages over WebSocket at `/rpc` and over stdio through `openhal rpc`.
-- Initialization with dated version negotiation, `hal/initialized` and `hal/shutdown`.
+- Initialization with version negotiation, `hal/initialized` and `hal/shutdown`.
 - Core methods `hal/initialize`, `hal/devices/list`, `hal/devices/describe`, `hal/read` and `hal/readMany`.
 - Control methods `hal/write`, `hal/dryRun`, `hal/planCheck`, `hal/stop` and `hal/unlock`.
 - Full methods `hal/action`, `hal/confirmations/list`, `hal/confirmations/approve`, `hal/confirmations/reject`, `hal/routines/list`, `hal/routines/dryRun` and `hal/audit/query`.
