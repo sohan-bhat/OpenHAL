@@ -66,7 +66,7 @@ Sources are named by where they live.
 
 | Element | Source |
 |---|---|
-| "Specification 2026-10-24" legend and the version switcher | Mapping, dated version and a switcher, spec/versions.json |
+| "Specification v0.1" legend and the version switcher | Mapping, the version in the URL and a switcher, spec/versions.json |
 | Numbered sidebar | Spec sections |
 | On this page outline | Layout |
 | Heading anchors | Layout |
