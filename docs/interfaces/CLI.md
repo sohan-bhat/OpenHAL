@@ -94,7 +94,7 @@ These commands use the hub's token routes, and when the hub is not running or ha
 openhal status [--json]
 ```
 
-`openhal status` shows the hub's version and address, who you are, connected devices, pending confirmations, the stop lock and device files that failed to load.
+`openhal status` shows the hub's version and address, the specification version it speaks, such as v0.1, who you are, connected devices, pending confirmations, the stop lock and device files that failed to load.
 
 ### openhal devices
 

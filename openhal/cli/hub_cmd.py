@@ -9,6 +9,7 @@ from rich.table import Table
 from openhal.cli import library_cmd
 from openhal.cli._common import console, handled, hub, print_json, show, when
 from openhal.client.models import DeviceView
+from openhal.protocol.version import label
 
 
 def _limits(spec_min: float | None, spec_max: float | None, unit: str | None) -> str:
@@ -77,9 +78,8 @@ def register(app: typer.Typer) -> None:
         if as_json:
             print_json(result)
             return
-        console.print(
-            f"{escape(result.product)} hub {escape(result.version)} at {escape(url)}, spec {escape(result.spec)}"
-        )
+        spec = label(result.protocol_version or result.spec)
+        console.print(f"{escape(result.product)} hub {escape(result.version)} at {escape(url)}, spec {escape(spec)}")
         console.print(f"you are {escape(result.you.kind)}:{escape(result.you.name)} ({escape(result.you.scope)})")
         console.print(f"devices {result.connected} of {result.devices} connected")
         console.print(f"pending confirmations {result.pending_confirmations}")

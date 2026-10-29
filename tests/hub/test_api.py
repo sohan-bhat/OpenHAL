@@ -49,6 +49,7 @@ async def test_status_and_devices(client: httpx.AsyncClient, hub: Hub) -> None:
     token, _ = hub.tokens.create("claude", "agent", "control_low")
     status = (await client.get("/v1/status", headers=bearer(token))).json()
     assert status["devices"] == 2
+    assert (status["protocol_version"], status["spec"]) == ("0.1", "0.1")
     assert status["you"] == {"kind": "agent", "name": "claude", "scope": "control_low"}
     devices = (await client.get("/v1/devices", headers=bearer(token))).json()
     assert {device["id"] for device in devices} == {"desk-fan", "heater"}
