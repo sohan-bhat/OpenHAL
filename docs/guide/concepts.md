@@ -2,6 +2,14 @@
 
 OpenHAL is an open protocol between agents and hardware. This page defines the protocol's parts.
 
+## What the name means
+
+OpenHAL stands for Open Hardware Abstraction Layer, and each of the last three words names a part of the system.
+
+- **Hardware.** The hardware is any device OpenHAL controls. Each device has a [Device File](glossary:device-file) that lists the device's channels and the limits a person confirmed.
+- **Abstraction.** A hardware abstraction layer gives every device the same interface, so an agent reads and changes a 3D printer, a bench power supply or an Arduino board with the same few requests while the device file and the driver handle the differences.
+- **Layer.** The layer is the [Hub](glossary:hub) between the agent and the hardware, where the [Safety Kernel](glossary:safety-kernel) checks every request against the device file's limits before a [Driver](glossary:driver) sends a command to the device.
+
 ## Hub
 
 The [Hub](glossary:hub) is one process on your computer or a Raspberry Pi, and the hub owns every device. Clients talk to the hub with JSON-RPC 2.0 messages over a WebSocket or stdio, or through the MCP server, which maps onto the same methods.
