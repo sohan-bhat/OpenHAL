@@ -1,0 +1,56 @@
+---
+import Default from "@astrojs/starlight/components/Sidebar.astro";
+import { sections } from "../../lib/sections";
+
+const links = await sections(Astro.url.pathname);
+const menuOnly = Astro.locals.starlightRoute.sidebar.length === 0;
+---
+
+<ul class="oh-menu-sections md:sl-hidden" data-menu-only={menuOnly ? "" : undefined}>
+  {
+    links.map((link) => (
+      <li>
+        <a href={link.href} aria-current={link.current ? "page" : undefined}>
+          {link.label}
+        </a>
+      </li>
+    ))
+  }
+</ul>
+<Default />
+
+<style>
+  .oh-menu-sections {
+    margin: 0;
+    padding: 0 0 var(--s-3);
+    border-bottom: 1px solid var(--border);
+    list-style: none;
+  }
+
+  .oh-menu-sections li + li {
+    margin-top: 2px;
+  }
+
+  .oh-menu-sections a {
+    display: block;
+    padding: var(--s-2) var(--s-2);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: var(--t-body);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .oh-menu-sections a:hover {
+    background: var(--surface);
+  }
+
+  .oh-menu-sections a[aria-current="page"] {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  }
+
+  .oh-menu-sections[data-menu-only] {
+    border-bottom: 0;
+  }
+</style>

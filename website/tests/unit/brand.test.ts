@@ -6,7 +6,7 @@ import { faviconSvg, markLightSvg, wordmarkLightSvg, wordmarkWidth } from "../..
 
 const assets = fileURLToPath(new URL("../../../docs/assets/", import.meta.url));
 const asset = (name: string) => readFileSync(`${assets}${name}`, "utf8");
-const header = readFileSync(fileURLToPath(new URL("../../src/components/Header.astro", import.meta.url)), "utf8");
+const header = readFileSync(fileURLToPath(new URL("../../src/components/starlight/Header.astro", import.meta.url)), "utf8");
 
 const withoutSize = (svg: string) => svg.trim().replace(/\s(width|height)="[\d.]+"/g, "");
 
@@ -20,10 +20,10 @@ describe("the mark matches docs/assets", () => {
     expect(withoutSize(wordmarkLightSvg(44))).toBe(withoutSize(asset("wordmark-light.svg")));
   });
 
-  it("shows the wordmark files in the header at their own aspect ratio", () => {
-    expect(header).toContain('srcset="/brand/wordmark-dark.svg"');
-    expect(header).toContain('src="/brand/wordmark-light.svg"');
-    expect(header).toContain("width={wordmarkWidth(24)}");
+  it("shows the wordmark files in the header at their own aspect ratio, one for each theme", () => {
+    expect(header).toContain('<img class="dark:sl-hidden" src="/brand/wordmark-light.svg"');
+    expect(header).toContain('<img class="light:sl-hidden" src="/brand/wordmark-dark.svg"');
+    expect(header).toContain("const width = wordmarkWidth(24);");
     const svg = asset("wordmark-light.svg");
     const width = Number(/\swidth="([\d.]+)"/.exec(svg)![1]);
     const height = Number(/\sheight="([\d.]+)"/.exec(svg)![1]);

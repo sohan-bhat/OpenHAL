@@ -44,7 +44,10 @@ export default defineConfig({
       customCss: ["./src/styles/global.css", "./src/styles/code.css", "./src/styles/starlight.css"],
       components: {
         Head: override("Head"),
+        Header: override("Header"),
         Hero: override("Hero"),
+        Sidebar: override("Sidebar"),
+        MobileMenuFooter: override("MobileMenuFooter"),
         PageTitle: override("PageTitle"),
         Footer: override("Footer"),
       },

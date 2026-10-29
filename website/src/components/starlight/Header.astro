@@ -1,0 +1,145 @@
+---
+import Search from "@astrojs/starlight/components/Search.astro";
+import SocialIcons from "@astrojs/starlight/components/SocialIcons.astro";
+import ThemeSelect from "@astrojs/starlight/components/ThemeSelect.astro";
+import { PRODUCT_NAME } from "../../config/brand";
+import { wordmarkWidth } from "../../lib/brand-mark";
+import { sections } from "../../lib/sections";
+import SectionSelect from "./SectionSelect.astro";
+import VersionSelect from "./VersionSelect.astro";
+
+const links = await sections(Astro.url.pathname);
+const width = wordmarkWidth(24);
+---
+
+<div class="oh-header">
+  <a class="oh-brand" href="/" aria-label={`${PRODUCT_NAME} overview`}>
+    <img class="dark:sl-hidden" src="/brand/wordmark-light.svg" alt="" width={width} height="24" />
+    <img class="light:sl-hidden" src="/brand/wordmark-dark.svg" alt="" width={width} height="24" />
+  </a>
+  <nav class="oh-sections" aria-label="Main">
+    <ul>
+      {
+        links.map((link) => (
+          <li>
+            <a href={link.href} aria-current={link.current ? "page" : undefined} data-match={link.matches}>
+              {link.current && <span class="nav-pill" aria-hidden="true" />}
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+  <SectionSelect links={links} />
+  <div class="oh-end print:hidden">
+    <Search />
+    <div class="oh-tools sl-hidden md:sl-flex">
+      <div class="oh-social sl-flex">
+        <SocialIcons />
+      </div>
+      <VersionSelect />
+      <ThemeSelect />
+    </div>
+  </div>
+</div>
+
+<style>
+  .oh-header {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    height: 100%;
+  }
+
+  .oh-brand {
+    display: flex;
+    flex: none;
+    align-items: center;
+    border-radius: var(--radius);
+  }
+
+  .oh-brand img {
+    height: 24px;
+    width: auto;
+  }
+
+  .oh-sections,
+  .oh-header :global(.oh-section-select) {
+    display: none;
+  }
+
+  .oh-sections ul {
+    display: flex;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .oh-sections a {
+    position: relative;
+    isolation: isolate;
+    display: block;
+    padding: var(--s-2) 10px;
+    border-radius: var(--radius);
+    color: var(--text-2);
+    font-size: var(--t-small);
+    font-weight: 600;
+    line-height: 1.4;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .oh-sections a:hover {
+    color: var(--text);
+    background: var(--surface);
+  }
+
+  .oh-sections a[aria-current="page"] {
+    color: var(--accent);
+    background: none;
+  }
+
+  .nav-pill {
+    view-transition-name: nav-pill;
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  }
+
+  .oh-end {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--s-4);
+    min-width: 0;
+  }
+
+  .oh-tools,
+  .oh-social {
+    align-items: center;
+    gap: var(--s-4);
+  }
+
+  .oh-social::after {
+    content: "";
+    height: 24px;
+    border-inline-end: 1px solid var(--border);
+  }
+
+  @media (min-width: 50rem) and (max-width: 1023.98px) {
+    .oh-header :global(.oh-section-select) {
+      display: block;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .oh-sections {
+      display: block;
+    }
+  }
+</style>
