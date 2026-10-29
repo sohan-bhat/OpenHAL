@@ -2,7 +2,7 @@
 import { getEntry, render } from "astro:content";
 import heroSpellSource from "../components/landing/hero-spell.js?raw";
 import Hero from "../components/landing/Hero.astro";
-import Story from "../components/landing/Story.astro";
+import HowItWorks from "../components/landing/HowItWorks.astro";
 import { PRODUCT_LONG_NAME, PRODUCT_NAME } from "../config/brand";
 import DocShell from "../layouts/DocShell.astro";
 import { driverCounts, driverGroups, statusWord } from "../lib/catalog";
@@ -39,11 +39,9 @@ const more = [
 <DocShell title={PRODUCT_NAME} description={HOME_TITLE} home head={head}>
   <Hero spell={heroSpell} />
 
-  <div class="home-width">
-    <Story after={after} />
-  </div>
+  <HowItWorks after={after} />
 
-  <section id={after} class="home-width part after-story" aria-labelledby="safe-title">
+  <section id={after} class="home-width part" aria-labelledby="safe-title">
     <h2 id="safe-title">Safety model</h2>
     <ul class="points">
       {
@@ -104,10 +102,8 @@ const more = [
 </DocShell>
 
 <script>
-  import { scene } from "../components/landing/scene-runtime";
   import { smoothSwitch } from "../components/landing/smooth-switch";
 
-  for (const root of document.querySelectorAll<HTMLElement>("[data-story]")) scene(root, { stage: ".story-stage", runway: ".story-runway", fits: true });
   for (const toggle of document.querySelectorAll<HTMLButtonElement>("[data-smooth]")) smoothSwitch(toggle);
 </script>
 
@@ -121,10 +117,6 @@ const more = [
   .part h2 {
     font-size: var(--t-h1);
     line-height: 1.15;
-  }
-
-  .part.after-story {
-    padding-top: var(--s-6);
   }
 
   .lede {

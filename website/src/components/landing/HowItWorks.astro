@@ -1,0 +1,156 @@
+---
+import { nb } from "../../lib/story/facts";
+import { CAMERA } from "../../lib/story/camera";
+import { COLUMNS, HEADS, TIP, across, howSteps, type Column, type HowStep, type Span } from "../../lib/story/how";
+import "../../styles/how.css";
+import { KEY } from "./smooth-switch";
+
+interface Props {
+  /** The id of the section a person reaches with Skip. */
+  after: string;
+}
+
+const { after } = Astro.props;
+const steps = howSteps();
+const count = steps.length;
+const EXAMPLE = "/docs/examples/3d-print-watch/";
+
+type Kind = "line" | "dash" | "show" | "hide";
+const draw = (index: number, kind: Kind, span: Span) => {
+  const [at, length] = across(index, count, span);
+  return { "data-draw": `${kind} ${at.toFixed(4)} ${length.toFixed(4)}` };
+};
+const tip = ([at, length]: Span): Span => [at + length - TIP / 2, TIP / 2];
+const answered = ([at]: Span): Span => [at, 0.04];
+const at = (column: Column) => `grid-column: ${column} / span 1`;
+const span = (from: Column, to: Column) => (COLUMNS.indexOf(from) < COLUMNS.indexOf(to) ? `grid-column: ${from} / ${to}` : `grid-column: ${to} / ${from}`);
+
+/** The rows of one step's diagram, the heads, the panel row, room above, two rows per arrow with room between, and room below. */
+const layout = (step: HowStep) => ({
+  rows: `auto auto minmax(var(--s-4), 0.8fr) ${step.rows.map(() => "auto var(--arrow)").join(" minmax(var(--gap), 0.5fr) ")} minmax(var(--s-4), 1fr)`,
+  text: (row: number) => 4 + row * 3,
+  arrow: (row: number) => 5 + row * 3,
+});
+
+const mode = `(() => {
+  const how = document.currentScript.previousElementSibling;
+  const toggle = how.querySelector("[data-smooth]");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (toggle) {
+    let stored = null;
+    try {
+      stored = localStorage.getItem(${JSON.stringify(KEY)});
+    } catch {}
+    toggle.setAttribute("aria-checked", String(!reduce && stored !== "off"));
+    toggle.disabled = reduce;
+    toggle.removeAttribute("data-wait");
+    toggle.removeAttribute("tabindex");
+    toggle.removeAttribute("aria-hidden");
+  }
+  if (!matchMedia(${JSON.stringify(CAMERA)}).matches) return;
+  how.setAttribute("data-motion", "");
+  how.setAttribute("data-step", "1");
+  const stage = how.querySelector(".how-stage");
+  if (stage.scrollHeight > stage.clientHeight + 1) {
+    how.removeAttribute("data-motion");
+    how.removeAttribute("data-step");
+  }
+})();`;
+---
+
+<section id="how" class="home-width how" aria-labelledby="how-title" data-how data-count={count}>
+  <div class="how-track">
+    <span class="how-probe" aria-hidden="true"></span>
+    <div class="how-stage">
+      <div class="how-top">
+        <h2 id="how-title">How it works</h2>
+        <div class="how-meta">
+          <p class="how-count" aria-hidden="true">
+            {steps.map((_, index) => <span>{index + 1} / {count}</span>)}
+          </p>
+          <a class="how-skip" href={`#${after}`}>Skip<span class="visually-hidden"> the three steps</span></a>
+          <button type="button" class="smooth" role="switch" aria-checked="false" data-smooth data-wait tabindex="-1" aria-hidden="true">
+            <span class="smooth-track" aria-hidden="true"><span class="smooth-knob"></span></span>
+            <span class="smooth-label">Smooth scrolling</span>
+          </button>
+        </div>
+      </div>
+      <ol class="how-steps" role="list">
+        {
+          steps.map((step, index) => {
+            const grid = layout(step);
+            return (
+              <li class="how-step">
+                <p class="how-number" aria-hidden="true">
+                  {index + 1} / {count}
+                </p>
+                <p class="how-caption">{nb(step.caption)}</p>
+                <div class="how-figure" style={`grid-template-rows: ${grid.rows}`} aria-hidden="true" data-pagefind-ignore="all">
+                  {COLUMNS.map((column) => (
+                    <p class="how-head" style={`${at(column)}; grid-row: 1`}>
+                      {HEADS[column]}
+                    </p>
+                  ))}
+                  <p class="how-rule" style={`${at("hub")}; grid-row: 2`}>
+                    <span {...draw(index, "show", step.rule.shows)}>{nb(step.rule.text)}</span>
+                  </p>
+                  <dl class="how-printer" style={`${at("printer")}; grid-row: 2`}>
+                    {step.readings.map((reading) => (
+                      <div>
+                        <dt>{reading.name}</dt>
+                        <dd>
+                          {reading.becomes ? (
+                            <Fragment>
+                              <span class="how-was" {...draw(index, "hide", reading.becomes.at)}>
+                                {nb(reading.value)}
+                              </span>
+                              <span {...draw(index, "show", reading.becomes.at)}>{nb(reading.becomes.value)}</span>
+                            </Fragment>
+                          ) : (
+                            <span>{nb(reading.value)}</span>
+                          )}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {COLUMNS.map((column) => (
+                    <span class="how-life" data-line={column} style={`${at(column)}; grid-row: 3 / -1`} />
+                  ))}
+                  {step.rows.map((row, place) =>
+                    row.kind === "request" ? (
+                      <Fragment>
+                        <p class:list={["how-label", { approve: row.approve }]} data-row={place} style={`grid-column: ${row.legs[0].from} / end; grid-row: ${grid.text(place)}`}>
+                          <span {...draw(index, "show", row.shows)}>{nb(row.label)}</span>
+                        </p>
+                        {row.legs.map((leg) => (
+                          <span class:list={["how-leg", { held: leg.held }]} data-row={place} data-from={leg.from} data-to={leg.to} style={`${span(leg.from, leg.to)}; grid-row: ${grid.arrow(place)}`}>
+                            <span class="how-line" {...draw(index, "line", leg.draws)} />
+                            <span class="how-tip" {...draw(index, "show", tip(leg.draws))} />
+                          </span>
+                        ))}
+                      </Fragment>
+                    ) : (
+                      <Fragment>
+                        <p class="how-answer" data-row={place} style={`${span("agent", row.from)}; grid-row: ${grid.text(place)}`}>
+                          <span class:list={["status", row.tone]} {...draw(index, "show", answered(row.draws))}>
+                            {row.answer}
+                          </span>
+                        </p>
+                        <span class:list={["how-leg", "how-back", row.tone]} data-row={place} data-from={row.from} data-to="agent" style={`${span("agent", row.from)}; grid-row: ${grid.arrow(place)}`}>
+                          <span class="how-dash" {...draw(index, "dash", row.draws)} />
+                          <span class="how-tip" {...draw(index, "show", tip(row.draws))} />
+                        </span>
+                      </Fragment>
+                    ),
+                  )}
+                </div>
+              </li>
+            );
+          })
+        }
+      </ol>
+    </div>
+  </div>
+  <p class="how-onward"><a href={EXAMPLE}>See the full example: an agent watching a 3D print overnight</a></p>
+</section>
+<script is:inline set:html={mode} />
