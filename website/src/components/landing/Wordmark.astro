@@ -245,13 +245,13 @@ const mode = `(() => {
     }
 
     .hero[data-camera] .hero-slot {
-      height: var(--band);
+      height: calc(var(--lead) + var(--band) + var(--s-2));
       margin-top: var(--s-6);
     }
 
     .hero[data-camera] .hero-demo {
       --gone: clamp(0, var(--t) / var(--drop), 1);
-      margin-top: var(--s-4);
+      margin-top: var(--s-1);
       transform: translateY(calc(var(--fall) * 100svh * var(--gone) * (0.6 + 0.4 * var(--gone))));
       opacity: min(0.999, calc(1 - var(--gone)));
       will-change: transform, opacity;
@@ -350,6 +350,10 @@ const mode = `(() => {
   }
 
   @media screen and (min-width: 1200px) {
+    .hero[data-camera] .hero-slot {
+      height: var(--band);
+    }
+
     .hero[data-camera] .hero-demo {
       margin-top: var(--s-2);
     }

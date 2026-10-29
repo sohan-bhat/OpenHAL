@@ -1,0 +1,17 @@
+diff --git a/dist/components-internals/TableOfContents/starlight-toc.js b/dist/components-internals/TableOfContents/starlight-toc.js
+index 27f761a0e4ef2cf43b492bfd8bc2eabdb4e4a3fb..ea5a62cb99102e88678b7501896a68aadf04539c 100644
+--- a/dist/components-internals/TableOfContents/starlight-toc.js
++++ b/dist/components-internals/TableOfContents/starlight-toc.js
+@@ -53,9 +53,9 @@ var StarlightTOC = class extends HTMLElement {
+ 		};
+ 		const toObserve = document.querySelectorAll([
+ 			`main :where(${this.tocHeadingSelector})`,
+-			`main :where(${this.tocHeadingSelector}, .sl-heading-wrapper) ~ *:not(:has(${this.tocHeadingSelector}))`,
+-			`main .sl-markdown-content > *:not(:has(${this.tocHeadingSelector}))`,
+-			`main > *:not(:has(${this.tocHeadingSelector}))`
++			`:where(main :where(${this.tocHeadingSelector}, .sl-heading-wrapper) ~ *):not(:has(${this.tocHeadingSelector}))`,
++			`:where(main .sl-markdown-content > *):not(:has(${this.tocHeadingSelector}))`,
++			`:where(main > *):not(:has(${this.tocHeadingSelector}))`
+ 		].join());
+ 		let observer;
+ 		const observe = () => {

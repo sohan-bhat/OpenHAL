@@ -38,6 +38,9 @@
     "overrides": {
       "zod": "4.6.7",
       "@astrojs/mdx": "8.0.3"
+    },
+    "patchedDependencies": {
+      "@astrojs/starlight@0.42.7": "patches/@astrojs__starlight@0.42.7.patch"
     }
   },
   "engines": {

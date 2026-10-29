@@ -127,6 +127,23 @@ test.describe("the wordmark sequence", () => {
     });
   }
 
+  for (const viewport of [{ width: 1199, height: 900 }, { width: 1100, height: 900 }, { width: 1024, height: 900 }, { width: 1024, height: 768 }, { width: 800, height: 900 }, { width: 640, height: 900 }, { width: 390, height: 844 }]) {
+    test(`shows every lifeline name of the small diagram in full under the step count's row, at ${viewport.width} by ${viewport.height}`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await page.goto("/");
+      await expect(page.locator("[data-story]")).toHaveAttribute("data-lifted", "band");
+      await expect(page.locator(".hero-demo .seq-head")).toHaveCount(4);
+      for (const head of await page.locator(".hero-demo .seq-head").all()) await expect(head).toBeInViewport({ ratio: 1 });
+      const covered = await page.locator(".hero-demo .seq-head").evaluateAll((heads) =>
+        heads.flatMap((head) => {
+          const box = head.getBoundingClientRect();
+          return [box.left + 2, box.left + box.width / 2, box.right - 2].filter((x) => document.elementsFromPoint(x, box.top + 1).some((el) => el.closest(".story-stage"))).map(() => head.textContent);
+        }),
+      );
+      expect(covered).toEqual([]);
+    });
+  }
+
   test("drops the opening away from the first pixel of scroll and brings the first screen back exactly at the top", async ({ page }) => {
     await page.goto("/");
     await settle(page);

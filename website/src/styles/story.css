@@ -1,6 +1,21 @@
 .hero,
 .story {
   --band: 32px;
+  --lead: var(--s-1);
+}
+
+@media screen and (min-width: 640px) {
+  .hero,
+  .story {
+    --lead: var(--s-3);
+  }
+}
+
+@media screen and (min-width: 1024px) and (min-height: 820px) {
+  .hero,
+  .story {
+    --lead: var(--s-4);
+  }
 }
 
 .story {
@@ -535,7 +550,7 @@
     grid-template-rows: auto minmax(0, 1fr);
     gap: var(--s-3);
     min-height: calc(100svh - var(--pin));
-    padding-block: var(--s-1) var(--s-2);
+    padding-block: var(--lead) var(--s-2);
     background: var(--bg);
   }
 
@@ -613,7 +628,7 @@
 @media screen and (min-width: 640px) {
   .story[data-camera] .story-stage {
     gap: var(--s-4);
-    padding-block: var(--s-3) var(--s-4);
+    padding-block: var(--lead) var(--s-4);
   }
 
   .story[data-camera] .story-heads {
@@ -642,7 +657,7 @@
 @media screen and (min-width: 1024px) and (min-height: 820px) {
   .story[data-camera] .story-stage {
     gap: var(--s-5);
-    padding-block: var(--s-4) var(--s-5);
+    padding-block: var(--lead) var(--s-5);
   }
 
   .story[data-camera] .seq {
