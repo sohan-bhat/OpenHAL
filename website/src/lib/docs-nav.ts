@@ -45,6 +45,19 @@ export function navTitle(title: string): string {
   return SHORT[title] ?? title;
 }
 
+/** The full print babysitter example, a page the site builds from the record rather than from docs/. */
+export const EXAMPLE = {
+  title: "Example: an agent watching a 3D print",
+  href: "/docs/examples/3d-print-watch/",
+  summary: "Every step, message and audit log entry of the print babysitter demo.",
+};
+
+/** The docs' examples, after Get started. */
+export const EXAMPLES: SideGroup = {
+  name: "Examples",
+  items: [{ title: "An agent watching a 3D print", href: EXAMPLE.href, summary: EXAMPLE.summary }],
+};
+
 /** Pages outside docs/ that the Docs section lists, since the main navigation leaves them out. */
 export const TOOLS: SideGroup = {
   name: "SDKs and Inspector",
@@ -64,6 +77,8 @@ export async function docsSidebar(): Promise<SideGroup[]> {
       summary: DOC_SUMMARIES[item.route],
     })),
   })).filter((group) => group.items.length > 0);
+  const start = groups.findIndex((group) => group.name === "Get started");
+  groups.splice(start + 1, 0, EXAMPLES);
   const reference = groups.findIndex((group) => group.name === "Reference");
   groups.splice(reference < 0 ? groups.length : reference + 1, 0, TOOLS);
   return groups;

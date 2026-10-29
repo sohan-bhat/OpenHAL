@@ -1,0 +1,150 @@
+---
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import Walkthrough from "../../../components/example/Walkthrough.astro";
+import DocShell from "../../../layouts/DocShell.astro";
+import { codeHtml } from "../../../lib/code";
+import { EXAMPLE, docsSidebar } from "../../../lib/docs-nav";
+import { storyFacts } from "../../../lib/story/facts";
+import { auditLog, messages } from "../../../lib/story/messages";
+import { REPO_ROOT } from "../../../lib/spec-meta.mjs";
+
+const facts = storyFacts();
+const file = `examples/print-babysitter/${facts.file}`;
+const device = readFileSync(join(REPO_ROOT, file), "utf8");
+const sent = messages();
+const audit = auditLog();
+const sidebar = await docsSidebar();
+const headings = [
+  { depth: 2, slug: "step-by-step", text: "Step by step" },
+  { depth: 2, slug: "device-file", text: "The device file" },
+  { depth: 2, slug: "messages", text: "The messages" },
+  { depth: 2, slug: "audit-log", text: "The audit log" },
+];
+const [day] = facts.confirmed.split(" ").slice(-1);
+const TONES: Record<string, string> = { done: "ok", blocked: "blocked", pending: "confirm" };
+---
+
+<DocShell title={EXAMPLE.title} description={EXAMPLE.summary} sidebar={sidebar} headings={headings}>
+  <p>
+    Someone starts a long print and asks an agent to keep an eye on the print overnight. Through the OpenHAL hub the agent reads the printer's webcam, warms the bed, has a request for a nozzle temperature of {facts.nozzle.value} refused, pauses the print and asks
+    to cancel the print, and the cancel waits until the owner approves.
+  </p>
+  <p>
+    Every value on this page comes from <code>docs/demo/scenario.yaml</code>, which <code>uv run openhal demo</code> records from a run of the hub against a simulated printer and webcam. The <a href="/docs/quickstart/">quickstart</a> runs the same demo in your terminal.
+  </p>
+
+  <h2 id="step-by-step">Step by step</h2>
+  <p>Next draws each step's request along the lifelines, with the hub's answer as a dashed arrow back to the sender.</p>
+  <Walkthrough />
+
+  <h2 id="device-file">The device file</h2>
+  <p>
+    The hub checks every request against <code>{facts.file}</code>, the printer's device file, which the owner confirmed on {day}. The file limits the nozzle target to {facts.nozzle.max} and the bed target to {facts.bed.max}, and the cancel action waits for a person each time.
+  </p>
+  <Fragment set:html={codeHtml(device, "yaml")} />
+
+  <h2 id="messages">The messages</h2>
+  <p>
+    Each request is the method and params the agent or the owner sent, and each response is the hub's result or error, as the record holds them. The record leaves out each message's <code>jsonrpc</code> and <code>id</code> members, keeps a camera frame's size in place
+    of its image data, and writes <code>REQUEST_ID</code> for the id the hub gave the held cancel.
+  </p>
+  <ol class="messages" role="list">
+    {
+      sent.map((message, index) => (
+        <li>
+          <p class="message-note">
+            <span class="message-number">{index + 1}</span> {message.note} <span class="mono message-by">{message.by}</span>
+          </p>
+          <p class="message-way">Request</p>
+          <Fragment set:html={codeHtml(message.request, "json")} />
+          <p class="message-way">{message.refused ? "Error response" : "Response"}</p>
+          <Fragment set:html={codeHtml(message.response, "json")} />
+        </li>
+      ))
+    }
+  </ol>
+
+  <h2 id="audit-log">The audit log</h2>
+  <p>The run ends with <code>{audit.command}</code>, which prints the hub's audit log, newest first. The log holds every request, the refusal and the owner's approval.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Seq</th>
+          <th scope="col">Event</th>
+          <th scope="col">Who</th>
+          <th scope="col">Target</th>
+          <th scope="col">Status</th>
+          <th scope="col">Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          audit.entries.map((entry) => (
+            <tr>
+              <td class="mono">{entry.seq}</td>
+              <td>{entry.event}</td>
+              <td class="mono">{entry.who}</td>
+              <td class="mono">{entry.target}</td>
+              <td>
+                <span class:list={["status", TONES[entry.status]]}>{entry.status}</span>
+              </td>
+              <td>{entry.message}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  <p>{audit.counts}</p>
+</DocShell>
+
+<script>
+  import { walkthrough } from "../../../components/example/walkthrough-runtime";
+
+  for (const root of document.querySelectorAll<HTMLElement>("[data-story]")) walkthrough(root);
+</script>
+
+<style>
+  .messages[role="list"] {
+    display: grid;
+    gap: var(--s-6);
+    margin-top: var(--s-5);
+    padding: 0;
+    list-style: none;
+  }
+
+  .messages > li {
+    display: grid;
+    gap: var(--s-2);
+    margin: 0;
+  }
+
+  .messages :global(.code-block) {
+    margin: 0;
+  }
+
+  .message-note {
+    font-weight: 700;
+  }
+
+  .message-number {
+    margin-right: var(--s-1);
+    color: var(--text-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .message-by {
+    margin-left: var(--s-1);
+    color: var(--text-2);
+    font-size: var(--t-small);
+    font-weight: 400;
+  }
+
+  .message-way {
+    margin-top: var(--s-1);
+    color: var(--text-2);
+    font-size: var(--t-small);
+  }
+</style>
