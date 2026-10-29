@@ -24,6 +24,7 @@ const interactDirective = {
 export default defineConfig({
   site: SITE_URL,
   trailingSlash: "always",
+  compressHTML: true,
   integrations: [svelte(), interactDirective, sitemap({ filter: (page) => !MOVED.some((part) => page.includes(part)) && !page.endsWith("/spec/") })],
   markdown: {
     syntaxHighlight: false,

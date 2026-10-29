@@ -20,7 +20,7 @@ export default defineConfig({
     { name: "webkit", use: { ...devices["Desktop Safari"], headless: true } },
   ],
   webServer: {
-    command: `pnpm exec astro preview --host 127.0.0.1 --port ${port}`,
+    command: `pnpm exec astro preview --host 127.0.0.1 --port ${port} --ignore-lock`,
     url: `http://127.0.0.1:${port}/`,
     reuseExistingServer: false,
     timeout: 60_000,
