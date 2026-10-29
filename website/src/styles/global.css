@@ -11,6 +11,10 @@
   color-scheme: dark;
 }
 
+body {
+  -webkit-font-smoothing: auto;
+}
+
 [hidden] {
   display: none !important;
 }

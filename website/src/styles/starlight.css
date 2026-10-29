@@ -68,7 +68,7 @@
 }
 
 @media (min-width: 50rem) {
-  :root[data-has-sidebar] {
+  html:root[data-has-sidebar] {
     --sl-content-inline-start: calc(var(--oh-gutter) + var(--sl-sidebar-width));
   }
 
@@ -80,7 +80,7 @@
     padding-inline-start: calc(var(--oh-gutter) + var(--sl-sidebar-pad-x));
   }
 
-  :root:has(.oh-home) {
+  html:root:has(.oh-home) {
     --sl-content-inline-start: 0px;
   }
 
