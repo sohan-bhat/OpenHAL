@@ -1,0 +1,15 @@
+---
+import Picker from "./Picker.astro";
+
+interface Props {
+  place?: "header" | "menu";
+}
+
+const { place = "header" } = Astro.props;
+const items = (["auto", "light", "dark"] as const).map((value) => ({ label: Astro.locals.t(`themeSelect.${value}`), value, current: value === "auto" }));
+---
+
+<Picker id={place === "menu" ? "oh-theme-menu" : "oh-theme"} kind="theme" label="Theme" items={items} />
+<script is:inline>
+  StarlightThemeProvider.updatePickers();
+</script>
