@@ -35,7 +35,7 @@ from openhal.protocol.errors import RpcError, from_kernel
 from openhal.protocol.log import MessageLog
 from openhal.protocol.notify import Notifier
 from openhal.protocol.session import Session
-from openhal.protocol.version import is_version, negotiate
+from openhal.protocol.version import is_version, negotiate, supported
 from openhal.spec.units import UnitError, parse_quantity, wire_unit
 from openhal.spec.units import convert as convert_units
 
@@ -213,7 +213,8 @@ class Dispatcher:
         if session.principal is not None:
             raise RpcError("INVALID_REQUEST", message="hal/initialize already ran on this connection")
         if not is_version(params.protocol_version):
-            raise RpcError("INVALID_PARAMS", {"problems": ["protocolVersion must be a date such as 2026-10-24"]})
+            problem = f"protocolVersion must be a version number, and this hub supports {supported()}"
+            raise RpcError("INVALID_PARAMS", {"problems": [problem]})
         principal = session.header_principal
         if principal is None and not session.token_rejected:
             principal = self.hub.tokens.principal(params.token) if params.token else session.fallback

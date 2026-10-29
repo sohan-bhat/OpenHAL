@@ -58,17 +58,27 @@ async def test_shutdown_stops_notifications(transport: Connect, tokens: dict[str
 
 
 async def test_version_negotiation(transport: Connect, tokens: dict[str, str]) -> None:
+    assert PROTOCOL_VERSIONS == [VERSION] == ["0.1"]
     assert negotiate(VERSION) == VERSION
-    assert negotiate("2099-01-01") == PROTOCOL_VERSIONS[-1]
-    assert negotiate("2020-01-01") == PROTOCOL_VERSIONS[-1]
-    async with transport(tokens["agent"]) as rpc:
-        result = await rpc.initialize(version="2099-01-01")
-        assert result["protocolVersion"] == VERSION
-    async with transport(tokens["agent"]) as rpc:
-        error = await rpc.error(
-            "hal/initialize", {"protocolVersion": "latest", "clientInfo": {"name": "pytest", "version": "1"}}
-        )
-        assert error["data"]["name"] == "INVALID_PARAMS"
+    assert negotiate("0.2") == negotiate("1.0") == negotiate("0.0") == VERSION
+    for newer in ("0.2", "1.0", "0.10"):
+        async with transport(tokens["agent"]) as rpc:
+            result = await rpc.initialize(version=newer)
+            assert result["protocolVersion"] == VERSION
+
+
+async def test_a_version_that_is_not_a_number_names_the_supported_version(
+    transport: Connect, tokens: dict[str, str]
+) -> None:
+    for sent in ("2026-10-24", "v0.1", "0.1.0", "latest", "01.1", ""):
+        async with transport(tokens["agent"]) as rpc:
+            error = await rpc.error(
+                "hal/initialize", {"protocolVersion": sent, "clientInfo": {"name": "pytest", "version": "1"}}
+            )
+            assert (error["code"], error["data"]["name"]) == (-32602, "INVALID_PARAMS"), sent
+            assert error["data"]["problems"] == ["protocolVersion must be a version number, and this hub supports 0.1"]
+            assert error["message"].endswith("this hub supports 0.1"), sent
+            assert (await rpc.initialize())["protocolVersion"] == VERSION
 
 
 async def test_initialize_twice_is_refused(transport: Connect, tokens: dict[str, str]) -> None:

@@ -15,7 +15,7 @@ from openhal.kernel.principals import human
 from openhal.protocol.dispatch import Dispatcher
 from openhal.protocol.log import LOG_SIZE, MessageLog, redact
 from openhal.spec import loads
-from tests.protocol.conftest import Connect, websocket_client
+from tests.protocol.conftest import VERSION, Connect, websocket_client
 
 LAMP = """
 device: Desk lamp
@@ -82,7 +82,7 @@ async def test_a_core_hub_answers_core_methods_only(hub: Hub, tokens: dict[str, 
         "jsonrpc": "2.0",
         "id": 1,
         "method": "hal/initialize",
-        "params": {"protocolVersion": "2026-10-24", "clientInfo": {"name": "pytest", "version": "1"}},
+        "params": {"protocolVersion": VERSION, "clientInfo": {"name": "pytest", "version": "1"}},
     }
     result = (await dispatcher.handle(session, initialize))["result"]  # type: ignore[index]
     assert result["conformance"] == "core"
@@ -167,7 +167,7 @@ def test_the_ring_buffer_keeps_the_last_2000() -> None:
 async def test_a_cookie_session_can_initialize(hub: Hub) -> None:
     dispatcher = Dispatcher(hub)
     session = dispatcher.open(fallback=human("owner"))
-    params = {"protocolVersion": "2026-10-24", "clientInfo": {"name": "inspector", "version": "1"}}
+    params = {"protocolVersion": VERSION, "clientInfo": {"name": "inspector", "version": "1"}}
     response = await dispatcher.handle(
         session, {"jsonrpc": "2.0", "id": 1, "method": "hal/initialize", "params": params}
     )

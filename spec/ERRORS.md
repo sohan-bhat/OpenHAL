@@ -1,6 +1,6 @@
 # Errors
 
-The normative error registry is in [spec/2026-10-24/safety.md](2026-10-24/safety.md#error-registry), and this page summarizes the registry.
+The normative error registry is in [spec/v0.1/safety.md](v0.1/safety.md#error-registry), and this page summarizes the registry.
 
 A blocked or failed command returns a JSON-RPC error. `error.code` is the number, `error.message` is the reason, and `error.data.name` is the registry name that Clients branch on. Numbers are stable across versions and never reused.
 
@@ -31,4 +31,4 @@ A blocked or failed command returns a JSON-RPC error. `error.code` is the number
 | -32022 | REQUEST_CLOSED |
 | -32023 | UNIT_INVALID |
 
-The kernel codes behind each name, the check order and the reason templates are in the dated [safety section](2026-10-24/safety.md). The error object's fields are in [messages](2026-10-24/basic/messages.md#errors).
+The kernel codes behind each name, the check order and the reason templates are in the dated [safety section](v0.1/safety.md). The error object's fields are in [messages](v0.1/basic/messages.md#errors).

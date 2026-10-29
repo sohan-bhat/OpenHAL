@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "OpenHAL hub protocol 2026-10-24",
+  "title": "OpenHAL hub protocol v0.1",
   "description": "Generated from openhal/protocol/messages.py by python -m openhal.protocol.schema.",
-  "protocolVersion": "2026-10-24",
+  "protocolVersion": "0.1",
   "methods": {
     "hal/initialize": {
       "level": "core",
@@ -1859,7 +1859,7 @@
       "additionalProperties": false,
       "properties": {
         "protocolVersion": {
-          "description": "The newest version the client supports.",
+          "description": "The newest version the client supports, a number such as 0.1.",
           "maxLength": 10,
           "title": "Protocolversion",
           "type": "string"
@@ -1893,6 +1893,7 @@
       "additionalProperties": false,
       "properties": {
         "protocolVersion": {
+          "description": "The version the hub answers with, such as 0.1.",
           "title": "Protocolversion",
           "type": "string"
         },

@@ -1,4 +1,4 @@
-# Schema reference, version 2026-10-24
+# Schema reference, v0.1
 
 Generated from the reference models by `uv run python -m openhal.protocol.schema`. Do not edit it by hand.
 The JSON Schema is [schema.json](schema.json). Field names are as they travel on the wire.
@@ -367,7 +367,7 @@ The JSON-RPC `error` member.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `protocolVersion` | string | yes | The newest version the client supports. |
+| `protocolVersion` | string | yes | The newest version the client supports, a number such as 0.1. |
 | `clientInfo` | [Info](#info) | yes |  |
 | `token` | string or null | no | The bearer token, if not sent as a header. |
 
@@ -375,7 +375,7 @@ The JSON-RPC `error` member.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `protocolVersion` | string | yes |  |
+| `protocolVersion` | string | yes | The version the hub answers with, such as 0.1. |
 | `hubInfo` | [Info](#info) | yes |  |
 | `conformance` | `"core"` or `"control"` or `"full"` | yes |  |
 | `principal` | [PrincipalInfo](#principalinfo) | yes |  |

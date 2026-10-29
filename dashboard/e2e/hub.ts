@@ -5,6 +5,8 @@ import type { BrowserContext } from "@playwright/test";
 export const PORT = Number(process.env.INSPECTOR_PORT ?? 7431);
 export const STATE_PATH =
   process.env.INSPECTOR_STATE ?? fileURLToPath(new URL("../test-results/inspector-hub.json", import.meta.url));
+const VERSIONS_PATH = fileURLToPath(new URL("../../spec/versions.json", import.meta.url));
+export const PROTOCOL_VERSION = (JSON.parse(readFileSync(VERSIONS_PATH, "utf-8")) as { latest: string }).latest;
 
 export interface HubState {
   url: string;
@@ -68,7 +70,7 @@ export class AgentClient {
     });
     const client = new AgentClient(socket);
     const hello = await client.call("hal/initialize", {
-      protocolVersion: "2026-10-24",
+      protocolVersion: PROTOCOL_VERSION,
       clientInfo: { name, version: "1.4.0" },
       token,
     });

@@ -16,11 +16,12 @@ from pathlib import Path
 import pytest
 
 from openhal.kernel.commands import BLOCK_CODES
+from openhal.protocol.version import LATEST, label
 
 ROOT = Path(__file__).resolve().parents[2]
 ADR = ROOT / "docs" / "adr" / "0015-openhal-hub-protocol.md"
 SPEC = ROOT / "spec"
-VERSION = SPEC / "2026-10-24"
+VERSION = SPEC / label(LATEST)
 TOP_LEVEL = ("SPEC.md", "CHANGELOG.md", "VERSIONING.md", "ERRORS.md", "CONFORMANCE.md", "GLOSSARY.md")
 NOT_ERROR_NAMES = frozenset({"HA_TOKEN"})
 
@@ -191,5 +192,6 @@ def test_versions_file_names_this_version_as_latest() -> None:
     import json
 
     versions = json.loads((SPEC / "versions.json").read_text(encoding="utf-8"))
-    assert versions["latest"] == VERSION.name
-    assert {"version": VERSION.name, "status": "draft"} in versions["versions"]
+    assert versions["latest"] == LATEST == "0.1"
+    assert VERSION.name == label(versions["latest"]) == "v0.1"
+    assert {"version": "0.1", "status": "draft"} in versions["versions"]

@@ -8,7 +8,7 @@
   from its data, and each kernel code belongs to the error's name.
 - The firmware sessions have real checksums.
 - The conformance checks the spec and the guide list are the suite's checks, at the suite's levels.
-- GLOSSARY.md and the spec's terminology define the same terms. The dated spec writes its
+- GLOSSARY.md and the spec's terminology define the same terms. The current spec writes its
   multi-word terms capitalized, and no page uses a known misspelling such as "Websocket".
 
 tests/spec/test_spec_names.py covers the names in spec/ against the ADR. This file covers the
@@ -29,6 +29,7 @@ from pydantic import TypeAdapter
 from openhal.drivers.openhal_firmware.protocol import checksum
 from openhal.protocol import messages as m
 from openhal.protocol.errors import BY_KERNEL_CODE, BY_NAME, RpcError
+from openhal.protocol.version import LATEST, label
 from tests.spec.test_spec_names import METHOD, PAIRINGS, adr
 
 ROOT: Final = Path(__file__).resolve().parents[2]
@@ -37,7 +38,8 @@ FIRMWARE_LINE: Final = re.compile(r"^(?:host|board)\s+(\d+ [^*\n]+)\*([0-9A-F]{2
 CHECK_ROW: Final = re.compile(r"^\| `([a-z ]+)` \| (Core|Control|Full) \|", re.M)
 SUITE_CHECK: Final = re.compile(r'\("([a-z ]+)", "(core|control|full)", \w+\)')
 GLOSSARY: Final = ROOT / "spec" / "GLOSSARY.md"
-TERMINOLOGY: Final = ROOT / "spec" / "2026-10-24" / "index.md"
+CURRENT: Final = ROOT / "spec" / label(LATEST)
+TERMINOLOGY: Final = CURRENT / "index.md"
 MISSPELLINGS: Final[dict[str, str]] = {
     r"\b(?:Websockets?|[Ww]eb [Ss]ockets?|websocket)\b": "WebSocket",
     r"\b(?:JSON ?RPC|JSONRPC|json-rpc|Json-Rpc)\b": "JSON-RPC",
@@ -74,7 +76,7 @@ ids = {"ids": lambda path: str(path.relative_to(ROOT))}
 
 @cache
 def schema_names() -> frozenset[str]:
-    document = json.loads((ROOT / "spec" / "2026-10-24" / "schema.json").read_text(encoding="utf-8"))
+    document = json.loads((CURRENT / "schema.json").read_text(encoding="utf-8"))
     return (
         frozenset(document["methods"])
         | frozenset(document["notifications"])
@@ -176,7 +178,7 @@ def test_every_message_trace_matches_the_protocol(page: Path) -> None:
 
 
 def test_the_messages_page_has_a_trace_for_every_method() -> None:
-    page = ROOT / "spec" / "2026-10-24" / "basic" / "messages.md"
+    page = CURRENT / "basic" / "messages.md"
     shown = {
         message["method"]
         for trace in traces(page.read_text(encoding="utf-8"))
@@ -224,9 +226,7 @@ def suite_checks() -> frozenset[tuple[str, str]]:
     return frozenset(SUITE_CHECK.findall(source))
 
 
-@pytest.mark.parametrize(
-    "page", [ROOT / "spec" / "2026-10-24" / "drivers.md", ROOT / "docs" / "guide" / "conformance.md"], **ids
-)
+@pytest.mark.parametrize("page", [CURRENT / "drivers.md", ROOT / "docs" / "guide" / "conformance.md"], **ids)
 def test_the_listed_conformance_checks_are_the_suites(page: Path) -> None:
     listed = {(name, level.lower()) for name, level in CHECK_ROW.findall(page.read_text(encoding="utf-8"))}
     assert len(suite_checks()) >= 15
@@ -247,9 +247,9 @@ def test_the_glossary_and_the_spec_define_the_same_terms() -> None:
 
 
 def spec_pages() -> list[Path]:
-    dated = sorted((ROOT / "spec" / "2026-10-24").rglob("*.md"))
+    current = sorted(CURRENT.rglob("*.md"))
     top = [ROOT / "spec" / name for name in ("GLOSSARY.md", "CONFORMANCE.md", "ERRORS.md")]
-    return [path for path in [*dated, *top] if path.name != "schema.md"]
+    return [path for path in [*current, *top] if path.name != "schema.md"]
 
 
 @pytest.mark.parametrize("page", spec_pages(), **ids)

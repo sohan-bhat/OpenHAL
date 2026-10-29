@@ -16,11 +16,12 @@ from typer.testing import CliRunner
 
 from openhal.cli.main import app
 from openhal.demo import e2e, e2e_trace, plant
+from openhal.protocol.version import LATEST, label
 from openhal.routines.engine import parse
 from openhal.spec import load
 
 ROOT = Path(__file__).resolve().parents[2]
-ROUTINES_SPEC = ROOT / "spec" / "2026-10-24" / "routines.md"
+ROUTINES_SPEC = ROOT / "spec" / label(LATEST) / "routines.md"
 SPEED = 80.0
 
 

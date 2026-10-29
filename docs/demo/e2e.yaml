@@ -1,6 +1,6 @@
 scenario: plant-waterer-e2e
 recorded_with: uv run openhal demo --full --record docs/demo/e2e.yaml
-protocol_version: '2026-10-24'
+protocol_version: '0.1'
 device: plant-waterer
 file: plant-waterer.hal.yaml
 person: human:owner

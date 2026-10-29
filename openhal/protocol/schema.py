@@ -1,8 +1,8 @@
 """The schema reference, generated from the message models and never written by hand (ADR 0015).
 
-`uv run python -m openhal.protocol.schema` writes spec/2026-10-24/schema.json, a JSON Schema for
-every message, and spec/2026-10-24/schema.md, a reference with every type and field. A test checks
-both files are current.
+`uv run python -m openhal.protocol.schema` writes schema.json, a JSON Schema for every message, and
+schema.md, a reference with every type and field, into the latest version's folder, such as
+spec/v0.1/. A test checks both files are current.
 """
 
 from __future__ import annotations
@@ -17,10 +17,10 @@ from pydantic.json_schema import models_json_schema
 
 from openhal.protocol import messages as m
 from openhal.protocol.errors import REGISTRY
-from openhal.protocol.version import LATEST
+from openhal.protocol.version import LATEST, label
 
 ROOT: Final = Path(__file__).resolve().parents[2]
-TARGET_DIR: Final = ROOT / "spec" / LATEST
+TARGET_DIR: Final = ROOT / "spec" / label(LATEST)
 JSON_PATH: Final = TARGET_DIR / "schema.json"
 MARKDOWN_PATH: Final = TARGET_DIR / "schema.md"
 REF: Final = "#/$defs/{model}"
@@ -51,7 +51,7 @@ def document() -> dict[str, Any]:
     _, defs = models_json_schema([(model, "validation") for model in message_models()], by_alias=True, ref_template=REF)
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "title": f"OpenHAL hub protocol {LATEST}",
+        "title": f"OpenHAL hub protocol {label(LATEST)}",
         "description": "Generated from openhal/protocol/messages.py by python -m openhal.protocol.schema.",
         "protocolVersion": LATEST,
         "methods": {
@@ -133,7 +133,7 @@ def _type_section(name: str, schema: dict[str, Any]) -> list[str]:
 def markdown(schema: dict[str, Any]) -> str:
     """The schema as a Markdown reference."""
     lines = [
-        f"# Schema reference, version {LATEST}",
+        f"# Schema reference, {label(LATEST)}",
         "",
         "Generated from the reference models by `uv run python -m openhal.protocol.schema`. Do not edit it by hand.",
         "The JSON Schema is [schema.json](schema.json). Field names are as they travel on the wire.",

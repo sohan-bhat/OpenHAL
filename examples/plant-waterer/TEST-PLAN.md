@@ -115,7 +115,7 @@ uv run openhal token create --name hwtest-agent --scope control_low --json | uv 
 Save this as `too-long.jsonl`.
 
 ```json
-{"jsonrpc": "2.0", "id": 1, "method": "hal/initialize", "params": {"protocolVersion": "2026-10-24", "clientInfo": {"name": "hwtest", "version": "1"}}}
+{"jsonrpc": "2.0", "id": 1, "method": "hal/initialize", "params": {"protocolVersion": "0.1", "clientInfo": {"name": "hwtest", "version": "1"}}}
 {"jsonrpc": "2.0", "method": "hal/initialized"}
 {"jsonrpc": "2.0", "id": 2, "method": "hal/action", "params": {"device": "plant-waterer", "action": "water", "args": {"duration": {"value": 120, "unit": "s"}}}}
 ```
@@ -123,7 +123,7 @@ Save this as `too-long.jsonl`.
 Save this as `short.jsonl`.
 
 ```json
-{"jsonrpc": "2.0", "id": 1, "method": "hal/initialize", "params": {"protocolVersion": "2026-10-24", "clientInfo": {"name": "hwtest", "version": "1"}}}
+{"jsonrpc": "2.0", "id": 1, "method": "hal/initialize", "params": {"protocolVersion": "0.1", "clientInfo": {"name": "hwtest", "version": "1"}}}
 {"jsonrpc": "2.0", "method": "hal/initialized"}
 {"jsonrpc": "2.0", "id": 2, "method": "hal/action", "params": {"device": "plant-waterer", "action": "water", "args": {"duration": {"value": 2, "unit": "s"}}}}
 ```

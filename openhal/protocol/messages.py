@@ -1,4 +1,4 @@
-"""Pydantic models for every protocol message (ADR 0015, spec/2026-10-24/basic/messages.md).
+"""Pydantic models for every protocol message (ADR 0015, spec/v0.1/basic/messages.md).
 
 Field names are snake_case in Python and camelCase on the wire. Params models refuse unknown fields,
 so a typo is INVALID_PARAMS instead of being ignored. Fields marked optional in the spec, such as
@@ -6,7 +6,7 @@ so a typo is INVALID_PARAMS instead of being ignored. Fields marked optional in 
 in UTC.
 
 `METHODS` and `NOTIFICATIONS` list every method and notification with its models and conformance
-level. The schema reference in spec/2026-10-24/ is generated from this module by
+level. The schema reference in spec/v0.1/ is generated from this module by
 `python -m openhal.protocol.schema`.
 """
 
@@ -173,7 +173,9 @@ class Info(Message):
 
 
 class InitializeParams(Message):
-    protocol_version: str = Field(max_length=10, description="The newest version the client supports.")
+    protocol_version: str = Field(
+        max_length=10, description="The newest version the client supports, a number such as 0.1."
+    )
     client_info: Info
     token: str | None = Field(default=None, max_length=200, description="The bearer token, if not sent as a header.")
 
@@ -189,7 +191,7 @@ class Capabilities(Message):
 
 
 class InitializeResult(Message):
-    protocol_version: str
+    protocol_version: str = Field(description="The version the hub answers with, such as 0.1.")
     hub_info: Info
     conformance: Conformance
     principal: PrincipalInfo

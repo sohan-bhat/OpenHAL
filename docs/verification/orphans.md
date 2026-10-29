@@ -10,7 +10,7 @@ Sources are named by where they live.
 - **Scenario.** docs/demo/scenario.yaml.
 - **Catalog.** drivers/catalog.json.
 - **Library.** The device files in library/.
-- **Schema.** spec/2026-10-24/schema.json and the error registry in ADR 0015.
+- **Schema.** spec/v0.1/schema.json and the error registry in ADR 0015.
 - **Hub.** A field the hub's REST or JSON-RPC answer carries.
 
 ## Removed
