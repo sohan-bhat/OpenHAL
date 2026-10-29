@@ -1,6 +1,7 @@
 import { getCollection } from "astro:content";
 import type { SideGroup } from "./nav-types";
 import { FIXED_ROUTES } from "./markdown/routes.mjs";
+import { EXAMPLE } from "./story/example";
 
 const DOC_GROUPS = ["Get started", "Tutorials", "Reference", "Firmware"];
 
@@ -45,17 +46,12 @@ export function navTitle(title: string): string {
   return SHORT[title] ?? title;
 }
 
-/** The full print babysitter example, a page the site builds from the record rather than from docs/. */
-export const EXAMPLE = {
-  title: "Example: an agent watching a 3D print",
-  href: "/docs/examples/3d-print-watch/",
-  summary: "Every step, message and audit log entry of the print babysitter demo.",
-};
+export { EXAMPLE };
 
 /** The docs' examples, after Get started. */
 export const EXAMPLES: SideGroup = {
   name: "Examples",
-  items: [{ title: "An agent watching a 3D print", href: EXAMPLE.href, summary: EXAMPLE.summary }],
+  items: [{ title: EXAMPLE.link, href: EXAMPLE.href, summary: EXAMPLE.summary }],
 };
 
 /** Pages outside docs/ that the Docs section lists, since the main navigation leaves them out. */
