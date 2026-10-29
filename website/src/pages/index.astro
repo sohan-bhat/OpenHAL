@@ -105,6 +105,15 @@ const more = [
   import { smoothSwitch } from "../components/landing/smooth-switch";
 
   for (const toggle of document.querySelectorAll<HTMLButtonElement>("[data-smooth]")) smoothSwitch(toggle);
+  const how = document.querySelector<HTMLElement>("[data-how]");
+  if (how) {
+    import("../components/landing/how-runtime")
+      .then(({ howItWorks }) => howItWorks(how))
+      .catch(() => {
+        how.removeAttribute("data-motion");
+        how.removeAttribute("data-step");
+      });
+  }
 </script>
 
 <style>
