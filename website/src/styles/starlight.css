@@ -2,6 +2,7 @@
   --oh-gutter: max(0px, (100vw - 1360px) / 2);
   --oh-control-border: color-mix(in srgb, var(--text-2) 60%, var(--border));
   --oh-control-line: 1.5px;
+  --oh-control-ring: inset 0 0 0 calc(var(--oh-control-line) - 1px);
   --oh-highlight: color-mix(in srgb, var(--accent) 10%, var(--bg));
 
   --sl-font: var(--font-text);
@@ -118,14 +119,15 @@ site-search button[data-open-modal] {
 
 @media (min-width: 50rem) {
   site-search button[data-open-modal] {
-    border-width: var(--oh-control-line);
     border-color: var(--oh-control-border);
+    box-shadow: var(--oh-control-ring) var(--oh-control-border);
     background: var(--bg);
     max-width: 260px;
   }
 
   site-search button[data-open-modal]:hover {
     border-color: var(--accent);
+    box-shadow: var(--oh-control-ring) var(--accent);
     color: var(--text);
   }
 }
@@ -147,7 +149,8 @@ site-search button[data-open-modal] > svg {
 }
 
 site-search button > kbd {
-  border: var(--oh-control-line) solid var(--border);
+  border: 1px solid var(--border);
+  box-shadow: var(--oh-control-ring) var(--border);
   background: var(--bg);
   color: var(--text-2);
   font-size: var(--t-legend);
@@ -178,8 +181,8 @@ site-search dialog[data-closing] {
   pointer-events: none;
 }
 
-#starlight__search {
-  --pagefind-ui-border-width: var(--oh-control-line);
+#starlight__search :is(.pagefind-ui__search-input, .pagefind-ui__button) {
+  box-shadow: var(--oh-control-ring) var(--pagefind-ui-border);
 }
 
 #starlight__sidebar[data-closing] {
@@ -192,7 +195,8 @@ details[data-closing]::details-content {
 }
 
 .sl-menu-button {
-  border: var(--oh-control-line) solid var(--oh-control-border);
+  border: 1px solid var(--oh-control-border);
+  box-shadow: var(--oh-control-ring) var(--oh-control-border);
   border-radius: var(--radius);
   background: var(--bg);
   color: var(--text);
@@ -280,14 +284,15 @@ html:root:has(.oh-home) {
 }
 
 .pagination-links a {
-  border-width: var(--oh-control-line);
   border-radius: var(--radius);
   border-color: var(--border);
+  box-shadow: var(--oh-control-ring) var(--border);
   color: var(--text-2);
 }
 
 .pagination-links a:hover {
   border-color: var(--accent);
+  box-shadow: var(--oh-control-ring) var(--accent);
 }
 
 .pagination-links .link-title {
@@ -312,7 +317,15 @@ html:root:has(.oh-home) {
 }
 
 mobile-starlight-toc .toggle {
-  border-width: var(--oh-control-line);
+  box-shadow: var(--oh-control-ring) var(--border);
+}
+
+mobile-starlight-toc details[open] .toggle {
+  box-shadow: var(--oh-control-ring) var(--accent);
+}
+
+mobile-starlight-toc details .toggle:hover {
+  box-shadow: var(--oh-control-ring) var(--text-2);
 }
 
 :is(.sidebar-content, mobile-starlight-toc) .caret {

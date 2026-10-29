@@ -96,7 +96,8 @@
     height: 16px;
     margin-left: 6px;
     padding: 0;
-    border: var(--oh-control-line) solid var(--text-2);
+    border: 1px solid var(--text-2);
+    box-shadow: var(--oh-control-ring) var(--text-2);
     border-radius: 50%;
     background: none;
     color: var(--text-2);
@@ -122,6 +123,7 @@
   .info[aria-expanded="true"] {
     color: var(--text);
     border-color: var(--text);
+    box-shadow: var(--oh-control-ring) var(--text);
   }
 
   .info-pop {

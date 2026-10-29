@@ -15,7 +15,8 @@
   place-items: center;
   min-height: 28px;
   padding: 0 var(--s-2);
-  border: var(--oh-control-line) solid var(--border);
+  border: 1px solid var(--border);
+  box-shadow: var(--oh-control-ring) var(--border);
   border-radius: 4px;
   background: var(--bg);
   color: var(--text-2);
@@ -38,6 +39,7 @@
 .copy-button:hover {
   color: var(--accent);
   border-color: var(--accent);
+  box-shadow: var(--oh-control-ring) var(--accent);
 }
 
 .code-block pre {

@@ -987,8 +987,8 @@
   }
 
   .button.person {
+    --oh-line: var(--text);
     background: var(--text);
-    border-color: var(--text);
     color: var(--bg);
   }
 
