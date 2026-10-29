@@ -8,7 +8,7 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- website-14. No icons in the header's pickers, smooth animation from a proven library for the search, pickers, menus and sidebar groups, and 1.5 px control outlines (BRIEF-website-14.md).
+None running.
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
@@ -61,6 +61,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - Version numbers (spec-semver, merged 2026-10-28). The specification and the hub protocol use MAJOR.MINOR versions (ADR 0017), the draft is v0.1 in spec/v0.1/, and the hub negotiates "0.1".
 - The docs on Astro Starlight (website-12, merged 2026-10-28). Starlight's header, sidebar, outline, search and pickers, themed with the design tokens, with one header on every page, a v0.1 version picker, a theme picker and redirects from the dated addresses. The whole-sidebar hiding is gone, because no maintained plugin offers that.
 - The schema reference at 100 on a phone and the home diagram's names in full (website-13, merged 2026-10-29). A pnpm patch makes Starlight's outline look for headings only where the outline observes, the schema reference's tables render as they near the screen, and the hero's small diagram shows every lifeline name from 640 to 1199 px.
+- Pickers without icons, Motion and thicker control outlines (website-14, merged 2026-10-29). The version, theme and section pickers are menu buttons on native popover lists, the search dialog, pickers, phone menu, sidebar groups, information marks and Copy animate with Motion's mini animate in 200 ms open and 150 ms close, and control outlines are 1.5 px. The JavaScript budgets have little headroom left and need a new baseline at the next change.
 
 ## Next
 
