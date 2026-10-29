@@ -8,6 +8,7 @@ interface Props {
 
 const { shots } = Astro.props;
 const frameStyle = (crop: Shot["crop"]) => `--w: ${crop.w}; --h: ${crop.h}`;
+const THEMES = ["light", "dark"] as const;
 ---
 
 {
@@ -18,22 +19,21 @@ const frameStyle = (crop: Shot["crop"]) => `--w: ${crop.w}; --h: ${crop.h}`;
       <figure class="shot">
         <div class="shot-scroll" data-shot-scroll data-label={item.caption}>
           <div class="shot-frame" style={frameStyle(item.crop)}>
-            <picture>
-              {FORMATS.map(({ format, type }) => (
-                <source media="(prefers-color-scheme: dark)" srcset={cropSrcset(item, "dark", format)} sizes={sizes} type={type} />
-              ))}
-              {FORMATS.map(({ format, type }) => (
-                <source srcset={cropSrcset(item, "light", format)} sizes={sizes} type={type} />
-              ))}
-              <img
-                src={cropPath(item.file, "light", widths[widths.length - 1], "webp")}
-                width={item.crop.w}
-                height={item.crop.h}
-                alt={item.alt}
-                loading="lazy"
-                decoding="async"
-              />
-            </picture>
+            {THEMES.map((theme) => (
+              <picture class={`shot-${theme}`}>
+                {FORMATS.map(({ format, type }) => (
+                  <source srcset={cropSrcset(item, theme, format)} sizes={sizes} type={type} />
+                ))}
+                <img
+                  src={cropPath(item.file, theme, widths[widths.length - 1], "webp")}
+                  width={item.crop.w}
+                  height={item.crop.h}
+                  alt={item.alt}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </picture>
+            ))}
           </div>
         </div>
         <figcaption>
@@ -98,17 +98,18 @@ const frameStyle = (crop: Shot["crop"]) => `--w: ${crop.w}; --h: ${crop.h}`;
     color: var(--text-2);
   }
 
-  .full-dark {
+  .full-dark,
+  .shot-dark,
+  :global(:root[data-theme="dark"]) .full-light,
+  :global(:root[data-theme="dark"]) .shot-light {
     display: none;
   }
 
-  @media (prefers-color-scheme: dark) {
-    .full-light {
-      display: none;
-    }
+  :global(:root[data-theme="dark"]) .full-dark {
+    display: inline;
+  }
 
-    .full-dark {
-      display: inline;
-    }
+  :global(:root[data-theme="dark"]) .shot-dark {
+    display: block;
   }
 </style>
