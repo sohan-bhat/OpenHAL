@@ -295,6 +295,29 @@ html:root:has(.oh-home) {
   margin-top: 0;
 }
 
+.starlight-aside {
+  --sl-color-asides-text-accent: var(--text);
+  --sl-color-asides-border: var(--border);
+  padding: var(--s-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text);
+}
+
+.starlight-aside__title {
+  font-size: var(--t-body);
+  font-weight: 700;
+}
+
+.starlight-aside__icon {
+  display: none;
+}
+
+.starlight-aside__content a {
+  color: var(--accent);
+}
+
 .pagination-links a {
   border-radius: var(--radius);
   border-color: var(--border);
