@@ -8,7 +8,8 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-None running.
+- website-15. The home page rebuilt simple and clean (hero with readable labels and no diagram, How it works in three steps, the existing sections), the nine-step story on /docs/examples/3d-print-watch/, and Concepts' "What the name means" (BRIEF-website-15.md, from OWNER-BRIEF-2026-10-29.md).
+- website-16. The deploy check, Tailwind, React islands, shadcn/ui and Motion for the docs frame, a cmdk search palette over Pagefind, a researched collapsible sidebar with a light hover peek, the version label, the one-item rails and the spec title (BRIEF-website-16.md).
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 

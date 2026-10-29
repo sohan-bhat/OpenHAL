@@ -18,3 +18,5 @@ website/.astro/
 .cache/
 
 /docs/design-rounds/
+
+/qa/
