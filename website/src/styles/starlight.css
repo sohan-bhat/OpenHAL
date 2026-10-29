@@ -1,6 +1,7 @@
 :root {
   --oh-gutter: max(0px, (100vw - 1360px) / 2);
   --oh-control-border: color-mix(in srgb, var(--text-2) 60%, var(--border));
+  --oh-control-line: 1.5px;
   --oh-highlight: color-mix(in srgb, var(--accent) 10%, var(--bg));
 
   --sl-font: var(--font-text);
@@ -117,6 +118,7 @@ site-search button[data-open-modal] {
 
 @media (min-width: 50rem) {
   site-search button[data-open-modal] {
+    border-width: var(--oh-control-line);
     border-color: var(--oh-control-border);
     background: var(--bg);
     max-width: 260px;
@@ -145,7 +147,7 @@ site-search button[data-open-modal] > svg {
 }
 
 site-search button > kbd {
-  border: 1px solid var(--border);
+  border: var(--oh-control-line) solid var(--border);
   background: var(--bg);
   color: var(--text-2);
   font-size: var(--t-legend);
@@ -165,6 +167,10 @@ site-search dialog {
 site-search dialog::backdrop {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+}
+
+#starlight__search {
+  --pagefind-ui-border-width: var(--oh-control-line);
 }
 
 :is(.header, .mobile-preferences) label:has(> select) {
@@ -231,7 +237,7 @@ site-search dialog::backdrop {
 }
 
 .sl-menu-button {
-  border: 1px solid var(--oh-control-border);
+  border: var(--oh-control-line) solid var(--oh-control-border);
   border-radius: var(--radius);
   background: var(--bg);
   color: var(--text);
@@ -319,6 +325,7 @@ html:root:has(.oh-home) {
 }
 
 .pagination-links a {
+  border-width: var(--oh-control-line);
   border-radius: var(--radius);
   border-color: var(--border);
   color: var(--text-2);
@@ -347,6 +354,10 @@ html:root:has(.oh-home) {
 
 .right-sidebar-panel a:hover {
   color: var(--accent);
+}
+
+mobile-starlight-toc .toggle {
+  border-width: var(--oh-control-line);
 }
 
 @media (prefers-reduced-motion: reduce) {

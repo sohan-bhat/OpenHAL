@@ -59,7 +59,7 @@
   flex: none;
   width: 30px;
   height: 18px;
-  border: 1.5px solid var(--text-2);
+  border: var(--oh-control-line) solid var(--text-2);
   border-radius: 9px;
   transition: background-color var(--motion-status) linear, border-color var(--motion-status) linear;
 }

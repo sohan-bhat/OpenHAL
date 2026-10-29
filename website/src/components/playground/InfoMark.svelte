@@ -72,7 +72,7 @@
     height: 16px;
     margin-left: 6px;
     padding: 0;
-    border: 1.5px solid var(--text-2);
+    border: var(--oh-control-line) solid var(--text-2);
     border-radius: 50%;
     background: none;
     color: var(--text-2);

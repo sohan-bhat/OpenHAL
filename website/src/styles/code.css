@@ -13,7 +13,7 @@
   right: var(--s-2);
   min-height: 28px;
   padding: 0 var(--s-2);
-  border: var(--rule);
+  border: var(--oh-control-line) solid var(--border);
   border-radius: 4px;
   background: var(--bg);
   color: var(--text-2);
