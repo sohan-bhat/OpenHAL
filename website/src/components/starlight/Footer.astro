@@ -2,9 +2,12 @@
 import Default from "@astrojs/starlight/components/Footer.astro";
 import { PRODUCT_NAME } from "../../config/brand";
 import { REPOSITORY_URL } from "../../config/site";
+
+const { editUrl, pagination } = Astro.locals.starlightRoute;
+const meta = Boolean(editUrl || pagination.prev || pagination.next);
 ---
 
-<Default />
+{meta && <Default />}
 <div class="oh-site-footer">
   <p><strong>{PRODUCT_NAME}</strong> <span class="muted">is an open protocol, released under Apache 2.0.</span></p>
   <p class="muted">{PRODUCT_NAME} is not affiliated with Anthropic or MHS.</p>

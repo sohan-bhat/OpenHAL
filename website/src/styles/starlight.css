@@ -260,6 +260,10 @@ site-search dialog::backdrop {
   color: var(--text);
 }
 
+html:root:has(.oh-home) {
+  --sl-main-pad: 0;
+}
+
 .content-panel:has(.oh-home) {
   padding: 0;
 }
@@ -267,6 +271,13 @@ site-search dialog::backdrop {
 .content-panel:has(.oh-home) > .sl-container {
   max-width: none;
   margin: 0;
+}
+
+.content-panel:has(.oh-home) .oh-site-footer {
+  margin-top: var(--s-8);
+  padding: var(--s-5) var(--sl-nav-pad-x) var(--s-6);
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
 }
 
 :root:has(.oh-wide) {
