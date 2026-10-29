@@ -87,7 +87,8 @@ async def test_reads_and_device_text_is_data(async_transport: httpx.ASGITranspor
     assert all(reading.ok and reading.unit == "degC" for reading in many)
     with pytest.raises(ToolError, match=r"device\.channel"):
         await tools.read_many(["desk-fan"])
-    assert (await tools.hub_status()).devices == 3
+    hub_status = await tools.hub_status()
+    assert (hub_status.devices, hub_status.protocol_version) == (3, "0.1")
     assert any(driver.name == "mock" for driver in await tools.list_drivers())
     assert "properties" in await tools.device_file_schema()
 

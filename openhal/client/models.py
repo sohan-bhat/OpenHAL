@@ -36,7 +36,7 @@ class HubStatus(Model):
     product: str
     version: str
     spec: str
-    protocol_version: str | None = Field(default=None, description="The hub protocol version, for example 2026-10-24.")
+    protocol_version: str | None = Field(default=None, description="The hub protocol version, for example 0.1.")
     conformance: str | None = Field(default=None, description="The hub's conformance level, core, control or full.")
     allow_lan: bool | None = Field(
         default=None, description="True when other machines may connect with a paired token."

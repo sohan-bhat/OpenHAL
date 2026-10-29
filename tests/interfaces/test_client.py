@@ -39,6 +39,7 @@ async def test_status_devices_and_reads(async_transport: httpx.ASGITransport, to
     async with aclient(async_transport, tokens.agent) as hub:
         status = await hub.status()
         assert status.devices == 2
+        assert (status.protocol_version, status.spec) == ("0.1", "0.1")
         assert status.you.kind == "agent"
         assert (await hub.whoami()).scope == "control_low"
         assert {device.id for device in await hub.devices()} == {"desk-fan", "heater"}

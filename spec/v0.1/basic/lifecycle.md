@@ -17,9 +17,9 @@ The token is the bearer token from the `Authorization` header of the transport, 
 
 ```json
 → {"jsonrpc": "2.0", "id": 1, "method": "hal/initialize",
-   "params": {"protocolVersion": "2026-10-24", "clientInfo": {"name": "bench-agent", "version": "1.4.0"}}}
+   "params": {"protocolVersion": "0.1", "clientInfo": {"name": "bench-agent", "version": "1.4.0"}}}
 ← {"jsonrpc": "2.0", "id": 1, "result": {
-     "protocolVersion": "2026-10-24",
+     "protocolVersion": "0.1",
      "hubInfo": {"name": "openhal", "version": "0.1.0"},
      "conformance": "full",
      "principal": {"kind": "agent", "name": "bench-agent", "scope": "control_low"},
@@ -32,14 +32,15 @@ In examples, `→` is a message from Client to Hub and `←` is a message from H
 
 ## Version negotiation
 
-Protocol versions are dates in the form `YYYY-MM-DD`. A later date is a newer version.
+Protocol versions are numbers in the form `MAJOR.MINOR`, such as `0.1`, and people see them with a leading v, as v0.1. Versions compare as numbers, major first and then minor, so `0.10` is newer than `0.9`. Before 1.0 a minor version may change behavior, and [VERSIONING.md](../../VERSIONING.md) explains the rest.
 
-1. The Client MUST send the newest version it supports in `protocolVersion`.
-2. If the Hub supports that version, it MUST answer with the same version.
-3. Otherwise the Hub MUST answer with the newest version it supports.
-4. If the Client cannot use the version in the answer, it MUST disconnect. It SHOULD tell its user which versions each side supports.
+1. The Client MUST send the newest version it supports in `protocolVersion`, as the bare number.
+2. If `protocolVersion` is not in the form `MAJOR.MINOR`, the Hub MUST answer with `INVALID_PARAMS` (-32602), and the reason SHOULD name the versions the Hub supports.
+3. If the Hub supports that version, it MUST answer with the same version.
+4. Otherwise the Hub MUST answer with the newest version it supports.
+5. If the Client cannot use the version in the answer, it MUST disconnect. It SHOULD tell its user which versions each side supports.
 
-The reference Hub supports one version, `2026-10-24`.
+The reference Hub supports one version, `0.1`.
 
 ## Operation
 
