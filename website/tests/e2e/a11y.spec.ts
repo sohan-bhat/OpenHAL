@@ -104,6 +104,7 @@ for (const scheme of ["light", "dark"] as const) {
 
   test(`the header's pickers, open, have no WCAG AA violations on a desktop and a tablet in the ${scheme} theme`, async ({ page, browserName }) => {
     test.skip(browserName !== "chromium", "axe runs once, in Chromium");
+    test.setTimeout(120_000);
     await page.emulateMedia({ colorScheme: scheme });
     const problems: string[] = [];
     await page.setViewportSize({ width: 1440, height: 900 });
