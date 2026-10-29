@@ -22,6 +22,6 @@ const sidebar = specSidebar(await specPages(page.version));
 const { Content } = rendered;
 ---
 
-<DocShell title={title} repo={page.repo} headings={rendered.headings} sidebar={sidebar} number={page.number}>
+<DocShell title={title} repo={page.repo} headings={rendered.headings} sidebar={sidebar} number={page.slug === "" ? undefined : page.number}>
   <Content />
 </DocShell>

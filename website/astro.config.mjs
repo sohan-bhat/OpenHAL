@@ -53,6 +53,7 @@ export default defineConfig({
       lastUpdated: false,
       pagination: true,
       pagefind: false,
+      routeMiddleware: "./src/route-data.ts",
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 3 },
       customCss: ["./src/styles/global.css", "./src/styles/code.css", "./src/styles/starlight.css"],
       components: {
