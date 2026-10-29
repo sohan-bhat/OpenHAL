@@ -20,12 +20,13 @@ function fail(message) {
 }
 
 /**
- * The page as the index reads it. Code blocks, YAML and message traces are left out, so a result's
- * excerpt is always prose. The page itself is served unchanged.
+ * The page as the index reads it. Code blocks, YAML, message traces and the text inside form
+ * fields, such as the Playground's device file editor, are left out, so a result's excerpt is
+ * always prose. The page itself is served unchanged.
  */
 export function forIndex(html) {
   return html
-    .replace(/<pre(?=[\s>])/g, '<pre data-pagefind-ignore="all"')
+    .replace(/<(pre|textarea)(?=[\s>])/g, '<$1 data-pagefind-ignore="all"')
     .replace(/<(figure|div)(?=\s[^>]*?\bclass="(?:[^"]*\s)?(?:code-block|trace-figure|trace)(?:\s[^"]*)?")/g, '<$1 data-pagefind-ignore="all"');
 }
 
