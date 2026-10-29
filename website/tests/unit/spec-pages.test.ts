@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { fromHtml } from "hast-util-from-html";
 import { describe, expect, it } from "vitest";
-import { errorRegistry, rehypeGlossaryLinks, rehypeSpecSections, rehypeTables, specSectionNumber } from "../../src/lib/markdown/plugins.mjs";
+import { LAZY_TABLES, errorRegistry, rehypeGlossaryLinks, rehypeSpecSections, rehypeTables, specSectionNumber } from "../../src/lib/markdown/plugins.mjs";
 import { REPO_ROOT } from "../../src/lib/spec-meta.mjs";
 
 type Node = { type: string; tagName?: string; value?: string; properties?: Record<string, unknown>; children?: Node[] };
@@ -45,6 +45,30 @@ describe("error registry in tables", () => {
       ["CONFIRMATION_REQUIRED", "status confirm registry-name"],
     ]);
     expect(all(root, "span").filter((node) => classes(node).includes("registry-code")).map(text)).toEqual(["-32010", "-32700", "-32013"]);
+  });
+});
+
+describe("tables on a long page", () => {
+  const row = "<tr><td>a</td><td>b</td><td>c</td><td>d</td></tr>";
+  const head = "<thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>";
+  const page = (count: number) => tree(Array.from({ length: count }, (_, index) => `<h3>T${index}</h3><table>${head}<tbody>${row.repeat((index % 3) + 1)}</tbody></table>`).join(""));
+  const wraps = (root: Node) => all(root, "div").filter((node) => classes(node).includes("table-wrap"));
+
+  it("render each table after the first only as it nears the screen, holding room for its rows", () => {
+    const root = page(LAZY_TABLES + 1);
+    rehypeTables()(root);
+    const found = wraps(root);
+    expect(found).toHaveLength(LAZY_TABLES + 1);
+    expect(classes(found[0])).not.toContain("lazy");
+    expect(found[0].properties?.style).toBeUndefined();
+    expect(found.slice(1).every((node) => classes(node).includes("lazy"))).toBe(true);
+    expect(found.slice(1, 4).map((node) => node.properties?.style)).toEqual(["--rows: 2", "--rows: 3", "--rows: 1"]);
+  });
+
+  it("render every table at once on a page with fewer tables", () => {
+    const root = page(LAZY_TABLES);
+    rehypeTables()(root);
+    expect(wraps(root).filter((node) => classes(node).includes("lazy") || node.properties?.style)).toEqual([]);
   });
 });
 

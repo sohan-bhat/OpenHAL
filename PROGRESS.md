@@ -8,7 +8,6 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- website-13. The schema reference back to 98 or more on a phone, and the home page's small diagram whole at 1024 px (BRIEF-website-13.md).
 - website-14. No icons in the header's pickers, smooth animation from a proven library for the search, pickers, menus and sidebar groups, and 1.5 px control outlines (BRIEF-website-14.md).
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
@@ -61,6 +60,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - The home page's first screen and the owner's review (website-11, merged 2026-10-27). The hero has a small still sequence diagram and the demo's opening row, the first scroll drops both away into the wordmark sequence, the Run the demo block stacks its three commands again, the lifelines run Agent, Owner, OpenHAL hub and Printer with dashed replies, the webcam says what each frame shows, the nine captions are the owner's, the nozzle cools after the cancel and the labels read [hardware] [abstraction] [layer].
 - Version numbers (spec-semver, merged 2026-10-28). The specification and the hub protocol use MAJOR.MINOR versions (ADR 0017), the draft is v0.1 in spec/v0.1/, and the hub negotiates "0.1".
 - The docs on Astro Starlight (website-12, merged 2026-10-28). Starlight's header, sidebar, outline, search and pickers, themed with the design tokens, with one header on every page, a v0.1 version picker, a theme picker and redirects from the dated addresses. The whole-sidebar hiding is gone, because no maintained plugin offers that.
+- The schema reference at 100 on a phone and the home diagram's names in full (website-13, merged 2026-10-29). A pnpm patch makes Starlight's outline look for headings only where the outline observes, the schema reference's tables render as they near the screen, and the hero's small diagram shows every lifeline name from 640 to 1199 px.
 
 ## Next
 
@@ -72,8 +72,6 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - Speed round proposals. A size-adjusted mono fallback in design/tokens.css so pages can drop the mono preload, the header wordmark inlined as SVG, a lighter first story() call, and the service worker for hashed /_astro/ files, which is the owner's call.
 - Owner decision. Adding `effects: [extruder_target, bed_target]` to the print babysitter's cancel would let the hub read the 0 °C targets after a cancel, but the change alters the limits hash, so the owner would confirm printer.hal.yaml again (scenario-cooling report).
 - Website budgets on documentation pages have under 1 % headroom after the sidebar and the version picker, so the docs rows in budget.spec.ts need a small new baseline at the next change (website-10 report).
-- The schema reference page scores 84 on a phone after the move to Starlight, against 99 before, because the page has 4,685 elements and Starlight's outline scans them (website-12 report). Splitting the generated schema reference into one page per part, or a lighter outline for that page, would fix it.
-- At 1024 px the home page's small diagram has its lifeline names cut off under the step row (website-12 report).
 - A kernel parity case that tries approve, reject and unlock as an agent and records each message, so the Playground's three permission messages are checked against the hub (copy-messages report).
 - Inspector proposals (inspector-5 report). Fold dashboard/e2e/print_hub.py into tests/inspector so the ruff and mypy gates cover it. A camera to device link in the Device File (`watches: [printer]`), so Confirmations shows the right camera without the picker. A read of the cached latest frame without a new snapshot. RFC 3339 times in /v1/confirmations instead of monotonic ones. `img-src 'self' data:` in any future Content-Security-Policy.
 - Owner decisions. Whether `openhal init` keeps the plant waterer as its sample, which the Python SDK snippet follows. Whether an action whose approval can't hurt, like cancel on a paused printer, gets a confirmation window long enough to wake up to, since the reference expiry is 5 minutes and the hub allows at most an hour.

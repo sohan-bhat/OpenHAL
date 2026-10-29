@@ -88,6 +88,18 @@
   margin-top: var(--s-5);
 }
 
+.prose .table-wrap.lazy {
+  overflow-y: hidden;
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto calc(var(--rows) * 66px);
+}
+
+@media print {
+  .prose .table-wrap.lazy {
+    content-visibility: visible;
+  }
+}
+
 .prose .diagram {
   margin: var(--s-5) 0 0;
   border: var(--rule);
@@ -149,6 +161,10 @@
     height: 1px;
     overflow: hidden;
     clip: rect(0 0 0 0);
+  }
+
+  .prose .table-wrap.lazy:not(.pair) {
+    contain-intrinsic-block-size: auto calc(var(--rows) * 224px);
   }
 
   .prose tr {

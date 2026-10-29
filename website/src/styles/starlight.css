@@ -302,6 +302,10 @@ html:root:has(.oh-home) {
   font-weight: 700;
 }
 
+.right-sidebar-container {
+  overflow-anchor: none;
+}
+
 .right-sidebar-panel h2 {
   color: var(--text-2);
   font-size: var(--t-small);

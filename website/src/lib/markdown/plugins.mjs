@@ -185,14 +185,19 @@ function markRegistryCell(cell, header) {
   cell.children = parts.flatMap((part, index) => [...(index ? [{ type: "text", value: ", " }] : []), registryNameNode(part, registry)]);
 }
 
+/** A page with more tables than this renders each table after the first only as the table nears the screen. */
+export const LAZY_TABLES = 20;
+
 export function rehypeTables() {
   return (tree) => {
+    const wraps = [];
     visit(tree, "element", (node, index, parent) => {
       if (node.tagName !== "table" || !parent || index === undefined) return undefined;
       const headers = [];
       visit(node, "element", (cell) => {
         if (cell.tagName === "th") headers.push(hastText(cell).trim());
       });
+      let rows = 0;
       visit(node, "element", (row) => {
         if (row.tagName !== "tr") return;
         let column = 0;
@@ -204,10 +209,18 @@ export function rehypeTables() {
           cell.children = [el("span", { className: ["cell"] }, cell.children)];
           column += 1;
         }
+        if (column > 0) rows += 1;
       });
-      parent.children[index] = el("div", { className: headers.length === 2 ? ["table-wrap", "pair"] : ["table-wrap"] }, [node]);
+      const wrap = el("div", { className: headers.length === 2 ? ["table-wrap", "pair"] : ["table-wrap"] }, [node]);
+      parent.children[index] = wrap;
+      wraps.push({ wrap, rows });
       return SKIP;
     });
+    if (wraps.length <= LAZY_TABLES) return;
+    for (const { wrap, rows } of wraps.slice(1)) {
+      wrap.properties.className.push("lazy");
+      wrap.properties.style = `--rows: ${rows}`;
+    }
   };
 }
 
