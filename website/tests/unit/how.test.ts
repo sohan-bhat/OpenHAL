@@ -78,7 +78,7 @@ describe("How it works", () => {
       { from: "printer", answer: "done", tone: "ok" },
     ]);
     const state = steps[2].readings.find((reading) => reading.name === "State")!;
-    expect([state.value, state.becomes?.value]).toEqual(["printing", byId(IDS.approve).printer.state]);
+    expect([state.value, state.becomes?.value]).toEqual(["printing", (byId(IDS.approve) as Record<string, any>).printer.state]);
     expect(steps[2].rows.map((row) => row.kind)).toEqual(["request", "reply", "request", "reply"]);
   });
 

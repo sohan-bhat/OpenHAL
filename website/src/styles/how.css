@@ -371,18 +371,7 @@
 
 @media screen {
   .how[data-motion] .how-track {
-    position: relative;
     height: calc(100svh - var(--sl-nav-height, 61px) + var(--run) * 3);
-  }
-
-  .how[data-motion] .how-probe {
-    position: absolute;
-    top: calc(-1 * var(--sl-nav-height, 61px));
-    bottom: 0;
-    left: 0;
-    width: 1px;
-    visibility: hidden;
-    pointer-events: none;
   }
 
   .how[data-motion] .how-stage {
@@ -401,8 +390,10 @@
 
   .how[data-motion] .how-count > * {
     grid-area: 1 / 1;
+    z-index: 0;
     opacity: 0;
     transition: opacity var(--motion-status) linear;
+    will-change: opacity;
   }
 
   .how[data-motion] .how-steps {
@@ -429,6 +420,7 @@
     min-height: calc(3 * 1.4em);
     opacity: 0;
     transition: opacity 0s linear var(--motion-status);
+    will-change: opacity;
   }
 
   .how[data-motion][data-step="1"] :is(.how-count > :nth-child(1), .how-step:nth-child(1)),

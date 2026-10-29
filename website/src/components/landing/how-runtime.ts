@@ -16,13 +16,13 @@ const FRAMES: Record<Kind, Record<string, [string | number, string | number]>> =
  * Plays How it works with the scroll. The stage pins under the header while the page scrolls past
  * the track, and Motion ties every piece to the scroll through the track, so an arrow draws as the
  * page scrolls and scrolling back plays it in reverse. Each piece names its kind and the stretch of
- * the scroll it changes in, `data-draw="line 0.04 0.0733"`, and a browser with scroll timelines
- * runs the pieces off the main thread. The step count and the step on show follow the same
- * progress. With reduced motion, on a screen too short for the stage, or before this runs, the
- * steps are three still panels.
+ * the scroll it changes in, `data-draw="line 0.04 0.0733"`. The progress runs from the moment the
+ * stage pins under the header to the moment the stage lets go, measured the same way in every
+ * browser, and the step count and the step on show follow the same progress. With reduced motion,
+ * on a screen too short for the stage, or before this runs, the steps are three still panels.
  */
 export function howItWorks(root: HTMLElement): void {
-  const probe = root.querySelector<HTMLElement>(".how-probe");
+  const track = root.querySelector<HTMLElement>(".how-track");
   const stage = root.querySelector<HTMLElement>(".how-stage");
   const count = Number(root.dataset.count) || 1;
   const media = window.matchMedia(CAMERA);
@@ -40,11 +40,13 @@ export function howItWorks(root: HTMLElement): void {
 
   const play = () => {
     still();
-    if (!probe || !stage || !media.matches) return;
+    if (!track || !stage || !media.matches) return;
     root.setAttribute("data-motion", "");
     root.setAttribute("data-step", "1");
     if (stage.scrollHeight > stage.clientHeight + 1) return still();
-    const options = { target: probe, offset: ["start start", "end end"] as ["start start", "end end"] };
+    const pin = document.querySelector<HTMLElement>("header.header")?.offsetHeight ?? 0;
+    const offset: [`start ${number}px`, "end end"] = [`start ${pin}px`, "end end"];
+    const options = { target: track, offset };
     for (const piece of root.querySelectorAll<HTMLElement>("[data-draw]")) {
       const [kind, start, length] = (piece.dataset.draw ?? "").split(" ");
       const frames = FRAMES[kind as Kind];
