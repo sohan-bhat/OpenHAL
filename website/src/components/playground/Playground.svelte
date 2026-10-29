@@ -494,6 +494,7 @@
 
   <details class="build" open={!ready.length}>
     <summary>Build your own request</summary>
+    <div class="build-body">
     <div class="playground">
       <section class="panel editor" aria-labelledby="pg-editor-title">
         <div class="panel-head">
@@ -691,6 +692,7 @@
         {/if}
       </div>
     </div>
+    </div>
   </details>
 </div>
 
@@ -784,8 +786,12 @@
     max-width: 100%;
   }
 
-  .build[open] > summary {
-    margin-bottom: var(--s-4);
+  .build-body {
+    display: flow-root;
+  }
+
+  .build-body > .playground {
+    margin-top: var(--s-4);
   }
 
   .as-label {
@@ -981,8 +987,8 @@
   }
 
   .button.person {
+    --oh-line: var(--text);
     background: var(--text);
-    border-color: var(--text);
     color: var(--bg);
   }
 

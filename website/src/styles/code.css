@@ -11,9 +11,12 @@
   position: absolute;
   top: var(--s-2);
   right: var(--s-2);
+  display: inline-grid;
+  place-items: center;
   min-height: 28px;
   padding: 0 var(--s-2);
-  border: var(--rule);
+  border: 1px solid var(--border);
+  box-shadow: var(--oh-control-ring) var(--border);
   border-radius: 4px;
   background: var(--bg);
   color: var(--text-2);
@@ -21,11 +24,22 @@
   font-size: var(--t-legend);
   font-weight: 700;
   cursor: pointer;
+  overflow: hidden;
+}
+
+.copy-button > span {
+  grid-area: 1 / 1;
+}
+
+.copy-button:not([data-copied]) > span + span,
+.copy-button[data-copied] > span:first-child {
+  visibility: hidden;
 }
 
 .copy-button:hover {
   color: var(--accent);
   border-color: var(--accent);
+  box-shadow: var(--oh-control-ring) var(--accent);
 }
 
 .code-block pre {

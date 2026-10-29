@@ -1,33 +1,17 @@
 ---
-import Select from "@astrojs/starlight/components/Select.astro";
 import { specPages } from "../../lib/spec";
 import { readVersions } from "../../lib/spec-meta.mjs";
 import { versionRows } from "../../lib/versions";
+import Picker from "./Picker.astro";
 
-const { versions, latest } = readVersions();
-const { current, rows } = versionRows(Astro.url.pathname, versions, latest, await specPages());
-const options = rows.map((row) => ({ label: row.label, value: row.href, selected: row.current }));
----
-
-{
-  current && (
-    <oh-version-select>
-      <Select icon="open-book" label="Specification version" width="4.5em" options={options} />
-    </oh-version-select>
-  )
+interface Props {
+  place?: "header" | "menu";
 }
 
-<script>
-  class VersionSelect extends HTMLElement {
-    constructor() {
-      super();
-      const select = this.querySelector("select");
-      if (!select) return;
-      select.addEventListener("change", () => location.assign(select.value));
-      addEventListener("pageshow", (event) => {
-        if (event.persisted) select.selectedIndex = select.querySelector<HTMLOptionElement>("option[selected]")?.index ?? 0;
-      });
-    }
-  }
-  customElements.define("oh-version-select", VersionSelect);
-</script>
+const { place = "header" } = Astro.props;
+const { versions, latest } = readVersions();
+const { current, rows } = versionRows(Astro.url.pathname, versions, latest, await specPages());
+const items = rows.map((row) => ({ label: row.label, href: row.href, current: row.current, page: row.href === Astro.url.pathname }));
+---
+
+{current && <Picker id={place === "menu" ? "oh-version-menu" : "oh-version"} kind="version" label="Specification version" items={items} />}

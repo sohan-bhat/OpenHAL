@@ -74,9 +74,10 @@
   flex: none;
   width: 30px;
   height: 18px;
-  border: 1.5px solid var(--text-2);
+  border: 1px solid var(--text-2);
+  box-shadow: var(--oh-control-ring) var(--text-2);
   border-radius: 9px;
-  transition: background-color var(--motion-status) linear, border-color var(--motion-status) linear;
+  transition: background-color var(--motion-status) linear, border-color var(--motion-status) linear, box-shadow var(--motion-status) linear;
 }
 
 .smooth-knob {
@@ -93,6 +94,7 @@
 .smooth[aria-checked="true"] .smooth-track {
   background: var(--accent);
   border-color: var(--accent);
+  box-shadow: var(--oh-control-ring) var(--accent);
 }
 
 .smooth[aria-checked="true"] .smooth-knob {
@@ -107,6 +109,7 @@
 .smooth:disabled .smooth-track {
   background: var(--surface);
   border-color: var(--border);
+  box-shadow: var(--oh-control-ring) var(--border);
 }
 
 .smooth:disabled .smooth-knob {

@@ -1,6 +1,8 @@
 :root {
   --oh-gutter: max(0px, (100vw - 1360px) / 2);
   --oh-control-border: color-mix(in srgb, var(--text-2) 60%, var(--border));
+  --oh-control-line: 1.5px;
+  --oh-control-ring: inset 0 0 0 calc(var(--oh-control-line) - 1px);
   --oh-highlight: color-mix(in srgb, var(--accent) 10%, var(--bg));
 
   --sl-font: var(--font-text);
@@ -118,12 +120,14 @@ site-search button[data-open-modal] {
 @media (min-width: 50rem) {
   site-search button[data-open-modal] {
     border-color: var(--oh-control-border);
+    box-shadow: var(--oh-control-ring) var(--oh-control-border);
     background: var(--bg);
     max-width: 260px;
   }
 
   site-search button[data-open-modal]:hover {
     border-color: var(--accent);
+    box-shadow: var(--oh-control-ring) var(--accent);
     color: var(--text);
   }
 }
@@ -146,6 +150,7 @@ site-search button[data-open-modal] > svg {
 
 site-search button > kbd {
   border: 1px solid var(--border);
+  box-shadow: var(--oh-control-ring) var(--border);
   background: var(--bg);
   color: var(--text-2);
   font-size: var(--t-legend);
@@ -160,6 +165,7 @@ site-search dialog {
   border-radius: var(--radius);
   border-color: var(--border);
   background: var(--bg);
+  transform-origin: 50% 0;
 }
 
 site-search dialog::backdrop {
@@ -167,71 +173,31 @@ site-search dialog::backdrop {
   backdrop-filter: none;
 }
 
-:is(.header, .mobile-preferences) label:has(> select) {
-  color: var(--text-2);
+site-search dialog[data-opening],
+site-search dialog[data-opening]::backdrop {
+  opacity: 0;
 }
 
-:is(.header, .mobile-preferences) label:has(> select):hover {
-  color: var(--text);
+site-search dialog[data-closing] {
+  pointer-events: none;
 }
 
-@supports (appearance: base-select) {
-  :is(.header, .mobile-preferences) select,
-  :is(.header, .mobile-preferences) select::picker(select) {
-    appearance: base-select;
-  }
+#starlight__search :is(.pagefind-ui__search-input, .pagefind-ui__button) {
+  box-shadow: var(--oh-control-ring) var(--pagefind-ui-border);
+}
 
-  :is(.header, .mobile-preferences) select {
-    border-radius: var(--radius);
-    font-size: var(--t-small);
-  }
+#starlight__sidebar[data-closing] {
+  display: block;
+  pointer-events: none;
+}
 
-  :is(.header, .mobile-preferences) select::picker-icon {
-    display: none;
-  }
-
-  :is(.header, .mobile-preferences) select::picker(select) {
-    margin-block: var(--s-1);
-    padding: var(--s-1);
-    min-width: max(anchor-size(width), 7rem);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--bg);
-    color: var(--text);
-    box-shadow: none;
-  }
-
-  :is(.header, .mobile-preferences) option {
-    padding: 6px var(--s-3);
-    border-radius: 4px;
-    background: transparent;
-    color: var(--text);
-    font-size: var(--t-small);
-    white-space: nowrap;
-    cursor: pointer;
-  }
-
-  :is(.header, .mobile-preferences) option::checkmark {
-    display: none;
-  }
-
-  :is(.header, .mobile-preferences) option:hover {
-    background: var(--surface);
-  }
-
-  :is(.header, .mobile-preferences) option:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: -2px;
-  }
-
-  :is(.header, .mobile-preferences) option:checked {
-    background: var(--oh-highlight);
-    color: var(--accent);
-  }
+details[data-closing]::details-content {
+  content-visibility: visible;
 }
 
 .sl-menu-button {
   border: 1px solid var(--oh-control-border);
+  box-shadow: var(--oh-control-ring) var(--oh-control-border);
   border-radius: var(--radius);
   background: var(--bg);
   color: var(--text);
@@ -321,11 +287,13 @@ html:root:has(.oh-home) {
 .pagination-links a {
   border-radius: var(--radius);
   border-color: var(--border);
+  box-shadow: var(--oh-control-ring) var(--border);
   color: var(--text-2);
 }
 
 .pagination-links a:hover {
   border-color: var(--accent);
+  box-shadow: var(--oh-control-ring) var(--accent);
 }
 
 .pagination-links .link-title {
@@ -353,8 +321,24 @@ html:root:has(.oh-home) {
   color: var(--accent);
 }
 
+mobile-starlight-toc .toggle {
+  box-shadow: var(--oh-control-ring) var(--border);
+}
+
+mobile-starlight-toc details[open] .toggle {
+  box-shadow: var(--oh-control-ring) var(--accent);
+}
+
+mobile-starlight-toc details .toggle:hover {
+  box-shadow: var(--oh-control-ring) var(--text-2);
+}
+
+:is(.sidebar-content, mobile-starlight-toc) .caret {
+  transition: transform 200ms var(--ease);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .sidebar-content .caret {
+  :is(.sidebar-content, mobile-starlight-toc) .caret {
     transition: none;
   }
 }

@@ -12,6 +12,8 @@ const box = (page: Page, selector: string) =>
 
 const searchReady = (page: Page) => page.locator("#starlight__search input").waitFor({ state: "attached", timeout: 15_000 });
 
+const picker = (page: Page, kind: "version" | "theme" | "section", scope = "header.header") => page.locator(`${scope} oh-picker[data-kind='${kind}'] .oh-picker-button`);
+
 const header = (page: Page) =>
   page.evaluate(() => {
     const boxes = (selector: string) =>
@@ -24,11 +26,11 @@ const header = (page: Page) =>
     return {
       brand: boxes(".oh-brand"),
       sections: boxes(".oh-sections li"),
-      picker: boxes("oh-section-select"),
+      picker: boxes("oh-picker[data-kind='section']"),
       search: boxes("site-search button[data-open-modal]"),
       github: boxes(".oh-social a"),
-      version: boxes("oh-version-select"),
-      theme: boxes("starlight-theme-select"),
+      version: boxes("oh-picker[data-kind='version']"),
+      theme: boxes("oh-picker[data-kind='theme']"),
     };
   });
 
@@ -100,7 +102,7 @@ test.describe("the header", () => {
       await page.evaluate(() => document.fonts.ready);
       const parts = await page.evaluate(() => {
         const bar = document.querySelector("header.header")!.getBoundingClientRect();
-        const items = [...document.querySelectorAll(".oh-brand, .oh-sections li, oh-section-select, site-search button[data-open-modal], .oh-social a, header.header oh-version-select, header.header starlight-theme-select, .sl-menu-button")]
+        const items = [...document.querySelectorAll(".oh-brand, .oh-sections li, site-search button[data-open-modal], .oh-social a, header.header oh-picker, .sl-menu-button")]
           .filter((el) => el.getClientRects().length)
           .map((el) => ({ name: el.tagName.toLowerCase() + "." + el.className, rect: el.getBoundingClientRect() }));
         return { bar: { top: bar.top, bottom: bar.bottom, right: bar.right }, items: items.map(({ name, rect }) => ({ name, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom })) };
@@ -133,15 +135,17 @@ test.describe("the header", () => {
     await page.setViewportSize({ width: 900, height: 900 });
     await page.goto("/drivers/moonraker/");
     await expect(page.getByRole("navigation", { name: "Main" })).toBeHidden();
-    const picker = page.locator("header.header oh-section-select select");
-    await expect(picker).toBeVisible();
-    await expect(picker).toHaveAccessibleName("Section");
-    expect(await picker.locator("option").allTextContents()).toEqual(SECTIONS);
-    await expect(picker.locator("option:checked")).toHaveText("Drivers");
-    await picker.selectOption({ label: "Device Library" });
+    const button = picker(page, "section");
+    await expect(button).toBeVisible();
+    await expect(button).toHaveAccessibleName("Section Drivers");
+    await button.click();
+    const menu = page.getByRole("menu", { name: "Section" });
+    await expect(menu.getByRole("menuitem")).toHaveText(SECTIONS);
+    await expect(menu.locator("[aria-current='page']")).toHaveText("Drivers");
+    await menu.getByRole("menuitem", { name: "Device Library" }).click();
     await expect(page).toHaveURL(/\/library\/$/);
     await page.goto("/404.html");
-    await expect(page.locator("header.header oh-section-select option:checked")).toHaveText("Sections");
+    await expect(picker(page, "section")).toHaveAccessibleName("Sections");
   });
 });
 
@@ -149,29 +153,27 @@ test.describe("the version picker", () => {
   test("sits after GitHub, names itself and shows v0.1, pointing at the same section", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(SPEC);
-    const picker = page.locator("header.header oh-version-select select");
-    await expect(picker).toHaveAccessibleName("Specification version");
-    await expect(picker.locator("option:checked")).toHaveText("v0.1");
-    await expect(picker).toHaveValue(SPEC);
+    await expect(picker(page, "version")).toHaveAccessibleName("Specification version v0.1");
     const github = await box(page, ".oh-social a");
-    expect((await box(page, "header.header oh-version-select"))[0]).toBeGreaterThan(github[0] + github[2]);
+    expect((await box(page, "header.header oh-picker[data-kind='version']"))[0]).toBeGreaterThan(github[0] + github[2]);
+    const items = page.locator("#oh-version-list [role='menuitem']");
+    await expect(page.locator("#oh-version-list [aria-current]")).toHaveAttribute("href", SPEC);
     await page.goto("/docs/");
-    await expect(picker).toHaveValue("/spec/v0.1/");
-    for (const value of await picker.locator("option").evaluateAll((items) => items.map((item) => (item as HTMLOptionElement).value))) {
-      expect((await page.request.get(value)).status(), value).toBe(200);
+    await expect(page.locator("#oh-version-list [aria-current]")).toHaveAttribute("href", "/spec/v0.1/");
+    for (const href of await items.evaluateAll((links) => links.map((link) => link.getAttribute("href") ?? ""))) {
+      expect((await page.request.get(href)).status(), href).toBe(200);
     }
   });
 
-  test("opens as a themed list with the current version in the nav's highlight in Chromium", async ({ page, browserName }) => {
-    test.skip(browserName !== "chromium", "customizable selects are a Chromium feature, other browsers draw the native list");
+  test("opens as a list with the current version on the nav's highlight, and Escape closes it", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(SPEC);
-    const picker = page.locator("header.header oh-version-select select");
-    await picker.click();
-    const checked = picker.locator("option:checked");
-    await expect(checked).toBeVisible();
-    const colors = await checked.evaluate((option) => {
-      const style = getComputedStyle(option);
+    await picker(page, "version").click();
+    const current = page.getByRole("menu", { name: "Specification version" }).locator("[aria-current='page']");
+    await expect(current).toBeVisible();
+    await expect(current).toBeFocused();
+    const colors = await current.evaluate((item) => {
+      const style = getComputedStyle(item);
       const probe = document.createElement("span");
       probe.style.background = "color-mix(in srgb, var(--accent) 10%, var(--bg))";
       probe.style.color = "var(--accent)";
@@ -183,7 +185,8 @@ test.describe("the version picker", () => {
     expect(colors.got).toEqual(colors.want);
     expect(colors.radius).toBeGreaterThan(0);
     await page.keyboard.press("Escape");
-    await expect(checked).toBeHidden();
+    await expect(current).toBeHidden();
+    await expect(picker(page, "version")).toBeFocused();
   });
 });
 
@@ -247,9 +250,9 @@ test.describe("the phone menu", () => {
     await expect(menu).toBeVisible();
     await expect(menu.locator(".oh-menu-sections a")).toHaveText(SECTIONS);
     await expect(menu.locator(".oh-menu-sections a[aria-current='page']")).toHaveText("Specification");
-    await expect(menu.locator(".sidebar-content a[aria-current='page']").last()).toHaveText("3.3 Messages");
-    await expect(menu.locator(".mobile-preferences oh-version-select select")).toHaveAccessibleName("Specification version");
-    await expect(menu.locator(".mobile-preferences starlight-theme-select select")).toBeVisible();
+    await expect(menu.locator(".sidebar-content a[aria-current='page']:not([role='menuitem'])").last()).toHaveText("3.3 Messages");
+    await expect(picker(page, "version", ".mobile-preferences")).toHaveAccessibleName("Specification version v0.1");
+    await expect(picker(page, "theme", ".mobile-preferences")).toHaveAccessibleName("Theme Auto");
     await menu.locator(".oh-menu-sections").getByRole("link", { name: "Device Library" }).click();
     await expect(page).toHaveURL(/\/library\/$/);
   });
@@ -300,15 +303,21 @@ test.describe("the theme picker", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.emulateMedia({ colorScheme: "light" });
     await page.goto("/docs/");
-    const picker = page.locator("header.header starlight-theme-select select");
-    await expect(picker).toHaveAccessibleName("Select theme");
-    await picker.selectOption("dark");
+    await expect(picker(page, "theme")).toHaveAccessibleName("Theme Auto");
+    await picker(page, "theme").click();
+    await page.getByRole("menuitemradio", { name: "Dark" }).click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await expect(picker(page, "theme")).toHaveAccessibleName("Theme Dark");
+    await expect(picker(page, "theme")).toBeFocused();
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(13, 15, 18)");
     await page.goto(SPEC);
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-    await page.locator("header.header starlight-theme-select select").selectOption("auto");
+    await expect(picker(page, "theme")).toHaveAccessibleName("Theme Dark");
+    await expect(page.getByRole("menuitemradio", { name: "Dark", includeHidden: true }).first()).toHaveAttribute("aria-checked", "true");
+    await picker(page, "theme").click();
+    await page.getByRole("menuitemradio", { name: "Auto" }).click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    expect(await page.evaluate(() => localStorage.getItem("starlight-theme"))).toBe("");
   });
 });
 
@@ -442,7 +451,8 @@ test("a copy button copies its block", async ({ page, browserName, context }) =>
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/library/scpi-rigol-dp832/");
   const button = page.getByRole("button", { name: "Copy code" }).first();
+  await expect(button).toHaveText("Copy", { useInnerText: true });
   await button.click();
-  await expect(button).toHaveText("Copied");
+  await expect(button).toHaveText("Copied", { useInnerText: true });
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("id: rigol-dp832");
 });
