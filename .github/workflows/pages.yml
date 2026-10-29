@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     defaults:
       run:
@@ -42,6 +42,8 @@ jobs:
       - run: node scripts/rebase.mjs dist /OpenHAL https://sohan-bhat.github.io
       - name: Build the search index for the rebased site
         run: node scripts/search-index.mjs dist /OpenHAL
+      - name: Stamp the build with its commit
+        run: printf '{"commit":"%s","run":"%s"}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > dist/version.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -49,10 +51,33 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  verify:
+    needs: deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Wait until the live site serves this commit
+        env:
+          PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+        run: |
+          for attempt in $(seq 1 40); do
+            live=$(curl -fsS "${PAGE_URL%/}/version.json?run=$GITHUB_RUN_ID-$attempt" | jq -r .commit || true)
+            if [ "$live" = "$GITHUB_SHA" ]; then
+              echo "The live site serves $GITHUB_SHA."
+              exit 0
+            fi
+            echo "Attempt $attempt found ${live:-no version.json}, waiting for $GITHUB_SHA."
+            sleep 15
+          done
+          echo "The live site still doesn't serve $GITHUB_SHA after 10 minutes."
+          exit 1
