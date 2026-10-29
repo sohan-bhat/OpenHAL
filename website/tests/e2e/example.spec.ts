@@ -74,7 +74,7 @@ test.describe("the full example page", () => {
       await stepTo(page, index);
       const id = item.id as Exclude<StepId, "intro">;
       expect(await shown(page, ".story-note"), id).toEqual([flat(nb(lines[id]))]);
-      if (index > 0) await expect(page.locator("[data-said]")).toHaveText(flat(nb(lines[id])));
+      if (index > 0) await expect(page.locator("[data-said]")).toHaveText(`Step ${index + 1} of ${COUNTED.length}. ${flat(nb(lines[id]))}`);
     }
     await expect(next).toHaveAttribute("aria-disabled", "true");
     await next.dispatchEvent("click");
