@@ -127,7 +127,7 @@ test.describe("driver counts", () => {
 });
 
 test.describe("the search index", () => {
-  test("leaves the story's state text out of the home page's entry", async ({ page }) => {
+  test("leaves the diagrams' state text out of the home page's entry", async ({ page }) => {
     await page.goto("/drivers/");
     await page.keyboard.press("Control+k");
     await page.locator("#starlight__search input").fill("Interlocks");
@@ -137,8 +137,8 @@ test.describe("the search index", () => {
     const ignored = await page.evaluate(async () => {
       const html = await (await fetch("/")).text();
       const doc = new DOMParser().parseFromString(html, "text/html");
-      const stage = doc.querySelectorAll(".story-scene, .story-snap, .story-trace, .story-notes, .story-count");
-      return [...stage].every((el) => el.closest("[data-pagefind-ignore]"));
+      const stage = doc.querySelectorAll(".how-figure, .how-count");
+      return stage.length > 0 && [...stage].every((el) => el.closest("[data-pagefind-ignore]"));
     });
     expect(ignored).toBe(true);
   });

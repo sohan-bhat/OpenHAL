@@ -18,22 +18,22 @@ function noErrors(page: Page): string[] {
 }
 
 test.describe("overview", () => {
-  test("names the product, says what it is in one sentence and offers one way in", async ({ page }) => {
+  test("names the product, says what it is in one sentence and offers two ways in", async ({ page }) => {
     const errors = noErrors(page);
     await page.goto("/");
     await expect(page.locator("h1")).toHaveText("OpenHAL");
     await expect(page.locator(".hero-pitch")).toHaveText("An open-source protocol for AI agents to control hardware.");
-    await expect(page.locator(".hero a")).toHaveCount(1);
-    await expect(page.locator(".hero a")).toHaveText("Get started");
+    await expect(page.locator(".hero a")).toHaveText(["Get started", "Read the specification"]);
     expect(errors).toEqual([]);
   });
 
-  test("tells the recorded refusal in the story, in the hub's own words", async ({ page }) => {
+  test("shows the recorded refusal in How it works, and the hub's own words on the full example", async ({ page }) => {
     await page.goto("/");
-    const story = page.locator(".story-list");
-    await expect(story).toContainText(firstError.data.name);
-    await expect(story).toContainText(firstError.message.slice(0, firstError.message.indexOf(" (")).replace(/(\d) degC\b/g, "$1 °C").replace(/(\d) /g, "$1\u00a0"));
-    await expect(page.locator("main .trace:not(.story-trace)")).toHaveCount(0);
+    await expect(page.locator(".how-step").nth(1).locator(".how-answer")).toHaveText(firstError.data.name);
+    await expect(page.locator("main .trace")).toHaveCount(0);
+    await page.goto("/docs/examples/3d-print-watch/");
+    await expect(page.locator(".messages")).toContainText(firstError.message);
+    await expect(page.locator(".story-list")).toContainText(firstError.message.slice(0, firstError.message.indexOf(" (")).replace(/(\d) degC\b/g, "$1 °C").replace(/(\d) /g, "$1\u00a0"));
   });
 
   test("the quickstart is three commands and says what they show", async ({ page }) => {
