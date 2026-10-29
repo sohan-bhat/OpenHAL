@@ -15,11 +15,11 @@ const SITE_URL = process.env.OPENHAL_SITE ?? "https://openhal.dev";
 const MOVED = ["/og/", "/spec/latest/", ...Object.keys(DATED_NAMES).map((name) => `/spec/${name}/`)];
 const override = (name) => `./src/components/starlight/${name}.astro`;
 
-const attributeScopedStyles = {
-  name: "openhal-attribute-scoped-styles",
+const classScopedStyles = {
+  name: "openhal-class-scoped-styles",
   hooks: {
     "astro:config:setup": ({ updateConfig }) => {
-      updateConfig({ scopedStyleStrategy: "attribute" });
+      updateConfig({ scopedStyleStrategy: "class" });
     },
   },
 };
@@ -61,7 +61,7 @@ export default defineConfig({
         Footer: override("Footer"),
       },
     }),
-    attributeScopedStyles,
+    classScopedStyles,
     svelte(),
     interactDirective,
     sitemap({ filter: (page) => !MOVED.some((part) => page.includes(part)) && !page.endsWith("/spec/") }),
