@@ -3,7 +3,7 @@
   --arrow: 10px;
   --gap: var(--s-3);
   --pad: 6px;
-  --run: 40svh;
+  --run: 36svh;
   --lifeline: color-mix(in srgb, var(--text-2) 38%, var(--bg));
   padding-top: var(--s-8);
 }
@@ -343,12 +343,6 @@
     justify-self: start;
     min-width: 7.6em;
     transform: translateX(-50%);
-  }
-}
-
-@media (min-width: 768px) {
-  .how {
-    padding-top: calc(var(--s-8) + var(--s-6));
   }
 }
 
