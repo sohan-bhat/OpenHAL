@@ -14,7 +14,7 @@ The research brief (docs/research/OPENHAL_RESEARCH.md, First version) set this s
 | Klipper printers | moonraker, plus marlin, octoprint, grbl and bambu |
 | Home Assistant | homeassistant, plus esphome, mqtt, matter, zigbee-zwave, knx and upnp |
 | Raspberry Pi pins and camera | rpi-gpio, rpi-camera and pi-i2c-spi, and the GPIO stop button |
-| Spec v0.1 | The dated specification 2026-10-24 (spec/2026-10-24/) with the device file format, the JSON-RPC hub protocol (ADR 0015), one value format (ADR 0016), the error registry, conformance levels and the generated schema |
+| Spec v0.1 | The specification v0.1, first published as the dated draft 2026-10-24 (spec/v0.1/), with the device file format, the JSON-RPC hub protocol (ADR 0015), one value format (ADR 0016), the error registry, conformance levels and the generated schema |
 | The hub with limits, stop, log | The safety kernel (range, rate, run limits, requirements, interlocks, watchdog rules, confirmations, grants), stop and unlock, the hash-chained audit log, dry runs and routines |
 | MCP, command line and Python | The MCP server, the `openhal` CLI and the sync and async Python client |
 | Driver writer for sketches and instruments | Sketch, manual and self-description drafts, the limits interview (now with requirements, run limits and a safe action) and staged test plans |
@@ -93,7 +93,7 @@ The critic's verdict. The protocol voice holds on the home page, spec, playgroun
 | Interfaces | The MCP server, CLI and Python client |
 | Drivers batch 1 and batch 2 | The 18 Tier 1 drivers |
 | Website design review, round 1 | A fresh critique from screenshots and DESIGN.md |
-| Specification | The dated specification 2026-10-24 |
+| Specification | The specification v0.1, first published as the dated draft 2026-10-24 |
 | Protocol | The JSON-RPC hub protocol over WebSocket and stdio |
 | Red team | The 100-test attack suite and SAFETY-REPORT.md |
 | Drivers batch 3 and batch 4 | The 16 Tier 2 and Tier 3 drivers |

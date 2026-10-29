@@ -8,8 +8,7 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- spec-semver. The specification and the hub protocol move from the dated version 2026-10-24 to semantic versions, starting at v0.1 (BRIEF-spec-semver.md).
-- website-12. The docs move to Astro Starlight, with Starlight's sidebar, a popular version picker plugin and one header on every page (BRIEF-website-12.md).
+None running.
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
@@ -27,7 +26,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - M10. The OpenHAL Arduino library, compiled for arduino:avr:uno and esp32:esp32:esp32, with its driver and a host build that runs conformance against the real C++.
 - Repository published at github.com/sohan-bhat/OpenHAL at the owner's request.
 - The protocol theme in docs/DESIGN.md, design/tokens.css and the Atkinson fonts. ADR 0015 for the JSON-RPC hub protocol.
-- The dated specification 2026-10-24 (spec workstream, merged) and the hub protocol over WebSocket and stdio with the error registry, conformance levels, message log and generated schema (protocol workstream, merged). 1120 tests pass on main.
+- The specification v0.1, first published as the dated draft 2026-10-24 (spec workstream, merged), and the hub protocol over WebSocket and stdio with the error registry, conformance levels, message log and generated schema (protocol workstream, merged). 1120 tests pass on main.
 - The README per Part 16, with the animated flow diagram built from docs/diagrams/flow.d2 by scripts/build-diagrams, in light, dark and phone variants. Tooling recorded in docs/TOOLING.md.
 - One value format (ADR 0016). Numbers travel with their unit apart in every protocol message, REST body, MCP tool, the Python client and CLI --json. A number sent as one string gets UNIT_INVALID with the shape to use, and a test fails on any docs example that sends one. Messages say % for percent.
 - The Arduino plant waterer was the canonical example until 2026-10-26 (examples/plant-waterer/). The Arduino library gained actions with typed arguments, named states and internal outputs, the firmware protocol gained ACT, and the driver, simulator and sketch reader follow. `openhal demo` runs it against a real hub and `--record` writes docs/demo/scenario.yaml, which the README, docs/QUICKSTART.md and the tests read.
@@ -59,6 +58,8 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - One header on every page, a collapsible sidebar and the version picker in the header (website-10, merged 2026-10-27). The header and footer use the 1360 px container everywhere, every documentation sidebar hides with a button and slides back in on hover at the left edge, and the spec version picker is a compact menu after GitHub.
 - The nozzle cools after the cancel (scenario-cooling, merged 2026-10-27). The Moonraker simulator runs Klipper's CANCEL_PRINT macro, which turns the heaters off, and the record follows the nozzle from 215 °C to 154.65 °C after 30 s and 113.17 °C after 60 s on a deterministic clock.
 - The home page's first screen and the owner's review (website-11, merged 2026-10-27). The hero has a small still sequence diagram and the demo's opening row, the first scroll drops both away into the wordmark sequence, the Run the demo block stacks its three commands again, the lifelines run Agent, Owner, OpenHAL hub and Printer with dashed replies, the webcam says what each frame shows, the nine captions are the owner's, the nozzle cools after the cancel and the labels read [hardware] [abstraction] [layer].
+- Version numbers (spec-semver, merged 2026-10-28). The specification and the hub protocol use MAJOR.MINOR versions (ADR 0017), the draft is v0.1 in spec/v0.1/, and the hub negotiates "0.1".
+- The docs on Astro Starlight (website-12, merged 2026-10-28). Starlight's header, sidebar, outline, search and pickers, themed with the design tokens, with one header on every page, a v0.1 version picker, a theme picker and redirects from the dated addresses. The whole-sidebar hiding is gone, because no maintained plugin offers that.
 
 ## Next
 
@@ -70,6 +71,8 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - Speed round proposals. A size-adjusted mono fallback in design/tokens.css so pages can drop the mono preload, the header wordmark inlined as SVG, a lighter first story() call, and the service worker for hashed /_astro/ files, which is the owner's call.
 - Owner decision. Adding `effects: [extruder_target, bed_target]` to the print babysitter's cancel would let the hub read the 0 °C targets after a cancel, but the change alters the limits hash, so the owner would confirm printer.hal.yaml again (scenario-cooling report).
 - Website budgets on documentation pages have under 1 % headroom after the sidebar and the version picker, so the docs rows in budget.spec.ts need a small new baseline at the next change (website-10 report).
+- The schema reference page scores 84 on a phone after the move to Starlight, against 99 before, because the page has 4,685 elements and Starlight's outline scans them (website-12 report). Splitting the generated schema reference into one page per part, or a lighter outline for that page, would fix it.
+- At 1024 px the home page's small diagram has its lifeline names cut off under the step row (website-12 report).
 - A kernel parity case that tries approve, reject and unlock as an agent and records each message, so the Playground's three permission messages are checked against the hub (copy-messages report).
 - Inspector proposals (inspector-5 report). Fold dashboard/e2e/print_hub.py into tests/inspector so the ruff and mypy gates cover it. A camera to device link in the Device File (`watches: [printer]`), so Confirmations shows the right camera without the picker. A read of the cached latest frame without a new snapshot. RFC 3339 times in /v1/confirmations instead of monotonic ones. `img-src 'self' data:` in any future Content-Security-Policy.
 - Owner decisions. Whether `openhal init` keeps the plant waterer as its sample, which the Python SDK snippet follows. Whether an action whose approval can't hurt, like cancel on a paused printer, gets a confirmation window long enough to wake up to, since the reference expiry is 5 minutes and the hub allows at most an hour.
