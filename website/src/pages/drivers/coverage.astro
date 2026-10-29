@@ -9,6 +9,6 @@ if (!entry) throw new Error("docs/drivers/COVERAGE.md is missing.");
 const { Content, headings, remarkPluginFrontmatter } = await render(entry);
 ---
 
-<DocShell title={String(remarkPluginFrontmatter.title ?? docTitle(entry))} repo={entry.id} headings={headings} sidebar={driversSidebar()} section="Drivers">
+<DocShell title={String(remarkPluginFrontmatter.title ?? docTitle(entry))} repo={entry.id} headings={headings} sidebar={driversSidebar()}>
   <Content />
 </DocShell>

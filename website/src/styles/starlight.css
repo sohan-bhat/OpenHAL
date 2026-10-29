@@ -322,3 +322,9 @@ html:root:has(.oh-home) {
 .right-sidebar-panel a:hover {
   color: var(--accent);
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-content .caret {
+    transition: none;
+  }
+}

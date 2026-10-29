@@ -22,6 +22,6 @@ const pages = latest ? await specPages(latest) : [];
 const sidebar = specSidebar(pages);
 ---
 
-<DocShell title={title} repo={entry.id} headings={headings} sidebar={sidebar} section="Specification">
+<DocShell title={title} repo={entry.id} headings={headings} sidebar={sidebar}>
   <Content />
 </DocShell>

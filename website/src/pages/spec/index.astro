@@ -9,7 +9,7 @@ import { specSidebar } from "../../lib/spec-nav";
   latestVersion() ? (
     <Redirect to={latestSpecHref()} title="Specification" />
   ) : (
-    <DocShell title="Specification" sidebar={specSidebar([])} section="Specification">
+    <DocShell title="Specification" sidebar={specSidebar([])}>
       <p>No version of the specification is published yet.</p>
     </DocShell>
   )

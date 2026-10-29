@@ -8,6 +8,6 @@ if (!entry) throw new Error("docs/interfaces/PYTHON.md is missing.");
 const { Content, headings } = await render(entry);
 ---
 
-<DocShell title="Python SDK" description="The reference SDK for the OpenHAL hub protocol." repo={entry.id} headings={headings} sidebar={sdkSidebar()} section="SDKs">
+<DocShell title="Python SDK" description="The reference SDK for the OpenHAL hub protocol." repo={entry.id} headings={headings} sidebar={sdkSidebar()}>
   <Content />
 </DocShell>
