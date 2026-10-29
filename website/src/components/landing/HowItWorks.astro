@@ -84,7 +84,7 @@ const mode = `(() => {
                   {index + 1} / {count}
                 </p>
                 <p class="how-caption">{nb(step.caption)}</p>
-                <div class="how-figure" style={`grid-template-rows: ${grid.rows}`} aria-hidden="true" data-pagefind-ignore="all">
+                <div class="how-figure" style={`grid-template-rows: ${grid.rows}; --rows: ${step.rows.length}`} aria-hidden="true" data-pagefind-ignore="all">
                   {COLUMNS.map((column) => (
                     <p class="how-head" style={`${at(column)}; grid-row: 1`}>
                       {HEADS[column]}
