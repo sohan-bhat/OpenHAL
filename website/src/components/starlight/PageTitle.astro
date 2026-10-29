@@ -2,15 +2,7 @@
 const { title, number } = Astro.locals.starlightRoute.entry.data as { title: string; number?: string };
 ---
 
-<h1 id="_top">
-  {
-    number && (
-      <Fragment>
-        <span class="secno">{number}</span>{" "}
-      </Fragment>
-    )
-  }{title}
-</h1>
+<h1 id="_top">{number && <span class="secno">{number}</span>}{number && " "}{title}</h1>
 
 <style>
   h1 {

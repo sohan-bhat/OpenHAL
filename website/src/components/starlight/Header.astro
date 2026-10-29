@@ -125,6 +125,16 @@ const width = wordmarkWidth(24);
     gap: var(--s-4);
   }
 
+  @media (min-width: 50rem) {
+    .oh-end {
+      justify-content: flex-start;
+    }
+
+    .oh-tools {
+      margin-inline-start: auto;
+    }
+  }
+
   .oh-social::after {
     content: "";
     height: 24px;
