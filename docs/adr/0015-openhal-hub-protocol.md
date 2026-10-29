@@ -1,4 +1,4 @@
-# 0015 The OpenHAL hub protocol is JSON-RPC 2.0, versioned by date
+# 0015 The OpenHAL hub protocol is JSON-RPC 2.0
 
 ## Context
 
@@ -16,7 +16,9 @@ OpenHAL is presented and specified as an open protocol, the way MCP is. Until no
 
 ### Versions
 
-- Spec versions are dated, `YYYY-MM-DD`. The first is **2026-10-24**. Each version lives in `spec/<version>/` with its own changelog entry, and `spec/versions.json` names `latest`.
+Amended on 2026-10-28 by [ADR 0017](0017-version-numbers.md). Spec versions were first named by date, and the first draft was dated 2026-10-24. That draft is now version 0.1, shown to people as v0.1.
+
+- Spec versions are numbers, `MAJOR.MINOR` (ADR 0017). Each version lives in `spec/v<version>/` with its own changelog entry, and `spec/versions.json` names `latest`.
 - `hal/initialize` negotiates the version. The client sends the newest it supports, and the hub answers with that version or the newest it supports. A client that can't use the answer disconnects.
 
 ### Lifecycle
