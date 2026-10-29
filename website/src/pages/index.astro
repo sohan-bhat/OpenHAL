@@ -1,9 +1,8 @@
 ---
 import { getEntry, render } from "astro:content";
 import heroSpellSource from "../components/landing/hero-spell.js?raw";
-import openingSource from "../components/landing/opening.ts?raw";
+import Hero from "../components/landing/Hero.astro";
 import Story from "../components/landing/Story.astro";
-import Wordmark from "../components/landing/Wordmark.astro";
 import { PRODUCT_LONG_NAME, PRODUCT_NAME } from "../config/brand";
 import DocShell from "../layouts/DocShell.astro";
 import { driverCounts, driverGroups, statusWord } from "../lib/catalog";
@@ -13,19 +12,6 @@ import { latestSpecHref } from "../lib/spec";
 import "../styles/prose.css";
 
 const heroSpell = await inlineScript(heroSpellSource, "hero-spell.js");
-const firstFrame = `
-const hero = document.querySelector("[data-sequence]");
-const runway = hero && hero.querySelector(".hero-runway");
-const opening = hero && runway ? measure(hero) : null;
-if (hero && runway && opening) {
-  let top = 0;
-  for (let node = hero; node; node = node.offsetParent) top += node.offsetTop;
-  const total = Number(hero.dataset.total) || 1;
-  const start = top - (document.querySelector("header.header")?.offsetHeight ?? 0);
-  const y = window.scrollY;
-  place(opening, Math.min(total, Math.max(0, ((y - start) * total) / Math.max(1, runway.offsetHeight))), y);
-}`;
-const openingScript = await inlineScript(`${openingSource}\n${firstFrame}`, "opening.ts", { iife: true });
 const quickstart = await getEntry("snippets", "quickstart");
 const { Content: Quickstart } = await render(quickstart!);
 const groups = driverGroups();
@@ -51,12 +37,11 @@ const more = [
 ---
 
 <DocShell title={PRODUCT_NAME} description={HOME_TITLE} home head={head}>
-  <Wordmark spell={heroSpell} />
+  <Hero spell={heroSpell} />
 
   <div class="home-width">
     <Story after={after} />
   </div>
-  <script is:inline set:html={openingScript} />
 
   <section id={after} class="home-width part after-story" aria-labelledby="safe-title">
     <h2 id="safe-title">Safety model</h2>
@@ -121,9 +106,7 @@ const more = [
 <script>
   import { scene } from "../components/landing/scene-runtime";
   import { smoothSwitch } from "../components/landing/smooth-switch";
-  import { wordmark } from "../components/landing/wordmark-runtime";
 
-  for (const root of document.querySelectorAll<HTMLElement>("[data-sequence]")) scene(root, { stage: ".hero-stage", runway: ".hero-runway", ...wordmark(root) });
   for (const root of document.querySelectorAll<HTMLElement>("[data-story]")) scene(root, { stage: ".story-stage", runway: ".story-runway", fits: true });
   for (const toggle of document.querySelectorAll<HTMLButtonElement>("[data-smooth]")) smoothSwitch(toggle);
 </script>
