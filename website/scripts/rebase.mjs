@@ -28,7 +28,11 @@ export function rebase(text, rawBase = "/OpenHAL", host = "https://sohan-bhat.gi
     })
     .replace(new RegExp(`url\\((["']?)/(?!/)${notBase}`, "g"), `url($1${base}/`)
     .replace(new RegExp(`(http-equiv="refresh" content="\\d+;\\s*url=)/(?!/)${notBase}`, "g"), `$1${base}/`)
+    .replace(new RegExp(`(<option\\b[^>]*?\\bvalue=)(["'])/(?!/)${notBase}`, "g"), `$1$2${base}/`)
     .replace(new RegExp(`(["'\`])/_astro/`, "g"), `$1${base}/_astro/`)
+    .replace(/([`"])\/pagefind\//g, `$1${base}/pagefind/`)
+    .replace(/\bbaseUrl:([`"'])\/\1/g, `baseUrl:$1${base}/$1`)
+    .replace(/\breturn([`"'])\/\1\+/g, `return$1${base}/$1+`)
     .replace(new RegExp(`"(src|start_url|scope|href_matches)":\\s*"/(?!/)${notBase}`, "g"), `"$1": "${base}/`)
     .replace(new RegExp(`${literal(host)}/${notBase}`, "g"), `${host}${base}/`);
 }
