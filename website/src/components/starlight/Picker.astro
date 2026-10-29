@@ -37,13 +37,9 @@ const none = !items.some((item) => item.current);
     {
       items.map((item) =>
         item.href ? (
-          <a role="menuitem" href={item.href} aria-current={item.current ? (item.page ? "page" : "true") : undefined}>
-            {item.label}
-          </a>
+          <a role="menuitem" href={item.href} aria-current={item.current ? (item.page ? "page" : "true") : undefined}>{item.label}</a>
         ) : (
-          <button type="button" role="menuitemradio" aria-checked={item.current ? "true" : "false"} data-value={item.value}>
-            {item.label}
-          </button>
+          <button type="button" role="menuitemradio" aria-checked={item.current ? "true" : "false"} data-value={item.value}>{item.label}</button>
         ),
       )
     }

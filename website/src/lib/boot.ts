@@ -1,12 +1,12 @@
 const intents = ["pointerover", "pointerdown", "focusin", "keydown", "touchstart"];
 
 /**
- * Loads the pickers' keys, the theme choice and the motion on a person's first interaction, never
- * while the page loads. Until then the pickers open as native popovers.
+ * Loads Motion and the motion for Starlight's parts on a person's first interaction, never while
+ * the page loads.
  */
 function load(): void {
   for (const kind of intents) removeEventListener(kind, load, { capture: true });
-  import("./live").catch(() => listen());
+  import("./ui").catch(() => listen());
   if (!matchMedia("(prefers-reduced-motion: reduce)").matches) import("motion/mini").catch(() => {});
 }
 
