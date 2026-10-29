@@ -1,25 +1,19 @@
-.hero,
 .story {
   --band: 32px;
   --lead: var(--s-1);
+  --pin: var(--sl-nav-height, 61px);
 }
 
 @media screen and (min-width: 640px) {
-  .hero,
   .story {
     --lead: var(--s-3);
   }
 }
 
 @media screen and (min-width: 1024px) and (min-height: 820px) {
-  .hero,
   .story {
     --lead: var(--s-4);
   }
-}
-
-.story {
-  --pin: var(--sl-nav-height, 61px);
 }
 
 .story-band {
@@ -666,13 +660,4 @@
   .story[data-camera] .seq {
     --arrow: 16px;
   }
-}
-
-.story[data-lifted] .story-stage {
-  z-index: 2;
-  will-change: transform, opacity;
-}
-
-.story:not([data-camera])[data-lifted] .story-stage {
-  position: relative;
 }
