@@ -13,6 +13,7 @@
   "dependencies": {
     "@astrojs/markdown-remark": "7.3.2",
     "@astrojs/sitemap": "3.7.4",
+    "@astrojs/starlight": "0.42.7",
     "@astrojs/svelte": "9.0.1",
     "ajv": "8.20.0",
     "astro": "7.3.8",
@@ -35,7 +36,8 @@
   },
   "pnpm": {
     "overrides": {
-      "zod": "4.6.7"
+      "zod": "4.6.7",
+      "@astrojs/mdx": "8.0.3"
     }
   },
   "engines": {
