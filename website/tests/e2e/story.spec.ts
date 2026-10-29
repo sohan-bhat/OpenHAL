@@ -110,11 +110,11 @@ test.describe("the landing story", () => {
       for (const item of COUNTED) {
         await storyTime(page, item.from + item.length / 2);
         const box = await page.locator(".story-stage").boundingBox();
-        const header = await page.locator(".site-header").evaluate((el) => el.getBoundingClientRect().height);
+        const header = await page.locator("header.header").evaluate((el) => el.getBoundingClientRect().height);
         const where = `${form.width}x${form.height} ${item.id}`;
         expect(Math.abs(box!.y - header), where).toBeLessThan(1);
         expect(box!.y + box!.height, where).toBeLessThanOrEqual(form.height + 1);
-        const band = await page.locator(".story-count").evaluate((el) => el.getBoundingClientRect().top - document.querySelector(".site-header")!.getBoundingClientRect().bottom);
+        const band = await page.locator(".story-count").evaluate((el) => el.getBoundingClientRect().top - document.querySelector("header.header")!.getBoundingClientRect().bottom);
         expect(band, where).toBeLessThan(24);
         places.push(JSON.stringify(await page.locator(".story-scene :is(.lifeline, .seq-head, .cam-frame, .say, .leg)").evaluateAll((items) => items.map((el) => [el.getBoundingClientRect().x, el.getBoundingClientRect().y, el.getBoundingClientRect().width]))));
         expect(await page.locator(".story-scene").evaluate((el) => getComputedStyle(el).transform)).toBe("none");

@@ -34,9 +34,9 @@ test.describe("pages load ahead of a click", () => {
     });
     await cdp.send("Preload.enable");
     await page.goto("/docs/");
-    await page.locator(".desktop-nav").getByRole("link", { name: "Drivers", exact: true }).hover();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Drivers", exact: true }).hover();
     await expect.poll(() => ready.has("/drivers/"), { timeout: 5000 }).toBe(true);
-    await page.locator(".desktop-nav").getByRole("link", { name: "Playground", exact: true }).hover();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Playground", exact: true }).hover();
     await expect.poll(() => ready.has("/spec/playground/"), { timeout: 5000 }).toBe(true);
     await page.waitForTimeout(500);
     expect(fetched.filter((path) => /\/_astro\/Playground\./.test(path))).toEqual([]);
@@ -46,9 +46,9 @@ test.describe("pages load ahead of a click", () => {
     test.skip(browserName !== "firefox", "Firefox has no speculation rules");
     await page.goto("/docs/");
     expect(await page.evaluate(() => Boolean(HTMLScriptElement.supports?.("speculationrules")))).toBe(false);
-    await page.locator(".desktop-nav").getByRole("link", { name: "Drivers", exact: true }).hover();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Drivers", exact: true }).hover();
     await expect(page.locator('link[rel="prefetch"][href$="/drivers/"]')).toHaveCount(1, { timeout: 5000 });
-    await page.getByRole("link", { name: "Quickstart" }).first().focus();
+    await page.locator("main").getByRole("link", { name: "Quickstart" }).first().focus();
     await expect(page.locator('link[rel="prefetch"][href$="/docs/quickstart/"]')).toHaveCount(1, { timeout: 5000 });
   });
 });

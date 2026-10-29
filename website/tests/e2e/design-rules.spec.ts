@@ -122,9 +122,9 @@ test.describe("the search index", () => {
   test("leaves the story's state text out of the home page's entry", async ({ page }) => {
     await page.goto("/drivers/");
     await page.keyboard.press("Control+k");
-    await page.locator("#site-search-input").fill("Interlocks");
-    await expect(page.locator("[data-search-status]")).toHaveText(/match/);
-    const hrefs = await page.locator("a.search-result").evaluateAll((items) => items.map((item) => item.getAttribute("href")));
+    await page.locator("#starlight__search input").fill("Interlocks");
+    await expect(page.locator(".pagefind-ui__message")).toHaveText(/result/, { timeout: 15_000 });
+    const hrefs = await page.locator(".pagefind-ui__result-link").evaluateAll((items) => items.map((item) => item.getAttribute("href")));
     expect(hrefs.filter((href) => href === "/" || href?.startsWith("/#"))).toEqual([]);
     const ignored = await page.evaluate(async () => {
       const html = await (await fetch("/")).text();

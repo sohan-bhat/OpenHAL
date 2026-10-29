@@ -76,9 +76,9 @@ test.describe("specification", () => {
   test("/spec/ goes to the latest version, which the header's version picker shows", async ({ page }) => {
     await page.goto("/spec/");
     await expect(page).toHaveURL(/\/spec\/v\d+\.\d+\/$/);
-    await expect(page.locator(".version-button")).toHaveAccessibleName(/^Specification version v\d+\.\d+$/);
-    await expect(page.locator("#version-menu a[aria-current]")).toContainText("latest");
-    await page.getByRole("link", { name: "Changelog" }).first().click();
+    await expect(page.locator("header.header oh-version-select select")).toHaveAccessibleName("Specification version");
+    await expect(page.locator("header.header oh-version-select option:checked")).toHaveText(/^v\d+\.\d+$/);
+    await page.locator(".sidebar-content").getByRole("link", { name: /Changelog$/ }).first().click();
     await expect(page.locator("h1")).toHaveText(/^\d+ Changelog$/);
   });
 
@@ -96,7 +96,7 @@ test.describe("specification", () => {
     await page.goto("/spec/v0.1/basic/messages/");
     await expect(page.locator("h1")).toHaveText("3.3 Messages");
     await expect(page.locator("h2 .secno").first()).toHaveText("3.3.1");
-    await expect(page.locator("aside.outline")).toBeAttached();
+    await expect(page.locator("starlight-toc")).toBeAttached();
     await expect(page.locator("h2 a.heading-link").first()).toHaveAttribute("href", /^#/);
     await expect(page.getByRole("link", { name: "Edit on GitHub" })).toHaveAttribute("href", /\/edit\/main\/spec\/v0\.1\/basic\/messages\.md$/);
     await expect(page.locator("figure.trace-code svg.trace-arrow").first()).toBeVisible();
@@ -268,7 +268,7 @@ test.describe("catalog pages", () => {
     await expect(page.locator("[data-shown]")).toHaveText(`2 of ${all} device files.`);
     await page.getByLabel("Filter", { exact: true }).fill("no such device");
     await expect(page.locator("[data-empty]")).toBeVisible();
-    await expect(page.getByRole("article").getByRole("link", { name: "How the library works" })).toHaveAttribute("href", "/docs/library/");
+    await expect(page.getByRole("main").getByRole("link", { name: "How the library works" })).toHaveAttribute("href", "/docs/library/");
     await page.goto("/library/scpi-keysight-34461a/");
     await expect(page.locator(".facts")).toContainText("unconfirmed");
     await expect(page.locator(".facts")).toContainText("This file has read channels only, so nothing in the file changes the device.");
@@ -291,7 +291,7 @@ test.describe("site", () => {
     await page.goto("/docs/quickstart/");
     await expect(page.locator("h1")).toHaveText("Quickstart");
     await expect(page.locator("figure[data-tested]").first()).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "Previous and next" }).getByRole("link").first()).toBeVisible();
+    await expect(page.locator(".pagination-links a").first()).toBeVisible();
   });
 
   test("copy buttons copy only the commands", async ({ page, browserName, context }) => {
