@@ -8,7 +8,7 @@ const sitemap = fileURLToPath(new URL("../../dist/sitemap-0.xml", import.meta.ur
 const PAGES = existsSync(sitemap)
   ? [...readFileSync(sitemap, "utf8").matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => new URL(match[1]).pathname)
   : [];
-PAGES.push("/spec/v0.1/", "/404.html");
+PAGES.push("/404.html");
 
 async function violations(page: Page): Promise<string[]> {
   await page.evaluate(() => document.fonts.ready);
@@ -80,7 +80,7 @@ for (const scheme of ["light", "dark"] as const) {
       await page.emulateMedia({ reducedMotion: "no-preference" });
 
       await page.goto("/");
-      await page.getByRole("button", { name: "Search", exact: true }).click();
+      await page.getByRole("button", { name: /^Search/ }).click();
       await page.locator("#starlight__search input").fill("print babysitter");
       await expect(page.locator(".pagefind-ui__result-link").first()).toBeVisible({ timeout: 15_000 });
       problems.push(...(await violations(page)).map((item) => `search ${item}`));

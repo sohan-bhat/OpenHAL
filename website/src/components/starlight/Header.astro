@@ -34,6 +34,13 @@ const width = wordmarkWidth(24);
   <SectionSelect links={links} />
   <div class="oh-end print:hidden">
     <Search />
+    <script is:inline>
+      (() => {
+        const button = document.querySelector("site-search button[data-open-modal]");
+        const keys = button ? [...button.querySelectorAll("kbd kbd")].map((key) => key.textContent).join(" ") : "";
+        if (keys) button.setAttribute("aria-label", `${button.getAttribute("aria-label")} ${keys}`);
+      })();
+    </script>
     <div class="oh-tools sl-hidden md:sl-flex">
       <div class="oh-social sl-flex">
         <SocialIcons />

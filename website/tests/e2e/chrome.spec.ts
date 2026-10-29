@@ -356,7 +356,7 @@ test.describe("site search", () => {
   test("on a phone the field is an icon button that opens the same dialog", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
-    await page.getByRole("button", { name: "Search", exact: true }).click();
+    await page.getByRole("button", { name: /^Search/ }).click();
     await expect(page.getByRole("dialog", { name: "Search" })).toBeVisible();
     await page.locator("#starlight__search input").fill("print babysitter");
     await expect(page.locator(".pagefind-ui__result-link").first()).toBeVisible({ timeout: 15_000 });
