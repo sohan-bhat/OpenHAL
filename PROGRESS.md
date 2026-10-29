@@ -9,6 +9,7 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
 - website-13. The schema reference back to 98 or more on a phone, and the home page's small diagram whole at 1024 px (BRIEF-website-13.md).
+- website-14. No icons in the header's pickers, smooth animation from a proven library for the search, pickers, menus and sidebar groups, and 1.5 px control outlines (BRIEF-website-14.md).
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 

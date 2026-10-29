@@ -144,7 +144,8 @@ Scale, mobile then desktop. 13/13 legend, 15/15 secondary, 16/17 body with line 
 - Asides. A note, tip, caution or danger aside sits in a 1 px `--border` box on the page background with its title in `--text`, no icon and no tint.
 - Breakpoints 800, 1024, 1140 and 1152. Under 800 px the sidebar is the menu, from 800 to 1023 px the sections are one picker, from 1024 to 1139 px the search is its icon, and under 1152 px the outline is an "On this page" disclosure under the header. Pages are checked at 390, 768, 1024, 1280 and 1440 px.
 - Spacing scale 4, 8, 12, 16, 24, 32, 48, 64.
-- Borders are 1 px `--border`, radius at most 6 px, no shadows.
+- Borders are 1 px `--border`, radius at most 6 px, no shadows. Controls with an outline, such as the search field and its shortcut key, inputs, pickers and outlined buttons, draw the outline 1.5 px wide, the owner's request on 2026-10-28. Rules, dividers and table borders stay 1 px.
+- Pickers and menus show words only, with a chevron where they open, and never an icon beside the word.
 - Every spec page has anchor links on headings, copy buttons on code, previous and next links, "Edit on GitHub", and the spec version in the URL.
 
 ## Information marks
@@ -187,7 +188,7 @@ The dashboard is the OpenHAL Inspector, a protocol inspector.
 
 ## Motion
 
-Eight patterns, nothing else.
+Nine patterns, nothing else.
 1. The flowing connectors in the flow diagram.
 2. A message appearing in the trace or log. A 120 ms fade, 4 px rise.
 3. A status change. A 120 ms cross-fade.
@@ -196,6 +197,7 @@ Eight patterns, nothing else.
 6. The page transition. A page change moves the content sideways in the direction of travel through the nav, with the header and its highlight held still. Going to an item further right, the old content slides 24 px left and fades as the new content wipes in from the right with a clip-path, and going left mirrors it. About 260 ms in all. It is not a fade, a rise or a scale, so it stays distinct from the owner's other sites. Built on cross-document view transitions, so a browser without them changes pages instantly. The owner asked for patterns 5 and 6 on 2026-10-26.
 7. The wordmark sequence. The first scroll drops the demo's opening and the hero's small diagram away and brings the hero's wordmark down into a pinned stage, shifted right so the slide never crosses the column's left edge, then each step fades every letter but the current one of H, A and L to a low opacity and slides the whole word left so the current letter lands in the same place, using transforms and opacity only. Nothing moves on its own, and scrolling back plays the sequence in reverse. The owner asked for this on 2026-10-27.
 8. The sidebar's groups. A group's caret turns a quarter turn in 200 ms as the group opens or closes, which is Starlight's own motion, and the group's links appear without sliding. With reduced motion the caret turns at once.
+9. Interactive parts. The search dialog, the header's menus and pickers, the phone menu, the sidebar's groups, popovers and other controls that open or change state animate with a popular, maintained animation library (Motion by default), in 150 to 250 ms with an ease out or a soft spring that never bounces past its end. Only transforms, opacity and the height of a disclosure move, and with reduced motion every part opens and closes at once. The owner asked for clean, smooth animations from a proven library on 2026-10-28.
 
 Smooth scrolling on the landing page. Wheel and trackpad scrolling eases on the home page so the story glides, the owner's request on 2026-10-26. It is on by default, a small "Smooth scrolling" switch near the story turns it off and remembers the choice per browser, and it is off under `prefers-reduced-motion`. It only eases the native scroll. The scrollbar, keyboard, anchor links, find in page and touch scrolling behave as usual, there is no snapping, and the speed is the person's own.
 
