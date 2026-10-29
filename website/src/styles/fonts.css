@@ -4,7 +4,7 @@
   font-display: swap;
   font-weight: 200 800;
   src: url("../fonts/atkinson-hyperlegible-next-normal.woff2") format("woff2-variations");
-  unicode-range: U+20-7E, U+A0, U+B0, U+B2-B3, U+B7, U+B9, U+D7, U+201C-201D, U+2026, U+2039-203A;
+  unicode-range: U+20-7E, U+A0, U+B0, U+B2-B3, U+B7, U+B9, U+D7, U+2026;
 }
 
 @font-face {
@@ -13,7 +13,7 @@
   font-display: swap;
   font-weight: 200 800;
   src: url("../fonts/atkinson-hyperlegible-mono-normal.woff2") format("woff2-variations");
-  unicode-range: U+20-7E, U+A0, U+B0, U+B2-B3, U+B7, U+B9, U+D7, U+201C-201D, U+2026, U+2039-203A;
+  unicode-range: U+20-7E, U+A0, U+B0, U+B2-B3, U+B7, U+B9, U+D7, U+2026;
 }
 
 @font-face {
@@ -22,5 +22,5 @@
   font-display: swap;
   font-weight: 200 800;
   src: url("../fonts/atkinson-hyperlegible-mono-italic.woff2") format("woff2");
-  unicode-range: U+20-7E, U+A0, U+B0, U+B2-B3, U+B7, U+B9, U+D7, U+201C-201D, U+2026, U+2039-203A;
+  unicode-range: U+20-7E, U+A0, U+B0, U+B2-B3, U+B7, U+B9, U+D7, U+2026;
 }

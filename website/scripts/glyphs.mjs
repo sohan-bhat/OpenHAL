@@ -16,12 +16,15 @@ function files(dir, root = dir) {
 
 /**
  * Every character beyond printable ASCII that a build can put on screen, from its pages, scripts and
- * styles, as sorted hexadecimal code points. Control characters are left out.
+ * styles, as sorted hexadecimal code points. Control characters are left out, and so is Pagefind's
+ * search interface, which carries every language's strings but shows the page's English ones.
  */
 export function siteCodepoints(dist) {
   const found = new Set();
   for (const file of files(dist)) {
-    for (const char of readFileSync(file, "utf8")) {
+    const text = readFileSync(file, "utf8");
+    if (extname(file) === ".js" && text.includes("pagefind-ui__result")) continue;
+    for (const char of text) {
       const code = char.codePointAt(0);
       if (code > 0x7e && !(code >= 0x7f && code <= 0x9f)) found.add(code);
     }

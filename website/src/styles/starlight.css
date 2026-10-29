@@ -148,9 +148,12 @@ site-search button > kbd {
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text-2);
-  font-family: var(--font-text);
   font-size: var(--t-legend);
   font-weight: 700;
+}
+
+site-search button kbd {
+  font-family: var(--font-text);
 }
 
 site-search dialog {

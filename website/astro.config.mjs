@@ -55,6 +55,7 @@ export default defineConfig({
         Head: override("Head"),
         Header: override("Header"),
         Hero: override("Hero"),
+        MarkdownContent: override("MarkdownContent"),
         Sidebar: override("Sidebar"),
         MobileMenuFooter: override("MobileMenuFooter"),
         PageTitle: override("PageTitle"),
