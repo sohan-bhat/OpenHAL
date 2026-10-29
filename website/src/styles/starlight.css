@@ -164,6 +164,69 @@ site-search dialog::backdrop {
   backdrop-filter: none;
 }
 
+:is(.header, .mobile-preferences) label:has(> select) {
+  color: var(--text-2);
+}
+
+:is(.header, .mobile-preferences) label:has(> select):hover {
+  color: var(--text);
+}
+
+@supports (appearance: base-select) {
+  :is(.header, .mobile-preferences) select,
+  :is(.header, .mobile-preferences) select::picker(select) {
+    appearance: base-select;
+  }
+
+  :is(.header, .mobile-preferences) select {
+    border-radius: var(--radius);
+    font-size: var(--t-small);
+  }
+
+  :is(.header, .mobile-preferences) select::picker-icon {
+    display: none;
+  }
+
+  :is(.header, .mobile-preferences) select::picker(select) {
+    margin-block: var(--s-1);
+    padding: var(--s-1);
+    min-width: max(anchor-size(width), 7rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    box-shadow: none;
+  }
+
+  :is(.header, .mobile-preferences) option {
+    padding: 6px var(--s-3);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text);
+    font-size: var(--t-small);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  :is(.header, .mobile-preferences) option::checkmark {
+    display: none;
+  }
+
+  :is(.header, .mobile-preferences) option:hover {
+    background: var(--surface);
+  }
+
+  :is(.header, .mobile-preferences) option:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+
+  :is(.header, .mobile-preferences) option:checked {
+    background: var(--oh-highlight);
+    color: var(--accent);
+  }
+}
+
 .sl-menu-button {
   border: 1px solid var(--oh-control-border);
   border-radius: var(--radius);
@@ -171,21 +234,21 @@ site-search dialog::backdrop {
   color: var(--text);
 }
 
-.sidebar-content ul a,
-.sidebar-content ul a.large {
+.sidebar-content .top-level a,
+.sidebar-content .top-level a.large {
   font-size: var(--t-small);
   font-weight: 400;
   color: var(--text-2);
 }
 
-.sidebar-content ul a:hover {
+.sidebar-content .top-level a:hover {
   color: var(--text);
   background: var(--surface);
 }
 
-.sidebar-content ul a[aria-current="page"],
-.sidebar-content ul a[aria-current="page"]:hover,
-.sidebar-content ul a[aria-current="page"]:focus {
+.sidebar-content .top-level a[aria-current="page"],
+.sidebar-content .top-level a[aria-current="page"]:hover,
+.sidebar-content .top-level a[aria-current="page"]:focus {
   color: var(--accent);
   background: var(--oh-highlight);
   font-weight: 700;
