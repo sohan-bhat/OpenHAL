@@ -1,0 +1,74 @@
+---
+import { inlineScript } from "../../lib/inline-script";
+import { nb, storyFacts, storyLines, type Sending } from "../../lib/story/facts";
+import { COUNTED, LAST, during, held } from "../../lib/story/script";
+import { storySequence } from "../../lib/story/timeline";
+import "../../styles/story.css";
+import Sequence from "./Sequence.astro";
+import Webcam from "./Webcam.astro";
+import walkSource from "./walk.ts?raw";
+
+const facts = storyFacts();
+const lines = storyLines(facts);
+const sequence = storySequence(facts);
+const reasons: Partial<Record<Sending, string>> = { hot: facts.nozzle.refusal.reason };
+const stops = COUNTED.map((item) => Math.min(item.to - 0.5, LAST));
+const opening = await inlineScript(
+  `${walkSource}
+const story = document.currentScript.previousElementSibling;
+story.setAttribute("data-walk", "");
+frames(story)(${stops[0]});`,
+  "walk.ts",
+  { iife: true },
+);
+---
+
+<div class="story" data-story data-stops={stops.join(" ")}>
+  <div class="story-stage">
+    <div class="story-controls">
+      <p class="story-count" aria-hidden="true">
+        {COUNTED.map((item, index) => <span {...during([held(item.id)])}>{index + 1} / {COUNTED.length}</span>)}
+      </p>
+      <button type="button" class="button quiet" data-previous aria-disabled="true">Previous<span class="visually-hidden"> step</span></button>
+      <button type="button" class="button quiet" data-next>Next<span class="visually-hidden"> step</span></button>
+    </div>
+    <div class="story-notes" aria-hidden="true">
+      {COUNTED.map((item) => <p class="story-note" {...during([held(item.id)])}>{nb(lines[item.id])}</p>)}
+    </div>
+    <p class="visually-hidden" aria-live="polite" data-said></p>
+    <div class="story-scene" aria-hidden="true" data-pagefind-ignore="all">
+      <Sequence sequence={sequence} />
+      <Webcam sequence={sequence} />
+    </div>
+  </div>
+  <ol class="story-list" role="list">
+    {
+      COUNTED.map((item) => {
+        const said = facts.said[item.id as Sending] ?? [];
+        const reason = reasons[item.id as Sending];
+        return (
+          <li class="story-step">
+            <p class="step-line">{nb(lines[item.id])}</p>
+            {said.length > 0 && (
+              <p class:list={["step-said", { mono: item.id !== "ask" }]}>
+                {said.map((words) => (
+                  <span class="step-words">
+                    {nb(words.label)}
+                    {words.answer && (
+                      <Fragment>
+                        {" "}
+                        <span class:list={["status", words.answer.tone]}>{words.answer.text}</span>
+                      </Fragment>
+                    )}
+                  </span>
+                ))}
+              </p>
+            )}
+            {reason && <p class="step-reason mono">{nb(reason)}</p>}
+          </li>
+        );
+      })
+    }
+  </ol>
+</div>
+<script is:inline set:html={opening} />
