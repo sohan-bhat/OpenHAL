@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { AgentClient, hubState, signIn } from "./hub";
 
 test.beforeEach(async ({ context }) => {
@@ -49,7 +49,18 @@ test("the phone header labels the hub, connection, protocol and conformance", as
   const facts = page.locator("dl.hub.narrow");
   await expect(facts).toBeVisible();
   for (const label of ["Hub", "Connection", "Protocol", "Conformance"]) await expect(facts.locator("dt", { hasText: label })).toBeVisible();
+  await expect(fact(facts, "Protocol")).toHaveText("0.1");
   await expect(page.locator("dl.hub.wide")).toBeHidden();
+});
+
+function fact(list: Locator, label: string | RegExp): Locator {
+  return list.locator("div").filter({ has: list.page().locator("dt", { hasText: label }) }).locator("dd");
+}
+
+test("the header and Settings show protocol 0.1, the version the hub speaks", async ({ page }) => {
+  await page.goto("/#/settings");
+  await expect(fact(page.locator("dl.hub.wide"), "Protocol")).toHaveText("0.1");
+  await expect(fact(page.locator("header.section dl.facts"), /^protocol$/)).toHaveText("0.1");
 });
 
 test("the log shows readings on request, expands long messages and copies the trace", async ({ page, browserName, context }) => {
