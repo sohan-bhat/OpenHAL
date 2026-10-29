@@ -4,6 +4,9 @@
   --oh-control-line: 1.5px;
   --oh-control-ring: inset 0 0 0 calc(var(--oh-control-line) - 1px);
   --oh-highlight: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  --oh-sidebar-head: var(--s-2);
+  --oh-rail: var(--s-8);
+  --oh-peek: 260px;
 
   --sl-font: var(--font-text);
   --sl-font-mono: var(--font-mono);
@@ -20,7 +23,8 @@
   --sl-nav-pad-x: calc(var(--oh-gutter) + var(--s-4));
   --sl-nav-gap: var(--s-4);
   --sl-menu-button-size: 40px;
-  --sl-content-width: 48.25rem;
+  --oh-reading-width: 48.25rem;
+  --sl-content-width: var(--oh-reading-width);
   --sl-sidebar-pad-x: var(--s-4);
 
   --sl-color-white: var(--text);
@@ -89,11 +93,46 @@
   .sidebar:has([data-menu-only]) {
     display: none;
   }
+
+  html:root[data-sidebar="collapsed"]:not(:has([data-menu-only])) {
+    --sl-content-inline-start: calc(var(--oh-gutter) + var(--oh-rail));
+  }
+
+  :root[data-sidebar="collapsed"] .sidebar-pane {
+    transform: translateX(-100%);
+    visibility: hidden;
+  }
+
+  :root[data-sidebar="collapsed"]:is([data-sidebar-moving], [data-sidebar-peek]) .sidebar-pane {
+    visibility: visible;
+  }
+
+  :root[data-sidebar="collapsed"][data-sidebar-peek] .sidebar-pane {
+    inset-block: calc(var(--sl-nav-height) + var(--oh-sidebar-head) + 40px) var(--s-2);
+    inset-inline-start: var(--oh-gutter);
+    width: var(--oh-peek);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transform: none;
+  }
+
+  :root[data-sidebar-peek] .sidebar-content {
+    padding-block-start: var(--s-2);
+    padding-inline-start: calc(var(--sl-sidebar-pad-x) - 1px);
+  }
+
+  :root[data-sidebar-leaving] .sidebar-pane {
+    pointer-events: none;
+  }
 }
 
 @media (min-width: 72rem) {
   :root:not([data-has-toc]) .main-pane {
     --sl-content-margin-inline: 0 auto;
+  }
+
+  html:root[data-sidebar="collapsed"]:not(:has([data-menu-only])) .main-pane {
+    --sl-content-margin-inline: max(0px, (100vw - var(--oh-gutter) - var(--oh-rail) - var(--oh-reading-width) - var(--sl-sidebar-width)) / 2) auto;
   }
 
   .right-sidebar-panel {

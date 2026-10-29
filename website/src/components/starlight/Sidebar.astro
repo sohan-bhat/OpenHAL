@@ -1,11 +1,19 @@
 ---
 import Default from "@astrojs/starlight/components/Sidebar.astro";
+import { SidebarHide } from "../islands/SidebarControls";
 import { sections } from "../../lib/sections";
 
 const links = await sections(Astro.url.pathname);
 const menuOnly = Astro.locals.starlightRoute.sidebar.length === 0;
 ---
 
+{
+  !menuOnly && (
+    <div data-sidebar-head class="sticky top-0 z-1 -mt-4 -mb-2 hidden bg-background pt-(--oh-sidebar-head) min-[50rem]:flex min-[50rem]:[:root[data-sidebar-peek]_&]:hidden">
+      <SidebarHide client:intent />
+    </div>
+  )
+}
 <ul class="oh-menu-sections md:sl-hidden" data-menu-only={menuOnly ? "" : undefined}>
   {
     links.map((link) => (
