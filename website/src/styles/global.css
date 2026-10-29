@@ -1,7 +1,65 @@
-@layer starlight, openhal;
+@layer base, starlight, openhal, theme, components, utilities;
 
+@import "@astrojs/starlight-tailwind";
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
 @import "../../../design/tokens.css";
 @import "./fonts.css";
+
+@source "../components/ui";
+@source "../components/islands";
+@source "../components/starlight";
+@source "../components/landing";
+@source "../pages/index.astro";
+
+@theme {
+  --color-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --blur-*: initial;
+}
+
+@theme inline {
+  --font-sans: var(--font-text);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-card: var(--bg);
+  --color-card-foreground: var(--text);
+  --color-popover: var(--bg);
+  --color-popover-foreground: var(--text);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--bg);
+  --color-secondary: var(--surface);
+  --color-secondary-foreground: var(--text);
+  --color-muted: var(--surface);
+  --color-muted-foreground: var(--text-2);
+  --color-accent: var(--oh-highlight);
+  --color-accent-foreground: var(--accent);
+  --color-destructive: var(--blocked);
+  --color-border: var(--border);
+  --color-input: var(--oh-control-border);
+  --color-ring: var(--accent);
+  --color-ok: var(--ok);
+  --color-confirm: var(--confirm);
+  --color-blocked: var(--blocked);
+  --color-unverified: var(--unverified);
+  --text-xs: var(--t-legend);
+  --text-xs--line-height: 1.4;
+  --text-sm: var(--t-small);
+  --text-sm--line-height: 1.4;
+  --text-base: var(--t-body);
+  --text-base--line-height: var(--lh-body);
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius);
+  --ease-out: var(--ease);
+  --ease-in-out: var(--ease);
+  --default-transition-duration: 200ms;
+  --default-transition-timing-function: var(--ease);
+}
 
 :root[data-theme="light"] {
   color-scheme: light;
