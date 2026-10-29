@@ -62,7 +62,7 @@ const quick = [
   { label: "Cancel the print", command: command(IDS.cancel) },
 ];
 const latest = latestVersion();
-const sidebar = specSidebar(latest ? await specPages(latest) : [], (item) => (item.slug ? `/spec/latest/${item.slug}/` : "/spec/latest/"));
+const sidebar = specSidebar(latest ? await specPages(latest) : []);
 ---
 
 <DocShell

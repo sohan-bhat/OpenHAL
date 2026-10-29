@@ -8,7 +8,7 @@ interface Rule {
 
 test.describe("pages load ahead of a click", () => {
   test("every page asks the browser to prerender links on intent, and only prefetches the Playground", async ({ page }) => {
-    for (const path of ["/", "/docs/", "/spec/2026-10-24/basic/messages/", "/404.html"]) {
+    for (const path of ["/", "/docs/", "/spec/v0.1/basic/messages/", "/404.html"]) {
       await page.goto(path);
       const rules = await page.locator('script[type="speculationrules"]').evaluateAll((scripts) => scripts.map((script) => JSON.parse(script.textContent ?? "{}")));
       expect(rules, path).toHaveLength(1);

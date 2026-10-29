@@ -3,11 +3,12 @@ import { getCollection } from "astro:content";
 import { PRODUCT_NAME } from "../config/brand";
 import { navLinks } from "../config/site";
 import { wordmarkWidth } from "../lib/brand-mark";
+import { latestSpecHref } from "../lib/spec";
 import SearchDialog from "./SearchDialog.astro";
 import VersionSwitcher from "./VersionSwitcher.astro";
 
 const published = (await getCollection("blog")).some((post) => !post.data.draft);
-const links = navLinks(published);
+const links = navLinks(published, latestSpecHref());
 const path = Astro.url.pathname;
 const matchLength = (match: string[]) =>
   Math.max(0, ...match.filter((prefix) => (prefix === "/" ? path === "/" : path.startsWith(prefix))).map((prefix) => prefix.length));

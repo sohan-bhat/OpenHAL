@@ -33,14 +33,14 @@ const chrome = (page: Page) =>
     };
   });
 
-const SPEC = "/spec/2026-10-24/basic/messages/";
+const SPEC = "/spec/v0.1/basic/messages/";
 
 test.describe("the header and footer", () => {
   for (const width of [1440, 1280, 1024]) {
     test(`hold the wordmark, search, nav, version and footer in place across /, /docs/ and a spec page at ${width} px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       const seen: Record<string, Awaited<ReturnType<typeof chrome>>> = {};
-      for (const path of ["/", "/docs/", SPEC, "/spec/latest/", "/spec/playground/"]) {
+      for (const path of ["/", "/docs/", SPEC, "/spec/v0.1/", "/spec/playground/"]) {
         await page.goto(path);
         await page.evaluate(() => document.fonts.ready);
         seen[path] = await chrome(page);
@@ -50,7 +50,7 @@ test.describe("the header and footer", () => {
         expect(seen[path].version, path).toHaveLength(width >= 1180 ? 1 : 0);
         expect(seen[path].footer.length, path).toBeGreaterThan(0);
       }
-      for (const path of ["/docs/", SPEC, "/spec/latest/", "/spec/playground/"]) expect(seen[path], path).toEqual(seen["/"]);
+      for (const path of ["/docs/", SPEC, "/spec/v0.1/", "/spec/playground/"]) expect(seen[path], path).toEqual(seen["/"]);
     });
   }
 
@@ -120,7 +120,7 @@ test.describe("the version picker", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(SPEC);
     const button = page.locator(".version-button");
-    await expect(button).toHaveAccessibleName(/^Specification version \d{4}-\d{2}-\d{2}$/);
+    await expect(button).toHaveAccessibleName(/^Specification version v\d+\.\d+$/);
     await expect(button).toHaveAttribute("aria-expanded", "false");
     const github = (await page.locator(".desktop-nav li").last().boundingBox())!;
     const place = (await button.boundingBox())!;
@@ -170,14 +170,14 @@ test.describe("the version picker", () => {
   test("links each version to its spec from other pages and to the same section from a spec page", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/docs/");
-    const latest = /\d{4}-\d{2}-\d{2}/.exec((await page.locator(".version-button").textContent())!)![0];
+    const latest = /v\d+\.\d+/.exec((await page.locator(".version-button").textContent())!)![0];
     await expect(page.locator("#version-menu a[aria-current]")).toHaveAttribute("href", `/spec/${latest}/`);
     await expect(page.locator("#version-menu a[aria-current]")).toHaveAttribute("aria-current", "true");
     await page.goto(SPEC);
     await expect(page.locator("#version-menu a[aria-current]")).toHaveAttribute("href", SPEC);
     await page.locator(".version-button").click();
     await page.locator("#version-menu a").first().click();
-    await expect(page).toHaveURL(/\/spec\/\d{4}-\d{2}-\d{2}\/basic\/messages\/$/);
+    await expect(page).toHaveURL(/\/spec\/v\d+\.\d+\/basic\/messages\/$/);
   });
 
   test("works from the keyboard, closes on Escape and gives focus back to the button", async ({ page, browserName }) => {
@@ -210,7 +210,7 @@ test.describe("the version picker", () => {
       const list = page.locator(".mobile-nav .versions");
       await expect(list.locator(".legend")).toHaveText("Specification version");
       const listed = await rows(page, ".mobile-nav nav");
-      const versions = listed.filter((row) => /^\d{4}-\d{2}-\d{2}/.test(row.text));
+      const versions = listed.filter((row) => /^v\d+\.\d+/.test(row.text));
       expect(versions.length).toBeGreaterThan(0);
       for (const row of versions) expect(row.lines.every((count) => count === 1), row.text).toBe(true);
       expect(versions.filter((row) => row.current)).toHaveLength(1);

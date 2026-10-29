@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { sourceUrl } from "../../config/repo.mjs";
-import { REPO_ROOT, readVersions, slugOf } from "../spec-meta.mjs";
+import { REPO_ROOT, readVersions, slugOf, specBase, versionOfFolder } from "../spec-meta.mjs";
 
 export const FIXED_ROUTES = [
   { repo: "docs/guide/quickstart.md", route: "/docs/quickstart/", group: "Get started" },
@@ -32,7 +32,7 @@ export const FIXED_ROUTES = [
 
 export const DOC_PATTERNS = [...FIXED_ROUTES.map((item) => item.repo), "docs/drivers/*.md"];
 
-export const SPEC_PATTERN = "spec/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/**/*.md";
+export const SPEC_PATTERN = "spec/v[0-9]*.[0-9]*/**/*.md";
 
 export function routeFor(repoPath) {
   const path = repoPath.replace(/^\.?\//, "").split("#")[0];
@@ -40,15 +40,16 @@ export function routeFor(repoPath) {
   if (fixed) return fixed.route;
   const driver = /^docs\/drivers\/([a-z0-9-]+)\.md$/.exec(path);
   if (driver) return `/drivers/${driver[1]}/`;
-  const spec = /^spec\/(\d{4}-\d{2}-\d{2})\/(.+\.md)$/.exec(path);
-  if (spec && existsSync(join(REPO_ROOT, path))) {
+  const spec = /^spec\/([^/]+)\/(.+\.md)$/.exec(path);
+  const version = spec && versionOfFolder(spec[1]);
+  if (version && existsSync(join(REPO_ROOT, path))) {
     const slug = slugOf(spec[2]);
-    return slug ? `/spec/${spec[1]}/${slug}/` : `/spec/${spec[1]}/`;
+    return slug ? `${specBase(version)}${slug}/` : specBase(version);
   }
   const pointer = SPEC_POINTERS[path];
   if (pointer !== undefined) {
     const { latest } = readVersions();
-    if (latest) return `/spec/${latest}/${pointer}`;
+    if (latest) return `${specBase(latest)}${pointer}`;
   }
   return null;
 }

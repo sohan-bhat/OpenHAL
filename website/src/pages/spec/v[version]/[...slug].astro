@@ -1,0 +1,27 @@
+---
+import { render } from "astro:content";
+import DocShell from "../../../layouts/DocShell.astro";
+import { type SpecPage, specPages } from "../../../lib/spec";
+import { specSidebar } from "../../../lib/spec-nav";
+
+export async function getStaticPaths() {
+  const pages = await specPages();
+  const routes: Array<{ params: { version: string; slug: string | undefined }; props: { page: SpecPage } }> = [];
+  for (const version of new Set(pages.map((page) => page.version))) {
+    const mine = pages.filter((page) => page.version === version);
+    for (const page of mine) routes.push({ params: { version, slug: page.slug || undefined }, props: { page } });
+    if (!mine.some((page) => page.slug === "")) routes.push({ params: { version, slug: undefined }, props: { page: mine[0] } });
+  }
+  return routes;
+}
+
+const { page } = Astro.props;
+const rendered = await render(page.entry);
+const title = String(rendered.remarkPluginFrontmatter.title ?? page.title);
+const sidebar = specSidebar(await specPages(page.version));
+const { Content } = rendered;
+---
+
+<DocShell title={title} repo={page.repo} headings={rendered.headings} sidebar={sidebar} section="Specification" number={page.number}>
+  <Content />
+</DocShell>

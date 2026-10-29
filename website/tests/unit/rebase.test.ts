@@ -13,6 +13,13 @@ describe("moving a build under /OpenHAL/", () => {
     expect(rebase(moved)).toBe(moved);
   });
 
+  it("moves where a moved page sends the browser", () => {
+    const moved = rebase('<meta http-equiv="refresh" content="0; url=/spec/v0.1/basic/messages/"><a href="/spec/v0.1/basic/messages/" data-moved>');
+    expect(moved).toContain('content="0; url=/OpenHAL/spec/v0.1/basic/messages/"');
+    expect(moved).toContain('href="/OpenHAL/spec/v0.1/basic/messages/"');
+    expect(rebase(moved)).toBe(moved);
+  });
+
   it("moves every candidate of a crop's srcset", () => {
     const moved = rebase('<source srcset="/captures/inspector-device-dark-843.avif 843w, /captures/inspector-device-dark-992.avif 992w" sizes="(min-width: 1024px) 992px">');
     expect(moved).toContain('srcset="/OpenHAL/captures/inspector-device-dark-843.avif 843w, /OpenHAL/captures/inspector-device-dark-992.avif 992w"');

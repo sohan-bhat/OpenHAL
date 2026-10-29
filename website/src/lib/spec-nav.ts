@@ -32,7 +32,7 @@ export function specSidebar(pages: SpecPage[], hrefFor: (page: SpecPage) => stri
         items.push({ title: folderTitle(folder), number: top, depth: 1 });
       }
     }
-    items.push({ title: page.slug === "" && page.depth === 1 ? "Introduction" : page.title.replace(/,? version \d{4}-\d{2}-\d{2}$/, ""), href: hrefFor(page), number: page.number, depth: page.depth });
+    items.push({ title: page.slug === "" && page.depth === 1 ? "Introduction" : page.title.replace(/,? (?:version )?v?\d+\.\d+$/, ""), href: hrefFor(page), number: page.number, depth: page.depth });
   }
   const summaries = specSummaries();
   return [

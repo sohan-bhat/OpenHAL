@@ -10,7 +10,7 @@ interface Props {
 const { menu = false } = Astro.props;
 const { versions, latest } = readVersions();
 const path = Astro.url.pathname;
-const { current, rows } = versionRows(path, versions, latest, await specPages());
+const { current, label, rows } = versionRows(path, versions, latest, await specPages());
 const mark = (row: VersionRow) => (row.current ? (row.href === path ? "page" : "true") : undefined);
 ---
 
@@ -21,7 +21,7 @@ const mark = (row: VersionRow) => (row.current ? (row.href === path ? "page" : "
         <p class="legend">Specification version</p>
         {rows.map((row) => (
           <a href={row.href} aria-current={mark(row)}>
-            <span>{row.version}</span>
+            <span>{row.label}</span>
             {row.note && <span class="muted">{row.note}</span>}
           </a>
         ))}
@@ -30,7 +30,7 @@ const mark = (row: VersionRow) => (row.current ? (row.href === path ? "page" : "
       <Fragment>
         <button type="button" class="version-button" popovertarget="version-menu" aria-expanded="false">
           <span class="visually-hidden">Specification version </span>
-          {current}
+          {label}
           <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M2.5 4.5 6 8l3.5-3.5"></path>
           </svg>
@@ -38,7 +38,7 @@ const mark = (row: VersionRow) => (row.current ? (row.href === path ? "page" : "
         <div id="version-menu" class="versions" popover>
           {rows.map((row) => (
             <a href={row.href} aria-current={mark(row)}>
-              <span>{row.version}</span>
+              <span>{row.label}</span>
               {row.note && <span class="muted">{row.note}</span>}
             </a>
           ))}

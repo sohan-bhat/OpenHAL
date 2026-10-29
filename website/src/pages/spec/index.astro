@@ -1,3 +1,16 @@
 ---
-return Astro.redirect("/spec/latest/");
+import Redirect from "../../components/Redirect.astro";
+import DocShell from "../../layouts/DocShell.astro";
+import { latestVersion, latestSpecHref } from "../../lib/spec";
+import { specSidebar } from "../../lib/spec-nav";
 ---
+
+{
+  latestVersion() ? (
+    <Redirect to={latestSpecHref()} title="Specification" />
+  ) : (
+    <DocShell title="Specification" sidebar={specSidebar([])} section="Specification">
+      <p>No version of the specification is published yet.</p>
+    </DocShell>
+  )
+}

@@ -9,6 +9,7 @@ import { PRODUCT_LONG_NAME, PRODUCT_NAME } from "../config/brand";
 import Base from "../layouts/Base.astro";
 import { driverCounts, driverGroups, statusWord } from "../lib/catalog";
 import { HOME_TITLE } from "../lib/pages";
+import { latestSpecHref } from "../lib/spec";
 import "../styles/prose.css";
 
 const heroSpell = (await transformWithEsbuild(heroSpellSource, "hero-spell.js", { minify: true })).code.trim();
@@ -37,7 +38,7 @@ const points = [
 const after = "safe";
 const site = JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: PRODUCT_NAME, alternateName: PRODUCT_LONG_NAME, url: new URL("/", Astro.site).href });
 const more = [
-  { href: "/spec/latest/", title: "Read the specification", text: "The specification defines every message, error and rule in dated versions." },
+  { href: latestSpecHref(), title: "Read the specification", text: "The specification defines every message, error and rule, and each version has a number such as v0.1." },
   { href: "/docs/", title: "Read the docs", text: "The docs explain how to run the hub, create device files and add drivers." },
 ];
 ---

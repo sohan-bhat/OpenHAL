@@ -7,8 +7,10 @@ import { fileURLToPath } from "node:url";
 import { rehypeDiagrams } from "./src/lib/markdown/mermaid.mjs";
 import { rehypeCodeBlocks, rehypeGlossaryLinks, rehypeHeadingLinks, rehypeSpecSections, rehypeTables, rehypeTypography, remarkRepoLinks, remarkTitle } from "./src/lib/markdown/plugins.mjs";
 import { deviceSchemaValidator } from "./src/lib/schema-validator-plugin.mjs";
+import { DATED_NAMES } from "./src/lib/spec-meta.mjs";
 
 const SITE_URL = process.env.OPENHAL_SITE ?? "https://openhal.dev";
+const MOVED = ["/og/", "/spec/latest/", ...Object.keys(DATED_NAMES).map((name) => `/spec/${name}/`)];
 
 const interactDirective = {
   name: "openhal-interact-directive",
@@ -22,7 +24,7 @@ const interactDirective = {
 export default defineConfig({
   site: SITE_URL,
   trailingSlash: "always",
-  integrations: [svelte(), interactDirective, sitemap({ filter: (page) => !page.includes("/og/") && !page.includes("/spec/latest/") && !page.endsWith("/spec/") })],
+  integrations: [svelte(), interactDirective, sitemap({ filter: (page) => !MOVED.some((part) => page.includes(part)) && !page.endsWith("/spec/") })],
   markdown: {
     syntaxHighlight: false,
     processor: unified({

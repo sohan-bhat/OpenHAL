@@ -12,11 +12,11 @@ export interface NavLink {
 export const BLOG: NavLink = { href: "/blog/", label: "Blog", match: ["/blog/"] };
 
 /** The main navigation. SDKs and the Inspector live under Docs, and the blog joins once a post is published. */
-export function navLinks(published: boolean): NavLink[] {
+export function navLinks(published: boolean, specHref: string): NavLink[] {
   return [
     { href: "/", label: "Overview", match: ["/"] },
     { href: "/docs/", label: "Docs", match: ["/docs/", "/sdks/", "/inspector/"] },
-    { href: "/spec/latest/", label: "Specification", match: ["/spec/"] },
+    { href: specHref, label: "Specification", match: ["/spec/"] },
     { href: "/spec/playground/", label: "Playground", match: ["/spec/playground/"] },
     { href: "/drivers/", label: "Drivers", match: ["/drivers/"] },
     { href: "/library/", label: "Device Library", match: ["/library/"] },

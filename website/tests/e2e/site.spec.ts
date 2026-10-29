@@ -73,27 +73,37 @@ test.describe("overview", () => {
 });
 
 test.describe("specification", () => {
-  test("/spec/ goes to the latest dated version, which the header's version picker shows", async ({ page }) => {
+  test("/spec/ goes to the latest version, which the header's version picker shows", async ({ page }) => {
     await page.goto("/spec/");
-    await expect(page).toHaveURL(/\/spec\/latest\/$/);
-    await expect(page.locator(".version-button")).toHaveAccessibleName(/^Specification version \d{4}-\d{2}-\d{2}$/);
+    await expect(page).toHaveURL(/\/spec\/v\d+\.\d+\/$/);
+    await expect(page.locator(".version-button")).toHaveAccessibleName(/^Specification version v\d+\.\d+$/);
     await expect(page.locator("#version-menu a[aria-current]")).toContainText("latest");
     await page.getByRole("link", { name: "Changelog" }).first().click();
     await expect(page.locator("h1")).toHaveText(/^\d+ Changelog$/);
   });
 
-  test("dated pages have an outline, heading anchors and an edit link", async ({ page }) => {
-    await page.goto("/spec/2026-10-24/basic/messages/");
+  test("the old dated and latest addresses send each page to its numbered address, keeping the anchor", async ({ page }) => {
+    for (const old of ["/spec/2026-10-24/basic/messages/#halwrite", "/spec/latest/basic/messages/#halwrite"]) {
+      await page.goto(old);
+      await expect(page, old).toHaveURL(/\/spec\/v0\.1\/basic\/messages\/#halwrite$/);
+      await expect(page.locator("h1")).toHaveText("3.3 Messages");
+    }
+    await page.goto("/spec/2026-10-24/");
+    await expect(page).toHaveURL(/\/spec\/v0\.1\/$/);
+  });
+
+  test("numbered pages have an outline, heading anchors and an edit link", async ({ page }) => {
+    await page.goto("/spec/v0.1/basic/messages/");
     await expect(page.locator("h1")).toHaveText("3.3 Messages");
     await expect(page.locator("h2 .secno").first()).toHaveText("3.3.1");
     await expect(page.locator("aside.outline")).toBeAttached();
     await expect(page.locator("h2 a.heading-link").first()).toHaveAttribute("href", /^#/);
-    await expect(page.getByRole("link", { name: "Edit on GitHub" })).toHaveAttribute("href", /\/edit\/main\/spec\/2026-10-24\/basic\/messages\.md$/);
+    await expect(page.getByRole("link", { name: "Edit on GitHub" })).toHaveAttribute("href", /\/edit\/main\/spec\/v0\.1\/basic\/messages\.md$/);
     await expect(page.locator("figure.trace-code svg.trace-arrow").first()).toBeVisible();
   });
 
   test("spec pages link each defined term once and mark blocked registry names", async ({ page }) => {
-    await page.goto("/spec/2026-10-24/architecture/");
+    await page.goto("/spec/v0.1/architecture/");
     await expect(page.locator("main a.term", { hasText: /^Hub$/ })).toHaveCount(1);
     await expect(page.locator("main a.term", { hasText: /^Hub$/ })).toHaveAttribute("href", "/spec/glossary/#term-hub");
     await expect(page.locator("figure.diagram.house").first()).toBeVisible();
@@ -237,7 +247,7 @@ test.describe("catalog pages", () => {
       await page.goto(path);
       return page.locator("main h1").evaluate((heading) => Math.round(heading.getBoundingClientRect().left));
     };
-    const spec = await left("/spec/2026-10-24/basic/messages/");
+    const spec = await left("/spec/v0.1/basic/messages/");
     for (const path of ["/drivers/", "/drivers/mock/", "/library/", "/library/scpi-rigol-dp832/", "/docs/quickstart/"]) {
       expect(await left(path), path).toBe(spec);
     }
@@ -319,7 +329,7 @@ test.describe("site", () => {
 
   test("nothing scrolls sideways at 1280 px", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    for (const path of ["/sdks/", "/sdks/python/", "/sdks/python/reference/", "/spec/playground/", "/spec/2026-10-24/basic/messages/", "/library/scpi-rigol-dp832/"]) {
+    for (const path of ["/sdks/", "/sdks/python/", "/sdks/python/reference/", "/spec/playground/", "/spec/v0.1/basic/messages/", "/library/scpi-rigol-dp832/"]) {
       await page.goto(path);
       const wide = await page.evaluate(() =>
         [...document.querySelectorAll<HTMLElement>("pre, textarea, .table-wrap, .trace")]

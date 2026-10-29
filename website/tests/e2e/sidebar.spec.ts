@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-const SPEC = "/spec/2026-10-24/basic/messages/";
+const SPEC = "/spec/v0.1/basic/messages/";
 const KEY = "openhal:sidebar";
 
 const left = (page: Page, selector: string) => page.locator(selector).first().evaluate((el) => Math.round(el.getBoundingClientRect().left));
@@ -327,7 +327,7 @@ test.describe("the sidebar", () => {
   });
 });
 
-const AXE = ["/docs/", "/docs/quickstart/", "/docs/architecture/", "/spec/latest/", SPEC, "/spec/2026-10-24/schema/", "/spec/errors/", "/spec/playground/", "/drivers/", "/drivers/moonraker/", "/library/", "/library/scpi-rigol-dp832/", "/sdks/", "/sdks/python/reference/", "/inspector/", "/blog/", "/404.html"];
+const AXE = ["/docs/", "/docs/quickstart/", "/docs/architecture/", "/spec/v0.1/", SPEC, "/spec/v0.1/schema/", "/spec/errors/", "/spec/playground/", "/drivers/", "/drivers/moonraker/", "/library/", "/library/scpi-rigol-dp832/", "/sdks/", "/sdks/python/reference/", "/inspector/", "/blog/", "/404.html"];
 
 for (const scheme of ["light", "dark"] as const) {
   test(`documentation pages have no WCAG AA violations with the sidebar hidden and while it shows over the content in the ${scheme} theme`, async ({ page, browserName }) => {

@@ -32,7 +32,7 @@ test.describe("site chrome", () => {
   });
 
   test("the nav highlight has one view transition name on every page", async ({ page }) => {
-    for (const path of ["/", "/docs/", "/spec/latest/", "/spec/playground/", "/drivers/", "/library/", "/sdks/"]) {
+    for (const path of ["/", "/docs/", "/spec/v0.1/", "/spec/playground/", "/drivers/", "/library/", "/sdks/"]) {
       await page.goto(path);
       const names = await page.evaluate(() =>
         [...document.querySelectorAll<HTMLElement>("*")].map((el) => getComputedStyle(el).viewTransitionName).filter((name) => name && name !== "none"),
@@ -104,7 +104,7 @@ test.describe("documentation chrome", () => {
     await page.locator(".side-desktop").getByRole("link", { name: "Concepts" }).click();
     await expect(page).toHaveURL(/\/docs\/concepts\/$/);
 
-    await page.goto("/spec/2026-10-24/basic/messages/");
+    await page.goto("/spec/v0.1/basic/messages/");
     const outline = page.locator("aside.outline a").first();
     const target = (await outline.getAttribute("href"))!;
     await outline.click();
@@ -126,12 +126,12 @@ test.describe("documentation chrome", () => {
   });
 
   test("the version picker lists each dated version and opens it", async ({ page }) => {
-    await page.goto("/spec/2026-10-24/basic/messages/");
+    await page.goto("/spec/v0.1/basic/messages/");
     await page.locator(".version-button").click();
     const version = page.locator("#version-menu").getByRole("link").first();
-    await expect(version).toHaveAttribute("href", /^\/spec\/\d{4}-\d{2}-\d{2}\//);
+    await expect(version).toHaveAttribute("href", /^\/spec\/v\d+\.\d+\//);
     await version.click();
-    await expect(page).toHaveURL(/\/spec\/\d{4}-\d{2}-\d{2}\//);
+    await expect(page).toHaveURL(/\/spec\/v\d+\.\d+\//);
   });
 
   test("the phone section menu and outline open and navigate", async ({ page }) => {

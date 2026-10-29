@@ -8,7 +8,7 @@ const sitemap = fileURLToPath(new URL("../../dist/sitemap-0.xml", import.meta.ur
 const PAGES = existsSync(sitemap)
   ? [...readFileSync(sitemap, "utf8").matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => new URL(match[1]).pathname)
   : [];
-PAGES.push("/spec/latest/", "/404.html");
+PAGES.push("/spec/v0.1/", "/404.html");
 
 async function violations(page: Page): Promise<string[]> {
   await page.evaluate(() => document.fonts.ready);
@@ -42,7 +42,7 @@ for (const scheme of ["light", "dark"] as const) {
       await page.locator(".mobile-nav summary").click();
       problems.push(...(await violations(page)).map((item) => `menu ${item}`));
 
-      await page.goto("/spec/2026-10-24/basic/messages/");
+      await page.goto("/spec/v0.1/basic/messages/");
       await page.locator(".side-menu summary").first().click();
       await page.locator(".mobile-nav summary").click();
       problems.push(...(await violations(page)).map((item) => `spec menus ${item}`));
@@ -93,7 +93,7 @@ for (const scheme of ["light", "dark"] as const) {
     test.skip(browserName !== "chromium", "axe runs once, in Chromium");
     await page.emulateMedia({ colorScheme: scheme });
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto("/spec/2026-10-24/basic/messages/");
+    await page.goto("/spec/v0.1/basic/messages/");
     await page.keyboard.press("Control+k");
     await page.locator("#site-search-input").fill("LIMIT_EXCEEDED");
     await expect(page.locator("a.search-result").first()).toBeVisible();
