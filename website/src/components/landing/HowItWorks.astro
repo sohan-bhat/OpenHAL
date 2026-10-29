@@ -1,6 +1,7 @@
 ---
 import { nb } from "../../lib/story/facts";
 import { CAMERA } from "../../lib/story/camera";
+import { EXAMPLE } from "../../lib/story/example";
 import { COLUMNS, HEADS, TIP, across, howSteps, type Column, type HowStep, type Span } from "../../lib/story/how";
 import "../../styles/how.css";
 import { KEY } from "./smooth-switch";
@@ -13,7 +14,6 @@ interface Props {
 const { after } = Astro.props;
 const steps = howSteps();
 const count = steps.length;
-const EXAMPLE = "/docs/examples/3d-print-watch/";
 
 type Kind = "line" | "dash" | "show" | "hide";
 const draw = (index: number, kind: Kind, span: Span) => {
@@ -150,6 +150,6 @@ const mode = `(() => {
       </ol>
     </div>
   </div>
-  <p class="how-onward"><a href={EXAMPLE}>See the full example: an agent watching a 3D print overnight</a></p>
+  <p class="how-onward"><a href={EXAMPLE.href}>See the full example: an agent watching a 3D print overnight</a></p>
 </section>
 <script is:inline set:html={mode} />

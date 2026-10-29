@@ -5,7 +5,7 @@ import Walkthrough from "../../../components/example/Walkthrough.astro";
 import DocShell from "../../../layouts/DocShell.astro";
 import { codeHtml } from "../../../lib/code";
 import { EXAMPLE, docsSidebar } from "../../../lib/docs-nav";
-import { storyFacts } from "../../../lib/story/facts";
+import { nb, storyFacts } from "../../../lib/story/facts";
 import { auditLog, messages } from "../../../lib/story/messages";
 import { REPO_ROOT } from "../../../lib/spec-meta.mjs";
 
@@ -27,7 +27,7 @@ const TONES: Record<string, string> = { done: "ok", blocked: "blocked", pending:
 
 <DocShell title={EXAMPLE.title} description={EXAMPLE.summary} sidebar={sidebar} headings={headings}>
   <p>
-    Someone starts a long print and asks an agent to keep an eye on the print overnight. Through the OpenHAL hub the agent reads the printer's webcam, warms the bed, has a request for a nozzle temperature of {facts.nozzle.value} refused, pauses the print and asks
+    Someone starts a long print and asks an agent to keep an eye on the print overnight. Through the OpenHAL hub the agent reads the printer's webcam, warms the bed, has a request for a nozzle temperature of {nb(facts.nozzle.value)} refused, pauses the print and asks
     to cancel the print, and the cancel waits until the owner approves.
   </p>
   <p>
@@ -40,7 +40,7 @@ const TONES: Record<string, string> = { done: "ok", blocked: "blocked", pending:
 
   <h2 id="device-file">The device file</h2>
   <p>
-    The hub checks every request against <code>{facts.file}</code>, the printer's device file, which the owner confirmed on {day}. The file limits the nozzle target to {facts.nozzle.max} and the bed target to {facts.bed.max}, and the cancel action waits for a person each time.
+    The hub checks every request against <code>{facts.file}</code>, the printer's device file, which the owner confirmed on {day}. The file limits the nozzle target to {nb(facts.nozzle.max)} and the bed target to {nb(facts.bed.max)}, and the cancel action waits for a person each time.
   </p>
   <Fragment set:html={codeHtml(device, "yaml")} />
 
