@@ -1,11 +1,15 @@
 import { readDeviceFile, storyFacts, type DeviceFile, type StoryFacts, type Tone } from "./facts";
 import { loadScenario, type Scenario } from "../scenario";
 
-/** The owner's three captions of 2026-10-29, word for word. A unit test checks their numbers against the record. */
+/**
+ * The three captions, the owner's of 2026-10-29 with every verb made mechanical on 2026-10-30, so the
+ * hub and the printer pass, block and hold requests and never act like people. A unit test checks
+ * their numbers against the record.
+ */
 export const CAPTIONS = [
-  "The agent sets the bed to 70 °C. Your limit is 110 °C, so the hub passes the request to the printer.",
-  "The agent asks for a 300 °C nozzle. Your limit is 260 °C, so the hub refuses the request.",
-  "The agent tries to cancel the print. Cancelling can't be undone, so the hub waits for you to approve.",
+  "The agent sends a request to set the bed to 70 °C. Your limit is 110 °C, so the hub passes the request to the printer.",
+  "The agent sends a request to set the nozzle to 300 °C. Your limit is 260 °C, so the hub blocks the request.",
+  "The agent sends a request to cancel the print. A cancel can't be undone, so the hub holds the request for your approval.",
 ] as const;
 
 /** The diagram's three columns, left to right, each with a lifeline. */
@@ -69,8 +73,8 @@ const leg = (from: Column, to: Column, draws: Span, held = false): Leg => ({ fro
  * The three steps of How it works, from the recorded scenario and the printer's device file. Each
  * step tells one request on one diagram, Agent, OpenHAL hub and Printer, with the limit the hub
  * checks under the hub and the printer's nozzle, bed and state under the printer. A request the hub
- * passes reaches the printer and done returns to the agent, a refused request stops at the hub with
- * LIMIT_EXCEEDED, and the cancel waits at the hub as pending until the person approves.
+ * passes reaches the printer and done returns to the agent, a blocked request stops at the hub with
+ * LIMIT_EXCEEDED, and the hub holds the cancel as pending until the person approves.
  */
 export function howSteps(facts: StoryFacts = storyFacts()): HowStep[] {
   const [nozzle, bed, state] = facts.printer.readings;

@@ -17,19 +17,19 @@ const replies = (index: number) => steps[index].rows.filter((row): row is Reply 
 const byId = (id: string) => fresh().record.exchanges.find((exchange) => exchange.id === id)!;
 
 describe("How it works", () => {
-  it("tells three steps in the owner's captions, word for word", () => {
+  it("tells three steps in the owner's captions, with the hub and the printer acting like machines", () => {
     expect(steps.map((step) => step.caption)).toEqual([
-      "The agent sets the bed to 70 °C. Your limit is 110 °C, so the hub passes the request to the printer.",
-      "The agent asks for a 300 °C nozzle. Your limit is 260 °C, so the hub refuses the request.",
-      "The agent tries to cancel the print. Cancelling can't be undone, so the hub waits for you to approve.",
+      "The agent sends a request to set the bed to 70 °C. Your limit is 110 °C, so the hub passes the request to the printer.",
+      "The agent sends a request to set the nozzle to 300 °C. Your limit is 260 °C, so the hub blocks the request.",
+      "The agent sends a request to cancel the print. A cancel can't be undone, so the hub holds the request for your approval.",
     ]);
     for (const caption of CAPTIONS) expect(caption).not.toMatch(/[;:!–—]/);
   });
 
   it("says the numbers the record and the device file hold", () => {
-    expect(CAPTIONS[0]).toContain(`sets the bed to ${facts.bed.value}.`);
+    expect(CAPTIONS[0]).toContain(`set the bed to ${facts.bed.value}.`);
     expect(CAPTIONS[0]).toContain(`Your limit is ${facts.bed.max},`);
-    expect(CAPTIONS[1]).toContain(`asks for a ${facts.nozzle.value} nozzle.`);
+    expect(CAPTIONS[1]).toContain(`set the nozzle to ${facts.nozzle.value}.`);
     expect(CAPTIONS[1]).toContain(`Your limit is ${facts.nozzle.max},`);
     expect(readDeviceFile().actions.cancel?.confirm).toBe("confirm-each-time");
     expect(byId(IDS.cancel).result?.status).toBe("pending");
