@@ -140,7 +140,7 @@ Serial probing sends only identify commands that are documented as read-only for
 flowchart TD
   START[Unknown device] --> LIB{1. Library match?}
   LIB -->|yes| DONE
-  LIB -->|no| PROT{2. Protocol driver can talk to it?}
+  LIB -->|no| PROT{2. Can a protocol driver connect?}
   PROT -->|yes| DESCRIBE[3. Self-description<br/>describe&#40;&#41;, firmware JSON,<br/>SCPI, Moonraker objects, GATT, OPC UA browse]
   PROT -->|no| CODE{4. Sketch available?}
   CODE -->|yes| SKETCH[Parse sketch<br/>commands, pins, ranges, units]
