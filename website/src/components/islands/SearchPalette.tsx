@@ -107,6 +107,7 @@ export default function SearchPalette({ sections, suggestions }: Props) {
   };
 
   const hits = found.status === "done" ? found.groups.reduce((sum, item) => sum + item.hits.length, 0) : 0;
+  const listed = found.status === "idle" || hits > 0;
   const pages = found.status === "done" ? new Set(found.groups.flatMap((item) => item.hits.map((hit) => hit.url.split("#")[0]))).size : 0;
   const announce =
     found.status === "done" ? (hits ? `${pages} ${pages === 1 ? "page" : "pages"} found` : `No results for ${found.query}`) : found.status === "error" ? "Search could not load" : "";
@@ -125,20 +126,17 @@ export default function SearchPalette({ sections, suggestions }: Props) {
             ref={trigger}
             type="button"
             data-search-trigger=""
-            aria-label="Search"
             aria-keyshortcuts="Control+K Meta+K"
             className={cn(
-              "flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-md bg-transparent px-1.5 text-sm text-muted-foreground",
-              "min-[50rem]:w-full min-[50rem]:max-w-[260px] min-[50rem]:border min-[50rem]:border-input min-[50rem]:bg-background min-[50rem]:pr-2 min-[50rem]:pl-3 min-[50rem]:[box-shadow:var(--oh-control-ring)_var(--oh-control-border)]",
+              "flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md bg-transparent text-sm text-muted-foreground",
+              "min-[50rem]:w-full min-[50rem]:max-w-[260px] min-[50rem]:justify-start min-[50rem]:border min-[50rem]:border-input min-[50rem]:bg-background min-[50rem]:pr-2 min-[50rem]:pl-3 min-[50rem]:[box-shadow:var(--oh-control-ring)_var(--oh-control-border)]",
               "min-[50rem]:hover:border-primary min-[50rem]:hover:text-foreground min-[50rem]:hover:[box-shadow:var(--oh-control-ring)_var(--accent)]",
               "min-[64rem]:max-[71.24rem]:w-10 min-[64rem]:max-[71.24rem]:justify-center min-[64rem]:max-[71.24rem]:p-0",
             )}
           >
             <SearchIcon aria-hidden="true" strokeWidth={2.25} className="size-[15px] shrink-0 text-primary" />
-            <span aria-hidden="true" className="hidden min-[50rem]:block min-[64rem]:max-[71.24rem]:hidden">
-              Search
-            </span>
-            <Kbd aria-hidden="true" className="ml-auto hidden min-[50rem]:inline-flex min-[64rem]:max-[71.24rem]:hidden">
+            <span className="sr-only min-[50rem]:not-sr-only min-[64rem]:max-[71.24rem]:sr-only">Search</span>
+            <Kbd className="ml-auto hidden min-[50rem]:inline-flex min-[64rem]:max-[71.24rem]:hidden">
               <span className="[:root[data-platform=mac]_&]:hidden">Ctrl</span>
               <span className="[:root:not([data-platform=mac])_&]:hidden">⌘</span>
               <span>K</span>
@@ -149,7 +147,7 @@ export default function SearchPalette({ sections, suggestions }: Props) {
           {open && (
             <DialogContent
               className={cn(
-                "inset-0 rounded-none border-0",
+                "inset-0 origin-top rounded-none border-0",
                 "min-[50rem]:inset-auto min-[50rem]:top-16 min-[50rem]:left-1/2 min-[50rem]:max-h-[min(640px,calc(100dvh-128px))] min-[50rem]:w-[min(640px,calc(100vw-32px))] min-[50rem]:-translate-x-1/2 min-[50rem]:rounded-md min-[50rem]:border",
               )}
               onCloseAutoFocus={(event) => {
@@ -168,19 +166,26 @@ export default function SearchPalette({ sections, suggestions }: Props) {
                   onKeyDown={() => {
                     pointer.current = false;
                   }}
-                  placeholder="Search the docs, spec, drivers and devices"
+                  placeholder="Search the docs, spec, drivers and devices…"
                 >
-                  <DialogClose className="h-9 shrink-0 cursor-pointer rounded-md px-2 text-sm font-semibold text-primary hover:bg-muted min-[50rem]:hidden">Cancel</DialogClose>
+                  <DialogClose className="h-9 shrink-0 cursor-pointer rounded-md bg-transparent px-2 text-sm font-semibold text-primary hover:bg-muted min-[50rem]:hidden">Cancel</DialogClose>
                 </CommandInput>
-                <CommandList>
-                  {found.status === "loading" && <CommandLoading label="Searching">Searching</CommandLoading>}
-                  {found.status === "error" && <CommandEmpty>Search could not load. Check your connection, then try again.</CommandEmpty>}
-                  {found.status === "done" && !hits && (
-                    <CommandEmpty>
-                      No results for "{found.query}". Try a method such as <code className="font-mono text-foreground">hal/write</code> or an error code such as{" "}
-                      <code className="font-mono text-foreground">LIMIT_EXCEEDED</code>.
-                    </CommandEmpty>
-                  )}
+                {found.status === "loading" && <CommandLoading label="Searching">Searching…</CommandLoading>}
+                {found.status === "error" && <CommandEmpty>Search could not load. Check your connection, then try again.</CommandEmpty>}
+                {found.status === "done" && !hits && (
+                  <CommandEmpty>
+                    No results for <strong className="font-bold text-foreground">{found.query}</strong>. Try a method such as{" "}
+                    <code translate="no" className="font-mono text-foreground">
+                      hal/write
+                    </code>{" "}
+                    or an error code such as{" "}
+                    <code translate="no" className="font-mono text-foreground">
+                      LIMIT_EXCEEDED
+                    </code>
+                    .
+                  </CommandEmpty>
+                )}
+                <CommandList hidden={!listed}>
                   {found.status === "done" &&
                     found.groups.map((item) => (
                       <CommandGroup key={item.section} heading={item.section}>
