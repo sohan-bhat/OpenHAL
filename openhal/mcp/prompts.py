@@ -23,7 +23,7 @@ Work through these steps with the OpenHAL tools, and tell me what you find at ea
    I answer the questions myself, with openhal writer interview <session id>.
 8. After I finish, call get_test_plan and walk me through the plan. Every write step needs my approval.
 
-Never write to the device during setup unless a test plan step says so and I approved that step.
+Never write to the device during setup unless a test plan step includes that write and I approved that step.
 """
 
 WRITE_ROUTINE: Final = """\
