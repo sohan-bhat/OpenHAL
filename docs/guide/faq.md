@@ -6,11 +6,11 @@ No, OpenHAL is an open protocol with a versioned specification, now at v0.1, and
 
 ## Is OpenHAL a safety system?
 
-No, OpenHAL is not a safety system. The hub checks every command against limits a person set and stops everything on request, but firmware stays in charge of each device, so a motor that ignores its serial port keeps running. Keep your e-stops, enclosures and interlocks wired in hardware.
+No, OpenHAL is not a safety system. The hub checks every command against limits a person set and stops everything on request, but each device's firmware still controls the device, so a motor that stops responding on its serial port keeps running. Keep your e-stops, enclosures and interlocks wired in hardware.
 
 ## Which AI clients work with OpenHAL?
 
-Any client that speaks MCP over stdio works with OpenHAL, including Claude Desktop, Claude Code and Cursor, and other clients speak the protocol's JSON-RPC methods over a WebSocket or stdio. Scripts can use the command line or the Python SDK, and every one of these clients reaches the same kernel.
+Any client that supports MCP over stdio works with OpenHAL, including Claude Desktop, Claude Code and Cursor, and other clients call the protocol's JSON-RPC methods over a WebSocket or stdio. Scripts can use the command line or the Python SDK, and every one of these clients reaches the same kernel.
 
 ## Does the model decide what is safe?
 
@@ -22,15 +22,15 @@ An agent may tighten a limit for the agent's own session, but loosening a limit,
 
 ## What happens when a sensor stops responding?
 
-The sensor's value becomes unknown after a short time, and an unknown value never lets a command pass. Interlocks that depend on the value then block the command, and rate limits wait for a fresh reading. If the device itself drops off, the hub applies the device's safe state where the device's protocol allows a safe state.
+The sensor's value becomes unknown after a short time, and the kernel counts an unknown value as unsafe. Interlocks that depend on the value then block the command, and rate limits block changes until a fresh reading arrives. If the device itself drops off, the hub applies the device's safe state where the device's protocol allows a safe state.
 
 ## Does OpenHAL need firmware on my device?
 
-Devices that already have an interface, such as bench instruments over SCPI, Klipper printers or Home Assistant entities, need no OpenHAL firmware once their drivers land, and [Drivers](/drivers/) shows which drivers run today. For boards you program yourself, the OpenHAL Arduino library makes the board describe itself and fall to its safe state when the hub's heartbeat stops.
+Devices that already have an interface, such as bench instruments over SCPI, Klipper printers or Home Assistant entities, need no OpenHAL firmware once their drivers land, and [Drivers](/drivers/) shows which drivers run today. For boards you program yourself, the OpenHAL Arduino library adds a self-description to the board and moves the board to its safe state when the hub's heartbeat stops.
 
 ## Does anything leave my machine?
 
-No, the hub binds to 127.0.0.1, sends no telemetry and only talks to the devices and bridges you configured. Other machines need `api.allow_lan` and a paired token.
+No, the hub binds to 127.0.0.1, sends no telemetry and only connects to the devices and bridges you configured. Other machines need `api.allow_lan` and a paired token.
 
 ## How does OpenHAL relate to MHS?
 

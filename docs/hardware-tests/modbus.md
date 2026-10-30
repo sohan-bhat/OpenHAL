@@ -67,7 +67,7 @@ asyncio.run(main(*sys.argv[1:]))
 
 ## Read-only steps
 
-### 1. The bus answers
+### 1. The bus responds
 
 Find the adapter (`ls /dev/ttyUSB*` on Linux, `ls /dev/cu.usbserial*` on macOS), then read the voltage register with mbpoll, which uses function 4, a read.
 
@@ -105,7 +105,7 @@ Expected. `voltage` matching mbpoll from step 1 and the meter's display, a `freq
 
 Unplug the A and B wires from the meter, then run step 4 again.
 
-Expected. A `TimeoutError` that says the device didn't answer and suggests checking the unit id, wiring, baud rate and parity, after about 2 seconds. Reconnect the wires and run step 4 again. The device reads normally.
+Expected. A `TimeoutError` stating that the device didn't respond, with a hint to check the unit id, wiring, baud rate and parity, after about 2 seconds. Reconnect the wires and run step 4 again. The device reads normally.
 
 ## Write steps
 
@@ -131,7 +131,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-relay.hal.yaml
 ```
 
-`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-relay.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-relay.hal.yaml` then shows `writable`.
 
 ### 7. The smallest safe write
 
@@ -159,7 +159,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the matching mbpoll
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, modbus driver
@@ -174,7 +174,7 @@ Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`
 
 | Step | Result | Notes |
 |---|---|---|
-| 1 the bus answers | pass / fail | |
+| 1 the bus responds | pass / fail | |
 | 2 the device file validates | pass / fail | |
 | 3 identify | pass / fail | |
 | 4 read every channel | pass / fail | |

@@ -10,7 +10,7 @@ This plan checks the OctoPrint driver against a real OctoPrint server with a pri
 
 ## The read-only probe
 
-Save this as `probe.py`. The probe connects, identifies the server, prints the driver's proposal and reads every channel. The probe holds no kernel grant, so the probe can't change the printer.
+Save this as `probe.py`. The probe connects, identifies the server, prints the driver's draft and reads every channel. The probe holds no kernel grant, so the probe can't change the printer.
 
 ```python
 import asyncio, json, sys
@@ -37,7 +37,7 @@ async def main(path):
 asyncio.run(main(sys.argv[1]))
 ```
 
-## Step 1. OctoPrint answers (read-only)
+## Step 1. OctoPrint responds (read-only)
 
 ```
 curl -s -H "X-Api-Key: $OCTOPRINT_API_KEY" http://octopi.local/api/version
@@ -89,7 +89,7 @@ Expected. `state` reads `offline`, the temperature reads fail with `can't do thi
 
 ## Step 5. Start the hub
 
-Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and prompts you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -143,7 +143,7 @@ Expected. `done  Done. home ran.`, because OctoPrint accepted the command into i
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the reply of the `curl` command from step 1, OctoPrint's terminal lines from the same minutes, and the printer model and firmware. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the reply of the `curl` command from step 1, OctoPrint's terminal lines from the same minutes, and the printer model and firmware. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -153,7 +153,7 @@ Tested by and date:
 OpenHAL: (uv run openhal --version, and git rev-parse --short HEAD)
 Device file: (path, and the sha256 in its confirmed line)
 OctoPrint version and printer:
-Step 1 OctoPrint answers:        pass / fail
+Step 1 OctoPrint responds:       pass / fail
 Step 2 file valid:               pass / fail
 Step 3 probe output:             pass / fail   (paste it)
 Step 4 disconnected printer:     pass / fail
@@ -167,4 +167,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.

@@ -32,11 +32,11 @@ OpenHAL is not a rival standard. OpenHAL uses the same read and write model and 
 
 ## Adapter plan
 
-When MHS publishes a specification, OpenHAL will add, in order.
+When Anthropic publishes an MHS specification, OpenHAL will add, in order.
 
 1. `openhal file import --from mhs <reference-file>`, which converts an MHS reference file into a `.hal.yaml` file with `provenance.source: library` and every limit marked `suggested: true`, so a human confirms limits before anything is writable.
 2. `openhal file export --to mhs <device>.hal.yaml`, which writes an MHS reference file. Concepts MHS lacks (confirmation tiers, approvals) go into MHS tags as plain-language notes where the format allows, and the export reports anything it could not carry over.
-3. An `mhs` bridge driver that talks to devices exposing MHS drivers, with OpenHAL's kernel still enforcing the OpenHAL device file.
+3. An `mhs` bridge driver that connects to devices exposing MHS drivers, with OpenHAL's kernel still enforcing the OpenHAL device file.
 4. Round-trip tests on every file in `spec/examples/` and `library/`.
 
 Until then, nothing in OpenHAL depends on guesses about the MHS format.

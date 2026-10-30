@@ -8,13 +8,13 @@ Today 34 drivers pass the conformance suite on simulators.
 
 - Run the plans in [docs/hardware-tests/README.md](hardware-tests/README.md) in their order, starting with the plant waterer.
 - Each passing report marks its device file `verified-on-hardware`, and a maintainer sets the driver's catalog status to `verified`.
-- Fix what the reports find before adding drivers.
+- Fix the problems the reports list before adding drivers.
 
 ## 2. Next drivers
 
 Every driver in `drivers/planned.json` and the coverage plan ([COVERAGE.md](drivers/COVERAGE.md)) is built. What remains for those drivers is hardware verification.
 
-The drivers below are proposed next. Each speaks a protocol no current driver covers, and each serves makers, teaching labs or small labs.
+The drivers below are proposed next. Each implements a protocol no current driver covers, and each serves makers, teaching labs or small labs.
 
 | Driver | Protocol | Covers | Hazard default |
 |---|---|---|---|
@@ -63,17 +63,17 @@ The starter library ships in the repository under `library/` and inside the whee
 - Submissions stay pull requests, and files stay CC0.
 - The `verified-on-hardware` badge links to its public report.
 
-## 6. Vendor app protocol learning
+## 6. Vendor app protocol capture
 
-Some devices have an interface but no description, and only the vendor's app knows the commands. The idea from the research is to record the app's traffic to a device the person owns and draft a device file from it. The idea needs a legal review before any code is written. The Bambu Lab terms note in docs/drivers/bambu.md shows why.
+Some devices have an interface but no description, and only the vendor's app contains the commands. The idea from the research is to record the app's traffic to a device the person owns and draft a device file from it. The idea needs a legal review before any code is written. The Bambu Lab terms note in docs/drivers/bambu.md shows why.
 
 - Passive capture only, on the person's own device and network.
 - Never break encryption, get around authentication or impersonate vendor software or a vendor cloud.
 - The result is a draft with every limit suggested, which goes through the same limits interview.
-- Learned commands are tested at their smallest value, one at a time, with a person approving each.
+- Captured commands are tested at their smallest value, one at a time, with a person approving each.
 - Captured text is data. The hub never treats it as instructions.
 
-## 7. Promised elsewhere in the docs
+## 7. Planned elsewhere in the docs
 
 - Out-of-process drivers, so a third-party driver can't reach the kernel (SAFETY.md, threat T17, ADR 0004).
 - Exporting the audit chain head outside the hub, so a deleted database is detectable (ADR 0010).
@@ -85,7 +85,7 @@ Some devices have an interface but no description, and only the vendor's app kno
 
 The protocol, the specification, the hub, the safety kernel, the drivers, the firmware library and the device library stay open source under Apache-2.0 and CC0. Safety features are never paid features. Paid work is hosting and people's time.
 
-- **Hosted remote access.** A relay that lets a person reach their own hub from outside their network. The hub dials out, traffic is end-to-end encrypted, and every command still passes the hub's own kernel and lands in its own audit log. Human-only steps still need the human.
+- **Hosted remote access.** A relay for a person to reach their own hub from outside their network. The hub dials out, traffic is end-to-end encrypted, and every command still passes the hub's own kernel and lands in its own audit log. Human-only steps still need the human.
 - **Classroom and lab plans.** Many hubs managed together. An instructor distributes device files, each hub's owner confirms the limits, teaching assistants work the confirmation queues, and audit logs export for review.
 - **A verified library.** A test lab runs the hardware test plans on a vendor's device and publishes the report. Vendors pay for the lab time, not for the badge. A device that fails is reported as failing, and every report is public.
 - **Hardware partnerships.** Kits such as the plant waterer, boards that ship with the OpenHAL firmware library and a device file, and vendors who publish device files for their own products.

@@ -13,7 +13,7 @@ The `homeassistant` driver is a bridge that exposes a few Home Assistant entitie
 
 ## Which entities are exposed
 
-- `entity` names one entity, or `entities` lists several, and a channel's `map.entity` must be one of the selected entities, otherwise the file is refused when it loads.
+- `entity` names one entity, or `entities` lists several, and a channel's `map.entity` must be one of the selected entities, otherwise the file fails to load.
 - With neither, the entities named in channel maps are the selection.
 - `match.homeassistant` is a glob, and every selected entity must match it.
 - The device file's limits apply even when Home Assistant has its own limits, so a `number` entity's `min`, `max` and `step` only appear in `describe()` as `suggested` values.
@@ -92,7 +92,7 @@ hazard: low
 
 ## Hazard defaults
 
-The default hazard is `low`, because lights, fans and sensors are the usual case, but a switch that powers a heater or a pump deserves `medium` or `high` in the device file.
+The default hazard is `low`, because lights, fans and sensors are the usual case, but a switch that powers a heater or a pump needs `medium` or `high` in the device file.
 
 ## Sources
 

@@ -35,7 +35,7 @@ Body joints are in degrees with `use_degrees: true`, LeRobot's default, and from
 
 ## How it works
 
-- connect() builds the robot from its LeRobot type and calls `connect(calibrate=False)`. Because calibration moves the arm by hand and prompts at the keyboard, the driver never runs calibration, and an uncalibrated arm is refused with the exact `lerobot-calibrate` command to run.
+- connect() builds the robot from its LeRobot type and calls `connect(calibrate=False)`. Because calibration moves the arm by hand and prompts at the keyboard, the driver never runs calibration, and connecting an uncalibrated arm fails with the exact `lerobot-calibrate` command to run.
 - Connecting turns torque on, so the arm holds its position and nothing moves.
 - Because the servo holds the joint's present position, a goal channel reads that position until a goal is sent, so the kernel's `max_change_per_s` is measured from where the joint really is.
 - A goal reads back as the value LeRobot actually wrote, after its own `max_relative_target` clipping.
@@ -88,14 +88,14 @@ hazard: high
 
 ## Known limitations
 
-- Cameras in the observation are ignored.
+- The driver doesn't read the cameras in the observation.
 - The fake in `simulator.py` stands in for LeRobot in tests, and the fake's assumptions are listed in its docstring and checked step by step in the hardware test plan.
 - Kinematics and Cartesian moves are not exposed, so goals are per joint.
 - `move` arguments get their limits from the action, not from the goal channels, so keep both the same.
 
 ## Hazard defaults
 
-The default hazard is `high`, because arms can pinch and strike and fall when torque goes off, so every change and action waits for a person's approval.
+The default hazard is `high`, because arms can pinch and strike and fall when torque goes off, so the hub holds every change and action until a person approves the request.
 
 ## Sources
 

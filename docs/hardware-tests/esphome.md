@@ -38,7 +38,7 @@ Export the key with `export ESPHOME_TEST_PSK="<your base64 key>"`.
 
 ## The read-only probe
 
-Save this as `probe.py`. The probe connects, prints the device info, the driver's proposal and every channel. The probe holds no kernel grant, so the probe can't send any command.
+Save this as `probe.py`. The probe connects, prints the device info, the driver's draft and every channel. The probe holds no kernel grant, so the probe can't send any command.
 
 ```python
 import asyncio, json, sys
@@ -141,7 +141,7 @@ Unplug the node for ten seconds, then plug it back in. Expected. Runs fail while
 
 ## Step 6. Start the hub
 
-Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and prompts you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -177,7 +177,7 @@ Expected. The node restarts. The hub shows it disconnected for a few seconds, th
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the `esphome logs` output from the same minutes, the node's YAML without its keys, and the ESPHome version. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the `esphome logs` output from the same minutes, the node's YAML without its keys, and the ESPHome version. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -201,4 +201,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.

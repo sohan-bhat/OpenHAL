@@ -5,7 +5,7 @@ This plan checks the PyLabRobot driver on a real liquid handler. The plan starts
 ## What you need
 
 - A Hamilton STAR or STARlet, a Tecan EVO or an Opentrons OT-2 that PyLabRobot already drives on this computer. Run one PyLabRobot example from its documentation first.
-- One full tip rack and one empty 96 well plate, placed where the layout says, and water in well A1 of the plate.
+- One full tip rack and one empty 96 well plate, placed at the positions the layout names, and water in well A1 of the plate.
 - A checkout of this repository with the pylabrobot extra, `uv sync --extra pylabrobot`.
 
 ## The probe
@@ -62,13 +62,13 @@ describe {"device": {...}, "actions": {...
 
 The instrument doesn't move. Paste the full output into the report.
 
-## Step 3. A wrong address is refused (no motion)
+## Step 3. A wrong address fails (no motion)
 
 Add `- { name: extra, resource: no_such_rack, rails: 20 }` to the layout and run the probe. Expected. `layout extra: no_such_rack is not a PyLabRobot resource factory.` Remove the line.
 
 ## Step 4. Start the hub
 
-Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and prompts you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -98,11 +98,11 @@ uv run openhal action starlet.initialize
 uv run openhal read starlet.initialized
 ```
 
-Expected. The instrument initializes and homes its channels, the same way PyLabRobot's setup does. The read says `True`.
+Expected. The instrument initializes and homes its channels, the same way PyLabRobot's setup does. The read shows `True`.
 
 ## Step 7. One tip, 10 uL of water, and back
 
-PyLabRobot tracks volumes and starts every well empty. The example tells it about the water with `volumes: { "plate:A1": 200 uL }` in `connect`, so put at least 200 uL in A1 or lower that number before you confirm the file.
+PyLabRobot tracks volumes and starts every well empty. The example gives PyLabRobot the water volume with `volumes: { "plate:A1": 200 uL }` in `connect`, so put at least 200 uL in A1 or lower that number before you confirm the file.
 
 ```
 uv run openhal action starlet.pick_up_tips tips="tips:A1"
@@ -135,7 +135,7 @@ Expected. The stop reports `starlet  safe`. The instrument finishes the move it 
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the PyLabRobot version (`uv run python -c "from importlib.metadata import version; print(version('pylabrobot'))"`), the deck layout from the file, and a photo of the deck. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the PyLabRobot version (`uv run python -c "from importlib.metadata import version; print(version('pylabrobot'))"`), the deck layout from the file, and a photo of the deck. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -148,7 +148,7 @@ Instrument and PyLabRobot backend:
 Deck layout used (paste it):
 Step 1 file valid:                pass / fail
 Step 2 connect and read:          pass / fail   (paste it)
-Step 3 wrong address refused:     pass / fail
+Step 3 wrong address fails:       pass / fail
 Step 4 hub lists the device:      pass / fail
 Step 5 blocked actions:           pass / fail
 Step 6 initialize:                pass / fail
@@ -159,4 +159,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.

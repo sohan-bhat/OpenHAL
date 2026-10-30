@@ -104,7 +104,7 @@ Expected. `relay = False` (or `True`) from the retained state. `power`, `voltage
 
 Stop the broker (`sudo systemctl stop mosquitto`), then run step 4 again.
 
-Expected. `DriverError` saying the broker could not be reached. Start the broker again and run step 4. The device reads normally.
+Expected. `DriverError` stating that the broker could not be reached. Start the broker again and run step 4. The device reads normally.
 
 ### 6. Describe
 
@@ -114,7 +114,7 @@ Set `discover_topic: "+/bench_plug/#"` under `connect`, then run
 uv run python hwtest.py my-plug.hal.yaml describe
 ```
 
-Expected. Proposed read channels such as `stat_bench_plug_power` (bool) and, if a SENSOR message arrived while it listened, `tele_bench_plug_sensor_time`. Nested JSON objects such as `ENERGY` are not expanded. Remove `discover_topic` afterwards.
+Expected. Suggested read channels such as `stat_bench_plug_power` (bool) and, if a SENSOR message arrived while it listened, `tele_bench_plug_sensor_time`. Nested JSON objects such as `ENERGY` are not expanded. Remove `discover_topic` afterwards.
 
 ## Write steps
 
@@ -128,7 +128,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-plug.hal.yaml
 ```
 
-`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-plug.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-plug.hal.yaml` then shows `writable`.
 
 ### 8. The smallest safe write
 
@@ -156,7 +156,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the `mosquitto_sub 
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, mqtt driver

@@ -48,7 +48,7 @@ uv run python -c "import asyncio; from openhal.drivers.alpaca.driver import Alpa
 
 Expected. One `Discovered` entry per configured device, with an address such as `http://192.168.1.20:11111/api/v1/telescope/0` and the device name as the label. If nothing is found, check that the server has discovery enabled and that UDP port 32227 isn't blocked, then use the host name directly.
 
-## Step 2. The management API answers (read-only)
+## Step 2. The management API responds (read-only)
 
 ```
 curl -s http://<host>:11111/management/apiversions
@@ -99,7 +99,7 @@ Stop the Alpaca server or unplug its network cable for ten seconds, then restore
 
 ## Step 6. Start the hub
 
-Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and prompts you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -160,7 +160,7 @@ uv run openhal read mount.slewing mount.tracking
 uv run openhal unlock
 ```
 
-Expected. The slew stops within a second. The stop reports `mount  safe`, `slewing` reads `false` and `tracking` reads `false`. The first terminal's action ends with `done` or `started`. `openhal unlock` asks you to type `unlock`.
+Expected. The slew stops within a second. The stop reports `mount  safe`, `slewing` reads `false` and `tracking` reads `false`. The first terminal's action ends with `done` or `started`. `openhal unlock` prompts you to type `unlock`.
 
 ## Step 11. Park (optional)
 
@@ -169,7 +169,7 @@ uv run openhal action mount.park
 uv run openhal read mount.at_park
 ```
 
-Expected. The mount slews to its park position. The action answers `done`, or `started` if parking takes longer than 8 s. `at_park` reads true once it arrives.
+Expected. The mount slews to its park position. The action returns `done`, or `started` if parking takes longer than 8 s. `at_park` reads true once it arrives.
 
 ## Step 12. Focuser (optional)
 
@@ -203,13 +203,13 @@ uv run openhal write focuser.position "<current + 100> dimensionless"
 uv run openhal action focuser.halt
 ```
 
-Expected. `devices` lists `focuser` as connected and writable. The focuser moves 100 steps, and `halt` answers `done  Done. halt ran.`
+Expected. `devices` lists `focuser` as connected and writable. The focuser moves 100 steps, and `halt` returns `done  Done. halt ran.`
 
 Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the reply of the `configureddevices` request from step 2, the Alpaca server and driver names and versions, and what your planetarium or ASCOM tool showed at the time. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the reply of the `configureddevices` request from step 2, the Alpaca server and driver names and versions, and what your planetarium or ASCOM tool showed at the time. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -237,4 +237,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.

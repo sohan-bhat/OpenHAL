@@ -1,6 +1,6 @@
 # serial driver
 
-The `serial` driver talks to any device with a line-based text protocol over a serial port. The driver has no command set of its own, and every query, reply pattern and command template comes from the device file, so one driver covers Arduino sketches, RS-232 instruments and sensor modules alike.
+The `serial` driver connects to any device with a line-based text protocol over a serial port. The driver has no command set of its own, and every query, reply pattern and command template comes from the device file, so one driver covers Arduino sketches, RS-232 instruments and sensor modules alike.
 
 | | |
 |---|---|
@@ -53,13 +53,13 @@ The `serial` driver talks to any device with a line-based text protocol over a s
 | `get` | write | Readback query. Without a readback query a read returns the last value sent, and unknown (null) before the first write |
 | `parse` | read, write | Regex for the reply. Group `value`, else group 1, else the whole match |
 | `expect` | write, action | Regex the reply must match. Without `expect` or `error` the driver doesn't wait for a reply |
-| `error` | write, action | Regex that marks a refusal, reported as a failed command |
+| `error` | write, action | Regex that marks an error reply, reported as a failed command |
 | `scale`, `offset` | read, write | `channel value = raw * scale + offset`, inverted for writes |
 | `unit` | read, write | The device's unit when it differs from the channel unit |
 | `on`, `off` | bool channels, actions | Device text for true and false. Reads accept common words when unset |
 | `lookup` | enum channels | Device text to enum value, inverted for writes |
 
-Templates accept only the placeholders named above, with an optional format spec such as `{value:.1f}`. Conversions and nested fields are refused when the file loads. A rendered command that contains a control character is refused before anything is sent, so a string value can't append a second command.
+Templates accept only the placeholders named above, with an optional format spec such as `{value:.1f}`. Conversions and nested fields fail validation when the file loads. The driver blocks a rendered command that contains a control character before anything is sent, so a string value can't append a second command.
 
 ## Example device file
 

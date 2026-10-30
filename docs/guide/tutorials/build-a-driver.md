@@ -1,14 +1,14 @@
 # Build a driver
 
-A [Driver](glossary:driver) speaks one protocol, and most devices need only a [Device File](glossary:device-file) for an existing driver, so build a driver only when no existing driver speaks your device's protocol. This tutorial builds a driver for a simulated bench lamp and runs the conformance suite on the driver.
+A [Driver](glossary:driver) implements one protocol, and most devices need only a [Device File](glossary:device-file) for an existing driver, so build a driver only when no existing driver supports your device's protocol. This tutorial builds a driver for a simulated bench lamp and runs the conformance suite on the driver.
 
 ## The contract
 
 1. A driver implements `connect`, `read` and `_write`, and never overrides `write`, `action`, `safe_state`, `attach` or `_consume`. The base class consumes the kernel's [Grant](glossary:grant), then calls `_write`.
 2. Values arrive checked and in the channel's unit, so a driver converts only to what the protocol needs.
 3. `discover` and `identify` send only read-only commands.
-4. A failure raises a `DriverError` whose message says what happened and what to try, and a driver never returns a made-up value.
-5. Every limit that `describe` proposes is marked `suggested`.
+4. A failure raises a `DriverError` whose message states what happened and what to try, and a driver never returns a made-up value.
+5. Every limit that `describe` returns is marked `suggested`.
 
 The [driver contract](../../drivers/WRITING-A-DRIVER.md) has the full rules.
 
@@ -34,12 +34,12 @@ class LampDriver(Driver):
 
     async def read(self, channel: str) -> Reading:
         if not self.sim.online:
-            raise DriverError("The lamp stopped answering. Check its cable, then reconnect.")
+            raise DriverError("The lamp stopped responding. Check its cable, then reconnect.")
         return Reading(channel, round(self.sim.duty / 255 * 100, 1), "percent")
 
     async def _write(self, channel: str, value: float | bool | str) -> Reading | None:
         if not self.sim.online:
-            raise DriverError("The lamp stopped answering. Check its cable, then reconnect.")
+            raise DriverError("The lamp stopped responding. Check its cable, then reconnect.")
         self.sim.duty = round(float(value) / 100 * 255)
         return await self.read(channel)
 

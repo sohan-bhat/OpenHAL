@@ -75,7 +75,7 @@ asyncio.run(main(*sys.argv[1:]))
 
 ## Read-only steps
 
-### 1. The server answers
+### 1. The server responds
 
 ```sh
 uv run python -c "import asyncio, json; from websockets.asyncio.client import connect
@@ -115,13 +115,13 @@ Expected. The first prints the server URL and node. The read shows `active_power
 
 Unplug the plug from the wall, wait until the server's frontend shows it unavailable, and run the read again.
 
-Expected. The connect works, then the reads fail with `DriverError` saying the node is unavailable. Plug the device back in, wait until the node shows available, and read again. The device reads normally.
+Expected. The connect works, then the reads fail with `DriverError` stating that the node is unavailable. Plug the device back in, wait until the node shows available, and read again. The device reads normally.
 
 ### 6. Server loss
 
 Stop the Matter Server and run the read.
 
-Expected. `DriverError` saying the Matter Server could not be opened. Start the Matter Server again.
+Expected. `DriverError` stating that the Matter Server could not be opened. Start the Matter Server again.
 
 ## Steps that change the device
 
@@ -133,7 +133,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-plug.hal.yaml
 ```
 
-`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-plug.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-plug.hal.yaml` then shows `writable`.
 
 ### 8. The smallest safe action
 
@@ -169,7 +169,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the server's name a
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, matter driver
@@ -184,7 +184,7 @@ Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`
 
 | Step | Result | Notes |
 |---|---|---|
-| 1 the server answers | pass / fail | |
+| 1 the server responds | pass / fail | |
 | 2 the device file validates | pass / fail | |
 | 3 describe | pass / fail | |
 | 4 identify and read | pass / fail | |

@@ -2,7 +2,7 @@
 
 The matter driver reads and controls Matter devices through a Matter Server, the WebSocket service that runs the Matter fabric for Home Assistant and other controllers. Each device file names one node, and attributes become channels while cluster commands become channel changes and actions.
 
-The Home Assistant bridge stays the other route. If Home Assistant already runs the Matter Server, the homeassistant driver reaches the same devices through their Home Assistant entities, and this driver talks to the Matter Server directly.
+The Home Assistant bridge stays the other route. If Home Assistant already runs the Matter Server, the homeassistant driver reaches the same devices through their Home Assistant entities, and this driver connects to the Matter Server directly.
 
 ## Server status
 
@@ -15,7 +15,7 @@ This status was checked on 2026-10-24. python-matter-server was archived in June
 - Actions that run any cluster command with their arguments in the payload, including timed commands such as door locks need.
 - A check on connect that every attribute exists on the node and every command's cluster exists on its endpoint.
 - Health from the WebSocket and the node's `available` flag.
-- `describe()` proposes channels for the clusters it supports (on and off, level, color temperature, temperature, humidity, pressure, occupancy, contact, battery, power, thermostat, fan, window covering and door lock), scaled as the Matter specification defines.
+- `describe()` returns suggested channels for the clusters the driver supports (on and off, level, color temperature, temperature, humidity, pressure, occupancy, contact, battery, power, thermostat, fan, window covering and door lock), scaled as the Matter specification defines.
 
 ## Setup
 
@@ -73,7 +73,7 @@ Because Matter attributes are integers, values going out are rounded to whole at
 ## How reads and commands behave
 
 - The Matter Server subscribes to every attribute of every node, so reads come from its pushes with the time they arrived and cost no round trip. A null attribute reads as no value.
-- A command returns when the server reports the device's response. A refused attribute change fails with `DriverError` naming the Matter status, such as `CONSTRAINT_ERROR` or `UNSUPPORTED_WRITE`.
+- A command returns when the server reports the device's response. An attribute change that returns an error status fails with `DriverError` naming the Matter status, such as `CONSTRAINT_ERROR` or `UNSUPPORTED_WRITE`.
 - Because an unavailable node's last values may be stale, the node fails its reads and reports itself disconnected.
 
 ## Example
@@ -82,7 +82,7 @@ Because Matter attributes are integers, values going out are rounded to whole at
 
 ## Errors
 
-- A server that can't be reached, a server too old or not a Matter Server, and an unknown node raise `DriverError` that says what to check.
+- A server that can't be reached, a server too old or not a Matter Server, and an unknown node raise `DriverError` with a message that names what to check.
 - A channel whose attribute or cluster the node doesn't have fails the connect with `DriverError`.
 - Server errors carry the server's error name, for example `node not ready` or `SDK stack error`, and its details. A server that doesn't respond raises `TimeoutError`.
 
@@ -94,7 +94,7 @@ Because Matter attributes are integers, values going out are rounded to whole at
 
 ## Hazard default and safe state
 
-The default hazard is low, because most Matter devices are lights, plugs and sensors. Locks, covers and plugs that switch heaters deserve a higher hazard in their device file, and lock commands should need confirmation each time. Matter has no fabric-wide emergency command, so `safe_state_support` is `file`. The hub sends the device file's safe state like any other command, which needs the server and the node to be reachable.
+The default hazard is low, because most Matter devices are lights, plugs and sensors. Locks, covers and plugs that switch heaters need a higher hazard in their device file, and lock commands should need confirmation each time. Matter has no fabric-wide emergency command, so `safe_state_support` is `file`. The hub sends the device file's safe state like any other command, which needs the server and the node to be reachable.
 
 ## Sources
 

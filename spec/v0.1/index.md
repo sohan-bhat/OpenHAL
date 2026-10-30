@@ -7,11 +7,11 @@ Version v0.1. Status draft.
 OpenHAL is an open protocol for AI agents to discover, read and control hardware safely. This specification defines two things.
 
 1. The Device File format. A Device File describes one Device, what can be read, what can be changed, the limits on every change, the safe state, and where the description came from.
-2. The hub protocol. Clients talk to one Hub over JSON-RPC 2.0. The Hub owns every Device, and its Safety Kernel decides every command before a Driver may touch hardware.
+2. The hub protocol. Clients connect to one Hub and send requests over JSON-RPC 2.0. The Hub owns every Device, and its Safety Kernel evaluates every command before a Driver may touch hardware.
 
 OpenHAL is an open protocol with a specification. It is not a standard. OpenHAL is not affiliated with Anthropic or with Anthropic's Model Hardware Standard (MHS).
 
-The reference implementation is the `openhal` Python package in this repository. Where this document and the reference implementation disagree, this document is normative and the disagreement is a bug.
+The reference implementation is the `openhal` Python package in this repository. Where this document and the reference implementation differ, this document is normative and the difference is a bug.
 
 ## Status
 
@@ -53,11 +53,11 @@ Defined terms are capitalized wherever they appear.
 | Client | A program that connects to a Hub and sends requests. An MCP server, a command line tool, the Inspector and a script are all Clients. |
 | Device | One piece of hardware, or one set of entities in a bridged system, described by one Device File and registered with a Hub under a unique id. |
 | Device File | A YAML document ending in `.hal.yaml` that describes one Device, its channels, actions, limits, safe state and provenance. |
-| Driver | Code that speaks one protocol to Devices. A Driver changes hardware only when it consumes a Grant. |
-| Safety Kernel | The deterministic part of a Hub that evaluates every command against the Device File and the current state, and issues Grants for the ones it allows. |
+| Driver | Code that communicates with Devices over one protocol. A Driver changes hardware only when it consumes a Grant. |
+| Safety Kernel | The deterministic part of a Hub that evaluates every command against the Device File and the current state, and issues Grants for the ones that pass. |
 | Grant | A single-use permission the Safety Kernel issues for exactly one operation, bound to one Device, one target and one value, with an expiry. |
 | Principal | The identity behind a request. Its kind is `human`, `agent`, `routine` or `system`, and it carries a scope. |
 | Conformance Level | One of `core`, `control` or `full`. It names the methods a Hub implements, or the capabilities a Driver supports. |
-| Confirmation Request | A command that passed every check except confirmation and waits in the Hub's queue until a human Principal approves or rejects it, or it expires. |
+| Confirmation Request | A command that passed every check except confirmation and that the Hub holds in its queue until a human Principal approves or rejects the command, or until the request expires. |
 
 Other terms are used in their plain sense. A channel is a named value on a Device. A read channel can be read. A write channel can be read and changed. An action is a named operation with typed arguments. A command is one change to a write channel or one run of an action. A safe state is the set of steps that leaves a Device safe to leave unattended. A routine is an automation that runs on the Hub without a model.

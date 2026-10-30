@@ -66,7 +66,7 @@ Each plan names its extra in place of `serial`. `uv sync` installs only the extr
 
 ### On a Raspberry Pi
 
-Use Raspberry Pi OS Trixie or later. Trixie's Python 3.13 meets OpenHAL's minimum of 3.12, and the camera's libcamera bindings and lgpio come from apt for that system Python. Make the checkout's environment on the system Python, so the environment sees the bindings.
+Use Raspberry Pi OS Trixie or later. Trixie's Python 3.13 meets OpenHAL's minimum of 3.12, and the camera's libcamera bindings and lgpio come from apt for that system Python. Make the checkout's environment on the system Python, so the environment can import the bindings.
 
 ```
 sudo apt install -y python3-dev python3-lgpio python3-picamera2 i2c-tools
@@ -87,30 +87,30 @@ uv run openhal init --yes --no-sample --no-discover --no-service
 bash docs/hardware-tests/hub.sh start
 ```
 
-`--yes` asks nothing. `--no-sample` leaves out the simulated plant waterer, `--no-discover` adds no device files and `--no-service` installs no background service. `init` also makes an agent token in `$OPENHAL_HOME/agent.token` with the read scope.
+`--yes` prompts for nothing. `--no-sample` leaves out the simulated plant waterer, `--no-discover` adds no device files and `--no-service` installs no background service. `init` also makes an agent token in `$OPENHAL_HOME/agent.token` with the read scope.
 
 [hub.sh](hub.sh) runs the hub from the checkout's environment and logs to `$OPENHAL_HOME/hub.log`.
 
 | Command | What it does |
 |---|---|
-| `bash docs/hardware-tests/hub.sh start` | Start the hub and wait until it answers |
+| `bash docs/hardware-tests/hub.sh start` | Start the hub and wait until the hub responds |
 | `bash docs/hardware-tests/hub.sh stop` | Stop it with SIGTERM and wait until it has exited |
 | `bash docs/hardware-tests/hub.sh restart` | Stop, then start, which loads changed device files |
 | `bash docs/hardware-tests/hub.sh kill` | Stop it with SIGKILL, so it can send nothing on its way out |
-| `bash docs/hardware-tests/hub.sh status` | Say whether it runs |
+| `bash docs/hardware-tests/hub.sh status` | Print whether the hub runs |
 
 A plan that stops a command while it runs uses a second terminal. Open the second terminal in the checkout and run `export OPENHAL_HOME="$PWD/openhal-test"` there first.
 
 ### Confirming limits
 
-You confirm the limits yourself. `uv run openhal file confirm` with the file's path prints every limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. The hub reads device files when the hub starts, so restart the hub after a confirmation. A changed limit makes the file read-only until you confirm the file again. A command you send with your own human token counts as your confirmation, so plans that test the confirmation queue send the command with an agent token and approve the request with `uv run openhal confirm approve`.
+You confirm the limits yourself. `uv run openhal file confirm` with the file's path prints every limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. The hub reads device files when the hub starts, so restart the hub after a confirmation. A changed limit makes the file read-only until you confirm the file again. A command you send with your own human token counts as your confirmation, so plans that test the confirmation queue send the command with an agent token and approve the request with `uv run openhal confirm approve`.
 
 ## Rules while testing
 
 - Read-only steps come first. Stop at the first step that fails.
 - Never widen a limit to make a step pass. The only limit changes are the ones a plan names, and the plan confirms the file again after each.
 - Keep the device's own power switch or emergency stop in reach for anything that moves, heats or switches mains.
-- A blocked command that reaches the device is a safety issue. Stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+- A blocked command that reaches the device is a safety issue. Stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 - Stop the hub with `bash docs/hardware-tests/hub.sh stop` at the end, and keep `$OPENHAL_HOME` until the report is filed.
 
 ## If a step fails

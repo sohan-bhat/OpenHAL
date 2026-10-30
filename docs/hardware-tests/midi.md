@@ -88,7 +88,7 @@ Expected. `valid  my-pads.hal.yaml  (pad-controller, low hazard, read-only)`.
 uv run python hwtest.py my-pads.hal.yaml describe
 ```
 
-Within three seconds of starting it, turn knob 1 and hit pad 1. Expected. Proposed read channels such as `cc_1` and `note_36`, matching what the MIDI monitor shows for the same controls.
+Within three seconds of starting it, turn knob 1 and hit pad 1. Expected. Suggested read channels such as `cc_1` and `note_36`, matching what the MIDI monitor shows for the same controls.
 
 ### 4. Read every channel
 
@@ -120,11 +120,11 @@ Run `uv run python midiread.py` and turn knob 1 slowly from left to right, then 
 
 Run `uv run python hwtest.py my-pads.hal.yaml read`, which ends with a health line, then unplug the controller and run it again.
 
-Expected. The first run ends with `health Health(connected=True, ...)`. The second run fails with a `DriverError` saying no MIDI input port matches and listing the ports there are. Plug the controller back in and the first command works again.
+Expected. The first run ends with `health Health(connected=True, ...)`. The second run fails with a `DriverError` stating that no MIDI input port matches and listing the ports there are. Plug the controller back in and the first command works again.
 
 ## Write steps
 
-Watch the controller's pads during these steps. Some controllers don't light their pads from incoming notes. On those, check the messages in a MIDI monitor that can watch what is sent to the controller.
+Watch the controller's pads during these steps. Some controllers don't light their pads from incoming notes. On those, check the messages in a MIDI monitor that can show what is sent to the controller.
 
 ### 6. Confirm the limits
 
@@ -134,7 +134,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-pads.hal.yaml
 ```
 
-`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-pads.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-pads.hal.yaml` then shows `writable`.
 
 ### 7. The smallest safe write
 
@@ -161,7 +161,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the port list from 
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, midi driver

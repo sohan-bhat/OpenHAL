@@ -27,7 +27,7 @@ On Linux, BlueZ 5.55 or newer must be running and your user needs access to Blue
 | `address` | `auto` | MAC address on Linux and Windows, CoreBluetooth UUID on macOS, or `auto`. The shorthand `ble: auto` sets it |
 | `scan_timeout` | `5 s` | How long `auto` listens for advertisements |
 | `timeout` | `10 s` | Connect, read and write deadline |
-| `pair` | `false` | Ask the OS to pair while connecting. Needed by devices with encrypted characteristics |
+| `pair` | `false` | Request pairing from the OS while connecting. Needed by devices with encrypted characteristics |
 
 ## Channel maps
 
@@ -59,7 +59,7 @@ A `stream: true` channel returns the newest notification. Before the first notif
 
 ## Describe
 
-`describe()` proposes read channels for the standard characteristics it finds, with their units, formats and scales.
+`describe()` returns suggested read channels for the standard characteristics the driver finds, with their units, formats and scales.
 
 | Characteristic | Channel | Format | Scale | Unit |
 |---|---|---|---|---|
@@ -79,7 +79,7 @@ A `stream: true` channel returns the newest notification. Before the first notif
 ## Errors
 
 - No matching advertiser, or more than one, for `address: auto` raises `DriverError` listing the candidates.
-- Connect failures, missing characteristics, refused reads and writes raise `DriverError` with what to check.
+- Connect failures, missing characteristics, and reads and writes that fail with a GATT error raise `DriverError` with what to check.
 - No response within `timeout` raises `TimeoutError`.
 - Values too short for the format, IEEE 11073 special values (NaN, NRes, infinity) and non-finite floats raise `DriverError`.
 

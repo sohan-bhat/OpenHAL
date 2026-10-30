@@ -6,7 +6,7 @@ Run every step from the repository checkout. [README.md](README.md) has the setu
 
 ## What you need
 
-- A USB CAN adapter that Linux sees as a SocketCAN interface, such as a CANable with candleLight firmware.
+- A USB CAN adapter that Linux lists as a SocketCAN interface, such as a CANable with candleLight firmware.
 - A VESC with controller id 1, CAN status messages 1, 4 and 5 enabled at 50 Hz in VESC Tool, and a command timeout set in its app settings.
 - Both ends of the bus terminated with 120 ohm, and a common ground.
 - can-utils for an independent view of the bus, `sudo apt install can-utils`.
@@ -125,13 +125,13 @@ Expected. `erpm = 0.0 rpm`, `motor_current` close to `0.0 A`, the two temperatur
 uv run python hwtest.py my-vesc.hal.yaml describe
 ```
 
-Expected. Proposed read channels `frame_901`, `frame_1001` and `frame_1b01`, each the first bytes of that frame as one number.
+Expected. Suggested read channels `frame_901`, `frame_1001` and `frame_1b01`, each the first bytes of that frame as one number.
 
 ### 7. Bus loss
 
 Run `sudo ip link set can0 down`, then run step 5 again.
 
-Expected. The connect fails with `DriverError` and a hint to bring the interface up, or the reads fail with `DriverError` saying the bus failed. Bring the interface up again with step 1 and run step 5. The device reads normally.
+Expected. The connect fails with `DriverError` and a hint to bring the interface up, or the reads fail with `DriverError` stating that the bus failed. Bring the interface up again with step 1 and run step 5. The device reads normally.
 
 ## Steps that change the device
 
@@ -145,7 +145,7 @@ Read the file and decide the limits and the safe state are right for your motor.
 uv run openhal file confirm my-vesc.hal.yaml
 ```
 
-`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-vesc.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-vesc.hal.yaml` then shows `writable`.
 
 ### 9. The smallest safe frame
 
@@ -183,7 +183,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the candump output 
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, can driver

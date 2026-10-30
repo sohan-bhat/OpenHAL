@@ -91,7 +91,7 @@ bash docs/hardware-tests/hub.sh start
 uv run openhal devices
 ```
 
-Expected. The confirm lists `control brightness  0 % to 60 %, at most 25 %/s`, asks you to type `confirm` and ends with `confirmed`. The device is now `writable`.
+Expected. The confirm lists `control brightness  0 % to 60 %, at most 25 %/s`, prompts you to type `confirm` and ends with `confirmed`. The device is now `writable`.
 
 ### 7. The smallest change
 
@@ -100,7 +100,7 @@ uv run openhal write openhal-led-strip.brightness "10 %"
 uv run openhal read openhal-led-strip.brightness
 ```
 
-Expected. `done  Done. brightness is now 10 %.`, the LED glows dimly, and the read says `10 %`.
+Expected. `done  Done. brightness is now 10 %.`, the LED glows dimly, and the read shows `10 %`.
 
 ### 8. A blocked command never reaches the board
 
@@ -118,7 +118,7 @@ uv run openhal read openhal-led-strip.brightness
 uv run openhal unlock
 ```
 
-Expected. The stop reports `openhal-led-strip  safe`, the LED goes off, the read says `0 %`, and `unlock` asks you to type `unlock`.
+Expected. The stop reports `openhal-led-strip  safe`, the LED goes off, the read shows `0 %`, and `unlock` prompts you to type `unlock`.
 
 ### 10. The board falls safe on its own
 
@@ -143,7 +143,7 @@ Expected. `intact  The audit chain verifies.` and the head hash.
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the arduino-cli or IDE version and the core version, the board and its USB id from step 1, and the output of `uv run openhal library show openhal-led-strip`. If the LED changed for a command the hub blocked, unplug the board and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the arduino-cli or IDE version and the core version, the board and its USB id from step 1, and the output of `uv run openhal library show openhal-led-strip`. If the LED changed for a command the hub blocked, unplug the board and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -170,4 +170,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/openhal-led-strip-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/openhal-led-strip-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.

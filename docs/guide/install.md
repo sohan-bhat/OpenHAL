@@ -42,12 +42,12 @@ openhal init
 In a terminal, `openhal init` prompts with a few short questions.
 
 1. Look for devices, using only read-only identify commands.
-2. Add each device discovery found as a read-only device file. OpenHAL firmware boards and ESPHome nodes describe themselves and library matches come from the device library, but no limit is confirmed for you.
+2. Add each device discovery found as a read-only device file. OpenHAL firmware boards and ESPHome nodes send their own descriptions, and library matches come from the device library, but no limit is confirmed for you.
 3. Make a token for your AI client, read-only unless you pick another scope.
 4. Save a client's config for you. The setup for Claude Desktop, Claude Code and Cursor is printed either way, and a file is backed up before it changes.
 5. Run the hub in the background, starting at login.
 
-`openhal init --yes` takes the safe defaults without prompting. With `--yes`, init looks for devices, adds every device read-only and makes a read token. A client config is saved only with `--client NAME`, and the service installs only with `--service`.
+`openhal init --yes` takes the safe defaults without prompting. With `--yes`, init scans for devices, adds every device read-only and makes a read token. A client config is saved only with `--client NAME`, and the service installs only with `--service`.
 
 A device that discovery can't find, such as a board on a known port, goes in with `--device`.
 

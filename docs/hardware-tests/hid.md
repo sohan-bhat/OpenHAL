@@ -9,7 +9,7 @@ Run every step from the repository checkout. [README.md](README.md) has the setu
 - The HID device, plugged in.
 - The device's report layout, from the device's firmware or documentation.
 - An independent HID tool to cross-check, such as `hidapitester` (https://github.com/todbot/hidapitester), or `usbhid-dump` on Linux.
-- On Linux, a udev rule that lets your user open the device (see docs/drivers/hid.md).
+- On Linux, a udev rule that gives your user access to the device (see docs/drivers/hid.md).
 - The repository with the hid extra, `uv sync --extra hid`.
 - A copy of the example file, `cp openhal/drivers/hid/examples/diy-macropad.hal.yaml my-pad.hal.yaml`, with `match.usb` and the maps set for your device.
 
@@ -91,7 +91,7 @@ uv run python hwtest.py my-pad.hal.yaml identify
 uv run python hwtest.py my-pad.hal.yaml describe
 ```
 
-Expected. `identify` before connecting prints the `usb` id. `describe` prints proposed channels from the report descriptor, with buttons and LEDs named, which should match your firmware's layout. Compare with `hidapitester --vidpid 1209:0001 --open --get-report-descriptor` if you have it.
+Expected. `identify` before connecting prints the `usb` id. `describe` prints suggested channels from the report descriptor, with buttons and LEDs named, which should match your firmware's layout. Compare with `hidapitester --vidpid 1209:0001 --open --get-report-descriptor` if you have it.
 
 ### 4. Read every channel
 
@@ -107,7 +107,7 @@ Expected. `key_1 = True` if the device sent a report since the driver connected,
 
 Run step 4, unplug the device, and run it again.
 
-Expected. The second run fails with `DriverError` saying no HID interfaces match. Plug the device back in and step 4 works again.
+Expected. The second run fails with `DriverError` stating that no HID interfaces match. Plug the device back in and step 4 works again.
 
 ## Write steps
 
@@ -121,7 +121,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-pad.hal.yaml
 ```
 
-`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-pad.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-pad.hal.yaml` then shows `writable`.
 
 ### 7. The smallest safe write
 
@@ -150,7 +150,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the `discover` line
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, hid driver

@@ -171,7 +171,7 @@ def printer_facts() -> dict[str, tuple[str, ...]]:
     approved = scenario.exchange(RECORD, "owner-approves")
     d = DEGREES
     return {
-        r"(\d+) requests, (\d+) refused,? (?:and )?(\d+) confirmed by a person": (
+        r"(\d+) requests, (\d+) (?:refused|blocked),? (?:and )?(\d+) confirmed by a person": (
             str(counts["requests"]),
             str(counts["refused"]),
             str(counts["confirmed_by_a_person"]),

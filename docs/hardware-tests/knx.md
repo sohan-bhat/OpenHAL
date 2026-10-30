@@ -75,13 +75,13 @@ asyncio.run(main(*sys.argv[1:]))
 
 ## Read-only steps
 
-### 1. The interface answers
+### 1. The interface responds
 
 ```sh
 uv run python -c "import asyncio; from openhal.drivers.knx.driver import KnxDriver; print(asyncio.run(KnxDriver.discover()))"
 ```
 
-Expected. Your interface with its address, port and name. Routers on another subnet may not answer a search, which is fine if the next steps work.
+Expected. Your interface with its address, port and name. Routers on another subnet may not respond to a search, which is fine if the next steps work.
 
 ### 2. The device file validates
 
@@ -98,7 +98,7 @@ uv run python hwtest.py my-room.hal.yaml identify
 uv run python hwtest.py my-room.hal.yaml read
 ```
 
-Expected. The first prints the gateway and `tunneling`. The read shows `temperature` within 1 degC of the room thermostat's display, `ceiling_light` and `ceiling_dimmer` as the light is, and `heating_setpoint` and `hvac_mode` as the thermostat shows. A value of `None` means the address doesn't answer reads. Check its read flag in ETS.
+Expected. The first prints the gateway and `tunneling`. The read shows `temperature` within 1 degC of the room thermostat's display, `ceiling_light` and `ceiling_dimmer` as the light is, and `heating_setpoint` and `hvac_mode` as the thermostat shows. A value of `None` means the address doesn't respond to reads. Check its read flag in ETS.
 
 ### 4. Bus changes reach the driver
 
@@ -110,7 +110,7 @@ Expected. `ceiling_light` follows the switch.
 
 Unplug the interface's network cable and run step 3.
 
-Expected. `DriverError` or `TimeoutError` saying the interface did not accept a connection. Plug the interface back in, wait a few seconds, and run step 3. The device reads normally.
+Expected. `DriverError` or `TimeoutError` stating that the interface did not accept a connection. Plug the interface back in, wait a few seconds, and run step 3. The device reads normally.
 
 ## Steps that change the device
 
@@ -122,7 +122,7 @@ Read the file and decide the limits, the interlock and the safe state are right.
 uv run openhal file confirm my-room.hal.yaml
 ```
 
-`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-room.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-room.hal.yaml` then shows `writable`.
 
 ### 7. The smallest safe change
 
@@ -169,7 +169,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the interface's mak
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, knx driver
@@ -184,7 +184,7 @@ Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`
 
 | Step | Result | Notes |
 |---|---|---|
-| 1 the interface answers | pass / fail | |
+| 1 the interface responds | pass / fail | |
 | 2 the device file validates | pass / fail | |
 | 3 identify and read | pass / fail | |
 | 4 bus changes reach the driver | pass / fail | |

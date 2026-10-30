@@ -61,7 +61,7 @@ write:
 | `values` | none | Enum word to raw value, required for enum channels |
 | `on`, `off` | `1`, `0` | Raw values for a bool channel on a register |
 
-Writes compute raw = (value - offset) / scale and round integer formats to the nearest whole number. The reading the driver returns shows the value it really sent, so `42.47 %` with `scale: 0.1` is sent as 425 and reported as 42.5 %. Set `step` on the channel to the register's resolution and the kernel rejects values that would be rounded.
+Writes compute raw = (value - offset) / scale and round integer formats to the nearest whole number. The reading the driver returns shows the value it really sent, so `42.47 %` with `scale: 0.1` is sent as 425 and reported as 42.5 %. Set `step` on the channel to the register's resolution and the kernel blocks values that would be rounded.
 
 Because changing one bit needs a read-modify-write that could race with the device or another master, bit channels can't be written.
 

@@ -1,6 +1,6 @@
 # MCP server
 
-`openhal mcp` is a stdio MCP server. An agent's MCP client starts the server as a subprocess, and the server forwards every tool call to the hub's local API with an agent token. The server makes no safety decisions, because the hub's kernel checks every write and action, and the tool returns the kernel's result unchanged.
+`openhal mcp` is a stdio MCP server. An agent's MCP client starts the server as a subprocess, and the server forwards every tool call to the hub's local API with an agent token. The server runs no safety checks, because the hub's kernel checks every write and action, and the tool returns the kernel's result unchanged.
 
 ## Before you start
 
@@ -12,13 +12,13 @@
 openhal token create --agent --scope control_low --name claude
 ```
 
-The token is printed once. Scopes are `read` (reads only), `control_low` (low hazard devices) and `control_medium` (low and medium hazard devices). Every write and action on a high hazard device waits for a person, whatever the agent token's scope.
+The token is printed once. Scopes are `read` (reads only), `control_low` (low hazard devices) and `control_medium` (low and medium hazard devices). The hub holds every write and action on a high hazard device until a person approves the request, whatever the agent token's scope.
 
 Give each client its own token, so the audit log shows which client did what and you can revoke one client's token without the others.
 
 ## Token
 
-The server reads its token from the `OPENHAL_TOKEN` environment variable, or from a file given with `--token-file`. Because the hub treats a human's command as already confirmed, the server never reads `~/.openhal/human.token` and refuses to run with a human token, so an agent always needs its own agent token.
+The server reads its token from the `OPENHAL_TOKEN` environment variable, or from a file given with `--token-file`. Because the hub treats a human's command as already confirmed, the server never reads `~/.openhal/human.token` and exits with an error at start when given a human token, so an agent always needs its own agent token.
 
 A token file keeps the token out of client config files that may be synced or shared.
 
@@ -86,11 +86,11 @@ Add the server to `~/.cursor/mcp.json` for every project, or `.cursor/mcp.json` 
 
 ## When the hub is not running
 
-On start, `openhal mcp` checks the hub. If the hub doesn't respond, `openhal mcp` starts `openhald` in the background once (output goes to `~/.openhal/openhald.log`) and waits up to 8 seconds. With `--no-start`, or if the start fails, the server still runs, and every tool returns an error that says the hub is not running and how to start the hub. Because stdout carries the MCP protocol, messages for people go to stderr and never to stdout.
+On start, `openhal mcp` checks the hub. If the hub doesn't respond, `openhal mcp` starts `openhald` in the background once (output goes to `~/.openhal/openhald.log`) and waits up to 8 seconds. With `--no-start`, or if the start fails, the server still runs, and every tool returns an error stating that the hub is not running and how to start the hub. Because stdout carries the MCP protocol, messages for people go to stderr and never to stdout.
 
 ## Tools
 
-The list and input schemas live in `openhal/mcp/tools.py`. Every tool has a description written for models, typed inputs and typed outputs. Values carry their unit, and blocked decisions carry a stable code, a message and the limit that blocked them.
+The list and input schemas live in `openhal/mcp/tools.py`. Every tool has a description written for models, typed inputs and typed outputs. Values carry their unit, and blocked results carry a stable code, a message and the limit that blocked the request.
 
 Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)), so `write` takes `value` 60 and `unit` `%`, and action arguments and session limits take `{"value": 2, "unit": "s"}`. A number sent as one string such as `"60 %"` comes back blocked with UNIT_INVALID and the shape to use.
 
@@ -107,16 +107,16 @@ Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)
 | `plan_check` | Check a list of steps in order without running any |
 | `stop_all` | Emergency stop. Every device goes to its safe state |
 | `tighten_limits` | Narrow min, max or rate for this session. Never widens |
-| `get_confirmation_status` | Status of requests that wait for a person |
+| `get_confirmation_status` | Status of requests held for a person's approval |
 | `list_routines` | Routines with state, devices, hazard and last run |
 | `get_routine` | One routine with source and history |
 | `draft_routine` | Store a routine. Every new routine starts disabled |
 | `run_routine_dry` | Dry run a routine step by step |
-| `enable_routine` | Request to enable a routine. Refused unless the owner allowed agents to enable low hazard routines |
+| `enable_routine` | Request to enable a routine. Blocked unless the owner allowed agents to enable low hazard routines |
 | `disable_routine` | Disable a routine |
 | `get_audit_log` | Audit entries, newest first |
 | `list_drivers` | Installed drivers and bridges |
-| `discover_devices` | Look for devices with read-only identify commands |
+| `discover_devices` | Scan for devices with read-only identify commands |
 | `list_unknown_devices` | Devices the last discovery could not match |
 | `start_driver_writer` | Start a driver writer session for an unknown device |
 | `get_writer_session` | Session state, sources, draft and problems |
@@ -136,7 +136,7 @@ Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)
 
 Only a person with the human token can do the following, in the CLI or the dashboard.
 
-- Approve or reject a request that waits for confirmation (`openhal confirm approve`)
+- Approve or reject a request held for confirmation (`openhal confirm approve`)
 - Unlock after a stop (`openhal unlock`)
 - Loosen a limit or confirm a device file (`openhal file confirm`, the limits interview)
 - Enable a routine, unless `routines.agent_enable_low_hazard` is on and every device the routine touches is low hazard
@@ -144,6 +144,6 @@ Only a person with the human token can do the following, in the CLI or the dashb
 
 ## Device text is data
 
-Text that comes from devices, device files, sketches, manuals and routine sources reaches the model inside `<device-data source="...">` blocks with a line saying the text is data. The hub wraps device notes and routine sources, and the MCP server also wraps string readings and driver error messages before returning them. Nothing inside these blocks can change a limit or approve anything, whatever the text says.
+Text that comes from devices, device files, sketches, manuals and routine sources reaches the model inside `<device-data source="...">` blocks with a line stating that the text is data. The hub wraps device notes and routine sources, and the MCP server also wraps string readings and driver error messages before returning them. Nothing inside these blocks can change a limit or approve anything, whatever the text contains.
 
-A camera frame from `read` is an MCP image block. Because a frame can show text too, a short `<device-data>` block that says the image came from a device and is data comes before the image. The structured result carries the reading with `mimeType`, `bytes`, `width` and `height`, without the pixels. A frame over 2 MB is refused with DRIVER_ERROR and a reason that names the camera settings to lower.
+A camera frame from `read` is an MCP image block. Because a frame can show text too, a short `<device-data>` block stating that the image came from a device and is data comes before the image. The structured result carries the reading with `mimeType`, `bytes`, `width` and `height`, without the pixels. A read of a frame over 2 MB returns DRIVER_ERROR with a reason that names the camera settings to lower.

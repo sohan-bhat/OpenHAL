@@ -64,7 +64,7 @@ async def run(ctx):
 ```
 
 1. A Python routine MUST define `async def run(ctx)`. It MAY define `TRIGGERS` as a literal list of trigger mappings. Without it, the routine is manual.
-2. `ctx` offers `read(device, channel)`, `write(device, channel, value, unit)`, `action(device, action, **args)` with numbers as `{"value": 2, "unit": "s"}`, `wait(duration)` of at most 1 h, `value(expression)` and `log(message)`.
+2. `ctx` provides `read(device, channel)`, `write(device, channel, value, unit)`, `action(device, action, **args)` with numbers as `{"value": 2, "unit": "s"}`, `wait(duration)` of at most 1 h, `value(expression)` and `log(message)`.
 3. Every device operation goes through `ctx`, and `ctx` goes through the Safety Kernel. A blocked command ends the run.
 4. Python routines run in the Hub process as trusted code. The Hub does not sandbox them ([Security](security.md#what-is-not-guaranteed)).
 
@@ -83,7 +83,7 @@ async def run(ctx):
 2. YAML content is hashed after parsing, so comments don't change the hash.
 3. A routine runs at most once at a time, and starts no more often than `routines.min_interval_s` (default 1 s).
 4. A run is cancelled after the smaller of its `max_runtime` and the Hub's `routines.max_runtime_s` (default 1 h).
-5. A routine cannot wait for a person. A command that needs confirmation is blocked ([Safety](safety.md#confirmations)).
+5. A routine runs unattended, so a routine's command that needs confirmation is blocked ([Safety](safety.md#confirmations)).
 6. A run ends `ok`, `blocked`, `failed` or `cancelled`. Every run and every command in it is logged.
 7. A stop MUST cancel running routines and disable every enabled routine. A human enables them again.
 
@@ -91,7 +91,7 @@ async def run(ctx):
 
 A dry run evaluates every command in every branch, in order, as the routine would send it. Nothing is sent to any Device.
 
-1. A `wait` advances the simulated clock, so rate limits are judged as in a real run.
+1. A `wait` advances the simulated clock, so rate limits are evaluated as in a real run.
 2. Each branch of an `if` starts from a copy of the state before it.
 3. The result is `{ ok, decisions, problems }`. `ok` is `true` only when every Decision is `allowed` and there are no problems.
 4. A Python routine can't be dry-run step by step. Its dry run reports that as a problem.

@@ -10,7 +10,7 @@ $ uv run openhal token create --agent --scope control_low --name claude | tail -
 $ chmod 600 ~/.openhal/claude.token
 ```
 
-The token is shown only once, and the token's scope limits what the token may do.
+The token is shown only once, and the token's scope limits the requests the hub accepts with the token.
 
 | Scope | Allows |
 |---|---|
@@ -18,7 +18,7 @@ The token is shown only once, and the token's scope limits what the token may do
 | `control_low` | Changes to low hazard devices |
 | `control_medium` | Changes to low and medium hazard devices |
 
-A change that an agent token requests on a high hazard device always waits for a person's approval, and `openhal mcp` refuses the human token.
+The hub holds every change requested with an agent token on a high hazard device until a person approves the change, and `openhal mcp` exits with an error at start when given the human token.
 
 ## Claude Code
 

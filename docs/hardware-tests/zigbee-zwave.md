@@ -77,7 +77,7 @@ asyncio.run(main(*sys.argv[1:]))
 
 ## Read-only steps
 
-### 1. Zigbee2MQTT knows the bulb
+### 1. Zigbee2MQTT lists the bulb
 
 ```sh
 mosquitto_sub -h 192.168.1.10 -u openhal -P "$MQTT_PASSWORD" -t zigbee2mqtt/bridge/devices -C 1 | grep -o '"friendly_name":"desk_lamp"'
@@ -103,7 +103,7 @@ Expected. Both `valid`, the bulb `low hazard, read-only` and the plug `medium ha
 uv run python hwtest.py my-bulb.hal.yaml read
 ```
 
-Expected. `state`, `brightness` and `color_temp` match the Zigbee2MQTT frontend, with brightness in percent. The watcher shows a `zigbee2mqtt/desk_lamp/get` request and the bulb's answer.
+Expected. `state`, `brightness` and `color_temp` match the Zigbee2MQTT frontend, with brightness in percent. The watcher shows a `zigbee2mqtt/desk_lamp/get` request and the bulb's reply.
 
 ### 4. Describe the bulb
 
@@ -125,13 +125,13 @@ Expected. `power` close to `0.0 W`, `energy` matching Z-Wave JS UI's meter value
 
 Stop the broker (`sudo systemctl stop mosquitto`) and run step 3, then stop Z-Wave JS UI's server and run step 5.
 
-Expected. Each fails with `DriverError` saying the broker or zwave-js-server could not be reached. Start the broker and zwave-js-server again and run steps 3 and 5. Both devices read normally.
+Expected. Each fails with `DriverError` stating that the broker or zwave-js-server could not be reached. Start the broker and zwave-js-server again and run steps 3 and 5. Both devices read normally.
 
 ### 7. An offline bulb
 
 Switch the bulb off at the wall and wait until the Zigbee2MQTT frontend shows it offline (its availability timeout, 10 minutes by default for mains devices). Run step 3.
 
-Expected. The values read as before, from the last report, and the health line says the bulb is offline in Zigbee2MQTT. Switch the bulb on again.
+Expected. The values read as before, from the last report, and the health line shows the bulb as offline in Zigbee2MQTT. Switch the bulb on again.
 
 ## Steps that change the device
 
@@ -144,7 +144,7 @@ uv run openhal file confirm my-bulb.hal.yaml
 uv run openhal file confirm my-plug.hal.yaml
 ```
 
-Each lists the file's limits, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-bulb.hal.yaml my-plug.hal.yaml` then says `writable` for both.
+Each lists the file's limits, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-bulb.hal.yaml my-plug.hal.yaml` then shows `writable` for both.
 
 ### 9. The smallest safe change on Zigbee
 
@@ -184,7 +184,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the watcher output 
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, zigbee-zwave driver
@@ -199,7 +199,7 @@ Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`
 
 | Step | Result | Notes |
 |---|---|---|
-| 1 Zigbee2MQTT knows the bulb | pass / fail / skipped | |
+| 1 Zigbee2MQTT lists the bulb | pass / fail / skipped | |
 | 2 the device files validate | pass / fail | |
 | 3 read the bulb | pass / fail / skipped | |
 | 4 describe the bulb | pass / fail / skipped | |

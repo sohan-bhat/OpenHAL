@@ -11,7 +11,7 @@ This plan checks the Moonraker driver on a real Klipper printer. The plan starts
 
 ## The read-only probe
 
-Save this as `probe.py`. The probe connects, identifies the printer, prints the driver's proposal and reads every channel. The probe holds no kernel grant, so the probe can't change the printer. With `transport: websocket` connecting also subscribes to the objects the file uses, which changes nothing on the printer.
+Save this as `probe.py`. The probe connects, identifies the printer, prints the driver's draft and reads every channel. The probe holds no kernel grant, so the probe can't change the printer. With `transport: websocket` connecting also subscribes to the objects the file uses, which changes nothing on the printer.
 
 ```python
 import asyncio, json, sys
@@ -38,7 +38,7 @@ async def main(path):
 asyncio.run(main(sys.argv[1]))
 ```
 
-## Step 1. Moonraker answers (read-only)
+## Step 1. Moonraker responds (read-only)
 
 ```
 curl -s http://voron.local:7125/printer/info
@@ -88,7 +88,7 @@ Unplug the printer host's network cable or turn off its Wi-Fi for ten seconds, t
 
 ## Step 5. Start the hub
 
-Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and prompts you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -132,7 +132,7 @@ Do this step only when the bed's `max_temp` in printer.cfg is below the file's l
 uv run openhal write voron.bed_target "105 degC"
 ```
 
-Expected. Klipper refuses it and the command fails with Klipper's message, which contains `out of range`. The target stays 0. If Mainsail shows a new target at all, set it back to 0 at once and report the step as failed.
+Expected. Klipper returns an error and the command fails with Klipper's message, which contains `out of range`. The target stays 0. If Mainsail shows a new target at all, set it back to 0 at once and report the step as failed.
 
 ## Step 9. A blocked write never reaches the printer
 
@@ -149,11 +149,11 @@ uv run openhal action voron.home axes=all
 uv run openhal read voron.homed_axes
 ```
 
-Expected. The printer homes. The action answers `done`, or `started` if homing takes longer than 8 s. `homed_axes` reads `xyz` afterwards, inside a `device-data` block because it is text from the printer. Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
+Expected. The printer homes. The action returns `done`, or `started` if homing takes longer than 8 s. `homed_axes` reads `xyz` afterwards, inside a `device-data` block because it is text from the printer. Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the reply of the `curl` command from step 1, the Klipper and Moonraker versions from Mainsail or Fluidd, the Klipper console lines from the same minutes, and the transport you used. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the reply of the `curl` command from step 1, the Klipper and Moonraker versions from Mainsail or Fluidd, the Klipper console lines from the same minutes, and the transport you used. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -165,7 +165,7 @@ Device file: (path, and the sha256 in its confirmed line)
 Printer, Klipper and Moonraker versions:
 Transport tested: http / websocket / both
 API key in use: yes / no
-Step 1 Moonraker answers:        pass / fail
+Step 1 Moonraker responds:       pass / fail
 Step 2 file valid:               pass / fail
 Step 3 probe output:             pass / fail   (paste both)
 Step 4 network loss:             pass / fail
@@ -180,4 +180,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
