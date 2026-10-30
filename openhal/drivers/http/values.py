@@ -115,7 +115,7 @@ def to_number(raw: Any, where: str) -> float:
         except ValueError:
             raise DriverError(f"{where} sent {text[:60]!r}, which is not a number.") from None
     else:
-        raise DriverError(f"{where} sent a {type(raw).__name__} where a number was expected.")
+        raise DriverError(f"{where} sent a {type(raw).__name__} where a number is required.")
     if not math.isfinite(value):
         raise DriverError(f"{where} sent a value that is not a finite number.")
     return value

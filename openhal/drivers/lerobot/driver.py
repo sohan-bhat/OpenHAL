@@ -7,8 +7,8 @@ docstring lists every assumption it makes about LeRobot.
 - One device file is one LeRobot robot, named by its LeRobot type (`so101_follower`) with its
   serial port and the id its calibration was saved under.
 - connect() calls `connect(calibrate=False)`. Calibration moves the arm by hand and prompts at
-  the keyboard, so the driver never runs it. An uncalibrated arm is refused with a pointer to
-  `lerobot-calibrate`. Connecting turns torque on, so the arm holds where it is.
+  the keyboard, so the driver never runs it. An uncalibrated arm fails to connect with a pointer
+  to `lerobot-calibrate`. Connecting turns torque on, so the arm holds where it is.
 - Joint positions are reads, `<joint>.pos` from `get_observation()`. Goal positions are changes
   through `send_action()`, one joint per channel, with the device file's per-joint limits and
   `max_change_per_s`. A goal reads back as the value LeRobot actually wrote, after its own
@@ -213,7 +213,7 @@ class LeRobotDriver(Driver):
             return await asyncio.wait_for(asyncio.to_thread(locked), wait)
         except TimeoutError:
             raise TimeoutError(
-                f"The arm didn't answer {what} within {wait:g} s. Check the bus and its power."
+                f"The arm sent no reply to {what} within {wait:g} s. Check the bus and its power."
             ) from None
         except DriverError:
             raise
@@ -223,7 +223,7 @@ class LeRobotDriver(Driver):
                 f"The arm's bus failed during {what} ({exc}). Check the cable and power, then reconnect."
             ) from exc
         except Exception as exc:
-            raise DriverError(f"LeRobot refused {what} ({type(exc).__name__}, {exc}).") from exc
+            raise DriverError(f"LeRobot returned an error for {what} ({type(exc).__name__}, {exc}).") from exc
 
     def _robot(self) -> Any:
         if self.robot is None:

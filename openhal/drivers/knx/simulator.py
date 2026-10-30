@@ -1,19 +1,19 @@
 """A fake KNXnet/IP tunneling server on UDP with a simulated KNX bus, built on xknx's own frame classes.
 
-It follows KNXnet/IP Core and Tunnelling (KNX Standard 03.08.02 and 03.08.04). It answers
+It follows KNXnet/IP Core and Tunnelling (KNX Standard 03.08.02 and 03.08.04). It replies to
 CONNECT_REQUEST, CONNECTIONSTATE_REQUEST and DISCONNECT_REQUEST, acknowledges every
 TUNNELLING_REQUEST with a TUNNELLING_ACK, confirms each L_Data.req with an L_Data.con, and
-sends what the bus answers as L_Data.ind. Frames are encoded and decoded with `xknx.knxip` and
+sends the bus's responses as L_Data.ind. Frames are encoded and decoded with `xknx.knxip` and
 `xknx.cemi`, so the bytes are the ones a real interface sends.
 
 The bus holds a room. `1/1/1` switches a light whose actuator reports on `1/1/2` (DPT 1.001).
 `1/1/3` dims it, reported on `1/1/4` (5.001). `2/1/1` is a readable room temperature (9.001).
 `2/1/2` sets the heating setpoint, reported on `2/1/3` (9.001). `2/1/4` is the readable HVAC mode
-(20.102). `3/1/1` has no read flag and never answers.
+(20.102). `3/1/1` has no read flag and never sends a response.
 
 Faults. `kick()` sends a DISCONNECT_REQUEST to the client, `refuse` makes CONNECT_REQUEST fail
-with E_NO_MORE_CONNECTIONS, `no_confirm` withholds L_Data.con, and `silent` stops the bus from
-answering reads.
+with E_NO_MORE_CONNECTIONS, `no_confirm` withholds L_Data.con, and `silent` stops the bus's
+responses to reads.
 """
 
 from __future__ import annotations
@@ -59,7 +59,7 @@ def encode(dpt: str, value: Any) -> DPTBinary | DPTArray:
 
 
 class SimulatedBus:
-    """Group objects with their values, which ones answer reads, and which addresses report which."""
+    """Group objects with their values, which ones respond to reads, and which addresses report which."""
 
     def __init__(self) -> None:
         self.values: dict[str, DPTBinary | DPTArray] = {

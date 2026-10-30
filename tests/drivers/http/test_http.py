@@ -176,7 +176,7 @@ async def test_malformed_and_missing_values_raise() -> None:
     driver, plug = make()
     await driver.connect()
     plug.malformed = True
-    with pytest.raises(DriverError, match="expected JSON"):
+    with pytest.raises(DriverError, match="needs JSON"):
         await driver.read("power")
     plug.malformed = False
     text = device(BASE, read="  ghost: { unit: W, map: { path: /api/status, json: power.kw } }")
@@ -304,7 +304,7 @@ async def test_slow_device_times_out() -> None:
     driver, plug = make(text)
     await driver.connect()
     plug.delay_s = 1.0
-    with pytest.raises(TimeoutError, match=r"no answer within 0\.2 s"):
+    with pytest.raises(TimeoutError, match=r"no reply within 0\.2 s"):
         await driver.read("power")
 
 

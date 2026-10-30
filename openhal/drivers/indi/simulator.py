@@ -1,10 +1,10 @@
-"""An INDI server simulator on a local TCP port, speaking the INDI 1.7 XML protocol.
+"""An INDI server simulator on a local TCP port, using the INDI 1.7 XML protocol.
 
 It serves three devices named like INDI's own simulators. "Telescope Simulator", "Focuser
 Simulator" and "CCD Simulator". Each defines CONNECTION and DRIVER_INFO, and defines its
 standard properties only after a client turns CONNECTION on, as real drivers do. Slews,
-focuser moves, exposures and cooling report Busy and finish in simulated time. Refused values
-answer in the Alert state with a message. Updates go to every connected client.
+focuser moves, exposures and cooling report Busy and finish in simulated time. A value the device can't take
+ends in the Alert state with a message. Updates go to every connected client.
 
 Fault hooks. `silent` stops all output, `drop_clients()` closes every connection and `inject()`
 sends raw bytes, for malformed XML tests.

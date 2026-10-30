@@ -8,8 +8,8 @@ Protocol (developers.home-assistant.io, REST API and WebSocket API pages).
 - WebSocket (`transport: websocket`). After `auth_required` the client sends `auth`, then
   `subscribe_entities` for the selected entities only. Events carry compressed states (`a` for
   full states, `c` with `+` and `-` for changes), which the driver keeps in a cache so reads need
-  no round trip. Home Assistant answers the subscription first and sends the full states in the
-  next event, so `connect()` waits for that event before it returns. Services go through
+  no round trip. Home Assistant confirms the subscription first and sends the full states in the
+  next event, so `connect()` returns only after that event. Services go through
   `call_service`.
 - The token comes from the environment variable named in `token_env`, never from the file.
 
@@ -156,7 +156,7 @@ def _name_attribute(name: str) -> str | None:
 
 
 def ha_unit(text: Any) -> str | None:
-    """Home Assistant's unit_of_measurement as a unit the OpenHAL registry knows, if any."""
+    """Home Assistant's unit_of_measurement as a unit the OpenHAL registry has, if any."""
     return mapping.device_unit(text)
 
 
@@ -220,8 +220,7 @@ class HomeAssistantDriver(Driver):
             if role is None:
                 if attribute is None or name in self.device.write:
                     raise DriverError(
-                        f"{name}: the driver doesn't know how to use {entity} this way. "
-                        "See docs/drivers/homeassistant.md."
+                        f"{name}: the driver doesn't support {entity} used this way. See docs/drivers/homeassistant.md."
                     )
                 role = "attribute"
             self._check_type(name, spec, role)
@@ -274,14 +273,16 @@ class HomeAssistantDriver(Driver):
             response = await asyncio.wait_for(self._client.request(verb, path, json=body), self.settings.timeout)
         except (httpx.TimeoutException, TimeoutError):
             raise TimeoutError(
-                f"Home Assistant didn't answer {verb} {path} within {self.settings.timeout:g} s."
+                f"Home Assistant sent no reply to {verb} {path} within {self.settings.timeout:g} s."
             ) from None
         except httpx.HTTPError as exc:
             raise DriverError(
                 f"Could not reach Home Assistant at {self.settings.host}:{self.settings.port} ({exc})."
             ) from exc
         if response.status_code == 401:
-            raise DriverError(f"Home Assistant refused the token in {self.settings.token_env}. Create a new one.")
+            raise DriverError(
+                f"Home Assistant did not accept the token in {self.settings.token_env}. Create a new one."
+            )
         try:
             data = response.json()
         except ValueError:
@@ -290,7 +291,7 @@ class HomeAssistantDriver(Driver):
             raise DriverError(f"Home Assistant has no {path.rsplit('/', 1)[-1]}. Check the entity id.")
         if response.status_code >= 400:
             message = data.get("message", data) if isinstance(data, dict) else data
-            raise DriverError(f"Home Assistant refused {path} ({message}).")
+            raise DriverError(f"Home Assistant returned an error for {path} ({message}).")
         return data
 
     async def _open_websocket(self, token: str) -> None:
@@ -303,7 +304,7 @@ class HomeAssistantDriver(Driver):
         except (OSError, TimeoutError) as exc:
             raise DriverError(f"Could not open the Home Assistant WebSocket at {url} ({exc}).") from exc
         except Exception as exc:
-            raise DriverError(f"Home Assistant refused the WebSocket at {url} ({exc}).") from exc
+            raise DriverError(f"Home Assistant did not accept the WebSocket at {url} ({exc}).") from exc
         try:
             hello = json.loads(await asyncio.wait_for(ws.recv(), self.settings.timeout))
             await ws.send(json.dumps({"type": "auth", "access_token": token}))
@@ -314,7 +315,7 @@ class HomeAssistantDriver(Driver):
         if answer.get("type") != "auth_ok":
             await ws.close()
             raise DriverError(
-                f"Home Assistant refused the token in {self.settings.token_env} ({answer.get('message')})."
+                f"Home Assistant did not accept the token in {self.settings.token_env} ({answer.get('message')})."
             )
         self.ha_version = str(answer.get("ha_version") or hello.get("ha_version") or "")
         self._ws = ws
@@ -361,7 +362,9 @@ class HomeAssistantDriver(Driver):
             future.set_result(message.get("result"))
         elif message.get("success") is False:
             error = message.get("error") or {}
-            future.set_exception(DriverError(f"Home Assistant refused the call ({error.get('message', error)})."))
+            future.set_exception(
+                DriverError(f"Home Assistant returned an error for the call ({error.get('message', error)}).")
+            )
             future.exception()
         else:
             future.set_exception(DriverError("Home Assistant sent a malformed result."))
@@ -395,7 +398,7 @@ class HomeAssistantDriver(Driver):
             return await asyncio.wait_for(future, self.settings.timeout)
         except TimeoutError:
             raise TimeoutError(
-                f"Home Assistant didn't answer {message['type']} within {self.settings.timeout:g} s."
+                f"Home Assistant sent no reply to {message['type']} within {self.settings.timeout:g} s."
             ) from None
         except DriverError:
             raise
@@ -493,7 +496,7 @@ class HomeAssistantDriver(Driver):
         role = mapped.role
         if role in ("onoff", "binary"):
             if raw not in ("on", "off"):
-                raise DriverError(f"{mapped.entity} reports {raw!r}, expected on or off.")
+                raise DriverError(f"{mapped.entity} reports {raw!r}, not on or off.")
             return raw == "on"
         if role == "brightness":
             if raw == "off":
@@ -538,7 +541,7 @@ class HomeAssistantDriver(Driver):
                 return value
             if value in ("on", "off"):
                 return value == "on"
-            raise DriverError(f"{mapped.entity} reports {value!r}, expected on or off.")
+            raise DriverError(f"{mapped.entity} reports {value!r}, not on or off.")
         text = str(value)
         if spec.type == "enum" and text not in spec.values:
             raise DriverError(f"{mapped.entity} reports {text!r}, which is not one of {', '.join(spec.values)}.")

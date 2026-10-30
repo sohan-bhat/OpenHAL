@@ -37,7 +37,7 @@ async def wait_disconnected(driver: Driver) -> None:
     deadline = time.monotonic() + 3.0
     while (await driver.health()).connected:
         if time.monotonic() > deadline:
-            raise AssertionError("the driver did not notice the tunnel closing")
+            raise AssertionError("the driver did not detect the tunnel closing")
         await asyncio.sleep(0.02)
 
 
