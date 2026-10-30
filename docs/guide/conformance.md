@@ -1,6 +1,6 @@
 # Conformance suite
 
-Every driver in the repository passes the same battery of checks before it ships. The suite runs the driver inside a real kernel, against the driver's own mock or simulator, and monitors the point where the driver talks to the protocol, which is how the suite proves that a blocked command never reaches the device.
+Every driver in the repository passes the same battery of checks before the driver ships. The suite runs the driver inside a real kernel, against the driver's own mock or simulator, and monitors every call from the driver into the driver's protocol code, which is how the suite checks that a blocked command never reaches the device.
 
 ## What the suite checks
 
@@ -12,10 +12,10 @@ The suite tests the driver's declared [Conformance Level](glossary:conformance-l
 | `connect` | Core | The kernel connects the device |
 | `describe` | Core | Self-description, if the protocol has one, uses only known sections |
 | `read every channel` | Core | Each readable channel returns a value in its declared unit |
-| `disconnect and reconnect` | Core | A lost connection is noticed, and every channel reads again afterwards |
+| `disconnect and reconnect` | Core | A lost connection is detected, and every channel returns a value again afterwards |
 | `timeout handling` | Core | A slow device times out or raises a driver error instead of hanging |
 | `close` | Core | The driver closes cleanly |
-| `write inside limits` | Control | A change the kernel allows reaches the driver exactly once |
+| `write inside limits` | Control | A change the kernel passes reaches the driver exactly once |
 | `write outside limits is blocked before the driver` | Control | A change over the limit never reaches the protocol code |
 | `no write without a kernel grant` | Control | Calling the driver without a grant fails, and nothing reaches the protocol code |
 | `action inside limits` | Full | An action with every argument inside its limits runs and reaches the driver exactly once |
@@ -103,7 +103,7 @@ def case() -> ConformanceCase:
     )
 ```
 
-The plant waterer has no control channel, so the four checks that need one are skipped, the report says why, and the other 11 pass. The case should use a device file that looks like the real device, with real units and limits, so the suite exercises the same conversions the hardware will see. The [driver contract](../drivers/WRITING-A-DRIVER.md) has every rule.
+The plant waterer has no control channel, so the four checks that need one are skipped, the report gives the reason, and the other 11 pass. The case should use a device file that matches the real device, with real units and limits, so the suite exercises the same conversions that commands to the real hardware go through. The [driver contract](../drivers/WRITING-A-DRIVER.md) has every rule.
 
 ## Passing is not verified
 

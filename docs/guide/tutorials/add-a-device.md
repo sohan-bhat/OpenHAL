@@ -4,7 +4,7 @@ Most devices need a [Device File](glossary:device-file) and no new code. This tu
 
 ## Pick a driver
 
-A device file names one [Driver](glossary:driver), and [Drivers](/drivers/) lists each driver with its status. If no driver speaks your device's protocol, see [Build a driver](build-a-driver.md).
+A device file names one [Driver](glossary:driver), and [Drivers](/drivers/) lists each driver with its status. If no driver supports your device's protocol, see [Build a driver](build-a-driver.md).
 
 ## Describe the device
 

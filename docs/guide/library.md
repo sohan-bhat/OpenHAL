@@ -4,9 +4,9 @@ The device library is a set of starter device files for real products, kept in `
 
 ## Matching
 
-`openhal discover` runs each driver's discovery, and the drivers send only read-only identify commands. Each driver reports identifiers, such as a USB vendor and product id, a Bluetooth name or an ESPHome project name, and the hub compares the identifiers with the `match` section of every library file and offers the file that fits best.
+`openhal discover` runs each driver's discovery, and the drivers send only read-only identify commands. Each driver reports identifiers, such as a USB vendor and product id, a Bluetooth name or an ESPHome project name, and the hub compares the identifiers with the `match` section of every library file and returns the file that fits best.
 
-Because a USB class or an mDNS service type only names a kind of device, a class or a type adds to a match but never makes a match alone, so a MIDI keyboard is never offered the file for a different MIDI controller.
+Because a USB class or an mDNS service type only names a kind of device, a class or a type adds to a match but never makes a match alone, so a MIDI keyboard never matches the file for a different MIDI controller.
 
 Some drivers can't report a product identifier yet. The midi driver lists port names only, and the rpi-gpio, rpi-camera and alpaca drivers report identifiers no match key holds. The moonraker, homeassistant, modbus and mqtt drivers don't discover anything, so add the files for those drivers by name.
 
@@ -29,7 +29,7 @@ A library file's control channels and actions are marked `suggested: true`, and 
 
 ## Confirmation
 
-A library file loads read-only, and the hub refuses every change to the device until you do four things.
+A library file loads read-only, and the hub blocks every change to the device until you do four things.
 
 1. Set the connection, such as the host name, the serial port or the entity ids.
 2. Check each limit against your device and what is wired to the device, change the limit if you need to, and remove `suggested: true`.

@@ -12,7 +12,7 @@ $ cd OpenHAL
 $ uv run openhal demo
 ```
 
-The demo starts a hub with a simulated Klipper printer and its camera, and connects an agent to watch a print. The agent reads camera frames and warms the bed, the hub refuses the agent's request for a nozzle temperature above the limit, and the agent pauses the print and requests a cancel. Because a cancel can't be undone, the cancel waits for a person, and the owner approves the cancel over the same protocol. The demo prints this trace.
+The demo starts a hub with a simulated Klipper printer and its camera, and connects an agent to watch a print. The agent reads camera frames and warms the bed, the hub blocks the agent's request for a nozzle temperature above the limit, and the agent pauses the print and sends a request to cancel the print. Because a cancel can't be undone, the hub holds the cancel until the owner approves the cancel over the same protocol. The demo prints this trace.
 
 ```scenario
 ```
@@ -27,7 +27,7 @@ $ uv run openhal demo --full
 <- error -32010 LIMIT_EXCEEDED
 ```
 
-`--full` runs the whole system with the Arduino plant waterer, starting from a hub with no devices that discovers the simulated board. The driver writer drafts the board's [Device File](glossary:device-file) from the board and the sketch, and a script answers the limits interview as a person would. An agent then connects through `openhal mcp` and drafts a routine, which a person enables. The routine waters the plant. Because 120 s is above the duration limit, the agent's request to water for 120 s never reaches the board. Every step is recorded in [e2e.yaml](../demo/e2e.yaml).
+`--full` runs the whole system with the Arduino plant waterer, starting from a hub with no devices that discovers the simulated board. The driver writer builds a draft of the board's [Device File](glossary:device-file) from the board and the sketch, and a script fills in the limits interview the way a person would. An agent then connects through `openhal mcp` and drafts a routine, which a person enables. The routine waters the plant. Because 120 s is above the duration limit, the agent's request to water for 120 s never reaches the board. Every step is recorded in [e2e.yaml](../demo/e2e.yaml).
 
 ## Run the hub yourself
 
@@ -54,7 +54,7 @@ $ uv run openhal action plant-waterer.water duration=20s
 done  Done. water ran.
 ```
 
-Because the duration in the first command is above the limit, the [Safety Kernel](glossary:safety-kernel) refused the command before anything reached the board. Over the protocol, the hub returns the same refusal as `error -32010 LIMIT_EXCEEDED`.
+Because the duration in the first command is above the limit, the [Safety Kernel](glossary:safety-kernel) blocked the command before anything reached the board. Over the protocol, the hub returns `error -32010 LIMIT_EXCEEDED` for the same command.
 
 ## Stop
 
