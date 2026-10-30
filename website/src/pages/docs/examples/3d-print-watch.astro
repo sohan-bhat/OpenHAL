@@ -34,17 +34,17 @@ const TONES: Record<string, string> = { done: "ok", blocked: "blocked", pending:
     Every value on this page comes from <code>docs/demo/scenario.yaml</code>, which <code>uv run openhal demo</code> records when the hub runs the print babysitter example against a simulated printer and webcam. The <a href="/docs/quickstart/">quickstart</a> runs the same demo in your terminal.
   </p>
 
-  <h2 id="step-by-step">Step by step</h2>
+  <h2 id="step-by-step"><a class="heading-link" href="#step-by-step">Step by step</a></h2>
   <p>Next draws each step's request along the lifelines, with the hub's answer as a dashed arrow back to the sender.</p>
   <Walkthrough />
 
-  <h2 id="device-file">The device file</h2>
+  <h2 id="device-file"><a class="heading-link" href="#device-file">The device file</a></h2>
   <p>
     The hub checks every request against <code>{facts.file}</code>, the printer's device file, which the owner confirmed on {day}. The file limits the nozzle target to {nb(facts.nozzle.max)} and the bed target to {nb(facts.bed.max)}, and the cancel action waits for a person each time.
   </p>
   <Fragment set:html={codeHtml(device, "yaml")} />
 
-  <h2 id="messages">The messages</h2>
+  <h2 id="messages"><a class="heading-link" href="#messages">The messages</a></h2>
   <p>
     Each request is the method and params the agent or the owner sent, and each response is the hub's result or error, as the record holds them. The record leaves out each message's <code>jsonrpc</code> and <code>id</code> members, keeps a camera frame's size in place
     of its image data, and writes <code>REQUEST_ID</code> for the id the hub gave the held cancel.
@@ -65,7 +65,7 @@ const TONES: Record<string, string> = { done: "ok", blocked: "blocked", pending:
     }
   </ol>
 
-  <h2 id="audit-log">The audit log</h2>
+  <h2 id="audit-log"><a class="heading-link" href="#audit-log">The audit log</a></h2>
   <p>The run ends with <code>{audit.command}</code>, which prints the hub's audit log, newest first. The log holds every request, the refusal and the owner's approval.</p>
   <div class="table-wrap">
     <table>

@@ -160,7 +160,7 @@ test.describe("the full example page", () => {
   test("keeps code, YAML and the diagrams out of what search shows", async ({ page }) => {
     await page.goto("/docs/");
     const found = await page.evaluate(async () => {
-      const pagefind = await import(/* @vite-ignore */ `${location.origin}/pagefind/pagefind.js`);
+      const pagefind = await import(`${location.origin}/pagefind/pagefind.js`);
       await pagefind.init();
       const out: Record<string, Array<{ url: string; excerpt: string }>> = {};
       for (const term of ["babysit", "LIMIT_EXCEEDED", "abstraction", "provenance"]) {
