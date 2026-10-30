@@ -200,7 +200,7 @@ async def run(case: ConformanceCase) -> Report:
                 raise AssertionError(f"read({channel}) returned a reading for {reading.channel}.")
             expected = case.file.channel_unit(channel)
             if expected and reading.unit not in (expected, None):
-                raise AssertionError(f"{channel} reported unit {reading.unit}, the file says {expected}.")
+                raise AssertionError(f"{channel} reported unit {reading.unit}, the file sets {expected}.")
         return f"{len(channels)} channels"
 
     async def write_inside_limits() -> str:

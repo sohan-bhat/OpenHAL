@@ -1,6 +1,6 @@
 """Pydantic models for every protocol message (ADR 0015, spec/v0.1/basic/messages.md).
 
-Field names are snake_case in Python and camelCase on the wire. Params models refuse unknown fields,
+Field names are snake_case in Python and camelCase on the wire. Params models forbid unknown fields,
 so a typo is INVALID_PARAMS instead of being ignored. Fields marked optional in the spec, such as
 `Decision.error`, are left out when they don't apply, never sent as null. Times are RFC 3339 strings
 in UTC.
@@ -37,7 +37,7 @@ LEVELS: Final[dict[Conformance, int]] = {"core": 0, "control": 1, "full": 2}
 
 
 class Message(BaseModel):
-    """Base for every protocol model. camelCase on the wire, unknown fields refused."""
+    """Base for every protocol model. camelCase on the wire, unknown fields forbidden."""
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="forbid")
 
@@ -564,7 +564,7 @@ class LogEntry(Message):
 
 @dataclass(frozen=True, slots=True)
 class MethodSpec:
-    """One method. `human_only` methods answer SCOPE_DENIED to every other principal."""
+    """One method. `human_only` methods return SCOPE_DENIED to every other principal."""
 
     params: type[Message]
     result: Any
@@ -593,7 +593,7 @@ METHODS: Final[dict[str, MethodSpec]] = {
     "hal/routines/dryRun": MethodSpec(params=RoutineDryRunParams, result=PlanResult, level="full"),
     "hal/audit/query": MethodSpec(params=AuditQueryParams, result=AuditQueryResult, level="full"),
 }
-"""Every method the hub answers, with its params, result and conformance level."""
+"""Every method the hub implements, with its params, result and conformance level."""
 
 NOTIFICATIONS: Final[dict[str, tuple[type[Message], Conformance]]] = {
     "hal/value": (Reading, "core"),
@@ -610,7 +610,7 @@ CLIENT_NOTIFICATIONS: Final[dict[str, type[Message]]] = {"hal/initialized": Empt
 
 
 def methods_for(level: Conformance) -> list[str]:
-    """The methods a hub at `level` answers."""
+    """The methods a hub at `level` implements."""
     return [name for name, spec in METHODS.items() if LEVELS[spec.level] <= LEVELS[level]]
 
 

@@ -61,7 +61,7 @@ class MessageLog:
         return self._seq
 
     def record(self, direction: Direction, client: str | None, principal: str | None, message: Any) -> dict[str, Any]:
-        """Keep one message and tell live listeners. Returns the stored entry."""
+        """Keep one message and notify live listeners. Returns the stored entry."""
         self._seq += 1
         entry = {
             "seq": self._seq,

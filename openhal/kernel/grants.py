@@ -21,7 +21,7 @@ DEFAULT_TTL_S: Final = 5.0
 
 
 class GrantError(PermissionError):
-    """A driver was asked to act without a valid grant. Nothing was sent to the hardware."""
+    """A driver received a command without a valid grant. Nothing was sent to the hardware."""
 
 
 def value_digest(value: object) -> str:
@@ -86,7 +86,7 @@ class GrantBook:
 
         Drivers get this closure instead of a bound method of the kernel, so the kernel and other
         devices aren't one attribute away (review finding F08). In-process code can still reach
-        anything through introspection, so this guards against accidents, not malice (THREAT_MODEL T17).
+        anything through introspection, so the closure protects against accidents, not malice (THREAT_MODEL T17).
         """
         consume = self.consume
 

@@ -40,7 +40,7 @@ class RuleState:
 
 @dataclass
 class DeviceRuntime:
-    """Everything the kernel knows about one registered device."""
+    """Everything the kernel holds about one registered device."""
 
     file: DeviceFile
     driver: Driver
@@ -67,7 +67,7 @@ class DeviceRuntime:
         return max(10.0, 3.0 * self.file.watchdog.heartbeat)
 
     def mark_unknown(self, channel: str, now: float) -> None:
-        """Forget what we knew about a channel, until a fresh reading arrives."""
+        """Drop the stored value of a channel until a fresh reading arrives."""
         self.unknown_since[channel] = now
         self.reads.pop(channel, None)
         self.accepted.pop(channel, None)

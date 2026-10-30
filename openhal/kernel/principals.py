@@ -1,4 +1,4 @@
-"""Who is asking. Humans, agents, routines and the hub itself are different principals (ADR 0012)."""
+"""Who sends a request. Humans, agents, routines and the hub itself are different principals (ADR 0012)."""
 
 from __future__ import annotations
 

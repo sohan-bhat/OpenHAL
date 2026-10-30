@@ -59,7 +59,7 @@ def shaped(name: str, spec: WriteChannel | ArgSpec, raw: Any, unit: str | None =
     """A value with its unit attached, in the shape `normalize` takes.
 
     `unit` is the unit sent beside the value, as protocol messages and REST bodies carry it. Without
-    `text`, a number sent as one string such as `"150 %"` is refused (ADR 0016). Routines and other
+    `text`, a number sent as one string such as `"150 %"` is blocked (ADR 0016). Routines and other
     human-written inputs keep quantity strings.
     """
     if unit is not None:
@@ -130,7 +130,7 @@ def _normalize(
                 matched = regex.fullmatch(spec.pattern, raw, timeout=PATTERN_TIMEOUT_S)
             except TimeoutError:
                 raise Block(
-                    "bad_value", f"{name} took too long to check against its pattern, so it is refused."
+                    "bad_value", f"{name} took too long to check against its pattern, so the value is blocked."
                 ) from None
             if not matched:
                 raise Block("bad_value", f"{name} doesn't match the allowed pattern.")
@@ -149,7 +149,7 @@ def _number(name: str, spec: WriteChannel | ArgSpec, raw: Any, tightened: dict[s
         value = convert(parse_quantity(raw), unit)
     except UnitError as exc:
         raise Block("bad_unit", f"{name}: {exc}") from exc
-    if not math.isfinite(value):  # pragma: no cover (convert already refuses non-finite values, kept as a backstop)
+    if not math.isfinite(value):  # pragma: no cover (convert already blocks non-finite values, kept as a backstop)
         raise Block("bad_unit", f"{name} must be a finite number.")
     limits = effective_limits(spec, tightened)
     asked = format_quantity(value, unit)

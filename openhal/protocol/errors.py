@@ -239,7 +239,7 @@ REGISTRY: Final[tuple[ErrorSpec, ...]] = (
         ("needs_confirmation",),
         "Queued for a person, data.requestId names the request",
         lambda data: (
-            f"{_subject(data)} waits for a person to approve request {data['requestId']}"
+            f"{_subject(data)} is held until a person approves request {data['requestId']}"
             if data.get("requestId")
             else f"{_subject(data)} needs a person to approve it"
         ),
@@ -336,7 +336,7 @@ def spec_for_kernel_code(kernel_code: str | None) -> ErrorSpec:
 
 
 class RpcError(Exception):
-    """A JSON-RPC error with a registry name. Raised inside the dispatcher, answered as an error response."""
+    """A JSON-RPC error with a registry name. Raised inside the dispatcher, returned as an error response."""
 
     def __init__(self, name: str, data: Data | None = None, *, message: str | None = None) -> None:
         spec = BY_NAME[name]

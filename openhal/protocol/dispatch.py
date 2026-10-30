@@ -1,11 +1,11 @@
-"""The one dispatcher. It answers JSON-RPC messages for one hub, whatever transport carried them.
+"""The one dispatcher, which handles JSON-RPC messages for one hub, whatever transport carried them.
 
 A transport opens a `Session` per connection (openhal/protocol/session.py), passes every received
-text to `Session.receive`, and sends whatever `Session.next` yields. `Dispatcher.handle` answers one
+text to `Session.receive`, and sends whatever `Session.next` yields. `Dispatcher.handle` handles one
 parsed message and is what both front ends use. The `/rpc` WebSocket calls it directly, and
 `openhal rpc` bridges stdio to that WebSocket.
 
-Lifecycle (ADR 0015). Every method but `hal/initialize` answers NOT_INITIALIZED until initialize
+Lifecycle (ADR 0015). Every method but `hal/initialize` returns NOT_INITIALIZED until initialize
 succeeds. Notifications flow only after the client sends `hal/initialized`, and stop after
 `hal/shutdown`. Batches are not supported in this version and get INVALID_REQUEST.
 
@@ -70,7 +70,7 @@ _DISPATCHERS: weakref.WeakKeyDictionary[Hub, Dispatcher] = weakref.WeakKeyDictio
 
 
 MAX_DEPTH: Final = 32
-"""Frames nested deeper than this are answered with PARSE_ERROR, so nothing downstream recurses on them (RT-03)."""
+"""Frames nested deeper than this get a PARSE_ERROR response, so nothing downstream recurses on them (RT-03)."""
 
 
 def _depth(message: Any) -> int:
@@ -88,7 +88,7 @@ def _depth(message: Any) -> int:
 
 
 class Dispatcher:
-    """Answers protocol messages for one hub and fans the hub's events out as notifications."""
+    """Handles protocol messages for one hub and fans the hub's events out as notifications."""
 
     def __init__(self, hub: Hub, *, level: m.Conformance = "full", message_log: MessageLog | None = None) -> None:
         self.hub = hub
@@ -138,7 +138,7 @@ class Dispatcher:
         return session
 
     def parse(self, session: Session, text: str | bytes) -> Any:
-        """Decode one frame. Invalid JSON is answered with PARSE_ERROR here and returns None."""
+        """Decode one frame. Invalid JSON gets a PARSE_ERROR response here, and the method returns None."""
         try:
             message = json.loads(text)
             if _depth(message) > MAX_DEPTH:
@@ -152,7 +152,7 @@ class Dispatcher:
         return message
 
     async def handle(self, session: Session, message: Any) -> dict[str, Any] | None:
-        """Answer one parsed JSON-RPC message. Returns the response, or None for a notification."""
+        """Handle one parsed JSON-RPC message. Returns the response, or None for a notification."""
         if isinstance(message, list):
             return failure(None, RpcError("INVALID_REQUEST", message="Batches are not supported in this version"))
         if not isinstance(message, dict):
@@ -311,7 +311,7 @@ class Dispatcher:
         )
 
     async def _plan_check(self, session: Session, params: m.PlanCheckParams) -> m.PlanResult:
-        """Evaluate a plan in order. Waits advance simulated time, so rate limits are judged as in a real run.
+        """Evaluate a plan in order. Waits advance simulated time, so rate limits are checked as in a real run.
 
         A plan can't hold a pending request, so a step that needs a person carries CONFIRMATION_REQUIRED.
         """

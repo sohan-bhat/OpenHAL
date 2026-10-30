@@ -2,11 +2,11 @@
 
 Readings come from the hub's live event stream (`Hub.subscribe`, the same stream `/v1/live`
 serves). Blocks, confirmation requests, stops and device changes come from the audit log the hub's
-stream is built from, because only the full entry carries the requested value. So every client sees
+stream is built from, because only the full entry carries the requested value. So every client receives
 the same notifications whether the command came over the protocol, REST, MCP or a routine.
 
 hal/stopped is sent once every device registered at the time of the stop has reported its result.
-hal/confirmationRequested reaches people and the principal that asked, never other agents.
+hal/confirmationRequested reaches people and the principal that sent the request, never other agents.
 """
 
 from __future__ import annotations

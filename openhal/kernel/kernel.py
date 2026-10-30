@@ -108,7 +108,7 @@ _UNKNOWN: Final = _Unknown()
 
 
 class Kernel:
-    """The one place that decides whether a command may reach hardware."""
+    """The one place that checks whether a command may reach hardware."""
 
     def __init__(
         self,
@@ -268,7 +268,7 @@ class Kernel:
             self.note_reading(device_id, reading)
 
     async def connection_lost(self, device_id: str, detail: str) -> None:
-        """Called by the hub's heartbeat when a device stops answering."""
+        """Called by the hub's heartbeat when the connection to a device is lost."""
         runtime = self._runtime(device_id)
         runtime.connected = False
         self.grants.revoke_all(device_id)
@@ -282,7 +282,7 @@ class Kernel:
         """Record a value read from a device, converted into the channel's unit (review finding F20).
 
         A reading of None means the device can't report this channel, such as a CAN or KNX output
-        with no read-back. It adds nothing, so what the kernel already knows stands. A failed
+        with no read-back. Such a reading adds nothing, so the values the kernel holds stay. A failed
         command still marks its channels unknown.
         """
         runtime = self.devices.get(device_id)
@@ -311,7 +311,7 @@ class Kernel:
                     target=f"read:{reading.channel}",
                     status="failed",
                     code="bad_unit",
-                    detail=f"reported {reading.unit}, the file says {unit}",
+                    detail=f"reported {reading.unit}, the file sets {unit}",
                 )
                 return
         if isinstance(value, float) and not math.isfinite(value):
@@ -377,7 +377,7 @@ class Kernel:
     def evaluate(
         self, command: Command, principal: Principal, *, shadow: Shadow | None = None, wire: bool = False
     ) -> Decision:
-        """Decide a command without side effects, as a dry run. Never raises. Fails closed.
+        """Evaluate a command without side effects, as a dry run. Never raises. Fails closed.
 
         `wire` marks a command from a protocol message, REST body or MCP tool. Its numbers must travel
         with a separate unit, never as one string (ADR 0016).
@@ -845,7 +845,7 @@ class Kernel:
                         update={
                             "status": "failed",
                             "code": "driver_error",
-                            "message": "Cancelled before the device answered.",
+                            "message": "Cancelled before the device returned a result.",
                         }
                     ),
                     before=before,
@@ -1058,7 +1058,7 @@ class Kernel:
     def tighten(
         self, principal: Principal, device_id: str, channel: str, *, min: Any = None, max: Any = None, rate: Any = None
     ) -> dict[str, float]:
-        """Narrow a channel's limits for this principal's session. Widening is refused. Refusals are logged."""
+        """Narrow a channel's limits for this principal's session. Widening is blocked, and each block is logged."""
         target = f"write:{channel}"
         try:
             runtime = self._runtime(device_id)

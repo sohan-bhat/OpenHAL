@@ -94,7 +94,7 @@ def limit_quantity(kernel_code: str | None, limit: dict[str, Any] | None) -> dic
 
 @dataclass(frozen=True, slots=True)
 class Facts:
-    """What a device file says about one target, enough to build its errors away from the hub.
+    """What a device file sets for one target, enough to build its errors away from the hub.
 
     `limits` holds the file's own `max`, `min` and `rate_per_s` in `unit`. The MCP server fills this
     from hal/devices/describe, the hub fills it from the loaded file.
@@ -198,7 +198,7 @@ def build_error(
 def _requested(
     kernel_code: str | None, facts: Facts | None, raw: Any, limit: dict[str, Any] | None, *, about: str | None
 ) -> Any:
-    """The requested value for an error about one channel or argument. A refused shape is shown as sent."""
+    """The requested value for an error about one channel or argument. A blocked shape is shown as sent."""
     if about is None or raw is None:
         return None
     if kernel_code == "bad_unit":
@@ -260,7 +260,7 @@ def kernel_error(
 
 
 def body_value(body: dict[str, Any] | None, limit: dict[str, Any] | None = None) -> Any:
-    """What a command body asked for on its channel, or on the action argument a limit names, with its unit."""
+    """The value a command body requests on its channel, or on the action argument a limit names, with its unit."""
     if not body:
         return None
     if body.get("kind", "write") == "write":
@@ -272,14 +272,14 @@ def body_value(body: dict[str, Any] | None, limit: dict[str, Any] | None = None)
 
 
 def raw_value(command: Command | None, limit: dict[str, Any] | None = None) -> Any:
-    """What a kernel command asked for, as `body_value` reads it."""
+    """The value a kernel command requests, as `body_value` reads it."""
     return body_value(command.model_dump() if command is not None else None, limit)
 
 
 def decision_error(
     hub: Hub, decision: Decision, command: Command | None = None, principal: str | None = None
 ) -> RpcError:
-    """The registry error for a blocked, failed or waiting decision."""
+    """The registry error for a blocked, failed or pending decision."""
     return kernel_error(
         hub,
         decision.code,

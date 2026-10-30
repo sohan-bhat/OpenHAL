@@ -1,7 +1,7 @@
-"""The confirmation queue. Commands that need a human wait here until approved, rejected or expired.
+"""The confirmation queue holds each command that needs a human until a person decides or it expires.
 
 Every status change is reported through `on_change` so the kernel can log it (review finding F09).
-Each principal may have at most `per_principal` pending requests. A full queue refuses new
+Each principal may have at most `per_principal` pending requests. A full queue blocks new
 requests instead of evicting someone else's (review finding F22).
 """
 
@@ -18,13 +18,13 @@ from openhal.kernel.principals import Principal
 RequestStatus = Literal["pending", "approved", "rejected", "expired", "cancelled", "blocked", "done", "failed"]
 
 
-class QueueFull(Exception):  # noqa: N818 (a refusal, not an error)
+class QueueFull(Exception):  # noqa: N818 (a blocked request, not an error)
     """The principal, or the whole queue, already has the maximum number of pending requests."""
 
 
 @dataclass
 class Request:
-    """One command waiting for a human."""
+    """One command held for a human."""
 
     request_id: str
     command: Command
