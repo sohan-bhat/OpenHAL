@@ -1,4 +1,4 @@
-"""Turning HTTP answers and connection failures into results or client exceptions."""
+"""Turning HTTP responses and connection failures into results or client exceptions."""
 
 from __future__ import annotations
 
@@ -35,8 +35,8 @@ def transport_error(url: str, exc: httpx.TransportError) -> OpenHALError:
     if isinstance(exc, httpx.ConnectError | httpx.ConnectTimeout):
         return HubNotRunning(f"The hub is not running at {url}. {START_HINT}")
     if isinstance(exc, httpx.TimeoutException):
-        return HubError(f"The hub at {url} did not answer in time. The hub may be busy talking to a slow device.")
-    return HubError(f"Could not talk to the hub at {url} ({type(exc).__name__}).")
+        return HubError(f"The hub at {url} sent no response in time. The hub may be busy with a slow device.")
+    return HubError(f"Could not reach the hub at {url} ({type(exc).__name__}).")
 
 
 def _detail(response: httpx.Response) -> Any:
@@ -94,12 +94,12 @@ def finish[T](call: Call[T], response: httpx.Response, source: TokenSource) -> T
         try:
             payload = response.json()
         except ValueError as exc:
-            raise HubError(f"The hub sent an answer that is not JSON for {call.path}.") from exc
+            raise HubError(f"The hub sent a response that is not JSON for {call.path}.") from exc
         try:
             return call.parse(payload)
         except ValidationError as exc:
             raise HubError(
-                f"The hub's answer to {call.method} {call.path} has a shape this client does not know. "
+                f"The hub's response to {call.method} {call.path} has a shape this client does not support. "
                 "Update the client or the hub so their versions match."
             ) from exc
     raise error_for(call, response, source)

@@ -21,7 +21,7 @@ from openhal.client.transport import finish, headers_for, transport_error
 class Client:
     """A blocking client of the hub's local API v1.
 
-    The client makes no safety decisions. Every write and action is decided by the hub's kernel,
+    The client makes no safety decisions. Every write and action is checked by the hub's kernel,
     and a blocked command comes back as a `Decision` with status `blocked`, not an exception.
     """
 
@@ -56,7 +56,7 @@ class Client:
         self._http.close()
 
     def call[T](self, call: Call[T]) -> T:
-        """Send one call and parse the answer. Raises a subclass of `OpenHALError` on failure."""
+        """Send one call and parse the response. Raises a subclass of `OpenHALError` on failure."""
         try:
             response = self._http.request(call.method, call.path, json=call.json, params=call.params)
         except httpx.TransportError as exc:
@@ -68,11 +68,12 @@ class Client:
         return self.call(calls.status())
 
     def whoami(self) -> m.Principal:
-        """The Principal the hub takes this token for, a human or an agent with its scope."""
+        """The Principal the hub maps this token to, a human or an agent with its scope."""
         return self.call(calls.whoami())
 
     def devices(self) -> list[m.DeviceSummary]:
-        """Every device the hub knows, with its driver, its hazard level and whether the device takes commands."""
+        """Every device registered with the hub, with its driver, its hazard level and whether the device takes
+        commands."""
         return self.call(calls.devices())
 
     def device(self, device_id: str) -> m.DeviceView:
@@ -91,11 +92,11 @@ class Client:
         return self.call(calls.read_many(pairs))
 
     def write(self, device: str, channel: str, value: Value, unit: str | None = None) -> m.Decision:
-        """Ask the kernel to set a channel. A number needs its unit, as `write("printer", "bed_target", 70, "degC")`."""
+        """Send a request to set a channel. A number needs its unit, as `write("printer", "bed_target", 70, "degC")`."""
         return self.call(calls.write(device, channel, value, unit))
 
     def action(self, device: str, action: str, args: Mapping[str, Any] | None = None, **kwargs: Any) -> m.Decision:
-        """Ask the kernel to run an action, with its arguments in `args` or as keywords.
+        """Send a request to run an action, with its arguments in `args` or as keywords.
 
         `action("printer", "pause")` takes none. A number argument goes with its unit, as
         `duration={"value": 20, "unit": "s"}`.
@@ -115,7 +116,7 @@ class Client:
         max: Mapping[str, Any] | None = None,
         rate: Mapping[str, Any] | None = None,
     ) -> m.TightenResult:
-        """Narrow limits for this token's session. Widening is refused with `cannot_loosen`."""
+        """Narrow limits for this token's session. Widening is blocked with `cannot_loosen`."""
         return self.call(calls.tighten(device, channel, min=min, max=max, rate=rate))
 
     def stop(self, reason: str = "stop requested") -> m.StopReport:
@@ -127,7 +128,7 @@ class Client:
         return self.call(calls.unlock(phrase))
 
     def confirmations(self, *, include_done: bool = False) -> list[m.ConfirmationRequest]:
-        """Requests waiting for a person. `include_done` adds the ones already decided or expired."""
+        """Requests held for a person. `include_done` adds the requests already decided or expired."""
         return self.call(calls.confirmations(include_done))
 
     def confirmation(self, request_id: str) -> m.ConfirmationRequest:
@@ -159,7 +160,7 @@ class Client:
         return self.call(calls.verify_audit())
 
     def drivers(self) -> list[m.DriverInfo]:
-        """The drivers the hub knows, with each driver's protocols and whether the driver is installed."""
+        """The drivers the hub has, with each driver's protocols and whether the driver is installed."""
         return self.call(calls.drivers())
 
     def pair(self, code: str) -> m.OkResult:
@@ -193,7 +194,7 @@ class Client:
         return decisions
 
     def discover(self, drivers: Iterable[str] | None = None) -> m.DiscoveryResult:
-        """Look for devices with every driver, or only the named ones. Devices no file matches come back unknown."""
+        """Search for devices with every driver, or only the named ones. Devices no file matches come back unknown."""
         return self.call(calls.discover(drivers))
 
     def unknown_devices(self) -> list[m.Unknown]:
@@ -273,7 +274,7 @@ class Client:
         return self.call(calls.finish(session_id, save_as))
 
     def test_plan(self, session_id: str) -> m.TestPlan:
-        """The steps to try the new device file on the real hardware, in order."""
+        """The steps to test the new device file on the real hardware, in order."""
         return self.call(calls.test_plan(session_id))
 
     def tokens(self) -> list[m.TokenInfo]:
@@ -281,11 +282,11 @@ class Client:
         return self.call(calls.tokens())
 
     def create_token(self, name: str, *, kind: str = "agent", scope: str = "read") -> m.NewToken:
-        """Issue a token. The answer carries the plain token once. Needs a human token."""
+        """Issue a token. The response carries the plain token once. Needs a human token."""
         return self.call(calls.create_token(name, kind, scope))
 
     def revoke_token(self, token_id: str) -> m.OkResult:
-        """Revoke a token so the hub refuses the token from then on. Revoking needs a human token."""
+        """Revoke a token so the hub no longer accepts the token. Revoking needs a human token."""
         return self.call(calls.revoke_token(token_id))
 
     def new_pairing_code(self) -> m.PairingCode:

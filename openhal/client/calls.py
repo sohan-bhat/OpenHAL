@@ -1,6 +1,6 @@
 """Every API route as a `Call`, shared by the sync and async clients.
 
-A `Call` is the method, path, body and the parser for the answer. The clients only send calls
+A `Call` is the method, path, body and the parser for the response. The clients only send calls
 and map errors, so both stay in step with one list of routes.
 """
 

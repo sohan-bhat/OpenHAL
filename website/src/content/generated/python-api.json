@@ -1,6 +1,6 @@
 {
   "module": "openhal.client",
-  "doc": "The Python client of the OpenHAL hub's local API.\n\n    from openhal.client import connect\n\n    with connect() as hub:\n        print(hub.read(\"printer\", \"bed_temp\").value)\n        decision = hub.write(\"printer\", \"bed_target\", 70, \"degC\")\n        print(decision.status, decision.message)\n\nThe client makes no safety decisions. The hub's kernel decides every command, and a blocked\ncommand comes back as a `Decision`, not an exception. See docs/interfaces/PYTHON.md.",
+  "doc": "The Python client of the OpenHAL hub's local API.\n\n    from openhal.client import connect\n\n    with connect() as hub:\n        print(hub.read(\"printer\", \"bed_temp\").value)\n        decision = hub.write(\"printer\", \"bed_target\", 70, \"degC\")\n        print(decision.status, decision.message)\n\nThe client makes no safety decisions. The hub's kernel checks every command, and a blocked\ncommand comes back as a `Decision`, not an exception. See docs/interfaces/PYTHON.md.",
   "groups": [
     {
       "name": "Connect",
@@ -20,13 +20,13 @@
         {
           "name": "Client",
           "kind": "class",
-          "doc": "A blocking client of the hub's local API v1.\n\nThe client makes no safety decisions. Every write and action is decided by the hub's kernel,\nand a blocked command comes back as a `Decision` with status `blocked`, not an exception.",
+          "doc": "A blocking client of the hub's local API v1.\n\nThe client makes no safety decisions. Every write and action is checked by the hub's kernel,\nand a blocked command comes back as a `Decision` with status `blocked`, not an exception.",
           "signature": "Client(url: str | None = None, token: str | None = None, *, home: Path | str | None = None, timeout: float = 15.0, transport: httpx.BaseTransport | None = None, use_human_token_file: bool = True) -> None",
           "methods": [
             {
               "name": "action",
               "signature": "action(device: str, action: str, args: Mapping[str, Any] | None = None, **kwargs: Any) -> Decision",
-              "doc": "Ask the kernel to run an action, with its arguments in `args` or as keywords.\n\n`action(\"printer\", \"pause\")` takes none. A number argument goes with its unit, as\n`duration={\"value\": 20, \"unit\": \"s\"}`."
+              "doc": "Send a request to run an action, with its arguments in `args` or as keywords.\n\n`action(\"printer\", \"pause\")` takes none. A number argument goes with its unit, as\n`duration={\"value\": 20, \"unit\": \"s\"}`."
             },
             {
               "name": "answer",
@@ -51,7 +51,7 @@
             {
               "name": "call",
               "signature": "call(call: Call[T]) -> T",
-              "doc": "Send one call and parse the answer. Raises a subclass of `OpenHALError` on failure."
+              "doc": "Send one call and parse the response. Raises a subclass of `OpenHALError` on failure."
             },
             {
               "name": "close",
@@ -66,7 +66,7 @@
             {
               "name": "confirmations",
               "signature": "confirmations(*, include_done: bool = False) -> list[ConfirmationRequest]",
-              "doc": "Requests waiting for a person. `include_done` adds the ones already decided or expired."
+              "doc": "Requests held for a person. `include_done` adds the requests already decided or expired."
             },
             {
               "name": "create_routine",
@@ -76,7 +76,7 @@
             {
               "name": "create_token",
               "signature": "create_token(name: str, *, kind: str = agent, scope: str = read) -> NewToken",
-              "doc": "Issue a token. The answer carries the plain token once. Needs a human token."
+              "doc": "Issue a token. The response carries the plain token once. Needs a human token."
             },
             {
               "name": "delete_routine",
@@ -91,7 +91,7 @@
             {
               "name": "devices",
               "signature": "devices() -> list[DeviceSummary]",
-              "doc": "Every device the hub knows, with its driver, its hazard level and whether the device takes commands."
+              "doc": "Every device registered with the hub, with its driver, its hazard level and whether the device takes\ncommands."
             },
             {
               "name": "disable_routine",
@@ -101,12 +101,12 @@
             {
               "name": "discover",
               "signature": "discover(drivers: Iterable[str] | None = None) -> DiscoveryResult",
-              "doc": "Look for devices with every driver, or only the named ones. Devices no file matches come back unknown."
+              "doc": "Search for devices with every driver, or only the named ones. Devices no file matches come back unknown."
             },
             {
               "name": "drivers",
               "signature": "drivers() -> list[DriverInfo]",
-              "doc": "The drivers the hub knows, with each driver's protocols and whether the driver is installed."
+              "doc": "The drivers the hub has, with each driver's protocols and whether the driver is installed."
             },
             {
               "name": "dry_run",
@@ -166,7 +166,7 @@
             {
               "name": "revoke_token",
               "signature": "revoke_token(token_id: str) -> OkResult",
-              "doc": "Revoke a token so the hub refuses the token from then on. Revoking needs a human token."
+              "doc": "Revoke a token so the hub no longer accepts the token. Revoking needs a human token."
             },
             {
               "name": "routine",
@@ -206,12 +206,12 @@
             {
               "name": "test_plan",
               "signature": "test_plan(session_id: str) -> TestPlan",
-              "doc": "The steps to try the new device file on the real hardware, in order."
+              "doc": "The steps to test the new device file on the real hardware, in order."
             },
             {
               "name": "tighten",
               "signature": "tighten(device: str, channel: str, *, min: Mapping[str, Any] | None = None, max: Mapping[str, Any] | None = None, rate: Mapping[str, Any] | None = None) -> TightenResult",
-              "doc": "Narrow limits for this token's session. Widening is refused with `cannot_loosen`."
+              "doc": "Narrow limits for this token's session. Widening is blocked with `cannot_loosen`."
             },
             {
               "name": "tokens",
@@ -236,12 +236,12 @@
             {
               "name": "whoami",
               "signature": "whoami() -> Principal",
-              "doc": "The Principal the hub takes this token for, a human or an agent with its scope."
+              "doc": "The Principal the hub maps this token to, a human or an agent with its scope."
             },
             {
               "name": "write",
               "signature": "write(device: str, channel: str, value: Value, unit: str | None = None) -> Decision",
-              "doc": "Ask the kernel to set a channel. A number needs its unit, as `write(\"printer\", \"bed_target\", 70, \"degC\")`."
+              "doc": "Send a request to set a channel. A number needs its unit, as `write(\"printer\", \"bed_target\", 70, \"degC\")`."
             },
             {
               "name": "writer_session",
@@ -253,7 +253,7 @@
         {
           "name": "AsyncClient",
           "kind": "class",
-          "doc": "An asyncio client of the hub's local API v1.\n\nThe client makes no safety decisions. Every write and action is decided by the hub's kernel,\nand a blocked command comes back as a `Decision` with status `blocked`, not an exception.",
+          "doc": "An asyncio client of the hub's local API v1.\n\nThe client makes no safety decisions. Every write and action is checked by the hub's kernel,\nand a blocked command comes back as a `Decision` with status `blocked`, not an exception.",
           "signature": "AsyncClient(url: str | None = None, token: str | None = None, *, home: Path | str | None = None, timeout: float = 15.0, transport: httpx.AsyncBaseTransport | None = None, use_human_token_file: bool = True) -> None",
           "methods": [
             {
@@ -264,7 +264,7 @@
             {
               "name": "action",
               "signature": "async action(device: str, action: str, args: Mapping[str, Any] | None = None, **kwargs: Any) -> Decision",
-              "doc": "Ask the kernel to run an action, with its arguments in `args` or as keywords.\n\n`action(\"printer\", \"pause\")` takes none. A number argument goes with its unit, as\n`duration={\"value\": 20, \"unit\": \"s\"}`."
+              "doc": "Send a request to run an action, with its arguments in `args` or as keywords.\n\n`action(\"printer\", \"pause\")` takes none. A number argument goes with its unit, as\n`duration={\"value\": 20, \"unit\": \"s\"}`."
             },
             {
               "name": "answer",
@@ -289,7 +289,7 @@
             {
               "name": "call",
               "signature": "async call(call: Call[T]) -> T",
-              "doc": "Send one call and parse the answer. Raises a subclass of `OpenHALError` on failure."
+              "doc": "Send one call and parse the response. Raises a subclass of `OpenHALError` on failure."
             },
             {
               "name": "confirmation",
@@ -299,7 +299,7 @@
             {
               "name": "confirmations",
               "signature": "async confirmations(*, include_done: bool = False) -> list[ConfirmationRequest]",
-              "doc": "Requests waiting for a person. `include_done` adds the ones already decided or expired."
+              "doc": "Requests held for a person. `include_done` adds the requests already decided or expired."
             },
             {
               "name": "create_routine",
@@ -309,7 +309,7 @@
             {
               "name": "create_token",
               "signature": "async create_token(name: str, *, kind: str = agent, scope: str = read) -> NewToken",
-              "doc": "Issue a token. The answer carries the plain token once. Needs a human token."
+              "doc": "Issue a token. The response carries the plain token once. Needs a human token."
             },
             {
               "name": "delete_routine",
@@ -324,7 +324,7 @@
             {
               "name": "devices",
               "signature": "async devices() -> list[DeviceSummary]",
-              "doc": "Every device the hub knows, with its driver, its hazard level and whether the device takes commands."
+              "doc": "Every device registered with the hub, with its driver, its hazard level and whether the device takes\ncommands."
             },
             {
               "name": "disable_routine",
@@ -334,12 +334,12 @@
             {
               "name": "discover",
               "signature": "async discover(drivers: Iterable[str] | None = None) -> DiscoveryResult",
-              "doc": "Look for devices with every driver, or only the named ones. Devices no file matches come back unknown."
+              "doc": "Search for devices with every driver, or only the named ones. Devices no file matches come back unknown."
             },
             {
               "name": "drivers",
               "signature": "async drivers() -> list[DriverInfo]",
-              "doc": "The drivers the hub knows, with each driver's protocols and whether the driver is installed."
+              "doc": "The drivers the hub has, with each driver's protocols and whether the driver is installed."
             },
             {
               "name": "dry_run",
@@ -404,7 +404,7 @@
             {
               "name": "revoke_token",
               "signature": "async revoke_token(token_id: str) -> OkResult",
-              "doc": "Revoke a token so the hub refuses the token from then on. Revoking needs a human token."
+              "doc": "Revoke a token so the hub no longer accepts the token. Revoking needs a human token."
             },
             {
               "name": "routine",
@@ -444,12 +444,12 @@
             {
               "name": "test_plan",
               "signature": "async test_plan(session_id: str) -> TestPlan",
-              "doc": "The steps to try the new device file on the real hardware, in order."
+              "doc": "The steps to test the new device file on the real hardware, in order."
             },
             {
               "name": "tighten",
               "signature": "async tighten(device: str, channel: str, *, min: Mapping[str, Any] | None = None, max: Mapping[str, Any] | None = None, rate: Mapping[str, Any] | None = None) -> TightenResult",
-              "doc": "Narrow limits for this token's session. Widening is refused with `cannot_loosen`."
+              "doc": "Narrow limits for this token's session. Widening is blocked with `cannot_loosen`."
             },
             {
               "name": "tokens",
@@ -474,12 +474,12 @@
             {
               "name": "whoami",
               "signature": "async whoami() -> Principal",
-              "doc": "The Principal the hub takes this token for, a human or an agent with its scope."
+              "doc": "The Principal the hub maps this token to, a human or an agent with its scope."
             },
             {
               "name": "write",
               "signature": "async write(device: str, channel: str, value: Value, unit: str | None = None) -> Decision",
-              "doc": "Ask the kernel to set a channel. A number needs its unit, as `write(\"printer\", \"bed_target\", 70, \"degC\")`."
+              "doc": "Send a request to set a channel. A number needs its unit, as `write(\"printer\", \"bed_target\", 70, \"degC\")`."
             },
             {
               "name": "writer_session",
@@ -560,7 +560,7 @@
         {
           "name": "Decision",
           "kind": "class",
-          "doc": "The kernel's answer to one write or action.",
+          "doc": "The kernel's result for one write or action.",
           "fields": [
             {
               "name": "status",
@@ -605,7 +605,7 @@
             {
               "name": "request_id",
               "type": "str | None",
-              "doc": "Set when the command waits for a human."
+              "doc": "Set when the hub holds the command for a human."
             }
           ]
         },
@@ -627,7 +627,7 @@
             {
               "name": "ok",
               "type": "bool",
-              "doc": "False when the driver could not read. `error` says why."
+              "doc": "False when the driver could not read. `error` gives the reason."
             },
             {
               "name": "value",
@@ -679,17 +679,17 @@
             {
               "name": "width",
               "type": "int | None",
-              "doc": "Width in pixels, when the format says."
+              "doc": "Width in pixels, when the image header records the width."
             },
             {
               "name": "height",
               "type": "int | None",
-              "doc": "Height in pixels, when the format says."
+              "doc": "Height in pixels, when the image header records the height."
             },
             {
               "name": "data",
               "type": "str | None",
-              "doc": "The image, base64 encoded. Device views leave it out."
+              "doc": "The image, base64 encoded. Device views leave the data out."
             }
           ]
         },
@@ -731,7 +731,7 @@
             {
               "name": "stopped",
               "type": "bool",
-              "doc": "True after a stop until a human unlocks. Every command is refused meanwhile."
+              "doc": "True after a stop until a human unlocks. Every command is blocked meanwhile."
             },
             {
               "name": "stop_reason",
@@ -803,7 +803,7 @@
             {
               "name": "hazard",
               "type": "str",
-              "doc": "low, medium or high. High hazard commands always wait for a human."
+              "doc": "low, medium or high. The hub always holds a high hazard command for a human."
             },
             {
               "name": "writable",
@@ -843,7 +843,7 @@
             {
               "name": "simulated",
               "type": "bool",
-              "doc": "True when the driver talks to a simulator, not hardware."
+              "doc": "True when the driver connects to a simulator, not hardware."
             }
           ]
         },
@@ -880,7 +880,7 @@
             {
               "name": "hazard",
               "type": "str",
-              "doc": "low, medium or high. High hazard commands always wait for a human."
+              "doc": "low, medium or high. The hub always holds a high hazard command for a human."
             },
             {
               "name": "writable",
@@ -920,7 +920,7 @@
             {
               "name": "simulated",
               "type": "bool",
-              "doc": "True when the driver talks to a simulator, not hardware."
+              "doc": "True when the driver connects to a simulator, not hardware."
             },
             {
               "name": "unconfirmed",
@@ -1317,7 +1317,7 @@
         {
           "name": "HubNotRunning",
           "kind": "exception",
-          "doc": "Nothing answered at the hub address.",
+          "doc": "No response came from the hub address.",
           "bases": [
             "OpenHALError"
           ]
@@ -1349,7 +1349,7 @@
         {
           "name": "Refused",
           "kind": "exception",
-          "doc": "The hub understood the call and refused it, for example an agent asking to approve.",
+          "doc": "The hub parsed the call and blocked it, for example an agent's request to approve.",
           "bases": [
             "OpenHALError"
           ]
@@ -1365,7 +1365,7 @@
         {
           "name": "HubError",
           "kind": "exception",
-          "doc": "The hub failed while answering. Check the hub log.",
+          "doc": "The hub failed while handling the call. Check the hub log.",
           "bases": [
             "OpenHALError"
           ]
