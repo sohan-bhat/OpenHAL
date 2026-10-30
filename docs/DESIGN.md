@@ -48,7 +48,7 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
 
 ### The home page hero
 
-The hero is centered in the column, which the owner's brief of 2026-10-29 allows, because the hero holds only the wordmark with its [hardware], [abstraction] and [layer] labels, the one-line description, the hub sentence ("Agents send requests to the OpenHAL hub, which checks each one against limits you set before anything reaches the device.") and two actions, Get started and Read the specification. The hero shows no diagram, and the sections under the hero keep the column's left edge. The full-screen H, A and L sections are gone, and the docs' Concepts page explains the name under "What the name means".
+The hero is centered in the column, which the owner's brief of 2026-10-29 allows, because the hero holds only the wordmark with its [hardware], [abstraction] and [layer] labels and two actions, Get started and Read the specification. The hero has no tagline and no sentence under the wordmark, which the owner removed on 2026-10-30, and the tagline stays the home page's title and description. The hero shows no diagram, and the sections under the hero keep the column's left edge. The full-screen H, A and L sections are gone, and the docs' Concepts page explains the name under "What the name means".
 
 ### How it works
 
@@ -228,7 +228,7 @@ With `prefers-reduced-motion: reduce`, nothing moves.
   - Write like technical documentation, not ad copy. No punchy fragments and no dramatic runs of short sentences.
   - Never write three or more short sentences in a row. Combine related ideas with "because", "but", "so" or "when".
   - State the cause before the effect. The reason something happens comes before the outcome or with the outcome, never as an afterthought.
-  - Don't personify software. Write that the hub refuses the request, blocks the command or returns an error, never that OpenHAL "says no" or the kernel "steps in" or "asks".
+  - Never personify an object. The hub, the kernel, a printer, a device, a driver, a board, a server, a client, an SDK, the Inspector and OpenHAL itself take mechanical verbs, so the hub passes, blocks, holds, returns, records or forwards a request, and a driver connects to a printer over serial. None of them refuses, rejects, asks, tries, waits, wants, decides, sees, watches, knows, says, tells, answers, lets, talks or speaks. The AI agent is the one actor that may decide or watch, and a protocol call the agent makes is a request the agent sends.
   - Be precise with units and nouns. Write "a nozzle temperature of 300 °C", not "a 300 °C nozzle".
   - Read each sentence aloud. A sentence that sounds like a movie trailer becomes one plain sentence.
 
@@ -341,7 +341,7 @@ Copy
 
 The repository README follows this structure, in this order, left-aligned.
 
-1. The wordmark (SVG, light and dark) and one sentence. "An open-source protocol for AI agents to control hardware." No second sentence and no subtitle. The same sentence is the website subhead, the default OG description, the pyproject description and the GitHub repository description.
+1. The wordmark (SVG, light and dark) and one sentence. "An open-source protocol for AI agents to control hardware." No second sentence and no subtitle. The same sentence is the home page's title, the default OG description, the pyproject description and the GitHub repository description.
 2. Two neutral badges, the license and CI.
 3. The animated flow diagram, directly under the badges.
 4. Quickstart. Three commands in one code block, then one line on what you'll see, generated from the scenario.

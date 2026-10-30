@@ -10,6 +10,7 @@
 - Copy rules
   - No em or en dashes. No colons or semicolons in running prose (headings, labels, tables and code are fine).
   - No exclamation marks. No banned words (docs/DESIGN.md, Banned).
+  - Never personify an object (docs/DESIGN.md, Copy voice). The hub blocks, holds, passes or returns a request and never refuses, rejects, asks, waits, knows, says, lets or talks.
   - Keep text short. The owner wants simple, digestible pages.
   - Never write the owner's name or a local home path in anything you commit. Write owner, as in "confirmed by owner".
 - docs/DESIGN.md is binding for anything visual. Load the skills frontend-design:frontend-design, design-taste-frontend, web-design-guidelines and playwright-cli before UI work.
