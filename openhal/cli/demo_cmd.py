@@ -45,12 +45,13 @@ def register(app: typer.Typer) -> None:
     ) -> None:
         """Watch an agent babysit a 3D print on a simulated Klipper printer and its camera.
 
-        The agent warms the bed, is refused a nozzle over the limit, pauses the print and asks to cancel.
+        The agent warms the bed, has a request for a nozzle temperature over the limit blocked, pauses
+        the print and sends a request to cancel.
         The owner approves the cancel, and the demo ends with the hub's audit log.
 
         With --full the hub starts empty and runs the whole system with the Arduino plant waterer.
 
-        Nothing touches hardware. The kernel decides every command.
+        Nothing touches hardware. The kernel checks every command.
         """
         from openhal.demo import e2e, e2e_trace, rig, scenario, trace
 

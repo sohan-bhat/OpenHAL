@@ -1,6 +1,6 @@
 """Shared pieces of the CLI. Options, the hub client, error handling and output helpers.
 
-Exit codes. 0 success, 1 blocked, refused or failed, 2 usage error, 3 hub not running, 4 token problem.
+Exit codes. 0 success, 1 blocked or failed, 2 usage error, 3 hub not running, 4 token problem.
 """
 
 from __future__ import annotations
@@ -174,7 +174,7 @@ def print_decision(decision: Decision, *, prefix: str = "") -> None:
     console.print(f"{prefix}{styled(decision.status)}{code}  {escape(decision.message)}")
     if decision.pending and decision.request_id:
         console.print(
-            f"{prefix}  waiting for a person. Approve with openhal confirm approve {decision.request_id}",
+            f"{prefix}  held for a person. Approve with openhal confirm approve {decision.request_id}",
             style="yellow",
         )
 

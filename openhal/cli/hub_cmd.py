@@ -87,7 +87,7 @@ def register(app: typer.Typer) -> None:
             console.print(f"started {when(result.started_at)}")
         if result.stopped:
             console.print(
-                f"[red]stopped[/red]  {escape(result.stop_reason or '')}. Commands are refused until openhal unlock."
+                f"[red]stopped[/red]  {escape(result.stop_reason or '')}. Commands are blocked until openhal unlock."
             )
         for problem in result.load_problems:
             console.print(f"[yellow]not loaded[/yellow]  {escape(problem.path)}")
@@ -123,10 +123,10 @@ def register(app: typer.Typer) -> None:
     @app.command()
     @handled
     def discover(
-        drivers: list[str] = typer.Option(None, "--driver", "-d", help="Only try this driver. Repeat for more."),  # noqa: B008
+        drivers: list[str] = typer.Option(None, "--driver", "-d", help="Only probe with this driver. Repeat for more."),  # noqa: B008
         as_json: bool = typer.Option(False, "--json", help="Print JSON."),
     ) -> None:
-        """Look for devices. Probing sends only read-only identify commands."""
+        """Search for devices. Probing sends only read-only identify commands."""
         with hub() as client:
             result = client.discover(drivers or None)
         if as_json:

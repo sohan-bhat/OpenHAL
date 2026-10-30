@@ -34,7 +34,7 @@ def read_phrase(prompt: str) -> str:
 
 
 def require_phrase(phrase: str, what: str, *, given: str | None = None) -> str:
-    """Ask the person to type `phrase` before `what`. Returns the phrase they typed.
+    """Prompt the person to type `phrase` before `what`. Returns the phrase they typed.
 
     `given` is a phrase passed on the command line. It is accepted only when
     `confirm.require_tty` is false.

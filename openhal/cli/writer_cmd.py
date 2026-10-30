@@ -1,4 +1,4 @@
-"""`openhal writer`, the driver writer for devices OpenHAL doesn't know yet (ADR 0006)."""
+"""`openhal writer`, the driver writer for devices OpenHAL doesn't support yet (ADR 0006)."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ def _print_session(session: WriterSession) -> None:
 @handled
 def start(
     unknown: str = typer.Option(None, "--unknown", "-u", help="An id from openhal discover."),
-    driver: str = typer.Option(None, "--driver", "-d", help="A driver to talk to the device with."),
+    driver: str = typer.Option(None, "--driver", "-d", help="A driver to connect to the device with."),
     params: list[str] = typer.Option(None, "--param", "-p", help="Driver parameter as key=value. Repeat for more."),  # noqa: B008
     sketch: Path = typer.Option(None, "--sketch", exists=True, dir_okay=False, help="The device's Arduino sketch."),  # noqa: B008
     manual: Path = typer.Option(None, "--manual", exists=True, dir_okay=False, help="A text file with the manual."),  # noqa: B008
