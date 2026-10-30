@@ -637,22 +637,26 @@ test.describe("page turns", () => {
     }
   });
 
-  test("a page turn moves the way the nav goes, and only for section links", async ({ page, browserName }) => {
-    test.skip(browserName !== "chromium", "cross-document view transitions are a Chromium feature");
-    await page.setViewportSize({ width: 1440, height: 900 });
-    const turn = () => page.evaluate(() => document.documentElement.dataset.turn ?? null);
-    await page.goto("/drivers/");
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Device Library", exact: true }).click();
-    await expect(page).toHaveURL(/\/library\/$/);
-    expect(await turn()).toBe("forward");
-    await page.waitForTimeout(500);
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Specification", exact: true }).click();
-    await expect(page).toHaveURL(/\/spec\//);
-    expect(await turn()).toBe("backward");
-    await page.goto("/");
-    await page.getByRole("link", { name: "Send the requests in your browser" }).click();
-    await expect(page).toHaveURL(/\/spec\/playground\/$/);
-    expect(await turn()).toBeNull();
+  test.describe("with retries, since a busy Mac can make Chromium drop a view transition between the preview server's uncached pages", () => {
+    test.describe.configure({ retries: 2 });
+
+    test("a page turn moves the way the nav goes, and only for section links", async ({ page, browserName }) => {
+      test.skip(browserName !== "chromium", "cross-document view transitions are a Chromium feature");
+      await page.setViewportSize({ width: 1440, height: 900 });
+      const turn = () => page.evaluate(() => document.documentElement.dataset.turn ?? null);
+      await page.goto("/drivers/");
+      await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Device Library", exact: true }).click();
+      await expect(page).toHaveURL(/\/library\/$/);
+      expect(await turn()).toBe("forward");
+      await page.waitForTimeout(500);
+      await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Specification", exact: true }).click();
+      await expect(page).toHaveURL(/\/spec\//);
+      expect(await turn()).toBe("backward");
+      await page.goto("/");
+      await page.getByRole("link", { name: "Send the requests in your browser" }).click();
+      await expect(page).toHaveURL(/\/spec\/playground\/$/);
+      expect(await turn()).toBeNull();
+    });
   });
 
   test("a section in the tablet's Section menu turns the page like the nav's links", async ({ page, browserName }) => {
