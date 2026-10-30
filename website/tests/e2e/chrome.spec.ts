@@ -655,6 +655,19 @@ test.describe("page turns", () => {
     expect(await turn()).toBeNull();
   });
 
+  test("a section in the tablet's Section menu turns the page like the nav's links", async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "cross-document view transitions are a Chromium feature");
+    await page.setViewportSize({ width: 900, height: 900 });
+    await page.goto("/drivers/");
+    const section = page.locator("header.header [data-picker='section']");
+    await section.hover();
+    await section.click();
+    await page.getByRole("menu").getByRole("menuitem", { name: "Device Library" }).click();
+    await expect(page).toHaveURL(/\/library\/$/);
+    const asked = () => page.evaluate(() => document.documentElement.dataset.turn ?? sessionStorage.getItem("openhal:page-turn"));
+    await expect.poll(asked, "the page left asked for a forward turn, which the preview server's uncached pages can drop at this width").toBe("forward");
+  });
+
   test("no page moves while it loads", async ({ page, browserName }) => {
     test.skip(browserName !== "chromium", "layout shift entries are a Chromium API");
     for (const path of ["/docs/quickstart/", SPEC, "/drivers/", "/spec/playground/"]) {

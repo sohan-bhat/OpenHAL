@@ -17,7 +17,7 @@
     });
     return found;
   };
-  addEventListener("click", (event) => (clicked = event.target.closest?.(".oh-sections a[data-match], .oh-menu-sections a, .oh-section-select a")?.href), true);
+  addEventListener("click", (event) => (clicked = event.target.closest?.(".oh-sections a[data-match], .oh-menu-sections a, [data-menu=section] a")?.href), true);
   addEventListener("pageswap", ({ viewTransition, activation }) => {
     if (!viewTransition) return;
     const links = [...document.querySelectorAll(".oh-sections a[data-match]")];

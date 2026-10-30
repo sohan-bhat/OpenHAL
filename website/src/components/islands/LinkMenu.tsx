@@ -47,7 +47,7 @@ export default function LinkMenu({ kind, label, items, placeholder, align = "end
             <Chevron />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align={align} aria-label={label} container={menuContainer(place)}>
+        <DropdownMenuContent data-menu={kind} align={align} aria-label={label} container={menuContainer(place)}>
           {items.map((item) => (
             <DropdownMenuItem key={item.href} asChild>
               <a href={withBase(item.href)} aria-current={item.current ? (item.page ? "page" : "true") : undefined}>
