@@ -48,7 +48,7 @@ async def test_a_press_stops_everything(tmp_path: Path, pins: MockFactory) -> No
 
 async def test_a_button_the_hub_cannot_watch_stops_the_start(tmp_path: Path, pins: MockFactory) -> None:
     hub = Hub(HubConfig(home=tmp_path, stop_button=GpioStopSettings(pin=40)), in_memory=True)
-    with pytest.raises(RuntimeError, match=r"sets stop_button\.pin 40, but the hub can.t watch it"):
+    with pytest.raises(RuntimeError, match=r"sets stop_button\.pin 40, but the hub can.t monitor that pin"):
         await hub.start()
     assert hub.audit.entries(event="stop_button", limit=1)[0].status == "failed"
     assert hub.started_at is None

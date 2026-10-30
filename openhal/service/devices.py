@@ -1,8 +1,8 @@
 """Devices `openhal init` offers to add, from discovery and from addresses the person names.
 
 A library match is copied from the device library with the address discovery found. A
-self-describing device, an OpenHAL firmware board or an ESPHome node, is asked to describe itself
-with its driver's read-only commands. Either way every limit is marked suggested and every
+self-describing device, an OpenHAL firmware board or an ESPHome node, describes itself through
+its driver's read-only commands. Either way every limit is marked suggested and every
 confirmation is dropped, so the file loads read-only until a person checks and confirms it.
 Nothing here writes to a device.
 """
@@ -121,7 +121,7 @@ def from_library(match: discovery.Match) -> Offer:
 
 
 async def describe(driver_name: str, address: str, *, timeout_s: float = DESCRIBE_TIMEOUT_S) -> dict[str, Any]:
-    """Ask a self-describing device what it has, with its driver's read-only commands."""
+    """Read what a self-describing device has, with its driver's read-only commands."""
     driver_class = registry.load(driver_name)
     params = registry.connect_params(driver_name, address)
     probe = from_data({"device": "Device being described", "connect": {"driver": driver_name, "params": params}})
@@ -149,7 +149,7 @@ async def describe_offer(driver: str, address: str, label: str | None = None) ->
     except Exception as exc:  # noqa: BLE001 (a device that can't describe itself is reported, not fatal)
         primary = PRIMARY_PARAM.get(driver, "target")
         offer.problem = (
-            f"It didn't describe itself ({type(exc).__name__}: {exc}). Try openhal writer start "
+            f"The device sent no description ({type(exc).__name__}: {exc}). Try openhal writer start "
             f"--driver {driver} --param {primary}={address}"
         )
     return offer

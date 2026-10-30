@@ -74,7 +74,7 @@ def parse_quantity(value: Any, *, default_unit: str | None = None) -> pint.Quant
     """Parse `"30 degC"`, `{"value": 30, "unit": "degC"}` or a number with a default unit.
 
     A bare number is accepted only when `default_unit` is given. Commands from clients never
-    pass a default unit, so bare numbers in commands are rejected.
+    pass a default unit, so a bare number in a command raises UnitError.
     """
     if isinstance(value, bool):
         raise UnitError("Expected a number with a unit, got a boolean.")
@@ -124,7 +124,7 @@ def _angle_power(unit: pint.Unit) -> float:
 
 
 def _same_angle(source: pint.Unit, target: pint.Unit, shown: str) -> None:
-    """Refuse a conversion that adds or drops an angle.
+    """Raise UnitError for a conversion that adds or drops an angle.
 
     pint treats angles as plain numbers, so it would turn 50 % into 28.6 degrees and 1 Hz into
     9.55 rpm. Both sides of a conversion must carry the same angle (drivers batch 3, proposal 1).

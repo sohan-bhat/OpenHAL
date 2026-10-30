@@ -55,7 +55,7 @@ async def serve(host: str | None = None, port: int | None = None) -> None:
     if port:
         config.api.port = port
     if config.api.host not in ("127.0.0.1", "::1", "localhost") and not config.api.allow_lan:
-        raise SystemExit("Refusing to listen on a non-loopback address. Set api.allow_lan: true in config.yaml first.")
+        raise SystemExit("Listening on a non-loopback address needs api.allow_lan: true in config.yaml.")
     lock = claim(config)
     try:
         await _run(config)

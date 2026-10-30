@@ -87,7 +87,7 @@ _TRIGGERS = TypeAdapter(list[Trigger])
 
 
 class RoutineError(ValueError):
-    """A routine is invalid or the request isn't allowed. The message says why."""
+    """A routine is invalid or the request isn't allowed. The message gives the reason."""
 
 
 class RoutineBlockedError(RuntimeError):
@@ -487,7 +487,7 @@ class RoutineEngine:
                     shadow.record_run(command.device, command.action)
 
     async def run(self, routine_id: str, trigger: str = "manual", *, by: Principal | None = None) -> Run:
-        """Run a routine now and wait for it to finish."""
+        """Run a routine now and return when the run finishes."""
         record = self.get(routine_id)
         if by is not None and by.kind != "human":
             raise RoutineError("Running a routine by hand takes a human principal.")

@@ -1,6 +1,6 @@
 """Load device files safely and report problems with their exact location.
 
-YAML anchors, aliases and custom tags are rejected (spec section 0), which also rules out
+YAML anchors, aliases and custom tags are load errors (spec section 0), which also rules out
 billion-laughs style expansion. Files are size-limited before parsing.
 """
 
@@ -33,7 +33,7 @@ _ALLOWED_TAGS: Final = frozenset(
 
 
 class _NoAliasLoader(yaml.SafeLoader):
-    """A safe loader that refuses anchors, aliases and non-standard tags."""
+    """A safe loader that raises an error on anchors, aliases and non-standard tags."""
 
     def compose_node(self, parent: Any, index: Any) -> Any:
         event: Any = self.peek_event()  # type: ignore[no-untyped-call]

@@ -108,9 +108,9 @@ class Hub:
         self.audit.append("hub_start", SYSTEM.label, status="done", devices=len(self.kernel.devices))
 
     def _watch_stop_button(self) -> None:
-        """Watch the GPIO stop button config.yaml names. A pressed button stops everything.
+        """Monitor the GPIO stop button config.yaml names. A pressed button stops everything.
 
-        A button the person configured but the hub can't watch is an error, not a warning, so no
+        A button the person configured but the hub can't monitor is an error, not a warning, so no
         one relies on a stop that isn't there.
         """
         settings = self.config.stop_button
@@ -132,7 +132,7 @@ class Hub:
             detail = f"{type(exc).__name__}: {exc}"
             self.audit.append("stop_button", SYSTEM.label, status="failed", pin=settings.pin, detail=detail)
             raise RuntimeError(
-                f"config.yaml sets stop_button.pin {settings.pin}, but the hub can't watch it ({detail}). "
+                f"config.yaml sets stop_button.pin {settings.pin}, but the hub can't monitor that pin ({detail}). "
                 "Install the rpi-gpio extra on the Pi, fix the wiring, or remove stop_button from config.yaml."
             ) from exc
         self.audit.append("stop_button", SYSTEM.label, status="done", pin=settings.pin)

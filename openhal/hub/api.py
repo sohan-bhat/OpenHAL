@@ -6,7 +6,7 @@ Security, in order of evaluation for every request.
 2. Identity. A bearer token, or the dashboard session cookie. Unknown tokens get 401.
 3. Cookie sessions must send the X-OpenHAL-Request header on every state-changing request, which a
    cross-site form can't do.
-4. The kernel decides everything else.
+4. The kernel checks everything else.
 """
 
 from __future__ import annotations
@@ -621,7 +621,7 @@ def create_app(hub: Hub) -> FastAPI:
         return True
 
     def socket_principals(websocket: WebSocket) -> tuple[Principal | None, bool, Principal | None]:
-        """The header principal, whether a header token was refused, and the session cookie's principal."""
+        """The header principal, whether a header token was invalid, and the session cookie's principal."""
         auth = websocket.headers.get("authorization", "")
         token = auth.removeprefix("Bearer ").strip() if auth.startswith("Bearer ") else None
         principal = hub.tokens.principal(token) if token else None

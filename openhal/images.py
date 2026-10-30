@@ -6,8 +6,8 @@ A driver returns an image channel's frame as bytes. Clients get it as an object,
 
 `describe()` gives everything but `data`. That is what the audit log, device views and records
 keep, so a frame's pixels never land in the log. `width` and `height` come from the image header
-and are None when the format is one this module can't read. A frame larger than MAX_BYTES is
-refused when it is read, with a reason that names the limit and the settings to lower.
+and are None when the format is one this module can't read. A frame larger than MAX_BYTES
+fails the read, with a reason that names the limit and the settings to lower.
 """
 
 from __future__ import annotations

@@ -33,7 +33,7 @@ class RunError(RuntimeError):
 
 @dataclass
 class Runner:
-    """Runs commands and changes files, or with `dry_run` only says what it would do."""
+    """Runs commands and changes files, or with `dry_run` only reports what it would do."""
 
     dry_run: bool = False
     echo: Callable[[str], None] = field(default=print)

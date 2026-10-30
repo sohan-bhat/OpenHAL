@@ -96,7 +96,7 @@ def _regex(pattern: str, value: str) -> bool:
 def score(file: DeviceFile, found: Discovered) -> int:
     """How well a library file matches a discovered device. 0 means no match.
 
-    A USB class or an mDNS service type only says what kind of device it is, such as any MIDI
+    A USB class or an mDNS service type only identifies the kind of device, such as any MIDI
     controller or any ESPHome node. They add to a match on a product identifier but never make one
     on their own, so a device is never offered a file for a different product of the same kind.
     """

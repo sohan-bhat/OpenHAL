@@ -2,7 +2,7 @@
 
 Every read request, write attempt, block, confirmation, stop and unlock is one entry. Each
 entry's hash covers the previous entry's hash and its own canonical body, so editing or
-removing an entry breaks the chain at that point. SQLite triggers refuse UPDATE and DELETE.
+removing an entry breaks the chain at that point. SQLite triggers block UPDATE and DELETE.
 """
 
 from __future__ import annotations
@@ -200,7 +200,7 @@ class AuditLog:
         """Recompute the chain and check every column against the hashed body.
 
         Returns (ok, first broken sequence number). A missing tail is reported at the sequence
-        number the head file expected.
+        number the head file records.
         """
         prev = GENESIS
         last_seq = 0

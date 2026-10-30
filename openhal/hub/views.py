@@ -41,7 +41,7 @@ def device_value(file: Any, device_id: str, channel: str, value: Any, *, image_d
     """A reading as clients see it. Strings are wrapped, except enum values the device file lists.
 
     Bytes are an image, sent as `{ mimeType, bytes, width, height }` (openhal/images.py). Only a read
-    asks for `image_data`, which adds the pixels as base64 in `data`.
+    requests `image_data`, which adds the pixels as base64 in `data`.
     """
     if isinstance(value, bytes):
         return images.value(value) if image_data else images.describe(value)
