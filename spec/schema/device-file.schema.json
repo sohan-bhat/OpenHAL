@@ -314,7 +314,7 @@
     },
     "Connect": {
       "additionalProperties": false,
-      "description": "Which driver talks to the device, and its parameters (validated by the driver itself).",
+      "description": "Which driver connects to the device, and its parameters (validated by the driver itself).",
       "properties": {
         "driver": {
           "title": "Driver",

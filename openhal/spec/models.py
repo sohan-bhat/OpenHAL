@@ -175,7 +175,7 @@ class Match(_Strict):
 
 
 class Connect(_Strict):
-    """Which driver talks to the device, and its parameters (validated by the driver itself)."""
+    """Which driver connects to the device, and its parameters (validated by the driver itself)."""
 
     driver: str
     params: dict[str, Any] = {}

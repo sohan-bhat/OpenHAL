@@ -1030,7 +1030,7 @@
     },
     "Decision": {
       "additionalProperties": false,
-      "description": "The Safety Kernel's answer to one command. A blocked one carries its registry error.",
+      "description": "The Safety Kernel's result for one command. A blocked result carries its registry error.",
       "properties": {
         "status": {
           "enum": [
@@ -1640,7 +1640,7 @@
             }
           ],
           "default": null,
-          "description": "What was asked for, a Quantity in the limit's unit when it had one, otherwise as sent.",
+          "description": "The requested value, a Quantity in the limit's unit when it had one, otherwise as sent.",
           "title": "Requested"
         },
         "runs": {
@@ -1893,7 +1893,7 @@
       "additionalProperties": false,
       "properties": {
         "protocolVersion": {
-          "description": "The version the hub answers with, such as 0.1.",
+          "description": "The version the hub returns, such as 0.1.",
           "title": "Protocolversion",
           "type": "string"
         },
@@ -2482,7 +2482,7 @@
     },
     "Request": {
       "additionalProperties": false,
-      "description": "A JSON-RPC request. It has an id and expects a response.",
+      "description": "A JSON-RPC request, which has an id and gets a response.",
       "properties": {
         "jsonrpc": {
           "const": "2.0",
