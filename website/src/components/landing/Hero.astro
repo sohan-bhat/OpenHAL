@@ -1,7 +1,7 @@
 ---
-import { PITCH, PRODUCT_NAME } from "../../config/brand";
+import { PRODUCT_NAME } from "../../config/brand";
 import { latestSpecHref } from "../../lib/spec";
-import { LEDE, SPELLED } from "../../lib/story/name";
+import { SPELLED } from "../../lib/story/name";
 
 interface Props {
   spell: string;
@@ -18,8 +18,6 @@ const labels = SPELLED.map((part) => ({ word: part.label, at: PRODUCT_NAME.lastI
       {labels.map((item) => <span data-at={item.at}>{item.word}</span>)}
     </p>
   </div>
-  <p class="hero-pitch">{PITCH}</p>
-  <p class="hero-lede">{LEDE}</p>
   <p class="hero-actions">
     <a class="button hero-go" href="/docs/quickstart/">Get started</a>
     <a class="button quiet hero-spec" href={latestSpecHref()}>Read the specification</a>
@@ -73,24 +71,6 @@ const labels = SPELLED.map((part) => ({ word: part.label, at: PRODUCT_NAME.lastI
     white-space: nowrap;
   }
 
-  .hero-pitch {
-    max-width: 18em;
-    margin-top: var(--s-5);
-    font-size: var(--t-h2);
-    font-weight: 500;
-    line-height: 1.2;
-    text-wrap: balance;
-  }
-
-  .hero-lede {
-    max-width: 36em;
-    margin-top: var(--s-4);
-    color: var(--text-2);
-    font-size: var(--t-h3);
-    line-height: 1.5;
-    text-wrap: balance;
-  }
-
   .hero-actions {
     display: flex;
     flex-wrap: wrap;
@@ -111,12 +91,6 @@ const labels = SPELLED.map((part) => ({ word: part.label, at: PRODUCT_NAME.lastI
 
     .hero-actions .button {
       padding: 0 var(--s-5);
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .hero-pitch {
-      font-size: var(--t-h1);
     }
   }
 </style>

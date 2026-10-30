@@ -18,11 +18,11 @@ function noErrors(page: Page): string[] {
 }
 
 test.describe("overview", () => {
-  test("names the product, says what it is in one sentence and offers two ways in", async ({ page }) => {
+  test("names the product and offers two ways in", async ({ page }) => {
     const errors = noErrors(page);
     await page.goto("/");
     await expect(page.locator("h1")).toHaveText("OpenHAL");
-    await expect(page.locator(".hero-pitch")).toHaveText("An open-source protocol for AI agents to control hardware.");
+    await expect(page.locator(".hero-pitch")).toHaveCount(0);
     await expect(page.locator(".hero a")).toHaveText(["Get started", "Read the specification"]);
     expect(errors).toEqual([]);
   });

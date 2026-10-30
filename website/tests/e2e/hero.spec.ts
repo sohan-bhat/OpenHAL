@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { PITCH, PRODUCT_NAME } from "../../src/config/brand";
-import { LEDE, SPELLED } from "../../src/lib/story/name";
+import { SPELLED } from "../../src/lib/story/name";
 
 /** Each label of the hero with the ink box of its letter, in px from the left of the page. */
 const labels = (page: Page) =>
@@ -50,11 +50,12 @@ const contrast = (page: Page, selector: string) =>
   });
 
 test.describe("the hero", () => {
-  test("names the product, says what it does in two sentences and offers two ways in", async ({ page }) => {
+  test("names the product with no sentence under the name and offers two ways in", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(PRODUCT_NAME);
-    await expect(page.locator(".hero-pitch")).toHaveText(PITCH);
-    await expect(page.locator(".hero-lede")).toHaveText(LEDE);
+    await expect(page.locator(".hero-pitch, .hero-lede")).toHaveCount(0);
+    await expect(page.locator(".hero")).not.toContainText(PITCH);
+    await expect(page.locator(".hero")).not.toContainText("checks each one against limits");
     const links = page.locator(".hero a");
     await expect(links).toHaveText(["Get started", "Read the specification"]);
     await expect(page.getByRole("link", { name: "Get started" })).toHaveAttribute("href", "/docs/quickstart/");
@@ -119,7 +120,6 @@ test.describe("the hero", () => {
       });
       await expect(page.locator(".hero-spell span").first()).toHaveCSS("color", muted);
       expect(await contrast(page, ".hero-spell span")).toBeGreaterThanOrEqual(4.5);
-      expect(await contrast(page, ".hero-lede")).toBeGreaterThanOrEqual(4.5);
     });
   }
 });
