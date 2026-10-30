@@ -183,7 +183,7 @@ def test_the_audit_log_holds_the_story() -> None:
     assert audit["lines"] == log_cmd.lines(rows)
     assert audit["lines"][0].split() == list(log_cmd.COLUMNS)
     assert audit["masked"] == ["time"]
-    assert trace.counts(RECORD) == "6 requests, 1 refused, 1 confirmed by a person"
+    assert trace.counts(RECORD) == "6 requests, 1 blocked, 1 confirmed by a person"
 
 
 def test_the_devices_are_the_example_files() -> None:
@@ -221,7 +221,7 @@ def test_the_trace_shows_every_exchange() -> None:
 def test_the_outcome_names_the_recorded_numbers() -> None:
     assert trace.outcome(RECORD) == (
         "You'll see the agent raise the bed target from 60 °C to 70 °C, have a request for a nozzle temperature of "
-        "300 °C refused at the nozzle limit of 260 °C and pause the print when the camera shows the print has come "
+        "300 °C blocked at the nozzle limit of 260 °C and pause the print when the camera shows the print has come "
         "loose. "
         "The owner then approves the cancel, and the printer's state becomes cancelled."
     )
@@ -248,6 +248,6 @@ def test_openhal_demo_prints_the_trace_and_can_record_it(tmp_path: Path) -> None
     assert "-> hal/confirmations/approve" in result.output
     assert "REQUEST_ID" not in result.output, "the live demo shows the hub's real request id"
     assert "The demo hub's audit log, newest first" in result.output
-    assert "6 requests, 1 refused, 1 confirmed by a person." in result.output
+    assert "6 requests, 1 blocked, 1 confirmed by a person." in result.output
     assert "The camera frames are line drawings." in result.output
     assert scenario.read(target) == RECORD

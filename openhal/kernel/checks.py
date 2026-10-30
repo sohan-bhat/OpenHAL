@@ -156,13 +156,13 @@ def _number(name: str, spec: WriteChannel | ArgSpec, raw: Any, tightened: dict[s
     if value < limits.min and not math.isclose(value, limits.min, rel_tol=1e-12, abs_tol=1e-12):
         raise Block(
             "below_min",
-            f"Blocked. The {name} limit is {format_quantity(limits.min, unit)} (min). Asked for {asked}.",
+            f"Blocked. The {name} limit is {format_quantity(limits.min, unit)} (min). Requested {asked}.",
             {"min": limits.min, "unit": unit},
         )
     if value > limits.max and not math.isclose(value, limits.max, rel_tol=1e-12, abs_tol=1e-12):
         raise Block(
             "above_max",
-            f"Blocked. The {name} limit is {format_quantity(limits.max, unit)} (max). Asked for {asked}.",
+            f"Blocked. The {name} limit is {format_quantity(limits.max, unit)} (max). Requested {asked}.",
             {"max": limits.max, "unit": unit},
         )
     if spec.step is not None:
@@ -171,7 +171,7 @@ def _number(name: str, spec: WriteChannel | ArgSpec, raw: Any, tightened: dict[s
             raise Block(
                 "bad_step",
                 f"Blocked. {name} moves in steps of {format_quantity(spec.step, unit)} from "
-                f"{format_quantity(spec.min or 0.0, unit)}. Asked for {asked}.",
+                f"{format_quantity(spec.min or 0.0, unit)}. Requested {asked}.",
                 {"step": spec.step, "unit": unit},
             )
     return value
@@ -199,6 +199,6 @@ def check_rate(
             "rate_limited",
             f"Blocked. {name} may change by {format_quantity(rate, unit)} per second. "
             f"Right now it can go from {format_quantity(low, unit)} to {format_quantity(high, unit)}. "
-            f"Asked for {format_quantity(new, unit)}, which is possible in {wait:.1f} s, or use small steps.",
+            f"Requested {format_quantity(new, unit)}, which is possible in {wait:.1f} s, or use small steps.",
             {"rate_per_s": rate, "unit": unit, "from": low, "to": high, "wait_s": wait},
         )

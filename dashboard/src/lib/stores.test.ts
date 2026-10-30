@@ -115,7 +115,7 @@ describe("the device store", () => {
     const blocked = describeDecision({
       status: "blocked",
       code: "above_max",
-      message: "Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.",
+      message: "Blocked. The extruder_target limit is 260 degC (max). Requested 300 degC.",
       device: "printer",
       target: "write:extruder_target",
       value: 300,
@@ -187,12 +187,12 @@ describe("the registry and units", () => {
       "pause",
       "state == printing",
     ]);
-    expect(code("Waiting for a human to approve action:vent on curing-heater.", identifiersOf("curing-heater", "action:vent"))).toEqual([
+    expect(code("Held until a human approves action:vent on curing-heater.", identifiersOf("curing-heater", "action:vent"))).toEqual([
       "action:vent",
       "curing-heater",
     ]);
     expect(code("if power > 0 W, require temperature < 70 degC", [])).toEqual(["power > 0 W", "temperature < 70 degC"]);
-    expect(code("The duration limit is 30 s (max). Asked for 120 s.", water)).toEqual([]);
+    expect(code("The duration limit is 30 s (max). Requested 120 s.", water)).toEqual([]);
     expect(code("water duration 120 s exceeds the limit (plant-waterer.hal.yaml)", water)).toEqual(["water"]);
     const text = "Done. pause ran.";
     expect(reasonSegments(text, pause).map((segment) => segment.text).join("")).toBe(text);

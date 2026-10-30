@@ -7,7 +7,7 @@ person: human:owner
 agent: agent:claude
 confirmed:
   by: owner
-  at: '2026-10-25'
+  at: '2026-10-30'
 limits:
   water_duration:
     min:
@@ -147,7 +147,7 @@ steps:
   writable: true
   confirmed:
     by: owner
-    at: '2026-10-25'
+    at: '2026-10-30'
   water:
     args:
       duration:
@@ -264,11 +264,11 @@ steps:
     error:
       code: -32010
       name: LIMIT_EXCEEDED
-      message: water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-25)
+      message: water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-30)
       data:
         name: LIMIT_EXCEEDED
         kernelCode: above_max
-        kernelMessage: Blocked. The duration limit is 30 s (max). Asked for 120 s.
+        kernelMessage: Blocked. The duration limit is 30 s (max). Requested 120 s.
         device: plant-waterer
         action: water
         argument: duration
@@ -280,5 +280,5 @@ steps:
           unit: s
         file: plant-waterer.hal.yaml
         confirmedBy: owner
-        confirmedAt: '2026-10-25'
+        confirmedAt: '2026-10-30'
   board_received: []

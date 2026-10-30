@@ -68,7 +68,7 @@ def test_the_docs_quickstart_ends_with_the_audit_log() -> None:
     text = (ROOT / "docs" / "QUICKSTART.md").read_text(encoding="utf-8")
     block = text[text.index("<!-- audit:start -->") : text.index("<!-- audit:end -->")]
     assert "\n".join(RECORD["audit"]["lines"]) in block
-    assert "6 requests, 1 refused, 1 confirmed by a person." in block
+    assert "6 requests, 1 blocked, 1 confirmed by a person." in block
     assert "`TIME` stands in for the time of each entry." in text
 
 

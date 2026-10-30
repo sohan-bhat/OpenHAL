@@ -22,7 +22,7 @@
       "result": {
         "status": "blocked",
         "code": "above_max",
-        "message": "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %.",
+        "message": "Blocked. The fan_speed limit is 100 % (max). Requested 150 %.",
         "wire": {
           "status": "blocked",
           "device": "desk-fan",
@@ -35,7 +35,7 @@
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "above_max",
-              "kernelMessage": "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %.",
+              "kernelMessage": "Blocked. The fan_speed limit is 100 % (max). Requested 150 %.",
               "device": "desk-fan",
               "channel": "fan_speed",
               "limit": {
@@ -60,7 +60,7 @@
       "result": {
         "status": "blocked",
         "code": "below_min",
-        "message": "Blocked. The fan_speed limit is 0 % (min). Asked for -5 %.",
+        "message": "Blocked. The fan_speed limit is 0 % (min). Requested -5 %.",
         "wire": {
           "status": "blocked",
           "device": "desk-fan",
@@ -73,7 +73,7 @@
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "below_min",
-              "kernelMessage": "Blocked. The fan_speed limit is 0 % (min). Asked for -5 %.",
+              "kernelMessage": "Blocked. The fan_speed limit is 0 % (min). Requested -5 %.",
               "device": "desk-fan",
               "channel": "fan_speed",
               "limit": {
@@ -98,7 +98,7 @@
       "result": {
         "status": "blocked",
         "code": "bad_step",
-        "message": "Blocked. fan_speed moves in steps of 1 % from 0 %. Asked for 20.5 %.",
+        "message": "Blocked. fan_speed moves in steps of 1 % from 0 %. Requested 20.5 %.",
         "wire": {
           "status": "blocked",
           "device": "desk-fan",
@@ -111,7 +111,7 @@
             "data": {
               "name": "INVALID_VALUE",
               "kernelCode": "bad_step",
-              "kernelMessage": "Blocked. fan_speed moves in steps of 1 % from 0 %. Asked for 20.5 %.",
+              "kernelMessage": "Blocked. fan_speed moves in steps of 1 % from 0 %. Requested 20.5 %.",
               "device": "desk-fan",
               "channel": "fan_speed",
               "limit": {
@@ -293,7 +293,7 @@
       "result": {
         "status": "blocked",
         "code": "rate_limited",
-        "message": "Blocked. fan_speed may change by 20 % per second. Right now it can go from -20 % to 20 %. Asked for 60 %, which is possible in 2.0 s, or use small steps.",
+        "message": "Blocked. fan_speed may change by 20 % per second. Right now it can go from -20 % to 20 %. Requested 60 %, which is possible in 2.0 s, or use small steps.",
         "wire": {
           "status": "blocked",
           "device": "desk-fan",
@@ -306,7 +306,7 @@
             "data": {
               "name": "RATE_LIMITED",
               "kernelCode": "rate_limited",
-              "kernelMessage": "Blocked. fan_speed may change by 20 % per second. Right now it can go from -20 % to 20 %. Asked for 60 %, which is possible in 2.0 s, or use small steps.",
+              "kernelMessage": "Blocked. fan_speed may change by 20 % per second. Right now it can go from -20 % to 20 %. Requested 60 %, which is possible in 2.0 s, or use small steps.",
               "device": "desk-fan",
               "channel": "fan_speed",
               "limit": {
@@ -344,7 +344,7 @@
       "result": {
         "status": "blocked",
         "code": "rate_limited",
-        "message": "Blocked. fan_speed may change by 20 % per second. Right now it can go from 10 % to 30 %. Asked for 40 %, which is possible in 0.5 s, or use small steps.",
+        "message": "Blocked. fan_speed may change by 20 % per second. Right now it can go from 10 % to 30 %. Requested 40 %, which is possible in 0.5 s, or use small steps.",
         "wire": {
           "status": "blocked",
           "device": "desk-fan",
@@ -357,7 +357,7 @@
             "data": {
               "name": "RATE_LIMITED",
               "kernelCode": "rate_limited",
-              "kernelMessage": "Blocked. fan_speed may change by 20 % per second. Right now it can go from 10 % to 30 %. Asked for 40 %, which is possible in 0.5 s, or use small steps.",
+              "kernelMessage": "Blocked. fan_speed may change by 20 % per second. Right now it can go from 10 % to 30 %. Requested 40 %, which is possible in 0.5 s, or use small steps.",
               "device": "desk-fan",
               "channel": "fan_speed",
               "limit": {
@@ -634,7 +634,7 @@
         {
           "status": "blocked",
           "code": "cannot_loosen",
-          "message": "Refused. fan_speed max is already 100 %. Session limits can only be tightened."
+          "message": "Blocked. fan_speed max is already 100 %. Session limits can only be tightened."
         },
         {
           "status": "tightened",
@@ -646,13 +646,13 @@
         {
           "status": "blocked",
           "code": "cannot_loosen",
-          "message": "Refused. fan_speed may already change by at most 10 % per second. Session limits can only be tightened."
+          "message": "Blocked. fan_speed may already change by at most 10 % per second. Session limits can only be tightened."
         }
       ],
       "result": {
         "status": "blocked",
         "code": "above_max",
-        "message": "Blocked. The fan_speed limit is 50 % (max). Asked for 60 %.",
+        "message": "Blocked. The fan_speed limit is 50 % (max). Requested 60 %.",
         "wire": {
           "status": "blocked",
           "device": "desk-fan",
@@ -665,7 +665,7 @@
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "above_max",
-              "kernelMessage": "Blocked. The fan_speed limit is 50 % (max). Asked for 60 %.",
+              "kernelMessage": "Blocked. The fan_speed limit is 50 % (max). Requested 60 %.",
               "device": "desk-fan",
               "channel": "fan_speed",
               "limit": {
@@ -695,7 +695,7 @@
       "result": {
         "status": "blocked",
         "code": "rate_limited",
-        "message": "Blocked. fan_speed may change by 5 % per second. Right now it can go from -10 % to 10 %. Asked for 20 %, which is possible in 2.0 s, or use small steps.",
+        "message": "Blocked. fan_speed may change by 5 % per second. Right now it can go from -10 % to 10 %. Requested 20 %, which is possible in 2.0 s, or use small steps.",
         "wire": {
           "status": "blocked",
           "device": "desk-fan",
@@ -708,7 +708,7 @@
             "data": {
               "name": "RATE_LIMITED",
               "kernelCode": "rate_limited",
-              "kernelMessage": "Blocked. fan_speed may change by 5 % per second. Right now it can go from -10 % to 10 %. Asked for 20 %, which is possible in 2.0 s, or use small steps.",
+              "kernelMessage": "Blocked. fan_speed may change by 5 % per second. Right now it can go from -10 % to 10 %. Requested 20 %, which is possible in 2.0 s, or use small steps.",
               "device": "desk-fan",
               "channel": "fan_speed",
               "limit": {
@@ -1183,7 +1183,7 @@
       "result": {
         "status": "needs_confirmation",
         "code": "needs_confirmation",
-        "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+        "message": "Held until a human approves write:ch1_output on bench-psu.",
         "wire": {
           "status": "needs_confirmation",
           "device": "bench-psu",
@@ -1348,7 +1348,7 @@
       "result": {
         "status": "blocked",
         "code": "bad_step",
-        "message": "Blocked. volts moves in steps of 0.01 V from 0 V. Asked for 5.005 V.",
+        "message": "Blocked. volts moves in steps of 0.01 V from 0 V. Requested 5.005 V.",
         "wire": {
           "status": "blocked",
           "device": "bench-psu",
@@ -1361,7 +1361,7 @@
             "data": {
               "name": "INVALID_VALUE",
               "kernelCode": "bad_step",
-              "kernelMessage": "Blocked. volts moves in steps of 0.01 V from 0 V. Asked for 5.005 V.",
+              "kernelMessage": "Blocked. volts moves in steps of 0.01 V from 0 V. Requested 5.005 V.",
               "device": "bench-psu",
               "action": "set_ch1",
               "argument": "volts",
@@ -1412,7 +1412,7 @@
       "result": {
         "status": "needs_confirmation",
         "code": "needs_confirmation",
-        "message": "Waiting for a human to approve action:set_ch1 on bench-psu.",
+        "message": "Held until a human approves action:set_ch1 on bench-psu.",
         "wire": {
           "status": "needs_confirmation",
           "device": "bench-psu",
@@ -1437,7 +1437,7 @@
       "result": {
         "status": "blocked",
         "code": "needs_confirmation",
-        "message": "Blocked. action:set_ch1 on bench-psu needs a human to confirm, and routines can't wait for one.",
+        "message": "Blocked. action:set_ch1 on bench-psu needs a human to confirm, so a routine can't run it.",
         "wire": {
           "status": "blocked",
           "device": "bench-psu",
@@ -1450,7 +1450,7 @@
             "data": {
               "name": "CONFIRMATION_REQUIRED",
               "kernelCode": "needs_confirmation",
-              "kernelMessage": "Blocked. action:set_ch1 on bench-psu needs a human to confirm, and routines can't wait for one.",
+              "kernelMessage": "Blocked. action:set_ch1 on bench-psu needs a human to confirm, so a routine can't run it.",
               "device": "bench-psu",
               "action": "set_ch1"
             }
@@ -1491,7 +1491,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1504,7 +1504,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1517,7 +1517,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1530,7 +1530,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1543,7 +1543,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1556,7 +1556,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1569,7 +1569,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1582,7 +1582,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1595,7 +1595,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1608,7 +1608,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1621,7 +1621,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1634,7 +1634,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1647,7 +1647,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1660,7 +1660,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1673,7 +1673,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1686,7 +1686,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1699,7 +1699,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1712,7 +1712,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1725,7 +1725,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1738,7 +1738,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1752,7 +1752,7 @@
       "result": {
         "status": "blocked",
         "code": "queue_full",
-        "message": "This client already has 20 requests waiting for a human. Wait for them to be decided.",
+        "message": "This client already has 20 requests held for a human. Wait until a person decides those requests.",
         "wire": {
           "status": "blocked",
           "device": "bench-psu",
@@ -1765,7 +1765,7 @@
             "data": {
               "name": "QUEUE_FULL",
               "kernelCode": "queue_full",
-              "kernelMessage": "This client already has 20 requests waiting for a human. Wait for them to be decided.",
+              "kernelMessage": "This client already has 20 requests held for a human. Wait until a person decides those requests.",
               "device": "bench-psu",
               "channel": "ch1_output",
               "requested": true
@@ -1780,7 +1780,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve write:ch1_output on bench-psu.",
+          "message": "Held until a human approves write:ch1_output on bench-psu.",
           "wire": {
             "status": "pending",
             "device": "bench-psu",
@@ -1866,7 +1866,7 @@
       "result": {
         "status": "needs_confirmation",
         "code": "needs_confirmation",
-        "message": "Waiting for a human to approve write:laser_power on laser.",
+        "message": "Held until a human approves write:laser_power on laser.",
         "wire": {
           "status": "needs_confirmation",
           "device": "laser",
@@ -1913,7 +1913,7 @@
       "result": {
         "status": "blocked",
         "code": "above_max",
-        "message": "Blocked. The laser_power limit is 30 % (max). Asked for 45 %.",
+        "message": "Blocked. The laser_power limit is 30 % (max). Requested 45 %.",
         "wire": {
           "status": "blocked",
           "device": "laser",
@@ -1926,7 +1926,7 @@
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "above_max",
-              "kernelMessage": "Blocked. The laser_power limit is 30 % (max). Asked for 45 %.",
+              "kernelMessage": "Blocked. The laser_power limit is 30 % (max). Requested 45 %.",
               "device": "laser",
               "channel": "laser_power",
               "limit": {
@@ -2076,7 +2076,7 @@
       "result": {
         "status": "blocked",
         "code": "needs_confirmation",
-        "message": "Blocked. action:home on laser needs a human to confirm, and routines can't wait for one.",
+        "message": "Blocked. action:home on laser needs a human to confirm, so a routine can't run it.",
         "wire": {
           "status": "blocked",
           "device": "laser",
@@ -2089,7 +2089,7 @@
             "data": {
               "name": "CONFIRMATION_REQUIRED",
               "kernelCode": "needs_confirmation",
-              "kernelMessage": "Blocked. action:home on laser needs a human to confirm, and routines can't wait for one.",
+              "kernelMessage": "Blocked. action:home on laser needs a human to confirm, so a routine can't run it.",
               "device": "laser",
               "action": "home"
             }
@@ -2135,7 +2135,7 @@
       "result": {
         "status": "needs_confirmation",
         "code": "needs_confirmation",
-        "message": "Waiting for a human to approve action:home on voron.",
+        "message": "Held until a human approves action:home on voron.",
         "wire": {
           "status": "needs_confirmation",
           "device": "voron",
@@ -2153,7 +2153,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve action:home on voron.",
+          "message": "Held until a human approves action:home on voron.",
           "wire": {
             "status": "pending",
             "device": "voron",
@@ -2192,7 +2192,7 @@
       "result": {
         "status": "needs_confirmation",
         "code": "needs_confirmation",
-        "message": "Waiting for a human to approve write:extruder_target on voron.",
+        "message": "Held until a human approves write:extruder_target on voron.",
         "wire": {
           "status": "needs_confirmation",
           "device": "voron",
@@ -2208,7 +2208,7 @@
       "result": {
         "status": "blocked",
         "code": "above_max",
-        "message": "Blocked. The extruder_target limit is 260 degC (max). Asked for 315.556 degC.",
+        "message": "Blocked. The extruder_target limit is 260 degC (max). Requested 315.556 degC.",
         "wire": {
           "status": "blocked",
           "device": "voron",
@@ -2221,7 +2221,7 @@
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "above_max",
-              "kernelMessage": "Blocked. The extruder_target limit is 260 degC (max). Asked for 315.556 degC.",
+              "kernelMessage": "Blocked. The extruder_target limit is 260 degC (max). Requested 315.556 degC.",
               "device": "voron",
               "channel": "extruder_target",
               "limit": {
@@ -2281,7 +2281,7 @@
       "result": {
         "status": "blocked",
         "code": "rate_limited",
-        "message": "Blocked. bed_target may change by 20 degC per second. Right now it can go from -20 degC to 20 degC. Asked for 100 degC, which is possible in 4.0 s, or use small steps.",
+        "message": "Blocked. bed_target may change by 20 degC per second. Right now it can go from -20 degC to 20 degC. Requested 100 degC, which is possible in 4.0 s, or use small steps.",
         "wire": {
           "status": "blocked",
           "device": "voron",
@@ -2294,7 +2294,7 @@
             "data": {
               "name": "RATE_LIMITED",
               "kernelCode": "rate_limited",
-              "kernelMessage": "Blocked. bed_target may change by 20 degC per second. Right now it can go from -20 degC to 20 degC. Asked for 100 degC, which is possible in 4.0 s, or use small steps.",
+              "kernelMessage": "Blocked. bed_target may change by 20 degC per second. Right now it can go from -20 degC to 20 degC. Requested 100 degC, which is possible in 4.0 s, or use small steps.",
               "device": "voron",
               "channel": "bed_target",
               "limit": {
@@ -2349,7 +2349,7 @@
       "result": {
         "status": "blocked",
         "code": "above_max",
-        "message": "Blocked. The ra limit is 24 hour (max). Asked for 25 hour.",
+        "message": "Blocked. The ra limit is 24 hour (max). Requested 25 hour.",
         "wire": {
           "status": "blocked",
           "device": "mount",
@@ -2362,7 +2362,7 @@
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "above_max",
-              "kernelMessage": "Blocked. The ra limit is 24 hour (max). Asked for 25 hour.",
+              "kernelMessage": "Blocked. The ra limit is 24 hour (max). Requested 25 hour.",
               "device": "mount",
               "action": "slew_to",
               "argument": "ra",
@@ -2542,7 +2542,7 @@
       "result": {
         "status": "blocked",
         "code": "bad_step",
-        "message": "Blocked. brightness moves in steps of 1 % from 1 %. Asked for 50.5 %.",
+        "message": "Blocked. brightness moves in steps of 1 % from 1 %. Requested 50.5 %.",
         "wire": {
           "status": "blocked",
           "device": "desk-lamp",
@@ -2555,7 +2555,7 @@
             "data": {
               "name": "INVALID_VALUE",
               "kernelCode": "bad_step",
-              "kernelMessage": "Blocked. brightness moves in steps of 1 % from 1 %. Asked for 50.5 %.",
+              "kernelMessage": "Blocked. brightness moves in steps of 1 % from 1 %. Requested 50.5 %.",
               "device": "desk-lamp",
               "channel": "brightness",
               "limit": {
@@ -2580,7 +2580,7 @@
       "result": {
         "status": "blocked",
         "code": "below_min",
-        "message": "Blocked. The brightness limit is 1 % (min). Asked for 0 %.",
+        "message": "Blocked. The brightness limit is 1 % (min). Requested 0 %.",
         "wire": {
           "status": "blocked",
           "device": "desk-lamp",
@@ -2593,7 +2593,7 @@
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "below_min",
-              "kernelMessage": "Blocked. The brightness limit is 1 % (min). Asked for 0 %.",
+              "kernelMessage": "Blocked. The brightness limit is 1 % (min). Requested 0 %.",
               "device": "desk-lamp",
               "channel": "brightness",
               "limit": {
@@ -2795,7 +2795,7 @@
       "result": {
         "status": "blocked",
         "code": "above_max",
-        "message": "Blocked. The duration limit is 30 s (max). Asked for 120 s.",
+        "message": "Blocked. The duration limit is 30 s (max). Requested 120 s.",
         "wire": {
           "status": "blocked",
           "device": "parity-waterer",
@@ -2808,7 +2808,7 @@
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "above_max",
-              "kernelMessage": "Blocked. The duration limit is 30 s (max). Asked for 120 s.",
+              "kernelMessage": "Blocked. The duration limit is 30 s (max). Requested 120 s.",
               "device": "parity-waterer",
               "action": "water",
               "argument": "duration",
@@ -2834,7 +2834,7 @@
       "result": {
         "status": "blocked",
         "code": "below_min",
-        "message": "Blocked. The duration limit is 1 s (min). Asked for 0.5 s.",
+        "message": "Blocked. The duration limit is 1 s (min). Requested 0.5 s.",
         "wire": {
           "status": "blocked",
           "device": "parity-waterer",
@@ -2847,7 +2847,7 @@
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "below_min",
-              "kernelMessage": "Blocked. The duration limit is 1 s (min). Asked for 0.5 s.",
+              "kernelMessage": "Blocked. The duration limit is 1 s (min). Requested 0.5 s.",
               "device": "parity-waterer",
               "action": "water",
               "argument": "duration",
@@ -3183,7 +3183,7 @@
       "result": {
         "status": "blocked",
         "code": "above_max",
-        "message": "Blocked. The duration limit is 30 s (max). Asked for 120 s.",
+        "message": "Blocked. The duration limit is 30 s (max). Requested 120 s.",
         "wire": {
           "status": "blocked",
           "device": "plant-waterer",
@@ -3196,7 +3196,7 @@
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "above_max",
-              "kernelMessage": "Blocked. The duration limit is 30 s (max). Asked for 120 s.",
+              "kernelMessage": "Blocked. The duration limit is 30 s (max). Requested 120 s.",
               "device": "plant-waterer",
               "action": "water",
               "argument": "duration",
@@ -3290,7 +3290,7 @@
       "result": {
         "status": "blocked",
         "code": "above_max",
-        "message": "Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.",
+        "message": "Blocked. The extruder_target limit is 260 degC (max). Requested 300 degC.",
         "wire": {
           "status": "blocked",
           "device": "printer",
@@ -3303,7 +3303,7 @@
             "data": {
               "name": "LIMIT_EXCEEDED",
               "kernelCode": "above_max",
-              "kernelMessage": "Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.",
+              "kernelMessage": "Blocked. The extruder_target limit is 260 degC (max). Requested 300 degC.",
               "device": "printer",
               "channel": "extruder_target",
               "limit": {
@@ -3344,7 +3344,7 @@
       "result": {
         "status": "pending",
         "code": "needs_confirmation",
-        "message": "Waiting for a human to approve action:cancel on printer.",
+        "message": "Held until a human approves action:cancel on printer.",
         "wire": {
           "status": "pending",
           "device": "printer",
@@ -3361,7 +3361,7 @@
         {
           "status": "pending",
           "code": "needs_confirmation",
-          "message": "Waiting for a human to approve action:cancel on printer.",
+          "message": "Held until a human approves action:cancel on printer.",
           "wire": {
             "status": "pending",
             "device": "printer",
@@ -3456,7 +3456,7 @@
         {
           "status": "blocked",
           "code": "rate_limited",
-          "message": "Blocked. bed_target may change by 20 degC per second. Right now it can go from 0 degC to 0 degC. Asked for 60 degC, which is possible in 3.0 s, or use small steps.",
+          "message": "Blocked. bed_target may change by 20 degC per second. Right now it can go from 0 degC to 0 degC. Requested 60 degC, which is possible in 3.0 s, or use small steps.",
           "wire": {
             "status": "blocked",
             "device": "printer",
@@ -3469,7 +3469,7 @@
               "data": {
                 "name": "RATE_LIMITED",
                 "kernelCode": "rate_limited",
-                "kernelMessage": "Blocked. bed_target may change by 20 degC per second. Right now it can go from 0 degC to 0 degC. Asked for 60 degC, which is possible in 3.0 s, or use small steps.",
+                "kernelMessage": "Blocked. bed_target may change by 20 degC per second. Right now it can go from 0 degC to 0 degC. Requested 60 degC, which is possible in 3.0 s, or use small steps.",
                 "device": "printer",
                 "channel": "bed_target",
                 "limit": {
@@ -3491,7 +3491,7 @@
       "result": {
         "status": "blocked",
         "code": "rate_limited",
-        "message": "Blocked. bed_target may change by 20 degC per second. Right now it can go from 0 degC to 0 degC. Asked for 110 degC, which is possible in 5.5 s, or use small steps.",
+        "message": "Blocked. bed_target may change by 20 degC per second. Right now it can go from 0 degC to 0 degC. Requested 110 degC, which is possible in 5.5 s, or use small steps.",
         "wire": {
           "status": "blocked",
           "device": "printer",
@@ -3504,7 +3504,7 @@
             "data": {
               "name": "RATE_LIMITED",
               "kernelCode": "rate_limited",
-              "kernelMessage": "Blocked. bed_target may change by 20 degC per second. Right now it can go from 0 degC to 0 degC. Asked for 110 degC, which is possible in 5.5 s, or use small steps.",
+              "kernelMessage": "Blocked. bed_target may change by 20 degC per second. Right now it can go from 0 degC to 0 degC. Requested 110 degC, which is possible in 5.5 s, or use small steps.",
               "device": "printer",
               "channel": "bed_target",
               "limit": {
@@ -3577,7 +3577,7 @@
     "inline:waterer": "d5491ef1e63f99b656de01fece078affd4644e65df0356f690f4c69a07488ccb"
   },
   "scenario": {
-    "outcome": "You'll see the agent raise the bed target from 60 °C to 70 °C, have a request for a nozzle temperature of 300 °C refused at the nozzle limit of 260 °C and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.",
+    "outcome": "You'll see the agent raise the bed target from 60 °C to 70 °C, have a request for a nozzle temperature of 300 °C blocked at the nozzle limit of 260 °C and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.",
     "lines": [
       "# the agent checks the first layer",
       "→ hal/read    { \"device\": \"printer-cam\", \"channel\": \"frame\" }",

@@ -195,7 +195,7 @@ A nozzle above its limit is blocked. A warmer bed inside its limit is granted.
      "data": {"name": "LIMIT_EXCEEDED", "kernelCode": "above_max", "device": "printer", "channel": "extruder_target",
               "requested": {"value": 300, "unit": "degC"}, "limit": {"value": 260, "unit": "degC"},
               "file": "printer.hal.yaml", "confirmedBy": "owner", "confirmedAt": "2026-10-24",
-              "kernelMessage": "Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC."}}}
+              "kernelMessage": "Blocked. The extruder_target limit is 260 degC (max). Requested 300 degC."}}}
 → {"jsonrpc": "2.0", "id": 7, "method": "hal/write",
    "params": {"device": "printer", "channel": "bed_target", "value": 70, "unit": "degC"}}
 ← {"jsonrpc": "2.0", "id": 7, "result": {"status": "done", "device": "printer", "channel": "bed_target",
@@ -363,7 +363,7 @@ Reads the audit log, newest entry first. Params `{ device?, status?, event?, sin
      {"seq": 41, "at": "2026-10-24T14:02:00Z", "event": "write", "principal": "agent:claude",
       "device": "printer", "target": "write:extruder_target", "status": "blocked", "code": "above_max",
       "body": {"requested": {"value": 300, "unit": "degC"}, "limit": {"max": 260, "unit": "degC"},
-               "message": "Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC."},
+               "message": "Blocked. The extruder_target limit is 260 degC (max). Requested 300 degC."},
       "hash": "a3f9..."}]}}
 ```
 

@@ -111,7 +111,7 @@ function request(command: ConfirmationRequest["command"]): ConfirmationRequest {
     dry_run: {
       status: "needs_confirmation",
       code: "needs_confirmation",
-      message: "Waiting for a human to approve action:cancel on printer.",
+      message: "Held until a human approves action:cancel on printer.",
       device: "printer",
       target: "action:cancel",
       value: {},
@@ -149,7 +149,7 @@ describe("the person's question", () => {
   it("falls back to the kernel's words when the device isn't loaded", () => {
     const ask = askOf(request({ kind: "action", device: "printer", action: "cancel", args: {} }), undefined);
     expect(ask.device).toBe("printer");
-    expect(ask.why.startsWith("Waiting for a human to approve action:cancel on printer.")).toBe(true);
+    expect(ask.why.startsWith("Held until a human approves action:cancel on printer.")).toBe(true);
     expect(askedAgo(13.4)).toBe("13 s ago");
     expect(askedAgo(130)).toBe("2 min ago");
   });

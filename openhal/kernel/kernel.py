@@ -553,13 +553,12 @@ class Kernel:
         if principal.kind == "routine":
             raise Block(
                 "needs_confirmation",
-                f"Blocked. {command.target} on {command.device} needs a human to confirm, "
-                "and routines can't wait for one.",
+                f"Blocked. {command.target} on {command.device} needs a human to confirm, so a routine can't run it.",
             )
         return Decision(
             status="needs_confirmation",
             code="needs_confirmation",
-            message=f"Waiting for a human to approve {command.target} on {command.device}.",
+            message=f"Held until a human approves {command.target} on {command.device}.",
             **decision_kwargs,
         )
 
@@ -1064,7 +1063,7 @@ class Kernel:
             runtime = self._runtime(device_id)
             spec = runtime.file.write.get(channel)
             if spec is None or spec.type != "number" or spec.unit is None:
-                raise Block("unknown_target", f"Refused. {device_id} has no numeric write channel {channel!r}.")
+                raise Block("unknown_target", f"Blocked. {device_id} has no numeric write channel {channel!r}.")
             key = (principal.label, device_id, channel)
             current = effective_limits(spec, self._session_limits.get(key))
             updated = dict(self._session_limits.get(key, {}))
@@ -1074,7 +1073,7 @@ class Kernel:
                     if low < current.min:
                         raise Block(
                             "cannot_loosen",
-                            f"Refused. {channel} min is already {format_quantity(current.min, spec.unit)}. "
+                            f"Blocked. {channel} min is already {format_quantity(current.min, spec.unit)}. "
                             "Session limits can only be tightened.",
                         )
                     updated["min"] = low
@@ -1083,7 +1082,7 @@ class Kernel:
                     if high > current.max:
                         raise Block(
                             "cannot_loosen",
-                            f"Refused. {channel} max is already {format_quantity(current.max, spec.unit)}. "
+                            f"Blocked. {channel} max is already {format_quantity(current.max, spec.unit)}. "
                             "Session limits can only be tightened.",
                         )
                     updated["max"] = high
@@ -1092,15 +1091,15 @@ class Kernel:
                     if current.rate is not None and value > current.rate:
                         raise Block(
                             "cannot_loosen",
-                            f"Refused. {channel} may already change by at most "
+                            f"Blocked. {channel} may already change by at most "
                             f"{format_quantity(current.rate, spec.unit)} per second. "
                             "Session limits can only be tightened.",
                         )
                     updated["rate"] = value
             except UnitError as exc:
-                raise Block("bad_unit", f"Refused. {exc}") from exc
+                raise Block("bad_unit", f"Blocked. {exc}") from exc
             if updated.get("min", -math.inf) > updated.get("max", math.inf):
-                raise Block("cannot_loosen", "Refused. min would be above max.")
+                raise Block("cannot_loosen", "Blocked. min would be above max.")
         except Block as block:
             self.audit.append(
                 "tighten",

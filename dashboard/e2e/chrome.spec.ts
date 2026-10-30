@@ -141,7 +141,7 @@ test("a person runs an action that needs confirmation each time, and a queued re
 
   await page.route("**/v1/action", (route) =>
     route.fulfill({
-      json: { status: "needs_confirmation", code: "confirmation_required", message: "Waiting for a human to approve action:vent on curing-heater.", request_id: "queued-by-test" },
+      json: { status: "needs_confirmation", code: "confirmation_required", message: "Held until a human approves action:vent on curing-heater.", request_id: "queued-by-test" },
     }),
   );
   await vent.getByRole("button", { name: "Confirm and run vent" }).click();

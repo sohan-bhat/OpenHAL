@@ -65,7 +65,8 @@ class ConfirmationQueue:
         mine = [request for request in pending if request.principal.label == principal.label]
         if len(mine) >= self.per_principal:
             raise QueueFull(
-                f"This client already has {len(mine)} requests waiting for a human. Wait for them to be decided."
+                f"This client already has {len(mine)} requests held for a human. "
+                "Wait until a person decides those requests."
             )
         if len(pending) >= self.max_pending:
             raise QueueFull("The confirmation queue is full. Wait for pending requests to be decided.")

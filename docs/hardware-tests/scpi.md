@@ -107,7 +107,7 @@ uv run openhal token create --name hwtest-agent --scope control_medium --json | 
 uv run openhal --token-file "$OPENHAL_HOME/hwtest-agent.token" action bench-psu.set_ch1 volts="1 V" amps="0.01 A"
 ```
 
-Expected. `pending needs_confirmation  Waiting for a human to approve action:set_ch1 on bench-psu.` and a line with the request id. The front panel doesn't change yet. Approve the request with that id, then do the same for the output switch.
+Expected. `pending needs_confirmation  Held until a human approves action:set_ch1 on bench-psu.` and a line with the request id. The front panel doesn't change yet. Approve the request with that id, then do the same for the output switch.
 
 ```
 uv run openhal confirm list
@@ -148,7 +148,7 @@ Expected. The output turns off on the front panel and reads `false`.
 uv run openhal action bench-psu.set_ch1 volts="20 V" amps="0.01 A"
 ```
 
-Expected. `blocked above_max  Blocked. The volts limit is 12 V (max). Asked for 20 V.` Nothing changes on the front panel. Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
+Expected. `blocked above_max  Blocked. The volts limit is 12 V (max). Requested 20 V.` Nothing changes on the front panel. Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 

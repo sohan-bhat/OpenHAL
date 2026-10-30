@@ -130,7 +130,7 @@ Run the probe in a loop and unplug the cable while it runs. Plug the cable back 
 while true; do uv run python probe.py ./fan-board.hal.yaml; sleep 1; done
 ```
 
-Expected. While unplugged each run ends with `Could not open` or `stopped answering`. After replugging the reads come back without restarting anything. Stop the loop with Ctrl-C.
+Expected. While unplugged each run ends with `Could not open` or `stopped sending data`. After replugging the reads come back without restarting anything. Stop the loop with Ctrl-C.
 
 ## Step 5. Start the hub with the device
 
