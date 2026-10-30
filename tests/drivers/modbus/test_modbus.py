@@ -217,7 +217,7 @@ async def test_device_exceptions_fail_writes_and_reads(sim: ModbusSimulator) -> 
     sim.exception = None
     channels = "read:\n  far: { unit: V, map: { register: 200, kind: input } }"
     other = await connected(file_for(sim, channels))
-    with pytest.raises(DriverError, match="refused read_input_registers"):
+    with pytest.raises(DriverError, match="returned an error for read_input_registers"):
         await other.read("far")
 
 
@@ -240,7 +240,7 @@ async def test_slow_device_times_out_and_turns_unhealthy(sim: ModbusSimulator) -
     assert health.latency_ms is not None
     sim.delay_s = 1.5
     for _ in range(3):
-        with pytest.raises(TimeoutError, match="didn't answer"):
+        with pytest.raises(TimeoutError, match="sent no reply"):
             await driver.read("v")
     assert (await driver.health()).connected is False
     sim.delay_s = 0

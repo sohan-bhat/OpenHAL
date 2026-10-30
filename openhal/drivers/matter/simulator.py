@@ -1,6 +1,6 @@
-"""A simulated Matter Server, a WebSocket server that speaks the python-matter-server message format.
+"""A simulated Matter Server, a WebSocket server that uses the python-matter-server message format.
 
-It sends the server info object on connect and answers `start_listening`, `get_nodes`, `get_node`,
+It sends the server info object on connect and replies to `start_listening`, `get_nodes`, `get_node`,
 `server_info`, `read_attribute`, `write_attribute` and `device_command`. Nodes follow the Matter
 data model with decimal `endpoint/cluster/attribute` paths.
 
@@ -13,8 +13,8 @@ data model with decimal `endpoint/cluster/attribute` paths.
   limited to 700 to 3000.
 
 Every change pushes `attribute_updated`. Faults. `unavailable(node)` pushes `node_updated` with
-`available: false`, `fail_next` answers the next command with error code 7, `latency_s` slows
-answers, and `drop()` closes every connection.
+`available: false`, `fail_next` fails the next command with error code 7, `latency_s` slows
+replies, and `drop()` closes every connection.
 """
 
 from __future__ import annotations

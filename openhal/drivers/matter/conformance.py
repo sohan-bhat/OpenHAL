@@ -80,7 +80,7 @@ def case() -> ConformanceCase:
         deadline = time.monotonic() + 3.0
         while (await driver.health()).connected:
             if time.monotonic() > deadline:
-                raise AssertionError("the driver did not notice the server going away")
+                raise AssertionError("the driver did not detect the server going away")
             await asyncio.sleep(0.02)
 
     async def cleanup() -> None:

@@ -1,7 +1,7 @@
 """A client for the Matter Server WebSocket API, the one python-matter-server and its matter.js successor share.
 
 The server sends a server info object (`fabric_id`, `schema_version`, `sdk_version` and so on) as
-soon as the socket opens. Requests are `{"message_id", "command", "args"}`. Answers are
+soon as the socket opens. Requests are `{"message_id", "command", "args"}`. Replies are
 `{"message_id", "result"}` or `{"message_id", "error_code", "details"}`. After `start_listening`
 the server returns every node with its attributes, keyed by `endpoint/cluster/attribute` paths of
 decimal ids, and then pushes events as `{"event", "data"}`, such as `attribute_updated` with
@@ -70,7 +70,7 @@ class MatterClient:
                 f"Could not open the Matter Server at {self.url} ({exc}). Check the URL and port 5580."
             ) from None
         except Exception as exc:  # noqa: BLE001
-            raise DriverError(f"The Matter Server at {self.url} refused the WebSocket ({exc}).") from None
+            raise DriverError(f"The Matter Server at {self.url} did not accept the WebSocket ({exc}).") from None
         try:
             hello = json.loads(await asyncio.wait_for(ws.recv(), self.timeout))
         except Exception as exc:  # noqa: BLE001
@@ -82,7 +82,7 @@ class MatterClient:
         if int(hello.get("schema_version") or 0) < MIN_SCHEMA:
             await ws.close()
             raise DriverError(
-                f"The Matter Server speaks schema {hello.get('schema_version')}. Update it to {MIN_SCHEMA} or newer."
+                f"The Matter Server uses schema {hello.get('schema_version')}. Update it to {MIN_SCHEMA} or newer."
             )
         self.server = hello
         self._ws = ws
@@ -131,7 +131,10 @@ class MatterClient:
                 reason = ERRORS.get(code, f"error {code}") if isinstance(code, int) else str(code)
                 details = message.get("details")
                 future.set_exception(
-                    DriverError(f"The Matter Server refused the command ({reason}{f', {details}' if details else ''}).")
+                    DriverError(
+                        "The Matter Server returned an error for the command "
+                        f"({reason}{f', {details}' if details else ''})."
+                    )
                 )
                 future.exception()
             else:
@@ -162,7 +165,7 @@ class MatterClient:
             await self._ws.send(json.dumps(message))
             return await asyncio.wait_for(future, self.timeout)
         except TimeoutError:
-            raise TimeoutError(f"The Matter Server didn't answer {command} within {self.timeout:g} s.") from None
+            raise TimeoutError(f"The Matter Server sent no reply to {command} within {self.timeout:g} s.") from None
         except DriverError:
             raise
         except Exception as exc:  # noqa: BLE001

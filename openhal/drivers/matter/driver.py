@@ -370,7 +370,7 @@ class MatterDriver(Driver):
             code = status.get("Status", 0) if isinstance(status, dict) else 0
             if code:
                 name = STATUS.get(code, f"status 0x{code:02X}")
-                raise DriverError(f"{self._where} refused the value for {write_map.key} ({name}).")
+                raise DriverError(f"{self._where} returned an error for the value of {write_map.key} ({name}).")
         return None
 
     async def _action(self, name: str, args: dict[str, Any]) -> Any:

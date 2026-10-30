@@ -1,7 +1,7 @@
 """A simulated Modbus fan controller on pymodbus's own server, over TCP or RTU framing.
 
 The server runs in a background thread with its own event loop, so tests and the conformance
-case can start it from synchronous code and the driver talks to it over a real socket. RTU uses
+case can start it from synchronous code and the driver connects to it over a real socket. RTU uses
 pymodbus's `socket://` serial transport, which sends real RTU frames (with CRC) over TCP.
 
 Register map (zero-based protocol addresses).
@@ -17,7 +17,7 @@ Register map (zero-based protocol addresses).
 | coil | 0 | bit | enable |
 | discrete | 0 | bit | door closed |
 
-Fault injection. `delay_s` makes every request slow, `exception` answers every request with a
+Fault injection. `delay_s` makes every request slow, `exception` fails every request with a
 Modbus exception code, and `stop()` and `start()` take the server away and bring it back.
 """
 
