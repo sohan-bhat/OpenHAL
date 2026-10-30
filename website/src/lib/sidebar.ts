@@ -84,9 +84,15 @@ function play(element: HTMLElement, frames: Frames, duration: number): Promise<b
   );
 }
 
-/** The parts of a page that move over when the sidebar hides or shows: the content and the outline. */
-function movers(): HTMLElement[] {
-  return [...document.querySelectorAll<HTMLElement>("main, .right-sidebar, mobile-starlight-toc nav")].filter((element) => element.getClientRects().length);
+/**
+ * The parts of a page that move over when the sidebar hides or shows, each with the element whose
+ * place says how far it moves: the content, measured by its column, which also changes its margin,
+ * and the outline beside it or above it.
+ */
+function movers(): Array<[HTMLElement, HTMLElement]> {
+  const pairs: Array<[HTMLElement, HTMLElement | null]> = [[document.querySelector<HTMLElement>("main")!, document.querySelector<HTMLElement>("main .sl-container")]];
+  for (const element of document.querySelectorAll<HTMLElement>(".right-sidebar, mobile-starlight-toc nav")) pairs.push([element, element]);
+  return pairs.filter((pair): pair is [HTMLElement, HTMLElement] => Boolean(pair[0] && pair[1]?.getClientRects().length));
 }
 
 /** Keeps the hidden sidebar out of the tab order and away from screen readers, except while it peeks. */
@@ -107,7 +113,7 @@ export function setCollapsed(next: boolean, { handoff = false }: { handoff?: boo
   const element = pane();
   const moving = wide() && !still();
   const peeked = isPeeking();
-  const before = moving ? movers().map((mover) => [mover, mover.getBoundingClientRect().left] as const) : [];
+  const before = moving ? movers().map(([mover, probe]) => [mover, probe, probe.getBoundingClientRect().left] as const) : [];
   const from = element && moving ? getComputedStyle(element).transform : "none";
   for (const [mover] of before) stop(mover);
   if (element) stop(element);
@@ -131,8 +137,8 @@ export function setCollapsed(next: boolean, { handoff = false }: { handoff?: boo
   const turn = ++turns;
   root().setAttribute("data-sidebar-moving", "");
   const done: Array<Promise<boolean>> = [];
-  for (const [mover, left] of before) {
-    const shift = left - mover.getBoundingClientRect().left;
+  for (const [mover, probe, left] of before) {
+    const shift = left - probe.getBoundingClientRect().left;
     if (Math.abs(shift) > 0.5) done.push(play(mover, { transform: [`translateX(${shift}px)`, "translateX(0px)"] }, duration));
   }
   if (element && !peeked) {

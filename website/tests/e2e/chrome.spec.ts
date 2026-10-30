@@ -256,6 +256,40 @@ test.describe("the sidebar's collapse", () => {
     expect((await box(page, "main h1"))[0]).toBe(docked.title);
   });
 
+  test("moves the content from where it stood, both ways, so the title never jumps", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    const title = () => box(page, "main h1").then((rect) => rect[0]);
+    const firstFrame = (selector: string) =>
+      page.evaluate(async (selector) => {
+        const main = document.querySelector("main")!;
+        document.querySelector<HTMLElement>(selector)!.click();
+        for (let frame = 0; frame < 120 && !main.getAnimations().length; frame++) await new Promise(requestAnimationFrame);
+        const animations = main.getAnimations();
+        for (const animation of animations) {
+          animation.pause();
+          animation.currentTime = 0;
+        }
+        const left = document.querySelector("main h1")!.getBoundingClientRect().left;
+        for (const animation of animations) animation.play();
+        return { left, moving: animations.length };
+      }, selector);
+    await page.getByRole("button", { name: "Hide sidebar" }).hover();
+    await expect(page.locator("astro-island:has([data-sidebar-hide])")).not.toHaveAttribute("ssr", "");
+    const docked = await title();
+    const hiding = await firstFrame("[data-sidebar-hide]");
+    expect(hiding.moving).toBeGreaterThan(0);
+    expect(Math.abs(hiding.left - docked)).toBeLessThan(2);
+    await settled(page);
+    const hidden = await title();
+    expect(hidden).toBeLessThan(docked);
+    await page.getByRole("button", { name: "Show sidebar" }).hover();
+    await expect(page.locator("astro-island:has([data-sidebar-show])")).not.toHaveAttribute("ssr", "");
+    const showing = await firstFrame("[data-sidebar-show]");
+    expect(Math.abs(showing.left - hidden)).toBeLessThan(2);
+    await settled(page);
+    expect(await title()).toBe(docked);
+  });
+
   test("keeps the choice on the next page, hidden from the first frame without a layout shift", async ({ page, browserName }) => {
     await page.goto("/docs/quickstart/");
     await hide(page);
