@@ -195,13 +195,13 @@ async def test_board_refusal_is_a_driver_error(driver: OpenHalFirmwareDriver) ->
 
 async def test_silent_board_times_out(driver: OpenHalFirmwareDriver) -> None:
     SIMULATORS["bench"].silent = True
-    with pytest.raises(DriverError, match="didn't answer READ"):
+    with pytest.raises(DriverError, match="sent no reply to READ"):
         await driver.read("temperature")
 
 
 async def test_corrupted_reply_is_discarded_and_times_out(driver: OpenHalFirmwareDriver) -> None:
     SIMULATORS["bench"].corrupt_next = True
-    with pytest.raises(DriverError, match="didn't answer"):
+    with pytest.raises(DriverError, match="sent no reply"):
         await driver.read("temperature")
     reading = await driver.read("temperature")
     assert reading.channel == "temperature"

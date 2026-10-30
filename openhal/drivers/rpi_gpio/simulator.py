@@ -1,8 +1,8 @@
 """The rpi-gpio simulator is gpiozero's own mock pin factory, with helpers for tests.
 
 `gpiozero.pins.mock.MockFactory` with `MockPWMPin` pins simulates every pin on the header,
-including PWM state, and lets tests drive inputs (`drive_low`, `drive_high`) and read what an
-output pin is set to (`state`). It ships with gpiozero, so nothing here talks to real pins.
+including PWM state, so tests can drive inputs (`drive_low`, `drive_high`) and read what an
+output pin is set to (`state`). It ships with gpiozero, so nothing here touches real pins.
 """
 
 from __future__ import annotations

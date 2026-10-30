@@ -3,7 +3,7 @@
 It follows the rosbridge v2 protocol (rosbridge_suite, ROSBRIDGE_PROTOCOL.md) closely enough to
 run the driver's real client. The robot publishes /battery_state, /odom, /temperature and
 /lamp_state, listens on /cmd_vel and /lamp, offers /reset_odometry (std_srvs/srv/Trigger) and
-/set_lamp (std_srvs/srv/SetBool), runs a /navigate action, and answers the rosapi services the
+/set_lamp (std_srvs/srv/SetBool), runs a /navigate action, and serves the rosapi services the
 driver uses. Odometry integrates /cmd_vel in simulated time.
 
 Fault hooks. `silent` stops all output, `drop_clients()` closes every connection and `inject()`

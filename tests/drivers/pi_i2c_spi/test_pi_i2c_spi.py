@@ -322,7 +322,7 @@ async def test_short_replies_fail_the_read(spi: FakeSpiBus) -> None:
     driver = await connected(
         bare(f"read:\n  pot: {{ unit: V, map: {ADC} }}", "{ pi-i2c-spi: spi0.1 }"), spi_factory=spi.spi
     )
-    with pytest.raises(DriverError, match="returned 1 bytes, expected 3"):
+    with pytest.raises(DriverError, match="returned 1 bytes, not 3"):
         await driver.read("pot")
 
 

@@ -3,7 +3,7 @@
 `FakeI2CBus` has the smbus2.SMBus methods the driver calls (`read_i2c_block_data`,
 `write_i2c_block_data`, `i2c_rdwr` with real `smbus2.i2c_msg` objects and `close`), and
 `FakeSpiDev` has the spidev.SpiDev ones (`open`, `xfer2`, `close` and the settings attributes).
-Chips answer from their datasheets.
+Chips reply with values from their datasheets.
 
 - `Tmp102`, a TI temperature sensor at 0x48. Registers are 16 bits, sent most significant byte
   first. 0x00 temperature, 12-bit two's complement left-justified, 0.0625 degC per step,

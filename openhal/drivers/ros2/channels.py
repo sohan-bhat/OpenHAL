@@ -9,7 +9,7 @@
 
 `field` is a dotted path into the message, with numbers for list items (`ranges.0`). `base`
 holds the rest of the message, so a change to `linear.x` publishes a whole Twist with zeros
-elsewhere. `unit` is the unit ROS uses for the field (REP 103 says SI) and `scale` multiplies the
+elsewhere. `unit` is the unit ROS uses for the field (REP 103 specifies SI) and `scale` multiplies the
 ROS value into it. `integer: true` sends whole numbers for int fields.
 """
 
@@ -141,5 +141,5 @@ def with_field(base: dict[str, Any], path: str, value: Any) -> dict[str, Any]:
 
 def finite(value: Any, where: str) -> float:
     if isinstance(value, bool) or not isinstance(value, int | float) or not math.isfinite(value):
-        raise DriverError(f"{where}: expected a finite number from ROS, got {value!r}.")
+        raise DriverError(f"{where}: ROS sent {value!r}, not a finite number.")
     return float(value)

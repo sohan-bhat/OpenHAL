@@ -107,13 +107,13 @@ async def test_pylabrobot_refusals_fail_before_anything_moves() -> None:
     _driver, backend, bench = make()
     await bench.connect()
     assert_done(await bench.act("initialize"))
-    assert_failed(await bench.act("aspirate", well="plate:B1", volume="10 uL"), "refused aspirate")
+    assert_failed(await bench.act("aspirate", well="plate:B1", volume="10 uL"), "returned an error for aspirate")
     assert_done(await bench.act("pick_up_tips", tips="tips:A1"))
     count = len(backend.operations)
     assert_failed(await bench.act("aspirate", well="plate:B1", volume="10 uL"), "TooLittleLiquidError")
-    assert_failed(await bench.act("pick_up_tips", tips="tips:B1"), "refused pick_up_tips")
+    assert_failed(await bench.act("pick_up_tips", tips="tips:B1"), "returned an error for pick_up_tips")
     assert len(backend.operations) == count
-    assert_failed(await bench.act("aspirate", well="plate:A1:B1", volume="10 uL"), "refused aspirate")
+    assert_failed(await bench.act("aspirate", well="plate:A1:B1", volume="10 uL"), "returned an error for aspirate")
     assert_done(await bench.act("discard_tips"))
     await bench.close()
 
@@ -162,7 +162,7 @@ async def test_lost_instrument_and_reconnect() -> None:
     await bench.connect()
     backend.lost = True
     assert not (await driver.health()).connected
-    assert_failed(await bench.act("initialize"), "doesn't answer")
+    assert_failed(await bench.act("initialize"), "sends no reply")
     fresh = RecordingBackend(num_channels=8)
     driver._injected = fresh
     await bench.connect()
@@ -221,7 +221,7 @@ read:
         (
             "- { name: tips, resource: hamilton_96_tiprack_1000uL_filter, rails: 3 }\n"
             "    - { name: more, resource: hamilton_96_tiprack_1000uL_filter, rails: 3 }",
-            "refused the placement",
+            "returned an error for the placement",
         ),
     ],
 )
