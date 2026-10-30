@@ -1,4 +1,4 @@
-"""Run the print babysitter scenario against a real hub and record what the hub answered.
+"""Run the print babysitter scenario against a real hub and record what the hub returned.
 
 Someone starts a long print and asks an agent to keep an eye on it. `run()` starts a hub on a
 loopback port with two simulated devices from examples/print-babysitter/, a Klipper printer behind
@@ -9,24 +9,25 @@ exchanges.
 1. The agent reads a camera frame. A corner of the first layer is lifting.
 2. The agent raises `bed_target` from 60 degC to 70 degC. The new target is inside the limit, so the
    write is done.
-3. The agent asks for a 300 degC nozzle and gets LIMIT_EXCEEDED, since the limit is 260 degC.
+3. The agent sends a request for a nozzle temperature of 300 degC and gets LIMIT_EXCEEDED, since the
+   limit is 260 degC.
 4. Later the agent reads another frame. The print has come loose.
 5. The agent pauses the print, which is done straight away.
-6. The agent asks to cancel. Cancelling can't be undone, so the hub answers pending and sends the
+6. The agent sends a request to cancel. Cancelling can't be undone, so the hub returns pending and sends the
    request to the owner.
 7. The owner approves the cancel with the human token. The kernel checks the cancel again and grants
    the cancel, the driver sends the cancel to the printer, and Klipper reports the print cancelled.
 
 Each exchange also keeps what the kernel did (the checks, the grant and the audit entries), the
 commands the printer received, and the printer panel. The panel is the hub's view of the printer
-(`GET /v1/devices/printer`), the view the Inspector shows. The view reports what the hub already
-knows, so reading the panel sends nothing to the printer and adds nothing to the audit log. At the
+(`GET /v1/devices/printer`), the view the Inspector shows. The view reports the values the hub already
+holds, so reading the panel sends nothing to the printer and adds nothing to the audit log. At the
 end the owner reads the audit log with `hal/audit/query`, and the record keeps the story's entries
 as `openhal log` prints them.
 
 Klipper's CANCEL_PRINT macro turns the heaters off, so the nozzle cools after the cancel. The
 approval's exchange keeps the panel twice more under `cooling`, after the printer has cooled for
-each time in COOLED_FOR_S, and each panel waits for the hub's next reading of the nozzle. The hub
+each time in COOLED_FOR_S, and each panel comes from the hub's next reading of the nozzle. The hub
 reads the targets again only when the device file lists them in the action's `effects`, and the
 cancel in printer.hal.yaml lists none, so the panel keeps the targets the hub read last.
 
@@ -93,7 +94,7 @@ COMMANDS: Final = frozenset(
         "printer.emergency_stop",
     }
 )
-"""The Moonraker methods that tell the printer to do something. Queries and status calls are left out."""
+"""The Moonraker methods that change the printer's state. Queries and status calls are left out."""
 CHECKS: Final = ("units", "range", "rate", "interlocks", "confirmation")
 """The kernel's checks of a write or an action, in the order the kernel runs them."""
 READ_CHECKS: Final = ("channel", "device")
@@ -177,7 +178,7 @@ class StoryClock:
 
 
 class PrinterSim(MoonrakerSim):
-    """The Moonraker simulator on a host named printer, as printer.hal.yaml expects.
+    """The Moonraker simulator on a host named printer, as printer.hal.yaml requires.
 
     `commands` keeps every command the printer received, G-code as its text and the print
     controls by their Moonraker method. The heaters follow `clock`, the wall clock unless the
@@ -217,7 +218,7 @@ def printing(clock: Callable[[], float] = time.monotonic) -> PrinterSim:
 class Peer:
     """A protocol client that keeps every frame, so the record shows exactly what the hub sent.
 
-    `label` is the principal the hub named in its `hal/initialize` answer, such as agent:claude.
+    `label` is the principal the hub named in its `hal/initialize` response, such as agent:claude.
     """
 
     def __init__(self, socket_: ClientConnection) -> None:
@@ -337,7 +338,7 @@ class Panel:
         for name in PANEL:
             channel = channels[name]
             if not channel["known"]:
-                raise RuntimeError(f"The hub doesn't know {DEVICE}.{name} yet, so the panel can't show it.")
+                raise RuntimeError(f"The hub has no value of {DEVICE}.{name} yet, so the panel can't show the channel.")
             unit = channel.get("unit")
             shown[name] = channel["value"] if unit is None else {"value": channel["value"], "unit": unit}
         return shown
@@ -425,7 +426,7 @@ async def run() -> dict[str, Any]:
 
 
 async def _described(agent: Peer, device: str) -> dict[str, Any]:
-    """What the hub says about a device, its file, confirmation and limits."""
+    """What the hub reports about a device, its file, confirmation and limits."""
     answer = await agent.call("hal/devices/describe", {"device": device})
     view = answer["result"]["device"]
     limits = {
@@ -562,7 +563,7 @@ def _frame(name: str) -> str:
 
 
 def _checks(names: tuple[str, ...], answered: str | None, word: str) -> dict[str, str]:
-    """Each check in order, `ok` until the one that answered, which reads `word` and ends the list."""
+    """Each check in order, `ok` until the check that blocked, which reads `word` and ends the list."""
     shown: dict[str, str] = {}
     for name in names:
         if name == answered:
@@ -573,9 +574,9 @@ def _checks(names: tuple[str, ...], answered: str | None, word: str) -> dict[str
 
 
 def _kernel(entry: dict[str, Any], logged: list[dict[str, Any]]) -> dict[str, Any]:
-    """What the kernel did for one exchange, from the hub's answer and the audit entries the exchange made.
+    """What the kernel did for one exchange, from the hub's response and the audit entries the exchange made.
 
-    A refusal from a check before these (a stop, read-only limits, the token's scope) lists no checks.
+    A block from a check before these (a stop, read-only limits, the token's scope) lists no checks.
     """
     error = entry.get("error")
     result = entry.get("result") or {}
@@ -639,7 +640,7 @@ def _entries_of(
 
 
 def _counts(story: list[dict[str, Any]]) -> dict[str, int]:
-    """Requests an agent made, the ones the kernel refused, and the approvals a person gave.
+    """Requests an agent made, the requests the kernel blocked, and the approvals a person gave.
 
     The run of an approved request carries `approved_by`. That run belongs to the request, so the
     count leaves the run out.

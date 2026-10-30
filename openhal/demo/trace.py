@@ -80,7 +80,7 @@ def _result(request: dict[str, Any], result: dict[str, Any], elided: str) -> dic
 
 
 def exchange(entry: dict[str, Any], arrows: tuple[str, str] = ARROWS) -> list[str]:
-    """One exchange: what held before it as a comment, the request and the hub's answer."""
+    """One exchange, with what held before it as a comment, the request and the hub's response."""
     to_hub, back = arrows
     out: list[str] = []
     if entry.get("before"):
