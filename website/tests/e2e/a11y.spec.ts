@@ -87,8 +87,10 @@ for (const scheme of ["light", "dark"] as const) {
 
       await page.goto("/");
       await page.getByRole("button", { name: /^Search/ }).click();
-      await page.locator("#starlight__search input").fill("print babysitter");
-      await expect(page.locator(".pagefind-ui__result-link").first()).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByRole("dialog", { name: "Search" })).toBeVisible();
+      problems.push(...(await violations(page)).map((item) => `search before typing ${item}`));
+      await page.getByRole("dialog", { name: "Search" }).getByRole("combobox").fill("print babysitter");
+      await expect(page.locator("[cmdk-item] mark").first()).toBeVisible({ timeout: 15_000 });
       problems.push(...(await violations(page)).map((item) => `search ${item}`));
 
       expect(problems).toEqual([]);
@@ -97,15 +99,25 @@ for (const scheme of ["light", "dark"] as const) {
 }
 
 for (const scheme of ["light", "dark"] as const) {
-  test(`the open search dialog has no WCAG AA violations on a desktop in the ${scheme} theme`, async ({ page, browserName }) => {
+  test(`the search palette, before typing, with results and with none, has no WCAG AA violations on a desktop in the ${scheme} theme`, async ({ page, browserName }) => {
     test.skip(browserName !== "chromium", "axe runs once, in Chromium");
+    test.setTimeout(120_000);
     await page.emulateMedia({ colorScheme: scheme });
     await page.setViewportSize({ width: 1280, height: 800 });
+    await page.addInitScript(() => localStorage.setItem("openhal-recent-searches", JSON.stringify(["hal/write"])));
     await page.goto("/spec/v0.1/basic/messages/");
     await page.keyboard.press("Control+k");
-    await page.locator("#starlight__search input").fill("LIMIT_EXCEEDED");
-    await expect(page.locator(".pagefind-ui__result-link").first()).toBeVisible({ timeout: 15_000 });
-    expect(await violations(page)).toEqual([]);
+    const palette = page.getByRole("dialog", { name: "Search" });
+    await expect(palette.locator("[cmdk-group-heading]").first()).toHaveText("Recent searches");
+    const problems = (await violations(page)).map((item) => `before typing ${item}`);
+    await palette.getByRole("combobox").fill("LIMIT_EXCEEDED");
+    await expect(palette.locator("[cmdk-item] mark").first()).toBeVisible({ timeout: 15_000 });
+    await page.keyboard.press("ArrowDown");
+    problems.push(...(await violations(page)).map((item) => `results ${item}`));
+    await palette.getByRole("combobox").fill("qzqzqz");
+    await expect(palette.locator("[cmdk-empty]")).toBeVisible({ timeout: 15_000 });
+    problems.push(...(await violations(page)).map((item) => `no results ${item}`));
+    expect(problems).toEqual([]);
   });
 
   test(`the pickers, open, have no WCAG AA violations on a desktop, a tablet and a phone in the ${scheme} theme`, async ({ page, browserName }) => {
@@ -114,21 +126,48 @@ for (const scheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     const problems: string[] = [];
     const open = async (scope: string, kind: string) => {
-      await page.locator(`${scope} oh-picker[data-kind='${kind}'] .oh-picker-button`).click();
-      await expect(page.locator(`${scope} oh-picker[data-kind='${kind}'] .oh-picker-list`)).toBeVisible();
+      const button = page.locator(`${scope} button[data-picker='${kind}']`);
+      await button.hover();
+      await button.click();
+      await expect(page.getByRole("menu")).toBeVisible();
       problems.push(...(await violations(page)).map((item) => `${scope} ${kind} ${item}`));
       await page.keyboard.press("Escape");
+      await expect(page.getByRole("menu")).toHaveCount(0);
     };
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/spec/v0.1/basic/messages/");
-    for (const kind of ["version", "theme"]) await open("header.header", kind);
+    await open("header.header", "theme");
     await page.setViewportSize({ width: 900, height: 900 });
     await page.goto("/drivers/");
     await open("header.header", "section");
+    await open("header.header", "theme");
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/spec/v0.1/basic/messages/");
     await page.locator(".sl-menu-button").click();
-    for (const kind of ["version", "theme"]) await open(".mobile-preferences", kind);
+    await open(".mobile-preferences", "theme");
+    expect(problems).toEqual([]);
+  });
+
+  test(`the hidden sidebar, its tooltip and its peek have no WCAG AA violations in the ${scheme} theme`, async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "axe runs once, in Chromium");
+    test.setTimeout(120_000);
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/docs/quickstart/");
+    await page.getByRole("button", { name: "Hide sidebar" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-sidebar", "collapsed");
+    const show = page.getByRole("button", { name: "Show sidebar" });
+    await show.focus();
+    await expect(page.locator("astro-island:has([data-sidebar-show])")).not.toHaveAttribute("ssr", "");
+    await show.blur();
+    await show.focus();
+    await expect(page.getByRole("tooltip")).toBeAttached();
+    await expect(page.locator("[data-slot='tooltip-content']")).toBeVisible();
+    const problems = (await violations(page)).map((item) => `hidden ${item}`);
+    await page.mouse.move(700, 500);
+    await page.mouse.move(6, 500);
+    await expect(page.locator("html")).toHaveAttribute("data-sidebar-peek", "");
+    problems.push(...(await violations(page)).map((item) => `peek ${item}`));
     expect(problems).toEqual([]);
   });
 }
