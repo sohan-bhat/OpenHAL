@@ -23,10 +23,10 @@ interface Weight {
  * measured weights of the build in docs/verification/ui.md with about ten percent of headroom.
  */
 const BUDGETS: Record<string, { path: string } & Weight> = {
-  home: { path: "/", html: 19_400, css: 21_700, js: 4_900, fonts: 28_100 },
+  home: { path: "/", html: 15_000, css: 20_200, js: 13_800, fonts: 28_100 },
   "docs index": { path: "/docs/", html: 13_400, css: 17_300, js: 1_500, fonts: 17_800 },
   "guide page": { path: "/docs/quickstart/", html: 15_500, css: 17_300, js: 3_000, fonts: 34_500 },
-  "example page": { path: "/docs/examples/3d-print-watch/", html: 17_100, css: 21_200, js: 36_500, fonts: 28_100 },
+  "example page": { path: "/docs/examples/3d-print-watch/", html: 21_100, css: 19_500, js: 4_200, fonts: 28_100 },
   "page with diagrams": { path: "/docs/architecture/", html: 26_500, css: 17_300, js: 3_000, fonts: 28_100 },
   "spec page": { path: "/spec/v0.1/basic/messages/", html: 25_700, css: 17_300, js: 3_000, fonts: 28_100 },
   "schema reference": { path: "/spec/v0.1/schema/", html: 23_100, css: 17_300, js: 3_000, fonts: 28_100 },
