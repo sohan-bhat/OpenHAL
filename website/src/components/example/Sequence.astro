@@ -1,21 +1,19 @@
 ---
-import { LIFELINES, nb, type Lifeline } from "../../../lib/story/facts";
-import { NEVER, drawn, during, type Span } from "../../../lib/story/script";
-import { drawing, type Leg, type Sequence } from "../../../lib/story/timeline";
+import { LIFELINES, nb, type Lifeline } from "../../lib/story/facts";
+import { NEVER, drawn, during, type Span } from "../../lib/story/script";
+import { drawing, type Leg, type Sequence } from "../../lib/story/timeline";
 
 interface Props {
   sequence: Sequence;
-  /** Draws the whole exchange as the story ends, with nothing that moves, for the hero's small copy. */
-  still?: boolean;
 }
 
-const { sequence, still = false } = Astro.props;
+const { sequence } = Astro.props;
 const TONES = { ok: "ok", confirm: "confirm", blocked: "blocked" } as const;
 const at = (name: Lifeline) => `grid-column: ${name} / span 1`;
 const across = (from: Lifeline, to: Lifeline) => `grid-column: ${from} / ${to}`;
 const from = (span: Span, start: number): Span => [Math.max(span[0], start), span[1]];
-const shown = (spans: Span[]) => (still ? {} : during(spans));
-const moves = (leg: Leg) => [still ? "" : drawn(leg.at, leg.d), leg.over === undefined ? "" : `--across: ${leg.over * 100}%; --cross: ${leg.back ? 1 - leg.over : leg.over}`].filter(Boolean).join("; ");
+const shown = (spans: Span[]) => during(spans);
+const moves = (leg: Leg) => [drawn(leg.at, leg.d), leg.over === undefined ? "" : `--across: ${leg.over * 100}%; --cross: ${leg.back ? 1 - leg.over : leg.over}`].filter(Boolean).join("; ");
 const backward = (a: Lifeline, b: Lifeline) => LIFELINES.indexOf(b) < LIFELINES.indexOf(a);
 let line = 3;
 const rows = sequence.rows.map((item) => {
@@ -26,7 +24,7 @@ const rows = sequence.rows.map((item) => {
 const template = `grid-template-rows: auto var(--under) ${sequence.rows.map((item) => `minmax(auto, 1fr) var(--arrow)${item.reply ? " auto" : ""}`).join(" ")} var(--tail)`;
 ---
 
-<div class:list={["seq", { still }]} style={template}>
+<div class="seq" style={template}>
   {LIFELINES.map((name) => <p class="seq-head" style={`${at(name)}; grid-row: 1`}>{sequence.heads[name]}</p>)}
   {LIFELINES.map((name) => <span class="lifeline" data-line={name} style={at(name)} />)}
   {
@@ -36,7 +34,7 @@ const template = `grid-template-rows: auto var(--under) ${sequence.rows.map((ite
           <p class:list={["say", { plain: !words.mono, back: backward(words.from, words.to) }]} data-row={item.id} style={`${across(words.from, words.to)}; grid-row: ${label}`}>
             <span class="label">
               <span class="quiet" {...shown([[words.shows, NEVER]])}>{nb(words.label)}</span>
-              {!still && <span class="live" {...during([from(item.live, words.shows)])}>{nb(words.label)}</span>}
+              <span class="live" {...during([from(item.live, words.shows)])}>{nb(words.label)}</span>
             </span>
           </p>
         ))}
@@ -47,13 +45,11 @@ const template = `grid-template-rows: auto var(--under) ${sequence.rows.map((ite
               <span class="line" />
               <span class="head" {...shown([[leg.lands, NEVER]])} />
             </span>
-            {!still && (
-              <span class="stroke live" {...during([from(drawing(item), leg.at)])}>
-                <span class="line" />
-                <span class="head" {...during([[leg.lands, NEVER]])} />
-              </span>
-            )}
-            {!still && item.held && leg === item.legs[item.legs.length - 1] && (
+            <span class="stroke live" {...during([from(drawing(item), leg.at)])}>
+              <span class="line" />
+              <span class="head" {...during([[leg.lands, NEVER]])} />
+            </span>
+            {item.held && leg === item.legs[item.legs.length - 1] && (
               <span class="stroke held" {...during([item.held])}>
                 <span class="line" />
                 <span class="head" />
@@ -68,12 +64,10 @@ const template = `grid-template-rows: auto var(--under) ${sequence.rows.map((ite
               <span class="line" />
               <span class="head" {...shown([[item.reply.leg.lands, NEVER]])} />
             </span>
-            {!still && (
-              <span class:list={["stroke", "live", TONES[item.reply.answer.tone]]} {...during([from(item.live, item.reply.shows)])}>
-                <span class="line" />
-                <span class="head" {...during([[item.reply.leg.lands, NEVER]])} />
-              </span>
-            )}
+            <span class:list={["stroke", "live", TONES[item.reply.answer.tone]]} {...during([from(item.live, item.reply.shows)])}>
+              <span class="line" />
+              <span class="head" {...during([[item.reply.leg.lands, NEVER]])} />
+            </span>
             <span class:list={["answer", "status", TONES[item.reply.answer.tone]]} {...shown([[item.reply.shows, NEVER]])}>
               {item.reply.answer.text}
             </span>

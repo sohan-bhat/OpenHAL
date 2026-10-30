@@ -1,7 +1,7 @@
 import { getCollection } from "astro:content";
 import { PITCH } from "../config/brand";
 import { drivers } from "./catalog";
-import { docTitle } from "./docs-nav";
+import { EXAMPLE, docTitle } from "./docs-nav";
 import { showDrafts } from "./drafts";
 import { libraryEntries } from "./library";
 import { routeFor } from "./markdown/routes.mjs";
@@ -29,6 +29,7 @@ export async function allPages(): Promise<PageInfo[]> {
   const pages: PageInfo[] = [
     { path: "/", title: HOME_TITLE, kind: "Overview" },
     { path: "/docs/", title: "Documentation", kind: "Docs" },
+    { path: EXAMPLE.href, title: EXAMPLE.title, kind: "Docs" },
     { path: "/spec/", title: "Specification", kind: "Specification" },
     { path: "/spec/playground/", title: "Playground", kind: "Specification" },
     { path: "/drivers/", title: "Drivers", kind: "Drivers" },

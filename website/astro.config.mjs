@@ -1,8 +1,10 @@
 // @ts-check
 import { unified } from "@astrojs/markdown-remark";
 import sitemap from "@astrojs/sitemap";
+import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
 import svelte from "@astrojs/svelte";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import { fileURLToPath } from "node:url";
 import { REPOSITORY_URL } from "./src/config/repo.mjs";
@@ -66,6 +68,7 @@ export default defineConfig({
     }),
     classScopedStyles,
     svelte(),
+    react(),
     interactDirective,
     sitemap({ filter: (page) => !MOVED.some((part) => page.includes(part)) && !page.endsWith("/spec/") }),
   ],
@@ -80,7 +83,7 @@ export default defineConfig({
   build: { inlineStylesheets: "auto" },
   devToolbar: { enabled: false },
   vite: {
-    plugins: [deviceSchemaValidator()],
+    plugins: [tailwindcss(), deviceSchemaValidator()],
     server: { fs: { allow: [".."] } },
   },
 });

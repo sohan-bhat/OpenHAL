@@ -15,7 +15,7 @@ async function firstScreen(browser: Browser, viewport: { width: number; height: 
 test.describe("the home page", () => {
   test.skip(({ browserName }) => browserName !== "chromium", "one engine is enough to compare a screen with itself");
 
-  test("holds its first frame until the story's inline script has run", async ({ page }) => {
+  test("holds its first frame until How it works' inline script has run", async ({ page }) => {
     await page.addInitScript(() => {
       requestAnimationFrame(() => {
         const href = document.querySelector('link[rel="expect"][blocking="render"]')?.getAttribute("href") ?? "";
@@ -26,14 +26,14 @@ test.describe("the home page", () => {
     const { firstFrame, order } = await page.evaluate(() => {
       const href = document.querySelector('link[rel="expect"][blocking="render"]')?.getAttribute("href") ?? "";
       const target = href.startsWith("#") ? document.getElementById(href.slice(1)) : null;
-      const inline = [...document.querySelectorAll<HTMLScriptElement>(".story-section script:not([src]):not([type])")];
+      const inline = [...document.querySelectorAll<HTMLScriptElement>("[data-how] + script:not([src]):not([type])")];
       return {
         firstFrame: (window as unknown as { firstFrame?: { href: string; parsed: boolean } }).firstFrame,
         order: target ? inline.map((script) => Boolean(script.compareDocumentPosition(target) & Node.DOCUMENT_POSITION_FOLLOWING)) : [],
       };
     });
-    expect(order.length, "the story keeps an inline script and the head names an element after it").toBeGreaterThan(0);
-    expect(order.every(Boolean), "the element the head waits for comes after the story's inline script").toBe(true);
+    expect(order.length, "How it works keeps an inline script and the head names an element after it").toBeGreaterThan(0);
+    expect(order.every(Boolean), "the element the head waits for comes after How it works' inline script").toBe(true);
     expect(firstFrame?.parsed, `the first frame came before ${firstFrame?.href ?? "the expected element"} was parsed`).toBe(true);
   });
 

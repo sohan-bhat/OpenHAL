@@ -1,6 +1,7 @@
 import { getCollection } from "astro:content";
 import type { SideGroup } from "./nav-types";
 import { FIXED_ROUTES } from "./markdown/routes.mjs";
+import { EXAMPLE } from "./story/example";
 
 const DOC_GROUPS = ["Get started", "Tutorials", "Reference", "Firmware"];
 
@@ -45,6 +46,14 @@ export function navTitle(title: string): string {
   return SHORT[title] ?? title;
 }
 
+export { EXAMPLE };
+
+/** The docs' examples, after Get started. */
+export const EXAMPLES: SideGroup = {
+  name: "Examples",
+  items: [{ title: EXAMPLE.link, href: EXAMPLE.href, summary: EXAMPLE.summary }],
+};
+
 /** Pages outside docs/ that the Docs section lists, since the main navigation leaves them out. */
 export const TOOLS: SideGroup = {
   name: "SDKs and Inspector",
@@ -64,6 +73,8 @@ export async function docsSidebar(): Promise<SideGroup[]> {
       summary: DOC_SUMMARIES[item.route],
     })),
   })).filter((group) => group.items.length > 0);
+  const start = groups.findIndex((group) => group.name === "Get started");
+  groups.splice(start + 1, 0, EXAMPLES);
   const reference = groups.findIndex((group) => group.name === "Reference");
   groups.splice(reference < 0 ? groups.length : reference + 1, 0, TOOLS);
   return groups;

@@ -74,16 +74,22 @@ for (const scheme of ["light", "dark"] as const) {
 
       await page.goto("/");
       await page.evaluate(() => {
-        const story = document.querySelector<HTMLElement>("[data-story]")!;
-        window.scrollTo(0, story.offsetTop + story.offsetHeight / 2);
+        const how = document.querySelector<HTMLElement>("[data-how]")!;
+        window.scrollTo(0, how.offsetTop + how.offsetHeight / 2);
       });
-      await page.waitForTimeout(300);
-      problems.push(...(await violations(page)).map((item) => `story mid scroll ${item}`));
+      await page.waitForTimeout(400);
+      problems.push(...(await violations(page)).map((item) => `how it works mid scroll ${item}`));
 
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.goto("/");
-      problems.push(...(await violations(page)).map((item) => `story as a list ${item}`));
+      problems.push(...(await violations(page)).map((item) => `how it works as panels ${item}`));
       await page.emulateMedia({ reducedMotion: "no-preference" });
+
+      await page.goto("/docs/examples/3d-print-watch/");
+      await page.getByRole("button", { name: "Next step" }).click();
+      await page.getByRole("button", { name: "Next step" }).click();
+      await page.waitForTimeout(1500);
+      problems.push(...(await violations(page)).map((item) => `example walkthrough ${item}`));
 
       await page.goto("/");
       await page.getByRole("button", { name: /^Search/ }).click();
