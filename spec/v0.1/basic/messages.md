@@ -3,16 +3,16 @@
 ## JSON-RPC rules
 
 1. Every message MUST be a JSON-RPC 2.0 request, response or notification, with `"jsonrpc": "2.0"`.
-2. A request MUST carry an `id` that is a string or a number. The Hub answers each request with exactly one response carrying the same `id`.
+2. A request MUST carry an `id` that is a string or a number. The Hub returns exactly one response to each request, carrying the same `id`.
 3. A notification has no `id` and gets no response.
 4. `params` MUST be an object. Positional params are not supported.
-5. Batches are not supported in this version. The Hub answers a JSON array with `INVALID_REQUEST` (-32600).
+5. Batches are not supported in this version. The Hub returns `INVALID_REQUEST` (-32600) for a JSON array.
 6. Text that is not valid JSON gets `PARSE_ERROR` (-32700). Valid JSON that is not a request gets `INVALID_REQUEST` (-32600).
 7. An unknown method, or one above the Hub's Conformance Level, gets `METHOD_NOT_FOUND` (-32601).
 8. Params that don't match the method's schema get `INVALID_PARAMS` (-32602). Unknown param names are invalid.
 9. Field names are camelCase. Method names use the `hal/` prefix.
 
-The [schema reference](../schema.md) defines every type and field. It is generated from the reference models and wins over the summaries on this page.
+The [schema reference](../schema.md) defines every type and field. It is generated from the reference models and takes precedence over the summaries on this page.
 
 ## Errors
 
@@ -44,7 +44,7 @@ Fields that don't apply are omitted.
 ## Values
 
 - A number travels with its unit apart, never as one string ([ADR 0016](../../../docs/adr/0016-one-value-format.md)). A channel value is `"value": 31, "unit": "%"`. Everywhere else a number is a Quantity object `{ "value": 20, "unit": "s" }`.
-- A number without a unit, or sent as one string such as `"20 s"`, is refused with `UNIT_INVALID`. A `unit` on a non-numeric value is refused the same way.
+- A number without a unit, or sent as one string such as `"20 s"`, is blocked with `UNIT_INVALID`. A `unit` on a non-numeric value is blocked the same way.
 - A `bool` channel takes `true` or `false`. An `enum` channel takes one of its values as a string. A `string` channel takes a string.
 - A numeric value sent by the Hub is a number in the channel's declared unit, with that unit in `unit`.
 - `at` is the time a value was observed, as an RFC 3339 timestamp in UTC.
@@ -72,9 +72,9 @@ A Decision's `status` is one of these.
 |---|---|
 | `allowed` | A dry run would run it now |
 | `needs_confirmation` | A dry run would queue it for a human |
-| `blocked` | The Safety Kernel refuses it. `error` names the reason |
+| `blocked` | The Safety Kernel blocks the command. `error` names the reason |
 | `done` | It ran |
-| `pending` | It waits in the confirmation queue. `requestId` names the request |
+| `pending` | The Hub holds the command in the confirmation queue. `requestId` names the request |
 | `failed` | It reached the Driver and failed. The affected channels are unknown until a readback |
 
 A ConfirmationRequest's `status` is `pending`, `approved`, `rejected`, `expired`, `cancelled`, `blocked`, `done` or `failed`.
@@ -101,7 +101,7 @@ A ConfirmationRequest's `status` is `pending`, `approved`, `rejected`, `expired`
 | `hal/routines/dryRun` | Full | [below](#halroutinesdryrun) |
 | `hal/audit/query` | Full | [below](#halauditquery) |
 
-Every example on this page uses the 3D printer and its camera from [examples/print-babysitter/](../../../examples/print-babysitter/), confirmed by owner on 2026-10-24. The printer reads `state`, `extruder_temp`, `bed_temp` and `progress`. Its write channel `extruder_target` takes 0 to 260 degC and `bed_target` takes 0 to 110 degC, changing by at most 50 and 20 degC per second. Its action `pause` needs `state == printing`, and `cancel` waits for a person every time. `printer-cam` reads `frame`. A print is running with the bed at 60 degC.
+Every example on this page uses the 3D printer and its camera from [examples/print-babysitter/](../../../examples/print-babysitter/), confirmed by owner on 2026-10-24. The printer reads `state`, `extruder_temp`, `bed_temp` and `progress`. Its write channel `extruder_target` takes 0 to 260 degC and `bed_target` takes 0 to 110 degC, changing by at most 50 and 20 degC per second. Its action `pause` needs `state == printing`, and the Hub holds `cancel` for a person's approval every time. `printer-cam` reads `frame`. A print is running with the bed at 60 degC.
 
 ### hal/devices/list
 
@@ -162,7 +162,7 @@ Reads one channel now. Params `{ device, channel }`. Result is a `Reading`. A di
 
 ### hal/readMany
 
-Reads several channels. Params `{ items: [{ device, channel }] }`. Result `{ readings: [...] }` in the order asked. Each entry is a `Reading`, or `{ device, channel, error }` for a read that failed. One failed read does not fail the request.
+Reads several channels. Params `{ items: [{ device, channel }] }`. Result `{ readings: [...] }` in the order requested. Each entry is a `Reading`, or `{ device, channel, error }` for a read that failed. One failed read does not fail the request.
 
 ```json
 → {"jsonrpc": "2.0", "id": 5, "method": "hal/readMany", "params": {"items": [
@@ -223,7 +223,7 @@ Evaluates commands in order as if each allowed one had run. Nothing is sent to a
 
 ### hal/planCheck
 
-Checks a whole plan before any of it runs. Params `{ steps: [Write, Action or Wait] }`, at most 200 steps. Each step is evaluated in order as if the earlier steps had run. A `Wait` step advances the simulated clock, so rate limits are judged as in a real run. Result `{ ok, decisions: [Decision], problems: [string] }`. `decisions` has one entry per `Write` or `Action`. `ok` is `true` only when every Decision is `allowed` and `problems` is empty.
+Checks a whole plan before any of it runs. Params `{ steps: [Write, Action or Wait] }`, at most 200 steps. Each step is evaluated in order as if the earlier steps had run. A `Wait` step advances the simulated clock, so rate limits are evaluated as in a real run. Result `{ ok, decisions: [Decision], problems: [string] }`. `decisions` has one entry per `Write` or `Action`. `ok` is `true` only when every Decision is `allowed` and `problems` is empty.
 
 The bed goes to 80 degC and then straight to 110 degC. The second step is faster than 20 degC per second allows. A `Wait` of 2 s between the steps makes the plan pass.
 
@@ -251,7 +251,7 @@ The bed goes to 80 degC and then straight to 110 degC. The second step is faster
 
 ### hal/stop
 
-Puts every Device in its safe state and refuses every command until a human sends `hal/unlock`. Params `{ reason? }`. Any Principal MAY stop. Result `{ devices: [{ device, status, detail }] }` with `status` one of `safe`, `partial`, `failed`, `no_safe_state` or `pending` ([Safety](../safety.md#stop-and-unlock)).
+Puts every Device in its safe state and blocks every command until a human sends `hal/unlock`. Params `{ reason? }`. Any Principal MAY stop. Result `{ devices: [{ device, status, detail }] }` with `status` one of `safe`, `partial`, `failed`, `no_safe_state` or `pending` ([Safety](../safety.md#stop-and-unlock)).
 
 ```json
 → {"jsonrpc": "2.0", "id": 11, "method": "hal/stop", "params": {"reason": "the print came loose"}}
@@ -268,9 +268,9 @@ Lifts the stop lock. Params `{ phrase: "unlock" }`. Result `{ ok: true }`.
 
 - Only a human Principal may unlock. Any other Principal gets `SCOPE_DENIED`.
 - A phrase other than `unlock` gets `INVALID_PARAMS`.
-- While a stop is still being applied, the Hub answers `BUSY`.
+- While a stop is still being applied, the Hub returns `BUSY`.
 
-An agent tries to unlock.
+An agent sends `hal/unlock`.
 
 ```json
 → {"jsonrpc": "2.0", "id": 12, "method": "hal/unlock", "params": {"phrase": "unlock"}}
@@ -281,7 +281,7 @@ An agent tries to unlock.
 
 ### hal/action
 
-Runs one action. Params `{ device, action, args }`, with numeric arguments as Quantity objects such as `{"value": 20, "unit": "s"}`. Level Full. The result is `{ status: "done", result }`, or `{ status: "pending", requestId, expiresInS }` when the action waits for a human. Blocks and failures are errors, as for `hal/write`.
+Runs one action. Params `{ device, action, args }`, with numeric arguments as Quantity objects such as `{"value": 20, "unit": "s"}`. Level Full. The result is `{ status: "done", result }`, or `{ status: "pending", requestId, expiresInS }` when the Hub holds the action for a human's approval. Blocks and failures are errors, as for `hal/write`.
 
 ```json
 → {"jsonrpc": "2.0", "id": 13, "method": "hal/action", "params": {"device": "printer", "action": "pause"}}
@@ -289,7 +289,7 @@ Runs one action. Params `{ device, action, args }`, with numeric arguments as Qu
      "result": {"device": "printer", "action": "pause", "args": {}}}}
 ```
 
-`cancel` has the confirmation tier `confirm-each-time`, so a person approves every request and the command waits.
+`cancel` has the confirmation tier `confirm-each-time`, so a person approves every request and the Hub holds the command until then.
 
 ```json
 → {"jsonrpc": "2.0", "id": 14, "method": "hal/action", "params": {"device": "printer", "action": "cancel"}}
@@ -298,7 +298,7 @@ Runs one action. Params `{ device, action, args }`, with numeric arguments as Qu
 
 ### hal/confirmations/list
 
-Lists Confirmation Requests. Params `{ status? }`. Without `status`, only pending requests are listed. Result `{ requests: [ConfirmationRequest] }`. A human Principal sees every request. Any other Principal sees only its own.
+Lists Confirmation Requests. Params `{ status? }`. Without `status`, only pending requests are listed. Result `{ requests: [ConfirmationRequest] }`. For a human Principal the result holds every request, and for any other Principal the result holds only that Principal's own requests.
 
 ```json
 → {"jsonrpc": "2.0", "id": 15, "method": "hal/confirmations/list", "params": {}}

@@ -70,7 +70,7 @@ function disclosure(details: HTMLDetailsElement): void {
   void tween(body, frames, opening ? OPEN : CLOSE).then(done);
 }
 
-/** Lets a Copy button's old word leave as the new one arrives, once the button says Copied or Copy. */
+/** Lets a Copy button's old word leave as the new one arrives, once the button shows Copied or Copy. */
 function swap(button: HTMLElement): void {
   const [copy, copied] = [...button.children] as HTMLElement[];
   if (still() || !copy || !copied) return;

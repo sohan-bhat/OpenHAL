@@ -1,6 +1,6 @@
 # hid driver
 
-The hid driver reads input reports from USB HID devices and sends output and feature reports to them, through hidapi. The driver suits macropads, knobs, foot switches, status lights and homemade HID gadgets whose report layout is documented. `describe()` reads the device's report descriptor and proposes channels from it.
+The hid driver reads input reports from USB HID devices and sends output and feature reports to them, through hidapi. The driver suits macropads, knobs, foot switches, status lights and homemade HID gadgets whose report layout is documented. `describe()` reads the device's report descriptor and returns suggested channels built from the descriptor.
 
 ## What it supports
 
@@ -68,7 +68,7 @@ Input reports arrive when the device sends them. A read returns the newest input
 
 ## Describe
 
-`describe()` parses the report descriptor (USB HID 1.11 section 6.2.2) and proposes one channel per data field that sits on whole bytes (8, 16 or 32 bits) or is a single bit. Buttons, LEDs and the generic desktop axes get names from the usage tables, other fields get `field_r<report>_b<bit>`. Input fields become read channels with their logical range as `range`, and output fields become write channels marked `suggested: true`, with the logical range as limits. Feature fields and odd-sized fields are listed in the notes.
+`describe()` parses the report descriptor (USB HID 1.11 section 6.2.2) and returns one channel per data field that sits on whole bytes (8, 16 or 32 bits) or is a single bit. Buttons, LEDs and the generic desktop axes get names from the usage tables, other fields get `field_r<report>_b<bit>`. Input fields become read channels with their logical range as `range`, and output fields become write channels marked `suggested: true`, with the logical range as limits. Feature fields and odd-sized fields are listed in the notes.
 
 ## Example
 
@@ -77,18 +77,18 @@ Input reports arrive when the device sends them. A read returns the newest input
 ## Errors and health
 
 - No match, several matches, or a device that can't be opened (held by another program or blocked by permissions) raises `DriverError` with what to do.
-- Reports too short for the map, enum raw values outside the map, values that don't fit the field and reports the device refuses raise `DriverError`.
+- Reports too short for the map, enum raw values outside the map, values that don't fit the field and reports that fail at the device raise `DriverError`.
 - A failed read in the reader thread marks the device as gone, `health()` reports the loss, and the hub reopens the device when the device comes back.
 
 ## Limitations
 
-- `describe()` skips long items in report descriptors and doesn't propose fields that are neither whole bytes nor single bits.
+- `describe()` skips long items in report descriptors and doesn't return fields that are neither whole bytes nor single bits.
 - Keyboards, mice and gamepads that the operating system claims exclusively can't be opened on some platforms (macOS and Windows keyboards in particular).
 - The driver has no actions, so model each report field as a channel.
 
 ## Hazard default and safe state
 
-The default hazard is low, because HID devices are mostly inputs and indicators. HID has no emergency behavior, so `safe_state_support` is `file`, and the hub sends the device file's `safe_state` as ordinary reports. A HID gadget that switches something physical deserves a higher hazard in its device file.
+The default hazard is low, because HID devices are mostly inputs and indicators. HID has no emergency behavior, so `safe_state_support` is `file`, and the hub sends the device file's `safe_state` as ordinary reports. A HID gadget that switches something physical needs a higher hazard in its device file.
 
 ## Sources
 

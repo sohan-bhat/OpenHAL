@@ -9,7 +9,7 @@ Run every step on the Pi, from the repository checkout. [README.md](README.md) h
 - A Raspberry Pi with Raspberry Pi OS Trixie or later, and your user in the `gpio` group. Bookworm's Python 3.11 is older than the 3.12 OpenHAL needs.
 - An LED with a 330 ohm resistor from GPIO 17 (header pin 11) to ground, and a push button from GPIO 27 (header pin 13) to ground.
 - `pinctrl` (part of Raspberry Pi OS) to check pin levels independently.
-- The repository set up as [README.md](README.md#on-a-raspberry-pi) says, with the rpi-gpio extra. The last command there prints the lgpio module's path.
+- The repository set up as [README.md](README.md#on-a-raspberry-pi) describes, with the rpi-gpio extra. The last command there prints the lgpio module's path.
 - This device file, saved as `my-gpio.hal.yaml`.
 
 ```yaml
@@ -146,7 +146,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-gpio.hal.yaml
 ```
 
-`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-gpio.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-gpio.hal.yaml` then shows `writable`.
 
 ### 7. The smallest safe write
 
@@ -156,7 +156,7 @@ pinctrl get 17
 uv run python hwtest.py my-gpio.hal.yaml write led false
 ```
 
-Expected. `done` for each write. The LED lights while the first command runs and goes dark when it ends, because the script releases the pins when it exits. Note what `pinctrl get 17` shows after the first command (usually `ip`, an input, once the pin is released), since that is what a relay sees when the hub stops.
+Expected. `done` for each write. The LED lights while the first command runs and goes dark when it ends, because the script releases the pins when it exits. Note what `pinctrl get 17` shows after the first command (usually `ip`, an input, once the pin is released), since that is the input a relay gets when the hub stops.
 
 ### 8. Stop
 
@@ -198,7 +198,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus `pinctrl get 17,27`
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, rpi-gpio driver

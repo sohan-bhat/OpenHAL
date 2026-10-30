@@ -27,20 +27,20 @@ const TONES: Record<string, string> = { done: "ok", blocked: "blocked", pending:
 
 <DocShell title={EXAMPLE.title} description={EXAMPLE.summary} sidebar={sidebar} headings={headings}>
   <p>
-    Someone starts a long print and asks an agent to keep an eye on the print overnight. Through the OpenHAL hub the agent reads the printer's webcam, warms the bed, has a request for a nozzle temperature of {nb(facts.nozzle.value)} refused, pauses the print and asks
-    to cancel the print, and the cancel waits until the owner approves.
+    Someone starts a long print and asks an agent to keep an eye on the print overnight. Through the OpenHAL hub the agent reads the printer's webcam, warms the bed, sends a request for a nozzle temperature of {nb(facts.nozzle.value)} that the hub blocks, pauses the print
+    and sends a request to cancel the print, which the hub holds until the owner approves the cancel.
   </p>
   <p>
     Every value on this page comes from <code>docs/demo/scenario.yaml</code>, which <code>uv run openhal demo</code> records when the hub runs the print babysitter example against a simulated printer and webcam. The <a href="/docs/quickstart/">quickstart</a> runs the same demo in your terminal.
   </p>
 
   <h2 id="step-by-step"><a class="heading-link" href="#step-by-step">Step by step</a></h2>
-  <p>Next draws each step's request along the lifelines, with the hub's answer as a dashed arrow back to the sender.</p>
+  <p>Next draws each step's request along the lifelines, with the hub's reply as a dashed arrow back to the sender.</p>
   <Walkthrough />
 
   <h2 id="device-file"><a class="heading-link" href="#device-file">The device file</a></h2>
   <p>
-    The hub checks every request against <code>{facts.file}</code>, the printer's device file, which the owner confirmed on {day}. The file limits the nozzle target to {nb(facts.nozzle.max)} and the bed target to {nb(facts.bed.max)}, and the cancel action waits for a person each time.
+    The hub checks every request against <code>{facts.file}</code>, the printer's device file, which the owner confirmed on {day}. The file limits the nozzle target to {nb(facts.nozzle.max)} and the bed target to {nb(facts.bed.max)}, and the cancel action needs a person's approval each time.
   </p>
   <Fragment set:html={codeHtml(device, "yaml")} />
 
@@ -66,7 +66,7 @@ const TONES: Record<string, string> = { done: "ok", blocked: "blocked", pending:
   </ol>
 
   <h2 id="audit-log"><a class="heading-link" href="#audit-log">The audit log</a></h2>
-  <p>The run ends with <code>{audit.command}</code>, which prints the hub's audit log, newest first. The log holds every request, the refusal and the owner's approval.</p>
+  <p>The run ends with <code>{audit.command}</code>, which prints the hub's audit log, newest first. The log holds every request, including the blocked one, and the owner's approval.</p>
   <div class="table-wrap">
     <table>
       <thead>

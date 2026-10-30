@@ -1,6 +1,6 @@
 # esphome driver
 
-The `esphome` driver talks to ESPHome devices over the native API, the same protocol Home Assistant uses. Channels bind to the device's entities by object id, buttons become actions, and every write waits for the device to report the new state.
+The `esphome` driver connects to ESPHome devices over the native API, the same protocol Home Assistant uses. Channels bind to the device's entities by object id, buttons become actions, and a write completes only when the device reports the new state.
 
 | | |
 |---|---|
@@ -80,7 +80,7 @@ hazard: low
 
 ## Hazard defaults
 
-The default hazard is `low`, because most nodes switch lights, fans, pumps and relays at low voltage, but a relay that switches mains to a heater deserves `medium` or `high` in the device file.
+The default hazard is `low`, because most nodes switch lights, fans, pumps and relays at low voltage, but a relay that switches mains to a heater needs `medium` or `high` in the device file.
 
 ## Sources
 

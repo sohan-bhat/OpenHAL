@@ -1,6 +1,6 @@
 # Device files
 
-A Device File describes one Device. How to find it, how to talk to it, what can be read, what can be changed, the limits on every change, the safe state, and where the description came from. Device Files are YAML, end in `.hal.yaml`, and are validated against [`spec/schema/device-file.schema.json`](../schema/device-file.schema.json). That schema is generated from the reference models in `openhal/spec/models.py`.
+A Device File describes one Device. How to find it, how to connect to it, what can be read, what can be changed, the limits on every change, the safe state, and where the description came from. Device Files are YAML, end in `.hal.yaml`, and are validated against [`spec/schema/device-file.schema.json`](../schema/device-file.schema.json). That schema is generated from the reference models in `openhal/spec/models.py`.
 
 This version of the specification defines Device File format 0.1.
 
@@ -24,24 +24,24 @@ hazard: low
 notes: "The board turns the pump off on its own after 30 s."
 ```
 
-It loads read-only, because no human has confirmed its limits yet ([section 12](#12-limits-provenance)). Adding `confirmed: { by: owner, at: 2026-10-24 }` lets it take commands. The full file for the real board is [examples/plant-waterer/plant-waterer.hal.yaml](../../examples/plant-waterer/plant-waterer.hal.yaml).
+It loads read-only, because no human has confirmed its limits yet ([section 12](#12-limits-provenance)). Once `confirmed: { by: owner, at: 2026-10-24 }` is added, the Device takes commands. The full file for the real board is [examples/plant-waterer/plant-waterer.hal.yaml](../../examples/plant-waterer/plant-waterer.hal.yaml).
 
 ## 0. File format
 
 1. A Device File MUST be a single YAML document whose top level is a mapping.
 2. A Device File MUST be UTF-8 and at most 256 KiB.
-3. A Device File MUST NOT use YAML anchors, aliases or custom tags. Loaders MUST reject them.
+3. A Device File MUST NOT use YAML anchors, aliases or custom tags. Loaders MUST NOT load a file that uses them.
 4. Only `true` and `false` are booleans (YAML 1.2). Words such as `on`, `off`, `yes` and `no` are strings, so they can be enum values.
-5. Loaders MUST reject unknown top-level keys, except keys starting with `x-`. OpenHAL ignores `x-` keys and tools MUST preserve them.
-6. `openhal` MAY give the format version as a string, for example `"0.1"`. If it is absent, the current version is assumed. A loader MUST reject a file whose major version it does not support, and SHOULD warn on a newer minor version.
+5. Loaders MUST NOT load a file with unknown top-level keys, except keys starting with `x-`. OpenHAL skips `x-` keys and tools MUST preserve them.
+6. `openhal` MAY give the format version as a string, for example `"0.1"`. If it is absent, the loader uses the current version. A loader MUST NOT load a file whose major version the loader does not support, and SHOULD report a warning for a newer minor version.
 
 ### Values and units
 
 1. A quantity is a number with a unit, written as a string (`"30 degC"`, `"500 ms"`, `"20 %/s"`) or as a mapping (`{ value: 30, unit: degC }`).
 2. Inside a channel that declares `unit`, plain numbers for `min`, `max`, `step` and value lists MAY be written without a unit and mean the channel's unit. Commands sent to the Hub MUST always carry a unit for numeric channels.
 3. Units are parsed by the pinned OpenHAL unit registry, which is pint with its default definitions and no user definitions. `percent` and `%` are the same unit. Temperatures are absolute (`degC`, `degF`, `K`). Rates are the channel unit per second, and temperature rates use delta units.
-4. Durations are quantities of time (`5 s`, `500ms`, `10 min`, `2 h`). The forms `1s`, `10min` and `2h` without a space are accepted. A duration MUST NOT be negative.
-5. Every number MUST be finite. Loaders MUST reject NaN and infinity.
+4. Durations are quantities of time (`5 s`, `500ms`, `10 min`, `2 h`). The forms `1s`, `10min` and `2h` without a space are valid. A duration MUST NOT be negative.
+5. Every number MUST be finite. Loaders MUST NOT load a file that holds NaN or infinity.
 
 ## 1. Identity
 
@@ -57,7 +57,7 @@ match:
 
 1. `device` MUST be a non-empty string of at most 120 characters, or a mapping with `name` and optional `model` and `manufacturer`. Top-level `model` and `manufacturer` fill the same fields. Each is at most 120 characters.
 2. `id` MAY be given as a lowercase slug matching `^[a-z][a-z0-9-]{0,47}$`. If it is absent, it is derived from the name. Within one Hub, ids MUST be unique. Interlocks and routines refer to Devices by id.
-3. `match` lists identifiers the library matcher uses to recognize the Device. Every key is optional.
+3. `match` lists identifiers the library matcher uses to identify the Device. Every key is optional.
 
 | Key | Type | Meaning |
 |---|---|---|
@@ -87,8 +87,8 @@ connect:
 
 1. `connect` MUST name a Driver, either with `driver:` or by shorthand. In shorthand, the first key that is a registered Driver name is the Driver, and its value is that Driver's primary parameter. `{ serial: auto, board: arduino-uno }` means `{ driver: serial, port: auto, board: arduino-uno }`.
 2. A Driver name MUST be a registered name or start with `x-`.
-3. The remaining keys are Driver parameters. Each Driver documents its parameters and validates them. A Driver MUST reject unknown parameters.
-4. The value `auto` asks the Driver to find the Device using `match` and its own discovery.
+3. The remaining keys are Driver parameters. Each Driver documents its parameters and validates them. A Driver MUST NOT accept unknown parameters.
+4. With the value `auto`, the Driver finds the Device using `match` and its own discovery.
 
 Common parameters by Driver family.
 
@@ -103,7 +103,7 @@ Common parameters by Driver family.
 | rpi-gpio | `pins` |
 | midi, hid, uvc | `name` or `auto` |
 
-Device Files MUST NOT contain secrets. Credentials are referenced by environment variable name. Loaders MUST reject a parameter named `token`, or one whose name contains `password`, `secret`, `apikey` or `api_key`.
+Device Files MUST NOT contain secrets. Credentials are referenced by environment variable name. Loaders MUST NOT load a file with a parameter named `token`, or one whose name contains `password`, `secret`, `apikey` or `api_key`.
 
 ## 3. Read channels
 
@@ -142,7 +142,7 @@ write:
 5. `enum` channels MUST declare a non-empty list of unique `values`. `string` channels MUST declare `max_length` (1 to 4096) and MAY declare `pattern`.
 6. `confirm` is `none` (default), `confirm` or `confirm-each-time` ([section 5](#5-actions) and [Safety](safety.md#confirmations)).
 7. `confirmed` MAY record who confirmed this channel's limits and when ([section 12](#12-limits-provenance)).
-8. `suggested: true` marks limits proposed by a tool that no human has confirmed.
+8. `suggested: true` marks limits generated by a tool that no human has confirmed.
 9. `every` MAY set a polling interval, as for read channels. `map` MAY give Driver-specific addressing, as for read channels.
 
 ## 5. Actions
@@ -190,7 +190,7 @@ safe_state:
 1. `safe_state` describes how to put the Device in a state that is safe to leave unattended.
 2. It is a mapping of write channels to values, an `action` with optional `args`, or a list of those applied in order. A step MUST NOT be empty.
 3. Every value MUST be valid for its channel and within its limits. Every action MUST be an action of the same file.
-4. A file with write channels or actions but no `safe_state` MUST still load. The loader MUST warn, and the Hub reports the Device as `no_safe_state` on stop. Such a file SHOULD set `safe_state_note`, at most 500 characters, explaining why none exists.
+4. A file with write channels or actions but no `safe_state` MUST still load. The loader MUST report a warning, and the Hub reports the Device as `no_safe_state` on stop. Such a file SHOULD set `safe_state_note`, at most 500 characters, explaining why none exists.
 
 ## 7. Interlocks and expressions
 
@@ -261,7 +261,7 @@ approvals:
 ```
 
 1. `hazard` is `low`, `medium` or `high`. A file with write channels or actions and no `hazard` is treated as `medium`. A file with no write channels and no actions is `low`.
-2. High hazard files make every command `confirm-each-time`, whatever the channel says.
+2. High hazard files make every command `confirm-each-time`, whatever the channel sets.
 3. `approvals` holds human-signed approvals that let a specific routine drive a high hazard Device. `routine` is the routine id. `sha256` is the hash of the routine's canonical content. `at` is a date and time. `signature` is an HMAC that only the Hub's human approval flow can produce ([Safety](safety.md#principals-and-hazard-classes)).
 4. Approvals are valid only on the Hub that signed them. A changed routine no longer matches its approval.
 
@@ -296,9 +296,9 @@ confirmed: { by: owner, at: 2026-10-24 }
 1. Every limit (min, max, step, rate, values, interlocks, watchdog rules, safe state, hazard) MUST be confirmed by a human before the Device takes commands.
 2. `confirmed` at the top level confirms every limit in the file. `confirmed` inside a write channel or action confirms that one. `by` is at most 80 characters. `at` is a date or a date and time.
 3. Interlocks, watchdog rules, the safe state and the hazard class are file-level limits. A file that has any of them needs a top-level `confirmed`. Per-channel confirmations alone don't cover them.
-4. `confirmed.sha256` MAY hold the hash of the file's limits at the moment they were confirmed. `openhal file confirm` adds it. When it is present and the limits have changed since, the whole file is unconfirmed again. Tools SHOULD always add it, and the validator warns when it is missing.
+4. `confirmed.sha256` MAY hold the hash of the file's limits at the moment they were confirmed. `openhal file confirm` adds it. When it is present and the limits have changed since, the whole file is unconfirmed again. Tools SHOULD always add it, and the validator reports a warning when it is missing.
 5. The limits hash covers identity, connection, channels, actions, safe state, interlocks, watchdog rules and hazard. It leaves out confirmations, approvals, notes, provenance, `safe_state_note` and `x-` keys, which can change without changing what the Device is allowed to do.
-6. A file takes commands only if every limit is covered by a confirmation, nothing is marked `suggested: true`, and any `confirmed.sha256` still matches. Otherwise it loads read-only, and the Hub says which entries are unconfirmed.
+6. A file takes commands only if every limit is covered by a confirmation, nothing is marked `suggested: true`, and any `confirmed.sha256` still matches. Otherwise it loads read-only, and the Hub reports which entries are unconfirmed.
 7. Tools MUST NOT add `confirmed` on their own. Only the human side of the limits interview, or a human editing the file, may add it.
 
 ## Versioning
@@ -311,4 +311,4 @@ The Device File format uses semantic versioning, separately from the version of 
 | Minor (0.x) | New optional fields or values. Every valid file stays valid with the same meaning |
 | Major (x.0) | Changes that can make a valid file invalid or change its meaning. Each major version ships `openhal file migrate` and a migration guide |
 
-A file's `openhal` field names the format version it was written for. Hubs accept files from the same major version and warn on a newer minor version.
+A file's `openhal` field names the format version it was written for. Hubs load files from the same major version and report a warning for a newer minor version.

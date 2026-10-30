@@ -1,6 +1,6 @@
 # sila2 driver
 
-The `sila2` driver talks to lab automation devices through SiLA 2, using the official `sila2` Python package. Properties become read channels, observable properties become streams, and commands become actions and the way channels change.
+The `sila2` driver connects to lab automation devices through SiLA 2, using the official `sila2` Python package. Properties become read channels, observable properties become streams, and commands become actions and the way channels change.
 
 | | |
 |---|---|
@@ -29,13 +29,13 @@ Every channel and action names its SiLA feature in a `map`. The client loads eac
 ## How the protocol is handled
 
 - connect() opens the gRPC channel and checks every feature, property, command and parameter the file names, with their types. Anything that doesn't fit stops the connect with a reason.
-- Units come from each data type's Unit constraint label, and a channel whose unit can't be converted from that label's unit is refused on connect.
+- Units come from each data type's Unit constraint label, and a channel whose unit can't be converted from that label's unit fails the connect.
 - Unobservable properties are read on demand. Observable properties are subscribed on connect and the newest value is kept, so a read costs no round trip and is unknown until the first value arrives.
 - SiLA properties are read-only, so a channel changes through a command with one parameter. Without `readback`, the channel reads back as the last value the driver sent.
 - An observable command waits up to `action_wait` and returns `done` with its responses, or returns `started` and keeps running on the server.
 - Defined execution errors fail the command with their identifier and message, for example `TooHot`. Constraint violations come back as validation errors.
 - The sila2 client is blocking, so every call runs in a worker thread with a deadline. Because the client compiles each feature definition, connecting gets 8 s.
-- sila2 0.14 loads two builds of its framework protos, which protobuf's default implementation refuses once another package, such as the ESPHome driver's aioesphomeapi, has loaded protobuf. The driver registers one build under both names first, so SiLA devices work next to every other driver in one hub.
+- sila2 0.14 loads two builds of its framework protos, which protobuf's default implementation reports as a conflict once another package, such as the ESPHome driver's aioesphomeapi, has loaded protobuf. The driver registers one build under both names first, so SiLA devices work next to every other driver in one hub.
 
 ## Safe state
 
@@ -49,7 +49,7 @@ SiLA has no general stop command, and the core features have none either, so the
 
 1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[sila2] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. Get the server's CA certificate (SiLA servers encrypt by default, many with a self-signed CA in their mDNS record) and save it as a PEM file.
-3. Start from `openhal/drivers/sila2/examples/thermoshaker.hal.yaml`, or call `describe` for a proposal, and keep only what you need.
+3. Start from `openhal/drivers/sila2/examples/thermoshaker.hal.yaml`, or call `describe` for a draft, and keep only what you need.
 4. Run `openhal file validate`, then confirm the limits by hand.
 
 ## Parameters

@@ -106,7 +106,7 @@ async function scenario(state) {
   const warmer = { device: "printer", channel: "bed_target", value: 70, unit: "degC" };
   expectAnswer(await agent.call("hal/write", warmer), (answer) => answer.result?.status === "done", "The bed did not warm to 70 degC.");
   const hotter = { device: "printer", channel: "extruder_target", value: 300, unit: "degC" };
-  expectAnswer(await agent.call("hal/write", hotter), (answer) => answer.error?.data?.name === "LIMIT_EXCEEDED", "The 300 degC nozzle was not refused with LIMIT_EXCEEDED.");
+  expectAnswer(await agent.call("hal/write", hotter), (answer) => answer.error?.data?.name === "LIMIT_EXCEEDED", "The hub did not block the 300 degC nozzle with LIMIT_EXCEEDED.");
   await show(state, "come-loose");
   expectAnswer(await agent.call("hal/read", look), (answer) => answer.result?.value?.bytes === 23567, "The second frame was not the come-loose drawing.");
   expectAnswer(await agent.call("hal/action", { device: "printer", action: "pause" }), (answer) => answer.result?.status === "done", "The print did not pause.");
@@ -213,17 +213,17 @@ const SHOTS = [
   {
     file: "inspector-confirmations",
     caption: "The pending cancel",
-    alt: "The Inspector's pending cancel. Because a cancelled print on the Klipper 3D printer can't be resumed, the agent print-watcher's request to run cancel waits for a person, with the camera's frame beside the Approve and run cancel and Reject buttons",
+    alt: "The Inspector's pending cancel. Because a cancelled print on the Klipper 3D printer can't be resumed, the hub holds the agent print-watcher's request to run cancel for a person, with the camera's frame beside the Approve and run cancel and Reject buttons",
   },
   {
     file: "inspector-log",
     caption: "The message log",
-    alt: "The Inspector's message log with hal/read results shown as image/jpeg 640 by 480 descriptions, the hal/write for a nozzle temperature of 300 °C refused with error -32010 LIMIT_EXCEEDED, and the cancel left pending",
+    alt: "The Inspector's message log with hal/read results shown as image/jpeg 640 by 480 descriptions, the hal/write for a nozzle temperature of 300 °C blocked with error -32010 LIMIT_EXCEEDED, and the cancel left pending",
   },
   {
     file: "inspector-stopped",
     caption: "Stopped",
-    alt: "The Inspector's stop banner, saying every command is refused with error -32014 STOPPED until a person lifts the stop with UNLOCK",
+    alt: "The Inspector's stop banner, which shows that every command is blocked with error -32014 STOPPED until a person lifts the stop with UNLOCK",
   },
 ];
 

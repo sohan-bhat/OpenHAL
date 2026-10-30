@@ -278,19 +278,19 @@ export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile
 /**
  * What the story says at each step, the owner's nine captions from 2026-10-27, with every value
  * from the record and the device file. Each caption reads on its own screen, in at most two
- * sentences, and speaks to the person who owns the printer.
+ * sentences, and addresses the person who owns the printer.
  */
 export function storyLines(facts: StoryFacts): Record<StepId, string> {
   return {
     intro: "An agent watches a 3D print through the OpenHAL hub.",
     ask: "You start a long print and ask an agent to watch it.",
     look: "The agent checks the webcam and sees a corner of the first layer lifting.",
-    warm: nb(`The agent raises the bed to ${facts.bed.value}. Your limit is ${facts.bed.max}, so the hub lets the request through.`),
-    hot: nb(`The agent also tries a nozzle temperature of ${facts.nozzle.value} to help the print stick. Your limit is ${facts.nozzle.max}, so the hub refuses.`),
+    warm: nb(`The agent sends a request to set the bed to ${facts.bed.value}. Your limit is ${facts.bed.max}, so the hub passes the request to the printer.`),
+    hot: nb(`The agent also sends a request for a nozzle temperature of ${facts.nozzle.value} to help the print stick. Your limit is ${facts.nozzle.max}, so the hub blocks the request.`),
     loose: "Later, the webcam shows the print has come loose.",
     pause: "The agent pauses the print. Pausing is safe, so no one has to approve it.",
     cancel: "Cancelling can't be undone, so the hub holds the request until you approve it.",
     approve: `You approve, and the hub sends the ${facts.approve.target} to the printer.`,
-    end: `The audit log records all ${facts.audit.requests} requests, including the refusal and your approval.`,
+    end: `The audit log records all ${facts.audit.requests} requests, including the blocked request and your approval.`,
   };
 }

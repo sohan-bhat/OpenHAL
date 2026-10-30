@@ -66,7 +66,7 @@ asyncio.run(main(*sys.argv[1:]))
 
 ## Read-only steps
 
-### 1. The device answers
+### 1. The device responds
 
 ```sh
 curl -s http://192.168.1.50/rpc/Shelly.GetDeviceInfo
@@ -102,7 +102,7 @@ Expected. `power = 0.0 W`, a `voltage` close to your mains voltage, a `plug_temp
 
 Unplug the device from the wall, then run step 4 again.
 
-Expected. `DriverError` that names the URL and says the device is not reachable, within about 3 seconds (the `timeout`). Plug the device back in, wait for the device to rejoin the network and run step 4 again. The device should read normally.
+Expected. `DriverError` that names the URL and states that the device is not reachable, within about 3 seconds (the `timeout`). Plug the device back in, wait for the device to rejoin the network and run step 4 again. The device should read normally.
 
 ### 6. Describe (only if your device serves an OpenAPI document)
 
@@ -112,7 +112,7 @@ Add `openapi: /openapi.json` (or your device's path) to `connect`, then run
 uv run python hwtest.py my-plug.hal.yaml describe
 ```
 
-Expected. Proposed `read`, `write` and `actions` sections. Every write and action has `suggested: true`.
+Expected. Suggested `read`, `write` and `actions` sections. Every write and action has `suggested: true`.
 
 ## Write steps
 
@@ -126,7 +126,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-plug.hal.yaml
 ```
 
-`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-plug.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-plug.hal.yaml` then shows `writable`.
 
 ### 8. The smallest safe write
 
@@ -154,7 +154,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the device model an
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, http driver
@@ -168,7 +168,7 @@ Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`
 
 | Step | Result | Notes |
 |---|---|---|
-| 1 device answers | pass / fail | |
+| 1 device responds | pass / fail | |
 | 2 file validates | pass / fail | |
 | 3 identify | pass / fail | |
 | 4 read every channel | pass / fail | values matched the device's own page: yes / no |

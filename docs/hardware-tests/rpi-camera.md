@@ -4,7 +4,7 @@ This plan checks the rpi-camera driver on a real Raspberry Pi. The driver has on
 
 The list below names what the fake can't prove, and the step that checks each item.
 
-| What the fake assumes | Checked in step |
+| Assumption in the fake | Checked in step |
 |---|---|
 | `Picamera2.global_camera_info()` lists modules with `Num`, `Model` and `Id` | 1, 3 |
 | `create_still_configuration(main={"size": ...})` and `create_video_configuration` accept those arguments | 4, 6 |
@@ -19,7 +19,7 @@ Run every step on the Pi, from the repository checkout. [README.md](README.md) h
 ## What you need
 
 - A Raspberry Pi 4 or 5 with Raspberry Pi OS Trixie or later, and a camera module on the CSI connector. Bookworm's Python 3.11 is older than the 3.12 OpenHAL needs, and picamera2's libcamera bindings load only in the system Python.
-- picamera2 from apt and a virtual environment on the system Python that can see it, set up as [README.md](README.md#on-a-raspberry-pi) says. The driver needs no extra. Check it with `uv run python -c "import picamera2"`.
+- picamera2 from apt and a virtual environment on the system Python that can import it, set up as [README.md](README.md#on-a-raspberry-pi) describes. The driver needs no extra. Check it with `uv run python -c "import picamera2"`.
 - A copy of the example file, `cp openhal/drivers/rpi_camera/examples/camera-module-3.hal.yaml my-picam.hal.yaml`.
 
 ## The test script
@@ -153,7 +153,7 @@ Expected. Frames at the full sensor resolution (4608x2592 for a Camera Module 3)
 
 Start `rpicam-hello -t 0` in another terminal, then run step 5's `read` command.
 
-Expected. A `DriverError` saying camera 0 could not be opened and that another program may be using it. Stop `rpicam-hello` with Ctrl-C and the command works again.
+Expected. A `DriverError` stating that camera 0 could not be opened and that another program may be using it. Stop `rpicam-hello` with Ctrl-C and the command works again.
 
 ## If something fails
 
@@ -161,7 +161,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus `rpicam-hello --lis
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, rpi-camera driver

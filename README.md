@@ -134,7 +134,7 @@ v0.1, in development. Every driver passes the conformance suite on a simulator.
 - A device file stays read-only until a person confirms its limits, and nothing an agent proposes counts as a confirmation.
 - Every hardware change needs a single-use grant the kernel issues for that exact command.
 - Unknown values never pass a check, so a stale or missing reading blocks the command.
-- One stop puts every device in its safe state, and the hub refuses every command until a person lifts the stop.
+- One stop puts every device in its safe state, and the hub blocks every command until a person lifts the stop.
 - Every decision goes into a hash-chained audit log.
 
 [docs/SAFETY.md](docs/SAFETY.md) has the details.

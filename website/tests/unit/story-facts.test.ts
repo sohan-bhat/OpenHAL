@@ -266,7 +266,7 @@ describe("the story's words and numbers", () => {
     expect(other.said.hot[0]).toEqual({ from: "agent", to: "hub", label: nb("extruder_target 290 °C"), answer: { text: "OUT_OF_RANGE", tone: "blocked" } });
     expect(lines.hot).toContain(nb("a nozzle temperature of 290 °C"));
     expect(other.said.warm[0].label).toBe(nb("bed_target 75 °C"));
-    expect(lines.warm).toContain(nb("raises the bed to 75 °C"));
+    expect(lines.warm).toContain(nb("set the bed to 75 °C"));
     expect(sequence.readings[1].values.map((value) => value.text)).toEqual(["60 °C", "75 °C"]);
     expect(sequence.heads).toEqual({ owner: "Operator", agent: "Agent", hub: "OpenHAL hub", printer: "Printer" });
     expect(other.said.approve[0].from).toBe("owner");
@@ -297,13 +297,13 @@ describe("the story's words and numbers", () => {
       "An agent watches a 3D print through the OpenHAL hub.",
       "You start a long print and ask an agent to watch it.",
       "The agent checks the webcam and sees a corner of the first layer lifting.",
-      "The agent raises the bed to 70 °C. Your limit is 110 °C, so the hub lets the request through.",
-      "The agent also tries a nozzle temperature of 300 °C to help the print stick. Your limit is 260 °C, so the hub refuses.",
+      "The agent sends a request to set the bed to 70 °C. Your limit is 110 °C, so the hub passes the request to the printer.",
+      "The agent also sends a request for a nozzle temperature of 300 °C to help the print stick. Your limit is 260 °C, so the hub blocks the request.",
       "Later, the webcam shows the print has come loose.",
       "The agent pauses the print. Pausing is safe, so no one has to approve it.",
       "Cancelling can't be undone, so the hub holds the request until you approve it.",
       "You approve, and the hub sends the cancel to the printer.",
-      "The audit log records all 6 requests, including the refusal and your approval.",
+      "The audit log records all 6 requests, including the blocked request and your approval.",
     ]);
   });
 
@@ -327,11 +327,11 @@ describe("the story's words and numbers", () => {
     expect(humane("extruder_target 300 degC exceeds the limit of 260 degC")).toBe("extruder_target 300 °C exceeds the limit of 260 °C");
   });
 
-  it("end on the audit log's count of requests, the refusal and the approval", () => {
+  it("end on the audit log's count of requests, the blocked request and the approval", () => {
     const end = storyLines(facts).end;
     expect(end).toContain(`all ${audit.counts.requests} requests`);
     expect(audit.counts.refused).toBe(1);
     expect(audit.counts.confirmed_by_a_person).toBe(1);
-    expect(end).toContain("the refusal and your approval");
+    expect(end).toContain("the blocked request and your approval");
   });
 });

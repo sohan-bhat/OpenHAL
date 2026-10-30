@@ -106,13 +106,13 @@ uv run python hwtest.py my-speaker.hal.yaml read
 uv run python hwtest.py my-speaker.hal.yaml describe
 ```
 
-Expected. The read shows `transport_state`, `volume` matching the Sonos app and `mute`. The proposal lists channels such as `current_volume` and actions such as `play` and `stop`.
+Expected. The read shows `transport_state`, `volume` matching the Sonos app and `mute`. The draft lists channels such as `current_volume` and actions such as `play` and `stop`.
 
 ### 5. Device loss
 
 Unplug the speaker and run the read.
 
-Expected. `DriverError` or `TimeoutError` saying the description could not be fetched. Plug the speaker in, wait until the app sees the speaker, and read again. The device reads normally.
+Expected. `DriverError` or `TimeoutError` stating that the description could not be fetched. Plug the speaker in, wait until the app lists the speaker, and read again. The device reads normally.
 
 ## Steps that change the device
 
@@ -124,7 +124,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-speaker.hal.yaml
 ```
 
-`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-speaker.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-speaker.hal.yaml` then shows `writable`.
 
 ### 7. The smallest safe change
 
@@ -163,7 +163,7 @@ Run the play action again, then run
 uv run python hwtest.py my-speaker.hal.yaml stop
 ```
 
-Expected. `workshop-speaker safe`, playback stops and the volume goes to 10. With an empty queue some firmware answers Stop with UPnP error 701, and the result is `partial`.
+Expected. `workshop-speaker safe`, playback stops and the volume goes to 10. With an empty queue some firmware returns UPnP error 701 for Stop, and the result is `partial`.
 
 ## If something fails
 
@@ -171,7 +171,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the description fro
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, upnp driver

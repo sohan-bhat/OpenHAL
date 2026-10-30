@@ -25,4 +25,4 @@ A Device File's `openhal` field names the format version it was written for, suc
 | Minor (0.x) | New optional fields or values. Every valid file stays valid with the same meaning |
 | Major (x.0) | Changes that can make a valid file invalid or change its meaning. Each major version ships `openhal file migrate` and a migration guide |
 
-Hubs accept files from the same major version and warn on a newer minor version. The full rules are in [device-files.md](v0.1/device-files.md#versioning).
+Hubs load files from the same major version and report a warning for a newer minor version. The full rules are in [device-files.md](v0.1/device-files.md#versioning).

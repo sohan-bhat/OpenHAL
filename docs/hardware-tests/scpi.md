@@ -10,7 +10,7 @@ This plan checks the scpi driver on a real bench power supply. Another SCPI inst
 
 ## The read-only probe
 
-Save this as `probe.py`. The probe connects, sends `*IDN?`, prints the driver's proposal and reads every channel. The probe holds no kernel grant, so the probe can't change the instrument. Connecting also drains `SYST:ERR?`, which only empties the error queue.
+Save this as `probe.py`. The probe connects, sends `*IDN?`, prints the driver's draft and reads every channel. The probe holds no kernel grant, so the probe can't change the instrument. Connecting also drains `SYST:ERR?`, which only empties the error queue.
 
 ```python
 import asyncio, json, sys
@@ -84,7 +84,7 @@ Unplug the USB or LAN cable for five seconds, then plug it back in. Expected. Ru
 
 ## Step 5. Start the hub
 
-Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and prompts you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -117,7 +117,7 @@ uv run openhal confirm approve <request id>
 uv run openhal read bench-psu.ch1_voltage bench-psu.ch1_current
 ```
 
-Expected. Each approval shows the request, asks you to type `approve`, checks the command again and prints `done`. The front panel shows 1.000 V and 0.010 A set, and the output turns on. The voltage reads about `1 V`. With the 1 kOhm resistor the current reads about `0.001 A`.
+Expected. Each approval shows the request, prompts you to type `approve`, checks the command again and prints `done`. The front panel shows 1.000 V and 0.010 A set, and the output turns on. The voltage reads about `1 V`. With the 1 kOhm resistor the current reads about `0.001 A`.
 
 ## Step 7. An instrument error is reported
 
@@ -130,7 +130,7 @@ bash docs/hardware-tests/hub.sh start
 uv run openhal action bench-psu.set_ch1 volts="1 V" amps="5 A"
 ```
 
-Expected. The kernel lets it through because the file allows it, the supply refuses it, and the command ends `failed driver_error` with a message containing `-222` (or your instrument's out-of-range code). The front panel limit doesn't change. Put the limit back to `max: 1` the same way, by stopping the hub, editing the file, confirming it and starting the hub.
+Expected. The kernel passes the command because the file allows it, the supply returns an error, and the command ends `failed driver_error` with a message containing `-222` (or your instrument's out-of-range code). The front panel limit doesn't change. Put the limit back to `max: 1` the same way, by stopping the hub, editing the file, confirming it and starting the hub.
 
 ## Step 8. The safe state
 
@@ -152,7 +152,7 @@ Expected. `blocked above_max  Blocked. The volts limit is 12 V (max). Asked for 
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the `*IDN?` reply from step 3, the output of `uv run pyvisa-info`, the resource string, and what the front panel showed at the time. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the `*IDN?` reply from step 3, the output of `uv run pyvisa-info`, the resource string, and what the front panel showed at the time. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -178,4 +178,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.

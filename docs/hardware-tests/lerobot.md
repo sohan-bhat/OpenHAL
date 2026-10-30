@@ -81,7 +81,7 @@ Expected. `read torque True` while connected. Runs during the outage fail with a
 
 ## Step 5. Start the hub
 
-Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and prompts you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -144,7 +144,7 @@ uv run openhal action so101.torque_on
 uv run openhal read so101.torque
 ```
 
-Expected. After the stop the arm goes limp and `torque` reads `false`. When torque comes back the arm stiffens where you left it and does not jump back to the old goal. `openhal unlock` asks you to type `unlock`.
+Expected. After the stop the arm goes limp and `torque` reads `false`. When torque comes back the arm stiffens where you left it and does not jump back to the old goal. `openhal unlock` prompts you to type `unlock`.
 
 ## Step 9. Close turns torque off (assumption 7)
 
@@ -152,7 +152,7 @@ Stop the hub with `bash docs/hardware-tests/hub.sh stop`. Expected. The arm goes
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the LeRobot version (`uv run python -c "from importlib.metadata import version; print(version('lerobot'))"`), the robot type and id, the numbers of the assumptions that didn't hold, and any motor bus errors. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the LeRobot version (`uv run python -c "from importlib.metadata import version; print(version('lerobot'))"`), the robot type and id, the numbers of the assumptions that didn't hold, and any motor bus errors. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -177,4 +177,4 @@ Assumptions that didn't hold (number and what you saw):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-A passing report lets the device file set `provenance.verification.status: verified-on-hardware` with `report:` pointing at the saved report. Send any assumption that didn't hold, since the fake has to change with it.
+With a passing report, the device file can set `provenance.verification.status: verified-on-hardware` with `report:` pointing at the saved report. Send any assumption that didn't hold, since the fake has to change with it.

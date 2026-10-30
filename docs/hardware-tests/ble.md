@@ -104,7 +104,7 @@ Expected. A `temperature` and `humidity` close to a reference thermometer, `pres
 
 Start step 4 and, while it runs, carry the sensor out of range or remove its battery. Then run step 4 again.
 
-Expected. A `DriverError` saying the device could not be connected (or that the read failed), and `health` reports the link dropped. Bring the sensor back and run step 4. The device reads normally.
+Expected. A `DriverError` stating that the device could not be connected (or that the read failed), and `health` reports the link dropped. Bring the sensor back and run step 4. The device reads normally.
 
 ## Write steps
 
@@ -130,7 +130,7 @@ Read the file and decide the limits and the safe state are right. Then confirm t
 uv run openhal file confirm my-led.hal.yaml
 ```
 
-`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-led.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-led.hal.yaml` then shows `writable`.
 
 ### 7. The smallest safe write
 
@@ -158,7 +158,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the operating syste
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, ble driver

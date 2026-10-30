@@ -1,6 +1,6 @@
 # marlin driver
 
-The `marlin` driver talks to printers and other machines running Marlin firmware over USB serial. The driver reads temperatures, positions and SD print state, sets heater targets and the part fan, and runs homing and SD print control.
+The `marlin` driver connects to printers and other machines running Marlin firmware over USB serial. The driver reads temperatures, positions and SD print state, sets heater targets and the part fan, and runs homing and SD print control.
 
 | | |
 |---|---|
@@ -41,7 +41,7 @@ Because a raw command would bypass every limit in the device file, the driver de
 ## How the protocol is handled
 
 - After opening the port the driver waits up to `settle` for the `start` banner that most boards print after the reset on open, then sends `M110 N0`.
-- Every command carries a line number and an XOR checksum (`N12 M104 T0 S200.0*93`). On `Resend` the driver sends the requested lines again and ignores the extra `ok` that Marlin sends with the request.
+- Every command carries a line number and an XOR checksum (`N12 M104 T0 S200.0*93`). On `Resend` the driver sends the requested lines again and discards the extra `ok` that Marlin sends with the request.
 - Commands in flight are tracked in order and resolved by `ok`, and `echo:busy: processing` keeps a command alive past `timeout`.
 - The driver reads M115 on connect, and when the M115 response reports `Cap:AUTOREPORT_TEMP:1` the driver turns on `M155 S<autoreport>` and reads temperatures from the reports, so reads keep working during long moves.
 - Because the hub's driver timeout of 10 s is shorter than many homing moves, `home` waits up to `action_wait`, and if the printer is still busy `home` returns `started` and the `ok` is collected in the background.
@@ -95,7 +95,7 @@ hazard: medium
 - Pause, resume and cancel only act on prints started from the printer's SD card, so a print streamed by a host program has to be paused by that program.
 - Moves other than homing are not exposed, and streaming G-code files is out of scope for this driver.
 - Multi-extruder printers need a `map` with `temperature: T1` or `heater: T1` for the second hotend.
-- The firmware's own thermal protection is the real last line of defense, and the driver can't tell whether that protection is enabled.
+- The firmware's own thermal protection is the real last line of defense, and the driver can't detect whether that protection is enabled.
 
 ## Hazard defaults
 

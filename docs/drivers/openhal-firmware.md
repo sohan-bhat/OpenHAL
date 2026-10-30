@@ -1,6 +1,6 @@
 # openhal-firmware
 
-The openhal-firmware driver talks to boards running the OpenHAL Arduino library (`firmware/arduino/OpenHAL`). The board describes its readings, outputs and actions, enforces its own limits and falls to its safe state when heartbeats stop, and the protocol is in `spec/FIRMWARE-PROTOCOL.md`.
+The openhal-firmware driver connects to boards running the OpenHAL Arduino library (`firmware/arduino/OpenHAL`). The board reports a description of its readings, outputs and actions, enforces its own limits and falls to its safe state when heartbeats stop, and the protocol is in `spec/FIRMWARE-PROTOCOL.md`.
 
 ## Device file
 
@@ -44,7 +44,7 @@ Install the optional dependency with `uv pip install "openhal-hub[openhal-firmwa
 
 - Connect sends `HELLO`, checks the protocol version, reads `DESC`, and starts a heartbeat at a third of the board's timeout.
 - Reads use a streamed `EVT` value when the value is less than 5 s old, and send `READ` otherwise.
-- Channel changes send `WRITE` and return the value the board applied, and actions send `ACT` with every argument in the board's unit. A board refusal (`ERR limit`, `ERR interlock`) becomes a DriverError, and the kernel marks what the command touched unknown until a readback.
+- Channel changes send `WRITE` and return the value the board applied, and actions send `ACT` with every argument in the board's unit. A board error reply (`ERR limit`, `ERR interlock`) becomes a DriverError, and the kernel marks what the command touched unknown until a readback.
 - `safe_state_support` is native, so a stop sends `SAFE` and the kernel also applies the device file's safe state.
 - `describe()` turns `DESC` into device file sections with every limit marked suggested, so the file stays read-only until a person confirms the file.
 - Discovery only probes ports whose USB vendor id is Arduino, WCH CH340, Silicon Labs CP210x, Espressif, Adafruit or FTDI, and only sends `HELLO`.

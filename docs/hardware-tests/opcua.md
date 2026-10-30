@@ -77,7 +77,7 @@ describe {"device": {...}, "read": {...
 
 The values match the PLC tool. A variable with EngineeringUnits shows the converted unit. Paste the full output into the report.
 
-## Step 4. A unit mismatch is refused (read-only)
+## Step 4. A unit mismatch fails the connect (read-only)
 
 Change one channel's unit to something that can't convert from the node's unit, for example `unit: V` on a temperature, and run the probe again.
 
@@ -93,7 +93,7 @@ Unplug this machine's network cable for ten seconds, then plug it back in. Expec
 
 ## Step 6. Start the hub
 
-Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and prompts you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -125,7 +125,7 @@ uv run openhal read dosing.speed
 uv run openhal unlock
 ```
 
-Expected. The PLC tool shows 100, and the read says `100 rpm`. After the stop the file's safe state runs, the Stop method if you kept it, then 0, and the read says `0 rpm`. `openhal unlock` asks you to type `unlock`.
+Expected. The PLC tool shows 100, and the read shows `100 rpm`. After the stop the file's safe state runs, the Stop method if you kept it, then 0, and the read shows `0 rpm`. `openhal unlock` prompts you to type `unlock`.
 
 ## Step 9. A method call (optional)
 
@@ -139,7 +139,7 @@ Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the endpoint and security mode, what UaExpert or the PLC tool shows for the node (data type, access level, engineering units), and the server's product and version. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the endpoint and security mode, what UaExpert or the PLC tool shows for the node (data type, access level, engineering units), and the server's product and version. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -153,7 +153,7 @@ Security and login used:
 Step 1 discovery:                pass / fail
 Step 2 file valid:               pass / fail
 Step 3 probe output:             pass / fail   (paste it)
-Step 4 unit mismatch refused:    pass / fail
+Step 4 unit mismatch fails:      pass / fail
 Step 5 network loss:             pass / fail
 Step 6 hub lists the device:     pass / fail
 Step 7 blocked change:           pass / fail
@@ -164,4 +164,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.

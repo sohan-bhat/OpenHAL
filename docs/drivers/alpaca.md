@@ -1,6 +1,6 @@
 # alpaca driver
 
-The `alpaca` driver talks to astronomy devices through ASCOM Alpaca, the REST form of ASCOM. The driver covers telescope mounts, focusers, cameras, switches and power boxes, and domes, and finds Alpaca servers with the Alpaca UDP discovery broadcast.
+The `alpaca` driver connects to astronomy devices through ASCOM Alpaca, the REST form of ASCOM. The driver covers telescope mounts, focusers, cameras, switches and power boxes, and domes, and finds Alpaca servers with the Alpaca UDP discovery broadcast.
 
 | | |
 |---|---|
@@ -47,11 +47,11 @@ Other members need a `map`.
 - Every request carries `ClientID` and `ClientTransactionID`. PUT parameter names are spelled exactly as the reference spells them.
 - An ASCOM error comes back as HTTP 200 with a non-zero `ErrorNumber`, and the driver names the error, for example `0x408 not allowed while parked`, and fails the command.
 - Actions with `wait` poll the `wait` member until the member is false and return `done`, or return `started` after `action_wait`.
-- Integer members such as the focuser position refuse a value that isn't whole, and nothing is sent.
+- The driver blocks a value that isn't whole for integer members such as the focuser position, and nothing is sent.
 
 ## Safe state
 
-Telescopes and domes get AbortSlew, focusers Halt and cameras AbortExposure, on every device the file uses. A parked mount refuses AbortSlew as InvalidWhileParked, which counts as safe because a parked mount isn't moving. `park_on_stop: true` also parks telescopes and domes after the abort. Switches have no native safe state, so the file's own `safe_state` values set the switches, and a stop turns tracking off only when the file's safe state does.
+Telescopes and domes get AbortSlew, focusers Halt and cameras AbortExposure, on every device the file uses. A parked mount returns InvalidWhileParked for AbortSlew, which counts as safe because a parked mount isn't moving. `park_on_stop: true` also parks telescopes and domes after the abort. Switches have no native safe state, so the file's own `safe_state` values set the switches, and a stop turns tracking off only when the file's safe state does.
 
 ## Discovery
 

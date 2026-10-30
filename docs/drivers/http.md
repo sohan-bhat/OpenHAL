@@ -1,6 +1,6 @@
 # http driver
 
-The http driver talks to devices that expose a local HTTP API, and every request the driver sends comes from the device file. Read channels name a request and where the value sits in the response, and write channels and actions name a request and a body or query template. With an OpenAPI 3 document, `describe()` proposes the channels for you.
+The http driver connects to devices that expose a local HTTP API, and every request the driver sends comes from the device file. Read channels name a request and where the value sits in the response, and write channels and actions name a request and a body or query template. With an OpenAPI 3 document, `describe()` builds suggested channels for you.
 
 ## What it supports
 
@@ -25,7 +25,7 @@ httpx is also part of the hub extra, so a hub install already has it.
 |---|---|---|
 | `base_url` | required | `http://` or `https://` URL of the device. The shorthand `http: "http://192.168.1.50"` sets it |
 | `timeout` | `5 s` | Hard deadline for each request, enforced by the driver |
-| `headers` | none | Extra request headers. Names that look like credentials are rejected |
+| `headers` | none | Extra request headers. Names that look like credentials fail validation |
 | `token_env` | none | Name of an environment variable holding a token |
 | `auth_header` | `Authorization` | Header that carries the token |
 | `auth_scheme` | `Bearer` | Prefix before the token. Use `""` for a bare API key header |
@@ -33,7 +33,7 @@ httpx is also part of the hub extra, so a hub install already has it.
 | `health` | `/` | Path fetched with GET for connect and the heartbeat. Any HTTP response counts as alive |
 | `identify` | none | Path fetched with GET by `identify()`. Scalar fields of the JSON reply become identity fields |
 | `openapi` | none | Path of an OpenAPI 3 JSON document for `describe()` |
-| `max_response_bytes` | `1048576` | Larger responses are refused |
+| `max_response_bytes` | `1048576` | Larger responses raise `DriverError` |
 
 ## Channel maps
 
@@ -88,7 +88,7 @@ Actions use `path`, `method`, `query` and `body` the same way, with `{arg}` for 
 
 ## Describe from OpenAPI
 
-With `openapi: /openapi.json`, `describe()` fetches the document and proposes
+With `openapi: /openapi.json`, `describe()` fetches the document and returns
 
 - read channels for the scalar properties of each GET operation's JSON reply, one nesting level deep,
 - write channels for the scalar properties of each PUT, POST or PATCH JSON body, only when numbers carry `minimum` and `maximum`,

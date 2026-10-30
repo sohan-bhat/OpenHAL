@@ -97,7 +97,7 @@ Run the loop from step 4, unplug the USB cable for five seconds, then plug it ba
 
 ## Step 6. Start the hub
 
-Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and prompts you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -120,7 +120,7 @@ uv run openhal action router.resume
 uv run openhal read router.state
 ```
 
-Expected. `hold` answers `done` and the state reads `hold`, because GRBL 1.1 enters Hold:0 even when nothing moves. `resume` answers `done` and the state is `idle` again. If the state stays `idle` after the hold, `resume` is blocked with `interlock`, because `resume` needs `state == hold`. Either outcome is safe, but write down which one you saw, since the simulator assumes the state stays `idle`.
+Expected. `hold` returns `done` and the state reads `hold`, because GRBL 1.1 enters Hold:0 even when nothing moves. `resume` returns `done` and the state is `idle` again. If the state stays `idle` after the hold, `resume` is blocked with `interlock`, because `resume` needs `state == hold`. Either outcome is safe, but write down which one you saw, since the simulator models the state as staying `idle`.
 
 ## Step 8. The smallest move, a 1 mm jog with Z clear
 
@@ -132,7 +132,7 @@ uv run openhal read router.position_x
 uv run openhal action router.jog x="-1 mm" y="0 mm" z="0 mm" feed="100 mm/min"
 ```
 
-Expected. The X axis moves 1 mm and back. The action answers `done`. `position_x` changes by 1.0 mm.
+Expected. The X axis moves 1 mm and back. The action returns `done`. `position_x` changes by 1.0 mm.
 
 ## Step 9. A blocked jog never reaches the machine
 
@@ -144,7 +144,7 @@ Expected. Blocked with code `above_max`. The machine doesn't move.
 
 ## Step 10. The spindle at low speed, then stop
 
-Use about a fifth of the `max_spindle` value from step 3. The commands show `2000 rpm` for a `$30` of 10000. The driver refuses a speed above `$30` with `failed driver_error` and sends nothing, and many 3018 boards ship with `$30=1000`. On a laser, put the cap on and run `uv run openhal write router.laser_power "1 %"` instead of the first two commands.
+Use about a fifth of the `max_spindle` value from step 3. The commands show `2000 rpm` for a `$30` of 10000. The driver blocks a speed above `$30` with `failed driver_error` and sends nothing, and many 3018 boards ship with `$30=1000`. On a laser, put the cap on and run `uv run openhal write router.laser_power "1 %"` instead of the first two commands.
 
 ```
 uv run openhal write router.spindle_speed "2000 rpm"
@@ -155,7 +155,7 @@ uv run openhal read router.state
 uv run openhal unlock
 ```
 
-Expected. The spindle spins up and the read says the speed you asked for. After `openhal stop` it spins down and the read says `0 rpm`. The state is `idle`, because nothing was moving. `openhal unlock` asks you to type `unlock`.
+Expected. The spindle spins up and the read shows the speed you requested. After `openhal stop` it spins down and the read shows `0 rpm`. The state is `idle`, because nothing was moving. `openhal unlock` prompts you to type `unlock`.
 
 ## Step 11. Stop during a jog
 
@@ -179,7 +179,7 @@ Expected. The stop reports `router  safe` and the axis decelerates and stops wel
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the `$I` and `$$` replies from your usual sender, the machine and board, and whether homing and limit switches are on. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the `$I` and `$$` replies from your usual sender, the machine and board, and whether homing and limit switches are on. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -206,4 +206,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.

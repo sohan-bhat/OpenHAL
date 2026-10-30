@@ -9,7 +9,7 @@ The upnp driver reads and controls UPnP devices through their SOAP actions, usin
 - Actions that call any SOAP action, with the action's arguments placed by `{name}`.
 - A check on connect that every service, action, argument and output exists, and that types and enum values match the device's service descriptions.
 - `discover()` sends one SSDP M-SEARCH, which only requests that devices announce themselves.
-- `describe()` proposes channels from the Get and Set actions and the actions without outputs.
+- `describe()` returns suggested channels from the Get and Set actions and the actions without outputs.
 
 ## Setup
 

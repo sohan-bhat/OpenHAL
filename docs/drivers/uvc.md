@@ -1,6 +1,6 @@
 # uvc driver
 
-The uvc driver captures frames from USB webcams and other cameras the operating system can open, and returns them as JPEG bytes. The driver uses OpenCV (`opencv-python-headless`), which talks to V4L2 on Linux, AVFoundation on macOS and Media Foundation or DirectShow on Windows. The driver is read-only and never changes exposure, focus or any other camera control.
+The uvc driver captures frames from USB webcams and other cameras the operating system can open, and returns them as JPEG bytes. The driver uses OpenCV (`opencv-python-headless`), which captures through V4L2 on Linux, AVFoundation on macOS and Media Foundation or DirectShow on Windows. The driver is read-only and never changes exposure, focus or any other camera control.
 
 ## What it supports
 

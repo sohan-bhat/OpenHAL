@@ -1,6 +1,6 @@
 # Architecture
 
-OpenHAL is one hub process that owns every device, plus thin clients around the hub. Safety lives in one deterministic kernel inside the hub, so everything else, including the MCP server an agent talks to, sends requests to the hub.
+OpenHAL is one hub process that owns every device, plus thin clients around the hub. Safety lives in one deterministic kernel inside the hub, so everything else, including the MCP server an agent connects to, sends requests to the hub.
 
 The decisions behind this design are in docs/adr/, the safety rules are in docs/SAFETY.md and the device file format is in spec/SPEC.md.
 
@@ -53,7 +53,7 @@ flowchart LR
 |---|---|---|
 | Brand | `openhal/_brand.py` | Every public name in one place (ADR 0002) |
 | Spec models | `openhal/spec/` | Pydantic models for device files, routines and commands, the unit registry, the expression language, JSON Schema export |
-| Safety kernel | `openhal/kernel/` | Every check, grant issuing and verification, rate limit state, interlocks, watchdog budgets, stop lock, confirmation decisions |
+| Safety kernel | `openhal/kernel/` | Every check, grant issuing and verification, rate limit state, interlocks, watchdog budgets, stop lock, confirmation checks |
 | Audit log | `openhal/audit/` | Append-only SQLite table with a hash chain (ADR 0010) |
 | Hub | `openhal/hub/` | Daemon, registry, config, tokens, storage, local API, discovery, library matcher, static dashboard files |
 | Drivers | `openhal/drivers/` | Base class, driver registry, mock framework, one package per protocol or bridge |
@@ -65,7 +65,7 @@ flowchart LR
 | Conformance | `openhal/conformance/` | The standard battery every driver must pass |
 | Dashboard | `dashboard/` | Svelte 5 app, built into `openhal/hub/static/` |
 | Website | `website/` | Astro site built from the repository |
-| Firmware | `firmware/arduino/OpenHAL/` | Arduino library that makes a maker's device describe itself |
+| Firmware | `firmware/arduino/OpenHAL/` | Arduino library that adds a self-description to a maker's device |
 | Library | `library/` | Shared device files (CC0) |
 
 ## The life of a command
@@ -108,7 +108,7 @@ sequenceDiagram
   end
 ```
 
-A human approving a queued request sends `POST /v1/confirmations/{id}/approve` with a human token. The kernel evaluates the request again with current state (a confirmation never approves a stale check), then follows the allowed branch.
+A human approving a queued request sends `POST /v1/confirmations/{id}/approve` with a human token. The kernel evaluates the request again with current state (an approval never applies to a stale check), then follows the allowed branch.
 
 ## Device discovery
 
@@ -132,7 +132,7 @@ flowchart TD
   MATCH -->|unknown| UNK[List as unknown device,<br/>offer the driver writer]
 ```
 
-Serial probing sends only identify commands that are documented as read-only for the protocol being tried, at a short timeout, and never opens a port that another process holds.
+Serial probing sends only identify commands that are documented as read-only for the protocol being probed, at a short timeout, and never opens a port that another process holds.
 
 ## Driver writer
 

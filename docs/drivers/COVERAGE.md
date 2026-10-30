@@ -10,7 +10,7 @@ Device estimates are rough orders of magnitude with the reasoning given. The est
 
 | Driver | Library | Covers | Hazard default | Status | Estimate and reasoning |
 |---|---|---|---|---|---|
-| serial | pyserial | Any device with a line-based serial protocol, configured by its device file | medium | tested on simulator | Unbounded. Most hobby boards and many instruments speak line-based serial |
+| serial | pyserial | Any device with a line-based serial protocol, configured by its device file | medium | tested on simulator | Unbounded. Most hobby boards and many instruments use line-based serial |
 | firmata | own Firmata client on pyserial | Arduino-compatible boards running StandardFirmata | low | tested on simulator | Tens of board models (Arduino, Teensy, ESP boards with Firmata) |
 | openhal-firmware | own (spec/FIRMWARE-PROTOCOL.md) | Boards running the OpenHAL Arduino library | from the sketch | tested on simulator | AVR and ESP32 boards |
 | scpi | PyVISA, pyvisa-py | Bench instruments over USB-TMC, LAN (VXI-11, raw socket) and serial | medium | tested on simulator | Thousands of models. SCPI is the default command language for programmable test equipment since 1990 |

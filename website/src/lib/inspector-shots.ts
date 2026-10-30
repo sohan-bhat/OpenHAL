@@ -11,8 +11,8 @@ export interface Shot {
 const listed = (captures as { shots?: Shot[] }).shots;
 
 /**
- * The Inspector page's screenshots, each with the words that say what it shows. The capture
- * script's own list in inspector-captures.json wins when it has one, since the script knows what
+ * The Inspector page's screenshots, each with the words that describe the image. The capture
+ * script's own list in inspector-captures.json wins when it has one, since the script records what
  * each image holds. Otherwise the page shows the device, the message log and the stop, described
  * with the record's numbers.
  */
@@ -29,13 +29,13 @@ export function inspectorShots(facts: StoryFacts = storyFacts(), shots: Shot[] |
       file: "inspector-log",
       caption: "The message log",
       crop: { x: 316, y: 126, w: 1100, h: 774 },
-      alt: `The Inspector's message log with the agent's requests to the printer, the request for a nozzle temperature of ${facts.nozzle.value} refused with error ${facts.nozzle.refusal.code} ${facts.nozzle.refusal.name}, and the cancel left ${facts.cancel.status} until a person approves or rejects the cancel`,
+      alt: `The Inspector's message log with the agent's requests to the printer, the request for a nozzle temperature of ${facts.nozzle.value} blocked with error ${facts.nozzle.refusal.code} ${facts.nozzle.refusal.name}, and the cancel left ${facts.cancel.status} until a person approves or rejects the cancel`,
     },
     {
       file: "inspector-stopped",
       caption: "Stopped",
       crop: { x: 0, y: 119, w: 1040, h: 48 },
-      alt: "The Inspector's stop banner, saying every command is refused with error -32014 STOPPED until a person lifts the stop with UNLOCK",
+      alt: "The Inspector's stop banner, which shows that every command is blocked with error -32014 STOPPED until a person lifts the stop with UNLOCK",
     },
   ];
 }

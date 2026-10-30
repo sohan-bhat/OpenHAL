@@ -1,8 +1,8 @@
 # OpenHAL firmware protocol, version 1
 
-This page defines the wire protocol between the hub's `openhal-firmware` driver and a board running the OpenHAL Arduino library (firmware/arduino/OpenHAL/). A board that speaks the protocol describes itself, so the hub can build the board's device file without a person typing channels.
+This page defines the wire protocol between the hub's `openhal-firmware` driver and a board running the OpenHAL Arduino library (firmware/arduino/OpenHAL/). A board that implements the protocol sends a description of itself, so the hub can build the board's device file without a person typing channels.
 
-The board also enforces its own limits as defense in depth, but the hub's safety kernel is still the authority, and nothing in this protocol can widen a limit the device file sets.
+The board also enforces its own limits as defense in depth, but the hub's safety kernel checks every command first, and nothing in this protocol can widen a limit the device file sets.
 
 ## Transport
 
@@ -16,7 +16,7 @@ The board also enforces its own limits as defense in depth, but the hub's safety
 <seq> <verb> [arg ...]*<checksum>
 ```
 
-- `seq` is a decimal number from 1 to 65535 chosen by the host, and the board echoes the number in its reply, while unsolicited board messages use `0`.
+- `seq` is a decimal number from 1 to 65535 set by the host, and the board echoes the number in its reply, while unsolicited board messages use `0`.
 - `verb` is an uppercase word, arguments are separated by single spaces, and names match `[a-z][a-z0-9_]{0,23}`. Numbers are decimal, with an optional sign and decimal point.
 - `*<checksum>` is two uppercase hex digits, the XOR of every byte before the `*`. Both sides check the checksum and discard lines with a wrong or missing checksum.
 
@@ -38,12 +38,12 @@ The board also enforces its own limits as defense in depth, but the hub's safety
 |---|---|
 | `0 EVT <name> <value>` | A streamed value (the board's channel has `every` set) |
 | `0 SAFE <reason>` | The board applied its safe state on its own. Reasons include `heartbeat_lost`, `<name>_timeout` and whatever the sketch passes, such as the plant waterer's `tank_empty` |
-| `<seq> ERR <code> <detail>` | A request failed. Codes are `unknown` (verb, channel or action), `limit` (outside the board's own limits), `format` (bad argument), `interlock` (the sketch refused the action, with its reason such as `tank_empty`), `checksum`, `fault` (the sensor returned no value), `busy` (the board refused commands because its sketch registered channels wrongly) |
+| `<seq> ERR <code> <detail>` | A request failed. Codes are `unknown` (verb, channel or action), `limit` (outside the board's own limits), `format` (bad argument), `interlock` (the sketch blocked the action, with its reason such as `tank_empty`), `checksum`, `fault` (the sensor returned no value), `busy` (the board blocks commands because its sketch registered channels wrongly) |
 
 
 ## Capability document
 
-The `DESC` reply is a compact JSON object, and the plant waterer (examples/plant-waterer/) reports its float switch as states and offers actions. Because the plant waterer's pump is an output the sketch keeps to itself, `w` is empty and the pump runs only through `water`.
+The `DESC` reply is a compact JSON object, and the plant waterer (examples/plant-waterer/) reports its float switch as states and lists actions. Because the plant waterer's pump is an output the sketch keeps to itself, `w` is empty and the pump runs only through `water`.
 
 ```json
 {
@@ -97,4 +97,4 @@ The checksums are real values that `openhal.drivers.openhal_firmware.protocol.ch
 
 ## Versioning
 
-The `1` in the `HELLO` reply is the protocol version. A board that speaks a newer major version than the hub refuses commands other than `HELLO` and `DESC`, and the hub reports the board as unsupported.
+The `1` in the `HELLO` reply is the protocol version. A board that implements a newer major version than the hub blocks commands other than `HELLO` and `DESC`, and the hub reports the board as unsupported.

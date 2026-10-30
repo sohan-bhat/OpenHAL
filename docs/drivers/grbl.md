@@ -1,6 +1,6 @@
 # grbl driver
 
-The `grbl` driver talks to CNC routers, laser engravers and plotters running GRBL 1.1 over USB serial. The driver reads the machine state, positions and settings, sets the spindle, laser power and coolant, and runs homing, jogs and moves. grblHAL controllers speak the same protocol and work too.
+The `grbl` driver connects to CNC routers, laser engravers and plotters running GRBL 1.1 over USB serial. The driver reads the machine state, positions and settings, sets the spindle, laser power and coolant, and runs homing, jogs and moves. grblHAL controllers use the same protocol and work too.
 
 | | |
 |---|---|
@@ -49,12 +49,12 @@ Because a raw line would bypass every limit in the device file, the driver delib
 
 ## How the protocol is handled
 
-- Lines go out one at a time, and each line waits for its `ok` or `error:N`, with the error number translated into a sentence.
+- Lines go out one at a time, and the driver sends the next line only after the `ok` or `error:N` for the previous one, with the error number translated into a sentence.
 - Status comes from the `?` realtime byte. Reads within `status_age` share one report so a page of channels costs one query.
 - Work and machine positions are converted with the `WCO` offset. When a report has no `WCO` the driver reads `$#` and `$G` once.
 - GRBL responds to motion lines with `ok` when the lines are queued, and `jog` and `move` then poll until the machine is idle and return `done`, or return `started` after `action_wait`.
 - `$H` blocks the line until homing ends. If homing takes longer than `action_wait` the action returns `started` and the `ok` is collected in the background.
-- `ALARM:N` fails the command in flight. After a hard or soft limit GRBL ignores everything but a reset, and the driver refuses lines until a reset is sent.
+- `ALARM:N` fails the command in flight. After a hard or soft limit GRBL discards everything but a reset, and the driver blocks lines until a reset is sent.
 - The banner `Grbl 1.1h ['$' for help]` means the board reset, so commands in flight fail.
 
 ## Safe state
@@ -112,11 +112,11 @@ hazard: high
 - Overrides (feed, rapid and spindle percentages) are not exposed yet.
 - Only the active work coordinate system is used for `work_*` reads and `set_work_zero`.
 - In laser mode `M4` only fires while moving, so setting `laser_power` alone never burns. `{ laser: constant }` uses `M3`, which keeps the laser at power during moves.
-- Because GRBL would clamp spindle speeds above `$30` or below `$31` silently, the driver refuses those speeds.
+- Because GRBL would clamp spindle speeds above `$30` or below `$31` silently, the driver blocks those speeds.
 
 ## Hazard defaults
 
-The default hazard is `high`, because spindles, bits and lasers cut and burn, and axes can crush. Every change and action on a high hazard device waits for a person's approval, and keeping `confirm: confirm-each-time` in the file as well makes the intent visible.
+The default hazard is `high`, because spindles, bits and lasers cut and burn, and axes can crush. The hub holds every change and action on a high hazard device until a person approves the request, and keeping `confirm: confirm-each-time` in the file as well makes the intent visible.
 
 ## Sources
 

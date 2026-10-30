@@ -1,6 +1,6 @@
 # opcua driver
 
-The `opcua` driver talks to OPC UA servers, the interface of most current PLCs, process equipment and LADS lab instruments. Variables become channels with their engineering units, and methods become actions.
+The `opcua` driver connects to OPC UA servers, the interface of most current PLCs, process equipment and LADS lab instruments. Variables become channels with their engineering units, and methods become actions.
 
 | | |
 |---|---|
@@ -28,9 +28,9 @@ Node ids may be numeric (`i=2258`), string (`s=...`), GUID (`g=...`) or opaque (
 ## How the protocol is handled
 
 - connect() checks every node the file names. Variables must exist, variables in the `write` section must be writable for this user, and methods must exist with as many inputs as the map lists. Anything else stops the connect with a reason.
-- Units come from each variable's EngineeringUnits, by UNECE code (`CEL`, `KPA`, `RPM`, `P1` and about 45 others) or its display name. A channel whose unit can't be converted from the node's unit is refused on connect, so a degF node can't be read as degC by mistake.
+- Units come from each variable's EngineeringUnits, by UNECE code (`CEL`, `KPA`, `RPM`, `P1` and about 45 others) or its display name. A channel whose unit can't be converted from the node's unit fails the connect, so a degF node can't be read as degC by mistake.
 - Reads check the status code, so Bad fails the read and Uncertain marks the reading suspect, and a reading outside the channel's `range` is also suspect.
-- A change sends a Variant of the node's own data type. Integer nodes refuse values that aren't whole or don't fit the type, and nothing is sent.
+- A change sends a Variant of the node's own data type. For integer nodes the driver blocks a value that isn't whole or doesn't fit the type, and nothing is sent.
 - Method arguments go out as the method's input types, and because OPC UA arguments carry no units, the value is sent in the argument's declared unit.
 
 ## Safe state
@@ -45,7 +45,7 @@ OPC UA has no general stop, so the driver has no native safe state. Give the dev
 
 1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[opcua] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. Find the endpoint URL and the node ids with the PLC's tool or a generic client such as UaExpert.
-3. Start from `openhal/drivers/opcua/examples/dosing-pump.hal.yaml`, or call `describe` for a proposal.
+3. Start from `openhal/drivers/opcua/examples/dosing-pump.hal.yaml`, or call `describe` for a draft.
 4. Run `openhal file validate`, then confirm the limits by hand.
 
 ## Parameters
@@ -83,7 +83,7 @@ hazard: medium
 
 - Subscriptions are not used, so each read is one request and the hub's polling sets the rate.
 - Arrays, structures and enumerated data types beyond String and the numeric and Boolean types are not mapped.
-- When the server has no EURange, describe proposes limits of 0 to 0 for numeric changes, so nothing moves until a person sets real limits.
+- When the server has no EURange, describe returns limits of 0 to 0 for numeric changes, so nothing moves until a person sets real limits.
 - asyncua is LGPL-3.0, installed as a separate package and not modified or copied.
 
 ## Hazard defaults

@@ -1,6 +1,6 @@
 # moonraker driver
 
-The `moonraker` driver talks to Klipper printers through Moonraker, the API server behind Mainsail and Fluidd. The driver reads printer objects (heaters, sensors, fans, print state, toolhead), sets heater targets and fan speeds with Klipper G-code, and runs homing and print control.
+The `moonraker` driver connects to Klipper printers through Moonraker, the API server behind Mainsail and Fluidd. The driver reads printer objects (heaters, sensors, fans, print state, toolhead), sets heater targets and fan speeds with Klipper G-code, and runs homing and print control.
 
 | | |
 |---|---|
@@ -43,7 +43,7 @@ The driver deliberately has no raw G-code action.
 - `transport: http` polls one object per read, while `transport: websocket` subscribes to every object the file uses with `printer.objects.subscribe`, keeps a cache that `notify_status_update` refreshes, and reads from the cache without a round trip.
 - An API key, when Moonraker requires one, is read from the environment variable named in `token_env` and sent as `X-Api-Key`.
 - G-code requests return when Klipper has finished the command. Because the hub's driver timeout is 10 s, `home` waits up to `action_wait`, then returns `started` and finishes in the background with a deadline of 300 s.
-- Klipper refuses heater targets above `max_temp` in printer.cfg, and that error, like every other Klipper or Moonraker error, fails the command with the original message.
+- Klipper returns an error for heater targets above `max_temp` in printer.cfg, and that error, like every other Klipper or Moonraker error, fails the command with the original message.
 - `health()` reads `printer.info` (or the subscribed `webhooks` object). Anything but `ready` reports the printer as disconnected with Klipper's own message, for example an MCU shutdown.
 - `match.moonraker` is checked against `printer.info` on connect, with glob patterns, so a file can't drive the wrong printer.
 

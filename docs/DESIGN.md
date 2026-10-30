@@ -13,7 +13,7 @@ Theme rules.
 
 ## Subject and job
 
-OpenHAL is an open protocol for AI agents to discover, read and control hardware safely. The reader is an engineer deciding whether to implement or adopt it. The site's job is to make the protocol legible: what a client sends, what the hub answers, and why a write is refused. The Inspector's job is to show every device and every message, and stop anything in one click.
+OpenHAL is an open protocol for AI agents to discover, read and control hardware safely. The reader is an engineer deciding whether to implement or adopt it. The site's job is to make the protocol legible: what a client sends, what the hub returns, and why the hub blocks a write. The Inspector's job is to show every device and every message, and stop anything in one click.
 
 ## Signature elements
 
@@ -62,17 +62,17 @@ The home page shows OpenHAL's three ideas once, in three steps on one diagram of
 
 The main example is a task that needs an agent. A timer or an IoT rule waters a plant on a schedule, but watching a print on a camera, judging what is going wrong and acting takes an agent, so the main example is the 3D print babysitter (examples/print-babysitter/). The owner chose the print babysitter on 2026-10-26.
 
-Every example value in the README, website, Inspector screenshots, docs and social images comes from one file, `docs/demo/scenario.yaml`, written by `uv run openhal demo --record docs/demo/scenario.yaml` from a real run of the hub against simulated devices. There are two. `printer` is a Klipper 3D printer reached through Moonraker, with `state`, `extruder_temp`, `bed_temp` and `progress` readings, `extruder_target` limited to 260 °C and `bed_target` limited to 110 °C, both rate limited, and the actions `pause`, `resume` and `cancel`, where cancel waits for a person. `printer-cam` is the printer's webcam watching the bed, read as snapshots over HTTP the way crowsnest serves it on a Klipper printer (the `http` driver). The limits were confirmed by owner on 2026-10-24.
+Every example value in the README, website, Inspector screenshots, docs and social images comes from one file, `docs/demo/scenario.yaml`, written by `uv run openhal demo --record docs/demo/scenario.yaml` from a real run of the hub against simulated devices. There are two. `printer` is a Klipper 3D printer reached through Moonraker, with `state`, `extruder_temp`, `bed_temp` and `progress` readings, `extruder_target` limited to 260 °C and `bed_target` limited to 110 °C, both rate limited, and the actions `pause`, `resume` and `cancel`, where the hub holds a cancel for a person. `printer-cam` is the printer's webcam pointed at the bed, read as snapshots over HTTP the way crowsnest serves it on a Klipper printer (the `http` driver). The limits were confirmed by owner on 2026-10-24.
 
 The story. Someone starts a long print and asks an agent to keep an eye on it.
 1. The agent reads a camera frame, an image Reading (ADR 0015), and sees a corner of the first layer lifting.
 2. The agent raises `bed_target` from 60 °C to 70 °C. The new target is inside the limit, so the write is done.
-3. Because a hotter nozzle might help the corner stick, the agent requests a nozzle temperature of 300 °C, and the kernel refuses the request with `LIMIT_EXCEEDED` because the nozzle limit is 260 °C.
+3. Because a hotter nozzle might help the corner stick, the agent requests a nozzle temperature of 300 °C, and the kernel blocks the request with `LIMIT_EXCEEDED` because the nozzle limit is 260 °C.
 4. Later the camera shows the print has come loose. The agent pauses the print, which is done straight away.
-5. The agent asks to cancel. Cancelling can't be undone, so `cancel` is `confirm-each-time`, and the hub queues the request and answers pending.
-6. The owner approves the cancel within the hub's five minute window. The kernel checks every limit again and grants the cancel, the driver sends the cancel to the printer, and the printer's state reads cancelled. The printer's CANCEL_PRINT macro turns the heaters off, so the record then follows the nozzle as the nozzle cools for a minute. The hub's audit log then holds every request, the refusal and the person's approval.
+5. The agent sends a request to cancel. Cancelling can't be undone, so `cancel` is `confirm-each-time`, and the hub queues the request and returns pending.
+6. The owner approves the cancel within the hub's five minute window. The kernel checks every limit again and grants the cancel, the driver sends the cancel to the printer, and the printer's state reads cancelled. The printer's CANCEL_PRINT macro turns the heaters off, so the record then follows the nozzle as the nozzle cools for a minute. The hub's audit log then holds every request, the blocked request and the person's approval.
 
-Tests check that the file is still what the hub answers and that every surface matches it. Demo values are labeled as demo data where shown.
+Tests check that the file still matches what the hub returns and that every surface matches the file. Demo values are labeled as demo data where shown.
 
 The Arduino plant waterer (examples/plant-waterer/) stays as the Arduino example. It runs the end-to-end demo (`openhal demo --full`, docs/demo/e2e.yaml), the driver writer tutorial and the first hardware test, since it is the lowest hazard. The desk fan stays only as a secondary example in spec/examples/.
 
@@ -188,11 +188,11 @@ The dashboard is the OpenHAL Inspector, a protocol inspector.
 - **Stop control.** Large and always visible in the header, in the blocked red with its word, never styled like other buttons.
 - **Agent requests and human confirmations look different.** Agent entries carry the client's name and a dashed rule, which stays dashed whatever the outcome, red when blocked. Human decisions sit on a solid surface.
 - **Commands say what a click does.** A command that needs a person's confirmation reads "Confirm and run X" or "Confirm and set X". A read-only device shows its limits without live controls. A device's own safe-state action is never a primary button, since STOP in the header covers every device.
-- **Where STOP can't be sent** (an unpaired browser, a hub that is offline), a panel on the surface fill with no colored border takes STOP's place. Its title is in the blocked red, and it says why and what still keeps devices safe.
+- **Where STOP can't be sent** (an unpaired browser, a hub that is offline), a panel on the surface fill with no colored border takes STOP's place. Its title is in the blocked red, and its text gives the reason and what still keeps devices safe.
 - **Buttons are controls, not status.** STOP keeps its solid blocked red fill. No other control has a red outline, so UNLOCK uses the standard secondary button with its word in the blocked red.
 - **Kernel reasons outside the trace** read as prose, with identifiers and conditions set in mono.
 - **Camera frames are device data.** An image channel shows its latest frame at its own size, labeled demo frame when it comes from a simulator, with its format, size and read time in small mono. A frame is never a link target and nothing on the page acts on what it shows. The message log and the audit log show an image result as its description, never its bytes.
-- **A pending request shows the camera a person picks.** No Device File links a camera to the device it watches yet, so Confirmations shows a request's own camera when it has one and otherwise offers "Show a camera". The browser keeps that pick for the device.
+- **A pending request shows the camera a person picks.** No Device File links a camera to the device the camera points at yet, so Confirmations shows a request's own camera when it has one and otherwise offers "Show a camera". The browser keeps that pick for the device.
 
 ## Motion
 
@@ -366,4 +366,4 @@ Run these on every screen before calling it done.
 
 1. **Swap.** Put another product's name on it. If it still fits, revise.
 2. **Thumbnail.** Blur a screenshot to 200 px wide. It should still read as a specification with message exchanges.
-3. **Memory.** What does a visitor remember ten minutes later? It should be the agent spotting the failed print on the camera, the request for a nozzle temperature of 300 °C refused with LIMIT_EXCEEDED, and the owner approving the cancel.
+3. **Memory.** What does a visitor remember ten minutes later? It should be the agent spotting the failed print on the camera, the request for a nozzle temperature of 300 °C blocked with LIMIT_EXCEEDED, and the owner approving the cancel.

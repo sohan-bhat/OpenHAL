@@ -59,7 +59,7 @@ void loop() {
 
 ## The read-only probe
 
-Steps 2 to 4 use this script. The probe connects, asks for the identity, asks the driver to describe the device and reads every channel. The probe holds no kernel grant, so the probe can't write anything. Save it as `probe.py`.
+Steps 2 to 4 use this script. The probe connects, requests the identity, calls the driver's `describe()` and reads every channel. The probe holds no kernel grant, so the probe can't write anything. Save it as `probe.py`.
 
 ```python
 import asyncio, json, sys
@@ -134,7 +134,7 @@ Expected. While unplugged each run ends with `Could not open` or `stopped answer
 
 ## Step 5. Start the hub with the device
 
-Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and prompts you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -158,7 +158,7 @@ uv run openhal read fan-board.led
 uv run openhal write fan-board.led false
 ```
 
-Expected. The LED turns on, the read says `true`, then it turns off.
+Expected. The LED turns on, the read shows `true`, then it turns off.
 
 ## Step 7. A small fan write and the safe state
 
@@ -170,7 +170,7 @@ uv run openhal read fan-board.fan_speed
 uv run openhal unlock
 ```
 
-Expected. The fan reading is about `10.2 %` (the PWM byte is 26). After `openhal stop` it reads `0 %` and the LED is off. `openhal unlock` asks you to type `unlock`.
+Expected. The fan reading is about `10.2 %` (the PWM byte is 26). After `openhal stop` it reads `0 %` and the LED is off. `openhal unlock` prompts you to type `unlock`.
 
 ## Step 8. A blocked write never reaches the board
 
@@ -182,7 +182,7 @@ Expected. Blocked with code `above_max`. The fan doesn't change. Stop the hub wi
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the line the Arduino serial monitor shows for the same command at 115200 baud with newline endings, the sketch if you changed it, and the output of `uv run python -m serial.tools.list_ports -v`. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the line the Arduino serial monitor shows for the same command at 115200 baud with newline endings, the sketch if you changed it, and the output of `uv run python -m serial.tools.list_ports -v`. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -206,4 +206,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.

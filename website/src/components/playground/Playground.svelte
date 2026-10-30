@@ -444,7 +444,7 @@
             {/each}
             {#if file}
               <div>
-                <dt>Hazard<InfoMark topic="hazard" text="The hazard class states how much harm the device can do, so a medium hazard device needs a control_medium token and the device's riskiest actions wait for a person." href="/docs/safety/" /></dt>
+                <dt>Hazard<InfoMark topic="hazard" text="The hazard class states how much harm the device can do, so a medium hazard device needs a control_medium token and the device's riskiest actions need a person's approval." href="/docs/safety/" /></dt>
                 <dd class="mono">{effectiveHazard(file)}</dd>
               </div>
               <div>
@@ -455,7 +455,7 @@
           </dl>
           {#if pending.length}
             <div class="waiting">
-              <p class="waiting-head">Waiting for a person<InfoMark topic="pending" text="Because a request such as a cancel that can't be undone needs a person, the hub returned pending, and the request waits here until a person approves or rejects the request." /></p>
+              <p class="waiting-head">Held for a person<InfoMark topic="pending" text="A request such as a cancel can't be undone, so the hub returned pending and holds the request here until a person approves or rejects the request." /></p>
               <ul>
                 {#each pending as request (request.requestId)}
                   <li>
@@ -524,7 +524,7 @@
             </ul>
           {:else if missing.length}
             <p class="status unverified">valid, limits unconfirmed</p>
-            <p class="muted">Changes are refused with UNVERIFIED_LIMITS until a person confirms {missing.join(", ")}.</p>
+            <p class="muted">Changes are blocked with UNVERIFIED_LIMITS until a person confirms {missing.join(", ")}.</p>
           {:else}
             <p class="status ok">valid</p>
           {/if}

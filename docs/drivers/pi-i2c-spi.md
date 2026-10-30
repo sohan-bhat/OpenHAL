@@ -79,7 +79,7 @@ actions:
 ## Errors
 
 - A chip that doesn't acknowledge raises `DriverError` with the `i2cdetect` command to try.
-- A missing `/dev/i2c-N` or `/dev/spidev` node and a permission problem raise `DriverError` that says what to enable or which group to join.
+- A missing `/dev/i2c-N` or `/dev/spidev` node and a permission problem raise `DriverError` with a message that names what to enable or which group to join.
 - A transaction that hangs raises `TimeoutError`. A reply of the wrong length and a raw value a bool or enum map doesn't name raise `DriverError`.
 
 ## Limitations

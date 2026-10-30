@@ -92,7 +92,7 @@ uv run python hwtest.py my-camera.hal.yaml identify
 uv run python hwtest.py my-camera.hal.yaml describe
 ```
 
-Expected. `identify` prints the source and backend. `describe` opens the camera, and its notes give the size and frame rate the camera chose for the requested 1280x720. On macOS, allow camera access when asked, then run it again.
+Expected. `identify` prints the source and backend. `describe` opens the camera, and its notes give the size and frame rate the camera selected for the requested 1280x720. On macOS, allow camera access when prompted, then run it again.
 
 ### 4. Capture a frame
 
@@ -119,13 +119,13 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-Expected. A line such as `142311 bytes 1280.0 720.0`, and `frame.jpg` shows what the camera sees right now, not an older frame. Run the command twice while moving something in view to check.
+Expected. A line such as `142311 bytes 1280.0 720.0`, and `frame.jpg` shows the camera's current view, not an older frame. Run the command twice while moving something in view to check.
 
 ### 5. Unplug handling
 
 Run `uv run python hwtest.py my-camera.hal.yaml read` to see `health Health(connected=True, ...)`. Then unplug the camera and run it again.
 
-Expected. A `DriverError` saying the camera could not be opened. Plug the camera back in and the command works again. If the camera came back under a different index or device number, use a `/dev/v4l/by-id/` path on Linux.
+Expected. A `DriverError` stating that the camera could not be opened. Plug the camera back in and the command works again. If the camera came back under a different index or device number, use a `/dev/v4l/by-id/` path on Linux.
 
 ## If something fails
 
@@ -133,7 +133,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the camera model an
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, uvc driver

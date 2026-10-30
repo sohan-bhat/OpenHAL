@@ -19,7 +19,7 @@ const { total, tested } = driverCounts();
 const points = [
   { title: "Limits a person confirmed", text: "A person sets the limits in the device file, and the kernel checks every command against the limits." },
   { title: "One STOP", text: "One command puts every device in its safe state, and the devices stay stopped until a person lifts the stop." },
-  { title: "Everything logged", text: "Every request, refusal, stop and confirmation goes into an append-only audit log." },
+  { title: "Everything logged", text: "Every request with its result, every stop and every confirmation goes into an append-only audit log." },
 ];
 const after = "safe";
 const site = JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: PRODUCT_NAME, alternateName: PRODUCT_LONG_NAME, url: new URL("/", Astro.site).href });

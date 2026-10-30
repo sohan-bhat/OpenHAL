@@ -1,10 +1,10 @@
 # Hardware test: Arduino plant waterer
 
-The first plan in [docs/hardware-tests/README.md](../../docs/hardware-tests/README.md), which has the setup and rules every plan shares. It is for a person with the parts in [README.md](README.md). Steps 1 to 5 change nothing. Steps 6 to 10 use the relay with the pump unplugged from its supply, so nothing gets wet until step 11. Steps 7 to 9 repeat the plant waterer's refused, blocked and granted waterings on the real board, sent by an agent. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists.
+The first plan in [docs/hardware-tests/README.md](../../docs/hardware-tests/README.md), which has the setup and rules every plan shares. It is for a person with the parts in [README.md](README.md). Steps 1 to 5 change nothing. Steps 6 to 10 use the relay with the pump unplugged from its supply, so nothing gets wet until step 11. Steps 7 to 9 repeat the plant waterer's two blocked waterings and its granted watering on the real board, sent by an agent. Stop at the first step that fails and send what [If something fails](#if-something-fails) lists.
 
 ## What you need
 
-- An Arduino Uno wired as README.md says. The soil sensor on A0, the float switch from pin 4 to ground and the relay input on pin 7.
+- An Arduino Uno wired as README.md describes. The soil sensor on A0, the float switch from pin 4 to ground and the relay input on pin 7.
 - The pump on its own supply, unplugged until step 11.
 - arduino-cli, or the Arduino IDE.
 - A checkout of this repository with the openhal-firmware extra, `uv sync --extra openhal-firmware`.
@@ -20,7 +20,7 @@ arduino-cli compile --fqbn arduino:avr:uno --library firmware/arduino/OpenHAL --
 
 In the Arduino IDE instead, copy `firmware/arduino/OpenHAL` into your `libraries` folder, open `examples/plant-waterer/plant-waterer.ino` and upload it.
 
-Make a test home and start the hub with no device files. `hub.sh` starts the hub in the background, waits until it answers and logs to `$OPENHAL_HOME/hub.log`.
+Make a test home and start the hub with no device files. `hub.sh` starts the hub in the background, waits until the hub responds and logs to `$OPENHAL_HOME/hub.log`.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -51,7 +51,7 @@ matched  OpenHAL board plant-waterer as openhal-plant-waterer
   The library has openhal-plant-waterer, and the hub has no device file for this device yet. Add the library file with openhal library add openhal-plant-waterer
 ```
 
-Discovery sends only `HELLO`. The match shows the starter library knows the board. This plan uses the example's own device file, so don't add the library's.
+Discovery sends only `HELLO`. The match shows that the starter library has a file for the board. This plan uses the example's own device file, so don't add the library's.
 
 ### 3. The file loads read-only
 
@@ -104,9 +104,9 @@ bash docs/hardware-tests/hub.sh start
 uv run openhal devices
 ```
 
-Expected. The confirm lists `action  water`, `action  stop` and `safe state  {'action': 'stop'}`, asks you to type `confirm`, and ends with `confirmed`. `devices` shows `plant-waterer` as `writable` and `connected`.
+Expected. The confirm lists `action  water`, `action  stop` and `safe state  {'action': 'stop'}`, prompts you to type `confirm`, and ends with `confirmed`. `devices` shows `plant-waterer` as `writable` and `connected`.
 
-Make an agent token that may run low hazard commands, and save these two files in the checkout. Each is one agent session, the way an MCP client or any other client speaks the hub protocol.
+Make an agent token that may run low hazard commands, and save these two files in the checkout. Each is one agent session, the way an MCP client or any other client uses the hub protocol.
 
 ```
 uv run openhal token create --name hwtest-agent --scope control_low --json | uv run python -c "import json, sys; print(json.load(sys.stdin)['token'])" > "$OPENHAL_HOME/hwtest-agent.token"
@@ -136,7 +136,7 @@ Lift the float, then send the 120 s watering as the agent.
 uv run openhal --token-file "$OPENHAL_HOME/hwtest-agent.token" rpc < too-long.jsonl
 ```
 
-Expected. The first line is the `hal/initialize` result with `"principal":{"kind":"agent","name":"hwtest-agent","scope":"control_low"}`. Then a `hal/blocked` notification and the answer, which starts `{"jsonrpc":"2.0","id":2,"error":{"code":-32010,"message":"water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by` and your name and today's date, with `"name":"LIMIT_EXCEEDED"` in `data`. No click.
+Expected. The first line is the `hal/initialize` result with `"principal":{"kind":"agent","name":"hwtest-agent","scope":"control_low"}`. Then a `hal/blocked` notification and the response, which starts `{"jsonrpc":"2.0","id":2,"error":{"code":-32010,"message":"water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by` and your name and today's date, with `"name":"LIMIT_EXCEEDED"` in `data`. No click.
 
 ### 8. Empty tank
 
@@ -186,13 +186,13 @@ Expected. `done  Done. water ran.`, water for about 5 s, and soil moisture risin
 
 ### 12. Runs per hour
 
-The file allows 3 runs per hour. Repeat this until the hub refuses it.
+The file allows 3 runs per hour. Repeat this until the hub blocks the run.
 
 ```
 uv run openhal action plant-waterer.water duration=2s
 ```
 
-Expected. `blocked rate_limited  Blocked. water may run at most 3 times per 1 h. It ran 3 times in that window.` and the wait. Steps 9, 10 and 11 used the three runs, so the first try is refused. A restart doesn't reset the count, because the hub reads recent runs back from its audit log. If the first try runs, write that down, since the hub then missed the run of step 10.
+Expected. `blocked rate_limited  Blocked. water may run at most 3 times per 1 h. It ran 3 times in that window.` and the wait. Steps 9, 10 and 11 used the three runs, so the hub blocks the first try. A restart doesn't reset the count, because the hub reads recent runs back from its audit log. If the first try runs, write that down, since the hub then didn't count the run of step 10.
 
 ### 13. Stop and the audit chain
 
@@ -203,11 +203,11 @@ uv run openhal unlock
 bash docs/hardware-tests/hub.sh stop
 ```
 
-Expected. `plant-waterer  safe`, the relay stays off, `intact  The audit chain verifies.` and the head hash, and `unlock` asks you to type `unlock`.
+Expected. `plant-waterer  safe`, the relay stays off, `intact  The audit chain verifies.` and the head hash, and `unlock` prompts you to type `unlock`.
 
 ## If something fails
 
-Send what [docs/hardware-tests/README.md](../../docs/hardware-tests/README.md#if-a-step-fails) lists, plus the arduino-cli or IDE version and the `arduino:avr` core version, the board and its USB id from step 1, your `SOIL_DRY` and `SOIL_WET` if you changed them, and what the relay did. If the relay clicked for a command the hub blocked, unplug the board and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [docs/hardware-tests/README.md](../../docs/hardware-tests/README.md#if-a-step-fails) lists, plus the arduino-cli or IDE version and the `arduino:avr` core version, the board and its USB id from step 1, your `SOIL_DRY` and `SOIL_WET` if you changed them, and what the relay did. If the relay clicked for a command the hub blocked, unplug the board and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report
 
@@ -224,16 +224,16 @@ Step 3 read-only file:           pass / fail
 Step 4 soil:                     pass / fail   dry and wet readings:
 Step 5 tank:                     pass / fail
 Step 6 confirm and token:        pass / fail
-Step 7 too long:                 pass / fail   (paste the answer)
-Step 8 empty tank:               pass / fail   (paste the answer)
+Step 7 too long:                 pass / fail   (paste the response)
+Step 8 empty tank:               pass / fail   (paste the response)
 Step 9 short run:                pass / fail
 Step 10 board falls safe:        pass / fail   seconds from the kill to relay off:
 Step 11 real run:                pass / fail   soil moisture before and after:
-Step 12 runs per hour:           pass / fail   refused on the first try:
+Step 12 runs per hour:           pass / fail   blocked on the first try:
 Step 13 stop and audit chain:    pass / fail
 Audit chain: (the line uv run openhal log --verify prints)
 Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/plant-waterer-<date>.md`. [docs/hardware-tests/README.md](../../docs/hardware-tests/README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/plant-waterer-<date>.md`. [docs/hardware-tests/README.md](../../docs/hardware-tests/README.md#reports) lists when a report marks the device file `verified-on-hardware`.
