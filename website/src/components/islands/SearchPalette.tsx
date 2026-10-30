@@ -193,6 +193,7 @@ export default function SearchPalette({ sections, suggestions }: Props) {
                           <CommandItem key={hit.id} value={hit.id} asChild onSelect={() => go(hit.url, found.query)}>
                             <a
                               href={hit.url}
+                              tabIndex={-1}
                               onPointerDown={() => {
                                 pointer.current = true;
                               }}
@@ -231,6 +232,7 @@ export default function SearchPalette({ sections, suggestions }: Props) {
                           <CommandItem key={suggestion.href} value={`go ${suggestion.href}`} asChild onSelect={() => go(withBase(suggestion.href), "")}>
                             <a
                               href={withBase(suggestion.href)}
+                              tabIndex={-1}
                               onPointerDown={() => {
                                 pointer.current = true;
                               }}

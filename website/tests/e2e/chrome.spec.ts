@@ -541,6 +541,9 @@ test.describe("site search", () => {
     await page.keyboard.press("ArrowUp");
     await page.keyboard.press("ArrowUp");
     await expect(results(page).last()).toHaveAttribute("aria-selected", "true");
+    await page.keyboard.press("Tab");
+    await expect(palette(page).getByRole("combobox"), "the results are reached with the arrow keys, not Tab").toBeFocused();
+    await expect(results(page).last()).toHaveAttribute("aria-selected", "true");
   });
 
   test("the header field opens the palette, and Escape closes it with focus back on the field", async ({ page }) => {
@@ -551,6 +554,7 @@ test.describe("site search", () => {
     await expect(field).toHaveAccessibleName(/^Search (Ctrl|⌘) K$/);
     await field.click();
     await expect(palette(page)).toBeVisible();
+    await expect(palette(page).getByRole("combobox"), "a field with an id, which Chrome asks of every form field").toHaveAttribute("id", /\S/);
     await palette(page).getByRole("combobox").fill("print babysitter");
     await expect(palette(page).locator("[cmdk-item] mark").first()).toBeVisible({ timeout: 15_000 });
     await page.keyboard.press("Escape");
@@ -608,11 +612,12 @@ test.describe("site search", () => {
       ["provenance", /provenance/i],
       ["babysit", /babysit/i],
       ["hand-written", /hand|written/i],
+      ["Klipper", /klipper/i],
     ] as const) {
       await palette(page).getByRole("combobox").fill(term);
       await expect(palette(page).locator("[cmdk-item] mark").filter({ hasText: marked }).first()).toBeVisible({ timeout: 15_000 });
       for (const excerpt of await results(page).allTextContents()) {
-        expect(excerpt, `${term}: ${excerpt}`).not.toMatch(/\$ uv run|"jsonrpc"|^\s*device:|provenance: \{|source: hand-written/);
+        expect(excerpt, `${term}: ${excerpt}`).not.toMatch(/\$ uv run|"jsonrpc"|^\s*device:|provenance: \{|source: hand-written|openhal: "0\.1"|device: Klipper|connect: \{|\{ type: /);
       }
     }
   });
