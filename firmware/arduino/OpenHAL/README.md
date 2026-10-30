@@ -2,11 +2,11 @@
 
 Add OpenHAL to a sketch and your board describes itself to an OpenHAL hub. The hub builds the device file from that description, you confirm the limits once, and then AI agents and routines can read and control the board through the hub's safety kernel.
 
-The board also refuses output values outside the limits you set in the sketch, and the board returns every output to its safe value when the hub stops sending heartbeats. The hub's kernel is still the authority, and the board's checks back up the kernel's checks.
+The board also blocks output values outside the limits you set in the sketch, and the board returns every output to its safe value when the hub stops sending heartbeats. The hub's kernel is still the authority, and the board's checks back up the kernel's checks.
 
 ## Sketch
 
-This sketch is the plant waterer, shortened from `examples/PlantWaterer`. Because the pump has no channel of its own, the hub can run the pump only through `water`, and the board refuses to pump from an empty tank.
+This sketch is the plant waterer, shortened from `examples/PlantWaterer`. Because the pump has no channel of its own, the hub can run the pump only through `water`, and the board never runs the pump from an empty tank.
 
 ```cpp
 #include <OpenHAL.h>
@@ -52,7 +52,7 @@ An output the hub may set directly works the same way without `.internal()`. The
 | `.every(ms)` | Stream the value every `ms` milliseconds |
 | `.range(lo, hi)` | The range a working sensor reports. The hub flags values outside it |
 | `output(name, unit, fn)` | A value the hub can set. `fn` receives a value already checked against the limits |
-| `.limits(min, max)` | Values outside this range are refused by the board |
+| `.limits(min, max)` | The board blocks values outside this range |
 | `.safe(value)` | Applied at start, on a stop, and when heartbeats stop |
 | `.rate(perSecond)` | The fastest safe change, sent to the hub as a suggested limit |
 | `.timeout(ms)` | Return to the safe value if nothing sets the output again in time, like a pump's maximum run |
@@ -62,9 +62,9 @@ An output the hub may set directly works the same way without `.internal()`. The
 | `.states(labels, count)` | A reading with named states, such as a float switch. `fn` returns the index of the state |
 | `.internal()` | An output only the sketch sets. The hub can't read or set the output, but a stop and a lost heartbeat still return the output to safe |
 | `action(name, fn)` | An action the hub can request from the board. `fn` receives the arguments in the order they were declared and returns `nullptr` to run, or a short reason such as `"tank_empty"` to refuse |
-| `.arg(name, unit, min, max)` | One argument of an action, up to 3. The board refuses values outside the range |
+| `.arg(name, unit, min, max)` | One argument of an action, up to 3. The board blocks values outside the range |
 | `drive(output, value, ms)` | Set an output from the sketch, and return it to safe after `ms` milliseconds when `ms` isn't 0 |
-| `misconfigured()` | True if a name was invalid, a limit was backwards or there were too many channels. The board then refuses all commands |
+| `misconfigured()` | True if a name was invalid, a limit was backwards or there were too many channels. The board then blocks all commands |
 
 Names are lowercase letters, digits and underscores, up to 24 characters, and units use the names in the OpenHAL spec (`degC`, `percent`, `deg`, `V`, `A`, `rpm` and so on). A sketch can have up to 8 readings, 8 outputs and 4 actions by default, and defining `OPENHAL_MAX_READS`, `OPENHAL_MAX_OUTPUTS` or `OPENHAL_MAX_ACTIONS` before the include changes those limits.
 
@@ -72,8 +72,8 @@ Names are lowercase letters, digits and underscores, up to 24 characters, and un
 
 | Example | Board shows the hub | Wiring on an Uno (ESP32 pins in brackets) |
 |---|---|---|
-| PlantWaterer | Soil moisture, a tank float switch and a `water` action that refuses to pump from an empty tank. The canonical OpenHAL example (examples/plant-waterer/) | Capacitive soil sensor on A0 (GPIO 35), float switch from pin 4 to ground (GPIO 27), pump relay on pin 7 (GPIO 26) |
-| DeskFan | A thermistor temperature streamed every second and a PWM fan. The board refuses fan_speed outside 0 to 100 % and stops the fan when no heartbeat arrives for 2 s | A 10k NTC thermistor and a 10k resistor as a divider on A0, the fan's MOSFET gate on pin 9 |
+| PlantWaterer | Soil moisture, a tank float switch and a `water` action that never runs the pump from an empty tank. The canonical OpenHAL example (examples/plant-waterer/) | Capacitive soil sensor on A0 (GPIO 35), float switch from pin 4 to ground (GPIO 27), pump relay on pin 7 (GPIO 26) |
+| DeskFan | A thermistor temperature streamed every second and a PWM fan. The board blocks fan_speed values outside 0 to 100 % and stops the fan when no heartbeat arrives for 2 s | A 10k NTC thermistor and a 10k resistor as a divider on A0, the fan's MOSFET gate on pin 9 |
 | LedStrip | An ambient light level and the brightness of a 12 V LED strip | MOSFET gate on pin 6 (GPIO 25), photoresistor divider on A1 (GPIO 34) |
 | ServoArm | A servo angle kept between 20 and 160 degrees so the arm can't hit its end stops. The arm parks at 90 degrees on a stop and when the hub's heartbeat stops. Because the Arduino Servo library doesn't support ESP32, the sketch drives the 50 Hz pulse with the LEDC peripheral on ESP32 | Servo signal on pin 3 (GPIO 13), servo powered from its own 5 V supply |
 | SoilPump | Soil moisture and a pump that stops itself after 20 s, with a local stop button. The board also stops the pump when no heartbeat arrives for 3 s | Capacitive soil sensor on A2 (GPIO 35), pump relay on pin 7 (GPIO 26), button from pin 2 to ground (GPIO 27) |

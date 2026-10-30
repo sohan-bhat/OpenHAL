@@ -17,19 +17,19 @@ Single-device tools exist for Arduino boards, 3D printers, bench instruments and
 OpenHAL is an open protocol with a versioned specification, and the specification defines two things.
 
 1. The [Device File](glossary:device-file) lists what a device can read and change, the limits on each change and the safe state. A person confirms the limits, and until then the file is read-only.
-2. The hub protocol lets clients speak JSON-RPC 2.0 to one [Hub](glossary:hub), and the hub's [Safety Kernel](glossary:safety-kernel) checks every command before a [Driver](glossary:driver) may act.
+2. Clients send JSON-RPC 2.0 messages over the hub protocol to one [Hub](glossary:hub), and the hub's [Safety Kernel](glossary:safety-kernel) checks every command before a [Driver](glossary:driver) runs the command.
 
 ```yaml tested include=examples/print-babysitter/printer.hal.yaml
 ```
 
-A request over a limit is refused with a stable code, a registry name and a reason that cites the rule. A request inside every limit runs, and a request that can't be undone waits for a person. This trace is recorded from the reference hub with a simulated printer and its webcam.
+A request over a limit is blocked with a stable code, a registry name and a reason that cites the rule. A request inside every limit runs, and the hub holds a request that can't be undone until a person approves the request. This trace is recorded from the reference hub with a simulated printer and its webcam.
 
 ```scenario
 ```
 
 ## Why a protocol
 
-A tool serves one client, but a protocol lets any client, in any language, reach any driver under the same rules. MCP remains the interface for agents and maps onto the same methods.
+A tool serves one client, but with a protocol any client, in any language, reaches any driver under the same rules. MCP remains the interface for agents and maps onto the same methods.
 
 ## MHS
 
@@ -37,6 +37,6 @@ Anthropic's Model Hardware Standard is a limited research preview for invited la
 
 ## What OpenHAL does not do
 
-OpenHAL can't make firmware obey and doesn't replace e-stops, enclosures or interlocks wired in hardware, so OpenHAL is not a safety system. The hub checks each request against what a person allowed, and the hub stops every device on request.
+OpenHAL has no control over what a device's firmware does and doesn't replace e-stops, enclosures or interlocks wired in hardware, so OpenHAL is not a safety system. The hub checks each request against what a person allowed, and the hub stops every device on request.
 
 The [quickstart](/docs/quickstart/) runs the print babysitter demo and needs no hardware.

@@ -32,7 +32,7 @@ export const DOC_SUMMARIES: Record<string, string> = {
   "/docs/mcp/": "The tools and prompts the MCP server gives an agent.",
   "/docs/writing-a-driver/": "The package, class, tests and catalog entry a new driver needs.",
   "/docs/mhs-mapping/": "How each OpenHAL concept maps to what is public about MHS.",
-  "/docs/firmware-protocol/": "The wire protocol a board running the OpenHAL Arduino library speaks.",
+  "/docs/firmware-protocol/": "The wire protocol between the hub and a board running the OpenHAL Arduino library.",
   "/docs/arduino-library/": "Make a sketch describe itself so the hub builds its device file.",
 };
 
