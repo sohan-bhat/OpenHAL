@@ -18,8 +18,8 @@ function save(on: boolean): void {
 }
 
 function idle(run: () => void): void {
-  if ("requestIdleCallback" in window) window.requestIdleCallback(run, { timeout: 2000 });
-  else window.setTimeout(run, 200);
+  if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(run, { timeout: 2000 });
+  else globalThis.setTimeout(run, 200);
 }
 
 /**

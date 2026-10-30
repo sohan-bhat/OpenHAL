@@ -17,6 +17,8 @@ The demo starts a hub with a simulated Klipper printer and its camera, and conne
 ```scenario
 ```
 
+[The full example](/docs/examples/3d-print-watch/) walks through the same run step by step, with every message and the audit log.
+
 ## Run the whole system
 
 ```sh tested

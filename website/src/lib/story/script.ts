@@ -1,8 +1,8 @@
 /**
- * The landing story as a list of steps, measured in vh of scroll. A point in the story is its story
- * time, from 0 at the title to TOTAL at the end. Each piece of the scene shows during spans of
- * story time, so a caption and the arrow it describes change together, and scrolling back plays
- * the story in reverse.
+ * The example page's story as a list of steps, measured in units of story time. A point in the
+ * story is its story time, from 0 at the title to TOTAL at the end. Each piece of the scene shows
+ * during spans of story time, so a caption and the arrow it describes change together, and going
+ * back a step shows the story as it was.
  */
 
 export type StepId = "intro" | "ask" | "look" | "warm" | "hot" | "loose" | "pause" | "cancel" | "approve" | "end";

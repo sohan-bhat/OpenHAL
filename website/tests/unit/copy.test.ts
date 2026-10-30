@@ -19,10 +19,14 @@ function walk(dir: string, suffixes: string[]): string[] {
   });
 }
 
-function proseLines(text: string): Array<[number, string]> {
-  const out: Array<[number, string]> = [];
+/** The section that spells out Open Hardware Abstraction Layer, the one place copy may say layer. */
+const NAME_SECTION = "What the name means";
+
+function proseLines(text: string): Array<[number, string, string]> {
+  const out: Array<[number, string, string]> = [];
   let fence = false;
   let front = text.startsWith("---\n");
+  let heading = "";
   text.split("\n").forEach((line, index) => {
     if (front) {
       if (index > 0 && line === "---") front = false;
@@ -32,12 +36,13 @@ function proseLines(text: string): Array<[number, string]> {
       fence = !fence;
       return;
     }
+    if (!fence && /^#{1,6} /.test(line)) heading = line.replace(/^#+\s*/, "").trim();
     if (fence || /^\s*(#|\||<)/.test(line) || !line.trim()) return;
     const prose = line
       .replace(/`[^`]*`/g, "CODE")
       .replace(/\]\([^)]*\)/g, "]")
       .replace(/https?:\/\/\S+/g, "URL");
-    out.push([index + 1, prose]);
+    out.push([index + 1, prose, heading]);
   });
   return out;
 }
@@ -54,13 +59,13 @@ describe("Markdown copy follows the rules", () => {
       const problems: string[] = [];
       const text = readFileSync(path, "utf8");
       if (/[–—]/.test(text)) problems.push("contains an em or en dash");
-      for (const [line, prose] of proseLines(text)) {
+      for (const [line, prose, heading] of proseLines(text)) {
         if (/[;!]/.test(prose)) problems.push(`line ${line} has a semicolon or exclamation mark`);
         if (/:\s/.test(prose) && !/^\s*[-*] \*\*/.test(prose)) problems.push(`line ${line} has a colon in running prose`);
         for (const word of BANNED) if (prose.toLowerCase().includes(word)) problems.push(`line ${line} uses "${word}"`);
         if (/\bunlock/i.test(prose)) problems.push(`line ${line} says unlock outside code`);
         if (/\bwrit(e|es|ing|ten)\b/i.test(prose)) problems.push(`line ${line} says write. Say command or change`);
-        if (/\blayers?\b/i.test(prose)) problems.push(`line ${line} says layer`);
+        if (/\blayers?\b/i.test(prose) && heading !== NAME_SECTION) problems.push(`line ${line} says layer`);
       }
       expect(problems).toEqual([]);
     });
