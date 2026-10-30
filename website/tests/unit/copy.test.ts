@@ -51,7 +51,7 @@ const markdown = [
   ...walk(join(repo, "docs", "guide"), [".md"]).filter((path) => !path.endsWith("driver-writer.md")),
   ...walk(join(website, "src", "content"), [".md"]),
 ];
-const markup = walk(join(website, "src"), [".astro", ".svelte", ".ts", ".mjs", ".json"]);
+const markup = walk(join(website, "src"), [".astro", ".svelte", ".ts", ".tsx", ".mjs", ".json"]);
 
 describe("Markdown copy follows the rules", () => {
   for (const path of markdown) {
