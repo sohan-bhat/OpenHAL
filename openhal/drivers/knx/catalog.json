@@ -8,7 +8,7 @@
   "tests": "real xknx tunneling against a fake KNXnet/IP server built from xknx's frame classes, with a simulated room",
   "estimate": {
     "devices": "thousands of certified products",
-    "reasoning": "KNX is a single standard across hundreds of manufacturers, and every certified device talks in group telegrams with standard datapoint types, which this driver maps from a group address list. KNX Secure devices and device programming are not covered, and the group addresses must come from the installation's ETS project.",
+    "reasoning": "KNX is a single standard across hundreds of manufacturers, and every certified device communicates in group telegrams with standard datapoint types, which this driver maps from a group address list. KNX Secure devices and device programming are not covered, and the group addresses must come from the installation's ETS project.",
     "sources": [
       "https://www.knx.org/knx-en/for-professionals/community/manufacturers/",
       "https://xknx.io/",

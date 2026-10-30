@@ -11,7 +11,7 @@
   "tests": "native API simulator over a local TCP socket, driven by the real aioesphomeapi client",
   "estimate": {
     "devices": "every ESPHome node, hundreds of thousands of installs",
-    "reasoning": "ESPHome is the most common firmware for DIY ESP-based devices and is preinstalled on a growing set of commercial products under the Made for ESPHome program. Every node speaks the same native API, and the driver maps the common entity types without per-device code.",
+    "reasoning": "ESPHome is the most common firmware for DIY ESP-based devices and is preinstalled on a growing set of commercial products under the Made for ESPHome program. Every node uses the same native API, and the driver maps the common entity types without per-device code.",
     "sources": [
       "https://esphome.io/components/api.html",
       "https://esphome.io/guides/made_for_esphome.html",
