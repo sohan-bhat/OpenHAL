@@ -116,13 +116,13 @@ uv run python hwtest.py my-camera.hal.yaml describe
 uv run python hwtest.py my-camera.hal.yaml identify
 ```
 
-Expected. The proposal lists pan, tilt, zoom, move, stop, home and goto_preset with the presets 1 and 2. Identify prints the host.
+Expected. The draft lists pan, tilt, zoom, move, stop, home and goto_preset with the presets 1 and 2. Identify prints the host.
 
 ### 6. Wrong credentials and camera loss
 
 Run step 3 with a wrong password (`CAMERA_PASSWORD=wrong uv run python hwtest.py my-camera.hal.yaml read`), then unplug the camera's network cable and run it again.
 
-Expected. The first fails with `DriverError` saying the camera refused the credentials. The second fails with `DriverError` saying the camera could not be reached, or `TimeoutError`. Plug the camera back in and run step 3. The device reads normally.
+Expected. The first fails with `DriverError` stating that the camera didn't accept the credentials. The second fails with `DriverError` stating that the camera could not be reached, or `TimeoutError`. Plug the camera back in and run step 3. The device reads normally.
 
 ## Steps that change the device
 
@@ -134,7 +134,7 @@ Read the file and decide the limits are right for where the camera hangs. Then c
 uv run openhal file confirm my-camera.hal.yaml
 ```
 
-`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-camera.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-camera.hal.yaml` then shows `writable`.
 
 ### 8. The smallest safe action
 
@@ -180,7 +180,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the camera's model 
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, onvif driver

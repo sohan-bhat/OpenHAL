@@ -87,7 +87,7 @@ Unplug the USB cable for five seconds, then plug it back in. Expected. Runs duri
 
 ## Step 5. Start the hub
 
-Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and prompts you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -109,7 +109,7 @@ uv run openhal read ender.fan_speed
 uv run openhal write ender.fan_speed "0 %"
 ```
 
-Expected. The part fan spins slowly, then stops. The read says `20 %`.
+Expected. The part fan spins slowly, then stops. The read shows `20 %`.
 
 ## Step 7. A low heater target and the safe state
 
@@ -122,7 +122,7 @@ uv run openhal read ender.bed_target
 uv run openhal unlock
 ```
 
-Expected. The display shows a bed target of 35. After `openhal stop` the target is 0 on the display and in the read. The printer does not halt and needs no reset. `openhal unlock` asks you to type `unlock`.
+Expected. The display shows a bed target of 35. After `openhal stop` the target is 0 on the display and in the read. The printer does not halt and needs no reset. `openhal unlock` prompts you to type `unlock`.
 
 ## Step 8. A blocked write never reaches the printer
 
@@ -139,11 +139,11 @@ uv run openhal action ender.home axes=all
 uv run openhal read ender.position_z
 ```
 
-Expected. The printer homes. The action answers `done`, or `started` if homing takes longer than 8 s. After homing the Z position is 0 or your Z offset. Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
+Expected. The printer homes. The action returns `done`, or `started` if homing takes longer than 8 s. After homing the Z position is 0 or your Z offset. Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the firmware line from the printer's About screen, the output of `uv run python -m serial.tools.list_ports -v`, and whether another program had the port open. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the firmware line from the printer's About screen, the output of `uv run python -m serial.tools.list_ports -v`, and whether another program had the port open. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -168,4 +168,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.

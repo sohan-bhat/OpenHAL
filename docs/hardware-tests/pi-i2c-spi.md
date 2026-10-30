@@ -7,10 +7,10 @@ Run every step on the Pi from the repository checkout. [README.md](README.md) ha
 ## What you need
 
 - A Raspberry Pi with Raspberry Pi OS Trixie or later, I2C and SPI enabled in `sudo raspi-config` under Interface Options, and the user in the `i2c` and `spi` groups.
-- A TMP102 breakout on pins 1 (3.3 V), 3 (SDA), 5 (SCL) and 6 (ground), with ADD0 to ground so it answers at 0x48.
+- A TMP102 breakout on pins 1 (3.3 V), 3 (SDA), 5 (SCL) and 6 (ground), with ADD0 to ground so the chip responds at 0x48.
 - Optionally an MCP3008 on SPI0 with chip select 1 (pin 26), VREF and VDD at 3.3 V, and a potentiometer between 3.3 V and ground on CH0.
 - i2c-tools for an independent view of the bus, `sudo apt install i2c-tools`.
-- The repository set up as [README.md](README.md#on-a-raspberry-pi) says, with the pi-i2c-spi extra.
+- The repository set up as [README.md](README.md#on-a-raspberry-pi) describes, with the pi-i2c-spi extra.
 - Copies of the examples, `cp openhal/drivers/pi_i2c_spi/examples/tmp102-temperature.hal.yaml my-tmp102.hal.yaml` and `cp openhal/drivers/pi_i2c_spi/examples/mcp3008-adc.hal.yaml my-mcp3008.hal.yaml`.
 
 ## The test script
@@ -77,7 +77,7 @@ asyncio.run(main(*sys.argv[1:]))
 
 ## Read-only steps
 
-### 1. The chip answers
+### 1. The chip responds
 
 ```sh
 ls /dev/i2c-1 /dev/spidev0.1
@@ -124,7 +124,7 @@ Expected. `potentiometer` follows the knob from about `0.0 V` to `3.3 V`. Unused
 
 Power the Pi off, disconnect the TMP102's SDA wire, power on and run step 4 again.
 
-Expected. `DriverError` saying nothing acknowledged at `i2c-1 address 0x48`, with the i2cdetect hint. Power off, reconnect the wire, power on and run step 4. The device reads normally.
+Expected. `DriverError` stating that nothing acknowledged at `i2c-1 address 0x48`, with the i2cdetect hint. Power off, reconnect the wire, power on and run step 4. The device reads normally.
 
 ## Steps that change the device
 
@@ -136,7 +136,7 @@ Read the file and decide the limits are right. Then confirm them yourself.
 uv run openhal file confirm my-tmp102.hal.yaml
 ```
 
-`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-tmp102.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-tmp102.hal.yaml` then shows `writable`.
 
 ### 8. The smallest safe change
 
@@ -173,7 +173,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the output of `i2cd
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, pi-i2c-spi driver
@@ -187,7 +187,7 @@ Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`
 
 | Step | Result | Notes |
 |---|---|---|
-| 1 the chip answers | pass / fail | |
+| 1 the chip responds | pass / fail | |
 | 2 the device file validates | pass / fail | |
 | 3 identify and discover | pass / fail | |
 | 4 read every channel | pass / fail | |

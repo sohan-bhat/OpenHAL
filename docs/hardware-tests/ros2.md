@@ -40,7 +40,7 @@ asyncio.run(main(sys.argv[1]))
 
 Connecting subscribes to the read topics and advertises the publish topics. Advertising alone sends nothing to the robot.
 
-## Step 1. rosbridge answers (read-only)
+## Step 1. rosbridge responds (read-only)
 
 ```
 uv run python -m websockets ws://<robot>:9090
@@ -87,7 +87,7 @@ Stop rosbridge for ten seconds, then start it again. Expected. Runs during the o
 
 ## Step 5. Start the hub
 
-Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and prompts you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -121,11 +121,11 @@ uv run openhal read turtlebot.cmd_vel_linear
 uv run openhal unlock
 ```
 
-Expected. `ros2 topic echo` prints one Twist with `linear.x: 0.05`, then one with `linear.x: 0.0` after the stop. The wheels turn slowly, then stop. Some bases stop by themselves within a second because `cmd_vel` went quiet. Note whether yours does. `openhal unlock` asks you to type `unlock`.
+Expected. `ros2 topic echo` prints one Twist with `linear.x: 0.05`, then one with `linear.x: 0.0` after the stop. The wheels turn slowly, then stop. Some bases stop by themselves within a second because `cmd_vel` went quiet. Note whether yours does. `openhal unlock` prompts you to type `unlock`.
 
 ## Step 8. An action goal and a stop that cancels it (optional)
 
-Use an action the robot offers, such as `undock` on a TurtleBot 4 sitting on its dock. Open a second terminal in the checkout and run `export OPENHAL_HOME="$PWD/openhal-test"` there, so the stop can go in while the robot moves. In the first terminal, send the goal.
+Use an action the robot provides, such as `undock` on a TurtleBot 4 sitting on its dock. Open a second terminal in the checkout and run `export OPENHAL_HOME="$PWD/openhal-test"` there, so the stop can go in while the robot moves. In the first terminal, send the goal.
 
 ```
 uv run openhal action turtlebot.undock
@@ -139,11 +139,11 @@ ros2 action list -t
 uv run openhal unlock
 ```
 
-Expected. The action answers `started`, the stop cancels the goal and the robot halts. Stop the hub with `bash docs/hardware-tests/hub.sh stop` and the echo with `kill %1` when done.
+Expected. The action returns `started`, the stop cancels the goal and the robot halts. Stop the hub with `bash docs/hardware-tests/hub.sh stop` and the echo with `kill %1` when done.
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the output of `ros2 topic list -t`, the `ros2 topic echo` output from the same minutes, the rosbridge launch output, and the ROS distribution. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the output of `ros2 topic list -t`, the `ros2 topic echo` output from the same minutes, the rosbridge launch output, and the ROS distribution. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -154,7 +154,7 @@ OpenHAL: (uv run openhal --version, and git rev-parse --short HEAD)
 Device file: (path, and the sha256 in its confirmed line)
 Robot, ROS 2 distribution and rosbridge version:
 Host OS and network:
-Step 1 rosbridge answers:         pass / fail
+Step 1 rosbridge responds:        pass / fail
 Step 2 file valid:                pass / fail
 Step 3 probe output:              pass / fail   (paste it)
 Step 4 network loss:              pass / fail
@@ -167,4 +167,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
