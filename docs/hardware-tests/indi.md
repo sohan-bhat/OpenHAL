@@ -92,7 +92,7 @@ Stop `indiserver` for ten seconds, then start it again with the same drivers. Ex
 
 ## Step 5. Start the hub
 
-Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and prompts you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -124,7 +124,7 @@ uv run openhal read eq6.tracking
 uv run openhal write eq6.tracking false
 ```
 
-Expected. Unpark answers done. Tracking starts and stops, and the reads match the control panel.
+Expected. Unpark returns done. Tracking starts and stops, and the reads match the control panel.
 
 ## Step 8. A blocked slew never reaches the mount
 
@@ -152,7 +152,7 @@ uv run openhal read eq6.slewing eq6.tracking
 uv run openhal unlock
 ```
 
-Expected. The slew stops within a second. The stop reports `eq6  safe`, `slewing` reads `false` and `tracking` reads `false`. The first terminal's action ends with `done` or `started`. The control panel shows EQUATORIAL_EOD_COORD in Alert or Idle, which is how drivers report an aborted slew. `openhal unlock` asks you to type `unlock`.
+Expected. The slew stops within a second. The stop reports `eq6  safe`, `slewing` reads `false` and `tracking` reads `false`. The first terminal's action ends with `done` or `started`. The control panel shows EQUATORIAL_EOD_COORD in Alert or Idle, which is how drivers report an aborted slew. `openhal unlock` prompts you to type `unlock`.
 
 ## Step 10. Park (optional)
 
@@ -161,7 +161,7 @@ uv run openhal action eq6.park
 uv run openhal read eq6.parked
 ```
 
-Expected. The mount slews to its park position. The action answers `done`, or `started` if parking takes longer than 8 s. `parked` reads true once it arrives.
+Expected. The mount slews to its park position. The action returns `done`, or `started` if parking takes longer than 8 s. `parked` reads true once it arrives.
 
 ## Step 11. Focuser (optional)
 
@@ -194,13 +194,13 @@ uv run openhal write focuser.position "<current + 100> dimensionless"
 uv run openhal action focuser.abort
 ```
 
-Expected. `devices` lists `focuser` as connected and writable. The focuser moves 100 steps, and `abort` answers `done  Done. abort ran.`
+Expected. `devices` lists `focuser` as connected and writable. The focuser moves 100 steps, and `abort` returns `done  Done. abort ran.`
 
 Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the indiserver output from the same minutes, a screenshot of the INDI control panel's properties, and the INDI driver name and version. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the indiserver output from the same minutes, a screenshot of the INDI control panel's properties, and the INDI driver name and version. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -227,4 +227,4 @@ Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.

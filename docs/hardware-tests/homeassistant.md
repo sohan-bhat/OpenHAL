@@ -11,7 +11,7 @@ This plan checks the Home Assistant bridge against a real Home Assistant instanc
 
 ## The read-only probe
 
-Save this as `probe.py`. The probe connects, prints the driver's proposal for the selected entities and reads every channel. The probe holds no kernel grant, so the probe can't call any service.
+Save this as `probe.py`. The probe connects, prints the driver's draft for the selected entities and reads every channel. The probe holds no kernel grant, so the probe can't call any service.
 
 ```python
 import asyncio, json, sys
@@ -38,7 +38,7 @@ async def main(path):
 asyncio.run(main(sys.argv[1]))
 ```
 
-## Step 1. Home Assistant answers (read-only)
+## Step 1. Home Assistant responds (read-only)
 
 ```
 curl -s -H "Authorization: Bearer $HA_TOKEN" http://homeassistant.local:8123/api/
@@ -84,9 +84,9 @@ Expected. `describe` lists only your two entities, with the light's brightness a
 
 Add `transport: websocket` under `connect` and run the probe again. Expected. The same values. Paste both outputs into the report.
 
-## Step 5. An entity outside the selection is refused (read-only)
+## Step 5. An entity outside the selection fails (read-only)
 
-Add a channel `other: { type: bool, map: { entity: switch.anything_else } }` under `read` and run `python probe.py ./lamp.hal.yaml`. Expected. The driver refuses the file with `which the file doesn't select`. Remove the channel again.
+Add a channel `other: { type: bool, map: { entity: switch.anything_else } }` under `read` and run `python probe.py ./lamp.hal.yaml`. Expected. The probe fails with `which the file doesn't select`. Remove the channel again.
 
 ## Step 6. Unavailable device (read-only)
 
@@ -94,7 +94,7 @@ Unplug the bulb, or switch it off at the wall, and wait until Home Assistant sho
 
 ## Step 7. Start the hub
 
-Read every limit in the file, then confirm them yourself. The confirm lists each limit and asks you to type `confirm`. Then the file goes into a fresh test home and hub.
+Read every limit in the file, then confirm them yourself. The confirm lists each limit and prompts you to type `confirm`. Then the file goes into a fresh test home and hub.
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
@@ -120,7 +120,7 @@ uv run openhal unlock
 
 Expected. The lamp turns on, dims to about 20 %, and turns off at `openhal stop`. The Home Assistant logbook shows the service calls.
 
-## Step 9. The file's limit wins over Home Assistant's
+## Step 9. The file's limit takes precedence over Home Assistant's
 
 ```
 uv run openhal write test-lamp.lamp_brightness "90 %"
@@ -130,7 +130,7 @@ Expected. Blocked with code `above_max` (the file allows 60 %), although Home As
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the Home Assistant version, the entity ids with their state from Developer Tools, and the logbook entries from the same minutes. Never send the token. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) says.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the Home Assistant version, the entity ids with their state from Developer Tools, and the logbook entries from the same minutes. Never send the token. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
 
 ## Report template
 
@@ -141,7 +141,7 @@ OpenHAL: (uv run openhal --version, and git rev-parse --short HEAD)
 Device file: (path, and the sha256 in its confirmed line)
 Home Assistant version:
 Entities used: (light, sensor, their integrations)
-Step 1 API answers:              pass / fail
+Step 1 API responds:             pass / fail
 Step 2 file valid:               pass / fail
 Step 3 REST probe:               pass / fail   (paste it)
 Step 4 WebSocket probe:          pass / fail   (paste it)
@@ -149,10 +149,10 @@ Step 5 unselected entity:        pass / fail
 Step 6 unavailable device:       pass / fail
 Step 7 hub lists the device:     pass / fail
 Step 8 writes and stop:          pass / fail
-Step 9 file limit wins:          pass / fail
+Step 9 file limit applies:       pass / fail
 Audit chain: (the line uv run openhal log --verify prints)
 Anything unexpected (paste exact output):
 Result: verified-on-hardware / tested-reads / failed at step N
 ```
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.

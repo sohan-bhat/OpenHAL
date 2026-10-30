@@ -123,19 +123,19 @@ Expected. `state = idle`, the nozzle and bed temperatures as the printer's scree
 uv run python hwtest.py my-printer.hal.yaml describe
 ```
 
-Expected. Proposed read channels for every field the printer reported, `speed_level` and `chamber_light` marked suggested, and pause, resume and stop.
+Expected. Suggested read channels for every field the printer reported, `speed_level` and `chamber_light` marked suggested, and pause, resume and stop.
 
 ### 7. A wrong pin
 
 Change one digit of `cert_sha256` and run step 5 again.
 
-Expected. `DriverError` saying the certificate's fingerprint is not the pinned one and the access code was not sent. Put the right fingerprint back.
+Expected. `DriverError` stating that the certificate's fingerprint is not the pinned one and the access code was not sent. Put the right fingerprint back.
 
 ### 8. Network loss
 
 Run step 5, turn the printer's Wi-Fi off, and run step 5 again.
 
-Expected. The second run fails with `TimeoutError` or `DriverError` saying the printer did not answer or could not be reached. Turn Wi-Fi back on, wait for the printer to show its address, and run step 5. The device reads normally.
+Expected. The second run fails with `TimeoutError` or `DriverError` stating that the printer did not respond or could not be reached. Turn Wi-Fi back on, wait for the printer to show its address, and run step 5. The device reads normally.
 
 ## Steps that change the device
 
@@ -147,7 +147,7 @@ Read the file and decide the limits are right. Then confirm them yourself.
 uv run openhal file confirm my-printer.hal.yaml
 ```
 
-`openhal file confirm` lists each limit, asks you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-printer.hal.yaml` then says `writable`.
+`openhal file confirm` lists each limit, prompts you to type `confirm`, and adds a `confirmed` line with your name, the date and the `sha256` of the limits. `uv run openhal file validate my-printer.hal.yaml` then shows `writable`.
 
 ### 10. The smallest safe change
 
@@ -199,7 +199,7 @@ Turn Developer Mode off on the printer's screen, then run
 uv run python hwtest.py my-printer.hal.yaml set chamber_light true
 ```
 
-Expected. `failed` with the printer's reason and the hint to turn on Developer Mode, and the light stays off. If the printer refuses the login instead, note that in the report. Turn Developer Mode back on.
+Expected. `failed` with the printer's reason and the hint to turn on Developer Mode, and the light stays off. If the login fails instead, note that in the report. Turn Developer Mode back on.
 
 ## If something fails
 
@@ -207,7 +207,7 @@ Send what [README.md](README.md#if-a-step-fails) lists, plus the printer model a
 
 ## Report template
 
-Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) says when it marks the device file `verified-on-hardware`.
+Save the filled-in report as `docs/hardware-tests/reports/<device id>-<date>.md`. [README.md](README.md#reports) lists when a report marks the device file `verified-on-hardware`.
 
 ```markdown
 # Hardware report, bambu driver
