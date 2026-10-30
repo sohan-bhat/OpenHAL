@@ -1,6 +1,6 @@
 # pylabrobot driver
 
-The `pylabrobot` driver runs liquid handlers through PyLabRobot. Picking up tips, aspirating, dispensing and transferring are actions, and on a high hazard device each action waits for a person to confirm the action.
+The `pylabrobot` driver runs liquid handlers through PyLabRobot. Picking up tips, aspirating, dispensing and transferring are actions, and on a high hazard device the hub holds each action until a person confirms the action.
 
 | | |
 |---|---|
@@ -29,7 +29,7 @@ The `pylabrobot` driver runs liquid handlers through PyLabRobot. Picking up tips
 
 An action under another name takes `map: { op: aspirate }`. Because every motion is an action, the driver has no channels that change.
 
-Tip spots and wells are addressed as `<resource>:<spot>` or `<resource>:<first>:<last>`, such as `tips:A1` or `plate:A1:H1`. Give address arguments a `pattern` or an enum of allowed addresses, so the kernel refuses anything else before PyLabRobot receives the address. Volumes are converted to uL.
+Tip spots and wells are addressed as `<resource>:<spot>` or `<resource>:<first>:<last>`, such as `tips:A1` or `plate:A1:H1`. Give address arguments a `pattern` or an enum of allowed addresses, so the kernel blocks anything else before PyLabRobot receives the address. Volumes are converted to uL.
 
 ## The deck
 
@@ -49,8 +49,8 @@ connect:
 ## How it works
 
 - connect() builds the deck and the LiquidHandler and checks the file, but doesn't move anything. PyLabRobot's `setup()` homes the channels, so it runs as the `initialize` action under the kernel, unless `setup_on_connect: true`.
-- PyLabRobot checks tips and tracked volumes before anything moves, so a refusal such as `TooLittleLiquidError` or `HasTipError` fails the action before anything is sent.
-- An operation longer than `action_wait` returns `started` and finishes in the background, and the next action waits for that operation to finish.
+- PyLabRobot checks tips and tracked volumes before anything moves, so an error such as `TooLittleLiquidError` or `HasTipError` fails the action before anything is sent.
+- An operation longer than `action_wait` returns `started` and finishes in the background, and the driver starts the next action only after that operation finishes.
 - When an operation fails while it runs, the tip and volume model may no longer match the deck, so reads are marked suspect until `initialize` runs again.
 - Tracked volumes are PyLabRobot's model of what was pipetted rather than a measurement, and every well starts empty unless `volumes` sets another volume.
 
@@ -62,7 +62,7 @@ A stop cancels running operations, and the instrument finishes the firmware comm
 
 1. Install the extra with `uv tool install --compile-bytecode "openhal-hub[pylabrobot] @ git+https://github.com/sohan-bhat/OpenHAL"`, plus PyLabRobot's USB or HTTP extras for your instrument.
 2. Lay out the deck in the file to match the physical deck, or save one from PyLabRobot.
-3. Start from `openhal/drivers/pylabrobot/examples/starlet.hal.yaml`, or call `describe` for a proposal.
+3. Start from `openhal/drivers/pylabrobot/examples/starlet.hal.yaml`, or call `describe` for a draft.
 4. Run `openhal file validate`, then confirm the limits by hand.
 
 ## Parameters
@@ -90,7 +90,7 @@ A stop cancels running operations, and the instrument finishes the firmware comm
 
 ## Hazard defaults
 
-The default hazard is `high`, because channels move fast across the deck, tips can crash, and liquids can be hazardous. Every action waits for a person's approval, and the example keeps `confirm-each-time` on each action.
+The default hazard is `high`, because channels move fast across the deck, tips can crash, and liquids can be hazardous. The hub holds every action until a person approves the action, and the example keeps `confirm-each-time` on each action.
 
 ## Sources
 

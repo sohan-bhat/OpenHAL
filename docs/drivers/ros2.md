@@ -31,7 +31,7 @@ Every channel and action names its ROS endpoint in a `map`.
 
 - connect() opens the WebSocket, subscribes to each read topic once and advertises each topic the file publishes to, so the first message isn't lost while DDS matches publishers and subscribers.
 - Reads come from the newest message on each topic, with its arrival time, and a channel is unknown until its first message arrives.
-- rosbridge reports a refused subscription or advertisement in a status line, and reads and changes on that topic then fail with the reported reason, while health shows the last refusal.
+- rosbridge reports a failed subscription or advertisement in a status line, and reads and changes on that topic then fail with the reported reason, while health shows the last failure.
 - Because publishing has no reply in rosbridge, a set channel reads back as the last value the driver sent.
 - A goal waits up to `action_wait` for its result and returns `done`, or returns `started` and keeps running. Aborted and canceled goals fail with their status.
 
@@ -45,7 +45,7 @@ Many bases stop on their own when `cmd_vel` messages stop arriving, and many do 
 
 1. On the robot, run rosbridge, for example `ros2 launch rosbridge_server rosbridge_websocket_launch.xml`. The default launch file starts rosapi too.
 2. Run `ros2 topic list -t` to see the topics and their types.
-3. Start from `openhal/drivers/ros2/examples/turtlebot4.hal.yaml`, or call `describe` for a proposal, and keep only what you need.
+3. Start from `openhal/drivers/ros2/examples/turtlebot4.hal.yaml`, or call `describe` for a draft, and keep only what you need.
 4. Run `openhal file validate`, then confirm the limits by hand.
 
 ## Parameters
@@ -91,14 +91,14 @@ hazard: high
 
 ## Known limitations
 
-- Images and point clouds are not read, and messages above 4 MB are refused.
+- Images and point clouds are not read, and a message above 4 MB closes the rosbridge connection.
 - Velocity commands are published once per change, so robots that need a steady stream of `cmd_vel` stop after their own timeout.
 - Because rosauth is not supported, keep rosbridge on a trusted network.
 - QoS settings use rosbridge's defaults.
 
 ## Hazard defaults
 
-The default hazard is `high`, because mobile robots and arms can injure. Every change and action waits for a person's approval, and velocity channels need small limits and a `max_change_per_s`.
+The default hazard is `high`, because mobile robots and arms can injure. The hub holds every change and action until a person approves the request, and velocity channels need small limits and a `max_change_per_s`.
 
 ## Sources
 

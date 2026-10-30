@@ -1,6 +1,6 @@
 # scpi driver
 
-The `scpi` driver talks to programmable test instruments over VISA. Bench supplies, multimeters, electronic loads, function generators and oscilloscopes all speak SCPI over USB-TMC, LAN, serial or GPIB. Each channel's `map` gives the query or setting command, and `describe()` proposes channels for common instrument families from the `*IDN?` reply.
+The `scpi` driver connects to programmable test instruments over VISA. Bench supplies, multimeters, electronic loads, function generators and oscilloscopes all use SCPI over USB-TMC, LAN, serial or GPIB. Each channel's `map` gives the query or setting command, and `describe()` returns suggested channels for common instrument families from the `*IDN?` reply.
 
 | | |
 |---|---|
@@ -30,13 +30,13 @@ The `scpi` driver talks to programmable test instruments over VISA. Bench suppli
 | `command` | action | Template with the action's argument names as placeholders |
 | `parse`, `scale`, `offset`, `unit`, `on`, `off`, `lookup` | read, write | As in the serial driver (docs/drivers/serial.md) |
 
-`unit` in a map is the unit the instrument uses, so a channel in `mA` can read a query that returns amps. Numbers are formatted with Python format specs, for example `{value:.3f}`. Templates are checked when the file loads and a rendered command with a control character is refused.
+`unit` in a map is the unit the instrument uses, so a channel in `mA` can read a query that returns amps. Numbers are formatted with Python format specs, for example `{value:.3f}`. Templates are checked when the file loads, and the driver blocks a rendered command with a control character.
 
 ## describe()
 
-The proposal always has `device` and `match.scpi_idn`, and the rest of the proposal depends on the instrument family.
+The draft always has `device` and `match.scpi_idn`, and the rest of the draft depends on the instrument family.
 
-| Family | Matched by | Proposal |
+| Family | Matched by | Draft |
 |---|---|---|
 | Rigol DP800, Siglent SPD | IDN model `DP8..`, `SPD..` | voltage and current reads per channel, output switch, set actions when the ratings are known. Siglent SPD gets separate `CHn:VOLT` and `CHn:CURR` actions and no output read back |
 | Keysight E36300 | `E363..A` | the same with `(@n)` channel lists |
@@ -45,7 +45,7 @@ The proposal always has `device` and `match.scpi_idn`, and the rest of the propo
 | Generators | Rigol DG, Siglent SDG, Keysight 33500 and 33600 | channel 1 frequency read and output switch |
 | Scopes | Rigol DS, MSO and DHO, Siglent SDS | trigger status |
 
-Every proposed write and action is `suggested: true` and carries rated limits at most, so the file loads read-only until a human lowers and confirms the limits.
+Every drafted write and action is `suggested: true` and carries rated limits at most, so the file loads read-only until a human lowers and confirms the limits.
 
 ## Setup
 
@@ -93,7 +93,7 @@ hazard: medium
 ## Known limitations
 
 - Binary block transfers (screenshots, waveform data) are not read, so use the `string` type for short text replies only.
-- An instrument that doesn't implement `SYST:ERR?` needs `check_errors: false`, and then a refused setting passes silently.
+- An instrument that doesn't implement `SYST:ERR?` needs `check_errors: false`, and then a setting that fails on the instrument passes silently.
 - After a timeout the driver reopens the VISA session before the next command, so a late reply can't be read as the next response. Instruments that are slow to accept new sessions may take one extra timeout to recover.
 - The first `ResourceManager('@py')` in a process can take several seconds while pyvisa-py loads its backends.
 - Supplies keep their outputs on after the host disconnects, and the safe state only runs when the hub can still reach the instrument.

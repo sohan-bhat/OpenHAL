@@ -9,7 +9,7 @@ The mqtt driver reads devices that publish their state on MQTT topics and contro
 - Retained messages seed reads right after connecting, and live messages replace the retained ones as they arrive.
 - QoS 0 or 1 for commands, and an optional retain flag.
 - Username and password, with the password from an environment variable, and TLS.
-- `describe()` listens on the broker for a moment and proposes read channels from the topics that carry messages.
+- `describe()` listens on the broker for a moment and returns suggested read channels from the topics that carry messages.
 
 ## Setup
 
@@ -36,7 +36,7 @@ You need a broker the hub can reach, and Mosquitto works well and runs on a Rasp
 | `retain_commands` | `false` | Default retain flag for commands |
 | `discover_topic` | `#` | Topic filter `describe()` listens on, under `prefix` |
 
-Because the device file loader rejects any parameter whose name contains `password`, the password parameter is `token_env` rather than `password_env`.
+Because the device file loader reports an error for any parameter whose name contains `password`, the password parameter is `token_env` rather than `password_env`.
 
 ## Channel maps
 
@@ -72,7 +72,7 @@ A write channel without a `state` topic reads back the last value the driver sen
 
 - Because MQTT only pushes, the driver subscribes to every state topic and keeps the newest message per topic, and a read returns that message with the time the message arrived. A topic that has had no message since connecting reads as no value (`None`), which the kernel treats as unknown.
 - Commands are never queued, so a write while the broker is down fails, and paho's automatic reconnect is off so nothing is replayed later on a new connection. The hub's heartbeat reconnects with a fresh client.
-- A QoS 1 command waits for the broker's PUBACK. Without the PUBACK the write fails with `TimeoutError` and the driver drops the connection, so the broker can't deliver the command late. A PUBACK proves that the broker has the message but not that the device acted, so watch the state topic to see whether the device acted.
+- A QoS 1 command waits for the broker's PUBACK. Without the PUBACK the write fails with `TimeoutError` and the driver drops the connection, so the broker can't deliver the command late. A PUBACK shows that the broker has the message but not that the device acted, so watch the state topic to see whether the device acted.
 
 ## Example
 
@@ -80,16 +80,16 @@ A write channel without a `state` topic reads back the last value the driver sen
 
 ## Errors
 
-- Unreachable broker, refused credentials and a missing password variable raise `DriverError`.
+- Unreachable broker, failed authentication and a missing password variable raise `DriverError`.
 - A payload that is not a number, not JSON, missing the JSON field, not an on or off word, or an enum value outside the list raises `DriverError` on read.
 - No CONNACK or PUBACK within `timeout` raises `TimeoutError` or `DriverError` with the topic.
 
 ## Limitations
 
-- The driver speaks MQTT 3.1.1 only and doesn't use MQTT 5 properties.
+- The driver uses MQTT 3.1.1 only and doesn't use MQTT 5 properties.
 - The driver doesn't support binary or protobuf payloads or image channels.
 - The driver has no actions, so model each command topic as a write channel.
-- `describe()` only finds topics that carry messages while `describe()` listens, so `describe()` proposes reads only, all `dimensionless` until you set the units.
+- `describe()` only finds topics that carry messages while `describe()` listens, so `describe()` returns reads only, all `dimensionless` until you set the units.
 
 ## Hazard default and safe state
 

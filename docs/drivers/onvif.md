@@ -1,6 +1,6 @@
 # onvif driver
 
-The onvif driver reads an ONVIF camera's identity and stream addresses and moves PTZ cameras through the safety kernel. The driver speaks the ONVIF device, media and PTZ services itself, with a small SOAP 1.2 client and WS-Security digest authentication, so it works with the Profile S and T cameras most brands sell.
+The onvif driver reads an ONVIF camera's identity and stream addresses and moves PTZ cameras through the safety kernel. The driver calls the ONVIF device, media and PTZ services directly, with a small SOAP 1.2 client and WS-Security digest authentication, so the driver works with the Profile S and T cameras most brands sell.
 
 ## What it supports
 
@@ -9,7 +9,7 @@ The onvif driver reads an ONVIF camera's identity and stream addresses and moves
 - Actions for ContinuousMove (`move`), RelativeMove (`step`), AbsoluteMove (`go_to`), presets (`goto_preset`), the home position (`home`) and `stop`.
 - A native safe state that stops pan, tilt and zoom.
 - `discover()` sends one WS-Discovery Probe for network video transmitters.
-- `describe()` proposes the identity and URI channels, the PTZ channels and actions, and the camera's presets.
+- `describe()` returns the identity and URI channels, the PTZ channels and actions, and the camera's presets.
 
 ## Setup
 
@@ -79,7 +79,7 @@ onvif-zeep-async (MIT, maintained) was checked first. Importing onvif-zeep-async
 
 ## Errors
 
-- A camera that can't be reached, refused credentials, a missing password variable and a missing profile raise `DriverError` that says what to check. A file that uses PTZ with a profile that has no PTZ fails the connect.
+- A camera that can't be reached, failed authentication, a missing password variable and a missing profile raise `DriverError` with a message that names what to check. A file that uses PTZ with a profile that has no PTZ fails the connect.
 - A reply that isn't SOAP raises `DriverError`, and a camera that doesn't respond raises `TimeoutError`.
 
 ## Limitations

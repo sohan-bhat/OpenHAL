@@ -1,6 +1,6 @@
 # octoprint driver
 
-The `octoprint` driver talks to printers that OctoPrint controls, through OctoPrint's REST API. The driver reads temperatures, the printer state and job progress, sets heater targets and the part fan, and runs homing and job control. Channel names match the moonraker driver where the API allows it.
+The `octoprint` driver connects to printers that OctoPrint controls, through OctoPrint's REST API. The driver reads temperatures, the printer state and job progress, sets heater targets and the part fan, and runs homing and job control. Channel names match the moonraker driver where the API allows it.
 
 | | |
 |---|---|
@@ -30,8 +30,8 @@ Temperatures are degC on the wire and converted to the channel unit both ways.
 
 ## How the protocol is handled
 
-- The API key comes from the environment variable named in `token_env` (default `OCTOPRINT_API_KEY`) and is sent as `X-Api-Key`. A missing variable fails the connect before any request, and a 403 means the key was refused.
-- OctoPrint returns 409 when the printer isn't connected or the operation doesn't fit the current state. The driver turns that into an error that says the printer can't do this now, and `state` reads `offline`.
+- The API key comes from the environment variable named in `token_env` (default `OCTOPRINT_API_KEY`) and is sent as `X-Api-Key`. A missing variable fails the connect before any request, and a 403 means OctoPrint didn't accept the key.
+- OctoPrint returns 409 when the printer isn't connected or the operation doesn't fit the current state. The driver turns that into an error stating that the printer can't run the operation now, and `state` reads `offline`.
 - `health()` reads `/api/printer`, and a printer that isn't operational counts as disconnected.
 - OctoPrint has no fan read, so `fan_speed` reads back the last value this driver sent, and unknown before the first write or after a failed one.
 - Homing is queued by OctoPrint and the request returns at once, so the action returns `queued`.
@@ -80,7 +80,7 @@ hazard: medium
 
 - File upload, selection and starting prints are not exposed.
 - The fan speed can't be read from the printer, and a fan change made on the printer's own display isn't seen.
-- Because printer profiles don't record heater maxima, proposals from `describe()` use placeholder heater maxima (250, 100 and 60 degC), so lower the maxima to your printer's real limits.
+- Because printer profiles don't record heater maxima, the channels `describe()` returns use placeholder heater maxima (250, 100 and 60 degC), so lower the maxima to your printer's real limits.
 - The driver can't check the printer's firmware thermal protection, which remains the last line of defense.
 
 ## Hazard defaults

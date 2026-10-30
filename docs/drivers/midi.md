@@ -1,6 +1,6 @@
 # midi driver
 
-The midi driver reads knobs, faders and pads from MIDI controllers and sends notes and control changes to light pad LEDs, move motorised faders and set synth parameters. The driver uses mido with the python-rtmidi backend, which talks to ALSA on Linux, CoreMIDI on macOS and WinMM on Windows.
+The midi driver reads knobs, faders and pads from MIDI controllers and sends notes and control changes to light pad LEDs, move motorised faders and set synth parameters. The driver uses mido with the python-rtmidi backend, which uses ALSA on Linux, CoreMIDI on macOS and WinMM on Windows.
 
 ## What it supports
 
@@ -8,7 +8,7 @@ The midi driver reads knobs, faders and pads from MIDI controllers and sends not
 - Read channels of type number (the raw value or percent) and bool (a CC at 64 or above, or a held note).
 - Write channels that send a CC, a note (as on and off for bool channels, or with a velocity for numbers, which many controllers use as the LED colour), a program change or a pitch bend.
 - One default MIDI channel for the device and a per-channel override, numbered 1 to 16 as on the device.
-- `discover()` lists MIDI ports, and `describe()` proposes read channels for every control you move while it listens.
+- `discover()` lists MIDI ports, and `describe()` returns read channels for every control you move while `describe()` listens.
 
 ## Setup
 
@@ -76,7 +76,7 @@ Because MIDI controllers push messages when something moves and can't be queried
 
 ## Hazard default and safe state
 
-The default hazard is low, because MIDI devices are controllers, lights and instruments. MIDI has no emergency behavior, so `safe_state_support` is `file`, and the hub sends the device file's `safe_state` like any other message. A MIDI device driving something physical, such as a motorised fader or a DMX bridge, deserves a higher hazard in its device file.
+The default hazard is low, because MIDI devices are controllers, lights and instruments. MIDI has no emergency behavior, so `safe_state_support` is `file`, and the hub sends the device file's `safe_state` like any other message. A MIDI device driving something physical, such as a motorised fader or a DMX bridge, needs a higher hazard in its device file.
 
 ## Sources
 
