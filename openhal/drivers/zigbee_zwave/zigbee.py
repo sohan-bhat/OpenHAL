@@ -146,7 +146,7 @@ class Zigbee2MqttLink:
 
     def _on_connect(self, client: Any, userdata: Any, flags: Any, reason: Any, properties: Any) -> None:
         if getattr(reason, "is_failure", False):
-            self._refused = f"the broker refused the connection ({reason})"
+            self._refused = f"the broker returned a connection error ({reason})"
             return
         topics = [self.state_topic, f"{self.state_topic}/availability", f"{self.base}/bridge/devices"]
         client.subscribe([(topic, 0) for topic in [*topics, f"{self.base}/bridge/state"]])
@@ -176,7 +176,7 @@ class Zigbee2MqttLink:
                 self._devices = document
 
     async def open(self, wanted: list[str]) -> None:
-        """Connect, find the device in the bridge's device list and ask it to report `wanted` properties."""
+        """Connect, find the device in the bridge's device list and request a report of the `wanted` properties."""
         client = self._factory(self.client_id)
         client.on_connect = self._on_connect
         client.on_disconnect = self._on_disconnect
@@ -196,7 +196,7 @@ class Zigbee2MqttLink:
         try:
             await asyncio.wait_for(asyncio.to_thread(client.connect, self.host, self.port, 30), self.timeout + 1)
         except TimeoutError:
-            raise TimeoutError(f"The MQTT broker {self.host}:{self.port} did not answer.") from None
+            raise TimeoutError(f"The MQTT broker {self.host}:{self.port} sent no reply.") from None
         except OSError as exc:
             raise DriverError(f"Could not reach the MQTT broker {self.host}:{self.port} ({exc}).") from None
         client.loop_start()
@@ -285,7 +285,7 @@ class Zigbee2MqttLink:
         topic = f"{self.state_topic}/set"
         info = client.publish(topic, json.dumps(_nest(channel_map.property or "", raw)), qos=1)
         if getattr(info, "rc", 0) != 0:
-            raise DriverError(f"The MQTT broker refused the publish to {topic} (code {info.rc}).")
+            raise DriverError(f"The MQTT broker returned an error for the publish to {topic} (code {info.rc}).")
         try:
             await asyncio.wait_for(asyncio.to_thread(info.wait_for_publish, self.timeout), self.timeout + 1)
         except (RuntimeError, ValueError) as exc:

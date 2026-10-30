@@ -123,7 +123,7 @@ class SerialLink:
         if self._port is None:
             raise DriverError(f"{self.name} is not open. Connect the device first.")
         if self._error is not None:
-            raise DriverError(f"{self.name} stopped answering ({self._error}). Check the cable, then reconnect.")
+            raise DriverError(f"{self.name} stopped sending data ({self._error}). Check the cable, then reconnect.")
 
     async def write(self, data: bytes) -> None:
         self._check()
@@ -224,7 +224,7 @@ def resolve_port(port: str, usb: list[str], serial_number: str | None, *, driver
         return port
     if not usb:
         raise DriverError(
-            f"port: auto needs match.usb in the device file so the {driver} driver knows which port is yours. "
+            f"port: auto needs match.usb in the device file so the {driver} driver can select your port. "
             "Add the USB vendor and product id, or give the port path."
         )
     import re

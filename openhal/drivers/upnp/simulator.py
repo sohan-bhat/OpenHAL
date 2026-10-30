@@ -1,6 +1,6 @@
 """A fake UPnP media renderer behind async-upnp-client's requester interface, for tests and the conformance case.
 
-`FakeRenderer` is an `UpnpRequester`. It answers HTTP requests the way a device does, with a
+`FakeRenderer` is an `UpnpRequester`. It replies to HTTP requests the way a device does, with a
 device description, two service descriptions (SCPD) and SOAP responses or SOAP faults, written
 from UPnP Device Architecture 2.0 and the RenderingControl:1 and AVTransport:1 service templates.
 
@@ -8,8 +8,8 @@ from UPnP Device Architecture 2.0 and the RenderingControl:1 and AVTransport:1 s
 - AVTransport. Play, Pause, Stop, Seek and GetTransportInfo with the TransportState values.
 
 Faults. `unplugged` raises a connection error for every request, `drop_next` for that many requests,
-`latency_s` slows answers,
-`fault_next` answers the next action with that UPnP error code, and `garbage` returns a body that
+`latency_s` slows replies,
+`fault_next` fails the next action with that UPnP error code, and `garbage` returns a body that
 isn't XML.
 """
 
@@ -147,7 +147,7 @@ ENVELOPE = (
 
 
 class FakeRenderer(UpnpRequester):
-    """A media renderer that answers what async-upnp-client sends. Every request is kept in `requests`."""
+    """A media renderer that replies to what async-upnp-client sends. Every request is kept in `requests`."""
 
     def __init__(self) -> None:
         self.volume = 25

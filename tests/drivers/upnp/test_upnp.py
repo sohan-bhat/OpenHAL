@@ -205,7 +205,7 @@ async def test_soap_faults_become_driver_errors(renderer: FakeRenderer) -> None:
     renderer.fault_next = 501
     decision = await kernel.execute(Action(device="conformance-upnp", action="play"), WHO)
     assert decision.status == "failed"
-    assert "UPnP error 501, Action Failed" in decision.message
+    assert "UPnP error 501 for Play (Action Failed)" in decision.message
     renderer.garbage = True
     with pytest.raises(DriverError, match="doesn't parse"):
         await driver.read("transport_state")
@@ -214,12 +214,12 @@ async def test_soap_faults_become_driver_errors(renderer: FakeRenderer) -> None:
 async def test_a_device_that_goes_away(renderer: FakeRenderer) -> None:
     driver = await connected(device_file(), renderer)
     renderer.unplugged = True
-    with pytest.raises(DriverError, match="didn't answer GetTransportInfo"):
+    with pytest.raises(DriverError, match="sent no reply to GetTransportInfo"):
         await driver.read("transport_state")
     health = await driver.health()
     assert not health.connected
     assert "Cannot connect" in health.detail
-    with pytest.raises(DriverError, match="stopped answering"):
+    with pytest.raises(DriverError, match="stopped sending replies"):
         await driver.read("transport_state")
     with pytest.raises(DriverError, match="Could not fetch the description"):
         await driver.connect()
@@ -234,7 +234,7 @@ async def test_a_device_that_goes_away(renderer: FakeRenderer) -> None:
 async def test_slow_devices_time_out(renderer: FakeRenderer) -> None:
     driver = await connected(device_file(timeout="200 ms"), renderer)
     renderer.latency_s = 2.0
-    with pytest.raises(TimeoutError, match="didn't answer GetTransportInfo"):
+    with pytest.raises(TimeoutError, match="sent no reply to GetTransportInfo"):
         await driver.read("transport_state")
     assert not (await driver.health()).connected
     with pytest.raises(TimeoutError, match="didn't send its description"):

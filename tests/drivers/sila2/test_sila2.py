@@ -126,7 +126,7 @@ async def test_validation_error_from_constraints(sim: ThermoShakerSim) -> None:
     text = SHAKER.replace("min: 4\n    max: 95", "min: 0\n    max: 95")
     _driver, bench = make(sim, text)
     await bench.connect()
-    assert_failed(await bench.write("target", "1 degC"), "refused the parameters")
+    assert_failed(await bench.write("target", "1 degC"), "returned an error for the parameters")
     await bench.close()
 
 
@@ -204,7 +204,7 @@ async def test_slow_server_times_out(sim: ThermoShakerSim) -> None:
     driver, bench = make(sim)
     await bench.connect()
     sim.block.delay_s = 2.0
-    with pytest.raises(TimeoutError, match="didn't answer reading mode"):
+    with pytest.raises(TimeoutError, match="sent no reply to reading mode"):
         await driver.read("mode")
     sim.block.delay_s = 0.0
     await bench.close()

@@ -7,7 +7,7 @@ is zwave-js-server, and the device is named by `node` (`openhal.drivers.zigbee_z
 Bridge rules (docs/drivers/WRITING-A-DRIVER.md rule 9). A device file names one device, and only
 the values its channels map are read or set. On connect the driver checks every channel against
 what the bridge reports (the Zigbee2MQTT `exposes` list or the zwave-js value metadata) and
-refuses a channel the bridge can't serve. The device file's limits apply even where the bridge has
+fails on a channel the bridge can't serve. The device file's limits apply even where the bridge has
 its own, which only show up as suggested limits in `describe()`.
 
 Reads come from what the bridge last pushed, timestamped when it arrived. A value the bridge

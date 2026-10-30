@@ -1,5 +1,5 @@
 # An Arduino Uno running a small text sketch (docs/hardware-tests/serial.md has the sketch).
-# The sketch answers one line per command. The fan PWM is 0 to 255 on the wire and percent here.
+# The sketch replies with one line per command. The fan PWM is 0 to 255 on the wire and percent here.
 device: { name: Arduino fan board, model: Uno R3, manufacturer: Arduino }
 id: fan-board
 match:

@@ -89,7 +89,7 @@ class ZWaveJsLink:
                 f"Could not open zwave-js-server at {self.url} ({exc}). Check the URL and port 3000."
             ) from None
         except Exception as exc:  # noqa: BLE001
-            raise DriverError(f"zwave-js-server at {self.url} refused the WebSocket ({exc}).") from None
+            raise DriverError(f"zwave-js-server at {self.url} did not accept the WebSocket ({exc}).") from None
         try:
             hello = json.loads(await asyncio.wait_for(ws.recv(), self.timeout))
         except Exception as exc:  # noqa: BLE001
@@ -101,7 +101,7 @@ class ZWaveJsLink:
         low, high = int(hello.get("minSchemaVersion", 0)), int(hello.get("maxSchemaVersion", 0))
         if low > SCHEMA:
             await ws.close()
-            raise DriverError(f"zwave-js-server needs schema {low} or newer, and this driver speaks up to {SCHEMA}.")
+            raise DriverError(f"zwave-js-server needs schema {low} or newer, and this driver supports up to {SCHEMA}.")
         self.version = hello
         self.schema = min(SCHEMA, high)
         self._ws = ws
@@ -164,7 +164,9 @@ class ZWaveJsLink:
                 code = message.get("errorCode") or "unknown error"
                 detail = message.get("zwaveErrorMessage") or message.get("message") or ""
                 future.set_exception(
-                    DriverError(f"zwave-js-server refused the command ({code}{f', {detail}' if detail else ''}).")
+                    DriverError(
+                        f"zwave-js-server returned an error for the command ({code}{f', {detail}' if detail else ''})."
+                    )
                 )
                 future.exception()
             return
@@ -205,7 +207,7 @@ class ZWaveJsLink:
             return await asyncio.wait_for(future, self.timeout)
         except TimeoutError:
             raise TimeoutError(
-                f"zwave-js-server didn't answer {message['command']} within {self.timeout:g} s."
+                f"zwave-js-server sent no reply to {message['command']} within {self.timeout:g} s."
             ) from None
         except DriverError:
             raise

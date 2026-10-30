@@ -3,7 +3,7 @@
 sila2 0.14 sets PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION to python when it is imported, then loads
 both its pregenerated `sila2.framework.pb2.SiLAFramework_pb2` and a copy it compiles at run time.
 Both register `SiLAFramework.proto`. Protobuf's pure Python pool accepts that. upb, protobuf's
-default, refuses the second file because the two builds differ. When another package, such as
+default, fails on the second file because the two builds differ. When another package, such as
 aioesphomeapi, imported protobuf first, upb is fixed for the whole process and `import sila2`
 fails with "duplicate file name SiLAFramework.proto".
 

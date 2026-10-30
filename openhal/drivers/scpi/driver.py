@@ -2,7 +2,7 @@
 
 Protocol. SCPI (IEEE 488.2 plus the SCPI 1999 standard) is line-based text. Queries end in `?`
 and return one reply. Settings return nothing, and failures are reported through the error
-queue, read with `SYST:ERR?` until it answers `0,...`. PyVISA with the pyvisa-py backend
+queue, read with `SYST:ERR?` until it returns `0,...`. PyVISA with the pyvisa-py backend
 handles the transports, or NI-VISA when `visa_library` points at it.
 
 Mapping, per channel in the device file.
@@ -17,8 +17,8 @@ Quirks.
   error fails the write with the instrument's own message. The error queue is drained once on
   connect so old errors aren't blamed on the first write.
 - After a timeout the driver reopens the session before the next command, because a late reply
-  would otherwise be read as the answer to the next query.
-- `health()` sends `*OPC?`, which every IEEE 488.2 instrument answers, so a dropped LAN link
+  would otherwise be read as the reply to the next query.
+- `health()` sends `*OPC?`, which every IEEE 488.2 instrument replies to, so a dropped LAN link
   is noticed by the heartbeat.
 - pyvisa-py reads a closed raw socket as no data and waits out the timeout, and on Linux a send
   to a closed peer can still succeed. So before each exchange, and after a timeout, the driver
@@ -273,7 +273,7 @@ class ScpiDriver(Driver):
                         raise self._lost() from None
                     self._dirty = True
                     raise TimeoutError(
-                        f"{self.resource_name} didn't answer {what} within {self.settings.timeout:g} s. "
+                        f"{self.resource_name} sent no reply to {what} within {self.settings.timeout:g} s. "
                         "Check the command and the termination setting."
                     ) from None
                 if isinstance(exc, DriverError):
@@ -398,7 +398,7 @@ class ScpiDriver(Driver):
 
         errors = await self._call(run, command)
         if errors:
-            raise DriverError(f"The instrument rejected {command!r} with {'; '.join(errors)}.")
+            raise DriverError(f"The instrument returned {'; '.join(errors)} for {command!r}.")
 
     async def _write(self, channel: str, value: float | bool | str) -> Reading | None:
         write_map = self.writes.get(channel)

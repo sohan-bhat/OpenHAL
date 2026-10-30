@@ -214,7 +214,7 @@ class UvcDriver(Driver):
         try:
             grabbed = await asyncio.wait_for(asyncio.to_thread(self._grab), self.settings.timeout)
         except TimeoutError:
-            return Health(connected=False, detail=f"camera {self.source} stopped answering")
+            return Health(connected=False, detail=f"camera {self.source} stopped sending frames")
         if not grabbed:
             return Health(connected=False, detail=f"camera {self.source} returned no frame")
         return Health(connected=True, detail=f"camera {self.source}")
@@ -253,7 +253,7 @@ class UvcDriver(Driver):
             try:
                 data = await asyncio.wait_for(asyncio.to_thread(self._capture_jpeg), self.settings.timeout)
             except TimeoutError:
-                self._failed = "stopped answering"
+                self._failed = "stopped sending frames"
                 raise TimeoutError(f"Camera {self.source} gave no frame within {self.settings.timeout:g} s.") from None
             return Reading(channel, data, at=time.time())
         prop = self.properties[channel]

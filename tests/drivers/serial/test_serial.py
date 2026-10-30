@@ -122,7 +122,7 @@ async def test_action_fills_its_template() -> None:
 async def test_error_reply_fails_the_write() -> None:
     _, _, bench = make()
     await bench.connect()
-    assert_failed(await bench.write("raw_fan", "300 dimensionless"), "refused")
+    assert_failed(await bench.write("raw_fan", "300 dimensionless"), "error reply")
     assert_failed(await bench.write("label", "turbo"), "ERR mode")
     await bench.close()
 
@@ -191,7 +191,7 @@ async def test_malformed_reply_raises() -> None:
     with pytest.raises(DriverError, match="not one of"):
         await driver.read("mode")
     board.answer = lambda line: "WHAT"  # type: ignore[method-assign]
-    assert_failed(await bench.write("fan_speed", "10 %"), "expected")
+    assert_failed(await bench.write("fan_speed", "10 %"), "doesn't match")
     await bench.close()
 
 
@@ -405,6 +405,6 @@ async def test_failed_write_leaves_the_channel_unknown() -> None:
     await bench.connect()
     assert_done(await bench.write("raw_fan", "100 dimensionless"))
     assert (await driver.read("raw_fan")).value == 100.0
-    assert_failed(await bench.write("raw_fan", "300 dimensionless"), "refused")
+    assert_failed(await bench.write("raw_fan", "300 dimensionless"), "error reply")
     assert (await driver.read("raw_fan")).value is None
     await bench.close()

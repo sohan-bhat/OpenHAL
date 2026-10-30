@@ -34,6 +34,6 @@ safe_state:
 hazard: low
 notes: >-
   A Sonos speaker, which serves its UPnP description on port 1400. Volume is capped at 40 % for the
-  workshop. Stop needs something in the queue on some firmware and answers UPnP error 701 otherwise,
+  workshop. Stop needs something in the queue on some firmware and returns UPnP error 701 otherwise,
   which leaves the safe state partial while nothing is playing.
 provenance: { source: hand-written, by: openhal upnp driver example, at: 2026-10-24, from: "https://openconnectivity.org/developer/specifications/upnp-resources/upnp/" }

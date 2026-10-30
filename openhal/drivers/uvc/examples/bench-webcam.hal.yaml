@@ -1,6 +1,6 @@
 # A USB webcam pointed at the workbench, so an agent can look at what it is doing. Read-only.
 # Any UVC webcam works. The requested 1280x720 is a request, and frame_width and frame_height
-# report the mode the camera really chose.
+# report the mode the camera really uses.
 device: Bench camera
 id: bench-camera
 match:

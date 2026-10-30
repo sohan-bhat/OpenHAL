@@ -2,11 +2,11 @@
 
 `Zigbee2MqttSim` lives on the mqtt driver's in-process broker. It publishes the retained
 `bridge/devices` list with real `exposes` for an IKEA TRADFRI bulb (`desk_lamp`) and an Aqara
-temperature sensor (`hall_sensor`), `bridge/state` and per-device availability, and answers
+temperature sensor (`hall_sensor`), `bridge/state` and per-device availability, and replies to
 `<name>/set` and `<name>/get` the way Zigbee2MQTT does, by publishing the device's state.
 
-`ZWaveJsSim` is a WebSocket server that speaks the zwave-js-server API. It sends the version
-message, answers `set_api_schema`, `initialize`, `start_listening`, `node.set_value` and
+`ZWaveJsSim` is a WebSocket server that implements the zwave-js-server API. It sends the version
+message, replies to `set_api_schema`, `initialize`, `start_listening`, `node.set_value` and
 `node.poll_value`, and pushes `value updated`, `dead` and `alive` events. It holds a Zooz ZEN04
 plug (node 2), a Zooz ZEN72 dimmer (node 3) and an Aeotec MultiSensor 7 (node 4).
 
@@ -168,7 +168,7 @@ class Zigbee2MqttSim:
         return self
 
     def report(self, name: str, changes: dict[str, Any] | None = None) -> None:
-        """The device reports, as when a sensor wakes up. Safe to call from any thread."""
+        """The device reports, as after a sensor's Wake Up notification. Safe to call from any thread."""
         self.states[name].update(changes or {})
         self.broker.publish(f"{self.base}/{name}", json.dumps(self.states[name]))
 

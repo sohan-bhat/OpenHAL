@@ -1,7 +1,7 @@
 """Generic line-based serial driver.
 
-Protocol. Many boards and instruments speak plain text over a serial port. The host sends one
-command line and the device answers with one line. Nothing about the commands is built in.
+Protocol. Many boards and instruments use plain text over a serial port. The host sends one
+command line and the device replies with one line. Nothing about the commands is built in.
 Each channel's `map` in the device file gives the query, the reply pattern and the command
 template, so the same driver covers any device with a documented line protocol.
 
@@ -27,8 +27,8 @@ Quirks.
 
 - Lines that match a `listen` pattern are unsolicited values and never count as a reply.
   Every other line is the reply to the command in flight. Late replies are dropped before the
-  next command is sent, so a slow device can't shift answers onto the wrong channel.
-- Values are refused if they contain control characters, so a string channel can't append a
+  next command is sent, so a slow device can't shift replies onto the wrong channel.
+- A value with control characters fails the write, so a string channel can't append a
   second command with an embedded newline.
 - Many Arduino boards reset when the port opens. Set `settle` (for example `2 s`) to wait for
   the boot banner before the first command. Anything received during that time is discarded.
@@ -303,7 +303,7 @@ class SerialDriver(Driver):
                 "Check the baud rate, the newline setting and the command."
             ) from None
         if reply is None:
-            raise DriverError(f"{self.settings.port} disconnected while waiting for a reply to {line!r}.")
+            raise DriverError(f"{self.settings.port} disconnected before the reply to {line!r} arrived.")
         return reply
 
     async def _exchange(self, line: str) -> str:
@@ -340,9 +340,9 @@ class SerialDriver(Driver):
         import re
 
         if error is not None and re.search(error, reply):
-            raise DriverError(f"The device refused {sent!r} and replied {reply!r}.")
+            raise DriverError(f"The device sent the error reply {reply!r} to {sent!r}.")
         if expect is not None and re.search(expect, reply) is None:
-            raise DriverError(f"The device replied {reply!r} to {sent!r}, expected {expect!r}.")
+            raise DriverError(f"The device replied {reply!r} to {sent!r}, which doesn't match {expect!r}.")
 
     async def _command(self, line: str, expect: str | None, error: str | None) -> str | None:
         async with self._lock:

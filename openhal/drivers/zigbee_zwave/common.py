@@ -1,6 +1,6 @@
 """What the Zigbee2MQTT and zwave-js-server links share. Channel maps, value descriptions and conversion.
 
-A link reports a `Feature` for every value it knows, taken from the Zigbee2MQTT `exposes` list or
+A link reports a `Feature` for every value the bridge exposes, taken from the Zigbee2MQTT `exposes` list or
 the zwave-js value metadata. Conversion uses it.
 
     channel value = convert(raw * scale + offset, from the bridge unit to the channel unit)
@@ -29,7 +29,7 @@ Kind = Literal["number", "bool", "enum", "string", "unknown"]
 
 @dataclass(frozen=True)
 class Feature:
-    """What the bridge says about one value."""
+    """What the bridge reports about one value."""
 
     kind: Kind
     unit: str | None = None
@@ -81,7 +81,7 @@ class ChannelMap(BaseModel):
 
 
 def bridge_unit(feature: Feature, channel_map: ChannelMap) -> str | None:
-    """The unit the bridge's raw numbers are in, as a registry name, if anyone says."""
+    """The unit the bridge's raw numbers are in, as a registry name, if the bridge or the map gives one."""
     return channel_map.unit or mapping.device_unit(feature.unit)
 
 
@@ -119,7 +119,7 @@ def decode(raw: Any, spec: Any, feature: Feature, channel_map: ChannelMap, where
 
 
 def encode(value: float | bool | str, spec: Any, feature: Feature, channel_map: ChannelMap, where: str) -> Any:
-    """Turn a checked channel value into what the bridge expects."""
+    """Turn a checked channel value into the form the bridge requires."""
     kind = spec.type
     if kind == "bool":
         return feature.on if value else feature.off
@@ -160,13 +160,15 @@ def suspect(value: Any, spec: Any) -> bool:
 
 
 def check(name: str, spec: Any, feature: Feature, channel_map: ChannelMap, *, sends: bool, where: str) -> None:
-    """Refuse a channel the bridge can't serve the way the device file asks. Raises DriverError."""
+    """Raise DriverError for a channel the bridge can't serve the way the device file sets it."""
     if feature is UNKNOWN:
         raise DriverError(f"{name}: {where} doesn't have this value. Check the map against describe().")
     if sends and not feature.writable:
-        raise DriverError(f"{name}: {where} says this value can't be set. Move it under read.")
+        raise DriverError(f"{name}: {where} reports that this value can't be set. Move it under read.")
     if not sends and not feature.readable:
-        raise DriverError(f"{name}: {where} says this value can't be read. Move it under write with a state map.")
+        raise DriverError(
+            f"{name}: {where} reports that this value can't be read. Move it under write with a state map."
+        )
     expected = {"number": "number", "bool": "bool", "enum": "enum", "string": "string"}.get(feature.kind)
     if expected == "number" and spec.type not in ("number",):
         raise DriverError(f"{name}: {where} reports a number, so the channel needs type number.")
@@ -179,7 +181,8 @@ def check(name: str, spec: Any, feature: Feature, channel_map: ChannelMap, *, se
         unknown = [value for value in spec.values if known and value not in known]
         if unknown:
             raise DriverError(
-                f"{name}: {where} doesn't know {', '.join(unknown)}. It knows {', '.join(sorted(known))}."
+                f"{name}: {where} doesn't list {', '.join(unknown)}. "
+                f"The values it lists are {', '.join(sorted(known))}."
             )
     source = bridge_unit(feature, channel_map)
     if spec.type == "number" and spec.unit and source and source != spec.unit:

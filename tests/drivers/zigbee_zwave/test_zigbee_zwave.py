@@ -197,7 +197,7 @@ async def test_zigbee_commands_go_to_the_set_topic(broker: MqttBroker, zigbee: Z
         ("read:\n  state: { unit: dimensionless }", "needs type bool"),
         ("read:\n  brightness: { type: bool }", "needs type number"),
         ("read:\n  power_on_behavior: { type: bool }", "needs type enum"),
-        ("read:\n  power_on_behavior: { type: enum, values: [sometimes] }", "doesn't know sometimes"),
+        ("read:\n  power_on_behavior: { type: enum, values: [sometimes] }", "doesn't list sometimes"),
         ("read:\n  wattage: { unit: W }", "doesn't have this value"),
     ],
 )
@@ -420,7 +420,7 @@ async def test_zwave_drops_and_slow_answers(zwave: ZWaveJsSim) -> None:
     zwave.latency_s = 2.0
     decision = await kernel.execute(Write(device="conformance-zwave", channel="level", value="5 percent"), WHO)
     assert decision.status == "failed"
-    assert "didn't answer node.set_value" in decision.message
+    assert "sent no reply to node.set_value" in decision.message
     zwave.latency_s = 0.0
     await zwave.drop()
     await wait_disconnected(driver)
@@ -440,7 +440,7 @@ async def test_zwave_drops_and_slow_answers(zwave: ZWaveJsSim) -> None:
         (
             "read:\n  motion: { type: enum, values: [running], map: { command_class: 113, property: Home Security, "
             "property_key: Motion sensor status } }",
-            "doesn't know running",
+            "doesn't list running",
         ),
         ("read:\n  x: { type: bool, map: { command_class: 99, property: nothing } }", "doesn't have this value"),
     ],
