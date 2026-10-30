@@ -5,9 +5,9 @@ This section states what a Safety Kernel MUST do. A Hub at Conformance Level `co
 ## Guarantees
 
 1. **One path.** Every command, from any source, MUST be evaluated by the Safety Kernel. Sources include every Client, routines, the dashboard, the driver writer, bridges and the stop command itself. A Driver MUST accept a change only with a single-use Grant the Safety Kernel issued for that exact Device, target and value.
-2. **Deterministic.** The Safety Kernel MUST NOT use a model, network calls or randomness to decide. The same state and the same command MUST produce the same decision and the same message.
+2. **Deterministic.** The Safety Kernel MUST NOT use a model, network calls or randomness in its checks. The same state and the same command MUST produce the same result and the same message.
 3. **Limits come from humans.** Agents MAY tighten limits for their own session. Nothing MAY loosen a limit except a human editing the Device File, which records who and when. A Device File with unconfirmed limits loads read-only.
-4. **Stop works.** One stop command MUST put every Device in its safe state and refuse every other command until a human unlocks.
+4. **Stop works.** One stop command MUST put every Device in its safe state and block every other command until a human unlocks.
 5. **Fail closed.** Any unexpected exception inside the Safety Kernel MUST block the command and be logged. Nothing fails open.
 6. **Everything is recorded.** Every read request, command, block, confirmation, stop and unlock MUST be appended to an audit log with a hash chain.
 
@@ -32,7 +32,7 @@ The Safety Kernel evaluates a command against the current state in this fixed or
 | 13 | Serialization | Another command holds the Device for longer than 5 s | `busy` | BUSY |
 | 14 | Confirmation | The channel or action needs confirmation, or the Device is high hazard, and there is no valid approval | `needs_confirmation`, `queue_full` | CONFIRMATION_REQUIRED, QUEUE_FULL |
 
-Check 13 runs before the others. Commands to one Device MUST run one at a time. A command waits up to 5 s for the Device, and is then evaluated against the state the previous command left.
+Check 13 runs before the others. Commands to one Device MUST run one at a time. The Safety Kernel holds a command for up to 5 s until the Device is free, and then evaluates the command against the state the previous command left.
 
 A command that passes every check gets a Grant and runs. A command that reaches check 14 without an approval goes to the confirmation queue, and `hal/write` or `hal/action` returns a pending result with its `requestId`.
 
@@ -41,24 +41,24 @@ A command that passes every check gets a Grant and runs. A command that reaches 
 1. A channel's value is unknown when nothing has been read since the Hub connected, when a sensor reading is older than `max(10 s, 3 x heartbeat)`, while a command to that channel is in flight, after a command to it failed or timed out (it may have landed), and after an action that lists it in `effects`.
 2. A write channel's last commanded value stays known while the Device is connected, because the Device holds it.
 3. The Hub SHOULD read such channels back right away when it can.
-4. Unknown MUST NOT let a command pass. Interlocks treat it as not satisfied, rate limits block until a fresh value arrives, and watchdog rules keep counting.
+4. A check that depends on an unknown value MUST NOT pass. Interlocks treat an unknown value as not satisfied, rate limits block until a fresh value arrives, and watchdog rules keep counting.
 5. While a command to one Device is in flight, the channels it may change are unknown to every other Device's interlocks.
 
 ## Rules for specific checks
 
-- **Units.** Values are converted to the channel's declared unit with one pinned unit registry. `85 degF` against a `max: 30 degC` channel is converted to 29.44 degC first, then compared. Bare numbers MUST be refused for `number` channels.
+- **Units.** Values are converted to the channel's declared unit with one pinned unit registry. `85 degF` against a `max: 30 degC` channel is converted to 29.44 degC first, then compared. Bare numbers MUST be blocked for `number` channels.
 - **Range tolerance.** A value within 1e-12 relative of a limit passes.
 - **Step tolerance.** A value within 1e-6 of one step passes.
-- **Rate of change.** The reference value is the newest known value for that channel, whether the Safety Kernel accepted it or read it from the Device. If nothing is known since connecting, the first command is measured from the channel's safe-state value, or from `min` if there is no safe state. If the value became unknown after connecting, the command is blocked until a fresh reading arrives. The allowed change is `max_change_per_s * elapsed_seconds`, with elapsed time on a monotonic clock, capped at 3600 s, and a relative tolerance of 1e-9. Commands that fail this check are blocked, not ramped. A Client that wants to move further issues steps that each pass.
-- **String patterns** MUST run with a time budget so no value can stall the Safety Kernel. The reference uses 50 ms. A value whose check runs out of time is refused.
+- **Rate of change.** The reference value is the newest known value for that channel, whether the Safety Kernel passed the value or read the value from the Device. If nothing is known since connecting, the first command is measured from the channel's safe-state value, or from `min` if there is no safe state. If the value became unknown after connecting, the command is blocked until a fresh reading arrives. The allowed change is `max_change_per_s * elapsed_seconds`, with elapsed time on a monotonic clock, capped at 3600 s, and a relative tolerance of 1e-9. Commands that fail this check are blocked, not ramped. To move further, a Client issues steps that each pass.
+- **String patterns** MUST run with a time budget so no value can stall the Safety Kernel. The reference uses 50 ms. A value whose check runs out of time is blocked.
 - **Interlocks** use the expression language of [Device files](device-files.md#7-interlocks-and-expressions) and are parsed by the Hub's own parser. Expressions MUST NOT be evaluated as code.
-- **Session limits.** A Client MAY narrow `min`, `max` or `max_change_per_s` for its own session. A request that would widen a limit MUST be refused with `cannot_loosen` (MISCONFIGURED). This version exposes session limits through MCP and REST only.
+- **Session limits.** A Client MAY narrow `min`, `max` or `max_change_per_s` for its own session. A request that would widen a limit MUST be blocked with `cannot_loosen` (MISCONFIGURED). This version exposes session limits through MCP and REST only.
 
 ## Grants
 
 1. A Grant names one Device, one target (`write:<channel>`, `action:<name>` or `safe_state`) and one exact value in the channel's unit.
 2. Only the Safety Kernel can create a Grant. Constructing one any other way MUST fail.
-3. A Grant MUST be consumed on use, and MUST be refused if it was already used, has expired, or names another Device, target or value. The reference expiry is 5 s.
+3. A Grant MUST be consumed on use, and MUST fail verification if the Grant was already used, has expired, or names another Device, target or value. The reference expiry is 5 s.
 4. A Driver receives a verifier bound to its own Device, not a reference to the Safety Kernel.
 5. A stop and a lost connection revoke every live Grant for the Device.
 
@@ -66,9 +66,9 @@ A command that passes every check gets a Grant and runs. A command that reaches 
 
 | Hazard | Examples | Agent scope needed | Confirmation |
 |---|---|---|---|
-| `low` | sensors, LEDs, small fans, displays | `control_low` | as the Device File says |
-| `medium` | motors, pumps, printers, heaters | `control_medium` | as the Device File says |
-| `high` | lasers, CNC spindles, high voltage, high-power heaters, robots that can injure | `control_medium` to request, never to execute | every command waits for a human, every time |
+| `low` | sensors, LEDs, small fans, displays | `control_low` | as set in the Device File |
+| `medium` | motors, pumps, printers, heaters | `control_medium` | as set in the Device File |
+| `high` | lasers, CNC spindles, high voltage, high-power heaters, robots that can injure | `control_medium` to request, never to execute | every command is held for a human's approval, every time |
 
 1. An agent with scope `read` MUST NOT change write channels or run actions.
 2. A human Principal's own command counts as confirmed. Every other check still applies to it.
@@ -80,12 +80,12 @@ A command that passes every check gets a Grant and runs. A command that reaches 
 
 1. Agents never confirm. A command that needs confirmation is queued as a Confirmation Request.
 2. A Confirmation Request holds the exact command, the requesting Principal, the dry-run result at the time of the request and an expiry. The reference expiry is 5 minutes.
-3. Each Principal MAY have at most 20 pending requests, and the queue holds at most 100. A full queue refuses new requests with QUEUE_FULL. It MUST NOT evict another Principal's request.
-4. Only a human Principal may approve or reject. Other Principals may see the status of their own requests.
+3. Each Principal MAY have at most 20 pending requests, and the queue holds at most 100. A full queue blocks new requests with QUEUE_FULL and MUST NOT evict another Principal's request.
+4. Only a human Principal may approve or reject. Other Principals may read the status of their own requests.
 5. Approval MUST re-run every check against the current state. If the command would now be blocked, it is blocked, not executed.
-6. Tier `confirm` lets one approval cover identical repeat requests from the same Principal for 10 minutes. Tier `confirm-each-time` approves exactly one execution. High hazard is always `confirm-each-time`.
-7. A routine cannot wait for a person. Its command that needs confirmation is blocked with CONFIRMATION_REQUIRED, except on a high hazard Device whose file carries a valid signed approval for that routine.
-8. Every change of a request's status (expired, cancelled, approved, rejected) MUST be logged. Expired requests are rejected automatically.
+6. Under tier `confirm`, one approval covers identical repeat requests from the same Principal for 10 minutes. Under tier `confirm-each-time`, one approval covers exactly one execution. High hazard is always `confirm-each-time`.
+7. A routine runs unattended, so a routine's command that needs confirmation is blocked with CONFIRMATION_REQUIRED, except on a high hazard Device whose file carries a valid signed approval for that routine.
+8. Every change of a request's status (expired, cancelled, approved, rejected) MUST be logged. Expired requests close automatically with the status `expired`.
 
 ## Stop and unlock
 
@@ -93,19 +93,19 @@ A command that passes every check gets a Grant and runs. A command that reaches 
 2. A stop runs in this order. Set the lock, cancel pending Confirmation Requests, clear approval windows, disable routines, cancel any command still in flight, apply every Device's safe state, then report the result per Device.
 3. Every safe-state step MUST run even if an earlier one fails. A Driver with native safe-state support runs its own safe behavior first, then the Device File's steps.
 4. The result per Device is `safe`, `partial` (some steps failed), `failed`, `no_safe_state`, or `pending` when a command was still running and couldn't be cancelled in time.
-5. A command that was in flight during a stop MUST reapply the safe state when it returns, so it can't win.
-6. Unlock MUST be refused while a stop is still being applied, and clears approval windows again.
+5. When a command that was in flight during a stop returns, the Hub MUST reapply the safe state, so the stop takes precedence over the command.
+6. Unlock MUST be blocked while a stop is still being applied, and an unlock clears approval windows again.
 7. Unlock requires the typed phrase `unlock`. The reference CLI also requires an interactive terminal by default.
 
 ## Watchdogs
 
-1. **Heartbeat.** The Hub checks each Device at its `heartbeat` interval. On connection loss it applies the safe state where `on_loss` asks for it, marks the Device unavailable and blocks commands until it reconnects.
+1. **Heartbeat.** The Hub checks each Device at its `heartbeat` interval. On connection loss the Hub applies the safe state when `on_loss` is `safe_state`, marks the Device unavailable and blocks commands until the Device reconnects.
 2. **Max duration.** A rule's budget starts when its expression becomes true and only resets once the expression has been false for `reset_after`, so a brief dip doesn't refill it. While the budget runs, an unknown value counts as true.
 3. When a budget runs out, the Hub applies the rule's `then`. A failed action is retried with backoff, and a `then` mapping that fails three times escalates to the safe state.
 
 ## Limits provenance
 
-1. A Device File accepts commands only when a human confirmed its limits ([Device files](device-files.md#12-limits-provenance)).
+1. A Device takes commands only when a human confirmed the limits in its Device File ([Device files](device-files.md#12-limits-provenance)).
 2. A confirmation that carries `sha256` is bound to the file's limits, so any later change makes the file read-only again.
 3. A LIMIT_EXCEEDED reason MUST name the Device File and the human confirmation behind the limit. `data.confirmedBy` and `data.confirmedAt` come from the channel's own `confirmed`, or else the file's.
 

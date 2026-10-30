@@ -9,20 +9,20 @@ This section covers who can reach a Hub, how they prove who they are, how text f
 | The human owner | yes | a human token or a paired dashboard session |
 | An AI agent the owner connected | no, assumed fallible and possibly manipulated | an agent token |
 | Text the agent reads, such as manuals, sketches, Device output and web pages | no, assumed adversarial | the agent and Device data |
-| A Device or bridged system | partly. Its reports are believed, but its text is data | Drivers |
+| A Device or bridged system | partly. The Hub uses its readings as reported, but its text is data | Drivers |
 | Other software on the network | no | the network, blocked by default |
 
 ## Network exposure
 
-1. A Hub MUST listen only on a loopback address by default. The reference Hub refuses to start on any other address unless `api.allow_lan` is `true`.
-2. Unless LAN access is on, the Hub MUST serve only loopback peers, and MUST refuse a request whose `Host` header is not a loopback name. This stops DNS rebinding from a web page.
+1. A Hub MUST listen only on a loopback address by default. The reference Hub exits at start on any other address unless `api.allow_lan` is `true`.
+2. Unless LAN access is on, the Hub MUST serve only loopback peers, and MUST block a request whose `Host` header is not a loopback name. This stops DNS rebinding from a web page.
 3. LAN access needs `api.allow_lan: true` in the Hub's config and a token per Client.
 4. A Hub MUST NOT send telemetry or open outbound connections except to Devices and bridged systems the user configured.
 
 ## Tokens
 
 1. Every connection carries a bearer token. A token has a kind, `human` or `agent`, and a scope.
-2. Agent scopes are `read`, `control_low` and `control_medium`. No scope lets an agent execute on a high hazard Device without a human.
+2. Agent scopes are `read`, `control_low` and `control_medium`. Whatever the scope, an agent can't execute on a high hazard Device without a human.
 3. Only human tokens may approve or reject Confirmation Requests, unlock after a stop, enable Python routines and sign routine approvals for high hazard Devices.
 4. Tokens are random, shown once, and MUST be stored only as hashes. The reference Hub stores SHA-256 hashes and prefixes tokens with `ohal_`.
 5. The human token file MUST be readable only by its owner. The reference file is `~/.openhal/human.token` with mode 0600.
@@ -53,7 +53,7 @@ A closing tag inside the text is altered so it can't end the block early.
 
 1. Every read request, command, block, confirmation, stop and unlock is one entry in an append-only log.
 2. Each entry's hash covers the previous entry's hash and its own canonical body, so editing or removing an entry breaks the chain at that point.
-3. The reference log refuses updates and deletes, and `openhal log --verify` checks the chain.
+3. The reference log blocks updates and deletes, and `openhal log --verify` checks the chain.
 
 ## Device Files
 
@@ -63,8 +63,8 @@ A closing tag inside the text is altered so it can't end the block early.
 ## What is not guaranteed
 
 - That a human set sensible limits. Limits are only as good as the person who confirmed them.
-- That a Device obeys. If firmware ignores a command or a sensor lies, the Safety Kernel acts on what it was told.
-- That an in-process third-party Driver behaves. A Driver gets a Grant verifier bound to its own Device, which stops accidents, not malice. A malicious Driver could talk to its own hardware directly. Bundled Drivers pass the conformance suite and review.
-- That a Python routine behaves. It is code a human enabled, running in the Hub process without a sandbox.
+- That a Device carries out each command. If firmware doesn't carry out a command or a sensor reports a wrong value, the Safety Kernel uses the values the Device reported.
+- What an in-process third-party Driver sends. A Driver gets a Grant verifier bound to its own Device, which stops accidents, not malice. A malicious Driver could send commands to its own hardware directly. Bundled Drivers pass the conformance suite and review.
+- What a Python routine does. A Python routine is code a human enabled, running in the Hub process without a sandbox.
 - Protection from someone with full control of the owner's account. An agent that runs shell commands as the owner can read the human token file. Agents with shell access SHOULD run as a different operating system user.
 - Physical safety equipment. OpenHAL is not a substitute for e-stops, enclosures, interlocks wired in hardware or certified safety systems.
