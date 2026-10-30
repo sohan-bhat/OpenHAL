@@ -3,7 +3,7 @@
 The plan reads every channel first, then tests each write channel once at the smallest change from
 its safe value, then returns it to safe, then tests the stop. Every write step needs a person's
 approval and nothing here runs it. `validate` replays the write steps through a real kernel with
-the mock driver and the confirmed draft, so a plan that the kernel would block is caught now
+the mock driver and the confirmed draft, so a plan that the kernel would block is detected now
 instead of on the bench.
 """
 

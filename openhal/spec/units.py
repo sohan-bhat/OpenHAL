@@ -77,7 +77,7 @@ def parse_quantity(value: Any, *, default_unit: str | None = None) -> pint.Quant
     pass a default unit, so a bare number in a command raises UnitError.
     """
     if isinstance(value, bool):
-        raise UnitError("Expected a number with a unit, got a boolean.")
+        raise UnitError("This value needs a number with a unit, not a boolean.")
     if isinstance(value, int | float):
         if default_unit is None:
             raise UnitError("This value needs a unit, for example 30 degC or 50 %.")
@@ -102,7 +102,7 @@ def parse_quantity(value: Any, *, default_unit: str | None = None) -> pint.Quant
                 raise UnitError(f"{value!r} needs a unit, for example {number} degC.")
             unit = default_unit
         return Quantity(_finite(float(number), "Value"), parse_unit(unit))
-    raise UnitError(f"Expected a number with a unit, got {type(value).__name__}.")
+    raise UnitError(f"This value needs a number with a unit, not {type(value).__name__}.")
 
 
 def convert(quantity: pint.Quantity, unit: str) -> float:

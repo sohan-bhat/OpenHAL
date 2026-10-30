@@ -1,6 +1,6 @@
 """`openhal library`, the starter device files the hub matches discovered devices against.
 
-The files live where discovery looks for them (openhal/hub/discovery.py), in `library/` of a source
+The files live where discovery searches for them (openhal/hub/discovery.py), in `library/` of a source
 checkout or `openhal/library_data` of an installed wheel. A file is named by its file name without
 the suffix, such as `rigol-dp832`. `add` copies the file into the hub's devices folder byte for byte,
 so it never adds a confirmation, and it never overwrites a file that is already there.

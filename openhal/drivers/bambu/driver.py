@@ -238,7 +238,7 @@ class BambuDriver(Driver):
 
     def _on_connect(self, client: Any, userdata: Any, flags: Any, reason: Any, properties: Any) -> None:
         if getattr(reason, "is_failure", False):
-            self._refused = f"the printer refused the connection ({reason})"
+            self._refused = f"the printer returned a connection error ({reason})"
             return
         client.subscribe(self.report_topic, 0)
         self._connected.set()

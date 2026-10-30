@@ -607,7 +607,7 @@ def create_app(hub: Hub) -> FastAPI:
     rpc = Dispatcher.for_hub(hub)
 
     def socket_allowed(websocket: WebSocket) -> bool:
-        """The REST network guard for WebSockets, plus a loopback Origin so a web page can't connect."""
+        """The REST network check for WebSockets, plus a loopback Origin so a web page can't connect."""
         if hub.config.api.allow_lan:
             return True
         client = websocket.client.host if websocket.client else None

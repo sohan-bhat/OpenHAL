@@ -71,7 +71,7 @@ class Shadow:
     """Values a dry run has already 'written', so a plan's later steps see earlier ones.
 
     `now` is simulated seconds since the dry run started. A routine's wait steps advance it, so
-    rate limits are judged as they would be in a real run.
+    rate limits are checked as they would be in a real run.
     """
 
     values: dict[tuple[str, str], Any] = field(default_factory=dict)

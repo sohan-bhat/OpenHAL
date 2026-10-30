@@ -190,7 +190,7 @@ def parse_bool(text: str) -> bool:
         return True
     if lowered in ("false", "off", "no", "0"):
         return False
-    raise ValueError(f"Expected true or false, got {text!r}.")
+    raise ValueError(f"Use true or false, not {text!r}.")
 
 
 def parse_quantity_text(text: str, name: str) -> dict[str, Any]:
