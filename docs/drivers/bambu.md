@@ -12,10 +12,10 @@ This section was checked on 2026-10-24, and you should read this section before 
 
 Given that status, the driver works within these rules.
 
-- The driver talks only to the printer on the local network, only through the MQTT interface Developer Mode leaves open, and only with the LAN access code shown on the printer's screen.
+- The driver connects only to the printer on the local network, only through the MQTT interface Developer Mode leaves open, and only with the LAN access code shown on the printer's screen.
 - The driver never contacts Bambu Cloud, never uses Bambu Connect or its keys, never presents itself as Bambu Studio and never bypasses authorization.
 - The driver sends only status requests and the pause, resume, stop, speed level and chamber light commands, and doesn't start prints, upload files, send G-code, change temperatures or move axes.
-- Without Developer Mode the printer refuses the commands and the driver reports the refusal with a hint to turn the mode on, but reads keep working.
+- Without Developer Mode the printer returns an error for each command, and the driver reports the error with a hint to turn the mode on, but reads keep working.
 
 ## What it supports
 
@@ -24,7 +24,7 @@ Given that status, the driver works within these rules.
 - Pause, resume and stop as actions.
 - A native safe state, where a hub stop sends `stop`, or `pause` with `safe_stop: pause`.
 - `discover()` listens for the printers' own SSDP announcements on UDP port 2021 and sends nothing.
-- `describe()` proposes channels from the printer's report.
+- `describe()` returns suggested channels built from the printer's report.
 
 ## Setup
 
@@ -78,22 +78,22 @@ Actions are named `pause`, `resume` and `stop`, or map to one with `map: { comma
 - After connecting, the driver requests a full report once. X1 printers then send full reports and P1 and A1 printers send only what changed, so the driver merges every report into one state. A field the printer hasn't sent reads as no value.
 - Commands go out at QoS 1 and wait for the broker's acknowledgement. When the printer responds with a result, a failure becomes a `DriverError` with the printer's reason. Some firmware doesn't respond to every command, so a missing response is not an error, and reading `state` shows what happened.
 - Commands are never queued, and without an acknowledgement the driver drops the connection, so a command can't arrive late.
-- Because Bambu Lab printers push their state and P1 printers are known to struggle with frequent full status requests, the driver doesn't poll.
+- Because Bambu Lab printers push their state and P1 printers are known to respond poorly to frequent full status requests, the driver doesn't poll.
 
 ## Example
 
-`openhal/drivers/bambu/examples/p1s-lan.hal.yaml` reads a P1S and lets pause, resume and stop through, with stop needing a confirmation.
+`openhal/drivers/bambu/examples/p1s-lan.hal.yaml` reads a P1S and has pause, resume and stop actions, with stop needing a confirmation.
 
 ## Errors
 
-- A missing access code variable, a certificate that doesn't match the pin, a refused login and a printer that sends no report for the serial number raise `DriverError` that says what to check.
-- A command the printer refuses raises `DriverError` with the printer's reason, and a refusal about verification adds the hint to turn on Developer Mode.
+- A missing access code variable, a certificate that doesn't match the pin, a failed login and a printer that sends no report for the serial number raise `DriverError` with a message that names what to check.
+- A command that fails on the printer raises `DriverError` with the printer's reason, and a verification error adds the hint to turn on Developer Mode.
 - A report value that isn't the channel's type raises `DriverError` on read.
 
 ## Limitations
 
 - The driver deliberately leaves out print start, file upload, camera, AMS control, G-code, temperature targets and motion.
-- The driver speaks MQTT 3.1.1 only and supports one printer per device file.
+- The driver uses MQTT 3.1.1 only and supports one printer per device file.
 - The driver is untested on real printers so far, and the simulator follows the community documentation of the report format, which Bambu Lab doesn't publish.
 
 ## Hazard default and safe state

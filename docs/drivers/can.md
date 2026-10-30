@@ -1,6 +1,6 @@
 # can driver
 
-The can driver reads signals out of CAN bus frames and sends frames as commands and actions. The driver uses python-can, so it works with SocketCAN on Linux and with the USB adapters python-can supports (PCAN, Kvaser, slcan, gs_usb and others). Each channel's map says which frame id carries the value and where it sits in the data bytes, so motor drives, battery systems, sensors and homemade nodes work without device-specific code.
+The can driver reads signals out of CAN bus frames and sends frames as commands and actions. The driver uses python-can, so it works with SocketCAN on Linux and with the USB adapters python-can supports (PCAN, Kvaser, slcan, gs_usb and others). Each channel's map names the frame id that carries the value and where the value sits in the data bytes, so motor drives, battery systems, sensors and homemade nodes work without device-specific code.
 
 ## What it supports
 
@@ -8,7 +8,7 @@ The can driver reads signals out of CAN bus frames and sends frames as commands 
 - Read channels of type number, bool and enum, decoded from any byte range or bit range, big or little endian, signed or unsigned, with scale, offset and a device unit.
 - Control channels that place a value in a frame and send the frame, where several channels can share one frame.
 - Actions that send a fixed frame, with action arguments placed in it.
-- `describe()` listens to the bus for a moment and proposes one read channel per frame id it receives.
+- `describe()` listens to the bus for a moment and returns one suggested read channel per frame id it receives.
 - `discover()` lists SocketCAN interfaces that are up and sends nothing.
 
 ## Setup
@@ -80,8 +80,8 @@ A change starts from the last payload the driver sent with that id, so changing 
 
 - An interface that can't be opened raises `DriverError` with the `ip link` command to try.
 - A frame too short for a field, a raw value a bool or enum map doesn't name, and a bus that went down raise `DriverError` on read.
-- A refused send raises `DriverError` and a send that hangs raises `TimeoutError`, each with the frame in candump notation.
-- `health()` reports the bus as down after a receive error, and reports bus-off where the interface can tell.
+- A send that fails raises `DriverError` and a send that hangs raises `TimeoutError`, each with the frame in candump notation.
+- `health()` reports the bus as down after a receive error, and reports bus-off where the interface exposes the bus state.
 
 ## Limitations
 

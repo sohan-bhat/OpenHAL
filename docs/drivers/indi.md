@@ -1,6 +1,6 @@
 # indi driver
 
-The `indi` driver talks to telescope mounts, focusers and cameras on an INDI server (`indiserver`, TCP port 7624) with its own client for the INDI XML protocol. Number, switch, text and light properties become channels, and abort is the native safe state.
+The `indi` driver connects to telescope mounts, focusers and cameras on an INDI server (`indiserver`, TCP port 7624) with its own client for the INDI XML protocol. Number, switch, text and light properties become channels, and abort is the native safe state.
 
 | | |
 |---|---|
@@ -44,7 +44,7 @@ Because the unit registry has no hour angle, right ascension comes from INDI in 
 - A change sends `new*Vector` with only the members that change and waits for the server's response. A response in the Alert state fails the command with the driver's own message, such as `Mount is parked`.
 - Actions with `wait` follow the property while the property is Busy and return `done`, or `started` after `action_wait`.
 - Numbers may arrive in sexagesimal form (`5:30:00`) and are read as decimal.
-- Because INDI never uses document type declarations and entities, the driver refuses them and drops the connection. BLOBs are never requested, so no image arrives.
+- Because INDI never uses document type declarations and entities, the driver treats them as an error and drops the connection. BLOBs are never requested, so no image arrives.
 
 ## Safe state
 

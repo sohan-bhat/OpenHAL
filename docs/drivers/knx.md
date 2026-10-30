@@ -53,7 +53,7 @@ Enum channels use the DPT's names in lower case, such as `comfort` and `economy`
 ## How reads and commands behave
 
 - The driver listens to every telegram for its addresses, and a read returns the newest value with the time the value arrived. When nothing has arrived since connecting, the read sends one GroupValueRead and waits `timeout`. An address whose read flag is off never responds, and reads as no value until a telegram arrives.
-- A command waits for the interface's L_Data.con, which proves that the telegram reached the bus but not that an actuator acted, so read the status address to see whether the actuator acted.
+- A command waits for the interface's L_Data.con, which shows that the telegram reached the bus but not that an actuator acted, so read the status address to see whether the actuator acted.
 - Values are rounded to the DPT's resolution. A channel without a status address reads back the value as encoded, such as 51 % for 50.4 %.
 - Because xknx's own reconnect is off, a lost tunnel leaves the device unavailable until the hub reconnects, so nothing goes out late.
 
@@ -63,7 +63,7 @@ Enum channels use the DPT's names in lower case, such as `comfort` and `economy`
 
 ## Errors
 
-- An interface that refuses the tunnel or can't be reached raises `DriverError` or `TimeoutError`.
+- A tunnel connection that fails and an interface that can't be reached raise `DriverError` or `TimeoutError`.
 - A channel whose DPT doesn't fit its type or unit, an unknown DPT and a malformed group address fail when the device file loads, with `DriverError`.
 - A command the interface doesn't confirm raises `DriverError` or `TimeoutError` naming the group address. A value the DPT can't carry raises `DriverError` and nothing is sent.
 

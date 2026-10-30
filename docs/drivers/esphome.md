@@ -1,6 +1,6 @@
 # esphome driver
 
-The `esphome` driver talks to ESPHome devices over the native API, the same protocol Home Assistant uses. Channels bind to the device's entities by object id, buttons become actions, and every write waits for the device to report the new state.
+The `esphome` driver connects to ESPHome devices over the native API, the same protocol Home Assistant uses. Channels bind to the device's entities by object id, buttons become actions, and a write completes only when the device reports the new state.
 
 | | |
 |---|---|
