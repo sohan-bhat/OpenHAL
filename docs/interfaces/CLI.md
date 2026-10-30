@@ -1,6 +1,6 @@
 # Command line reference
 
-`openhal` talks to the hub's local API, so every command except `init`, `file` and `doctor`'s local checks needs a running hub (`openhald`). The CLI makes no safety decisions, because the hub's kernel checks every command.
+`openhal` connects to the hub's local API, so every command except `init`, `file` and `doctor`'s local checks needs a running hub (`openhald`). The CLI runs no safety checks, because the hub's kernel checks every command.
 
 ## Global options
 
@@ -10,7 +10,7 @@
 | `--token-file PATH` | Read the token from this file |
 | `--version` | Print the version |
 
-The CLI looks for the token in `--token-file`, then `OPENHAL_TOKEN`, then `$OPENHAL_HOME/human.token` (default `~/.openhal/human.token`), and `OPENHAL_HOME` moves the whole config folder.
+The CLI reads the token from `--token-file`, then `OPENHAL_TOKEN`, then `$OPENHAL_HOME/human.token` (default `~/.openhal/human.token`), and `OPENHAL_HOME` moves the whole config folder.
 
 Most commands take `--json` and then print JSON on stdout instead of tables.
 
@@ -19,7 +19,7 @@ Most commands take `--json` and then print JSON on stdout instead of tables.
 | Code | Meaning |
 |---|---|
 | 0 | Success |
-| 1 | Blocked, refused or failed. The message says which rule and what to do |
+| 1 | Blocked or failed. The message names the rule and what to do |
 | 2 | Usage error, for example a target that is not `device.channel` |
 | 3 | The hub is not running |
 | 4 | Token problem, missing or not accepted |
@@ -94,7 +94,7 @@ These commands use the hub's token routes, and when the hub is not running or ha
 openhal status [--json]
 ```
 
-`openhal status` shows the hub's version and address, the specification version it speaks, such as v0.1, who you are, connected devices, pending confirmations, the stop lock and device files that failed to load.
+`openhal status` shows the hub's version and address, the specification version the hub implements, such as v0.1, who you are, connected devices, pending confirmations, the stop lock and device files that failed to load.
 
 ### openhal devices
 
@@ -110,7 +110,7 @@ openhal devices [DEVICE] [--json]
 openhal discover [--driver NAME ...] [--json]
 ```
 
-`openhal discover` looks for devices with probes that send only read-only identify commands, and prints matches against the device library, unknown devices with the command to start the driver writer, and per-driver errors.
+`openhal discover` scans for devices with probes that send only read-only identify commands, and prints matches against the device library, unknown devices with the command to start the driver writer, and per-driver errors.
 
 ### openhal read
 
@@ -126,7 +126,7 @@ openhal read DEVICE.CHANNEL [DEVICE.CHANNEL ...] [--json]
 openhal write DEVICE.CHANNEL VALUE... [--json]
 ```
 
-`openhal write` sends a request to set a channel, and the kernel checks the request. The value words are joined, so `60 %` and `"60 %"` are the same. The CLI splits the number from its unit before sending, so the hub receives `"value": 60, "unit": "%"` ([ADR 0016](../adr/0016-one-value-format.md)), and `--json` prints values the same way. Numbers need a unit, and the hub converts compatible units (`85 degF` against a degC channel). Bool channels take true, false, on, off, yes, no, 1 or 0. The command prints the decision, and a blocked command prints its code and message and exits 1. Because the plant waterer's pump runs only through `water`, the plant waterer has no write channels.
+`openhal write` sends a request to set a channel, and the kernel checks the request. The value words are joined, so `60 %` and `"60 %"` are the same. The CLI splits the number from its unit before sending, so the hub receives `"value": 60, "unit": "%"` ([ADR 0016](../adr/0016-one-value-format.md)), and `--json` prints values the same way. Numbers need a unit, and the hub converts compatible units (`85 degF` against a degC channel). Bool channels take true, false, on, off, yes, no, 1 or 0. The command prints the result, and a blocked command prints its code and message and exits 1. Because the plant waterer's pump runs only through `water`, the plant waterer has no write channels.
 
 ```
 $ openhal write plant-waterer.pump on
@@ -196,7 +196,7 @@ openhal confirm approve REQUEST_ID [--phrase approve]
 openhal confirm reject REQUEST_ID [--reason TEXT]
 ```
 
-Commands that need a person wait in the confirmation queue. `show` and `approve` print the command, who asked and the dry run at the time of asking. Approval makes the kernel check the command again against the current state, so a request that the current state would block is blocked instead of run. Rejecting needs the human token and no phrase.
+The hub holds commands that need a person in the confirmation queue. `show` and `approve` print the command, who sent the request and the dry run at the time of the request. Approval makes the kernel check the command again against the current state, so a request that the current state would block is blocked instead of run. Rejecting needs the human token and no phrase.
 
 ## Audit log
 
@@ -221,7 +221,7 @@ openhal routine delete ID [--yes]
 openhal routine approve ID --device DEVICE [--phrase approve]
 ```
 
-`new` stores a routine, always disabled, and the kind comes from the file suffix unless `--kind` sets the kind. `enable` prints the routine and its dry run first, and refuses if the dry run does not pass. `run` runs the routine once now. `approve` signs an approval that lets this exact routine content drive a high hazard device, so any change to the routine voids the approval.
+`new` stores a routine, always disabled, and the kind comes from the file suffix unless `--kind` sets the kind. `enable` prints the routine and its dry run first, and exits 1 without enabling the routine if the dry run does not pass. `run` runs the routine once now. `approve` signs an approval for this exact routine content to drive a high hazard device, so any change to the routine voids the approval.
 
 A YAML routine looks like the one below, which checks the soil every hour and waters for 20 s when the soil is dry.
 
@@ -266,7 +266,7 @@ openhal file schema
 openhal file confirm PATH [--by NAME] [--phrase confirm]
 ```
 
-`validate` checks files against the spec, and `schema` prints the JSON Schema. `confirm` prints every limit in a file, then adds a top-level `confirmed` with your name, the date and the hash of the limits, so any later change to a limit makes the file read-only again. `confirm` refuses while any entry is still marked `suggested: true`, and `openhald` loads the change after a restart.
+`validate` checks files against the spec, and `schema` prints the JSON Schema. `confirm` prints every limit in a file, then adds a top-level `confirmed` with your name, the date and the hash of the limits, so any later change to a limit makes the file read-only again. `confirm` exits 1 without confirming the file while any entry is still marked `suggested: true`, and `openhald` loads the change after a restart.
 
 ## Device library
 
@@ -276,7 +276,7 @@ openhal library show NAME [--json]
 openhal library add NAME
 ```
 
-`list` shows every starter device file in the library with its driver, hazard class and what it can change. `show` prints what a file matches, every suggested limit in the file and the file itself, and `--json` gives the limits in the shape `hal/devices/describe` uses. `add` copies a file into the devices folder unchanged, never adds a confirmation, and refuses to overwrite a file or to add a second file for a device id the folder already has. A name is the file name without `.hal.yaml`, such as `rigol-dp832`. When `discover` matches a library file, it prints the `add` command to run. docs/guide/library.md explains how matching and confirmation work.
+`list` shows every starter device file in the library with its driver, hazard class and what it can change. `show` prints what a file matches, every suggested limit in the file and the file itself, and `--json` gives the limits in the shape `hal/devices/describe` uses. `add` copies a file into the devices folder unchanged, never adds a confirmation, and never overwrites a file or adds a second file for a device id the folder already has. A name is the file name without `.hal.yaml`, such as `rigol-dp832`. When `discover` matches a library file, `discover` prints the `add` command to run. docs/guide/library.md explains how matching and confirmation work.
 
 ## Install and background service
 
@@ -290,7 +290,7 @@ openhal init [--yes] [--discover | --no-discover] [--driver NAME ...] [--device 
 
 In an interactive terminal, `init` sets up the config folder, the human token and the sample as above, then prompts you to choose whether to look for devices, which found devices to add, the scope of a token for your AI client, which client config to save and whether to install the background service. With `--yes`, `init` takes the safe defaults without prompting. A run that can't prompt and has no `--yes`, such as a script, stops after the sample.
 
-| Step | Asked in a terminal | With `--yes` |
+| Step | In a terminal | With `--yes` |
 |---|---|---|
 | Look for devices | yes, default yes | yes, unless `--no-discover` |
 | Add each device found | yes, default yes | yes |
@@ -299,7 +299,7 @@ In an interactive terminal, `init` sets up the config folder, the human token an
 | Save a client config | which one, default none | only `--client` |
 | Install the background service | yes or no, default no | only `--service` |
 
-Found devices are saved as read-only device files, where a library match is copied with the address discovery found and an `openhal-firmware` board or an ESPHome node describes itself with read-only commands. Every limit is marked `suggested: true` and every confirmation is dropped, so a person confirms the file before anything can change. A device that already has a file is left out, `--driver` limits discovery to some drivers, and `--device` adds a self-describing device at a known address, such as `openhal-firmware=/dev/ttyACM0`.
+Found devices are saved as read-only device files, where a library match is copied with the address discovery found and an `openhal-firmware` board or an ESPHome node returns its own description in reply to read-only commands. Every limit is marked `suggested: true` and every confirmation is dropped, so a person confirms the file before anything can change. A device that already has a file is left out, `--driver` limits discovery to some drivers, and `--device` adds a self-describing device at a known address, such as `openhal-firmware=/dev/ttyACM0`.
 
 `init` keeps the agent token while the token works and has the requested scope. The client setup for Claude Desktop, Claude Code and Cursor starts `openhal mcp --token-file ~/.openhal/agent.token` with the full path to `openhal`. `--client claude-desktop`, `claude-code` or `cursor` saves that client's config file. An existing file is copied to `NAME.openhal-backup-DATE` first and keeps every other entry and its mode. A file that isn't valid JSON is left as it is, and `init` exits 1 if a step you asked for failed.
 

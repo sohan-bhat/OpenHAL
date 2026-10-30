@@ -1,6 +1,6 @@
 # Python library
 
-`openhal.client` is a sync and an async client of the hub's local API v1, and scripts, the CLI and the MCP server all use the client. The client makes no safety decisions, because the hub's kernel checks every command, and a blocked command comes back as a `Decision` rather than as an exception.
+`openhal.client` is a sync and an async client of the hub's local API v1, and scripts, the CLI and the MCP server all use the client. The client runs no safety checks, because the hub's kernel checks every command, and a blocked command comes back as a `Decision` rather than as an exception.
 
 ```sh
 uv pip install "openhal-hub @ git+https://github.com/sohan-bhat/OpenHAL"
@@ -44,7 +44,7 @@ asyncio.run(main())
 | `token` | `OPENHAL_TOKEN`, then `$OPENHAL_HOME/human.token` (default `~/.openhal/human.token`) |
 | `home` | `OPENHAL_HOME`, then `~/.openhal` |
 
-`Client(..., use_human_token_file=False)` never falls back to the human token file, so pass `use_human_token_file=False` for anything that acts for an agent. The client ignores proxy environment variables, so a token is never sent through a proxy.
+`Client(..., use_human_token_file=False)` never falls back to the human token file, so pass `use_human_token_file=False` for anything that acts for an agent. The client doesn't use proxy environment variables, so a token is never sent through a proxy.
 
 ## Exceptions
 
@@ -52,11 +52,11 @@ All of these exceptions derive from `openhal.client.OpenHALError`, which has `me
 
 | Exception | When |
 |---|---|
-| `HubNotRunning` | No hub responds at the hub address. The message says how to start the hub |
-| `Unauthorized` | No token, or the hub does not accept it. The message says where the token came from |
+| `HubNotRunning` | No hub responds at the hub address. The message names the command that starts the hub |
+| `Unauthorized` | No token, or the hub doesn't accept the token. The message names where the token came from |
 | `NotFound` | Unknown device, channel, request, routine or session |
 | `NotSupported` | The hub is older and has no such route. A subclass of `NotFound` |
-| `Refused` | The hub refused, for example an agent token trying to approve, or a request that is no longer pending |
+| `Refused` | The hub blocked the request, for example an approval sent with an agent token, or a request that is no longer pending |
 | `BadRequest` | The hub could not read the request, or a wrong unlock phrase |
 | `HubError` | The hub failed or timed out |
 
@@ -73,7 +73,7 @@ All of these exceptions derive from `openhal.client.OpenHALError`, which has `me
 | `limit` | The limit that blocked it, with its unit |
 | `request_id` | Set when a person has to approve |
 
-`decision.ok` is true for done and allowed, and `decision.pending` is true when the request waits for a person.
+`decision.ok` is true for done and allowed, and `decision.pending` is true when the hub holds the request for a person's approval.
 
 ```python
 decision = hub.write("printer", "extruder_target", 300, "degC")
@@ -128,7 +128,7 @@ Every method exists on `Client` and, as a coroutine, on `AsyncClient`.
 
 `Write` and `Action` are the kernel's command models, exported from `openhal.client`. A plain dict with `device` and `channel` and `value`, or `device` and `action` and `args`, works too.
 
-`ramp_to` moves a channel to a target in steps that each pass its `max_change_per_s`, waiting `interval_s` before each step, with `margin` of the allowed change per step. The kernel still checks every step, the ramp stops at the first step the kernel does not accept, and `ramp_to` returns every decision. The LED strip from [Add a device](../guide/tutorials/add-a-device.md) lets `brightness` change by at most 40 %/s.
+`ramp_to` moves a channel to a target in steps that each pass its `max_change_per_s`, waiting `interval_s` before each step, with `margin` of the allowed change per step. The kernel still checks every step, the ramp stops at the first step the kernel blocks, and `ramp_to` returns the `Decision` of every step. The LED strip from [Add a device](../guide/tutorials/add-a-device.md) limits `brightness` to a change of at most 40 %/s.
 
 ```python
 for decision in hub.ramp_to("led-strip", "brightness", 80, "%"):
