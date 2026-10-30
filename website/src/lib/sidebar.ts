@@ -8,6 +8,7 @@ type Frames = Record<string, [string | number, string | number]>;
 const listeners = new Set<() => void>();
 const running = new Map<HTMLElement, { cancel(): void; names: string[] }>();
 let library: Promise<typeof import("motion/mini")> | undefined;
+let turns = 0;
 
 /** Motion's small animate, loaded the first time something moves, so reduced motion never loads it. */
 const motion = () => (library ??= import("motion/mini"));
@@ -127,6 +128,7 @@ export function setCollapsed(next: boolean, { handoff = false }: { handoff?: boo
   if (!moving) return;
 
   const duration = next ? CLOSE : OPEN;
+  const turn = ++turns;
   root().setAttribute("data-sidebar-moving", "");
   const done: Array<Promise<boolean>> = [];
   for (const [mover, left] of before) {
@@ -138,7 +140,7 @@ export function setCollapsed(next: boolean, { handoff = false }: { handoff?: boo
     done.push(play(element, { transform: [start, next ? "translateX(-100%)" : "translateX(0px)"] }, duration));
   }
   void Promise.all(done).then(() => {
-    if (!running.size) root().removeAttribute("data-sidebar-moving");
+    if (turn === turns) root().removeAttribute("data-sidebar-moving");
   });
 }
 
