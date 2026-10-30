@@ -14,7 +14,7 @@ const labels = SPELLED.map((part) => ({ word: part.label, at: PRODUCT_NAME.lastI
 <section class="home-width hero" aria-labelledby="home-title">
   <div class="hero-name" data-spell>
     <h1 id="home-title" class="hero-mark">{PRODUCT_NAME}</h1>
-    <p class="hero-spell" aria-hidden="true">
+    <p class="hero-spell" aria-hidden="true" data-pagefind-ignore="all">
       {labels.map((item) => <span data-at={item.at}>{item.word}</span>)}
     </p>
   </div>
