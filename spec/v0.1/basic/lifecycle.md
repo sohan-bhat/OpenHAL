@@ -5,11 +5,11 @@ A connection between a Client and a Hub has three phases. Initialization, operat
 ## Initialization
 
 1. The Client MUST send `hal/initialize` as its first request.
-2. The Hub MUST answer with the negotiated protocol version, its own name and version, its Conformance Level, the Principal its token maps to, and the notifications it sends.
+2. The Hub MUST respond with the negotiated protocol version, its own name and version, its Conformance Level, the Principal its token maps to, and the notifications it sends.
 3. The Client MUST then send the notification `hal/initialized`.
 4. The Hub MUST NOT send any notification before it receives `hal/initialized`.
-5. The Hub MUST answer any other request received before `hal/initialize` with `NOT_INITIALIZED` (-32001).
-6. If the token is missing or unknown, the Hub MUST answer `hal/initialize` with `UNAUTHORIZED` (-32002).
+5. The Hub MUST respond to any other request received before `hal/initialize` with `NOT_INITIALIZED` (-32001).
+6. If the token is missing or unknown, the Hub MUST respond to `hal/initialize` with `UNAUTHORIZED` (-32002).
 
 The token is the bearer token from the `Authorization` header of the transport, or the `token` param of `hal/initialize` ([Transports](transports.md#authentication)).
 
@@ -35,10 +35,10 @@ In examples, `→` is a message from Client to Hub and `←` is a message from H
 Protocol versions are numbers in the form `MAJOR.MINOR`, such as `0.1`, and people see them with a leading v, as v0.1. Versions compare as numbers, major first and then minor, so `0.10` is newer than `0.9`. Before 1.0 a minor version may change behavior, and [VERSIONING.md](../../VERSIONING.md) explains the rest.
 
 1. The Client MUST send the newest version it supports in `protocolVersion`, as the bare number.
-2. If `protocolVersion` is not in the form `MAJOR.MINOR`, the Hub MUST answer with `INVALID_PARAMS` (-32602), and the reason SHOULD name the versions the Hub supports.
-3. If the Hub supports that version, it MUST answer with the same version.
-4. Otherwise the Hub MUST answer with the newest version it supports.
-5. If the Client cannot use the version in the answer, it MUST disconnect. It SHOULD tell its user which versions each side supports.
+2. If `protocolVersion` is not in the form `MAJOR.MINOR`, the Hub MUST respond with `INVALID_PARAMS` (-32602), and the reason SHOULD name the versions the Hub supports.
+3. If the Hub supports that version, the Hub MUST respond with the same version.
+4. Otherwise the Hub MUST respond with the newest version it supports.
+5. If the Client cannot use the version in the response, the Client MUST disconnect. The Client SHOULD show its user which versions each side supports.
 
 The reference Hub supports one version, `0.1`.
 

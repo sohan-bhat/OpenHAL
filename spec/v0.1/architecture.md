@@ -5,9 +5,9 @@
 | Role | Responsibility |
 |---|---|
 | Client | Sends requests to a Hub and receives responses and notifications. Holds one token, which the Hub maps to one Principal. |
-| Hub | Owns every Device. Loads Device Files, runs Drivers, the Safety Kernel, the confirmation queue, routines and the audit log. Answers Clients over the transports in [Transports](basic/transports.md). |
+| Hub | Owns every Device. Loads Device Files, runs Drivers, the Safety Kernel, the confirmation queue, routines and the audit log. Responds to Clients over the transports in [Transports](basic/transports.md). |
 | Safety Kernel | Evaluates every command in a fixed order ([Safety](safety.md)). Issues a Grant only for a command that passes every check. |
-| Driver | Speaks one protocol. Reads values and, given a Grant, applies one channel value, one action or the safe state ([Drivers](drivers.md)). |
+| Driver | Implements one protocol. Reads values and, given a Grant, applies one channel value, one action or the safe state ([Drivers](drivers.md)). |
 | Device | The hardware or bridged system. It is described by its Device File and is never reached except through its Driver. |
 
 ## The one-hub model
@@ -18,13 +18,13 @@
 4. A Driver MUST NOT change hardware except by consuming a Grant issued by that Hub's Safety Kernel.
 5. Two Hubs MUST NOT open the same Device at the same time. The reference Hub takes an exclusive lock file per device port.
 
-Because one Hub sees every command, rate limits, interlocks across Devices and watchdog budgets hold no matter which Client sent a command.
+Because every command passes through one Hub, rate limits, interlocks across Devices and watchdog budgets hold no matter which Client sent a command.
 
 The reference Hub also serves a REST API under `/v1` for its dashboard and scripts. It calls the same Hub functions as the protocol, so behavior is identical. The REST API is not part of this specification.
 
 ## One blocked and one granted command
 
-The Device File for `printer` limits `extruder_target` to 260 degC and `bed_target` to 110 degC. A human named owner confirmed those limits on 2026-10-24. A print is running with the bed at 60 degC. An agent Client asks for a 300 degC nozzle and then for a 70 degC bed.
+The Device File for `printer` limits `extruder_target` to 260 degC and `bed_target` to 110 degC. A human named owner confirmed those limits on 2026-10-24. A print is running with the bed at 60 degC. An agent Client sends a request for a nozzle temperature of 300 degC and then a request for a bed temperature of 70 degC.
 
 ```mermaid
 sequenceDiagram
