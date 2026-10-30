@@ -55,7 +55,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
       parsed = text;
     }
   }
-  if (!response.ok) throw new ApiError(response.status, detail(parsed, `The hub answered ${response.status}.`));
+  if (!response.ok) throw new ApiError(response.status, detail(parsed, `The hub returned ${response.status}.`));
   return parsed as T;
 }
 

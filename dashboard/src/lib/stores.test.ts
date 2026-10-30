@@ -53,7 +53,7 @@ describe("the message log store", () => {
     expect(merged.map((item) => item.seq)).toEqual([5, 6, 7, 8, 9, 10]);
   });
 
-  it("tells value notifications apart", () => {
+  it("separates value notifications", () => {
     expect(isValueNotification(entry(1, "hal/value"))).toBe(true);
     expect(isValueNotification(entry(1, "hal/write"))).toBe(false);
   });
@@ -164,7 +164,7 @@ describe("the registry and units", () => {
     expect(conformanceFor({})).toBe("not reported");
   });
 
-  it("counts a device as simulated only when the hub says so", () => {
+  it("counts a device as simulated only when the hub reports it as simulated", () => {
     expect(isSimulated({ simulated: true })).toBe(true);
     expect(isSimulated({ simulated: false })).toBe(false);
     expect(isSimulated({})).toBe(false);

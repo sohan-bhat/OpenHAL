@@ -204,7 +204,7 @@
         {#if outcome.head && outcome.tone !== "granted"}<span class="mono head {outcome.tone}">{outcome.head}</span>{/if}
         <p class="reason"><Reason text={outcome.reason} code={identifiersOf(device, `action:${name}`)} /></p>
         {#if requestId}
-          <p class="reason">Request <a class="mono" href={href("confirmations")}>{requestId}</a> waits in the confirmation queue.</p>
+          <p class="reason">Request <a class="mono" href={href("confirmations")}>{requestId}</a> is held in the confirmation queue.</p>
         {/if}
       </div>
     {/if}

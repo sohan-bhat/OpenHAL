@@ -43,8 +43,8 @@ export function askOf(request: ConfirmationRequest, view: DeviceView | undefined
   const source = file ?? "The Device File";
   let why: string;
   if (view?.hazard === "high") why = `${view.name} has a high hazard, so a person confirms every command.`;
-  else if (tier === "confirm-each-time") why = `${source} asks a person to confirm ${target} each time.`;
-  else if (tier === "confirm") why = `${source} asks a person to confirm ${target}.`;
+  else if (tier === "confirm-each-time") why = `${source} requires a person to confirm ${target} each time.`;
+  else if (tier === "confirm") why = `${source} requires a person to confirm ${target}.`;
   else why = request.dry_run.message;
   return {
     actor: ACTORS[who.kind] ?? "",

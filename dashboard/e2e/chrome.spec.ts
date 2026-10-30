@@ -57,7 +57,7 @@ function fact(list: Locator, label: string | RegExp): Locator {
   return list.locator("div").filter({ has: list.page().locator("dt", { hasText: label }) }).locator("dd");
 }
 
-test("the header and Settings show protocol 0.1, the version the hub speaks", async ({ page }) => {
+test("the header and Settings show protocol 0.1, the version the hub supports", async ({ page }) => {
   await page.goto("/#/settings");
   await expect(fact(page.locator("dl.hub.wide"), "Protocol")).toHaveText("0.1");
   await expect(fact(page.locator("header.section dl.facts"), /^protocol$/)).toHaveText("0.1");
@@ -131,7 +131,7 @@ test("the stop action reads as the device safe state, not as the global STOP", a
   await expect(stop).toContainText("is this device's safe state");
 });
 
-test("a person runs an action that asks for confirmation each time, and a queued answer links to the queue", async ({ page }) => {
+test("a person runs an action that needs confirmation each time, and a queued result links to the queue", async ({ page }) => {
   await page.goto("/#/devices/curing-heater");
   const vent = page.locator("form.action").filter({ hasText: "vent" });
   await expect(vent).toContainText("Your click is that confirmation.");
@@ -254,18 +254,18 @@ test("a pairing code from Settings pairs a new browser", async ({ page, browser 
   await stranger.close();
 });
 
-test("the offline page tries the hub again on its own", async ({ page }) => {
+test("the offline page retries the hub on its own", async ({ page }) => {
   let refuse = true;
   await page.route("**/v1/whoami", (route) => (refuse ? route.abort() : route.continue()));
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "The hub does not answer" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The hub is unreachable" })).toBeVisible();
   const stop = page.getByRole("complementary", { name: "STOP can't reach the hub" });
   await expect(stop).toContainText("hardware e-stop");
   refuse = false;
   await expect(page.getByRole("button", { name: /STOP/ })).toBeVisible({ timeout: 8_000 });
 });
 
-test("the driver writer looks for devices, opens the raw data, takes answers and saves a Device File", async ({ page }) => {
+test("the driver writer searches for devices, opens the raw data, takes answers and saves a Device File", async ({ page }) => {
   test.setTimeout(60_000);
   await page.route("**/v1/discover", (route) =>
     route.fulfill({ json: { matched: [], unknown: [], errors: [] } }),

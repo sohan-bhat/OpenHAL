@@ -44,7 +44,7 @@ test("a printer in its error state shows INTERLOCK_BLOCKED with the device file'
   await expect(page.locator("main tr").filter({ hasText: "state" }).locator("output")).toHaveText("printing");
 });
 
-test("a number sent as one string is refused with UNIT_INVALID", async ({ page }) => {
+test("a number sent as one string is blocked with UNIT_INVALID", async ({ page }) => {
   await page.goto("/#/devices/printer");
   const agent = await AgentClient.connect("string-agent", hubState().printToken);
   const reply = await agent.call("hal/write", { device: "printer", channel: "bed_target", value: "70 degC" });

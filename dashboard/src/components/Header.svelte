@@ -71,7 +71,7 @@
         <a href={href(item.view)} aria-current={router.route.view === item.view ? "page" : undefined}>
           {item.label}
           {#if item.view === "confirmations" && pending > 0}
-            <span class="count">{pending}<span class="visually-hidden"> waiting for confirmation</span></span>
+            <span class="count">{pending}<span class="visually-hidden"> pending confirmation</span></span>
           {/if}
         </a>
       </li>
@@ -92,7 +92,7 @@
   <div class="stopped" id="stopped-state" role="status">
     <StatusMark tone="blocked" label="stopped" />
     <p>
-      Every command is refused with <code>error -32014 STOPPED</code> until a person lifts the stop with
+      Every command is blocked with <code>error -32014 STOPPED</code> until a person lifts the stop with
       UNLOCK.
       {#if status.stop_reason}<span class="reason"><span class="label">Reason</span> {status.stop_reason}</span>{/if}
     </p>

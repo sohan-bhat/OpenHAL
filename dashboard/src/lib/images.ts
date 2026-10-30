@@ -87,7 +87,7 @@ export function frameSource(image: ImageReading): FrameCheck {
   if (typeof data !== "string" || !data.length) return { ok: false, reason: "The hub sent the frame without its pixels." };
   if (data.length % 4 !== 0 || !BASE64.test(data)) return { ok: false, reason: "The frame's pixels are not valid base64." };
   if (decodedLength(data) !== image.bytes) {
-    return { ok: false, reason: `The frame is ${decodedLength(data)} bytes, but the hub said ${image.bytes}.` };
+    return { ok: false, reason: `The frame is ${decodedLength(data)} bytes, but the hub reported ${image.bytes}.` };
   }
   let head: Uint8Array;
   try {

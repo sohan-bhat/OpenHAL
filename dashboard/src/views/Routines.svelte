@@ -71,7 +71,7 @@
         message = { tone: run.status === "ok" ? "ok" : "blocked", text: `Run ${run.run_id} ${run.status}. ${run.message}`.trim() };
       }
     } catch (error) {
-      message = { tone: "blocked", text: error instanceof Error ? error.message : "The hub refused." };
+      message = { tone: "blocked", text: error instanceof Error ? error.message : "The hub blocked the request." };
     }
     busy = false;
     await Promise.all([loadList(), loadDetail(id)]);

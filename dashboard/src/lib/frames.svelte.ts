@@ -47,7 +47,7 @@ class Frames {
           detail: dataBlock(result.error)?.text ?? null,
         };
       } else if (!isImageReading(result.value)) {
-        next = { ...before, reading: false, problem: `${channel} did not answer with an image.`, detail: null };
+        next = { ...before, reading: false, problem: `${channel} did not return an image.`, detail: null };
       } else {
         const image = withoutData(result.value);
         const check = frameSource(result.value);

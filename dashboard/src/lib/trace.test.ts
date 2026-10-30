@@ -18,7 +18,7 @@ const entries = fixture as LogEntry[];
 describe("buildTrace", () => {
   const rows = buildTrace(entries);
 
-  it("gives hal/initialize the principal its answer names, so agents keep their dashed rule", () => {
+  it("gives hal/initialize the principal its response names, so agents keep their dashed rule", () => {
     const hello = rows.find((row) => row.seq === 1)!;
     expect(hello.head).toBe("hal/initialize");
     expect(hello.client).toBe("print-watcher");
@@ -109,7 +109,7 @@ describe("buildTrace", () => {
     expect(response!.head).toBe("error -32003 SCOPE_DENIED");
   });
 
-  it("names a client by its clientInfo before the hub knows it, so initialize pairs with its result", () => {
+  it("names a client by its clientInfo before the hub registers it, so initialize pairs with its result", () => {
     const rows = buildTrace([
       {
         seq: 1,

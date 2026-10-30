@@ -126,7 +126,7 @@ for (const theme of THEMES) {
       await shoot(page, "device-read-only", width, theme);
 
       await page.goto("/#/confirmations");
-      const cancel = page.getByRole("main").getByRole("listitem").filter({ hasText: "asks to run cancel" }).first();
+      const cancel = page.getByRole("main").getByRole("listitem").filter({ hasText: "sends a request to run cancel" }).first();
       await cancel.getByRole("combobox", { name: /camera/i }).selectOption("printer-cam/frame");
       await expect(cancel.getByRole("img", { name: /^Demo frame from Printer camera/ })).toBeVisible();
       await scrollTo(page, "#pending-title", header);
@@ -178,7 +178,7 @@ test("pairing and offline", async ({ browser }) => {
       const page = await open(browser, width, theme);
       await page.route("**/v1/whoami", (route) => route.abort());
       await page.goto("/");
-      await expect(page.getByRole("heading", { name: "The hub does not answer" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "The hub is unreachable" })).toBeVisible();
       await shoot(page, "offline", width, theme);
       await page.context().close();
     }

@@ -16,7 +16,7 @@ function jpeg(size: number): ImageReading {
 const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]).toString("base64");
 
 describe("camera frames", () => {
-  it("shows a JPEG whose bytes match what the hub said", () => {
+  it("shows a JPEG whose bytes match what the hub reported", () => {
     const check = frameSource(jpeg(30));
     expect(check.ok).toBe(true);
     if (check.ok) expect(check.src.startsWith("data:image/jpeg;base64,/9j/")).toBe(true);
@@ -26,7 +26,7 @@ describe("camera frames", () => {
     const frame = jpeg(30);
     expect(frameSource({ ...frame, mimeType: "image/svg+xml" })).toMatchObject({ ok: false });
     expect(frameSource({ ...frame, mimeType: "image/png" })).toEqual({ ok: false, reason: "The frame's first bytes are not image/png." });
-    expect(frameSource({ ...frame, bytes: 31 })).toEqual({ ok: false, reason: "The frame is 30 bytes, but the hub said 31." });
+    expect(frameSource({ ...frame, bytes: 31 })).toEqual({ ok: false, reason: "The frame is 30 bytes, but the hub reported 31." });
     expect(frameSource({ ...frame, data: `${frame.data!.slice(0, -4)}");` })).toMatchObject({ ok: false });
     expect(frameSource({ ...frame, data: undefined })).toEqual({ ok: false, reason: "The hub sent the frame without its pixels." });
     expect(frameSource({ mimeType: "image/png", bytes: 12, width: 1, height: 1, data: png }).ok).toBe(true);
@@ -125,7 +125,7 @@ function request(command: ConfirmationRequest["command"]): ConfirmationRequest {
 }
 
 describe("the person's question", () => {
-  it("says what the agent asked, what it does and why it waits", () => {
+  it("shows what the agent requested, what it does and why the request is held", () => {
     const ask = askOf(request({ kind: "action", device: "printer", action: "cancel", args: {} }), printer);
     expect(ask).toMatchObject({
       actor: "The agent",
@@ -137,13 +137,13 @@ describe("the person's question", () => {
       does: "Cancel the print. It can't be resumed afterwards.",
       file: "printer.hal.yaml",
     });
-    expect(ask.why).toBe("printer.hal.yaml asks a person to confirm cancel each time. Nothing reaches the device until you approve.");
+    expect(ask.why).toBe("printer.hal.yaml requires a person to confirm cancel each time. Nothing reaches the device until you approve.");
   });
 
   it("names the value and limit of a write", () => {
     const ask = askOf(request({ kind: "write", device: "printer", channel: "extruder_target", value: 240, unit: "degC" }), printer);
     expect(ask).toMatchObject({ verb: "set", target: "extruder_target", value: "240 °C", limit: "0 °C to 260 °C" });
-    expect(ask.why.startsWith("printer.hal.yaml asks a person to confirm extruder_target.")).toBe(true);
+    expect(ask.why.startsWith("printer.hal.yaml requires a person to confirm extruder_target.")).toBe(true);
   });
 
   it("falls back to the kernel's words when the device isn't loaded", () => {
