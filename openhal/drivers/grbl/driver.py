@@ -4,15 +4,15 @@ Protocol (gnea/grbl wiki, "Grbl v1.1 Interface", "Grbl v1.1 Commands", "Grbl v1.
 and "Grbl v1.1 Laser Mode"). Message parsing is in `protocol.py`, the line protocol client in
 `session.py` and the channel maps in `channels.py`.
 
-- Line commands end with a newline and are answered in order with `ok` or `error:N`. The driver
-  sends one line at a time and waits for its answer, the "send and wait" streaming GRBL
-  documents as the simplest safe method.
-- Realtime commands are single bytes that act at once and are never answered with `ok`. `?`
-  asks for a status report, `!` holds the feed, `~` resumes, 0x85 cancels a jog and 0x18 resets.
+- Line commands end with a newline and get `ok` or `error:N` in order. The driver sends one
+  line at a time and holds the next line until the reply arrives, the "send and wait" streaming
+  GRBL documents as the simplest safe method.
+- Realtime commands are single bytes that act at once and never get `ok`. `?` requests a
+  status report, `!` holds the feed, `~` resumes, 0x85 cancels a jog and 0x18 resets.
 - Motion lines get `ok` once they are queued, not when the move ends. Jog and move actions poll
   the status until the machine is idle again, or return `started` after `action_wait`.
-- `ALARM:N` means the controller stopped. In alarm GRBL refuses G-code with error:9 until `$X`
-  or `$H`. After a hard or soft limit it waits for a reset (`[MSG:Reset to continue]`).
+- `ALARM:N` means the controller stopped. In alarm GRBL returns error:9 for G-code until `$X`
+  or `$H`. After a hard or soft limit GRBL stays halted until a reset (`[MSG:Reset to continue]`).
 - The banner (`Grbl 1.1h ['$' for help]`) means the controller reset. Lines in flight are lost.
 
 Read only. `?`, `$$` (settings), `$I` (build info), `$G` (parser state) and `$#` (offsets).
@@ -220,7 +220,7 @@ class GrblDriver(Driver):
             shift = [float(item) for item in rows.get("G92", "0,0,0").split(",")]
             tool = float(rows.get("TLO", "0").split(",")[0])
         except (KeyError, ValueError):
-            raise DriverError("GRBL's $# answer has no usable work offsets.") from None
+            raise DriverError("GRBL's $# reply has no usable work offsets.") from None
         offsets = [base[i] + (shift[i] if i < len(shift) else 0.0) for i in range(len(base))]
         if len(offsets) > 2:
             offsets[2] += tool
@@ -342,7 +342,7 @@ class GrblDriver(Driver):
             raise DriverError(f"{channel} {rpm:g} rpm is below the $31 of {bottom:g} rpm. Nothing was sent.")
 
     async def _off(self, line: str, key: str, already: str) -> None:
-        """Turn an output off. In alarm GRBL refuses G-code, and the reset already turned the output off."""
+        """Turn an output off. In alarm GRBL returns an error for G-code, and the reset already turned it off."""
         try:
             await self._session().command(line)
         except GrblError as exc:
@@ -471,7 +471,7 @@ class GrblDriver(Driver):
         if status.state == "alarm" and session.alarm:
             detail += f", ALARM:{session.alarm} ({protocol.alarm_text(session.alarm)})"
         if session.critical:
-            detail += ", waiting for a reset"
+            detail += ", halted until a reset"
         return Health(connected=True, detail=detail)
 
     async def close(self) -> None:

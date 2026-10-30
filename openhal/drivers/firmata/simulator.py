@@ -1,6 +1,6 @@
 """A StandardFirmata board simulator, laid out like an Arduino Uno.
 
-It answers the queries a host sends (version, firmware, capabilities, analog mapping, pin
+It replies to the queries a host sends (version, firmware, capabilities, analog mapping, pin
 state), keeps pin modes and output values, and sends analog and digital reports the way
 StandardFirmata 2.5 does. Plug it into `SerialSimulator` from the serial driver.
 """

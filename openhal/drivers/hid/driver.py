@@ -15,7 +15,7 @@ Behavior worth knowing.
 - Output reports are whole reports. The driver keeps one buffer per output report, starting at
   zero (or the map's `fill`), changes only the masked bits of the channel being written, and sends
   the whole buffer. Write channels on output reports report the last value written.
-- hidapi always expects the report id as the first byte, and 0 for devices without report ids.
+- hidapi always requires the report id as the first byte, and 0 for devices without report ids.
 - HID has no emergency behavior. The device file's safe state is sent as ordinary reports.
 """
 
@@ -279,7 +279,7 @@ class HidDriver(Driver):
             try:
                 data = handle.read(self.settings.report_length + 1, 100)
             except (OSError, ValueError) as exc:
-                self._error = f"the device stopped answering ({exc})"
+                self._error = f"the device stopped sending replies ({exc})"
                 return
             if not data:
                 continue
@@ -385,7 +385,9 @@ class HidDriver(Driver):
                     self.settings.timeout,
                 )
             except TimeoutError:
-                raise TimeoutError(f"The HID device didn't answer the feature report {hmap.report} request.") from None
+                raise TimeoutError(
+                    f"The HID device sent no reply to the feature report {hmap.report} request."
+                ) from None
             except (OSError, ValueError) as exc:
                 raise DriverError(f"Reading feature report {hmap.report} failed ({exc}).") from None
             payload, at = bytes(data)[1:], time.time()
@@ -453,7 +455,8 @@ class HidDriver(Driver):
             raise DriverError(f"Sending {hmap.kind} report {hmap.report} failed ({exc}).") from None
         if isinstance(result, int) and result < 0:
             raise DriverError(
-                f"The HID device refused {hmap.kind} report {hmap.report}. Check the report id and length."
+                f"The HID device returned an error for {hmap.kind} report {hmap.report}. "
+                "Check the report id and length."
             )
         buffer[:] = candidate
         self._written[channel] = sent

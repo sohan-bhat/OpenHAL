@@ -12,7 +12,7 @@ the report format the printers use on `device/<serial>/report`.
 - `partial=True` behaves like a P1 or A1 printer and pushes only the fields that changed. Otherwise it
   pushes full reports like an X1.
 
-Faults. `authorization=True` refuses every control command the way firmware outside Developer Mode
+Faults. `authorization=True` fails every control command the way firmware outside Developer Mode
 does, `silent=True` stops replying to commands, and the broker's `kick_all()` and `paused` work as in
 the mqtt simulator.
 """

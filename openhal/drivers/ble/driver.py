@@ -10,7 +10,7 @@ Behavior worth knowing.
   connects, and a read returns the newest notified value. Until the first notification, a read
   falls back to a GATT read if the characteristic allows it, or reports None (unknown).
 - Other channels do a GATT read every time.
-- Writes use write with response when the characteristic supports it, unless the map says
+- Writes use write with response when the characteristic supports it, unless the map sets
   `response: false`. Write without response gives no confirmation that the device got the value.
 - `address: auto` scans for `scan_timeout` and picks the one peripheral that matches the device
   file's `match.ble_name` and `match.ble_services`. Scanning only listens to advertisements.
@@ -365,7 +365,7 @@ class BleDriver(Driver):
             try:
                 data = bytes(await asyncio.wait_for(client.read_gatt_char(char), self.settings.timeout))
             except TimeoutError:
-                raise TimeoutError(f"{self._where} didn't answer a read of {cmap.characteristic}.") from None
+                raise TimeoutError(f"{self._where} sent no reply to a read of {cmap.characteristic}.") from None
             except _errors() as exc:
                 raise DriverError(f"Reading {cmap.characteristic} for {channel} failed ({exc}).") from None
             at = time.time()
@@ -483,8 +483,8 @@ class BleDriver(Driver):
         text = "Mapped the standard Environmental Sensing and Battery characteristics."
         if notes:
             text += (
-                " These characteristics are not standard, so the driver can't know their format. Add them by hand "
-                f"from the device's documentation: {'; '.join(notes[:30])}."
+                " These characteristics are not standard, so the driver has no record of their format. Add them "
+                f"by hand from the device's documentation: {'; '.join(notes[:30])}."
             )
         if "firmware" in device:
             text += f" Firmware {device['firmware']}."

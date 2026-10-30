@@ -137,7 +137,7 @@ class AlpacaSim:
 
 
 class DiscoveryResponder(asyncio.DatagramProtocol):
-    """Answers `alpacadiscovery1` with `{"AlpacaPort": port}`, like an Alpaca server on UDP 32227."""
+    """Replies to `alpacadiscovery1` with `{"AlpacaPort": port}`, like an Alpaca server on UDP 32227."""
 
     def __init__(self, alpaca_port: int) -> None:
         self.alpaca_port = alpaca_port

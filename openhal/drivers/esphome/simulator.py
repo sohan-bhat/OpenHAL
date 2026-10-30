@@ -1,6 +1,6 @@
 """An ESPHome native API simulator, served on a local TCP port in plaintext.
 
-It speaks the native API framing (a 0x00 preamble, a varint length, a varint message type, then
+It implements the native API framing (a 0x00 preamble, a varint length, a varint message type, then
 a protobuf payload) with the message classes generated from ESPHome's api.proto, which ship in
 aioesphomeapi (`aioesphomeapi.api_pb2`, MIT). So the driver runs the real `APIClient` against
 it, including the hello handshake, device info, entity listing, state subscription and commands.
@@ -290,7 +290,7 @@ class ThreadedSim:
     """Runs an `EspHomeSim` on its own event loop in a daemon thread.
 
     The conformance suite builds drivers synchronously, so it can't await `start()`. This wrapper
-    starts the server before the suite runs and lets the case reach it from any loop.
+    starts the server before the suite runs, so the case can reach it from any loop.
     """
 
     def __init__(self, sim: EspHomeSim | None = None) -> None:

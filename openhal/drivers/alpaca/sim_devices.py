@@ -2,7 +2,7 @@
 
 Each follows the members and errors of its ASCOM interface (ITelescopeV3, IFocuserV3, ICameraV3,
 ISwitchV2, IDomeV2) as the Alpaca API reference lists them. Motion takes simulated time scaled by
-the server's `time_scale`. Members other than the common identity ones refuse with NotConnected
+the server's `time_scale`. Members other than the common identity ones return NotConnected
 (0x407) until `connected` is set.
 """
 
@@ -34,7 +34,7 @@ class SimError(Exception):
 
 
 class BadRequest(Exception):  # noqa: N818
-    """Answered with HTTP 400."""
+    """Returned as HTTP 400."""
 
 
 def _number(params: dict[str, str], name: str) -> float:

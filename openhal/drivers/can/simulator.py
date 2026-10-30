@@ -2,7 +2,7 @@
 
 `MotorController` behaves like a small motor drive. It opens its own python-can virtual bus on
 a channel name, broadcasts a status frame every 20 ms and acts on command frames, so a driver on
-the same channel name sees real `can.Message` traffic. All ids are 11-bit.
+the same channel name receives real `can.Message` traffic. All ids are 11-bit.
 
     0x101  status, broadcast every 20 ms
            bytes 0-1  speed in rpm, unsigned big-endian

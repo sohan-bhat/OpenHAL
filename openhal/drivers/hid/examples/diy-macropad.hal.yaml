@@ -1,6 +1,6 @@
 # A homemade USB macropad (for example a Raspberry Pi Pico running a TinyUSB HID sketch) that
 # uses the pid.codes test ids 1209:0001. Its firmware defines these reports, which is what a
-# device file for any custom HID gadget needs to know.
+# device file for any custom HID gadget must describe.
 #   Input report 1:  byte 0 bits 0 to 3 are buttons 1 to 4, byte 1 is a knob from 0 to 255.
 #   Output report 2: byte 0 bits 0 to 3 are the four key LEDs, byte 1 is LED brightness.
 # It loads read-only until a human checks the limits and adds confirmed: { by: <name>, at: <date> }.

@@ -2,7 +2,7 @@
 
 Protocol. Classic CAN (ISO 11898-1, 11-bit and 29-bit identifiers, up to 8 data bytes) and CAN FD
 (up to 64 bytes), through any python-can interface (socketcan on Linux, PCAN, Kvaser, slcan, gs_usb
-and others). CAN has no request and reply. Nodes broadcast frames, and every node sees every frame.
+and others). CAN has no request and reply. Nodes broadcast frames, and every node receives every frame.
 
 How channels map to frames.
 
@@ -380,7 +380,7 @@ class CanDriver(Driver):
             ) from None
         except (can.CanError, OSError, ValueError) as exc:
             raise DriverError(
-                f"{self._where} refused frame {notation(frame.id, frame.is_extended, data)} ({exc}). "
+                f"{self._where} returned an error for frame {notation(frame.id, frame.is_extended, data)} ({exc}). "
                 "Check the bus is up and another node acknowledges frames."
             ) from None
 

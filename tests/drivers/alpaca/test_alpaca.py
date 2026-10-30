@@ -396,7 +396,7 @@ async def test_bad_replies_from_the_client() -> None:
         await client.get("/api/v1/telescope/0/weird")
     with pytest.raises(DriverError, match="not a JSON object"):
         await client.get("/api/v1/telescope/0/list")
-    with pytest.raises(DriverError, match="malformed"):
+    with pytest.raises(DriverError, match="returned HTTP 400"):
         await client.put("/api/v1/telescope/0/bad")
     with pytest.raises(DriverError, match="Check the device type"):
         await client.get("/api/v1/telescope/9/name")

@@ -1,6 +1,6 @@
 """Alpaca discovery. A UDP broadcast of `alpacadiscovery1` to port 32227.
 
-Every Alpaca server that hears it answers with `{"AlpacaPort": <http port>}` from its own
+Every Alpaca server that receives it replies with `{"AlpacaPort": <http port>}` from its own
 address (Alpaca API reference, "Alpaca Discovery"). Discovery only listens and changes nothing.
 """
 
@@ -35,7 +35,7 @@ class _Collector(asyncio.DatagramProtocol):
 
 
 async def probe(targets: list[tuple[str, int]], wait: float) -> list[tuple[str, int]]:
-    """Send the discovery message to each target and collect (host, port) answers for `wait` seconds."""
+    """Send the discovery message to each target and collect (host, port) replies for `wait` seconds."""
     loop = asyncio.get_running_loop()
     try:
         transport, protocol = await loop.create_datagram_endpoint(

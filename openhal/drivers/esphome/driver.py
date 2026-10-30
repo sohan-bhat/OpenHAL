@@ -3,9 +3,9 @@
 Protocol (esphome.io native API component, and aioesphomeapi's documentation). The device
 listens on TCP 6053. With `api: encryption: key:` in its YAML the session uses the Noise
 protocol and the 32-byte base64 key, which the driver reads from the environment variable named
-in `noise_psk_env`. The client says hello, reads the device info, lists entities and subscribes
-to their states. Commands are fire-and-forget messages, and the device answers with a state
-update once it has acted.
+in `noise_psk_env`. The client sends Hello, reads the device info, lists entities and subscribes
+to their states. Commands are fire-and-forget messages, and the device sends a state update
+once it has acted.
 
 Mapping. Channels bind to entities by `object_id`, which by default is the channel name. A name
 ending in `_brightness`, `_speed` or `_preset` binds to the entity named by the rest of it.

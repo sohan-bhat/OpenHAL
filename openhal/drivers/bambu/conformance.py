@@ -50,7 +50,7 @@ def device_file(
 
 
 def environ(name: str) -> str | None:
-    """The environment the driver sees, with the simulator's access code."""
+    """The environment the driver reads, with the simulator's access code."""
     return ACCESS_CODE if name == TOKEN_ENV else os.environ.get(name)
 
 
@@ -69,7 +69,7 @@ class _Case:
         deadline = time.monotonic() + 3.0
         while driver.connected:
             if time.monotonic() > deadline:
-                raise AssertionError("the driver did not notice the printer going away")
+                raise AssertionError("the driver did not detect the printer going away")
             await asyncio.sleep(0.02)
 
     async def cleanup(self) -> None:

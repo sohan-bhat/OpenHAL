@@ -240,7 +240,9 @@ def default_action(device_type: str, name: str) -> dict[str, Any] | None:
 def validate(model: type[BaseModel], raw: dict[str, Any] | None, default: dict[str, Any] | None, where: str) -> Any:
     data = raw if raw is not None else default
     if data is None:
-        raise DriverError(f"{where} is not an Alpaca member the driver knows. Add a map, see docs/drivers/alpaca.md.")
+        raise DriverError(
+            f"{where} is not an Alpaca member the driver supports. Add a map, see docs/drivers/alpaca.md."
+        )
     try:
         return model.model_validate(data)
     except ValidationError as exc:

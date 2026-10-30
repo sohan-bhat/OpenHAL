@@ -1,7 +1,7 @@
 """The driver interface. Every protocol driver and bridge subclasses `Driver`.
 
-Drivers speak a protocol. Device files describe a specific device and its limits. A driver
-never decides whether a change is safe. That is the safety kernel's job, and the only way a
+Drivers implement a protocol. Device files describe a specific device and its limits. A driver
+never checks whether a change is safe. That is the safety kernel's job, and the only way a
 change reaches `_write`, `_action` or `_safe_state` is through the final methods below, which
 consume a single-use grant issued by the kernel (ADR 0004). A test checks that nothing else in
 the package calls those protected methods.
@@ -70,7 +70,7 @@ class DriverInfo:
 
 
 class DriverError(RuntimeError):
-    """The device or protocol failed. The message says what happened and what to try."""
+    """The device or protocol failed. The message states what happened and the next step."""
 
 
 _NO_VERIFIER: Final = "This driver is not attached to a safety kernel, so it can't change hardware."
@@ -104,7 +104,7 @@ class Driver(abc.ABC):
 
     @property
     def simulated(self) -> bool:
-        """True when this driver talks to a simulator instead of hardware, so clients can label demo data."""
+        """True when this driver connects to a simulator instead of hardware, so clients can label demo data."""
         return False
 
     @classmethod

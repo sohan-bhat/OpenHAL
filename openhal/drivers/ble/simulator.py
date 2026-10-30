@@ -1,4 +1,4 @@
-"""A fake BLE peripheral and a fake BleakClient and BleakScanner that talk to it. No radio.
+"""A fake BLE peripheral and a fake BleakClient and BleakScanner that connect to it. No radio.
 
 The fake implements exactly the bleak calls the driver uses: `connect`, `disconnect`,
 `is_connected`, `services` (iterable services with `uuid` and `characteristics`, and

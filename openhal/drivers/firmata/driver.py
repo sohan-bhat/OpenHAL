@@ -24,8 +24,8 @@ Analog values are `raw * scale + offset`. Without `scale` the driver uses `vref 
 for volt channels, `100 / (2^res - 1)` for percent and 1 for dimensionless counts.
 
 Firmata writes have no acknowledgement. With `verify: true` (the default) every write is
-followed by a PIN_STATE_QUERY, so a write to a board that stopped answering fails instead of
-passing silently. Write channels read back through PIN_STATE_QUERY as well.
+followed by a PIN_STATE_QUERY, so a write to a board that stopped sending replies fails instead
+of passing silently. Write channels read back through PIN_STATE_QUERY as well.
 
 Safe state. From the device file. Firmata's SYSTEM_RESET returns pins to their power-on modes,
 which is not a safe state for every circuit, so the driver never sends it.
@@ -410,7 +410,7 @@ class FirmataDriver(Driver):
             return await asyncio.wait_for(waiter, self.settings.timeout)
         except TimeoutError:
             raise TimeoutError(
-                f"The board didn't answer a Firmata query within {self.settings.timeout:g} s. "
+                f"The board sent no reply to a Firmata query within {self.settings.timeout:g} s. "
                 "Check that StandardFirmata is running."
             ) from None
         finally:
@@ -526,7 +526,7 @@ class FirmataDriver(Driver):
             if mode != channel.mode or state != expected:
                 raise DriverError(
                     f"The board reports pin {channel.pin} as mode {p.MODE_NAMES.get(mode, mode)} value {state} "
-                    f"after the write, expected {p.MODE_NAMES[channel.mode]} value {expected}."
+                    f"after the write, not {p.MODE_NAMES[channel.mode]} value {expected}."
                 )
         return Reading(channel_name, value, channel.unit)
 

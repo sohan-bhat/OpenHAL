@@ -13,11 +13,11 @@ in `discovery.py` and the describe() proposal in `describe.py`.
   as the reference spells them (`RightAscension`, `Position`, `Id`, `State`).
 - Right ascension and sidereal time arrive in hours and are reported in degrees (hours times 15),
   since OpenHAL's unit registry has no hour angle unit.
-- Actions with a `wait` property (`slewing`, `ismoving`) poll it until false and answer `done`,
-  or answer `started` after `action_wait`.
+- Actions with a `wait` property (`slewing`, `ismoving`) poll it until false and return `done`,
+  or return `started` after `action_wait`.
 
 Safe state. Native. Telescopes and domes get AbortSlew, focusers Halt and cameras
-AbortExposure. A parked mount refuses AbortSlew with InvalidWhileParked, which counts as safe.
+AbortExposure. A parked mount returns InvalidWhileParked for AbortSlew, which counts as safe.
 `park_on_stop: true` also parks a telescope or dome after the abort. Switches have no native
 safe state, the device file's own steps set them.
 """
@@ -90,7 +90,7 @@ def _convert(value: float, source: str | None, target: str | None, where: str) -
 
 
 class AlpacaDriver(Driver):
-    """Telescopes, focusers, cameras, switches and domes that speak ASCOM Alpaca."""
+    """Telescopes, focusers, cameras, switches and domes that use ASCOM Alpaca."""
 
     info: ClassVar[DriverInfo] = DriverInfo(
         name="alpaca",
@@ -265,11 +265,11 @@ class AlpacaDriver(Driver):
         unit = self.device.channel_unit(channel)
         if spec.type == "bool":
             if not isinstance(raw, bool):
-                raise DriverError(f"{channel}: expected true or false from the device, got {raw!r}.")
+                raise DriverError(f"{channel}: the device sent {raw!r}, not true or false.")
             return Reading(channel, raw, None)
         if spec.type == "number":
             if isinstance(raw, bool) or not isinstance(raw, int | float) or not math.isfinite(raw):
-                raise DriverError(f"{channel}: expected a number from the device, got {raw!r}.")
+                raise DriverError(f"{channel}: the device sent {raw!r}, not a number.")
             value = _convert(float(raw) * scale, source, unit, channel)
             low_high = getattr(spec, "range", None)
             suspect = low_high is not None and not low_high[0] <= value <= low_high[1]
