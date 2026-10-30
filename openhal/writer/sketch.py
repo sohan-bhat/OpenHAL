@@ -255,7 +255,7 @@ def parse(text: str) -> SketchFindings:
     if not findings.uses_openhal_library and not findings.commands:
         findings.notes.append(
             "No serial commands were found. The sketch may only stream values, or use a protocol the "
-            "parser doesn't know. Ask your AI client to read it and propose a draft."
+            "parser doesn't support. Ask your AI client to read the sketch and propose a draft."
         )
     return findings
 

@@ -3,7 +3,7 @@
 A session turns an unknown device into a confirmed device file in this order.
 
 1. Library match. Discovery already offers library files, so an unknown device has none.
-2. Protocol match and self-description. If a driver can talk to the device, the driver connects
+2. Protocol match and self-description. If a driver supports the device's protocol, the driver connects
    with its read-only commands and `describe()` maps what the device exposes into sections.
 3. A sketch, parsed statically (writer/sketch.py).
 4. A manual, with its commands extracted and every one unconfirmed (writer/manual.py).
@@ -50,7 +50,7 @@ FILE_NAME: Final = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
 
 
 class WriterError(ValueError):
-    """A request the writer refuses. The message says why and what to do."""
+    """A request the writer blocks. The message gives the reason and the next step."""
 
 
 class NotHumanError(PermissionError):
@@ -77,7 +77,7 @@ def _dump(data: dict[str, Any]) -> str:
 
 
 def force_suggested(data: dict[str, Any]) -> dict[str, Any]:
-    """Nothing a draft says can confirm a limit. Mark every limit suggested and drop confirmations."""
+    """Nothing in a draft can confirm a limit. Mark every limit suggested and drop confirmations."""
     cleaned = copy.deepcopy(data)
     for key in ("confirmed", "approvals"):
         cleaned.pop(key, None)
@@ -198,7 +198,7 @@ class WriterEngine:
     async def _describe(
         self, session: Session, driver: str, address: str | None, params: dict[str, Any]
     ) -> dict[str, Any] | None:
-        """Connect with the driver's read-only commands and ask it to describe the device."""
+        """Connect with the driver's read-only commands and read the driver's description of the device."""
         try:
             driver_class = registry.load(driver)
         except registry.UnknownDriver as exc:
@@ -340,7 +340,7 @@ class WriterEngine:
         if session.draft is None:
             raise WriterError("There is no valid draft to interview yet. Propose one first.")
         if session.status not in ("interview", "ready"):
-            raise WriterError(f"The session is {session.status}, so it can't take answers.")
+            raise WriterError(f"The session is {session.status}, so the session can't take answers.")
         known = {question.id for question in interview.questions(session.draft)}
         unknown = sorted(set(answers) - known)
         if unknown:
