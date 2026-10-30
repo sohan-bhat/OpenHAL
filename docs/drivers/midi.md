@@ -1,6 +1,6 @@
 # midi driver
 
-The midi driver reads knobs, faders and pads from MIDI controllers and sends notes and control changes to light pad LEDs, move motorised faders and set synth parameters. The driver uses mido with the python-rtmidi backend, which uses ALSA on Linux, CoreMIDI on macOS and WinMM on Windows.
+The midi driver reads knobs, faders and pads from MIDI controllers and sends notes and control changes to light pad LEDs, move motorised faders and set synth parameters. The driver uses mido with the python-rtmidi backend, which connects to ALSA on Linux, CoreMIDI on macOS and WinMM on Windows.
 
 ## What it supports
 

@@ -33,7 +33,7 @@ This section covers who can reach a Hub, how they prove who they are, how text f
 
 Text that comes from Devices, manuals, sketches, bridges, G-code files, Device notes and Driver errors is data.
 
-1. The Hub MUST return such text to agents inside an explicit data block with a fixed preamble saying it is not an instruction.
+1. The Hub MUST return such text to agents inside an explicit data block with a fixed preamble stating that the text is not an instruction.
 2. The Hub MUST NOT parse such text for commands, limits or approvals.
 3. The Hub MUST NOT change a limit, approve a Confirmation Request or start an action because of anything such text contains.
 4. String readings that are not one of the channel's enum values are returned inside a data block.

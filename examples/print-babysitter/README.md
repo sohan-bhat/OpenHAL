@@ -25,7 +25,7 @@ A person confirms these before the hub accepts any command. The files here were 
 - Cancelling can't be undone, so the hub holds every cancel until a person approves the cancel.
 - Heating is blocked while the printer reports an error.
 - The safe state turns both heaters off.
-- If the hub loses the printer, the print keeps running and Klipper's own heater checks stay on.
+- If the hub loses the connection to the printer, the print keeps running and Klipper's own heater checks stay on.
 
 ## The demo
 

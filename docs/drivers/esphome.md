@@ -80,7 +80,7 @@ hazard: low
 
 ## Hazard defaults
 
-The default hazard is `low`, because most nodes switch lights, fans, pumps and relays at low voltage, but a relay that switches mains to a heater deserves `medium` or `high` in the device file.
+The default hazard is `low`, because most nodes switch lights, fans, pumps and relays at low voltage, but a relay that switches mains to a heater needs `medium` or `high` in the device file.
 
 ## Sources
 

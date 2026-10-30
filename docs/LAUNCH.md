@@ -139,7 +139,7 @@ Prepared replies.
 >
 > - A device file per device, with ranges, rate limits and confirmation tiers on each entity you choose. Only those entities are reachable.
 > - Interlocks across devices, such as no heater while a window sensor reads open, including devices Home Assistant doesn't manage.
-> - The file's limits win even when Home Assistant would allow more.
+> - The file's limits apply even when Home Assistant would allow more.
 > - Every request and stop goes into a hash-chained log with the result and the sender.
 > - The token lives in an environment variable, never in the file.
 >

@@ -92,7 +92,7 @@ hazard: low
 
 ## Hazard defaults
 
-The default hazard is `low`, because lights, fans and sensors are the usual case, but a switch that powers a heater or a pump deserves `medium` or `high` in the device file.
+The default hazard is `low`, because lights, fans and sensors are the usual case, but a switch that powers a heater or a pump needs `medium` or `high` in the device file.
 
 ## Sources
 

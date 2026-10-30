@@ -224,12 +224,12 @@ Step 3 read-only file:           pass / fail
 Step 4 soil:                     pass / fail   dry and wet readings:
 Step 5 tank:                     pass / fail
 Step 6 confirm and token:        pass / fail
-Step 7 too long:                 pass / fail   (paste the answer)
-Step 8 empty tank:               pass / fail   (paste the answer)
+Step 7 too long:                 pass / fail   (paste the response)
+Step 8 empty tank:               pass / fail   (paste the response)
 Step 9 short run:                pass / fail
 Step 10 board falls safe:        pass / fail   seconds from the kill to relay off:
 Step 11 real run:                pass / fail   soil moisture before and after:
-Step 12 runs per hour:           pass / fail   refused on the first try:
+Step 12 runs per hour:           pass / fail   blocked on the first try:
 Step 13 stop and audit chain:    pass / fail
 Audit chain: (the line uv run openhal log --verify prints)
 Anything unexpected (paste exact output):
