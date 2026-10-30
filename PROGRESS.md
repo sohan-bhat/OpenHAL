@@ -8,7 +8,7 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-- website-16. The deploy check, Tailwind, React islands, shadcn/ui and Motion for the docs frame, a cmdk search palette over Pagefind, a researched collapsible sidebar with a light hover peek, the version label, the one-item rails and the spec title (BRIEF-website-16.md).
+None running.
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
@@ -63,6 +63,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - The schema reference at 100 on a phone and the home diagram's names in full (website-13, merged 2026-10-29). A pnpm patch makes Starlight's outline look for headings only where the outline observes, the schema reference's tables render as they near the screen, and the hero's small diagram shows every lifeline name from 640 to 1199 px.
 - Pickers without icons, Motion and thicker control outlines (website-14, merged 2026-10-29). The version, theme and section pickers are menu buttons on native popover lists, the search dialog, pickers, phone menu, sidebar groups, information marks and Copy animate with Motion's mini animate in 200 ms open and 150 ms close, and control outlines are 1.5 px. The JavaScript budgets have little headroom left and need a new baseline at the next change.
 - The home page simple and clean (website-15, merged 2026-10-29, from OWNER-BRIEF-2026-10-29.md). A centered hero with readable labels and no diagram, How it works in three steps with the owner's captions, the safety model, device families, Run the demo and Read more, 4.84 screens at 1440×900 against 9.35 before, the nine-step story on /docs/examples/3d-print-watch/ and "What the name means" on Concepts. The deploy check found every push deployed, and the pipeline now stamps each build and verifies the live site (DEPLOY_NOTES.md).
+- The docs frame on a component stack (website-16, merged 2026-10-29). Tailwind through Starlight's integration, React islands with shadcn/ui on Radix and Motion, a cmdk search palette over Pagefind, a collapsible sidebar with Cmd or Ctrl B and a light hover peek, the plain v0.1 label, no one-item outlines, the unnumbered spec title and clean search snippets. All 18 Lighthouse runs scored 100, and every page sends about 28 KB less.
 
 ## Next
 
