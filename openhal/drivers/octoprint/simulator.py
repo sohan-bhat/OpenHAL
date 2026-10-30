@@ -1,6 +1,6 @@
 """An OctoPrint REST API simulator, written from the OctoPrint API documentation.
 
-`OctoPrintSim.http_transport()` returns an `httpx.MockTransport` that answers the endpoints the
+`OctoPrintSim.http_transport()` returns an `httpx.MockTransport` that serves the endpoints the
 driver uses (`/api/version`, `/api/printer`, `/api/printer/tool`, `/bed`, `/chamber`,
 `/printhead`, `/command`, `/api/job`, `/api/printerprofiles`) with OctoPrint's status codes.
 Every request needs the `X-Api-Key` header. The printer can be operational, printing, paused or

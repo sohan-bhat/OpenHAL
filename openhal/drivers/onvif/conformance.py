@@ -37,7 +37,7 @@ confirmed: { by: conformance, at: 2026-10-24 }
 
 
 def environ(name: str) -> str | None:
-    """The environment the driver sees, with the simulator's password."""
+    """The environment the driver reads, with the simulator's password."""
     return PASSWORD if name == TOKEN_ENV else None
 
 

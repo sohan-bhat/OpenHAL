@@ -3,10 +3,10 @@
 ONVIF services are SOAP 1.2 over HTTP (ONVIF Core Specification, section 5). Requests are
 authenticated with a WS-Security UsernameToken whose password is a digest,
 Base64(SHA-1(nonce + created + password)) (OASIS Web Services Security UsernameToken Profile 1.0).
-Cameras reject a `Created` time far from their own clock, so the client keeps the offset from
+Authentication fails on a camera for a `Created` time far from its own clock, so the client keeps the offset from
 GetSystemDateAndTime, which needs no authentication.
 
-Replies are parsed with defusedxml, which refuses DTDs and entity expansion, because camera
+Replies are parsed with defusedxml, which blocks DTDs and entity expansion, because camera
 replies are untrusted input. Elements are matched by local name, as ONVIF namespaces vary
 between firmware versions.
 """
@@ -35,7 +35,7 @@ SCHEMA: Final = "http://www.onvif.org/ver10/schema"
 
 
 class SoapFaultError(Exception):
-    """The camera answered with a SOAP fault."""
+    """The camera returned a SOAP fault."""
 
     def __init__(self, code: str, subcode: str, reason: str) -> None:
         super().__init__(f"{subcode or code}: {reason}".strip(": "))

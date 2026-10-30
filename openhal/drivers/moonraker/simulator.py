@@ -20,7 +20,7 @@ CANCEL_PRINT macro that Mainsail and Fluidd ship, TURN_OFF_HEATERS and M106 S0, 
 target and the part fan go to 0 and the heaters cool.
 
 Faults. `latency_s`, `klippy_state` ("ready", "shutdown", "startup", "disconnected"), `fail_http` (every HTTP
-request raises a connection error), `fail_next` (only the next N do), `malformed` (answer with
+request raises a connection error), `fail_next` (only the next N do), `malformed` (reply with
 invalid JSON) and `drop_websockets()`.
 """
 
@@ -321,7 +321,7 @@ class MoonrakerSim:
         self._connections.add(connection)
         try:
             async for raw in connection:
-                asyncio.create_task(self._ws_message(connection, raw))  # noqa: RUF006 (each request answers on its own)
+                asyncio.create_task(self._ws_message(connection, raw))  # noqa: RUF006 (each request replies on its own)
         except Exception:  # noqa: BLE001, S110 (a dropped client just ends the session)
             pass
         finally:
