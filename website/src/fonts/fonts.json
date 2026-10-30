@@ -9,9 +9,9 @@
         400,
         800
       ],
-      "bytes": 16144,
+      "bytes": 16160,
       "sourceBytes": 33996,
-      "unicodeRange": "U+20-7E, U+A0, U+B0, U+B2-B3, U+B7, U+B9, U+D7, U+2026",
+      "unicodeRange": "U+20-7E, U+A0, U+B0, U+B2-B3, U+B7, U+B9, U+D7, U+2014, U+2026",
       "sourceRange": "U+20-7E, U+A0-AC, U+AE-B4, U+B6-FF, U+102, U+131, U+152-153, U+2C6, U+2DA, U+2DC, U+300-301, U+303-304, U+308, U+2009, U+2013-2014, U+2018-201A, U+201C-201E, U+2022, U+2026, U+2039-203A, U+2044, U+20AC, U+2122, U+2212, U+2215"
     },
     {
@@ -23,9 +23,9 @@
         400,
         700
       ],
-      "bytes": 9360,
+      "bytes": 9436,
       "sourceBytes": 17752,
-      "unicodeRange": "U+20-7E, U+A0, U+B0, U+B2-B3, U+B7, U+B9, U+D7, U+2026",
+      "unicodeRange": "U+20-7E, U+A0, U+B0, U+B2-B3, U+B7, U+B9, U+D7, U+2014, U+2026",
       "sourceRange": "U+20-7E, U+A0-AC, U+AE-B4, U+B6-FF, U+102, U+131, U+152-153, U+2C6, U+2DA, U+2DC, U+300-301, U+303-304, U+308, U+2009, U+2013-2014, U+2018-201A, U+201C-201E, U+2022, U+2026, U+2039-203A, U+2044, U+20AC, U+2122, U+2212, U+2215"
     },
     {
@@ -37,9 +37,9 @@
         400,
         400
       ],
-      "bytes": 5852,
+      "bytes": 5876,
       "sourceBytes": 19084,
-      "unicodeRange": "U+20-7E, U+A0, U+B0, U+B2-B3, U+B7, U+B9, U+D7, U+2026",
+      "unicodeRange": "U+20-7E, U+A0, U+B0, U+B2-B3, U+B7, U+B9, U+D7, U+2014, U+2026",
       "sourceRange": "U+20-7E, U+A0-AC, U+AE-B4, U+B6-FF, U+102, U+131, U+152-153, U+2C6, U+2DA, U+2DC, U+300-301, U+303-304, U+308, U+2009, U+2013-2014, U+2018-201A, U+201C-201E, U+2022, U+2026, U+2039-203A, U+2044, U+20AC, U+2122, U+2212, U+2215"
     }
   ]

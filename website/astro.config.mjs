@@ -31,6 +31,7 @@ const interactDirective = {
   hooks: {
     "astro:config:setup": ({ addClientDirective }) => {
       addClientDirective({ name: "interact", entrypoint: fileURLToPath(new URL("./src/directives/interact.mjs", import.meta.url)) });
+      addClientDirective({ name: "intent", entrypoint: fileURLToPath(new URL("./src/directives/intent.ts", import.meta.url)) });
     },
   },
 };
@@ -51,6 +52,8 @@ export default defineConfig({
       credits: false,
       lastUpdated: false,
       pagination: true,
+      pagefind: false,
+      routeMiddleware: "./src/route-data.ts",
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 3 },
       customCss: ["./src/styles/global.css", "./src/styles/code.css", "./src/styles/starlight.css"],
       components: {
@@ -60,10 +63,12 @@ export default defineConfig({
         MarkdownContent: override("MarkdownContent"),
         Sidebar: override("Sidebar"),
         MobileMenuFooter: override("MobileMenuFooter"),
+        MobileMenuToggle: override("MobileMenuToggle"),
         ThemeProvider: override("ThemeProvider"),
         ThemeSelect: override("ThemeSelect"),
         PageTitle: override("PageTitle"),
         Footer: override("Footer"),
+        Search: override("Search"),
       },
     }),
     classScopedStyles,

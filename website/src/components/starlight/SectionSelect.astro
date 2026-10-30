@@ -1,6 +1,6 @@
 ---
+import LinkMenu from "../islands/LinkMenu";
 import type { Section } from "../../lib/sections";
-import Picker from "./Picker.astro";
 
 interface Props {
   links: Section[];
@@ -10,4 +10,6 @@ const { links } = Astro.props;
 const items = links.map((link) => ({ label: link.label, href: link.href, current: link.current, page: true }));
 ---
 
-<Picker id="oh-section" class="oh-section-select" kind="section" label="Section" placeholder="Sections" align="start" items={items} />
+<div class="oh-section-select">
+  <LinkMenu client:intent kind="section" label="Section" placeholder="Sections" align="start" items={items} />
+</div>

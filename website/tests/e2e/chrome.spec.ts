@@ -10,9 +10,10 @@ const box = (page: Page, selector: string) =>
     return [Math.round(rect.left), Math.round(rect.top), Math.round(rect.width), Math.round(rect.height)];
   });
 
-const searchReady = (page: Page) => page.locator("#starlight__search input").waitFor({ state: "attached", timeout: 15_000 });
+const picker = (page: Page, kind: "version" | "theme" | "section", scope = "header.header") => page.locator(`${scope} [data-picker='${kind}']`);
 
-const picker = (page: Page, kind: "version" | "theme" | "section", scope = "header.header") => page.locator(`${scope} oh-picker[data-kind='${kind}'] .oh-picker-button`);
+const palette = (page: Page) => page.getByRole("dialog", { name: "Search" });
+const results = (page: Page) => palette(page).locator("[cmdk-item]");
 
 const header = (page: Page) =>
   page.evaluate(() => {
@@ -26,11 +27,11 @@ const header = (page: Page) =>
     return {
       brand: boxes(".oh-brand"),
       sections: boxes(".oh-sections li"),
-      picker: boxes("oh-picker[data-kind='section']"),
-      search: boxes("site-search button[data-open-modal]"),
+      picker: boxes("[data-picker='section']"),
+      search: boxes("[data-search-trigger]"),
       github: boxes(".oh-social a"),
-      version: boxes("oh-picker[data-kind='version']"),
-      theme: boxes("oh-picker[data-kind='theme']"),
+      version: boxes("[data-picker='version']"),
+      theme: boxes("[data-picker='theme']"),
     };
   });
 
@@ -102,7 +103,7 @@ test.describe("the header", () => {
       await page.evaluate(() => document.fonts.ready);
       const parts = await page.evaluate(() => {
         const bar = document.querySelector("header.header")!.getBoundingClientRect();
-        const items = [...document.querySelectorAll(".oh-brand, .oh-sections li, site-search button[data-open-modal], .oh-social a, header.header oh-picker, .sl-menu-button")]
+        const items = [...document.querySelectorAll(".oh-brand, .oh-sections li, [data-search-trigger], .oh-social a, header.header [data-picker], .sl-menu-button")]
           .filter((el) => el.getClientRects().length)
           .map((el) => ({ name: el.tagName.toLowerCase() + "." + el.className, rect: el.getBoundingClientRect() }));
         return { bar: { top: bar.top, bottom: bar.bottom, right: bar.right }, items: items.map(({ name, rect }) => ({ name, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom })) };
@@ -149,44 +150,22 @@ test.describe("the header", () => {
   });
 });
 
-test.describe("the version picker", () => {
-  test("sits after GitHub, names itself and shows v0.1, pointing at the same section", async ({ page }) => {
+test.describe("the version label", () => {
+  test("sits after GitHub, names itself, shows v0.1 and links to the specification's Versions section", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(SPEC);
-    await expect(picker(page, "version")).toHaveAccessibleName("Specification version v0.1");
-    const github = await box(page, ".oh-social a");
-    expect((await box(page, "header.header oh-picker[data-kind='version']"))[0]).toBeGreaterThan(github[0] + github[2]);
-    const items = page.locator("#oh-version-list [role='menuitem']");
-    await expect(page.locator("#oh-version-list [aria-current]")).toHaveAttribute("href", SPEC);
-    await page.goto("/docs/");
-    await expect(page.locator("#oh-version-list [aria-current]")).toHaveAttribute("href", "/spec/v0.1/");
-    for (const href of await items.evaluateAll((links) => links.map((link) => link.getAttribute("href") ?? ""))) {
-      expect((await page.request.get(href)).status(), href).toBe(200);
+    for (const path of [SPEC, "/docs/"]) {
+      await page.goto(path);
+      const label = picker(page, "version");
+      await expect(label, path).toHaveAccessibleName("Specification version v0.1");
+      await expect(label, path).toHaveAttribute("href", "/spec/v0.1/#versions");
+      expect(await label.evaluate((element) => element.localName), "a plain link while one version exists").toBe("a");
+      await expect(label.locator("svg")).toHaveCount(0);
+      const github = await box(page, ".oh-social a");
+      expect((await box(page, "header.header [data-picker='version']"))[0]).toBeGreaterThan(github[0] + github[2]);
     }
-  });
-
-  test("opens as a list with the current version on the nav's highlight, and Escape closes it", async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(SPEC);
     await picker(page, "version").click();
-    const current = page.getByRole("menu", { name: "Specification version" }).locator("[aria-current='page']");
-    await expect(current).toBeVisible();
-    await expect(current).toBeFocused();
-    const colors = await current.evaluate((item) => {
-      const style = getComputedStyle(item);
-      const probe = document.createElement("span");
-      probe.style.background = "color-mix(in srgb, var(--accent) 10%, var(--bg))";
-      probe.style.color = "var(--accent)";
-      document.body.append(probe);
-      const want = [getComputedStyle(probe).backgroundColor, getComputedStyle(probe).color];
-      probe.remove();
-      return { got: [style.backgroundColor, style.color], want, radius: parseFloat(style.borderTopLeftRadius) };
-    });
-    expect(colors.got).toEqual(colors.want);
-    expect(colors.radius).toBeGreaterThan(0);
-    await page.keyboard.press("Escape");
-    await expect(current).toBeHidden();
-    await expect(picker(page, "version")).toBeFocused();
+    await expect(page).toHaveURL(/\/spec\/v0\.1\/#versions$/);
+    await expect(page.locator("#versions")).toBeInViewport();
   });
 });
 
@@ -238,6 +217,209 @@ test.describe("the sidebar", () => {
   }
 });
 
+test.describe("the sidebar's collapse", () => {
+  const state = (page: Page) => page.evaluate(() => ({ collapsed: document.documentElement.dataset.sidebar === "collapsed", peek: document.documentElement.hasAttribute("data-sidebar-peek") }));
+  const settled = (page: Page) => page.waitForFunction(() => !document.documentElement.hasAttribute("data-sidebar-moving") && document.getAnimations().every((animation) => animation.playState !== "running"));
+  const hide = async (page: Page) => {
+    await page.getByRole("button", { name: "Hide sidebar" }).click();
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: false });
+    await settled(page);
+  };
+
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+  });
+
+  test("hides from the button at its top and shows from a button in the same place, while the content moves over", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    const hide = page.getByRole("button", { name: "Hide sidebar" });
+    await expect(hide).toHaveAttribute("aria-controls", "starlight__sidebar");
+    await expect(hide).toHaveAttribute("aria-expanded", "true");
+    const spot = await box(page, "[data-sidebar-hide]");
+    const docked = { title: (await box(page, "main h1"))[0], outline: (await box(page, ".right-sidebar-panel"))[0] };
+    await hide.click();
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: false });
+    await settled(page);
+    await expect(page.locator("#starlight__sidebar")).toBeHidden();
+    const show = page.getByRole("button", { name: "Show sidebar" });
+    await expect(show).toBeVisible();
+    await expect(show).toBeFocused();
+    await expect(show).toHaveAttribute("aria-expanded", "false");
+    expect(await box(page, "[data-sidebar-show]")).toEqual(spot);
+    const collapsed = { title: (await box(page, "main h1"))[0], outline: (await box(page, ".right-sidebar-panel"))[0] };
+    expect(collapsed.title).toBeLessThan(docked.title);
+    expect(collapsed.outline).toBeLessThan(docked.outline);
+    await show.click();
+    await settled(page);
+    expect(await state(page)).toEqual({ collapsed: false, peek: false });
+    await expect(hide).toBeFocused();
+    expect((await box(page, "main h1"))[0]).toBe(docked.title);
+  });
+
+  test("moves the content from where it stood, both ways, so the title never jumps", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    const title = () => box(page, "main h1").then((rect) => rect[0]);
+    const firstFrame = (selector: string) =>
+      page.evaluate(async (selector) => {
+        const main = document.querySelector("main")!;
+        document.querySelector<HTMLElement>(selector)!.click();
+        for (let frame = 0; frame < 120 && !main.getAnimations().length; frame++) await new Promise(requestAnimationFrame);
+        const animations = main.getAnimations();
+        for (const animation of animations) {
+          animation.pause();
+          animation.currentTime = 0;
+        }
+        const left = document.querySelector("main h1")!.getBoundingClientRect().left;
+        for (const animation of animations) animation.play();
+        return { left, moving: animations.length };
+      }, selector);
+    await page.getByRole("button", { name: "Hide sidebar" }).hover();
+    await expect(page.locator("astro-island:has([data-sidebar-hide])")).not.toHaveAttribute("ssr", "");
+    const docked = await title();
+    const hiding = await firstFrame("[data-sidebar-hide]");
+    expect(hiding.moving).toBeGreaterThan(0);
+    expect(Math.abs(hiding.left - docked)).toBeLessThan(2);
+    await settled(page);
+    const hidden = await title();
+    expect(hidden).toBeLessThan(docked);
+    await page.getByRole("button", { name: "Show sidebar" }).hover();
+    await expect(page.locator("astro-island:has([data-sidebar-show])")).not.toHaveAttribute("ssr", "");
+    const showing = await firstFrame("[data-sidebar-show]");
+    expect(Math.abs(showing.left - hidden)).toBeLessThan(2);
+    await settled(page);
+    expect(await title()).toBe(docked);
+  });
+
+  test("keeps the choice on the next page, hidden from the first frame without a layout shift", async ({ page, browserName }) => {
+    await page.goto("/docs/quickstart/");
+    await hide(page);
+    await page.route(/\/_astro\/.*\.js$/, (route) => route.abort());
+    await page.goto(SPEC);
+    expect(await state(page), "the head script alone applies the choice").toEqual({ collapsed: true, peek: false });
+    await expect(page.locator("#starlight__sidebar")).toBeHidden();
+    await expect(page.locator("[data-sidebar-show]")).toBeVisible();
+    await page.unroute(/\/_astro\/.*\.js$/);
+    await page.goto(SPEC);
+    expect(await state(page)).toEqual({ collapsed: true, peek: false });
+    await expect(page.getByRole("button", { name: "Show sidebar" })).toBeVisible();
+    if (browserName === "chromium") {
+      const shift = await page.evaluate(
+        () =>
+          new Promise<number>((resolve) => {
+            let total = 0;
+            new PerformanceObserver((list) => {
+              for (const entry of list.getEntries() as Array<PerformanceEntry & { value: number; hadRecentInput: boolean }>) if (!entry.hadRecentInput) total += entry.value;
+            }).observe({ type: "layout-shift", buffered: true });
+            setTimeout(() => resolve(total), 400);
+          }),
+      );
+      expect(shift).toBeLessThan(0.001);
+    }
+  });
+
+  test("Control or Command and B hides and shows it, even before any script ran, but not while typing", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    await page.keyboard.press("Control+b");
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: false });
+    await settled(page);
+    await page.keyboard.press("Control+b");
+    await expect.poll(() => state(page)).toEqual({ collapsed: false, peek: false });
+    await page.goto("/spec/playground/");
+    await page.locator("summary", { hasText: "Build your own request" }).click();
+    await expect(page.locator("astro-island:has(#pg-text)")).not.toHaveAttribute("ssr", "");
+    await page.locator("#pg-text").focus();
+    await expect(page.locator("#pg-text")).toBeFocused();
+    await page.keyboard.press("Control+b");
+    await page.waitForTimeout(300);
+    expect(await state(page)).toEqual({ collapsed: false, peek: false });
+  });
+
+  test("a pointer resting at the left edge brings it in as a narrower panel, which leaves with the pointer", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    const docked = await box(page, "#starlight__sidebar");
+    await hide(page);
+    await page.mouse.move(700, 500);
+    await page.mouse.move(6, 500);
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: true });
+    await settled(page);
+    const panel = await box(page, "#starlight__sidebar");
+    expect(panel[2]).toBeLessThan(docked[2]);
+    expect(panel[1]).toBeGreaterThan((await box(page, "[data-sidebar-show]"))[1]);
+    await expect(page.locator("#starlight__sidebar").getByRole("link", { name: "Install" })).toBeVisible();
+    await page.mouse.move(120, 500, { steps: 5 });
+    await page.waitForTimeout(250);
+    expect((await state(page)).peek, "stays while the pointer is on the panel").toBe(true);
+    await page.mouse.move(800, 500, { steps: 5 });
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: false });
+    await settled(page);
+    await expect(page.locator("#starlight__sidebar")).toBeHidden();
+    await page.mouse.move(6, 500);
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: true });
+    await page.keyboard.press("Escape");
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: false });
+  });
+
+  test("a pointer passing over the edge on its way somewhere does not bring it in", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    await hide(page);
+    await page.mouse.move(700, 500);
+    await page.mouse.move(6, 500);
+    await page.mouse.move(700, 500);
+    await page.waitForTimeout(400);
+    expect(await state(page)).toEqual({ collapsed: true, peek: false });
+  });
+
+  test("while hidden, its links leave the tab order and screen readers", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    await hide(page);
+    expect(await page.locator("#starlight__sidebar").evaluate((pane) => (pane as HTMLElement).inert)).toBe(true);
+    await page.getByRole("button", { name: "Show sidebar" }).focus();
+    for (let step = 0; step < 3; step++) {
+      await page.keyboard.press("Tab");
+      expect(await page.evaluate(() => Boolean(document.activeElement?.closest("#starlight__sidebar")))).toBe(false);
+    }
+  });
+
+  test("with reduced motion it switches at once and nothing slides", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/docs/quickstart/");
+    await page.getByRole("button", { name: "Hide sidebar" }).click();
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: false });
+    const moving = () => page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === "running" && Number(animation.effect?.getTiming().duration) > 0).length);
+    expect(await moving()).toBe(0);
+    await page.mouse.move(6, 500);
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: true });
+    expect(await moving()).toBe(0);
+  });
+
+  for (const width of [1440, 1280, 1024]) {
+    test(`starts every documentation page's title at one left edge while hidden at ${width} px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.addInitScript(() => localStorage.setItem("openhal-sidebar", "collapsed"));
+      const edges: Record<string, number> = {};
+      for (const path of [SPEC, "/docs/", "/docs/quickstart/", "/spec/playground/", "/drivers/", "/library/scpi-rigol-dp832/"]) {
+        await page.goto(path);
+        edges[path] = (await box(page, "main h1"))[0];
+      }
+      for (const path of Object.keys(edges)) expect(edges[path], path).toBe(edges[SPEC]);
+      expect(edges[SPEC]).toBeGreaterThan((await box(page, "[data-sidebar-show]"))[0] + 32);
+    });
+  }
+
+  test("leaves phones and the pages without a sidebar alone", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("openhal-sidebar", "collapsed"));
+    for (const path of ["/", "/blog/", "/404.html"]) {
+      await page.goto(path);
+      await expect(page.locator("[data-sidebar-show], [data-sidebar-hide]").locator("visible=true")).toHaveCount(0);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/docs/quickstart/");
+    await expect(page.locator("[data-sidebar-show], [data-sidebar-hide]").locator("visible=true")).toHaveCount(0);
+    await page.locator(".sl-menu-button").click();
+    await expect(page.locator("#starlight__sidebar").getByRole("link", { name: "Install" })).toBeVisible();
+  });
+});
+
 test.describe("the phone menu", () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -253,6 +435,10 @@ test.describe("the phone menu", () => {
     await expect(menu.locator(".sidebar-content a[aria-current='page']:not([role='menuitem'])").last()).toHaveText("3.3 Messages");
     await expect(picker(page, "version", ".mobile-preferences")).toHaveAccessibleName("Specification version v0.1");
     await expect(picker(page, "theme", ".mobile-preferences")).toHaveAccessibleName("Theme Auto");
+    await picker(page, "theme", ".mobile-preferences").click();
+    await expect(menu.getByRole("menu")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(menu.getByRole("menu")).toHaveCount(0);
     await menu.locator(".oh-menu-sections").getByRole("link", { name: "Device Library" }).click();
     await expect(page).toHaveURL(/\/library\/$/);
   });
@@ -313,8 +499,8 @@ test.describe("the theme picker", () => {
     await page.goto(SPEC);
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await expect(picker(page, "theme")).toHaveAccessibleName("Theme Dark");
-    await expect(page.getByRole("menuitemradio", { name: "Dark", includeHidden: true }).first()).toHaveAttribute("aria-checked", "true");
     await picker(page, "theme").click();
+    await expect(page.getByRole("menuitemradio", { name: "Dark" })).toHaveAttribute("aria-checked", "true");
     await page.getByRole("menuitemradio", { name: "Auto" }).click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
     expect(await page.evaluate(() => localStorage.getItem("starlight-theme"))).toBe("");
@@ -322,64 +508,117 @@ test.describe("the theme picker", () => {
 });
 
 test.describe("site search", () => {
-  test("Ctrl K opens Starlight's search, which finds an error code and opens a result", async ({ page }) => {
+  test("Ctrl K opens the palette before any script ran, which finds an error code and opens a result", async ({ page }) => {
     await page.goto("/drivers/");
-    await searchReady(page);
     await page.keyboard.press("Control+k");
-    const dialog = page.getByRole("dialog", { name: "Search" });
-    await expect(dialog).toBeVisible();
-    const input = dialog.locator("#starlight__search input");
+    await expect(palette(page)).toBeVisible();
+    const input = palette(page).getByRole("combobox");
     await expect(input).toBeFocused();
     await input.fill("LIMIT_EXCEEDED");
-    const results = dialog.locator(".pagefind-ui__result-link");
-    await expect(results.first()).toBeVisible({ timeout: 15_000 });
-    expect(await results.evaluateAll((items) => items.map((item) => item.getAttribute("href")))).toContain("/spec/errors/");
-    const target = (await results.first().getAttribute("href"))!;
-    await results.first().click();
+    await expect(palette(page).locator("[cmdk-item] mark").first()).toBeVisible({ timeout: 15_000 });
+    expect(await results(page).evaluateAll((items) => items.map((item) => item.getAttribute("href")))).toContain("/spec/errors/");
+    const target = (await results(page).first().getAttribute("href"))!;
+    await expect(results(page).first()).toHaveAttribute("aria-selected", "true");
+    await page.keyboard.press("Enter");
     await expect(page).toHaveURL(new RegExp(`${target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
   });
 
-  test("the header field opens the search, and Escape closes it with focus back on the field", async ({ page }) => {
+  test("groups results by the header's sections, marks the matches and moves with the arrow keys", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/docs/");
+    await page.keyboard.press("Control+k");
+    await palette(page).getByRole("combobox").fill("LIMIT_EXCEEDED");
+    await expect(palette(page).locator("[cmdk-item] mark").first()).toBeVisible({ timeout: 15_000 });
+    const headings = await palette(page).locator("[cmdk-group-heading]").allTextContents();
+    expect(headings.length).toBeGreaterThan(1);
+    for (const heading of headings) expect(SECTIONS).toContain(heading);
+    expect(new Set(headings).size).toBe(headings.length);
+    await expect(palette(page).locator("mark").first()).toHaveText(/LIMIT_EXCEEDED/);
+    const ids = await results(page).evaluateAll((items) => items.map((item) => item.id));
+    await page.keyboard.press("ArrowDown");
+    await expect(results(page).nth(1)).toHaveAttribute("aria-selected", "true");
+    await expect(palette(page).getByRole("combobox")).toHaveAttribute("aria-activedescendant", ids[1]);
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("ArrowUp");
+    await expect(results(page).last()).toHaveAttribute("aria-selected", "true");
+    await page.keyboard.press("Tab");
+    await expect(palette(page).getByRole("combobox"), "the results are reached with the arrow keys, not Tab").toBeFocused();
+    await expect(results(page).last()).toHaveAttribute("aria-selected", "true");
+  });
+
+  test("the header field opens the palette, and Escape closes it with focus back on the field", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
-    const field = page.locator("site-search button[data-open-modal]");
+    const field = page.locator("[data-search-trigger]");
     await expect(field).toContainText("Search");
+    await expect(field).toHaveAccessibleName(/^Search (Ctrl|⌘) K$/);
     await field.click();
-    const dialog = page.getByRole("dialog", { name: "Search" });
-    await expect(dialog).toBeVisible();
-    await dialog.locator("#starlight__search input").fill("print babysitter");
-    await expect(dialog.locator(".pagefind-ui__result-link").first()).toBeVisible({ timeout: 15_000 });
+    await expect(palette(page)).toBeVisible();
+    await expect(palette(page).getByRole("combobox"), "a field with an id, which Chrome asks of every form field").toHaveAttribute("id", /\S/);
+    await palette(page).getByRole("combobox").fill("print babysitter");
+    await expect(palette(page).locator("[cmdk-item] mark").first()).toBeVisible({ timeout: 15_000 });
     await page.keyboard.press("Escape");
-    await expect(dialog).toBeHidden();
+    await expect(palette(page)).toBeHidden();
     await expect(field).toBeFocused();
   });
 
-  test("a search with no match says so", async ({ page }) => {
+  test("a search with no match says so and suggests what to try", async ({ page }) => {
     await page.goto("/");
-    await searchReady(page);
     await page.keyboard.press("Control+k");
-    await page.locator("#starlight__search input").fill("qzqzqz");
-    await expect(page.locator(".pagefind-ui__message")).toHaveText(/No results for qzqzqz/, { timeout: 15_000 });
-    await expect(page.locator(".pagefind-ui__result-link")).toHaveCount(0);
+    await palette(page).getByRole("combobox").fill("qzqzqz");
+    await expect(palette(page).locator("[cmdk-empty]")).toHaveText(/No results for qzqzqz\. Try a method such as hal\/write or an error code such as LIMIT_EXCEEDED\./, { timeout: 15_000 });
+    await expect(results(page)).toHaveCount(0);
   });
 
-  test("on a phone the field is an icon button that opens the same dialog", async ({ page }) => {
+  test("before typing it lists pages to start with, then the searches a person opened", async ({ page }) => {
+    await page.goto("/docs/");
+    await page.keyboard.press("Control+k");
+    await expect(palette(page).locator("[cmdk-group-heading]")).toHaveText(["Start here"]);
+    await expect(results(page).first()).toHaveText("Quickstart");
+    await expect(results(page).first()).toHaveAttribute("aria-selected", "true");
+    await palette(page).getByRole("combobox").fill("Device file");
+    await expect(palette(page).locator("[cmdk-item][href*='#']").first()).toBeVisible({ timeout: 15_000 });
+    await page.keyboard.press("Enter");
+    await expect(page).not.toHaveURL(/\/docs\/$/);
+    await page.keyboard.press("Control+k");
+    await expect(palette(page).locator("[cmdk-group-heading]")).toHaveText(["Recent searches", "Start here"]);
+    await expect(results(page).first()).toHaveText("Device file");
+    await page.keyboard.press("Enter");
+    await expect(palette(page).getByRole("combobox")).toHaveValue("Device file");
+    await palette(page).getByRole("combobox").fill("");
+    await results(page).filter({ hasText: "Clear recent searches" }).click();
+    await expect(palette(page).locator("[cmdk-group-heading]")).toHaveText(["Start here"]);
+  });
+
+  test("on a phone the field is an icon button that opens the palette full screen with a Cancel button", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     await page.getByRole("button", { name: /^Search/ }).click();
-    await expect(page.getByRole("dialog", { name: "Search" })).toBeVisible();
-    await page.locator("#starlight__search input").fill("print babysitter");
-    await expect(page.locator(".pagefind-ui__result-link").first()).toBeVisible({ timeout: 15_000 });
+    await expect(palette(page)).toBeVisible();
+    await page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== "running"));
+    expect(await box(page, "[role='dialog']")).toEqual([0, 0, 390, 844]);
+    expect((await box(page, "[data-search-trigger]")).slice(2), "the icon button is as easy to tap as the menu button").toEqual([40, 40]);
+    await palette(page).getByRole("combobox").fill("print babysitter");
+    await expect(palette(page).locator("[cmdk-item] mark").first()).toBeVisible({ timeout: 15_000 });
+    await palette(page).getByRole("button", { name: "Cancel" }).click();
+    await expect(palette(page)).toBeHidden();
   });
 
   test("results never show code, YAML or a message trace", async ({ page }) => {
     await page.goto("/docs/");
-    await searchReady(page);
     await page.keyboard.press("Control+k");
-    await page.locator("#starlight__search input").fill("uv run openhal demo");
-    await expect(page.locator(".pagefind-ui__result-link").first()).toBeVisible({ timeout: 15_000 });
-    for (const excerpt of await page.locator(".pagefind-ui__result-excerpt").allTextContents()) {
-      expect(excerpt, excerpt).not.toMatch(/\$ uv run|"jsonrpc"|^\s*device:/);
+    for (const [term, marked] of [
+      ["uv run openhal demo", /demo|openhal/i],
+      ["provenance", /provenance/i],
+      ["babysit", /babysit/i],
+      ["hand-written", /hand|written/i],
+      ["Klipper", /klipper/i],
+    ] as const) {
+      await palette(page).getByRole("combobox").fill(term);
+      await expect(palette(page).locator("[cmdk-item] mark").filter({ hasText: marked }).first()).toBeVisible({ timeout: 15_000 });
+      for (const excerpt of await results(page).allTextContents()) {
+        expect(excerpt, `${term}: ${excerpt}`).not.toMatch(/\$ uv run|"jsonrpc"|^\s*device:|provenance: \{|source: hand-written|openhal: "0\.1"|device: Klipper|connect: \{|\{ type: /);
+      }
     }
   });
 });
@@ -398,22 +637,39 @@ test.describe("page turns", () => {
     }
   });
 
-  test("a page turn moves the way the nav goes, and only for section links", async ({ page, browserName }) => {
+  test.describe("with retries, since a busy Mac can make Chromium drop a view transition between the preview server's uncached pages", () => {
+    test.describe.configure({ retries: 2 });
+
+    test("a page turn moves the way the nav goes, and only for section links", async ({ page, browserName }) => {
+      test.skip(browserName !== "chromium", "cross-document view transitions are a Chromium feature");
+      await page.setViewportSize({ width: 1440, height: 900 });
+      const turn = () => page.evaluate(() => document.documentElement.dataset.turn ?? null);
+      await page.goto("/drivers/");
+      await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Device Library", exact: true }).click();
+      await expect(page).toHaveURL(/\/library\/$/);
+      expect(await turn()).toBe("forward");
+      await page.waitForTimeout(500);
+      await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Specification", exact: true }).click();
+      await expect(page).toHaveURL(/\/spec\//);
+      expect(await turn()).toBe("backward");
+      await page.goto("/");
+      await page.getByRole("link", { name: "Send the requests in your browser" }).click();
+      await expect(page).toHaveURL(/\/spec\/playground\/$/);
+      expect(await turn()).toBeNull();
+    });
+  });
+
+  test("a section in the tablet's Section menu turns the page like the nav's links", async ({ page, browserName }) => {
     test.skip(browserName !== "chromium", "cross-document view transitions are a Chromium feature");
-    await page.setViewportSize({ width: 1440, height: 900 });
-    const turn = () => page.evaluate(() => document.documentElement.dataset.turn ?? null);
+    await page.setViewportSize({ width: 900, height: 900 });
     await page.goto("/drivers/");
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Device Library", exact: true }).click();
+    const section = page.locator("header.header [data-picker='section']");
+    await section.hover();
+    await section.click();
+    await page.getByRole("menu").getByRole("menuitem", { name: "Device Library" }).click();
     await expect(page).toHaveURL(/\/library\/$/);
-    expect(await turn()).toBe("forward");
-    await page.waitForTimeout(500);
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Specification", exact: true }).click();
-    await expect(page).toHaveURL(/\/spec\//);
-    expect(await turn()).toBe("backward");
-    await page.goto("/");
-    await page.getByRole("link", { name: "Send the requests in your browser" }).click();
-    await expect(page).toHaveURL(/\/spec\/playground\/$/);
-    expect(await turn()).toBeNull();
+    const asked = () => page.evaluate(() => document.documentElement.dataset.turn ?? sessionStorage.getItem("openhal:page-turn"));
+    await expect.poll(asked, "the page left asked for a forward turn, which the preview server's uncached pages can drop at this width").toBe("forward");
   });
 
   test("no page moves while it loads", async ({ page, browserName }) => {

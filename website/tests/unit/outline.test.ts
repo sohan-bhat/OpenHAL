@@ -16,7 +16,7 @@ function scan(source: string): string[] {
 describe("Starlight's outline", () => {
   it("is patched for the Starlight version the site installs", () => {
     const version = pkg.dependencies["@astrojs/starlight"];
-    expect(Object.keys(pkg.pnpm.patchedDependencies)).toEqual([`@astrojs/starlight@${version}`]);
+    expect(Object.keys(pkg.pnpm.patchedDependencies)).toContain(`@astrojs/starlight@${version}`);
   });
 
   it("tests an element for a heading inside it only once the element sits where the outline observes", () => {

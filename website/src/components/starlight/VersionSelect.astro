@@ -1,8 +1,8 @@
 ---
+import LinkMenu from "../islands/LinkMenu";
 import { specPages } from "../../lib/spec";
-import { readVersions } from "../../lib/spec-meta.mjs";
-import { versionRows } from "../../lib/versions";
-import Picker from "./Picker.astro";
+import { readVersions, specBase } from "../../lib/spec-meta.mjs";
+import { versionMenu, versionRows } from "../../lib/versions";
 
 interface Props {
   place?: "header" | "menu";
@@ -10,8 +10,22 @@ interface Props {
 
 const { place = "header" } = Astro.props;
 const { versions, latest } = readVersions();
-const { current, rows } = versionRows(Astro.url.pathname, versions, latest, await specPages());
+const { current, label, rows } = versionRows(Astro.url.pathname, versions, latest, await specPages());
 const items = rows.map((row) => ({ label: row.label, href: row.href, current: row.current, page: row.href === Astro.url.pathname }));
 ---
 
-{current && <Picker id={place === "menu" ? "oh-version-menu" : "oh-version"} kind="version" label="Specification version" items={items} />}
+{
+  current &&
+    (versionMenu(rows) ? (
+      <LinkMenu client:intent kind="version" label="Specification version" items={items} place={place} />
+    ) : (
+      <a
+        data-picker="version"
+        href={`${specBase(current)}#versions`}
+        class="inline-flex h-9 shrink-0 items-center rounded-md px-2 text-sm leading-[1.4] font-semibold whitespace-nowrap text-muted-foreground no-underline hover:bg-muted hover:text-foreground"
+      >
+        <span class="sr-only">Specification version </span>
+        {label}
+      </a>
+    ))
+}

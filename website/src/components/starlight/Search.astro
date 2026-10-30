@@ -1,0 +1,16 @@
+---
+import SearchPalette from "../islands/SearchPalette";
+import { sections } from "../../lib/sections";
+import { latestSpecHref } from "../../lib/spec";
+
+const links = (await sections(Astro.url.pathname)).map(({ label, match }) => ({ label, match }));
+const suggestions = [
+  { label: "Quickstart", href: "/docs/quickstart/" },
+  { label: "Concepts", href: "/docs/concepts/" },
+  { label: "Device files", href: `${latestSpecHref()}device-files/` },
+  { label: "Error codes", href: "/spec/errors/" },
+  { label: "Playground", href: "/spec/playground/" },
+];
+---
+
+<SearchPalette client:intent="mod+k" sections={links} suggestions={suggestions} />

@@ -1,10 +1,10 @@
 ---
-import Search from "@astrojs/starlight/components/Search.astro";
 import SocialIcons from "@astrojs/starlight/components/SocialIcons.astro";
 import { PRODUCT_NAME } from "../../config/brand";
 import { wordmarkWidth } from "../../lib/brand-mark";
 import { sections } from "../../lib/sections";
 import SectionSelect from "./SectionSelect.astro";
+import Search from "./Search.astro";
 import ThemeSelect from "./ThemeSelect.astro";
 import VersionSelect from "./VersionSelect.astro";
 
@@ -34,13 +34,6 @@ const width = wordmarkWidth(24);
   <SectionSelect links={links} />
   <div class="oh-end print:hidden">
     <Search />
-    <script is:inline>
-      (() => {
-        const button = document.querySelector("site-search button[data-open-modal]");
-        const keys = button ? [...button.querySelectorAll("kbd kbd")].map((key) => key.textContent).join(" ") : "";
-        if (keys) button.setAttribute("aria-label", `${button.getAttribute("aria-label")} ${keys}`);
-      })();
-    </script>
     <div class="oh-tools sl-hidden md:sl-flex">
       <div class="oh-social sl-flex">
         <SocialIcons />
@@ -53,7 +46,6 @@ const width = wordmarkWidth(24);
 
 <script>
   import "../../lib/boot";
-  import "../../lib/picker";
 </script>
 
 <style>

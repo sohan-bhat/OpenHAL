@@ -23,23 +23,30 @@ interface Weight {
  * measured weights of the build in docs/verification/ui.md with about ten percent of headroom.
  */
 const BUDGETS: Record<string, { path: string } & Weight> = {
-  home: { path: "/", html: 17_200, css: 22_100, js: 45_400, fonts: 28_100 },
-  "docs index": { path: "/docs/", html: 11_000, css: 17_800, js: 32_600, fonts: 17_800 },
-  "guide page": { path: "/docs/quickstart/", html: 12_800, css: 17_800, js: 32_600, fonts: 34_500 },
-  "example page": { path: "/docs/examples/3d-print-watch/", html: 17_100, css: 21_200, js: 36_500, fonts: 28_100 },
-  "page with diagrams": { path: "/docs/architecture/", html: 23_700, css: 17_800, js: 32_600, fonts: 28_100 },
-  "spec page": { path: "/spec/v0.1/basic/messages/", html: 22_900, css: 17_800, js: 32_600, fonts: 28_100 },
-  "schema reference": { path: "/spec/v0.1/schema/", html: 20_200, css: 17_800, js: 32_600, fonts: 28_100 },
-  drivers: { path: "/drivers/", html: 16_600, css: 17_800, js: 31_100, fonts: 28_100 },
-  "driver page": { path: "/drivers/moonraker/", html: 15_000, css: 17_800, js: 32_600, fonts: 28_100 },
-  library: { path: "/library/", html: 12_000, css: 17_800, js: 31_100, fonts: 28_100 },
-  "library device": { path: "/library/scpi-rigol-dp832/", html: 12_600, css: 17_800, js: 31_100, fonts: 28_100 },
-  playground: { path: "/spec/playground/", html: 19_800, css: 19_800, js: 31_100, fonts: 28_100 },
-  "Python reference": { path: "/sdks/python/reference/", html: 18_700, css: 17_800, js: 32_600, fonts: 28_100 },
-  "Inspector page": { path: "/inspector/", html: 11_500, css: 17_800, js: 31_100, fonts: 28_100 },
-  blog: { path: "/blog/", html: 8_800, css: 17_800, js: 31_100, fonts: 28_100 },
-  "not found": { path: "/404.html", html: 9_100, css: 17_800, js: 31_100, fonts: 28_100 },
+  home: { path: "/", html: 15_000, css: 20_200, js: 13_800, fonts: 28_100 },
+  "docs index": { path: "/docs/", html: 13_400, css: 17_300, js: 1_500, fonts: 17_800 },
+  "guide page": { path: "/docs/quickstart/", html: 15_500, css: 17_300, js: 3_000, fonts: 34_500 },
+  "example page": { path: "/docs/examples/3d-print-watch/", html: 21_100, css: 19_500, js: 4_200, fonts: 28_100 },
+  "page with diagrams": { path: "/docs/architecture/", html: 26_500, css: 17_300, js: 3_000, fonts: 28_100 },
+  "spec page": { path: "/spec/v0.1/basic/messages/", html: 25_700, css: 17_300, js: 3_000, fonts: 28_100 },
+  "schema reference": { path: "/spec/v0.1/schema/", html: 23_100, css: 17_300, js: 3_000, fonts: 28_100 },
+  drivers: { path: "/drivers/", html: 19_400, css: 17_300, js: 1_500, fonts: 28_100 },
+  "driver page": { path: "/drivers/moonraker/", html: 17_700, css: 17_300, js: 3_000, fonts: 28_100 },
+  library: { path: "/library/", html: 14_700, css: 17_300, js: 1_500, fonts: 28_100 },
+  "library device": { path: "/library/scpi-rigol-dp832/", html: 15_400, css: 17_300, js: 1_500, fonts: 28_100 },
+  playground: { path: "/spec/playground/", html: 20_500, css: 19_400, js: 1_500, fonts: 28_100 },
+  "Python reference": { path: "/sdks/python/reference/", html: 21_500, css: 17_300, js: 3_000, fonts: 28_100 },
+  "Inspector page": { path: "/inspector/", html: 14_300, css: 17_300, js: 1_500, fonts: 28_100 },
+  blog: { path: "/blog/", html: 10_900, css: 17_300, js: 1_500, fonts: 28_100 },
+  "not found": { path: "/404.html", html: 11_300, css: 17_300, js: 1_500, fonts: 28_100 },
 };
+
+/**
+ * The most script the React islands may load once a person reaches for them, gzipped. The first is
+ * the search palette's first open with its first results, React and the shared parts included, and
+ * the second is what a picker adds once the palette has loaded those.
+ */
+const ISLANDS = { palette: 180_200, picker: 22_300 };
 
 function fileOf(url: string): string {
   const path = decodeURIComponent(new URL(url).pathname);
@@ -90,6 +97,30 @@ test.describe("page weight", () => {
       for (const file of weight.files) expect(manifest.faces.map((face) => face.file.replace(/\.woff2$/, "")).some((stem) => file.includes(stem)), `${name} loads ${file}`).toBe(true);
     });
   }
+
+  test("the islands load their script only once a person reaches for them, within their budget", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const requests: Request[] = [];
+    page.on("requestfinished", (request) => requests.push(request));
+    await page.goto("/docs/quickstart/", { waitUntil: "load" });
+    await page.waitForTimeout(1500);
+    requests.length = 0;
+    await page.keyboard.press("Control+k");
+    await page.getByRole("dialog", { name: "Search" }).getByRole("combobox").fill("LIMIT_EXCEEDED");
+    await expect(page.locator("[cmdk-item] mark").first()).toBeVisible({ timeout: 15_000 });
+    await page.waitForTimeout(1000);
+    const palette = weigh(requests).js;
+    await page.keyboard.press("Escape");
+    requests.length = 0;
+    await page.locator("header.header [data-picker='theme']").hover();
+    await page.locator("header.header [data-picker='theme']").click();
+    await expect(page.getByRole("menu")).toBeVisible();
+    await page.waitForTimeout(1000);
+    const picker = weigh(requests).js;
+    console.log(`islands palette js ${palette} picker js ${picker}`);
+    expect(palette).toBeLessThanOrEqual(ISLANDS.palette);
+    expect(picker).toBeLessThanOrEqual(ISLANDS.picker);
+  });
 
   test("every page uses its faces within the weights the subsets keep", async ({ page }) => {
     test.setTimeout(120_000);

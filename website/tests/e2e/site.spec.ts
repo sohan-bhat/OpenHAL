@@ -76,8 +76,8 @@ test.describe("specification", () => {
   test("/spec/ goes to the latest version, which the header's version picker shows", async ({ page }) => {
     await page.goto("/spec/");
     await expect(page).toHaveURL(/\/spec\/v\d+\.\d+\/$/);
-    await expect(page.locator("header.header oh-picker[data-kind='version'] .oh-picker-button")).toHaveAccessibleName(/^Specification version v\d+\.\d+$/);
-    await expect(page.locator("#oh-version-list [aria-current='page']")).toHaveText(/^v\d+\.\d+$/);
+    await expect(page.locator("header.header [data-picker='version']")).toHaveAccessibleName(/^Specification version v\d+\.\d+$/);
+    await expect(page.locator("header.header [data-picker='version']")).toHaveAttribute("href", /^\/spec\/v\d+\.\d+\/#versions$/);
     await page.locator(".sidebar-content").getByRole("link", { name: /Changelog$/ }).first().click();
     await expect(page.locator("h1")).toHaveText(/^\d+ Changelog$/);
   });

@@ -2,49 +2,6 @@ import { CLOSE, OPEN, release, still, tween, warm } from "./motion";
 
 const keepsContent = CSS.supports("selector(::details-content)");
 
-/** Fades Starlight's search dialog and its backdrop in and out, whatever opens or closes it. */
-function searchDialog(): void {
-  const dialog = document.querySelector<HTMLDialogElement>("site-search dialog");
-  if (!dialog) return;
-  const close = dialog.close.bind(dialog);
-  const backdrop = { pseudoElement: "::backdrop" };
-  let turn = 0;
-
-  new MutationObserver(() => {
-    if (!dialog.open || dialog.hasAttribute("data-closing") || still()) return;
-    const mine = ++turn;
-    dialog.setAttribute("data-opening", "");
-    warm()
-      .then(() => {
-        dialog.removeAttribute("data-opening");
-        void tween(dialog, { opacity: [0, 1] }, OPEN, backdrop);
-        return tween(dialog, { opacity: [0, 1], transform: ["translateY(-8px) scale(0.98)", "none"] }, OPEN);
-      })
-      .then(() => mine === turn && release(dialog, "opacity", "transform"))
-      .catch(() => dialog.removeAttribute("data-opening"));
-  }).observe(dialog, { attributes: true, attributeFilter: ["open"] });
-
-  dialog.addEventListener("cancel", (event) => {
-    if (still() || !event.cancelable) return;
-    event.preventDefault();
-    dialog.close();
-  });
-
-  dialog.close = (value?: string) => {
-    if (!dialog.open || still()) return close(value);
-    if (dialog.hasAttribute("data-closing")) return;
-    const mine = ++turn;
-    dialog.setAttribute("data-closing", "");
-    void tween(dialog, { opacity: [1, 0] }, CLOSE, backdrop);
-    void tween(dialog, { opacity: [null, 0], transform: [null, "translateY(-4px) scale(0.98)"] }, CLOSE).then(() => {
-      if (mine !== turn) return;
-      close(value);
-      dialog.removeAttribute("data-closing");
-      release(dialog, "opacity", "transform");
-    });
-  };
-}
-
 /** Fades the phone menu in and out, which stays drawn while it fades out. */
 function phoneMenu(): void {
   const pane = document.getElementById("starlight__sidebar");
@@ -139,7 +96,6 @@ function observe(): void {
   }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["open", "data-copied"], attributeOldValue: true });
 }
 
-searchDialog();
 phoneMenu();
 observe();
 if (!still()) warm().catch(() => {});

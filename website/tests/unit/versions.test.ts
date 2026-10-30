@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { compareVersions, parseVersions, versionLabel, versionOfFolder } from "../../src/lib/spec-meta.mjs";
-import { versionRows } from "../../src/lib/versions";
+import { versionMenu, versionRows } from "../../src/lib/versions";
 
 const versions = [
   { version: "0.2", status: "draft", latest: false },
@@ -69,5 +69,10 @@ describe("the header's version picker", () => {
   it("names each version's status in words", () => {
     const { rows } = versionRows("/", [{ version: "0.1", status: "draft", latest: true }], "0.1", []);
     expect(rows[0].note).toBe("latest draft");
+  });
+
+  it("is a plain label while one version exists and a menu once there are two", () => {
+    expect(versionMenu(versionRows("/", [{ version: "0.1", status: "draft", latest: true }], "0.1", []).rows)).toBe(false);
+    expect(versionMenu(versionRows("/", versions, "0.1", pages).rows)).toBe(true);
   });
 });
