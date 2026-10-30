@@ -5,7 +5,7 @@ client gets from the hub. Its reason needs the device file and who confirmed the
 from `hal/devices/describe` over the hub's `/rpc` socket. When that socket can't be reached, the
 REST device view gives the file name and limits, and the reason leaves the confirmation out.
 
-Tool errors for refused calls start with the registry name and number, for example
+A tool error for a failed call starts with the registry name and number, for example
 `SCOPE_DENIED (-32003). This request takes a human principal.`
 """
 
@@ -37,7 +37,7 @@ HTTP_NAMES: Final = {
 
 
 class ErrorInfo(BaseModel):
-    """The registry error behind a blocked or failed decision, as a protocol client sees it."""
+    """The registry error behind a blocked or failed decision, as a protocol client receives it."""
 
     code: int = Field(description="The registry number, for example -32010.")
     name: str = Field(description="The registry name to branch on, for example LIMIT_EXCEEDED.")
@@ -46,13 +46,13 @@ class ErrorInfo(BaseModel):
 
 
 class Decision(m.Decision):
-    """The kernel's answer, with the registry error when it was blocked or failed."""
+    """The kernel's result, with the registry error when the decision was blocked or failed."""
 
     error: ErrorInfo | None = Field(default=None, description="Set when status is blocked or failed.")
 
 
 def tool_error_text(exc: OpenHALError) -> str:
-    """A refused call's message, led by its registry name and number when it has one."""
+    """A failed call's message, led by its registry name and number when it has one."""
     if isinstance(exc, HubNotRunning) or exc.status_code is None:
         return str(exc)
     name = HTTP_NAMES.get(exc.status_code) or ("INTERNAL_ERROR" if exc.status_code >= 500 else None)
@@ -111,7 +111,7 @@ def facts_from_view(view: m.DeviceView, target: str | None) -> Facts:
 
 
 def reaches_network(client: AsyncClient) -> bool:
-    """False when the client talks to an in-process app, as tests do, so no socket is opened."""
+    """False when the client connects to an in-process app, as tests do, so no socket is opened."""
     transport = client._http._transport  # noqa: SLF001
     return isinstance(transport, httpx.AsyncHTTPTransport)
 
@@ -119,7 +119,7 @@ def reaches_network(client: AsyncClient) -> bool:
 class ErrorMapper:
     """Adds registry errors to decisions for one hub client.
 
-    `use_socket` says whether to ask the hub's `/rpc` socket for the device's limits provenance.
+    `use_socket` sets whether to query the hub's `/rpc` socket for the device's limits provenance.
     It defaults to whether the client reaches the network at all.
     """
 

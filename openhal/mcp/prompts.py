@@ -44,8 +44,8 @@ Help me write an OpenHAL routine. The goal is {goal}
    be write (device, channel, value), if (a condition with then), wait (a duration) and log (text).
 3. Call draft_routine. Routines always start disabled. If the hub reports a problem, fix the problem and draft again.
 4. Call run_routine_dry and show me each decision. Change the routine until nothing is blocked.
-5. Tell me how to enable the routine with openhal routine enable <id>. Leave enabling to me. The hub lets an agent
-   enable a routine only when I turned on routines.agent_enable_low_hazard and every device the routine touches is
+5. Tell me how to enable the routine with openhal routine enable <id>. Leave enabling to me. An agent can enable
+   a routine only when I turned on routines.agent_enable_low_hazard and every device the routine touches is
    low hazard. A routine on a high hazard device also needs my signed approval.
 """
 
