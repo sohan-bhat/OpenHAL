@@ -379,7 +379,7 @@ class MidiDriver(Driver):
             "match": {"usb_class": "midi"},
             "notes": (
                 f"Proposed from {len(seen)} controls that sent messages while the driver listened. "
-                "Rename them after what they are on the device. Outputs such as pad LEDs can't be seen by "
+                "Rename them after what they are on the device. Outputs such as pad LEDs can't be detected by "
                 "listening, so add write channels from the device's MIDI implementation chart."
             ),
         }

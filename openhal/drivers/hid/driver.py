@@ -301,7 +301,7 @@ class HidDriver(Driver):
 
     @property
     def connected(self) -> bool:
-        """True while the device is open and the reader has seen no failure."""
+        """True while the device is open and the reader has had no failure."""
         return self._device is not None and not self._error
 
     async def health(self) -> Health:

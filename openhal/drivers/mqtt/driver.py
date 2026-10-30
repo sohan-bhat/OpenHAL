@@ -514,8 +514,8 @@ def describe_topics(seen: dict[str, bytes], prefix: str = "") -> dict[str, Any]:
         elif text.lower() in v.DEFAULT_ON + v.DEFAULT_OFF:
             reads[name_for(relative)] = {"type": "bool", "map": {"state": relative}}
     notes = (
-        f"Proposed from {len(seen)} topics seen while listening. Numbers use dimensionless until you set the real "
-        "unit. Command topics can't be seen by listening, so add write channels from the device's documentation."
+        f"Proposed from {len(seen)} topics received while listening. Numbers use dimensionless until you set the real "
+        "unit. Command topics can't be detected by listening, so add write channels from the device's documentation."
     )
     result: dict[str, Any] = {"notes": notes}
     if reads:

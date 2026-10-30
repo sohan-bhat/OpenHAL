@@ -8,7 +8,7 @@ KNXnet/IP), and xknx implements that protocol.
 How channels map to KNX.
 
 - Every channel names a `group_address` and a `dpt`. Reads come from the newest
-  GroupValueWrite or GroupValueResponse seen on the bus. When nothing has been seen since
+  GroupValueWrite or GroupValueResponse received on the bus. When nothing has arrived since
   connecting, a read sends one GroupValueRead and waits `timeout` for the response. An address
   whose read flag is off sends no response, and reads as no value until a telegram arrives.
 - A channel under `write` sends a GroupValueWrite. KNX actuators usually report their state on a

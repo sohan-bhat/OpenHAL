@@ -9,7 +9,7 @@ How channels map to frames.
 - A read channel names a frame id and where its value sits in the data bytes (`byte`, `length`,
   `endian`, `signed`, optionally `bit` and `bits`), plus `scale`, `offset` and the device `unit`
   (`openhal.drivers.can.bits`). A background thread keeps the newest frame per id, and a read
-  decodes the newest one, timestamped when it arrived. An id that hasn't been seen since
+  decodes the newest one, timestamped when it arrived. An id that hasn't arrived since
   connecting reads as no value, which the kernel treats as unknown.
 - A write channel names the frame to send and where the value goes. `data` gives the bytes the
   rest of the frame carries. Write channels may share one frame. A write starts from the last
@@ -419,7 +419,7 @@ class CanDriver(Driver):
         return {"sent": notation(action_map.id, action_map.is_extended, data)}
 
     async def describe(self, listen_s: float = 1.0) -> dict[str, Any] | None:
-        """Listen for a moment and propose one read channel per frame id seen on the bus."""
+        """Listen for a moment and propose one read channel per frame id received on the bus."""
         if self._bus is None or self._lost:
             return None
         await asyncio.sleep(listen_s)
@@ -437,9 +437,9 @@ class CanDriver(Driver):
             }
         result: dict[str, Any] = {
             "notes": (
-                f"Proposed from {len(seen)} frame ids seen while listening. Each reads the frame's first bytes as one "
-                "unsigned number. Split them into signals and set units from the node's documentation or DBC file. "
-                "Command frames can't be seen by listening, so add writes and actions by hand."
+                f"Proposed from {len(seen)} frame ids received while listening. Each reads the frame's first bytes as "
+                "one unsigned number. Split them into signals and set units from the node's documentation or DBC file. "
+                "Command frames can't be detected by listening, so add writes and actions by hand."
             )
         }
         if reads:

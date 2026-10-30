@@ -76,7 +76,7 @@ class PiBusParams(BaseModel):
         if kind == "i2c" and self.address is None:
             raise ValueError("I2C devices need address, for example address: 0x48.")
         if kind == "spi" and self.address is not None:
-            raise ValueError("SPI devices are chosen by the chip select in bus (spi0.1), so remove address.")
+            raise ValueError("SPI devices are selected by the chip select in bus (spi0.1), so remove address.")
         return self
 
     @property

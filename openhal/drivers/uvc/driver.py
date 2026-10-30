@@ -9,7 +9,7 @@ Behavior worth knowing.
 
 - Cameras queue frames, so the first frame read after a pause can be old. The driver grabs and
   drops `flush_frames` frames before each capture.
-- Asking for a resolution or frame rate is a request. Cameras fall back to the nearest mode they
+- A resolution or frame rate in the device file is a request. Cameras fall back to the nearest mode they
   support, and the `width`, `height` and `fps` properties report what the camera really uses.
 - Setting the requested resolution when opening is configuration, not an actuation. The driver
   never changes exposure, focus or any other camera control.

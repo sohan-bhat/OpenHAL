@@ -18,8 +18,8 @@ Quirks.
   connect so old errors aren't blamed on the first write.
 - After a timeout the driver reopens the session before the next command, because a late reply
   would otherwise be read as the reply to the next query.
-- `health()` sends `*OPC?`, which every IEEE 488.2 instrument replies to, so a dropped LAN link
-  is noticed by the heartbeat.
+- `health()` sends `*OPC?`, which every IEEE 488.2 instrument replies to, so the heartbeat detects
+  a dropped LAN link.
 - pyvisa-py reads a closed raw socket as no data and waits out the timeout, and on Linux a send
   to a closed peer can still succeed. So before each exchange, and after a timeout, the driver
   peeks at the socket, and a closed one marks the connection lost instead of reopening it.
