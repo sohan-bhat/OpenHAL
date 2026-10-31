@@ -1,9 +1,0 @@
----
-import Default from "@astrojs/starlight/components/MobileMenuToggle.astro";
-import SidebarRail from "../islands/SidebarControls";
-
-const collapsible = Astro.locals.starlightRoute.sidebar.length > 0;
----
-
-<Default />
-{collapsible && <SidebarRail client:intent="mod+b" />}

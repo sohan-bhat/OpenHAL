@@ -63,7 +63,6 @@ export default defineConfig({
         MarkdownContent: override("MarkdownContent"),
         Sidebar: override("Sidebar"),
         MobileMenuFooter: override("MobileMenuFooter"),
-        MobileMenuToggle: override("MobileMenuToggle"),
         ThemeProvider: override("ThemeProvider"),
         ThemeSelect: override("ThemeSelect"),
         PageTitle: override("PageTitle"),
