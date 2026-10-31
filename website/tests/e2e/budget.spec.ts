@@ -20,21 +20,24 @@ interface Weight {
 /**
  * The most each template may send on its first load, in bytes. HTML, CSS and JavaScript count
  * gzipped, the way GitHub Pages serves them, and fonts as the WOFF2 files they are. Set from the
- * measured weights of the build in docs/verification/ui.md with about ten percent of headroom.
+ * measured weights of the build in docs/verification/ui.md with about ten percent of headroom. The
+ * HTML of every page with a sidebar was set again the same way when the sidebar became shadcn/ui's
+ * server-rendered component, whose utility classes, island props and restore script add about 2.5
+ * to 3.4 KB gzipped.
  */
 const BUDGETS: Record<string, { path: string } & Weight> = {
   home: { path: "/", html: 15_000, css: 20_200, js: 13_800, fonts: 28_100 },
-  "docs index": { path: "/docs/", html: 13_400, css: 17_300, js: 1_500, fonts: 17_800 },
-  "guide page": { path: "/docs/quickstart/", html: 15_500, css: 17_300, js: 3_000, fonts: 34_500 },
-  "example page": { path: "/docs/examples/3d-print-watch/", html: 21_100, css: 19_500, js: 4_200, fonts: 28_100 },
-  "page with diagrams": { path: "/docs/architecture/", html: 26_500, css: 17_300, js: 3_000, fonts: 28_100 },
-  "spec page": { path: "/spec/v0.1/basic/messages/", html: 25_700, css: 17_300, js: 3_000, fonts: 28_100 },
-  "schema reference": { path: "/spec/v0.1/schema/", html: 23_100, css: 17_300, js: 3_000, fonts: 28_100 },
-  drivers: { path: "/drivers/", html: 19_400, css: 17_300, js: 1_500, fonts: 28_100 },
-  "driver page": { path: "/drivers/moonraker/", html: 17_700, css: 17_300, js: 3_000, fonts: 28_100 },
-  library: { path: "/library/", html: 14_700, css: 17_300, js: 1_500, fonts: 28_100 },
-  "library device": { path: "/library/scpi-rigol-dp832/", html: 15_400, css: 17_300, js: 1_500, fonts: 28_100 },
-  playground: { path: "/spec/playground/", html: 20_500, css: 19_400, js: 1_500, fonts: 28_100 },
+  "docs index": { path: "/docs/", html: 16_400, css: 17_300, js: 1_500, fonts: 17_800 },
+  "guide page": { path: "/docs/quickstart/", html: 18_800, css: 17_300, js: 3_000, fonts: 34_500 },
+  "example page": { path: "/docs/examples/3d-print-watch/", html: 24_200, css: 19_500, js: 4_200, fonts: 28_100 },
+  "page with diagrams": { path: "/docs/architecture/", html: 29_600, css: 17_300, js: 3_000, fonts: 28_100 },
+  "spec page": { path: "/spec/v0.1/basic/messages/", html: 28_500, css: 17_300, js: 3_000, fonts: 28_100 },
+  "schema reference": { path: "/spec/v0.1/schema/", html: 25_800, css: 17_300, js: 3_000, fonts: 28_100 },
+  drivers: { path: "/drivers/", html: 23_100, css: 17_300, js: 1_500, fonts: 28_100 },
+  "driver page": { path: "/drivers/moonraker/", html: 21_500, css: 17_300, js: 3_000, fonts: 28_100 },
+  library: { path: "/library/", html: 18_400, css: 17_300, js: 1_500, fonts: 28_100 },
+  "library device": { path: "/library/scpi-rigol-dp832/", html: 18_900, css: 17_300, js: 1_500, fonts: 28_100 },
+  playground: { path: "/spec/playground/", html: 23_200, css: 19_400, js: 1_500, fonts: 28_100 },
   "Python reference": { path: "/sdks/python/reference/", html: 21_500, css: 17_300, js: 3_000, fonts: 28_100 },
   "Inspector page": { path: "/inspector/", html: 14_300, css: 17_300, js: 1_500, fonts: 28_100 },
   blog: { path: "/blog/", html: 10_900, css: 17_300, js: 1_500, fonts: 28_100 },
@@ -43,10 +46,11 @@ const BUDGETS: Record<string, { path: string } & Weight> = {
 
 /**
  * The most script the React islands may load once a person reaches for them, gzipped. The first is
- * the search palette's first open with its first results, React and the shared parts included, and
- * the second is what a picker adds once the palette has loaded those.
+ * the search palette's first open with its first results, React and the shared parts included, the
+ * second is what a picker adds once the palette has loaded those, and the third is the sidebar's
+ * first Command or Control and B on a fresh page, React included.
  */
-const ISLANDS = { palette: 180_200, picker: 22_300 };
+const ISLANDS = { palette: 180_200, picker: 22_300, sidebar: 105_900 };
 
 function fileOf(url: string): string {
   const path = decodeURIComponent(new URL(url).pathname);
@@ -120,6 +124,22 @@ test.describe("page weight", () => {
     console.log(`islands palette js ${palette} picker js ${picker}`);
     expect(palette).toBeLessThanOrEqual(ISLANDS.palette);
     expect(picker).toBeLessThanOrEqual(ISLANDS.picker);
+  });
+
+  test("the sidebar loads its script on its first shortcut, within its budget", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const requests: Request[] = [];
+    page.on("requestfinished", (request) => requests.push(request));
+    await page.goto("/docs/quickstart/", { waitUntil: "load" });
+    await page.waitForTimeout(1500);
+    expect(requests.filter((request) => /SidebarNav/.test(request.url())), "the sidebar loads nothing before it is used").toEqual([]);
+    requests.length = 0;
+    await page.keyboard.press("Control+b");
+    await expect(page.locator("[data-slot=sidebar]")).toHaveAttribute("data-state", "collapsed");
+    await page.waitForTimeout(1000);
+    const sidebar = weigh(requests).js;
+    console.log(`islands sidebar js ${sidebar}`);
+    expect(sidebar).toBeLessThanOrEqual(ISLANDS.sidebar);
   });
 
   test("every page uses its faces within the weights the subsets keep", async ({ page }) => {

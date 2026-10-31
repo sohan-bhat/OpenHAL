@@ -1,16 +1,21 @@
 <script is:inline>
   (() => {
     const root = document.documentElement;
-    let stored = "";
-    let sidebar = "";
-    try {
-      stored = localStorage.getItem("starlight-theme") || "";
-      sidebar = localStorage.getItem("openhal-sidebar") || "";
-    } catch {}
-    const choice = stored === "light" || stored === "dark" ? stored : "auto";
-    root.dataset.themeChoice = choice;
-    root.dataset.theme = choice === "auto" ? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark") : choice;
+    const apply = () => {
+      let stored = "";
+      let sidebar = "";
+      try {
+        stored = localStorage.getItem("starlight-theme") || "";
+        sidebar = localStorage.getItem("openhal-sidebar") || "";
+      } catch {}
+      const choice = stored === "light" || stored === "dark" ? stored : "auto";
+      root.dataset.themeChoice = choice;
+      root.dataset.theme = choice === "auto" ? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark") : choice;
+      if (sidebar === "collapsed") root.dataset.sidebar = "collapsed";
+      else delete root.dataset.sidebar;
+    };
     root.dataset.platform = /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform) ? "mac" : "other";
-    if (sidebar === "collapsed") root.dataset.sidebar = "collapsed";
+    apply();
+    if (document.prerendering) document.addEventListener("prerenderingchange", apply, { once: true });
   })();
 </script>

@@ -1,19 +1,37 @@
 ---
-import Default from "@astrojs/starlight/components/Sidebar.astro";
-import { SidebarHide } from "../islands/SidebarControls";
+import SidebarNav, { type NavEntry } from "../islands/SidebarNav";
+import { inlineScript } from "../../lib/inline-script";
 import { sections } from "../../lib/sections";
+import sidebarSource from "../../lib/sidebar.ts?raw";
+import MobileMenuFooter from "./MobileMenuFooter.astro";
+
+type RouteEntry = typeof Astro.locals.starlightRoute.sidebar[number];
 
 const links = await sections(Astro.url.pathname);
-const menuOnly = Astro.locals.starlightRoute.sidebar.length === 0;
+const route = Astro.locals.starlightRoute.sidebar;
+const menuOnly = route.length === 0;
+
+/** Starlight's route data for the island, keeping only what the sidebar shows. */
+function entries(list: RouteEntry[]): NavEntry[] {
+  return list.map((entry) => {
+    const badge = entry.badge ? { badge: entry.badge.text } : {};
+    if (entry.type === "group") return { label: entry.label, entries: entries(entry.entries), ...(entry.collapsed ? { closed: true } : {}), ...badge };
+    const attrs = Object.fromEntries(Object.entries(entry.attrs).filter((pair): pair is [string, string | number | boolean] => ["string", "number", "boolean"].includes(typeof pair[1])));
+    return { label: entry.label, href: entry.href, ...(entry.isCurrent ? { current: true } : {}), ...badge, ...(Object.keys(attrs).length ? { attrs } : {}) };
+  });
+}
+
+/** Names a section's sidebar by its labels and links, the same on every page of the section. */
+function hashOf(list: RouteEntry[]): string {
+  const text = JSON.stringify(list, (key, value) => (key === "isCurrent" ? undefined : value));
+  let hash = 2166136261;
+  for (let index = 0; index < text.length; index++) hash = Math.imul(hash ^ text.charCodeAt(index), 16777619);
+  return (hash >>> 0).toString(36);
+}
+
+const restore = menuOnly ? "" : await inlineScript(`${sidebarSource}\nrestore(document.currentScript.previousElementSibling);`, "sidebar.ts", { iife: true });
 ---
 
-{
-  !menuOnly && (
-    <div data-sidebar-head class="sticky top-0 z-1 -mt-4 -mb-2 hidden bg-background pt-(--oh-sidebar-head) min-[50rem]:flex min-[50rem]:[:root[data-sidebar-peek]_&]:hidden">
-      <SidebarHide client:intent />
-    </div>
-  )
-}
 <ul class="oh-menu-sections md:sl-hidden" data-menu-only={menuOnly ? "" : undefined}>
   {
     links.map((link) => (
@@ -25,7 +43,11 @@ const menuOnly = Astro.locals.starlightRoute.sidebar.length === 0;
     ))
   }
 </ul>
-<Default />
+{!menuOnly && <SidebarNav client:intent="mod+b" entries={entries(route)} hash={hashOf(route)} />}
+{!menuOnly && <script is:inline set:html={restore} />}
+<div class="md:sl-hidden">
+  <MobileMenuFooter />
+</div>
 
 <style>
   .oh-menu-sections {
