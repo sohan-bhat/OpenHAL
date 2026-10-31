@@ -216,9 +216,9 @@ pre {
 .wrap,
 .home-width {
   width: 100%;
-  max-width: 1360px;
+  max-width: calc(1328px + 2 * var(--oh-lead));
   margin-inline: auto;
-  padding-inline: var(--s-4);
+  padding-inline: var(--oh-lead);
 }
 
 @view-transition {

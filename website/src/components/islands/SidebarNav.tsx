@@ -46,7 +46,7 @@ interface Props {
 const ROW = "h-auto py-[4.5px]";
 const CHEVRON = "[&>svg]:size-[18px] motion-safe:[&>svg]:transition-[rotate] motion-safe:[&>svg]:duration-200 motion-safe:[&>svg]:ease-(--ease) [&[data-state=open]>svg]:rotate-90";
 const LABEL = cn("h-auto py-1 font-bold text-foreground", CHEVRON);
-const SUB = "mx-0 ml-2 translate-x-0 gap-0 px-0 py-0 pl-2 [&[data-state=closed]:not([data-closing])]:hidden";
+const SUB = "mx-0 ml-2 translate-x-0 gap-0 px-0 py-0 pl-[7px] [&[data-state=closed]:not([data-closing])]:hidden";
 const SUB_ROW = "h-auto translate-x-0 py-[4.5px]";
 const SUB_LABEL = cn(SUB_ROW, "w-full cursor-pointer border-0 bg-transparent py-1 text-left font-bold text-foreground", CHEVRON);
 
@@ -195,11 +195,11 @@ export default function SidebarNav({ entries, hash }: Props) {
       open={open}
       onOpenChange={moveOver}
       className="contents"
-      style={{ "--sidebar-width": "calc(var(--oh-gutter) + var(--sl-sidebar-width))", "--sidebar-top": "var(--sl-nav-height)" } as React.CSSProperties}
+      style={{ "--sidebar-width": "var(--sl-sidebar-width)", "--sidebar-top": "var(--sl-nav-height)" } as React.CSSProperties}
     >
       <Sidebar id="oh-sidebar">
         <SidebarContent data-hash={hash} className="min-[50rem]:[scrollbar-gutter:stable]">
-          <SidebarGroup className="p-0 min-[50rem]:py-4 min-[50rem]:pr-4 min-[50rem]:pl-[calc(var(--oh-gutter)+var(--sl-sidebar-pad-x))]">
+          <SidebarGroup className="p-0 min-[50rem]:p-(--sl-sidebar-pad-x)">
             <SidebarMenu className="gap-2">
               {entries.map((entry, index) => (
                 <Entry key={index} entry={entry} path="" depth={0} />
