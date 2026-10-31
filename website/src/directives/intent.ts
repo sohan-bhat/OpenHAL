@@ -21,6 +21,11 @@ export function isShortcut(shortcut: string, event: KeyboardEvent): boolean {
   return event.key.toLowerCase() === shortcut.split("+").pop();
 }
 
+/** True when an event happens on a control the island drives, a button, rather than a plain link. */
+function onControl(event: Event): boolean {
+  return event.target instanceof Element && Boolean(event.target.closest("button"));
+}
+
 function copy(event: Event): Event {
   if (event instanceof KeyboardEvent) {
     const { key, code, metaKey, ctrlKey, shiftKey, altKey } = event;
@@ -33,20 +38,25 @@ function copy(event: Event): Event {
 }
 
 /**
- * Hydrates an island on the first sign that a person means to use it: the pointer over it, focus
- * inside it, a touch or a press, or its keyboard shortcut anywhere on the page, given as the
- * directive's value, such as client:intent="mod+k". Presses and the shortcut that arrive while
- * the island loads are held, then replayed once the island says it is ready, so the first click or
- * key still does what it should.
+ * Hydrates an island on the first sign that a person means to use one of its controls: the pointer
+ * over a button, focus on it, a touch or a press, or the island's keyboard shortcut anywhere on the
+ * page, given as the directive's value, such as client:intent="mod+k". Links inside an island stay
+ * plain links that load nothing. Presses and the shortcut that arrive while the island loads are
+ * held, then replayed once the island says it is ready, so the first click or key still does what
+ * it should.
  */
 const intent: ClientDirective = (load, options, element) => {
   const shortcut = typeof options.value === "string" ? options.value : "";
   const held: Array<{ target: EventTarget; event: Event }> = [];
   let started = false;
 
+  const begin = (event: Event) => {
+    if (onControl(event)) void start();
+  };
+
   const hold = (event: Event) => {
     const target = event.target;
-    if (!target) return;
+    if (!target || !onControl(event)) return;
     if (event instanceof KeyboardEvent && !(OPENERS.has(event.key) && target instanceof Element && target.closest("[aria-haspopup]"))) return;
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -63,7 +73,7 @@ const intent: ClientDirective = (load, options, element) => {
   async function start(): Promise<void> {
     if (started) return;
     started = true;
-    for (const name of STARTERS) element.removeEventListener(name, start, true);
+    for (const name of STARTERS) element.removeEventListener(name, begin, true);
     for (const name of HELD) element.addEventListener(name, hold, true);
     const ready = new Promise<void>((resolve) => {
       const done = () => resolve();
@@ -83,7 +93,7 @@ const intent: ClientDirective = (load, options, element) => {
     }
   }
 
-  for (const name of STARTERS) element.addEventListener(name, start, { capture: true, passive: true });
+  for (const name of STARTERS) element.addEventListener(name, begin, { capture: true, passive: true });
   if (shortcut) document.addEventListener("keydown", onKey, true);
 };
 
