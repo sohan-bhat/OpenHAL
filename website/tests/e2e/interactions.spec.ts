@@ -95,7 +95,12 @@ test.describe("the interactive parts", () => {
     expect(fetched.filter((path) => islands.includes(path)), "moving over the page loads no island").toEqual([]);
     await picker(page, "theme").hover();
     await expect.poll(() => fetched.some((path) => /ThemeMenu/.test(path))).toBe(true);
-    expect(fetched.filter((path) => /SearchPalette|SidebarControls/.test(path)), "only the island a person reached for loads").toEqual([]);
+    expect(fetched.filter((path) => /SearchPalette|SidebarNav/.test(path)), "only the island a person reached for loads").toEqual([]);
+    await page.locator("[data-slot=sidebar-content] a").first().hover();
+    await page.waitForTimeout(400);
+    expect(fetched.filter((path) => /SidebarNav/.test(path)), "pointing at a sidebar link loads nothing").toEqual([]);
+    await page.locator("[data-group] > button").first().hover();
+    await expect.poll(() => fetched.some((path) => /SidebarNav/.test(path)), "pointing at a group loads the sidebar").toBe(true);
   });
 
   test("open and close in 150 to 250 ms on the site's ease, moving only opacity, transforms and a disclosure's height", async ({ page, browserName }) => {
@@ -119,27 +124,34 @@ test.describe("the interactive parts", () => {
     within(search, "search palette");
     expect(search.filter((item) => item.target.includes("bg-(--oh-overlay)") && item.properties.includes("opacity")), "the overlay fades in and out").toHaveLength(2);
 
-    await page.getByRole("button", { name: "Hide sidebar" }).click();
-    await expect(page.locator("html")).toHaveAttribute("data-sidebar", "collapsed");
+    await page.evaluate(() => {
+      const container = document.querySelector("[data-slot=sidebar-container]")!;
+      const slides: unknown[] = [];
+      Object.assign(window, { slides });
+      new MutationObserver(() =>
+        slides.push(
+          container.getAnimations().map((animation) => ({ property: (animation as CSSTransition).transitionProperty, duration: Number(animation.effect?.getTiming().duration), easing: String(animation.effect?.getTiming().easing) })),
+        ),
+      ).observe(document.querySelector("[data-slot=sidebar]")!, { attributes: true, attributeFilter: ["data-state"] });
+    });
+    await page.keyboard.press("Control+b");
+    await expect(page.locator("[data-slot=sidebar]")).toHaveAttribute("data-state", "collapsed");
     await settled(page);
-    await page.mouse.move(700, 500);
-    await page.mouse.move(6, 500);
-    await expect(page.locator("html")).toHaveAttribute("data-sidebar-peek", "");
+    await page.keyboard.press("Control+b");
+    await expect(page.locator("[data-slot=sidebar]")).toHaveAttribute("data-state", "expanded");
     await settled(page);
-    await page.mouse.move(800, 500, { steps: 4 });
-    await expect(page.locator("html")).not.toHaveAttribute("data-sidebar-peek", "");
-    await settled(page);
-    await page.getByRole("button", { name: "Show sidebar" }).click();
-    await expect(page.locator("html")).not.toHaveAttribute("data-sidebar", "collapsed");
-    await settled(page);
-    const sidebar = await taken(page);
-    within(sidebar, "sidebar collapse and peek");
-    expect(sidebar.filter((item) => item.target.startsWith("sl-sidebar-pane")).length, "the sidebar slides out, peeks in and out, and slides back").toBeGreaterThanOrEqual(4);
-    expect(sidebar.filter((item) => item.target.startsWith("main")).length, "the content moves over both ways").toBeGreaterThanOrEqual(2);
+    const [out, back] = await page.evaluate(() => (window as unknown as { slides: unknown[] }).slides);
+    expect(out, "the sidebar slides out in 150 ms").toContainEqual({ property: "translate", duration: 150, easing: EASE });
+    expect(back, "the sidebar slides back in 200 ms").toContainEqual({ property: "translate", duration: 200, easing: EASE });
+    const moves = await taken(page);
+    within(moves, "the content moving over");
+    expect(moves.filter((item) => item.target.startsWith("main")).length, "the content moves over both ways").toBeGreaterThanOrEqual(2);
 
     await page.goto("/docs/quickstart/");
     await ready(page);
-    const group = page.locator(".sidebar-content summary", { hasText: "Tutorials" });
+    const group = page.locator("[data-group='Tutorials'] > button");
+    await group.hover();
+    await expect(page.locator("astro-island:has([data-slot=sidebar])")).not.toHaveAttribute("ssr", "");
     await group.click();
     await settled(page);
     await group.click();
@@ -207,12 +219,14 @@ test.describe("the interactive parts", () => {
     await expect(page.getByRole("dialog", { name: "Search" })).toHaveCSS("opacity", "1");
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog", { name: "Search" })).toHaveCount(0);
-    await page.locator(".sidebar-content summary").first().click();
-    await expect(page.locator(".sidebar-content details[data-closing]")).toHaveCount(0);
-    await page.getByRole("button", { name: "Hide sidebar" }).click();
+    await page.locator("[data-group] > button").first().click();
+    await expect(page.locator("[data-group]").first()).toHaveAttribute("data-state", "closed");
+    await expect(page.locator("[data-group] [data-closing]")).toHaveCount(0);
+    await page.keyboard.press("Control+b");
     await expect(page.locator("html")).toHaveAttribute("data-sidebar", "collapsed");
-    await expect(page.locator("html")).not.toHaveAttribute("data-sidebar-moving", "");
-    await page.getByRole("button", { name: "Show sidebar" }).click();
+    expect(await page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === "running").length), "nothing slides").toBe(0);
+    await page.keyboard.press("Control+b");
+    await expect(page.locator("html")).not.toHaveAttribute("data-sidebar", "collapsed");
     await page.setViewportSize({ width: 390, height: 844 });
     await page.locator(".sl-menu-button").click();
     await expect(page.locator("#starlight__sidebar")).toHaveCSS("opacity", "1");
@@ -224,18 +238,20 @@ test.describe("the interactive parts", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/docs/quickstart/");
     await ready(page);
+    await page.locator("[data-group='Tutorials'] > button").hover();
+    await expect(page.locator("astro-island:has([data-slot=sidebar])")).not.toHaveAttribute("ssr", "");
     const half = await page.evaluate(async () => {
-      const details = [...document.querySelectorAll<HTMLDetailsElement>(".sidebar-content details")].find((item) => item.querySelector("summary")?.textContent?.includes("Tutorials"))!;
+      const details = document.querySelector<HTMLElement>("[data-group='Tutorials']")!;
       const body = details.querySelector<HTMLElement>(":scope > ul")!;
       const full = body.getBoundingClientRect().height;
-      details.querySelector("summary")!.click();
+      details.querySelector<HTMLElement>(":scope > button")!.click();
       for (let frame = 0; frame < 60 && !body.getAnimations().length; frame++) await new Promise(requestAnimationFrame);
       const animations = body.getAnimations();
       for (const animation of animations) {
         animation.pause();
         animation.currentTime = Number(animation.effect?.getComputedTiming().duration) / 2;
       }
-      const result = { full, half: body.getBoundingClientRect().height, open: details.open, closing: details.hasAttribute("data-closing"), shown: body.checkVisibility() };
+      const result = { full, half: body.getBoundingClientRect().height, open: details.dataset.state === "open", closing: body.hasAttribute("data-closing"), shown: body.checkVisibility() };
       for (const animation of animations) animation.play();
       return result;
     });
@@ -244,7 +260,7 @@ test.describe("the interactive parts", () => {
     expect(half.shown).toBe(true);
     expect(half.half).toBeGreaterThan(0);
     expect(half.half).toBeLessThan(half.full);
-    await expect(page.locator(".sidebar-content details[data-closing]")).toHaveCount(0);
+    await expect(page.locator("[data-group] [data-closing]")).toHaveCount(0);
 
     await open(page, "theme");
     await settled(page);
@@ -346,7 +362,7 @@ test.describe("the pickers", () => {
     await page.keyboard.press("Tab");
     await expect(menu(page)).toHaveCount(0);
     await expect(theme).not.toBeFocused();
-    await expect(page.getByRole("button", { name: "Hide sidebar" }), "Tab moves on to what follows the picker").toBeFocused();
+    await expect(page.locator("[data-slot=sidebar-content] :is(a, button)").first(), "Tab moves on to what follows the picker").toBeFocused();
   });
 
   test("close on a click outside, and one opening closes another", async ({ page }) => {

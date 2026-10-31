@@ -154,26 +154,31 @@ for (const scheme of ["light", "dark"] as const) {
     expect(problems).toEqual([]);
   });
 
-  test(`the hidden sidebar, its tooltip and its peek have no WCAG AA violations in the ${scheme} theme`, async ({ page, browserName }) => {
+  test(`the sidebar expanded, collapsed and in the phone menu has no WCAG AA violations in the ${scheme} theme`, async ({ page, browserName }) => {
     test.skip(browserName !== "chromium", "axe runs once, in Chromium");
     test.setTimeout(120_000);
     await page.emulateMedia({ colorScheme: scheme });
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/docs/quickstart/");
-    await page.getByRole("button", { name: "Hide sidebar" }).click();
-    await expect(page.locator("html")).toHaveAttribute("data-sidebar", "collapsed");
-    const show = page.getByRole("button", { name: "Show sidebar" });
-    await show.focus();
-    await expect(page.locator("astro-island:has([data-sidebar-show])")).not.toHaveAttribute("ssr", "");
-    await show.blur();
-    await show.focus();
-    await expect(page.getByRole("tooltip")).toBeAttached();
-    await expect(page.locator("[data-slot='tooltip-content']")).toBeVisible();
-    const problems = (await violations(page)).map((item) => `hidden ${item}`);
-    await page.mouse.move(700, 500);
-    await page.mouse.move(6, 500);
-    await expect(page.locator("html")).toHaveAttribute("data-sidebar-peek", "");
-    problems.push(...(await violations(page)).map((item) => `peek ${item}`));
+    const problems: string[] = [];
+    for (const path of ["/docs/quickstart/", "/spec/v0.1/basic/messages/"]) {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto(path);
+      await page.locator("[data-group] > button").first().hover();
+      await expect(page.locator("astro-island:has([data-slot=sidebar])")).not.toHaveAttribute("ssr", "");
+      problems.push(...(await violations(page)).map((item) => `${path} expanded ${item}`));
+      await page.keyboard.press("Control+b");
+      await expect(page.locator("[data-slot=sidebar]")).toHaveAttribute("data-state", "collapsed");
+      await page.mouse.move(3, 450);
+      problems.push(...(await violations(page)).map((item) => `${path} collapsed ${item}`));
+      await page.goto(path);
+      problems.push(...(await violations(page)).map((item) => `${path} collapsed before React ${item}`));
+      await page.keyboard.press("Control+b");
+      await expect(page.locator("[data-slot=sidebar]")).toHaveAttribute("data-state", "expanded");
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.locator(".sl-menu-button").click();
+      await expect(page.locator("#starlight__sidebar")).toBeVisible();
+      problems.push(...(await violations(page)).map((item) => `${path} phone menu ${item}`));
+      await page.keyboard.press("Escape");
+    }
     expect(problems).toEqual([]);
   });
 }
