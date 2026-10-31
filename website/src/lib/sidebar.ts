@@ -79,13 +79,22 @@ export function trackInput(): void {
   addEventListener("keydown", note("key"), { capture: true, passive: true });
 }
 
+/**
+ * Keeps the pointer as the last input after Tab hides or shows the sidebar, so the next Tab hides or
+ * shows the sidebar again. Any other key, Shift and Tab among them, hands Tab back to moving focus.
+ */
+export function keepPointer(): void {
+  inputs().latest = "pointer";
+}
+
 const OVERLAYS = "dialog[open], [role=dialog], [role=alertdialog], [role=menu], [role=listbox], [role=note]:not([hidden])";
 
 /**
  * True when Tab should hide or show the sidebar instead of moving focus: on a desktop, with no
  * modifier held, with focus resting on the page itself, with no dialog, menu, popover or search
- * palette open, and when the person's last input before Tab was a pointer. A keyboard-only
- * visitor never meets these, so Tab moves focus as before, the first press reaching the skip link.
+ * palette open, and when the person's last input before Tab was a pointer or a Tab that hid or
+ * showed the sidebar. A keyboard-only visitor never meets these, so Tab moves focus as before, the
+ * first press reaching the skip link.
  */
 export function isSidebarTab(event: KeyboardEvent): boolean {
   if (event.key !== "Tab" || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey || event.isComposing) return false;

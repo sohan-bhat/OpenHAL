@@ -575,6 +575,17 @@ test.describe("the sidebar's collapse", () => {
     await expect(trigger(page)).not.toHaveAttribute("aria-keyshortcuts");
   });
 
+  test("after a pointer press on the page, Tab and Tab again hide and show it without another press", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    await pressPage(page);
+    for (const collapsed of [true, false, true, false]) {
+      await page.keyboard.press("Tab");
+      await expect.poll(() => state(page)).toEqual({ collapsed, state: collapsed ? "collapsed" : "expanded" });
+      expect(await focused(page), "focus stays on the page").toBe("body");
+      await settled(page);
+    }
+  });
+
   test("after a pointer press on the page, Tab hides and shows it on the first press, before React loads, and keeps focus where it was", async ({ page }) => {
     const fetched: string[] = [];
     page.on("request", (request) => fetched.push(new URL(request.url()).pathname));
@@ -603,9 +614,10 @@ test.describe("the sidebar's collapse", () => {
     await pressPage(page);
     await page.keyboard.press("Tab");
     await expect.poll(() => state(page)).toEqual({ collapsed: true, state: "collapsed" });
+    await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Tab");
     await page.waitForTimeout(300);
-    expect(await focused(page), "the second Tab moves focus, since the last input was a key").not.toBe("body");
+    expect(await focused(page), "a key other than Tab hands Tab back to moving focus").not.toBe("body");
     expect(await state(page)).toEqual({ collapsed: true, state: "collapsed" });
     await page.keyboard.press("Escape");
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());

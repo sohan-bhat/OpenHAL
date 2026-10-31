@@ -4,7 +4,7 @@ import { PanelLeftIcon } from "lucide-react";
 import { Slot } from "radix-ui";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { isSidebarTab } from "@/lib/sidebar";
+import { isSidebarTab, keepPointer } from "@/lib/sidebar";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_STORAGE_KEY = "openhal-sidebar";
@@ -34,7 +34,8 @@ function useSidebar() {
  * shadcn/ui's SidebarProvider (shadcn 4.23.0, new-york-v4), kept to the parts the documentation
  * sidebar renders. The browser keeps the choice in localStorage, which the page's head script reads
  * before the first paint. Tab toggles the sidebar only when isSidebarTab allows it, after a pointer
- * press on the page with nothing focused, so Tab still moves focus for anyone using the keyboard.
+ * press on the page with nothing focused, and keeps toggling it until another key is pressed, so Tab
+ * still moves focus for anyone using the keyboard.
  * Under 800 px the sidebar is Starlight's phone menu, so the shortcut leaves it alone there. The
  * sidebar's own island listens for the shortcut, so a second provider for the header's button sets
  * shortcut to false.
@@ -78,6 +79,7 @@ function SidebarProvider({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!event.defaultPrevented && isSidebarTab(event)) {
         event.preventDefault();
+        keepPointer();
         toggleSidebar();
       }
     };
