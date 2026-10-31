@@ -49,6 +49,7 @@ const LABEL = cn("h-auto py-1 font-bold text-foreground", CHEVRON);
 const SUB = "mx-0 ml-2 translate-x-0 gap-0 px-0 py-0 pl-[7px] [&[data-state=closed]:not([data-closing])]:hidden";
 const SUB_ROW = "h-auto translate-x-0 py-[4.5px]";
 const SUB_LABEL = cn(SUB_ROW, "w-full cursor-pointer border-0 bg-transparent py-1 text-left font-bold text-foreground", CHEVRON);
+const HERE = "before:absolute before:inset-y-0 before:-left-2 before:w-0.5 before:bg-spark before:content-['']";
 
 const isGroup = (entry: NavEntry): entry is NavGroup => "entries" in entry;
 const holdsCurrent = (entry: NavEntry): boolean => (isGroup(entry) ? entry.entries.some(holdsCurrent) : Boolean(entry.current));
@@ -157,7 +158,7 @@ function Entry({ entry, path, depth }: { entry: NavEntry; path: string; depth: n
 
   if (depth === 0) {
     return (
-      <SidebarMenuItem>
+      <SidebarMenuItem className={current ? HERE : undefined}>
         <SidebarMenuButton asChild isActive={current} className={cn(ROW, String(className ?? ""))}>
           <a {...link}>
             {entry.label}
@@ -169,7 +170,7 @@ function Entry({ entry, path, depth }: { entry: NavEntry; path: string; depth: n
   }
 
   return (
-    <SidebarMenuSubItem>
+    <SidebarMenuSubItem className={current ? HERE : undefined}>
       <SidebarMenuSubButton isActive={current} className={cn(SUB_ROW, String(className ?? ""))} {...link}>
         {entry.label}
         <Badge text={entry.badge} />

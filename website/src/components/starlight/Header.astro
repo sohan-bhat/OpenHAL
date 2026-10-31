@@ -31,6 +31,7 @@ const hasSidebar = Astro.locals.starlightRoute.sidebar.length > 0;
               {link.current && <span class="nav-pill" aria-hidden="true" />}
               {link.label}
             </a>
+            {link.current && <span class="nav-mark" aria-hidden="true" />}
           </li>
         ))
       }
@@ -89,12 +90,23 @@ const hasSidebar = Astro.locals.starlightRoute.sidebar.length > 0;
     display: none;
   }
 
+  .oh-sections {
+    align-self: stretch;
+  }
+
   .oh-sections ul {
     display: flex;
     gap: 2px;
+    height: 100%;
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+
+  .oh-sections li {
+    position: relative;
+    display: flex;
+    align-items: center;
   }
 
   .oh-sections a {
@@ -128,6 +140,15 @@ const hasSidebar = Astro.locals.starlightRoute.sidebar.length > 0;
     z-index: -1;
     border-radius: var(--radius);
     background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  }
+
+  .nav-mark {
+    view-transition-name: nav-mark;
+    position: absolute;
+    inset-inline: 10px;
+    bottom: -1px;
+    height: 2px;
+    background: var(--spark);
   }
 
   .oh-end {

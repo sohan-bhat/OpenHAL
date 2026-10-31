@@ -8,7 +8,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "border border-primary bg-primary text-primary-foreground [box-shadow:var(--oh-control-ring)_var(--accent)]",
+        default: "border border-spark bg-spark text-background [box-shadow:var(--oh-control-ring)_var(--spark)]",
         outline: "border border-input bg-background text-foreground [box-shadow:var(--oh-control-ring)_var(--oh-control-border)] hover:border-primary hover:[box-shadow:var(--oh-control-ring)_var(--accent)]",
         ghost: "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
         link: "text-primary underline-offset-[3px] hover:underline",
@@ -28,7 +28,7 @@ const buttonVariants = cva(
   },
 );
 
-/** shadcn/ui's Button on the site's tokens: the house primary, outline, ghost and link buttons. */
+/** shadcn/ui's Button on the site's tokens: the house primary in the flat magenta accent, outline, ghost and link buttons. */
 function Button({
   className,
   variant = "default",

@@ -46,6 +46,7 @@
   --color-confirm: var(--confirm);
   --color-blocked: var(--blocked);
   --color-unverified: var(--unverified);
+  --color-spark: var(--spark);
   --text-xs: var(--t-legend);
   --text-xs--line-height: 1.4;
   --text-sm: var(--t-small);
@@ -250,6 +251,11 @@ pre {
   opacity: 0;
 }
 
+::view-transition-group(nav-mark) {
+  animation-duration: 240ms;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
 :root:active-view-transition-type(forward)::view-transition-old(root) {
   animation: page-leave-left 260ms cubic-bezier(0.2, 0, 0, 1) both;
 }
@@ -367,10 +373,10 @@ pre {
   gap: var(--s-2);
   min-height: 40px;
   padding: 0 var(--s-4);
-  border: 1px solid var(--oh-line, var(--accent));
-  box-shadow: var(--oh-control-ring) var(--oh-line, var(--accent));
+  border: 1px solid var(--oh-line, var(--spark));
+  box-shadow: var(--oh-control-ring) var(--oh-line, var(--spark));
   border-radius: var(--radius);
-  background: var(--accent);
+  background: var(--spark);
   color: var(--bg);
   font: inherit;
   font-weight: 700;
@@ -385,7 +391,9 @@ pre {
 }
 
 .button:disabled {
-  opacity: 0.55;
+  --oh-line: var(--border);
+  background: var(--surface);
+  color: var(--text-2);
   cursor: default;
 }
 

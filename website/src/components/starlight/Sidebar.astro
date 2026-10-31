@@ -62,6 +62,7 @@ const restore = menuOnly ? "" : await inlineScript(`${sidebarSource}\nrestore(do
   }
 
   .oh-menu-sections a {
+    position: relative;
     display: block;
     padding: var(--s-2) var(--s-2);
     border-radius: var(--radius);
@@ -78,6 +79,15 @@ const restore = menuOnly ? "" : await inlineScript(`${sidebarSource}\nrestore(do
   .oh-menu-sections a[aria-current="page"] {
     color: var(--accent);
     background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  }
+
+  .oh-menu-sections a[aria-current="page"]::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(-1 * var(--s-2));
+    width: 2px;
+    background: var(--spark);
   }
 
   .oh-menu-sections[data-menu-only] {
