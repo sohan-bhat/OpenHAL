@@ -134,10 +134,10 @@ test.describe("the interactive parts", () => {
         ),
       ).observe(document.querySelector("[data-slot=sidebar]")!, { attributes: true, attributeFilter: ["data-state"] });
     });
-    await page.keyboard.press("Control+b");
+    await page.locator("[data-slot=sidebar-trigger]").click();
     await expect(page.locator("[data-slot=sidebar]")).toHaveAttribute("data-state", "collapsed");
     await settled(page);
-    await page.keyboard.press("Control+b");
+    await page.locator("[data-slot=sidebar-trigger]").click();
     await expect(page.locator("[data-slot=sidebar]")).toHaveAttribute("data-state", "expanded");
     await settled(page);
     const [out, back] = await page.evaluate(() => (window as unknown as { slides: unknown[] }).slides);
@@ -222,10 +222,10 @@ test.describe("the interactive parts", () => {
     await page.locator("[data-group] > button").first().click();
     await expect(page.locator("[data-group]").first()).toHaveAttribute("data-state", "closed");
     await expect(page.locator("[data-group] [data-closing]")).toHaveCount(0);
-    await page.keyboard.press("Control+b");
+    await page.locator("[data-slot=sidebar-trigger]").click();
     await expect(page.locator("html")).toHaveAttribute("data-sidebar", "collapsed");
     expect(await page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === "running").length), "nothing slides").toBe(0);
-    await page.keyboard.press("Control+b");
+    await page.locator("[data-slot=sidebar-trigger]").click();
     await expect(page.locator("html")).not.toHaveAttribute("data-sidebar", "collapsed");
     await page.setViewportSize({ width: 390, height: 844 });
     await page.locator(".sl-menu-button").click();

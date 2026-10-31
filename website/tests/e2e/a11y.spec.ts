@@ -154,7 +154,7 @@ for (const scheme of ["light", "dark"] as const) {
     expect(problems).toEqual([]);
   });
 
-  test(`the sidebar expanded, collapsed and in the phone menu has no WCAG AA violations in the ${scheme} theme`, async ({ page, browserName }) => {
+  test(`the sidebar expanded, collapsed, with the trigger's tooltip open and in the phone menu has no WCAG AA violations in the ${scheme} theme`, async ({ page, browserName }) => {
     test.skip(browserName !== "chromium", "axe runs once, in Chromium");
     test.setTimeout(120_000);
     await page.emulateMedia({ colorScheme: scheme });
@@ -165,13 +165,21 @@ for (const scheme of ["light", "dark"] as const) {
       await page.locator("[data-group] > button").first().hover();
       await expect(page.locator("astro-island:has([data-slot=sidebar])")).not.toHaveAttribute("ssr", "");
       problems.push(...(await violations(page)).map((item) => `${path} expanded ${item}`));
-      await page.keyboard.press("Control+b");
+      await page.locator("[data-slot=sidebar-trigger]").hover();
+      await expect(page.locator("astro-island:has([data-slot=sidebar-trigger])")).not.toHaveAttribute("ssr", "");
+      await expect(async () => {
+        await page.mouse.move(30, 28);
+        await page.mouse.move(34, 32, { steps: 3 });
+        await expect(page.locator("[data-slot=tooltip-content]")).toBeVisible({ timeout: 1000 });
+      }).toPass();
+      problems.push(...(await violations(page)).map((item) => `${path} tooltip ${item}`));
+      await page.locator("[data-slot=sidebar-trigger]").click();
       await expect(page.locator("[data-slot=sidebar]")).toHaveAttribute("data-state", "collapsed");
       await page.mouse.move(3, 450);
       problems.push(...(await violations(page)).map((item) => `${path} collapsed ${item}`));
       await page.goto(path);
       problems.push(...(await violations(page)).map((item) => `${path} collapsed before React ${item}`));
-      await page.keyboard.press("Control+b");
+      await page.locator("[data-slot=sidebar-trigger]").click();
       await expect(page.locator("[data-slot=sidebar]")).toHaveAttribute("data-state", "expanded");
       await page.setViewportSize({ width: 390, height: 844 });
       await page.locator(".sl-menu-button").click();
