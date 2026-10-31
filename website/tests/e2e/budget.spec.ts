@@ -23,7 +23,8 @@ interface Weight {
  * measured weights of the build in docs/verification/ui.md with about ten percent of headroom. The
  * HTML of every page with a sidebar was set again the same way when the sidebar became shadcn/ui's
  * server-rendered component, whose utility classes, island props and restore script add about 2.5
- * to 3.4 KB gzipped.
+ * to 3.4 KB gzipped. The Inspector page was set again the same way when the header gained the
+ * sidebar's server-rendered trigger, which took the page about 0.2 KB over its old budget.
  */
 const BUDGETS: Record<string, { path: string } & Weight> = {
   home: { path: "/", html: 15_000, css: 20_200, js: 13_800, fonts: 28_100 },
@@ -39,7 +40,7 @@ const BUDGETS: Record<string, { path: string } & Weight> = {
   "library device": { path: "/library/scpi-rigol-dp832/", html: 18_900, css: 17_300, js: 1_500, fonts: 28_100 },
   playground: { path: "/spec/playground/", html: 23_200, css: 19_400, js: 1_500, fonts: 28_100 },
   "Python reference": { path: "/sdks/python/reference/", html: 21_500, css: 17_300, js: 3_000, fonts: 28_100 },
-  "Inspector page": { path: "/inspector/", html: 14_300, css: 17_300, js: 1_500, fonts: 28_100 },
+  "Inspector page": { path: "/inspector/", html: 15_900, css: 17_300, js: 1_500, fonts: 28_100 },
   blog: { path: "/blog/", html: 10_900, css: 17_300, js: 1_500, fonts: 28_100 },
   "not found": { path: "/404.html", html: 11_300, css: 17_300, js: 1_500, fonts: 28_100 },
 };
@@ -47,10 +48,11 @@ const BUDGETS: Record<string, { path: string } & Weight> = {
 /**
  * The most script the React islands may load once a person reaches for them, gzipped. The first is
  * the search palette's first open with its first results, React and the shared parts included, the
- * second is what a picker adds once the palette has loaded those, and the third is the sidebar's
- * first Command or Control and B on a fresh page, React included.
+ * second is what a picker adds once the palette has loaded those, the third is the sidebar's first
+ * Tab after a pointer press on a fresh page, React included, and the fourth is the first press on
+ * the sidebar's trigger in the header on a fresh page, React, Radix's Tooltip and Motion included.
  */
-const ISLANDS = { palette: 180_200, picker: 22_300, sidebar: 105_900 };
+const ISLANDS = { palette: 180_200, picker: 22_300, sidebar: 105_900, trigger: 157_700 };
 
 function fileOf(url: string): string {
   const path = decodeURIComponent(new URL(url).pathname);
@@ -126,7 +128,7 @@ test.describe("page weight", () => {
     expect(picker).toBeLessThanOrEqual(ISLANDS.picker);
   });
 
-  test("the sidebar loads its script on its first shortcut, within its budget", async ({ page }) => {
+  test("the sidebar loads its script on its first Tab after a pointer press, within its budget", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     const requests: Request[] = [];
     page.on("requestfinished", (request) => requests.push(request));
@@ -134,12 +136,29 @@ test.describe("page weight", () => {
     await page.waitForTimeout(1500);
     expect(requests.filter((request) => /SidebarNav/.test(request.url())), "the sidebar loads nothing before it is used").toEqual([]);
     requests.length = 0;
-    await page.keyboard.press("Control+b");
+    await page.locator("main h1").click({ position: { x: 4, y: 8 } });
+    await page.keyboard.press("Tab");
     await expect(page.locator("[data-slot=sidebar]")).toHaveAttribute("data-state", "collapsed");
     await page.waitForTimeout(1000);
     const sidebar = weigh(requests).js;
     console.log(`islands sidebar js ${sidebar}`);
     expect(sidebar).toBeLessThanOrEqual(ISLANDS.sidebar);
+  });
+
+  test("the sidebar's trigger loads its script on its first press, within its budget", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const requests: Request[] = [];
+    page.on("requestfinished", (request) => requests.push(request));
+    await page.goto("/docs/quickstart/", { waitUntil: "load" });
+    await page.waitForTimeout(1500);
+    expect(requests.filter((request) => /SidebarToggle/.test(request.url())), "the trigger loads nothing before it is used").toEqual([]);
+    requests.length = 0;
+    await page.locator("[data-slot=sidebar-trigger]").click();
+    await expect(page.locator("[data-slot=sidebar]")).toHaveAttribute("data-state", "collapsed");
+    await page.waitForTimeout(1000);
+    const trigger = weigh(requests).js;
+    console.log(`islands trigger js ${trigger}`);
+    expect(trigger).toBeLessThanOrEqual(ISLANDS.trigger);
   });
 
   test("every page uses its faces within the weights the subsets keep", async ({ page }) => {
