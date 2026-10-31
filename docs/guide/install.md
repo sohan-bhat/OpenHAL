@@ -41,7 +41,7 @@ openhal init
 
 In a terminal, `openhal init` prompts with a few short questions.
 
-1. Look for devices, using only read-only identify commands.
+1. Search for devices, using only read-only identify commands.
 2. Add each device discovery found as a read-only device file. OpenHAL firmware boards and ESPHome nodes send their own descriptions, and library matches come from the device library, but no limit is confirmed for you.
 3. Make a token for your AI client, read-only unless you pick another scope.
 4. Save a client's config for you. The setup for Claude Desktop, Claude Code and Cursor is printed either way, and a file is backed up before it changes.

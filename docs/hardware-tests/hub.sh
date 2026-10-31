@@ -33,7 +33,7 @@ start() {
     fi
     sleep 0.5
   done
-  echo "The hub didn't answer within 60 s. See $logfile." >&2
+  echo "The hub sent no reply within 60 s. See $logfile." >&2
   exit 1
 }
 

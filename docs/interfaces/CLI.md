@@ -292,7 +292,7 @@ In an interactive terminal, `init` sets up the config folder, the human token an
 
 | Step | In a terminal | With `--yes` |
 |---|---|---|
-| Look for devices | yes, default yes | yes, unless `--no-discover` |
+| Search for devices | yes, default yes | yes, unless `--no-discover` |
 | Add each device found | yes, default yes | yes |
 | Agent token in `agent.token` | scope, default `read` | `read`, or `--agent-scope` |
 | Print the MCP client setup | always, once there is an agent token | always |
