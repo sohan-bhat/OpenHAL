@@ -1,14 +1,15 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import { PanelLeftIcon } from "lucide-react";
 import { Slot } from "radix-ui";
-import { isShortcut } from "@/directives/intent";
+import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { isSidebarTab } from "@/lib/sidebar";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_STORAGE_KEY = "openhal-sidebar";
 const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
-const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed";
@@ -32,18 +33,22 @@ function useSidebar() {
 /**
  * shadcn/ui's SidebarProvider (shadcn 4.23.0, new-york-v4), kept to the parts the documentation
  * sidebar renders. The browser keeps the choice in localStorage, which the page's head script reads
- * before the first paint, and Command or Control and B toggles the sidebar outside a text field. Under
- * 800 px the sidebar is Starlight's phone menu, so the shortcut leaves it alone there.
+ * before the first paint. Tab toggles the sidebar only when isSidebarTab allows it, after a pointer
+ * press on the page with nothing focused, so Tab still moves focus for anyone using the keyboard.
+ * Under 800 px the sidebar is Starlight's phone menu, so the shortcut leaves it alone there. The
+ * sidebar's own island listens for the shortcut, so a second provider for the header's button sets
+ * shortcut to false.
  */
 function SidebarProvider({
   defaultOpen = true,
   open: openProp,
   onOpenChange: setOpenProp,
+  shortcut = true,
   className,
   style,
   children,
   ...props
-}: React.ComponentProps<"div"> & { defaultOpen?: boolean; open?: boolean; onOpenChange?: (open: boolean) => void }) {
+}: React.ComponentProps<"div"> & { defaultOpen?: boolean; open?: boolean; onOpenChange?: (open: boolean) => void; shortcut?: boolean }) {
   const isMobile = useIsMobile();
 
   const [_open, _setOpen] = React.useState(defaultOpen);
@@ -69,8 +74,9 @@ function SidebarProvider({
   }, [isMobile, setOpen]);
 
   React.useEffect(() => {
+    if (!shortcut) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isShortcut(`mod+${SIDEBAR_KEYBOARD_SHORTCUT}`, event)) {
+      if (!event.defaultPrevented && isSidebarTab(event)) {
         event.preventDefault();
         toggleSidebar();
       }
@@ -78,7 +84,7 @@ function SidebarProvider({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleSidebar]);
+  }, [shortcut, toggleSidebar]);
 
   const state = open ? "expanded" : "collapsed";
 
@@ -154,6 +160,33 @@ function Sidebar({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * shadcn/ui's SidebarTrigger, the ghost button at the far left of the header that hides and shows
+ * the sidebar, 32 px square so its panel icon starts on the sidebar's label edge. Its own data
+ * attributes come last, so a TooltipTrigger around it keeps it findable as the sidebar's trigger.
+ */
+function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<typeof Button>) {
+  const { toggleSidebar } = useSidebar();
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      {...props}
+      data-sidebar="trigger"
+      data-slot="sidebar-trigger"
+      className={cn("size-8", className)}
+      onClick={(event) => {
+        onClick?.(event);
+        toggleSidebar();
+      }}
+    >
+      <PanelLeftIcon aria-hidden="true" strokeWidth={1.75} />
+      <span className="sr-only">Toggle sidebar</span>
+    </Button>
   );
 }
 
@@ -305,5 +338,6 @@ export {
   SidebarMenuSubItem,
   SidebarProvider,
   SidebarRail,
+  SidebarTrigger,
   useSidebar,
 };

@@ -43,7 +43,7 @@ const restore = menuOnly ? "" : await inlineScript(`${sidebarSource}\nrestore(do
     ))
   }
 </ul>
-{!menuOnly && <SidebarNav client:intent="mod+b" entries={entries(route)} hash={hashOf(route)} />}
+{!menuOnly && <SidebarNav client:intent="tab" entries={entries(route)} hash={hashOf(route)} />}
 {!menuOnly && <script is:inline set:html={restore} />}
 <div class="md:sl-hidden">
   <MobileMenuFooter />

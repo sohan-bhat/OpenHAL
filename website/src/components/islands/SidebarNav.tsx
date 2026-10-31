@@ -181,9 +181,9 @@ function Entry({ entry, path, depth }: { entry: NavEntry; path: string; depth: n
 /**
  * The documentation sidebar, built from shadcn/ui's Sidebar on Starlight's route data, so every page
  * keeps its items, order, numbers, badges and current page. It collapses off canvas from its own
- * SidebarRail and from Command or Control and B, and the content and the outline move over to use
- * the space. Its links are plain links that work without JavaScript, and React loads once a person
- * reaches for a group, the rail or the shortcut.
+ * SidebarRail, from its SidebarTrigger in the header and from Tab after a pointer press on the page,
+ * and the content and the outline move over to use the space. Its links are plain links that work
+ * without JavaScript, and React loads once a person reaches for a group, the rail or the shortcut.
  */
 export default function SidebarNav({ entries, hash }: Props) {
   const open = useSidebarOpen();
@@ -207,7 +207,7 @@ export default function SidebarNav({ entries, hash }: Props) {
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarRail ref={rail} aria-controls="oh-sidebar" aria-expanded={open} aria-keyshortcuts="Control+B Meta+B" />
+        <SidebarRail ref={rail} aria-controls="oh-sidebar" aria-expanded={open} />
       </Sidebar>
     </SidebarProvider>
   );
