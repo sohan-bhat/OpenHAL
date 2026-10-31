@@ -111,8 +111,7 @@
   }
 
   html:root[data-has-toc] .right-sidebar-container {
-    margin-inline-start: 0;
-    width: var(--sl-sidebar-width);
+    width: max(var(--sl-sidebar-width), 100% - var(--oh-reading-width) - 2 * var(--sl-content-pad-x));
   }
 }
 

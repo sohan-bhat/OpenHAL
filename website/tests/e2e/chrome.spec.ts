@@ -211,6 +211,29 @@ test.describe("the left edge", () => {
     }
   }
 
+  for (const width of [1200, 1440, 2560]) {
+    test(`keeps the outline beside the column at ${width} px even when it paints before the column has arrived`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      for (const stored of ["", "collapsed"]) {
+        await page.addInitScript((value) => localStorage.setItem("openhal-sidebar", value), stored);
+        await page.goto(SPEC);
+        const seen = await page.evaluate(() => {
+          const outline = () => Math.round(document.querySelector(".right-sidebar-container")!.getBoundingClientRect().left);
+          const pane = document.querySelector<HTMLElement>(".main-pane")!;
+          const column = Math.round(pane.getBoundingClientRect().right);
+          const whole = outline();
+          const parent = pane.parentElement!;
+          pane.remove();
+          const early = outline();
+          parent.append(pane);
+          return { column, whole, early };
+        });
+        expect(seen.whole, `${stored || "shown"} the outline right after the column`).toBe(seen.column);
+        expect(seen.early, `${stored || "shown"} the outline in its place before the column is parsed`).toBe(seen.whole);
+      }
+    });
+  }
+
   test("lines the phone menu's sections and rows up with the header's wordmark", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(SPEC);
