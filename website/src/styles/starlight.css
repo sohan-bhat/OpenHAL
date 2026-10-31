@@ -98,7 +98,7 @@
   }
 }
 
-astro-island[ssr] [data-slot="sidebar"] * {
+:root[data-sidebar-restoring] [data-slot="sidebar"] * {
   transition: none;
 }
 

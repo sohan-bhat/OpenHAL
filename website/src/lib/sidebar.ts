@@ -10,6 +10,16 @@ export function isCollapsed(): boolean {
   return typeof document !== "undefined" && document.documentElement.dataset.sidebar === "collapsed";
 }
 
+/**
+ * Calls back whenever the sidebar is hidden or shown, by whichever control, so the sidebar, its
+ * button in the header and the server-rendered parts all follow the root. Returns the way to stop.
+ */
+export function watchSidebar(callback: () => void): () => void {
+  const observer = new MutationObserver(callback);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-sidebar"] });
+  return () => observer.disconnect();
+}
+
 /** The groups a person closed or opened in this tab, by the labels that lead to each group. */
 export function storedGroups(): Record<string, boolean> {
   try {
@@ -47,21 +57,32 @@ function savedScroll(): { hash: string; top: number } | null {
 }
 
 /**
- * Gives the server-rendered sidebar the state the island renders once it loads, before the first
- * paint: hidden or shown, each group open or closed, and the scroll position the sidebar had on the
- * section's last page. A prerendered page applies the state again when it becomes the shown page,
- * since a person may have changed it meanwhile, and the scroll position is kept as the page goes.
+ * Gives the server-rendered sidebar and its button in the header the state the islands render once
+ * they load, before the first paint: hidden or shown, each group open or closed, and the scroll
+ * position the sidebar had on the section's last page. The sidebar holds still while a page restores
+ * the state, so it only slides for a person's toggle. A prerendered page applies the state again
+ * when it becomes the shown page, since a person may have changed it meanwhile, and the scroll
+ * position is kept as the page goes. Until an island loads, its server-rendered part follows each
+ * toggle the other island makes.
  */
 export function restore(island: Element): void {
+  const root = document.documentElement;
   const scroller = () => island.querySelector<HTMLElement>("[data-slot=sidebar-content]");
-  const apply = () => {
+  const follow = () => {
     const collapsed = isCollapsed();
     const sidebar = island.querySelector<HTMLElement>("[data-slot=sidebar]");
-    if (sidebar) {
+    if (sidebar && island.hasAttribute("ssr")) {
       sidebar.dataset.state = collapsed ? "collapsed" : "expanded";
       sidebar.dataset.collapsible = collapsed ? "offcanvas" : "";
+      island.querySelector("[data-slot=sidebar-rail]")?.setAttribute("aria-expanded", String(!collapsed));
     }
-    island.querySelector("[data-slot=sidebar-rail]")?.setAttribute("aria-expanded", String(!collapsed));
+    const trigger = document.querySelector("[data-slot=sidebar-trigger]");
+    if (trigger?.closest("astro-island[ssr]")) trigger.setAttribute("aria-expanded", String(!collapsed));
+  };
+  const apply = () => {
+    root.toggleAttribute("data-sidebar-restoring", true);
+    requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute("data-sidebar-restoring")));
+    follow();
     const groups = storedGroups();
     for (const group of island.querySelectorAll<HTMLElement>("[data-group]")) {
       const open = startsOpen(group.dataset.group ?? "", group.hasAttribute("data-current"), group.hasAttribute("data-closed"), groups);
@@ -80,6 +101,7 @@ export function restore(island: Element): void {
     if (pane && saved && saved.hash === pane.dataset.hash && matchMedia(WIDE).matches) pane.scrollTop = saved.top;
   };
   apply();
+  watchSidebar(follow);
   if ((document as Document & { prerendering?: boolean }).prerendering) document.addEventListener("prerenderingchange", apply, { once: true });
   addEventListener("pagehide", () => {
     const pane = scroller();
