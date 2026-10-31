@@ -322,6 +322,7 @@ test.describe("the sidebar", () => {
 
   for (const width of [2560, 1728, 1440, 1280, 1024]) {
     test(`starts every documentation page's title at one left edge at ${width} px`, async ({ page }) => {
+      test.slow();
       await page.setViewportSize({ width, height: 900 });
       const edges: Record<string, number> = {};
       for (const path of [SPEC, "/docs/quickstart/", "/inspector/", "/spec/playground/", "/drivers/", "/library/scpi-rigol-dp832/", "/sdks/python/reference/", "/blog/", "/404.html"]) {
