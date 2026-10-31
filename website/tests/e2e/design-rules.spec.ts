@@ -143,3 +143,112 @@ test.describe("the search index", () => {
     expect(ignored).toBe(true);
   });
 });
+
+/**
+ * Every place the page paints the magenta accent, read from the computed styles of every element
+ * and its ::before and ::after, with the role each place plays: a primary button or the marker of
+ * where a person is. Anything else is reported by its tag and class, so a third use fails.
+ */
+const sparks = (page: Page) =>
+  page.evaluate(() => {
+    const probe = document.createElement("span");
+    probe.style.color = "var(--spark)";
+    document.body.append(probe);
+    const spark = getComputedStyle(probe).color;
+    probe.remove();
+    const roles: string[] = [];
+    const strays: string[] = [];
+    for (const element of document.querySelectorAll<HTMLElement>("body *")) {
+      if (!element.checkVisibility({ visibilityProperty: true })) continue;
+      for (const pseudo of [null, "::before", "::after"] as const) {
+        const style = getComputedStyle(element, pseudo);
+        if (pseudo && (style.content === "none" || style.content === "normal")) continue;
+        const border = ["Top", "Right", "Bottom", "Left"].some((side) => parseFloat(style.getPropertyValue(`border-${side.toLowerCase()}-width`)) > 0 && style.getPropertyValue(`border-${side.toLowerCase()}-color`) === spark);
+        const text = !pseudo && style.color === spark && [...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
+        const paints = style.backgroundColor === spark || border || text || style.boxShadow.includes(spark) || style.backgroundImage.includes(spark);
+        if (!paints) continue;
+        const name = `${element.localName}${pseudo ?? ""}.${String(element.className).slice(0, 60)}`;
+        if (style.backgroundImage !== "none") strays.push(`${name} draws an image or a gradient`);
+        if (text) strays.push(`${name} sets text in the accent`);
+        if (element.matches(".button:not(.quiet), [data-slot=button][data-variant=default]") && !pseudo) roles.push("primary button");
+        else if (element.matches(".nav-mark") || (pseudo === "::before" && element.matches("li:has(> [aria-current=page]), .oh-menu-sections a[aria-current=page]"))) roles.push("current location");
+        else strays.push(name);
+      }
+    }
+    return { spark, roles: [...new Set(roles)].sort(), strays };
+  });
+
+test.describe("the magenta accent", () => {
+  for (const [scheme, value, least] of [
+    ["light", "rgb(204, 20, 117)", 5.2],
+    ["dark", "rgb(255, 79, 163)", 6.3],
+  ] as const) {
+    test(`fills the primary buttons and marks the current location, two uses at most per screen, in the ${scheme} theme`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
+      await page.setViewportSize({ width: 1440, height: 900 });
+      for (const [path, roles] of [
+        ["/", ["current location", "primary button"]],
+        ["/docs/quickstart/", ["current location"]],
+        ["/spec/v0.1/basic/messages/", ["current location"]],
+        ["/drivers/", ["current location"]],
+        ["/404.html", []],
+      ] as const) {
+        await page.goto(path);
+        const seen = await sparks(page);
+        expect(seen.spark, path).toBe(value);
+        expect(seen.strays, `${path} uses the accent only for its two roles`).toEqual([]);
+        expect(seen.roles, path).toEqual(roles);
+      }
+      await page.goto("/spec/playground/");
+      await page.locator("summary", { hasText: "Build your own request" }).click();
+      const playground = await sparks(page);
+      expect(playground.strays).toEqual([]);
+      expect(playground.roles.length, "the Playground shows its primary button and the current location, no third use").toBeLessThanOrEqual(2);
+
+      await page.goto("/");
+      const colors = await page.getByRole("link", { name: "Get started" }).evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { background: style.backgroundColor, color: style.color, page: getComputedStyle(document.body).backgroundColor, image: style.backgroundImage };
+      });
+      expect(colors.background).toBe(value);
+      expect(colors.color, "the button's text is the page background").toBe(colors.page);
+      expect(colors.image, "no gradient").toBe("none");
+      const ratio = await page.evaluate(([one, two]) => {
+        const luminance = (color: string) => {
+          const [r, g, b] = color.match(/[\d.]+/g)!.slice(0, 3).map((part) => {
+            const c = Number(part) / 255;
+            return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+          });
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        };
+        const [a, b] = [luminance(one), luminance(two)].sort((x, y) => y - x);
+        return (a + 0.05) / (b + 0.05);
+      }, [colors.background, colors.page]);
+      expect(ratio, "the accent against the page, which is also the button's text").toBeGreaterThanOrEqual(least);
+    });
+  }
+
+  test("puts a 2 px bar on the header's rule under the current section and on the guide line beside the current page", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/spec/v0.1/basic/messages/");
+    const header = await page.evaluate(() => {
+      const mark = document.querySelector(".nav-mark")!.getBoundingClientRect();
+      const link = document.querySelector(".oh-sections a[aria-current='page']")!.getBoundingClientRect();
+      const bar = document.querySelector("header.header")!.getBoundingClientRect();
+      return { height: mark.height, bottom: mark.bottom - bar.bottom, under: mark.left >= link.left && mark.right <= link.right, marks: document.querySelectorAll(".nav-mark").length };
+    });
+    expect(header).toEqual({ height: 2, bottom: 0, under: true, marks: 1 });
+    const side = await page.evaluate(() => {
+      const item = document.querySelector("[data-slot=sidebar] li:has(> [aria-current='page'])")!;
+      const row = item.querySelector("[aria-current='page']")!.getBoundingClientRect();
+      const before = getComputedStyle(item, "::before");
+      return {
+        width: before.width,
+        bar: Math.round(item.getBoundingClientRect().left + parseFloat(before.left)),
+        guide: Math.round(item.closest("[data-sidebar=menu-sub]")!.getBoundingClientRect().left),
+        tall: Math.round(parseFloat(before.height)) === Math.round(row.height),
+      };
+    });
+    expect(side).toEqual({ width: "2px", bar: side.guide, guide: side.guide, tall: true });
+  });
+});

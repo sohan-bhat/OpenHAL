@@ -1,4 +1,5 @@
 import type { ClientDirective } from "astro";
+import { isSidebarTab } from "../lib/sidebar";
 
 const STARTERS = ["pointerover", "pointerdown", "focusin", "touchstart"];
 const HELD = ["pointerdown", "click", "keydown"];
@@ -21,6 +22,14 @@ export function isShortcut(shortcut: string, event: KeyboardEvent): boolean {
   return event.key.toLowerCase() === shortcut.split("+").pop();
 }
 
+/**
+ * True when a key event is the shortcut the directive's value names: "tab" for the sidebar's Tab,
+ * which only acts after a pointer press on the page, or a combination such as "mod+k".
+ */
+function matches(shortcut: string, event: KeyboardEvent): boolean {
+  return shortcut === "tab" ? isSidebarTab(event) : isShortcut(shortcut, event);
+}
+
 /** True when an event happens on a control the island drives, a button, rather than a plain link. */
 function onControl(event: Event): boolean {
   return event.target instanceof Element && Boolean(event.target.closest("button"));
@@ -40,10 +49,10 @@ function copy(event: Event): Event {
 /**
  * Hydrates an island on the first sign that a person means to use one of its controls: the pointer
  * over a button, focus on it, a touch or a press, or the island's keyboard shortcut anywhere on the
- * page, given as the directive's value, such as client:intent="mod+k". Links inside an island stay
- * plain links that load nothing. Presses and the shortcut that arrive while the island loads are
- * held, then replayed once the island says it is ready, so the first click or key still does what
- * it should.
+ * page, given as the directive's value, such as client:intent="mod+k" or client:intent="tab".
+ * Links inside an island stay plain links that load nothing. Presses and the shortcut that arrive
+ * while the island loads are held, then replayed once the island says it is ready, so the first
+ * click or key still does what it should.
  */
 const intent: ClientDirective = (load, options, element) => {
   const shortcut = typeof options.value === "string" ? options.value : "";
@@ -64,7 +73,7 @@ const intent: ClientDirective = (load, options, element) => {
   };
 
   const onKey = (event: KeyboardEvent) => {
-    if (event.defaultPrevented || !isShortcut(shortcut, event)) return;
+    if (event.defaultPrevented || !matches(shortcut, event)) return;
     event.preventDefault();
     if (!held.some((item) => item.event instanceof KeyboardEvent && item.event.key.toLowerCase() === event.key.toLowerCase())) held.push({ target: event.target ?? document, event: copy(event) });
     void start();

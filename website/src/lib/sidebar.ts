@@ -10,6 +10,16 @@ export function isCollapsed(): boolean {
   return typeof document !== "undefined" && document.documentElement.dataset.sidebar === "collapsed";
 }
 
+/**
+ * Calls back whenever the sidebar is hidden or shown, by whichever control, so the sidebar, its
+ * button in the header and the server-rendered parts all follow the root. Returns the way to stop.
+ */
+export function watchSidebar(callback: () => void): () => void {
+  const observer = new MutationObserver(callback);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-sidebar"] });
+  return () => observer.disconnect();
+}
+
 /** The groups a person closed or opened in this tab, by the labels that lead to each group. */
 export function storedGroups(): Record<string, boolean> {
   try {
@@ -37,6 +47,68 @@ export function startsOpen(key: string, current: boolean, closed: boolean, group
   return current || (groups[key] ?? !closed);
 }
 
+interface Inputs {
+  prior: string;
+  latest: string;
+  tracking?: boolean;
+}
+
+/**
+ * The kinds of input a person used last on the page, "pointer" or "key", kept on the window so the
+ * page's inline script, the intent directive and the islands share them.
+ */
+function inputs(): Inputs {
+  const scope = globalThis as unknown as Record<string, Inputs | undefined>;
+  return (scope.openhalInputs ??= { prior: "", latest: "" });
+}
+
+/**
+ * Notes each pointer press, from a mouse, a pen or a touch, and each key press, before any other
+ * listener sees it. A key event is noted as it happens, so the rule for Tab reads the input before it.
+ */
+export function trackInput(): void {
+  const state = inputs();
+  if (state.tracking) return;
+  state.tracking = true;
+  const note = (kind: string) => (event: Event) => {
+    if (!event.isTrusted) return;
+    state.prior = state.latest;
+    state.latest = kind;
+  };
+  addEventListener("pointerdown", note("pointer"), { capture: true, passive: true });
+  addEventListener("keydown", note("key"), { capture: true, passive: true });
+}
+
+/**
+ * Keeps the pointer as the last input after Tab hides or shows the sidebar, so the next Tab hides or
+ * shows the sidebar again. Any other key, Shift and Tab among them, hands Tab back to moving focus.
+ */
+export function keepPointer(): void {
+  inputs().latest = "pointer";
+}
+
+const OVERLAYS = "dialog[open], [role=dialog], [role=alertdialog], [role=menu], [role=listbox], [role=note]:not([hidden])";
+
+/**
+ * True when Tab should hide or show the sidebar instead of moving focus: on a desktop, with no
+ * modifier held, with focus resting on the page itself, with no dialog, menu, popover or search
+ * palette open, and when the person's last input before Tab was a pointer or a Tab that hid or
+ * showed the sidebar. A keyboard-only visitor never meets these, so Tab moves focus as before, the
+ * first press reaching the skip link.
+ */
+export function isSidebarTab(event: KeyboardEvent): boolean {
+  if (event.key !== "Tab" || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey || event.isComposing) return false;
+  if (!matchMedia(WIDE).matches || inputs().prior !== "pointer") return false;
+  const active = document.activeElement;
+  if (active && active !== document.body && active !== document.documentElement) return false;
+  if (document.querySelector(OVERLAYS)) return false;
+  try {
+    return !document.querySelector(":popover-open");
+  } catch {
+    return true;
+  }
+}
+
 function savedScroll(): { hash: string; top: number } | null {
   try {
     const saved: unknown = JSON.parse(sessionStorage.getItem(SCROLL_KEY) || "null");
@@ -47,21 +119,32 @@ function savedScroll(): { hash: string; top: number } | null {
 }
 
 /**
- * Gives the server-rendered sidebar the state the island renders once it loads, before the first
- * paint: hidden or shown, each group open or closed, and the scroll position the sidebar had on the
- * section's last page. A prerendered page applies the state again when it becomes the shown page,
- * since a person may have changed it meanwhile, and the scroll position is kept as the page goes.
+ * Gives the server-rendered sidebar and its button in the header the state the islands render once
+ * they load, before the first paint: hidden or shown, each group open or closed, and the scroll
+ * position the sidebar had on the section's last page. The sidebar holds still while a page restores
+ * the state, so it only slides for a person's toggle. A prerendered page applies the state again
+ * when it becomes the shown page, since a person may have changed it meanwhile, and the scroll
+ * position is kept as the page goes. Until an island loads, its server-rendered part follows each
+ * toggle the other island makes.
  */
 export function restore(island: Element): void {
+  const root = document.documentElement;
   const scroller = () => island.querySelector<HTMLElement>("[data-slot=sidebar-content]");
-  const apply = () => {
+  const follow = () => {
     const collapsed = isCollapsed();
     const sidebar = island.querySelector<HTMLElement>("[data-slot=sidebar]");
-    if (sidebar) {
+    if (sidebar && island.hasAttribute("ssr")) {
       sidebar.dataset.state = collapsed ? "collapsed" : "expanded";
       sidebar.dataset.collapsible = collapsed ? "offcanvas" : "";
+      island.querySelector("[data-slot=sidebar-rail]")?.setAttribute("aria-expanded", String(!collapsed));
     }
-    island.querySelector("[data-slot=sidebar-rail]")?.setAttribute("aria-expanded", String(!collapsed));
+    const trigger = document.querySelector("[data-slot=sidebar-trigger]");
+    if (trigger?.closest("astro-island[ssr]")) trigger.setAttribute("aria-expanded", String(!collapsed));
+  };
+  const apply = () => {
+    root.toggleAttribute("data-sidebar-restoring", true);
+    requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute("data-sidebar-restoring")));
+    follow();
     const groups = storedGroups();
     for (const group of island.querySelectorAll<HTMLElement>("[data-group]")) {
       const open = startsOpen(group.dataset.group ?? "", group.hasAttribute("data-current"), group.hasAttribute("data-closed"), groups);
@@ -79,7 +162,9 @@ export function restore(island: Element): void {
     const saved = savedScroll();
     if (pane && saved && saved.hash === pane.dataset.hash && matchMedia(WIDE).matches) pane.scrollTop = saved.top;
   };
+  trackInput();
   apply();
+  watchSidebar(follow);
   if ((document as Document & { prerendering?: boolean }).prerendering) document.addEventListener("prerenderingchange", apply, { once: true });
   addEventListener("pagehide", () => {
     const pane = scroller();

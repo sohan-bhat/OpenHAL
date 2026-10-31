@@ -1,5 +1,6 @@
 ---
 import SocialIcons from "@astrojs/starlight/components/SocialIcons.astro";
+import SidebarToggle from "../islands/SidebarToggle";
 import { PRODUCT_NAME } from "../../config/brand";
 import { wordmarkWidth } from "../../lib/brand-mark";
 import { sections } from "../../lib/sections";
@@ -10,13 +11,17 @@ import VersionSelect from "./VersionSelect.astro";
 
 const links = await sections(Astro.url.pathname);
 const width = wordmarkWidth(24);
+const hasSidebar = Astro.locals.starlightRoute.sidebar.length > 0;
 ---
 
 <div class="oh-header">
-  <a class="oh-brand" href="/" aria-label={`${PRODUCT_NAME} overview`}>
-    <img class="dark:sl-hidden" src="/brand/wordmark-light.svg" alt="" width={width} height="24" />
-    <img class="light:sl-hidden" src="/brand/wordmark-dark.svg" alt="" width={width} height="24" />
-  </a>
+  <div class="oh-lead">
+    <div class="oh-toggle print:hidden">{hasSidebar && <SidebarToggle client:intent />}</div>
+    <a class="oh-brand" href="/" aria-label={`${PRODUCT_NAME} overview`}>
+      <img class="dark:sl-hidden" src="/brand/wordmark-light.svg" alt="" width={width} height="24" />
+      <img class="light:sl-hidden" src="/brand/wordmark-dark.svg" alt="" width={width} height="24" />
+    </a>
+  </div>
   <nav class="oh-sections" aria-label="Main">
     <ul>
       {
@@ -26,6 +31,7 @@ const width = wordmarkWidth(24);
               {link.current && <span class="nav-pill" aria-hidden="true" />}
               {link.label}
             </a>
+            {link.current && <span class="nav-mark" aria-hidden="true" />}
           </li>
         ))
       }
@@ -56,6 +62,17 @@ const width = wordmarkWidth(24);
     height: 100%;
   }
 
+  .oh-lead {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--s-2);
+  }
+
+  .oh-toggle {
+    display: none;
+  }
+
   .oh-brand {
     display: flex;
     flex: none;
@@ -73,12 +90,23 @@ const width = wordmarkWidth(24);
     display: none;
   }
 
+  .oh-sections {
+    align-self: stretch;
+  }
+
   .oh-sections ul {
     display: flex;
     gap: 2px;
+    height: 100%;
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+
+  .oh-sections li {
+    position: relative;
+    display: flex;
+    align-items: center;
   }
 
   .oh-sections a {
@@ -114,6 +142,15 @@ const width = wordmarkWidth(24);
     background: color-mix(in srgb, var(--accent) 10%, var(--bg));
   }
 
+  .nav-mark {
+    view-transition-name: nav-mark;
+    position: absolute;
+    inset-inline: 10px;
+    bottom: -1px;
+    height: 2px;
+    background: var(--spark);
+  }
+
   .oh-end {
     display: flex;
     flex: 1 1 auto;
@@ -130,6 +167,12 @@ const width = wordmarkWidth(24);
   }
 
   @media (min-width: 50rem) {
+    .oh-toggle {
+      display: flex;
+      width: var(--s-6);
+      height: var(--s-6);
+    }
+
     .oh-end {
       justify-content: flex-start;
     }

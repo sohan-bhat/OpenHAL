@@ -14,8 +14,10 @@ import {
   SidebarProvider,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { useSidebarOpen } from "@/hooks/use-sidebar-open";
 import { CLOSE, OPEN, release, still, tween } from "@/lib/motion";
-import { isCollapsed, rememberGroup, startsOpen } from "@/lib/sidebar";
+import { rememberGroup, startsOpen } from "@/lib/sidebar";
+import { moveOver } from "@/lib/sidebar-move";
 import { cn } from "@/lib/utils";
 import { useIslandReady, withBase } from "./ready";
 
@@ -41,54 +43,16 @@ interface Props {
   hash: string;
 }
 
-const WIDE = "(min-width: 50rem)";
 const ROW = "h-auto py-[4.5px]";
 const CHEVRON = "[&>svg]:size-[18px] motion-safe:[&>svg]:transition-[rotate] motion-safe:[&>svg]:duration-200 motion-safe:[&>svg]:ease-(--ease) [&[data-state=open]>svg]:rotate-90";
 const LABEL = cn("h-auto py-1 font-bold text-foreground", CHEVRON);
-const SUB = "mx-0 ml-2 translate-x-0 gap-0 px-0 py-0 pl-2 [&[data-state=closed]:not([data-closing])]:hidden";
+const SUB = "mx-0 ml-2 translate-x-0 gap-0 px-0 py-0 pl-[7px] [&[data-state=closed]:not([data-closing])]:hidden";
 const SUB_ROW = "h-auto translate-x-0 py-[4.5px]";
 const SUB_LABEL = cn(SUB_ROW, "w-full cursor-pointer border-0 bg-transparent py-1 text-left font-bold text-foreground", CHEVRON);
+const HERE = "before:absolute before:inset-y-0 before:-left-2 before:w-0.5 before:bg-spark before:content-['']";
 
 const isGroup = (entry: NavEntry): entry is NavGroup => "entries" in entry;
 const holdsCurrent = (entry: NavEntry): boolean => (isGroup(entry) ? entry.entries.some(holdsCurrent) : Boolean(entry.current));
-
-/**
- * The parts of a page that move over when the sidebar hides or shows, each with the element whose
- * place says how far it moves: the content, measured by its column, and the outline beside it or
- * above it.
- */
-function movers(): Array<[HTMLElement, HTMLElement]> {
-  const pairs: Array<[HTMLElement | null, HTMLElement | null]> = [[document.querySelector("main"), document.querySelector<HTMLElement>("main .sl-container")]];
-  for (const element of document.querySelectorAll<HTMLElement>(".right-sidebar, mobile-starlight-toc nav")) pairs.push([element, element]);
-  return pairs.filter((pair): pair is [HTMLElement, HTMLElement] => Boolean(pair[0] && pair[1]?.getClientRects().length));
-}
-
-/**
- * Marks the root, so the stylesheet gives the content and the outline the space the sidebar leaves
- * or takes, and moves them over from where they stood with Motion while the sidebar slides, using
- * transforms only. A part moving already starts again from where it is.
- */
-function moveOver(open: boolean): void {
-  const root = document.documentElement;
-  const moving = matchMedia(WIDE).matches && !still();
-  const before = moving ? movers().map(([mover, probe]) => [mover, probe, probe.getBoundingClientRect().left] as const) : [];
-  for (const [mover] of before) {
-    for (const animation of mover.getAnimations()) animation.cancel();
-    release(mover, "transform");
-  }
-  if (open) delete root.dataset.sidebar;
-  else root.dataset.sidebar = "collapsed";
-  const shifts = before.map(([mover, probe, left]) => [mover, left - probe.getBoundingClientRect().left] as const);
-  for (const [mover, shift] of shifts) {
-    if (Math.abs(shift) < 0.5) continue;
-    const from = `translateX(${shift}px)`;
-    mover.style.transform = from;
-    tween(mover, { transform: [from, "translateX(0px)"] }, open ? OPEN : CLOSE).then(
-      () => release(mover, "transform"),
-      () => {},
-    );
-  }
-}
 
 const turns = new WeakMap<HTMLElement, number>();
 
@@ -194,7 +158,7 @@ function Entry({ entry, path, depth }: { entry: NavEntry; path: string; depth: n
 
   if (depth === 0) {
     return (
-      <SidebarMenuItem>
+      <SidebarMenuItem className={current ? HERE : undefined}>
         <SidebarMenuButton asChild isActive={current} className={cn(ROW, String(className ?? ""))}>
           <a {...link}>
             {entry.label}
@@ -206,7 +170,7 @@ function Entry({ entry, path, depth }: { entry: NavEntry; path: string; depth: n
   }
 
   return (
-    <SidebarMenuSubItem>
+    <SidebarMenuSubItem className={current ? HERE : undefined}>
       <SidebarMenuSubButton isActive={current} className={cn(SUB_ROW, String(className ?? ""))} {...link}>
         {entry.label}
         <Badge text={entry.badge} />
@@ -218,29 +182,25 @@ function Entry({ entry, path, depth }: { entry: NavEntry; path: string; depth: n
 /**
  * The documentation sidebar, built from shadcn/ui's Sidebar on Starlight's route data, so every page
  * keeps its items, order, numbers, badges and current page. It collapses off canvas from its own
- * SidebarRail and from Command or Control and B, and the content and the outline move over to use
- * the space. Its links are plain links that work without JavaScript, and React loads once a person
- * reaches for a group, the rail or the shortcut.
+ * SidebarRail, from its SidebarTrigger in the header and from Tab after a pointer press on the page,
+ * and the content and the outline move over to use the space. Its links are plain links that work
+ * without JavaScript, and React loads once a person reaches for a group, the rail or the shortcut.
  */
 export default function SidebarNav({ entries, hash }: Props) {
-  const [open, setOpen] = React.useState(() => !isCollapsed());
+  const open = useSidebarOpen();
   const rail = React.useRef<HTMLButtonElement>(null);
   useIslandReady(rail);
-  const change = React.useCallback((next: boolean) => {
-    moveOver(next);
-    setOpen(next);
-  }, []);
 
   return (
     <SidebarProvider
       open={open}
-      onOpenChange={change}
+      onOpenChange={moveOver}
       className="contents"
-      style={{ "--sidebar-width": "calc(var(--oh-gutter) + var(--sl-sidebar-width))", "--sidebar-top": "var(--sl-nav-height)" } as React.CSSProperties}
+      style={{ "--sidebar-width": "var(--sl-sidebar-width)", "--sidebar-top": "var(--sl-nav-height)" } as React.CSSProperties}
     >
       <Sidebar id="oh-sidebar">
         <SidebarContent data-hash={hash} className="min-[50rem]:[scrollbar-gutter:stable]">
-          <SidebarGroup className="p-0 min-[50rem]:py-4 min-[50rem]:pr-4 min-[50rem]:pl-[calc(var(--oh-gutter)+var(--sl-sidebar-pad-x))]">
+          <SidebarGroup className="p-0 min-[50rem]:p-(--sl-sidebar-pad-x)">
             <SidebarMenu className="gap-2">
               {entries.map((entry, index) => (
                 <Entry key={index} entry={entry} path="" depth={0} />
@@ -248,7 +208,7 @@ export default function SidebarNav({ entries, hash }: Props) {
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarRail ref={rail} aria-controls="oh-sidebar" aria-expanded={open} aria-keyshortcuts="Control+B Meta+B" />
+        <SidebarRail ref={rail} aria-controls="oh-sidebar" aria-expanded={open} />
       </Sidebar>
     </SidebarProvider>
   );

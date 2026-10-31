@@ -103,7 +103,7 @@ test.describe("the header", () => {
       await page.evaluate(() => document.fonts.ready);
       const parts = await page.evaluate(() => {
         const bar = document.querySelector("header.header")!.getBoundingClientRect();
-        const items = [...document.querySelectorAll(".oh-brand, .oh-sections li, [data-search-trigger], .oh-social a, header.header [data-picker], .sl-menu-button")]
+        const items = [...document.querySelectorAll("[data-slot=sidebar-trigger], .oh-brand, .oh-sections li, [data-search-trigger], .oh-social a, header.header [data-picker], .sl-menu-button")]
           .filter((el) => el.getClientRects().length)
           .map((el) => ({ name: el.tagName.toLowerCase() + "." + el.className, rect: el.getBoundingClientRect() }));
         return { bar: { top: bar.top, bottom: bar.bottom, right: bar.right }, items: items.map(({ name, rect }) => ({ name, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom })) };
@@ -120,15 +120,12 @@ test.describe("the header", () => {
   }
 
   for (const width of [1440, 1280, 1024]) {
-    test(`lines the wordmark up with the home column and the sidebar at ${width} px`, async ({ page }) => {
+    test(`lines the wordmark up with the home page's column at ${width} px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/");
       const brand = (await box(page, ".oh-brand"))[0];
       const column = await page.locator("main .home-width").first().evaluate((el) => el.getBoundingClientRect().left + parseFloat(getComputedStyle(el).paddingLeft));
       expect(Math.abs(brand - column)).toBeLessThan(1);
-      await page.goto(SPEC);
-      const pill = await page.locator("[data-slot=sidebar-menu] > li").first().evaluate((el) => el.getBoundingClientRect().left);
-      expect(Math.abs((await box(page, ".oh-brand"))[0] - pill)).toBeLessThan(1);
     });
   }
 
@@ -147,6 +144,109 @@ test.describe("the header", () => {
     await expect(page).toHaveURL(/\/library\/$/);
     await page.goto("/404.html");
     await expect(picker(page, "section")).toHaveAccessibleName("Sections");
+  });
+});
+
+test.describe("the left edge", () => {
+  /** Where every left edge of the header's left group and the sidebar starts, rounded to the pixel. */
+  const edges = (page: Page) =>
+    page.evaluate(() => {
+      const left = (element: Element | null) => (element?.getClientRects().length ? Math.round(element.getBoundingClientRect().left) : null);
+      const text = (element: Element) => {
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+          if (!node.textContent?.trim()) continue;
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          return Math.round(range.getBoundingClientRect().left);
+        }
+        return null;
+      };
+      const depth = (element: Element) => {
+        let count = 0;
+        for (let node = element.parentElement; node; node = node.parentElement) if (node.matches("[data-sidebar=menu-sub]")) count++;
+        return count;
+      };
+      const container = document.querySelector("[data-slot=sidebar-container]");
+      const shown = Boolean(container && getComputedStyle(container).visibility === "visible");
+      const rows = shown ? [...document.querySelectorAll("[data-sidebar=menu-button], [data-sidebar=menu-sub-button]")].filter((row) => row.getClientRects().length) : [];
+      const guides = shown ? [...document.querySelectorAll("[data-sidebar=menu-sub]")].filter((list) => list.getClientRects().length) : [];
+      const title = document.querySelector("main h1");
+      return {
+        container: left(container),
+        trigger: left(document.querySelector("[data-slot=sidebar-trigger]")),
+        icon: left(document.querySelector("[data-slot=sidebar-trigger] svg")),
+        brand: left(document.querySelector(".oh-brand")),
+        rows: rows.map((row) => ({ depth: depth(row), box: left(row), text: text(row) })),
+        guides: guides.map((list) => ({ depth: depth(list) + 1, line: left(list) })),
+        title: title ? text(title) : null,
+      };
+    });
+
+  for (const width of [1280, 1440, 1728, 1920, 2560]) {
+    for (const stored of ["", "collapsed"]) {
+      test(`starts the sidebar at the window's edge and puts every left edge on one grid at ${width} px with the sidebar ${stored ? "hidden" : "shown"}`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.addInitScript((value) => localStorage.setItem("openhal-sidebar", value), stored);
+        for (const path of [SPEC, "/docs/"]) {
+          await page.goto(path);
+          await page.evaluate(() => document.fonts.ready);
+          const seen = await edges(page);
+          expect(seen.trigger, `${path} the trigger on the rows' edge`).toBe(16);
+          expect(seen.icon, `${path} the trigger's icon on the labels' edge`).toBe(24);
+          expect(seen.brand, `${path} the wordmark after the trigger`).toBe(56);
+          if (stored) {
+            expect(seen.container, path).toBe(-300);
+            expect(seen.title, `${path} the title under the wordmark while the sidebar is hidden`).toBe(56);
+            continue;
+          }
+          expect(seen.container, `${path} the sidebar at the window's edge`).toBe(0);
+          expect(seen.rows.length, path).toBeGreaterThan(3);
+          for (const row of seen.rows) expect({ box: row.box, text: row.text }, `${path} a row at depth ${row.depth}`).toEqual({ box: 16 + 16 * row.depth, text: 24 + 16 * row.depth });
+          expect(seen.guides.length, path).toBeGreaterThan(0);
+          for (const guide of seen.guides) expect(guide.line, `${path} the guide line of a group at depth ${guide.depth}`).toBe(8 + 16 * guide.depth);
+          expect(seen.title, `${path} the title right of the sidebar`).toBe(324);
+        }
+      });
+    }
+  }
+
+  for (const width of [1200, 1440, 2560]) {
+    test(`keeps the outline beside the column at ${width} px even when it paints before the column has arrived`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      for (const stored of ["", "collapsed"]) {
+        await page.addInitScript((value) => localStorage.setItem("openhal-sidebar", value), stored);
+        await page.goto(SPEC);
+        const seen = await page.evaluate(() => {
+          const outline = () => Math.round(document.querySelector(".right-sidebar-container")!.getBoundingClientRect().left);
+          const pane = document.querySelector<HTMLElement>(".main-pane")!;
+          const column = Math.round(pane.getBoundingClientRect().right);
+          const whole = outline();
+          const parent = pane.parentElement!;
+          pane.remove();
+          const early = outline();
+          parent.append(pane);
+          return { column, whole, early };
+        });
+        expect(seen.whole, `${stored || "shown"} the outline right after the column`).toBe(seen.column);
+        expect(seen.early, `${stored || "shown"} the outline in its place before the column is parsed`).toBe(seen.whole);
+      }
+    });
+  }
+
+  test("lines the phone menu's sections and rows up with the header's wordmark", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(SPEC);
+    await page.locator(".sl-menu-button").click();
+    await expect(page.locator("#starlight__sidebar")).toBeVisible();
+    const seen = await page.evaluate(() => ({
+      brand: Math.round(document.querySelector(".oh-brand")!.getBoundingClientRect().left),
+      sections: [...document.querySelectorAll(".oh-menu-sections a")].map((link) => Math.round(link.getBoundingClientRect().left)),
+      rows: [...document.querySelectorAll("#starlight__sidebar [data-sidebar=menu-button]")].filter((row) => row.getClientRects().length).map((row) => Math.round(row.getBoundingClientRect().left)),
+    }));
+    expect(seen.brand).toBe(16);
+    expect(new Set(seen.sections)).toEqual(new Set([16]));
+    expect(new Set(seen.rows)).toEqual(new Set([16]));
   });
 });
 
@@ -220,8 +320,9 @@ test.describe("the sidebar", () => {
     }
   });
 
-  for (const width of [1440, 1280, 1024]) {
+  for (const width of [2560, 1728, 1440, 1280, 1024]) {
     test(`starts every documentation page's title at one left edge at ${width} px`, async ({ page }) => {
+      test.slow();
       await page.setViewportSize({ width, height: 900 });
       const edges: Record<string, number> = {};
       for (const path of [SPEC, "/docs/quickstart/", "/inspector/", "/spec/playground/", "/drivers/", "/library/scpi-rigol-dp832/", "/sdks/python/reference/", "/blog/", "/404.html"]) {
@@ -242,11 +343,19 @@ test.describe("the sidebar's collapse", () => {
   const hydrated = (page: Page) => expect(page.locator("astro-island:has([data-slot=sidebar])")).not.toHaveAttribute("ssr", "");
   const settled = (page: Page) => page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== "running"), undefined, { polling: 25 });
   const rail = (page: Page) => page.locator("[data-slot=sidebar-rail]");
+  const trigger = (page: Page) => page.locator("[data-slot=sidebar-trigger]");
   const container = (page: Page) => page.locator("[data-slot=sidebar-container]");
+  const tooltip = (page: Page) => page.locator("[data-slot=tooltip-content]");
+  const focused = (page: Page) => page.evaluate(() => (document.activeElement === document.body ? "body" : (document.activeElement?.outerHTML.slice(0, 80) ?? "none")));
   const collapse = async (page: Page) => {
-    await page.keyboard.press("Control+b");
+    await trigger(page).click();
     await expect.poll(() => state(page)).toEqual({ collapsed: true, state: "collapsed" });
     await settled(page);
+  };
+  /** A pointer press on the page's own text, which moves focus to the page and nowhere else. */
+  const pressPage = async (page: Page) => {
+    await page.locator("main h1").click({ position: { x: 4, y: 8 } });
+    expect(await focused(page)).toBe("body");
   };
 
   test.beforeEach(async ({ page }) => {
@@ -283,20 +392,88 @@ test.describe("the sidebar's collapse", () => {
     expect((await box(page, "main h1"))[0]).toBe(docked.title);
   });
 
-  test("has no button that shows or hides it, and nothing peeks over the content", async ({ page }) => {
+  test("toggles from shadcn/ui's SidebarTrigger at the far left of the header, which stays in place and never floats over the content", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    await expect(trigger(page)).toHaveAccessibleName("Toggle sidebar");
+    await expect(trigger(page)).toHaveAttribute("aria-controls", "oh-sidebar");
+    await expect(trigger(page)).toHaveAttribute("aria-expanded", "true");
+    await expect(trigger(page).locator("svg.lucide-panel-left")).toHaveCount(1);
+    expect(await trigger(page).evaluate((element) => element.closest("header.header") !== null)).toBe(true);
+    const shown = await trigger(page).boundingBox();
+    expect(shown).toMatchObject({ x: 16, width: 32, height: 32 });
+    const brand = await page.locator(".oh-brand").boundingBox();
+    expect(shown!.x + shown!.width).toBeLessThan(brand!.x);
+    await trigger(page).click();
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, state: "collapsed" });
+    await settled(page);
+    await expect(trigger(page)).toHaveAttribute("aria-expanded", "false");
+    await expect(rail(page)).toHaveAttribute("aria-expanded", "false");
+    expect(await trigger(page).boundingBox()).toEqual(shown);
+    const title = await page.locator("main h1").boundingBox();
+    expect(shown!.y + shown!.height).toBeLessThanOrEqual(61);
+    expect(title!.y).toBeGreaterThan(61);
+    await trigger(page).click();
+    await expect.poll(() => state(page)).toEqual({ collapsed: false, state: "expanded" });
+    await expect(trigger(page)).toHaveAttribute("aria-expanded", "true");
+    expect(await trigger(page).boundingBox()).toEqual(shown);
+  });
+
+  test("the trigger's first press works before React loads and before the sidebar's island loads", async ({ page }) => {
+    const fetched: string[] = [];
+    page.on("request", (request) => fetched.push(new URL(request.url()).pathname));
+    await page.goto("/docs/quickstart/");
+    await page.waitForTimeout(500);
+    expect(fetched.filter((path) => /SidebarNav|SidebarToggle/.test(path))).toEqual([]);
+    await trigger(page).click();
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, state: "collapsed" });
+    expect(fetched.filter((path) => /SidebarNav/.test(path)), "the server-rendered sidebar follows the trigger").toEqual([]);
+    await expect(rail(page)).toHaveAttribute("aria-expanded", "false");
+    expect(await page.evaluate(() => localStorage.getItem("openhal-sidebar"))).toBe("collapsed");
+  });
+
+  test("shows shadcn/ui's Tooltip on the trigger, naming what a press does and the Tab key", async ({ page }) => {
+    const point = async () => {
+      await trigger(page).hover();
+      await expect(page.locator("astro-island:has([data-slot=sidebar-trigger])")).not.toHaveAttribute("ssr", "");
+      await expect(async () => {
+        await page.mouse.move(30, 28);
+        await page.mouse.move(34, 32, { steps: 3 });
+        await expect(tooltip(page)).toBeVisible({ timeout: 1000 });
+      }).toPass();
+    };
+    await page.goto("/docs/quickstart/");
+    await point();
+    await expect(tooltip(page)).toHaveText("Hide sidebarTab");
+    await expect(tooltip(page).locator("kbd")).toHaveText("Tab");
+    await expect(trigger(page)).toHaveAttribute("aria-describedby", /\S/);
+    await trigger(page).click();
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, state: "collapsed" });
+    await page.mouse.move(700, 500);
+    await expect(tooltip(page)).toHaveCount(0);
+    await point();
+    await expect(tooltip(page)).toHaveText("Show sidebarTab");
+    await page.mouse.move(700, 500);
+    await page.mouse.move(710, 510);
+    await expect(tooltip(page)).toHaveCount(0);
+    await trigger(page).blur();
+    await trigger(page).focus();
+    await expect(tooltip(page), "focus shows the tooltip as well as the pointer").toBeVisible();
+  });
+
+  test("has the trigger and the rail as its only buttons, and nothing peeks over the content", async ({ page }) => {
     await page.goto("/docs/quickstart/");
     const toggles = page.getByRole("button", { name: /sidebar/i });
-    await expect(toggles).toHaveCount(1);
-    await expect(toggles).toHaveAttribute("data-slot", "sidebar-rail");
-    await expect(toggles).toHaveAttribute("tabindex", "-1");
-    expect((await toggles.boundingBox())!.width).toBeLessThanOrEqual(16);
+    await expect(toggles).toHaveCount(2);
+    await expect(toggles.nth(0)).toHaveAttribute("data-slot", "sidebar-trigger");
+    await expect(toggles.nth(1)).toHaveAttribute("data-slot", "sidebar-rail");
+    await expect(rail(page)).toHaveAttribute("tabindex", "-1");
+    expect((await rail(page).boundingBox())!.width).toBeLessThanOrEqual(16);
     await collapse(page);
     await page.mouse.move(700, 500);
     await page.mouse.move(4, 500);
     await page.waitForTimeout(600);
     await expect(container(page)).toBeHidden();
     expect(await state(page)).toEqual({ collapsed: true, state: "collapsed" });
-    await expect(page.getByRole("button", { name: /sidebar/i })).toHaveAttribute("data-slot", "sidebar-rail");
   });
 
   for (const width of [1440, 1280, 1152, 1024, 900, 800]) {
@@ -383,29 +560,102 @@ test.describe("the sidebar's collapse", () => {
       );
       expect(shift).toBeLessThan(0.001);
     }
-    await page.keyboard.press("Control+b");
+    await trigger(page).click();
     await expect.poll(() => state(page)).toEqual({ collapsed: false, state: "expanded" });
   });
 
-  test("Control or Command and B hides and shows it on the first press, before React loads, but not while typing", async ({ page }) => {
+  test("Control or Command and B no longer toggles it", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    await pressPage(page);
+    for (const keys of ["Control+b", "Meta+b"]) {
+      await page.keyboard.press(keys);
+      await page.waitForTimeout(300);
+      expect(await state(page), keys).toEqual({ collapsed: false, state: "expanded" });
+    }
+    await expect(rail(page)).not.toHaveAttribute("aria-keyshortcuts");
+    await expect(trigger(page)).not.toHaveAttribute("aria-keyshortcuts");
+  });
+
+  test("after a pointer press on the page, Tab and Tab again hide and show it without another press", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    await pressPage(page);
+    for (const collapsed of [true, false, true, false]) {
+      await page.keyboard.press("Tab");
+      await expect.poll(() => state(page)).toEqual({ collapsed, state: collapsed ? "collapsed" : "expanded" });
+      expect(await focused(page), "focus stays on the page").toBe("body");
+      await settled(page);
+    }
+  });
+
+  test("after a pointer press on the page, Tab hides and shows it on the first press, before React loads, and keeps focus where it was", async ({ page }) => {
     const fetched: string[] = [];
     page.on("request", (request) => fetched.push(new URL(request.url()).pathname));
     await page.goto("/docs/quickstart/");
     await page.waitForTimeout(500);
     expect(fetched.filter((path) => /SidebarNav/.test(path))).toEqual([]);
-    await page.keyboard.press("Control+b");
+    await pressPage(page);
+    await page.keyboard.press("Tab");
     await expect.poll(() => state(page)).toEqual({ collapsed: true, state: "collapsed" });
+    expect(await focused(page), "focus stays on the page").toBe("body");
     await settled(page);
-    await page.keyboard.press("Control+b");
+    await pressPage(page);
+    await page.keyboard.press("Tab");
     await expect.poll(() => state(page)).toEqual({ collapsed: false, state: "expanded" });
+    expect(await focused(page)).toBe("body");
+  });
+
+  test("Tab keeps moving focus once the last input was a key, so a keyboard's Tab never toggles it", async ({ page, browserName }) => {
+    test.skip(browserName === "webkit", "WebKit only tabs to links with the macOS full keyboard setting");
+    await page.goto("/docs/quickstart/");
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("link", { name: "Skip to content" }), "a keyboard's first Tab reaches the skip link").toBeFocused();
+    await page.keyboard.press("Tab");
+    expect(await focused(page)).not.toBe("body");
+    expect(await state(page)).toEqual({ collapsed: false, state: "expanded" });
+    await pressPage(page);
+    await page.keyboard.press("Tab");
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, state: "collapsed" });
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(300);
+    expect(await focused(page), "a key other than Tab hands Tab back to moving focus").not.toBe("body");
+    expect(await state(page)).toEqual({ collapsed: true, state: "collapsed" });
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(300);
+    expect(await state(page), "a key before Tab, with focus back on the page, leaves Tab to move focus").toEqual({ collapsed: true, state: "collapsed" });
+    expect(await focused(page)).not.toBe("body");
+  });
+
+  test("Shift and Tab never toggles it", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    await pressPage(page);
+    await page.keyboard.press("Shift+Tab");
+    await page.waitForTimeout(300);
+    expect(await state(page)).toEqual({ collapsed: false, state: "expanded" });
+  });
+
+  test("typing in the search field or a form field never toggles it", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    await page.locator("[data-search-trigger]").click();
+    const input = page.getByRole("dialog", { name: "Search" }).getByRole("combobox");
+    await expect(input).toBeFocused();
+    await input.pressSequentially("limit");
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(300);
+    expect(await state(page)).toEqual({ collapsed: false, state: "expanded" });
+    await expect(input).toBeFocused();
+    await page.keyboard.press("Escape");
     await page.goto("/spec/playground/");
     await page.locator("summary", { hasText: "Build your own request" }).click();
     await expect(page.locator("astro-island:has(#pg-text)")).not.toHaveAttribute("ssr", "");
-    await page.locator("#pg-text").focus();
-    await expect(page.locator("#pg-text")).toBeFocused();
-    await page.keyboard.press("Control+b");
+    await page.locator("#pg-text").click();
+    await page.keyboard.type("x");
+    await page.keyboard.press("Tab");
     await page.waitForTimeout(300);
     expect(await state(page)).toEqual({ collapsed: false, state: "expanded" });
+    await expect(page.locator("#pg-text")).not.toBeFocused();
   });
 
   test("while hidden, its links leave the tab order and screen readers", async ({ page }) => {
@@ -422,7 +672,7 @@ test.describe("the sidebar's collapse", () => {
   test("with reduced motion it switches at once and nothing slides", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/docs/quickstart/");
-    await page.keyboard.press("Control+b");
+    await trigger(page).click();
     await expect.poll(() => state(page)).toEqual({ collapsed: true, state: "collapsed" });
     const moving = () => page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === "running" && Number(animation.effect?.getTiming().duration) > 0).length);
     expect(await moving()).toBe(0);
@@ -462,14 +712,18 @@ test.describe("the sidebar's collapse", () => {
     for (const path of ["/", "/blog/", "/404.html"]) {
       await page.goto(path);
       await expect(page.locator("[data-slot=sidebar-rail]")).toHaveCount(0);
+      await expect(trigger(page), `${path} has no sidebar, so no trigger`).toHaveCount(0);
+      expect((await page.locator(".oh-brand").boundingBox())!.x, `${path} keeps the wordmark in place`).toBe(56);
     }
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/docs/quickstart/");
     await expect(rail(page)).toBeHidden();
+    await expect(trigger(page), "phones keep the menu button").toBeHidden();
+    await page.locator("main h1").click({ position: { x: 4, y: 8 } });
+    await page.keyboard.press("Tab");
+    expect(await focused(page), "Tab moves focus on a phone").not.toBe("body");
+    expect(await page.evaluate(() => document.documentElement.dataset.sidebar ?? "shown")).toBe("collapsed");
     await page.locator(".sl-menu-button").click();
-    await expect(page.locator("#starlight__sidebar").getByRole("link", { name: "Install" })).toBeVisible();
-    await page.keyboard.press("Control+b");
-    await page.waitForTimeout(300);
     await expect(page.locator("#starlight__sidebar").getByRole("link", { name: "Install" })).toBeVisible();
   });
 });
