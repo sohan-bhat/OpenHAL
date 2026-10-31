@@ -143,7 +143,7 @@ async def test_wrong_instrument_is_refused(server: ScpiServer) -> None:
 async def test_timeout_then_recovery(server: ScpiServer) -> None:
     bench = await make(server).connect()
     server.latency_s = 0.6
-    with pytest.raises(TimeoutError, match="didn't answer MEAS:VOLT"):
+    with pytest.raises(TimeoutError, match="sent no reply to MEAS:VOLT"):
         await bench.driver.read("ch1_voltage")
     server.latency_s = 0.0
     assert_done(await bench.act("set_ch1", volts="3 V", amps="1 A"))
@@ -155,9 +155,9 @@ async def test_timeout_then_recovery(server: ScpiServer) -> None:
 async def test_malformed_reply(server: ScpiServer) -> None:
     bench = await make(server).connect()
     server.garble = True
-    with pytest.raises(DriverError, match="expected a number"):
+    with pytest.raises(DriverError, match="not a number"):
         await bench.driver.read("ch1_voltage")
-    with pytest.raises(DriverError, match="expected on or off"):
+    with pytest.raises(DriverError, match="not on or off"):
         await bench.driver.read("ch1_output")
     await bench.close()
 

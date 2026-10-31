@@ -84,7 +84,9 @@ def build(kind: str, layout: list[Placement], deck_file: str | None) -> Any:
         except DriverError:
             raise
         except Exception as exc:
-            raise DriverError(f"layout {placement.name}: PyLabRobot refused the placement ({exc}).") from exc
+            raise DriverError(
+                f"layout {placement.name}: PyLabRobot returned an error for the placement ({exc})."
+            ) from exc
     return deck
 
 

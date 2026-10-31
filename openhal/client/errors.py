@@ -1,8 +1,8 @@
 """Exceptions raised by the OpenHAL client.
 
-A blocked write is not an exception. The kernel answers it with a `Decision` whose status is
-`blocked`, and the client returns that decision. Exceptions are for calls the hub could not
-answer or refused to take at all.
+A blocked write is not an exception. The kernel returns a `Decision` whose status is `blocked`,
+and the client returns that decision. Exceptions are for calls the hub could not complete or did
+not accept at all.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ class OpenHALError(Exception):
 
 
 class HubNotRunning(OpenHALError):  # noqa: N818 (public name fixed by the brief)
-    """Nothing answered at the hub address."""
+    """No response came from the hub address."""
 
 
 class Unauthorized(OpenHALError):  # noqa: N818
@@ -40,7 +40,7 @@ class NotSupported(NotFound):
 
 
 class Refused(OpenHALError):  # noqa: N818
-    """The hub understood the call and refused it, for example an agent asking to approve."""
+    """The hub parsed the call and blocked it, for example an agent's request to approve."""
 
 
 class BadRequest(OpenHALError):  # noqa: N818
@@ -48,4 +48,4 @@ class BadRequest(OpenHALError):  # noqa: N818
 
 
 class HubError(OpenHALError):
-    """The hub failed while answering. Check the hub log."""
+    """The hub failed while handling the call. Check the hub log."""

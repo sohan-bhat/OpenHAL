@@ -1,7 +1,7 @@
 """Encode and decode GATT characteristic values.
 
 Formats follow the Bluetooth GATT Specification Supplement (section 2.2, "Format types") and the
-format names in Assigned Numbers. GATT values are little-endian unless a profile says otherwise.
+format names in Assigned Numbers. GATT values are little-endian unless a profile states otherwise.
 
 | Format | Bytes | Notes |
 |---|---|---|

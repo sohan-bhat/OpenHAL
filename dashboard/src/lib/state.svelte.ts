@@ -248,7 +248,7 @@ class Inspector {
     try {
       await api.unlock(phrase);
     } catch (error) {
-      return error instanceof Error ? error.message : "The hub refused to unlock.";
+      return error instanceof Error ? error.message : "Unlocking the hub failed.";
     }
     await Promise.all([this.refreshStatus(), this.refreshDevices()]);
     return null;

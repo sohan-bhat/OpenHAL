@@ -200,7 +200,7 @@ async def run(case: ConformanceCase) -> Report:
                 raise AssertionError(f"read({channel}) returned a reading for {reading.channel}.")
             expected = case.file.channel_unit(channel)
             if expected and reading.unit not in (expected, None):
-                raise AssertionError(f"{channel} reported unit {reading.unit}, the file says {expected}.")
+                raise AssertionError(f"{channel} reported unit {reading.unit}, the file sets {expected}.")
         return f"{len(channels)} channels"
 
     async def write_inside_limits() -> str:
@@ -212,7 +212,7 @@ async def run(case: ConformanceCase) -> Report:
         before = len(spy.calls)
         decision = await kernel.execute(Write(device=device_id, channel=target[0], value=target[1]), who)
         if decision.status != "done":
-            raise AssertionError(f"expected done, got {decision.status} {decision.code}: {decision.message}")
+            raise AssertionError(f"the write ended {decision.status} {decision.code}, not done: {decision.message}")
         if len(spy.calls) != before + 1:
             raise AssertionError("an allowed write must reach the driver exactly once")
         return f"{target[0]} = {target[1]}"
@@ -224,7 +224,7 @@ async def run(case: ConformanceCase) -> Report:
         before = len(spy.calls)
         decision = await kernel.execute(Write(device=device_id, channel=target[0], value=target[1]), who)
         if decision.status != "blocked":
-            raise AssertionError(f"expected blocked, got {decision.status}")
+            raise AssertionError(f"the write ended {decision.status}, not blocked")
         if len(spy.calls) != before:
             raise AssertionError("a blocked write reached the driver")
         return decision.message
@@ -272,7 +272,7 @@ async def run(case: ConformanceCase) -> Report:
         before = len(spy.calls)
         decision = await kernel.execute(Action(device=device_id, action=target[0], args=target[1]), who)
         if decision.status != "blocked":
-            raise AssertionError(f"expected blocked, got {decision.status}")
+            raise AssertionError(f"the action ended {decision.status}, not blocked")
         if len(spy.calls) != before:
             raise AssertionError("a blocked action reached the driver")
         return decision.message
@@ -334,7 +334,7 @@ async def run(case: ConformanceCase) -> Report:
             await asyncio.wait_for(driver.read(channel), 2.0)
         except (TimeoutError, DriverError):
             return "slow reads time out or raise DriverError"
-        return "driver answered within the deadline"
+        return "driver replied within the deadline"
 
     async def close() -> str:
         await driver.close()

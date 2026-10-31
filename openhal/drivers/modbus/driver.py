@@ -51,7 +51,7 @@ _WORDS: Final = {"uint16": 1, "int16": 1, "uint32": 2, "int32": 2, "float32": 2}
 _EXCEPTIONS: Final = {
     1: "illegal function (the device doesn't support this request for that table)",
     2: "illegal data address (no such register on this device)",
-    3: "illegal data value (the device refused the value)",
+    3: "illegal data value (the device does not accept the value)",
     4: "server device failure",
     5: "acknowledge (the device is still working on it)",
     6: "server device busy",
@@ -282,7 +282,7 @@ class ModbusDriver(Driver):
         if client is None or not client.connected:
             return Health(connected=False, detail=f"{self._where} is not connected")
         if self._failures >= _FAILURES_BEFORE_UNHEALTHY:
-            return Health(connected=False, detail=f"{self._where} stopped answering ({self._failures} failures)")
+            return Health(connected=False, detail=f"{self._where} stopped sending replies ({self._failures} failures)")
         probe = next(iter(self.maps), None)
         if probe is not None:
             started = time.monotonic()
@@ -343,7 +343,7 @@ class ModbusDriver(Driver):
             except (TimeoutError, ModbusIOException):
                 self._failures += 1
                 raise TimeoutError(
-                    f"{self._where} didn't answer {method} within {deadline:g} s. Check the unit id, "
+                    f"{self._where} sent no reply to {method} within {deadline:g} s. Check the unit id, "
                     "wiring, baud rate and parity, or raise timeout."
                 ) from None
             except ConnectionException as exc:
@@ -356,7 +356,7 @@ class ModbusDriver(Driver):
             code = getattr(response, "exception_code", None)
             reason = _EXCEPTIONS.get(code, f"exception code {code}") if isinstance(code, int) else str(response)
             self._failures = 0
-            raise DriverError(f"{self._where} refused {method}, {reason}. Check the register map.")
+            raise DriverError(f"{self._where} returned an error for {method}, {reason}. Check the register map.")
         self._failures = 0
         return response
 
@@ -370,7 +370,7 @@ class ModbusDriver(Driver):
         response = await self._call(method, rmap.address, count=rmap.words)
         data = response.bits if rmap.kind in ("coil", "discrete") else response.registers
         if len(data) < rmap.words:
-            raise DriverError(f"{self._where} returned {len(data)} values for {method}, expected {rmap.words}.")
+            raise DriverError(f"{self._where} returned {len(data)} values for {method}, not {rmap.words}.")
         return list(data[: rmap.words])
 
     def _orders(self, rmap: RegisterMap) -> tuple[Order, Order]:

@@ -231,7 +231,7 @@
           "data": {
             "name": "LIMIT_EXCEEDED",
             "kernelCode": "above_max",
-            "kernelMessage": "Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.",
+            "kernelMessage": "Blocked. The extruder_target limit is 260 degC (max). Requested 300 degC.",
             "device": "printer",
             "channel": "extruder_target",
             "limit": {
@@ -265,7 +265,7 @@
         "data": {
           "name": "LIMIT_EXCEEDED",
           "kernelCode": "above_max",
-          "kernelMessage": "Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.",
+          "kernelMessage": "Blocked. The extruder_target limit is 260 degC (max). Requested 300 degC.",
           "device": "printer",
           "channel": "extruder_target",
           "requested": {

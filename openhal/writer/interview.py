@@ -137,7 +137,7 @@ def questions(draft: dict[str, Any]) -> list[Question]:
                         f"{name}.unit",
                         f"What unit is {name} in? For example percent, degC, V, rpm or dimensionless.",
                         unit,
-                        "The draft could not tell. Limits and rates are written in this unit.",
+                        "The draft gives no unit. Limits and rates are written in this unit.",
                         name,
                         "unit",
                     )
@@ -211,7 +211,7 @@ def questions(draft: dict[str, Any]) -> list[Question]:
                 f"{name}.confirm",
                 f"Should changes to {name} need a person's approval? none, confirm or confirm-each-time.",
                 spec.get("confirm", _DEFAULT_TIER[hazard]),
-                f"The usual tier for a {hazard} hazard device. High hazard devices always ask each time.",
+                f"The usual tier for a {hazard} hazard device. A high hazard device always needs approval each time.",
                 name,
                 "confirm",
             )

@@ -215,7 +215,7 @@ async def test_fill_values_and_refused_reports() -> None:
     assert pad.writes[-1] == bytes([2, 0xF7, 9])
     decision = await kernel.execute(Write(device="t", channel="wrong", value=True), WHO)
     assert decision.status == "failed"
-    assert "refused output report 9" in decision.message
+    assert "returned an error for output report 9" in decision.message
 
 
 async def test_selection_and_open_errors() -> None:
@@ -245,7 +245,7 @@ async def test_unplug_is_noticed_and_reopen_works() -> None:
     await settle(lambda: not driver.connected)
     health = await driver.health()
     assert health.connected is False
-    assert "stopped answering" in health.detail
+    assert "stopped sending replies" in health.detail
     with pytest.raises(DriverError, match="reopen"):
         await driver.read("button_1")
     decision = await kernel.execute(Write(device="conformance-hid", channel="led_1", value=True), WHO)

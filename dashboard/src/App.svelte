@@ -95,9 +95,9 @@
     <StopUnavailable why="offline" host={location.host} />
   </header>
   <main class="offline" id="main">
-    <h1>The hub does not answer</h1>
-    <p>Nothing answers at <code>{location.host}</code>. Start the hub with <code>openhald</code>.</p>
-    <p class="muted">Trying again every 3 s.</p>
+    <h1>The hub is unreachable</h1>
+    <p>No response comes from <code>{location.host}</code>. Start the hub with <code>openhald</code>.</p>
+    <p class="muted">Retrying every 3 s.</p>
   </main>
 {:else if !shell}
   <div class="booting" aria-busy="true"></div>

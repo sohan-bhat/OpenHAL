@@ -10,9 +10,9 @@ are in `deck.py`, and the recording chatterbox backend in `simulator.py`.
   homes the channels. The `initialize` action does it under the kernel instead.
 - Actions are pick_up_tips, drop_tips, return_tips, discard_tips, aspirate, dispense and
   transfer. Tip spots and wells are addressed as `tips:A1` or `plate:A1:H1`. PyLabRobot checks
-  tips and tracked volumes before anything moves, and those refusals fail the action.
-- An operation that takes longer than `action_wait` answers `started` and finishes in the
-  background. The next action waits for it.
+  tips and tracked volumes before anything moves, and a failed check fails the action.
+- An operation that takes longer than `action_wait` returns `started` and finishes in the
+  background. The next action starts after that operation finishes.
 - Reads come from PyLabRobot's own state, whether it is initialized, which channels hold tips
   and the tracked volume in a well. Tracked volumes are a model of what was pipetted, not a
   measurement.
@@ -126,7 +126,7 @@ def _validate(model: type[BaseModel], raw: dict[str, Any] | None, default: dict[
     data = raw if raw is not None else default
     if data is None:
         raise DriverError(
-            f"{where} is not a PyLabRobot channel or action the driver knows. "
+            f"{where} is not a PyLabRobot channel or action the driver supports. "
             "Add a map, see docs/drivers/pylabrobot.md."
         )
     try:
@@ -292,12 +292,12 @@ class PyLabRobotDriver(Driver):
             self.uncertain = f"{what} was cancelled while it ran"
             raise
         except checks as exc:
-            raise DriverError(f"PyLabRobot refused {what} ({type(exc).__name__}, {exc}).") from exc
+            raise DriverError(f"PyLabRobot returned an error for {what} ({type(exc).__name__}, {exc}).") from exc
         except (OSError, ConnectionError, TimeoutError) as exc:
             self._lost = f"{what} failed ({exc})"
             self.uncertain = f"{what} failed while it ran"
             raise DriverError(
-                f"The liquid handler stopped answering during {what} ({exc}). Check it, then reconnect."
+                f"The liquid handler stopped sending replies during {what} ({exc}). Check it, then reconnect."
             ) from exc
         except Exception as exc:
             self.uncertain = f"{what} failed while it ran"
@@ -407,7 +407,7 @@ class PyLabRobotDriver(Driver):
         if self.handler is None:
             return Health(connected=False, detail="not connected")
         if getattr(self.backend, "lost", False):
-            return Health(connected=False, detail="the instrument doesn't answer")
+            return Health(connected=False, detail="the instrument sends no reply")
         if self._lost:
             return Health(connected=False, detail=self._lost)
         state = "initialized" if self.handler.setup_finished else "not initialized"

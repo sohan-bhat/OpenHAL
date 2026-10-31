@@ -81,7 +81,7 @@ class Rosbridge:
                 "ros2 launch rosbridge_server rosbridge_websocket_launch.xml."
             ) from exc
         except Exception as exc:
-            raise DriverError(f"rosbridge at {self.url} refused the WebSocket ({exc}).") from exc
+            raise DriverError(f"rosbridge at {self.url} did not accept the WebSocket ({exc}).") from exc
         self.lost = None
         self._task = asyncio.create_task(self._read_forever(self._ws))
 
@@ -138,7 +138,7 @@ class Rosbridge:
             self.last_error = text
             if ident in self._topics:
                 self.refused[self._topics[ident]] = text
-            error = DriverError(f"rosbridge refused the request ({text}).")
+            error = DriverError(f"rosbridge returned an error for the request ({text}).")
             for future in (self._pending.pop(ident, None), getattr(self.goals.pop(ident, None), "result", None)):
                 if future is not None and not future.done():
                     future.set_exception(error)
@@ -168,7 +168,7 @@ class Rosbridge:
             await self.send(message)
             reply = await asyncio.wait_for(future, self.timeout)
         except TimeoutError:
-            raise TimeoutError(f"{service} didn't answer within {self.timeout:g} s.") from None
+            raise TimeoutError(f"{service} sent no reply within {self.timeout:g} s.") from None
         finally:
             self._pending.pop(ident, None)
         values = reply.get("values")
@@ -177,7 +177,7 @@ class Rosbridge:
         return values if isinstance(values, dict) else {}
 
     async def subscribe(self, topic: str, kind: str | None, *, throttle_ms: int = 0) -> None:
-        """Subscribe. A refusal arrives later as a status line and lands in `refused`."""
+        """Subscribe. An error arrives later as a status line and lands in `refused`."""
         ident = self._id("sub")
         self._topics[ident] = topic
         message: dict[str, Any] = {"op": "subscribe", "id": ident, "topic": topic, "throttle_rate": throttle_ms}

@@ -21,7 +21,7 @@ actions:
 safe_state: { action: stop }
 watchdog: { heartbeat: 1 s, on_loss: safe_state }
 hazard: low
-notes: "A simulated board that speaks the real firmware protocol and behaves like plant-waterer.ino. Nothing here touches hardware."
+notes: "A simulated board that implements the real firmware protocol and runs the same logic as plant-waterer.ino. Nothing here touches hardware."
 provenance:
   source: sketch
   from: examples/plant-waterer/plant-waterer.ino

@@ -1,4 +1,4 @@
-"""Channel proposals for common SCPI instrument families, chosen from the `*IDN?` reply.
+"""Channel proposals for common SCPI instrument families, selected from the `*IDN?` reply.
 
 `propose(idn)` returns device file sections for `describe()`. Every write channel and action is
 marked `suggested: true`, so the proposal loads read-only until a human confirms the limits.

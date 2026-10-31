@@ -1,25 +1,25 @@
 """KNX building automation through xknx, over KNXnet/IP tunneling (UDP or TCP) or routing.
 
-Protocol. KNX devices talk in group telegrams. A group address such as `1/2/3` carries one value,
+Protocol. KNX devices communicate in group telegrams. A group address such as `1/2/3` carries one value,
 encoded by its datapoint type (DPT), such as 1.001 for on and off, 5.001 for percent or 9.001 for
 a temperature. A KNXnet/IP interface or router puts the hub on the bus (KNX Standard 03.08,
-KNXnet/IP), and xknx speaks that protocol.
+KNXnet/IP), and xknx implements that protocol.
 
 How channels map to KNX.
 
 - Every channel names a `group_address` and a `dpt`. Reads come from the newest
-  GroupValueWrite or GroupValueResponse seen on the bus. When nothing has been seen since
-  connecting, a read sends one GroupValueRead and waits `timeout` for the answer. An address
-  whose read flag is off never answers, and reads as no value until a telegram arrives.
+  GroupValueWrite or GroupValueResponse received on the bus. When nothing has arrived since
+  connecting, a read sends one GroupValueRead and waits `timeout` for the response. An address
+  whose read flag is off sends no response, and reads as no value until a telegram arrives.
 - A channel under `write` sends a GroupValueWrite. KNX actuators usually report their state on a
   separate status address, which `state_address` names. The driver reads that address, or the
-  command address itself, and falls back to the last value it sent when neither answers.
+  command address itself, and falls back to the last value it sent when neither responds.
 - Values are converted from the DPT's unit to the channel unit, and rounded to the DPT's
   resolution. The reading a command returns shows the value as encoded.
 
 Behavior worth knowing.
 
-- Commands wait for the interface's data link confirmation (L_Data.con), which proves the
+- Commands complete on the interface's data link confirmation (L_Data.con), which proves the
   telegram reached the bus, not that an actuator acted. Read the status address for that.
 - xknx's own reconnect is off. A lost tunnel makes the device unavailable until the hub
   reconnects it, so nothing is replayed late.
@@ -116,7 +116,7 @@ class ChannelMap(BaseModel):
     def transcoder(self) -> type[DPTBase]:
         found = DPTBase.parse_transcoder(self.dpt)
         if found is None:
-            raise ValueError(f"xknx doesn't know DPT {self.dpt}.")
+            raise ValueError(f"xknx doesn't support DPT {self.dpt}.")
         return found
 
     @property
@@ -214,7 +214,7 @@ class KnxDriver(Driver):
 
     @classmethod
     async def discover(cls) -> list[Discovered]:
-        """Search for KNXnet/IP interfaces with a SEARCH_REQUEST, which only asks them to describe themselves."""
+        """Search for KNXnet/IP interfaces with a SEARCH_REQUEST, which only requests a self-description."""
         from xknx.io import GatewayScanner
 
         try:
@@ -316,7 +316,7 @@ class KnxDriver(Driver):
             ) from None
 
     async def _request(self, xknx: XKNX, address: str) -> None:
-        """Send one GroupValueRead and wait up to `timeout` for the answer. No answer leaves the value unknown."""
+        """Send one GroupValueRead and wait up to `timeout` for the response. No response leaves the value unknown."""
         arrived = self._waiters.setdefault(address, asyncio.Event())
         try:
             await self._send(

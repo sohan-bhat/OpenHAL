@@ -24,7 +24,7 @@ from openhal.client.transport import START_HINT, finish, headers_for, transport_
 class AsyncClient:
     """An asyncio client of the hub's local API v1.
 
-    The client makes no safety decisions. Every write and action is decided by the hub's kernel,
+    The client makes no safety decisions. Every write and action is checked by the hub's kernel,
     and a blocked command comes back as a `Decision` with status `blocked`, not an exception.
     """
 
@@ -61,7 +61,7 @@ class AsyncClient:
         await self._http.aclose()
 
     async def call[T](self, call: Call[T]) -> T:
-        """Send one call and parse the answer. Raises a subclass of `OpenHALError` on failure."""
+        """Send one call and parse the response. Raises a subclass of `OpenHALError` on failure."""
         try:
             response = await self._http.request(call.method, call.path, json=call.json, params=call.params)
         except httpx.TransportError as exc:
@@ -73,11 +73,12 @@ class AsyncClient:
         return await self.call(calls.status())
 
     async def whoami(self) -> m.Principal:
-        """The Principal the hub takes this token for, a human or an agent with its scope."""
+        """The Principal the hub maps this token to, a human or an agent with its scope."""
         return await self.call(calls.whoami())
 
     async def devices(self) -> list[m.DeviceSummary]:
-        """Every device the hub knows, with its driver, its hazard level and whether the device takes commands."""
+        """Every device registered with the hub, with its driver, its hazard level and whether the device takes
+        commands."""
         return await self.call(calls.devices())
 
     async def device(self, device_id: str) -> m.DeviceView:
@@ -96,13 +97,13 @@ class AsyncClient:
         return await self.call(calls.read_many(pairs))
 
     async def write(self, device: str, channel: str, value: Value, unit: str | None = None) -> m.Decision:
-        """Ask the kernel to set a channel. A number needs its unit, as `write("printer", "bed_target", 70, "degC")`."""
+        """Send a request to set a channel. A number needs its unit, as `write("printer", "bed_target", 70, "degC")`."""
         return await self.call(calls.write(device, channel, value, unit))
 
     async def action(
         self, device: str, action: str, args: Mapping[str, Any] | None = None, **kwargs: Any
     ) -> m.Decision:
-        """Ask the kernel to run an action, with its arguments in `args` or as keywords.
+        """Send a request to run an action, with its arguments in `args` or as keywords.
 
         `action("printer", "pause")` takes none. A number argument goes with its unit, as
         `duration={"value": 20, "unit": "s"}`.
@@ -122,7 +123,7 @@ class AsyncClient:
         max: Mapping[str, Any] | None = None,
         rate: Mapping[str, Any] | None = None,
     ) -> m.TightenResult:
-        """Narrow limits for this token's session. Widening is refused with `cannot_loosen`."""
+        """Narrow limits for this token's session. Widening is blocked with `cannot_loosen`."""
         return await self.call(calls.tighten(device, channel, min=min, max=max, rate=rate))
 
     async def stop(self, reason: str = "stop requested") -> m.StopReport:
@@ -134,7 +135,7 @@ class AsyncClient:
         return await self.call(calls.unlock(phrase))
 
     async def confirmations(self, *, include_done: bool = False) -> list[m.ConfirmationRequest]:
-        """Requests waiting for a person. `include_done` adds the ones already decided or expired."""
+        """Requests held for a person. `include_done` adds the requests already decided or expired."""
         return await self.call(calls.confirmations(include_done))
 
     async def confirmation(self, request_id: str) -> m.ConfirmationRequest:
@@ -166,7 +167,7 @@ class AsyncClient:
         return await self.call(calls.verify_audit())
 
     async def drivers(self) -> list[m.DriverInfo]:
-        """The drivers the hub knows, with each driver's protocols and whether the driver is installed."""
+        """The drivers the hub has, with each driver's protocols and whether the driver is installed."""
         return await self.call(calls.drivers())
 
     async def pair(self, code: str) -> m.OkResult:
@@ -200,7 +201,7 @@ class AsyncClient:
         return decisions
 
     async def discover(self, drivers: Iterable[str] | None = None) -> m.DiscoveryResult:
-        """Look for devices with every driver, or only the named ones. Devices no file matches come back unknown."""
+        """Search for devices with every driver, or only the named ones. Devices no file matches come back unknown."""
         return await self.call(calls.discover(drivers))
 
     async def unknown_devices(self) -> list[m.Unknown]:
@@ -280,7 +281,7 @@ class AsyncClient:
         return await self.call(calls.finish(session_id, save_as))
 
     async def test_plan(self, session_id: str) -> m.TestPlan:
-        """The steps to try the new device file on the real hardware, in order."""
+        """The steps to test the new device file on the real hardware, in order."""
         return await self.call(calls.test_plan(session_id))
 
     async def tokens(self) -> list[m.TokenInfo]:
@@ -288,11 +289,11 @@ class AsyncClient:
         return await self.call(calls.tokens())
 
     async def create_token(self, name: str, *, kind: str = "agent", scope: str = "read") -> m.NewToken:
-        """Issue a token. The answer carries the plain token once. Needs a human token."""
+        """Issue a token. The response carries the plain token once. Needs a human token."""
         return await self.call(calls.create_token(name, kind, scope))
 
     async def revoke_token(self, token_id: str) -> m.OkResult:
-        """Revoke a token so the hub refuses the token from then on. Revoking needs a human token."""
+        """Revoke a token so the hub no longer accepts the token. Revoking needs a human token."""
         return await self.call(calls.revoke_token(token_id))
 
     async def new_pairing_code(self) -> m.PairingCode:

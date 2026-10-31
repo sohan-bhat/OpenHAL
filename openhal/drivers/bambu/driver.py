@@ -4,20 +4,20 @@ Status of local access (checked 2026-10-24, sources in docs/drivers/bambu.md). S
 Authorization Control firmware, Bambu Lab printers accept control commands over plain LAN MQTT
 only in Developer Mode, an opt-in setting under LAN-only mode that Bambu Lab documents and does
 not support. Status reports stay readable either way. This driver uses only what Developer Mode
-leaves open. It never talks to Bambu Cloud, never uses Bambu Connect or its keys, and never
-tries to get around authorization. Without Developer Mode the printer refuses the commands and
-the driver reports that.
+leaves open. The driver never connects to Bambu Cloud, never uses Bambu Connect or its keys, and
+never works around authorization. Without Developer Mode the printer returns an error for the
+commands and the driver reports that.
 
 Protocol. MQTT 3.1.1 over TLS on port 8883 of the printer. User `bblp`, and the LAN access code
 from the printer's screen as the password. The printer publishes JSON on `device/<serial>/report`
 and takes JSON commands on `device/<serial>/request`.
 
-- Reads come from the newest report. `{"pushing": {"command": "pushall"}}` asks for a full report
+- Reads come from the newest report. `{"pushing": {"command": "pushall"}}` requests a full report
   once after connecting. X1 printers send full reports, P1 and A1 printers send only what changed,
   so the driver merges every report into one state.
 - `pause`, `resume` and `stop` are `{"print": {"command": ...}}`. The speed level is
   `print_speed` with `param` 1 to 4, and the chamber light is `system.ledctrl`.
-- Commands are QoS 1 and wait for the PUBACK. If the printer replies with a result for the same
+- Commands are QoS 1 and complete on the PUBACK. If the printer replies with a result for the same
   `sequence_id`, a failed result raises DriverError with the printer's reason.
 
 TLS. The printer's certificate is signed by Bambu Lab's own authority and names the serial number,
@@ -238,7 +238,7 @@ class BambuDriver(Driver):
 
     def _on_connect(self, client: Any, userdata: Any, flags: Any, reason: Any, properties: Any) -> None:
         if getattr(reason, "is_failure", False):
-            self._refused = f"the printer refused the connection ({reason})"
+            self._refused = f"the printer returned a connection error ({reason})"
             return
         client.subscribe(self.report_topic, 0)
         self._connected.set()
@@ -326,12 +326,12 @@ class BambuDriver(Driver):
                 self.settings.timeout + 1,
             )
         except TimeoutError:
-            raise TimeoutError(f"{self._where} did not answer on port {self.settings.port}.") from None
+            raise TimeoutError(f"{self._where} sent no reply on port {self.settings.port}.") from None
         except PinMismatchError as exc:
             with contextlib.suppress(Exception):
                 client.socket().close()
             raise DriverError(
-                f"Refused to log in to {self._where}, because {exc}. The access code was not sent. "
+                f"The login to {self._where} stopped, because {exc}. The access code was not sent. "
                 "Check the address, then read the fingerprint again if the printer was reset."
             ) from None
         except (OSError, ssl.SSLError) as exc:
@@ -341,7 +341,7 @@ class BambuDriver(Driver):
         deadline = time.monotonic() + self.settings.timeout
         while not self._connected.is_set():
             if self._refused or time.monotonic() > deadline:
-                reason = self._refused or "no answer to the MQTT login"
+                reason = self._refused or "no reply to the MQTT login"
                 await self.close()
                 raise DriverError(f"{self._where} did not accept the login, {reason}. Check the access code.")
             await asyncio.sleep(0.02)
@@ -447,7 +447,7 @@ class BambuDriver(Driver):
         client = self._check_open()
         info = client.publish(self.request_topic, json.dumps(document, separators=(",", ":")), qos=1)
         if getattr(info, "rc", 0) != 0:
-            raise DriverError(f"{self._where} refused the publish (code {info.rc}).")
+            raise DriverError(f"{self._where} returned an error for the publish (code {info.rc}).")
         try:
             await asyncio.wait_for(
                 asyncio.to_thread(info.wait_for_publish, self.settings.timeout), self.settings.timeout + 1
@@ -480,8 +480,8 @@ class BambuDriver(Driver):
             reason = str(reply.get("reason") or reply.get("err_code") or "no reason given")[:200]
             hint = ""
             if "verif" in reason.lower() or "auth" in reason.lower():
-                hint = " The printer wants authorization, so turn on LAN-only mode and Developer Mode on its screen."
-            raise DriverError(f"{self._where} refused {body.get('command')} ({reason}).{hint}")
+                hint = " The printer requires authorization, so turn on LAN-only mode and Developer Mode on its screen."
+            raise DriverError(f"{self._where} returned an error for {body.get('command')} ({reason}).{hint}")
         return reply
 
     async def _write(self, channel: str, value: float | bool | str) -> Reading | None:

@@ -1,6 +1,6 @@
 """A simulated printer webcam, the way crowsnest serves a USB camera on a Klipper printer's host.
 
-`GET /webcam/?action=snapshot` answers with the frame the camera is showing, as JPEG. `show()`
+`GET /webcam/?action=snapshot` returns the frame the camera is showing, as JPEG. `show()`
 changes the frame. The frames are the demo's line drawings (examples/print-babysitter/frames/),
 never photos. The webcam is served through httpx.MockTransport to the http driver, so nothing
 opens a socket or touches a camera.

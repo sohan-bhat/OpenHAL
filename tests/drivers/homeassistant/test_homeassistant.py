@@ -168,7 +168,7 @@ async def test_bad_states_are_malformed() -> None:
     with pytest.raises(DriverError, match="doesn't convert"):
         await bench.driver.read("room_temp")
     sim.entities["switch.heater_plug"]["state"] = "maybe"
-    with pytest.raises(DriverError, match="expected on or off"):
+    with pytest.raises(DriverError, match="not on or off"):
         await bench.driver.read("heater")
     sim.entities["select.mode"]["state"] = "vacation"
     with pytest.raises(DriverError, match="not one of"):
@@ -186,12 +186,12 @@ async def test_rest_transport_faults(monkeypatch: pytest.MonkeyPatch) -> None:
     with pytest.raises(DriverError, match="Set the HA_TEST_TOKEN"):
         await bench.driver.connect()
     monkeypatch.setenv("HA_TEST_TOKEN", "nope")
-    with pytest.raises(DriverError, match="refused the token"):
+    with pytest.raises(DriverError, match="did not accept the token"):
         await bench.driver.connect()
     monkeypatch.setenv("HA_TEST_TOKEN", "ha-token")
     await bench.connect()
     sim.latency_s = 1.0
-    with pytest.raises(TimeoutError, match="didn't answer"):
+    with pytest.raises(TimeoutError, match="sent no reply"):
         await bench.driver.read("room_temp")
     sim.latency_s = 0.0
     sim.malformed = True
@@ -307,12 +307,12 @@ async def _down(bench: Bench) -> bool:
 
 async def test_websocket_auth_timeout_and_malformed(ws_sim: HomeAssistantSim, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("HA_TEST_TOKEN", "wrong")
-    with pytest.raises(DriverError, match="refused the token"):
+    with pytest.raises(DriverError, match="did not accept the token"):
         await ws_bench(ws_sim).driver.connect()
     monkeypatch.setenv("HA_TEST_TOKEN", "ha-token")
     bench = await ws_bench(ws_sim).connect()
     ws_sim.latency_s = 1.0
-    assert_failed(await bench.write("heater", True), "didn't answer call_service")
+    assert_failed(await bench.write("heater", True), "sent no reply to call_service")
     ws_sim.latency_s = 0.0
     ws_sim.malformed = True
     assert_failed(await bench.write("heater", True), "malformed result")
@@ -343,7 +343,7 @@ def test_units_from_home_assistant() -> None:
         ("entity: sensor.t", "write: { value: { unit: degC, min: 0, max: 1 } }", "read-only"),
         ("entity: light.a", "write: { power: { unit: percent, min: 0, max: 1 } }", "type bool"),
         ("entity: light.a", "write: { brightness: { unit: V, min: 0, max: 1 } }", "converts to percent"),
-        ("entity: lock.door", "write: { power: { type: bool } }", "doesn't know how"),
+        ("entity: lock.door", "write: { power: { type: bool } }", "doesn't support"),
         ("entity: light.a", "read: { r: { type: string, map: { entity: light.a, extra: 1 } } }", "Extra inputs"),
         ("entity: light.a", "read: { r: { type: string, map: { entity: 'not an id' } } }", "should match pattern"),
         ("entity: light.a, entities: [light.b]", "", "not both"),

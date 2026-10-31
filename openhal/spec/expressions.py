@@ -2,7 +2,7 @@
 
 Expressions are parsed by this module's own recursive descent parser and evaluated over a
 resolver. Nothing is ever passed to `eval`. Evaluation is three-valued. A reference the hub
-can't read is unknown, and unknown never lets a command pass (spec section 7).
+can't read is unknown, and an unknown result never passes a check (spec section 7).
 """
 
 from __future__ import annotations
@@ -230,7 +230,7 @@ def parse(text: str, channels: frozenset[str] | set[str] | None = None) -> Node:
 
     `channels` names the owning device's channels. A bare name that is one of them becomes a
     channel reference, and any other bare name becomes a word literal (an enum value such as
-    `idle`). Deciding this at parse time means an unknown channel value can only ever be unknown,
+    `idle`). Classifying names at parse time means an unknown channel value can only ever be unknown,
     never mistaken for a word. With `channels=None` every bare name is a channel reference.
     """
     if not isinstance(text, str) or not text.strip():

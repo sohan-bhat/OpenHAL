@@ -252,8 +252,8 @@ async def test_soft_limit_alarm_blocks_until_reset() -> None:
     assert driver.session.critical
     assert (await bench.read("state")).value == "alarm"
     assert (await bench.read("alarm")).value == 2
-    assert "waiting for a reset" in (await driver.health()).detail
-    assert_failed(await bench.act("clear_alarm"), "waiting for a reset")
+    assert "halted until a reset" in (await driver.health()).detail
+    assert_failed(await bench.act("clear_alarm"), "halted until a reset")
     assert_done(await bench.act("reset"))
     assert not driver.session.critical
     assert_done(await bench.act("clear_alarm"))

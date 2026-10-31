@@ -61,7 +61,7 @@ for (const scheme of ["light", "dark"] as const) {
       }
 
       await page.goto("/#/confirmations");
-      const cancel = page.getByRole("main").getByRole("listitem").filter({ hasText: "asks to run cancel" }).first();
+      const cancel = page.getByRole("main").getByRole("listitem").filter({ hasText: "sends a request to run cancel" }).first();
       await cancel.getByRole("combobox", { name: "Show a camera" }).selectOption("printer-cam/frame");
       await expect(cancel.getByRole("img", { name: /^Demo frame from Printer camera/ })).toBeVisible();
       problems.push(...(await violations(page, "cancel with its camera")));
@@ -109,7 +109,7 @@ for (const scheme of ["light", "dark"] as const) {
       const offline = await lost.newPage();
       await offline.route("**/v1/whoami", (route) => route.abort());
       await offline.goto("/");
-      await expect(offline.getByRole("heading", { name: "The hub does not answer" })).toBeVisible();
+      await expect(offline.getByRole("heading", { name: "The hub is unreachable" })).toBeVisible();
       problems.push(...(await violations(offline, "offline")));
       await lost.close();
 

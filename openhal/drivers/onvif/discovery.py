@@ -1,7 +1,7 @@
 """WS-Discovery for ONVIF cameras. One Probe for NetworkVideoTransmitter devices, then the ProbeMatches.
 
 A Probe is a SOAP 1.2 message sent over UDP to 239.255.255.250:3702 (OASIS WS-Discovery 1.1,
-ONVIF Core Specification section 7.3). It only asks devices to say where their device service is,
+ONVIF Core Specification section 7.3). The Probe only requests the address of each device service,
 so it changes nothing. Each ProbeMatch carries XAddrs (the device service URLs) and Scopes such as
 `onvif://www.onvif.org/name/Garage` and `onvif://www.onvif.org/hardware/C6CN`.
 """
@@ -62,7 +62,7 @@ def parse_matches(raw: bytes) -> list[Discovered]:
 
 
 async def search() -> list[Discovered]:
-    """Send one Probe and collect the answers for LISTEN_S seconds."""
+    """Send one Probe and collect the replies for LISTEN_S seconds."""
     loop = asyncio.get_running_loop()
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     found: dict[str, Discovered] = {}

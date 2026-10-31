@@ -1,7 +1,7 @@
 """A physical stop button on a Raspberry Pi GPIO input, for the hub's stop command.
 
-The hub wires this to `Kernel.stop_all`. This module only watches the pin and calls back. It
-never decides anything and never changes an output.
+The hub wires this to `Kernel.stop_all`. This module only monitors the pin and calls back. The
+module never makes a safety decision and never changes an output.
 
     from openhal.drivers.rpi_gpio import watch_stop_button
 
@@ -12,7 +12,7 @@ never decides anything and never changes an output.
 Wiring. A normally open push button between the GPIO pin and ground, with the Pi's internal
 pull-up (the default). A latching mushroom-head e-stop with a normally closed contact is better
 for real machines. Use `pull_up=False` and `active_state` to match the wiring, and keep the
-hardware e-stop that cuts power. This button only asks the hub to stop.
+hardware e-stop that cuts power. This button only sends the hub a stop request.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from typing import Any
 
 
 class StopButton:
-    """A running watch. `close()` releases the pin."""
+    """A running pin monitor. `close()` releases the pin."""
 
     def __init__(self, button: Any) -> None:
         self._button = button

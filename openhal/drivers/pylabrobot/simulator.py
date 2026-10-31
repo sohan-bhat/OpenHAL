@@ -39,7 +39,7 @@ class RecordingBackend(LiquidHandlerChatterboxBackend):  # type: ignore[misc]
 
     async def _run(self, name: str, ops: list[Any], call: Callable[[], Awaitable[Any]]) -> Any:
         if self.lost:
-            raise InstrumentError("The instrument doesn't answer. Check the USB cable.")
+            raise InstrumentError("The instrument sends no reply. Check the USB cable.")
         if self.latency_s:
             await asyncio.sleep(self.latency_s)
         if self.fail_next > 0:

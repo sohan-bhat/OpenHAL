@@ -143,7 +143,7 @@ openhal action DEVICE.ACTION [KEY=VALUE ...] [--json]
 
 ```
 $ openhal action plant-waterer.water duration=120s
-blocked above_max  Blocked. The duration limit is 30 s (max). Asked for 120 s.
+blocked above_max  Blocked. The duration limit is 30 s (max). Requested 120 s.
 $ openhal action plant-waterer.water duration=20s
 done  Done. water ran.
 ```
@@ -165,7 +165,7 @@ openhal dry-run --file plan.yaml
 
 ```
 $ openhal dry-run --file plan.yaml
-1. blocked above_max  Blocked. The duration limit is 30 s (max). Asked for 120 s.
+1. blocked above_max  Blocked. The duration limit is 30 s (max). Requested 120 s.
 2. allowed  Allowed.
 ```
 

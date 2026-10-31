@@ -67,7 +67,7 @@ async def test_write_is_decided_by_the_kernel(client: httpx.AsyncClient, hub: Hu
         headers=bearer(token),
     )
     assert blocked.json()["code"] == "above_max"
-    assert blocked.json()["message"] == "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %."
+    assert blocked.json()["message"] == "Blocked. The fan_speed limit is 100 % (max). Requested 150 %."
     done = await client.post(
         "/v1/write",
         json={"device": "desk-fan", "channel": "fan_speed", "value": 20, "unit": "%"},

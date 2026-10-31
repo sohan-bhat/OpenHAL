@@ -272,7 +272,7 @@ async def test_silent_server_times_out_changes(server: IndiServerSim) -> None:
     _driver, bench = make(server)
     await bench.connect()
     server.silent = True
-    assert_failed(await bench.write("tracking", True), "didn't answer")
+    assert_failed(await bench.write("tracking", True), "sent no reply")
     server.silent = False
     await bench.close()
 

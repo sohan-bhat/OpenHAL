@@ -85,7 +85,7 @@ def test_bad_params(connect: str, message: str) -> None:
     [
         ("read:\n  x: { type: bool }", "needs a knx map"),
         ("read:\n  x: { type: bool, map: { group_address: 1/1/1, dpt: 1.001 } }", "quote the DPT"),
-        ('read:\n  x: { type: bool, map: { group_address: 1/1/1, dpt: "999.999" } }', "doesn't know DPT"),
+        ('read:\n  x: { type: bool, map: { group_address: 1/1/1, dpt: "999.999" } }', "doesn't support DPT"),
         ('read:\n  x: { type: bool, map: { group_address: 1/1/1/1, dpt: "1.001" } }', "not a group address"),
         ('read:\n  x: { type: bool, map: { group_address: 1/1/1, dpt: "9.001" } }', "need a 1.x DPT"),
         ('read:\n  x: { unit: degC, map: { group_address: 1/1/1, dpt: "1.001" } }', "doesn't carry a number"),

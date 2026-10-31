@@ -117,7 +117,7 @@ def insert(data: bytearray, field: BitField, raw: int, where: str) -> None:
 
 
 def check_channel(name: str, spec: Any, field: BitField, *, sends: bool) -> None:
-    """Refuse a map that can't carry the channel's or argument's type and unit. Raises DriverError.
+    """Raise DriverError for a map that can't carry the channel's or argument's type and unit.
 
     `sends` is true for write channels and action arguments, whose enum values all need a raw value.
     """

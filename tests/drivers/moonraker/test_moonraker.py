@@ -247,7 +247,7 @@ async def test_api_key_from_the_environment(monkeypatch: pytest.MonkeyPatch) -> 
     with pytest.raises(DriverError, match="Set the MOONRAKER_KEY"):
         await bench.driver.connect()
     monkeypatch.setenv("MOONRAKER_KEY", "wrong")
-    with pytest.raises(DriverError, match="wants an API key"):
+    with pytest.raises(DriverError, match="requires an API key"):
         await bench.driver.connect()
     monkeypatch.setenv("MOONRAKER_KEY", "s3cret")
     await bench.connect()
@@ -266,7 +266,7 @@ async def test_http_faults() -> None:
     sim = MoonrakerSim()
     bench = await http_bench(sim).connect()
     sim.latency_s = 1.0
-    with pytest.raises(TimeoutError, match=r"didn't answer printer\.objects\.query"):
+    with pytest.raises(TimeoutError, match=r"sent no reply to printer\.objects\.query"):
         await bench.driver.read("extruder_temp")
     sim.latency_s = 0.0
     sim.malformed = True
@@ -363,7 +363,7 @@ async def _down(bench: Bench) -> bool:
 async def test_websocket_timeout_and_malformed(ws_sim: MoonrakerSim) -> None:
     bench = await ws_bench(ws_sim).connect()
     ws_sim.latency_s = 1.0
-    with pytest.raises(TimeoutError, match=r"didn't answer printer\.gcode\.script"):
+    with pytest.raises(TimeoutError, match=r"sent no reply to printer\.gcode\.script"):
         await _gcode(bench)
     ws_sim.latency_s = 0.0
     ws_sim.malformed = True

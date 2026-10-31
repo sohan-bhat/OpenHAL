@@ -53,7 +53,7 @@
     { value: "pending", label: "confirmation required" },
     { value: "error", label: "error" },
     { value: "notification", label: "notification" },
-    { value: "open", label: "no answer yet" },
+    { value: "open", label: "no response yet" },
   ];
 
   let painted = $state(false);
@@ -74,7 +74,7 @@
     const blocked = rows.filter((row) => row.kind === "error" && row.seq > lastAnnounced);
     if (rows.length) lastAnnounced = rows[rows.length - 1]!.seq;
     const latest = blocked[blocked.length - 1];
-    if (latest) announcement = `${latest.client} ${latest.method ?? ""} answered ${latest.head}`;
+    if (latest) announcement = `${latest.client} ${latest.method ?? ""} got ${latest.head}`;
   });
 
   $effect(() => {

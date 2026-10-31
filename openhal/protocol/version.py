@@ -2,8 +2,8 @@
 
 Versions are numbers written `MAJOR.MINOR`, such as `0.1`, and compare as numbers, so 0.10 is newer
 than 0.9. People see them with a leading v, as v0.1, and the spec's folder uses that form too. The
-client sends the newest version it supports. The hub answers with that version when it supports it,
-and otherwise with the newest version it supports. A client that can't use the answer disconnects.
+client sends the newest version it supports. The hub returns that version when the hub supports it,
+and otherwise the newest version the hub supports. A client that can't use the returned version disconnects.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from typing import Final
 _NUMBER: Final = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
 
 PROTOCOL_VERSIONS: Final = ["0.1"]
-"""Every protocol version this hub speaks, oldest first."""
+"""Every protocol version this hub supports, oldest first."""
 
 
 def is_version(text: str) -> bool:
@@ -39,13 +39,13 @@ def label(version: str) -> str:
 
 
 def supported() -> str:
-    """Every version this hub speaks as a reason names them, such as `0.1` or `0.1 and 0.2`."""
+    """Every version this hub supports as a reason names them, such as `0.1` or `0.1 and 0.2`."""
     *rest, last = PROTOCOL_VERSIONS
     return f"{', '.join(rest)} and {last}" if rest else last
 
 
 def negotiate(requested: str) -> str:
-    """The version the hub answers with when a client asks for `requested`."""
+    """The version the hub returns when a client requests `requested`."""
     if requested in PROTOCOL_VERSIONS:
         return requested
     return LATEST

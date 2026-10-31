@@ -11,7 +11,7 @@ Protocol (moonraker.readthedocs.io, web_api and printer_objects pages).
   `token_env` and is sent as `X-Api-Key`.
 - Writes are Klipper G-code. Heater targets use `SET_HEATER_TEMPERATURE HEATER=<name>
   TARGET=<degC>`, the part fan uses `M106 S<0..255>` and generic fans use `SET_FAN_SPEED`.
-  Klipper itself refuses targets above the heater's `max_temp` and the error is passed on.
+  Klipper itself returns an error for targets above the heater's `max_temp`, and the error is passed on.
 - G-code requests only return when Klipper finishes. Homing can outlast the hub's 10 s driver
   timeout, so `home` returns `started` after `action_wait` and finishes in the background.
 - When Klippy is not `ready` (shutdown after an MCU error, or still starting) the health check
@@ -153,7 +153,7 @@ def _validate(model: type[BaseModel], raw: dict[str, Any] | None, default: dict[
     data = raw if raw is not None else default
     if data is None:
         raise DriverError(
-            f"{where} is not a Moonraker channel the driver knows. Add a map, see docs/drivers/moonraker.md."
+            f"{where} is not a Moonraker channel the driver supports. Add a map, see docs/drivers/moonraker.md."
         )
     try:
         return model.model_validate(data)
@@ -280,7 +280,7 @@ class MoonrakerDriver(Driver):
         except (OSError, TimeoutError) as exc:
             raise DriverError(f"Could not open the Moonraker WebSocket at {url} ({exc}).") from exc
         except Exception as exc:
-            raise DriverError(f"Moonraker refused the WebSocket at {url} ({exc}). Check token_env.") from exc
+            raise DriverError(f"Moonraker did not accept the WebSocket at {url} ({exc}). Check token_env.") from exc
         self._ws_task = asyncio.create_task(self._ws_reader(self._ws))
 
     async def _ws_reader(self, ws: Any) -> None:
@@ -316,7 +316,9 @@ class MoonrakerDriver(Driver):
             return
         if "error" in message:
             error = message["error"] or {}
-            future.set_exception(DriverError(f"Moonraker refused the request ({error.get('message', error)})."))
+            future.set_exception(
+                DriverError(f"Moonraker returned an error for the request ({error.get('message', error)}).")
+            )
             future.exception()
         else:
             future.set_result(message.get("result"))
@@ -345,7 +347,7 @@ class MoonrakerDriver(Driver):
             await self._ws.send(json.dumps(request))
             return await asyncio.wait_for(future, wait)
         except TimeoutError:
-            raise TimeoutError(f"Moonraker didn't answer {method} within {wait:g} s.") from None
+            raise TimeoutError(f"Moonraker sent no reply to {method} within {wait:g} s.") from None
         except DriverError:
             raise
         except Exception as exc:
@@ -368,7 +370,7 @@ class MoonrakerDriver(Driver):
         try:
             response = await asyncio.wait_for(request, wait)
         except (httpx.TimeoutException, TimeoutError):
-            raise TimeoutError(f"Moonraker didn't answer {method} within {wait:g} s.") from None
+            raise TimeoutError(f"Moonraker sent no reply to {method} within {wait:g} s.") from None
         except httpx.HTTPError as exc:
             raise DriverError(
                 f"Could not reach Moonraker at {self.settings.host}:{self.settings.port} ({exc}). "
@@ -381,11 +383,11 @@ class MoonrakerDriver(Driver):
                 f"Moonraker sent a reply to {method} that is not JSON (HTTP {response.status_code})."
             ) from None
         if response.status_code == 401:
-            raise DriverError("Moonraker wants an API key. Set token_env to a variable that holds it.")
+            raise DriverError("Moonraker requires an API key. Set token_env to a variable that holds the key.")
         if response.status_code >= 400 or not isinstance(body, dict) or "result" not in body:
             error = body.get("error", {}) if isinstance(body, dict) else {}
             message = error.get("message", body) if isinstance(error, dict) else error
-            raise DriverError(f"Moonraker refused {method} ({message}).")
+            raise DriverError(f"Moonraker returned an error for {method} ({message}).")
         return body["result"]
 
     async def _gcode(self, script: str, *, deadline: float | None = None) -> None:
@@ -459,7 +461,7 @@ class MoonrakerDriver(Driver):
             return self._number(raw, protocol_unit, spec.unit, channel, scale=read_map.scale)
         if spec.type == "bool":
             if not isinstance(raw, bool):
-                raise DriverError(f"{channel}: expected true or false from Klipper, got {raw!r}.")
+                raise DriverError(f"{channel}: Klipper sent {raw!r}, not true or false.")
             return raw
         text = str(raw)
         if spec.type == "enum" and text not in spec.values:
@@ -468,7 +470,7 @@ class MoonrakerDriver(Driver):
 
     def _number(self, raw: Any, protocol_unit: str, unit: str | None, channel: str, *, scale: float = 1.0) -> float:
         if isinstance(raw, bool) or not isinstance(raw, int | float):
-            raise DriverError(f"{channel}: expected a number from Klipper, got {raw!r}.")
+            raise DriverError(f"{channel}: Klipper sent {raw!r}, not a number.")
         value = float(raw) * scale
         if unit and protocol_unit != unit:
             try:

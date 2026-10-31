@@ -5,7 +5,7 @@ spec/schema/device-file.schema.json is generated from them, so the two can't dri
 
 Every limit is stored as a float in its channel's declared unit. Shorthands allowed by the spec
 (a string `device`, `connect` shorthand, unit strings in limits) are expanded by `before`
-validators, so the rest of OpenHAL only ever sees the full form.
+validators, so the rest of OpenHAL only ever receives the full form.
 """
 
 from __future__ import annotations
@@ -175,7 +175,7 @@ class Match(_Strict):
 
 
 class Connect(_Strict):
-    """Which driver talks to the device, and its parameters (validated by the driver itself)."""
+    """Which driver connects to the device, and its parameters (validated by the driver itself)."""
 
     driver: str
     params: dict[str, Any] = {}

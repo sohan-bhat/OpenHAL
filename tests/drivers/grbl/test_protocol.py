@@ -88,6 +88,6 @@ def test_numbers_and_code_texts() -> None:
     assert protocol.number(1.23456) == "1.2346"
     assert protocol.number(-3.5) == "-3.5"
     assert "alarm" in protocol.error_text(9)
-    assert protocol.error_text(99) == "an error code this driver does not know"
+    assert protocol.error_text(99) == "an error code this driver does not list"
     assert "hard limit" in protocol.alarm_text(1)
     assert protocol.alarm_text(42).startswith("an alarm code")

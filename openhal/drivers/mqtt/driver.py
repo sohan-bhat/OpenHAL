@@ -15,7 +15,7 @@ Behavior worth knowing.
 - Commands are never queued. A write while disconnected fails instead of being delivered later,
   and paho's automatic reconnect is turned off so in-flight commands are not replayed on a new
   connection. The hub's heartbeat reconnects with a fresh client.
-- QoS 1 commands wait for the broker's PUBACK. That proves the broker has the message, not that
+- QoS 1 commands complete on the broker's PUBACK. That proves the broker has the message, not that
   the device acted. Read the state topic to see what the device did.
 - There is no protocol-level safe state. The device file's safe state is published like any other
   command, and only works while the broker and the device are up.
@@ -219,7 +219,7 @@ class MqttDriver(Driver):
 
     def _on_connect(self, client: Any, userdata: Any, flags: Any, reason: Any, properties: Any) -> None:
         if getattr(reason, "is_failure", False):
-            self._disconnect_reason = f"the broker refused the connection ({reason})"
+            self._disconnect_reason = f"the broker returned a connection error ({reason})"
             return
         topics = sorted(self.state_topics)
         if topics:
@@ -424,7 +424,9 @@ class MqttDriver(Driver):
         retain = self.settings.retain_commands if wmap.retain is None else wmap.retain
         info = client.publish(self._topic(wmap.command), payload, qos=qos, retain=retain)
         if getattr(info, "rc", 0) != 0:
-            raise DriverError(f"The {self._where} refused the publish to {wmap.command} (code {info.rc}).")
+            raise DriverError(
+                f"The {self._where} returned an error for the publish to {wmap.command} (code {info.rc})."
+            )
         if qos == 1:
             try:
                 await asyncio.wait_for(
@@ -512,8 +514,8 @@ def describe_topics(seen: dict[str, bytes], prefix: str = "") -> dict[str, Any]:
         elif text.lower() in v.DEFAULT_ON + v.DEFAULT_OFF:
             reads[name_for(relative)] = {"type": "bool", "map": {"state": relative}}
     notes = (
-        f"Proposed from {len(seen)} topics seen while listening. Numbers use dimensionless until you set the real "
-        "unit. Command topics can't be seen by listening, so add write channels from the device's documentation."
+        f"Proposed from {len(seen)} topics received while listening. Numbers use dimensionless until you set the real "
+        "unit. Command topics can't be detected by listening, so add write channels from the device's documentation."
     )
     result: dict[str, Any] = {"notes": notes}
     if reads:

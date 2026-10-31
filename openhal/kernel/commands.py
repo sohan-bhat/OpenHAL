@@ -1,4 +1,4 @@
-"""Commands and decisions. What a client asks for, and what the kernel answers."""
+"""Commands and decisions. What a client requests, and what the kernel returns."""
 
 from __future__ import annotations
 
@@ -70,7 +70,7 @@ Command = Write | Action
 
 
 class Decision(BaseModel):
-    """The kernel's answer to one command. Messages are stable and say what to do next."""
+    """The kernel's result for one command. Messages are stable and name the next step."""
 
     model_config = ConfigDict(frozen=True)
 

@@ -9,7 +9,7 @@ uv run openhal demo
 ```
 
 <!-- outcome:start -->
-You'll see the agent raise the bed target from 60 °C to 70 °C, have a request for a nozzle temperature of 300 °C refused at the nozzle limit of 260 °C and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.
+You'll see the agent raise the bed target from 60 °C to 70 °C, have a request for a nozzle temperature of 300 °C blocked at the nozzle limit of 260 °C and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.
 <!-- outcome:end -->
 
 The demo starts a hub with a simulated Klipper [printer and its camera](../examples/print-babysitter/) and connects an agent over the hub protocol to watch a print. The agent reads camera frames, raises the bed target, sends a request for a nozzle temperature above the nozzle limit, which the hub blocks, pauses the print and sends a request to cancel the print. Because a cancel can't be undone, the hub holds the cancel request until the owner approves the request with the human token over the same protocol, well inside the hub's five minute window. The demo sends nothing to hardware, because the printer runs on a Moonraker simulator and the camera frames are line drawings, but the hub's safety kernel checks every command exactly as the kernel would for a real printer.
@@ -60,15 +60,15 @@ The demo ends with the hub's audit log, newest first. `TIME` stands in for the t
 seq  time  event    who           target                   status   message
 13   TIME  action   agent:claude  printer.cancel           done     Done. cancel ran.
 12   TIME  confirm  human:owner   printer.cancel           done
-11   TIME  action   agent:claude  printer.cancel           pending  Waiting for a human to approve action:cancel on printer.
+11   TIME  action   agent:claude  printer.cancel           pending  Held until a human approves action:cancel on printer.
 10   TIME  action   agent:claude  printer.pause            done     Done. pause ran.
 9    TIME  read     agent:claude  printer-cam.frame        done
-8    TIME  write    agent:claude  printer.extruder_target  blocked  Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.
+8    TIME  write    agent:claude  printer.extruder_target  blocked  Blocked. The extruder_target limit is 260 degC (max). Requested 300 degC.
 7    TIME  write    agent:claude  printer.bed_target       done     Done. bed_target is now 70 degC.
 6    TIME  read     agent:claude  printer-cam.frame        done
 ```
 
-6 requests, 1 refused, 1 confirmed by a person.
+6 requests, 1 blocked, 1 confirmed by a person.
 <!-- audit:end -->
 
 ## Run your own hub

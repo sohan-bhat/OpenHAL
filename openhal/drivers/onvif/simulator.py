@@ -1,6 +1,6 @@
 """A simulated ONVIF PTZ camera behind an `httpx.MockTransport`, for tests and the conformance case.
 
-`OnvifCameraSim` answers the SOAP 1.2 calls the driver makes on the device, media and PTZ
+`OnvifCameraSim` replies to the SOAP 1.2 calls the driver makes on the device, media and PTZ
 services, written from the ONVIF Core, Media and PTZ service specifications. Every call except
 GetSystemDateAndTime needs a WS-Security UsernameToken whose digest matches the password and whose
 Created time is within five minutes of the camera's clock, which can run ahead with `clock_skew`.
@@ -10,8 +10,8 @@ and `profile_2` (SubStream) has none. PTZ positions are in the generic spaces an
 them. ContinuousMove integrates the velocity until its timeout or a Stop. Presets 1 (Door) and
 2 (Driveway) and a home position exist.
 
-Faults. `offline` refuses connections, `drop_next` drops that many requests, `latency_s` slows
-answers, `fault_next` answers the next call with a SOAP fault, and `garbage` returns a body that isn't XML.
+Faults. `offline` fails connections, `drop_next` drops that many requests, `latency_s` slows
+replies, `fault_next` fails the next call with a SOAP fault, and `garbage` returns a body that isn't XML.
 """
 
 from __future__ import annotations

@@ -102,7 +102,7 @@ def register(app: typer.Typer) -> None:
         value: list[str] = typer.Argument(..., help="The value with a unit, for example 60 % or 25 degC."),  # noqa: B008
         as_json: bool = typer.Option(False, "--json", help="Print the decision as JSON."),
     ) -> None:
-        """Set a control channel. The hub's safety kernel decides."""
+        """Set a control channel. The hub's safety kernel checks the command first."""
         device, channel = split_target(target)
         with hub() as client:
             view = client.device(device)
@@ -117,7 +117,7 @@ def register(app: typer.Typer) -> None:
         args: list[str] = typer.Argument(None, help="Arguments as key=value, for example seconds=2s."),  # noqa: B008
         as_json: bool = typer.Option(False, "--json", help="Print the decision as JSON."),
     ) -> None:
-        """Run a device action. The hub's safety kernel decides."""
+        """Run a device action. The hub's safety kernel checks the action first."""
         device, name = split_target(target)
         with hub() as client:
             view = client.device(device)
@@ -169,7 +169,7 @@ def register(app: typer.Typer) -> None:
         reason: str = typer.Option("stop from the command line", "--reason", "-r", help="Recorded in the audit log."),
         as_json: bool = typer.Option(False, "--json", help="Print the report as JSON."),
     ) -> None:
-        """Stop everything. Every device goes to its safe state and commands are refused until openhal unlock."""
+        """Stop everything. Every device goes to its safe state and commands are blocked until openhal unlock."""
         with hub() as client:
             report = client.stop(reason)
         if as_json:
@@ -181,7 +181,7 @@ def register(app: typer.Typer) -> None:
             console.print(table)
             console.print(
                 f"Stopped by {escape(report.by)}. {report.cancelled_requests} pending requests cancelled. "
-                "Commands are refused until a person runs openhal unlock."
+                "Commands are blocked until a person runs openhal unlock."
             )
         if any(item.status in ("failed", "partial") for item in report.devices):
             raise typer.Exit(EXIT_FAILED)

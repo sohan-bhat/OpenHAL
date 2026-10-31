@@ -5,7 +5,7 @@ hub's heartbeats stop. The driver keeps a heartbeat task running while connected
 requests by sequence number, and keeps streamed `EVT` values as the latest readings.
 
 Ports. `port: auto` picks the first serial port whose USB id belongs to a common Arduino or ESP32
-board and answers `HELLO`. `port: sim:<name>` connects to the built-in simulator (tests and the
+board and replies to `HELLO`. `port: sim:<name>` connects to the built-in simulator (tests and the
 demo). Any other value is a serial device path or a pyserial URL.
 
 Discovery probes the ports listed in `OPENHAL_FIRMWARE_PORTS`, comma separated. `auto`, the
@@ -16,7 +16,7 @@ USB serial chip, a network bridge or a simulator can be found too.
 Quirks. Many boards reset when the port opens (DTR), so the driver waits `boot_s` before the first
 `HELLO`. Discovery only sends `HELLO`, which the protocol defines as read-only, and only to ports
 with a known board USB id or listed by name. It skips a simulated board another link has open, as
-an open serial port refuses a second program.
+an open serial port can't be opened by a second program.
 """
 
 from __future__ import annotations
@@ -175,21 +175,21 @@ class _Link:
             await self.transport.write_line(encode(seq, verb, *args))
             reply = await asyncio.wait_for(future, self.timeout_s)
         except TimeoutError as exc:
-            raise DriverError(f"The board didn't answer {verb} within {self.timeout_s:g} s.") from exc
+            raise DriverError(f"The board sent no reply to {verb} within {self.timeout_s:g} s.") from exc
         except ConnectionError as exc:
             raise DriverError(f"The board's port closed during {verb}.") from exc
         finally:
             self._pending.pop(seq, None)
         if reply.verb == "ERR":
-            raise DriverError(f"The board refused {verb} ({' '.join(reply.args)}).")
+            raise DriverError(f"The board returned an error for {verb} ({' '.join(reply.args)}).")
         return reply
 
     async def hello(self) -> tuple[str, ...]:
         reply = await self.request("HELLO")
         if len(reply.args) < 4 or reply.args[0] != "openhal":
-            raise DriverError("This board didn't answer like an OpenHAL board. Is the OpenHAL library flashed?")
+            raise DriverError("This board's reply doesn't match an OpenHAL board. Is the OpenHAL library flashed?")
         if not reply.args[1].isdigit() or int(reply.args[1]) > PROTOCOL_VERSION:
-            raise DriverError(f"This board speaks protocol {reply.args[1]}, which this hub doesn't support yet.")
+            raise DriverError(f"This board uses protocol {reply.args[1]}, which this hub doesn't support yet.")
         return reply.args
 
     async def close(self) -> None:
@@ -202,7 +202,7 @@ class _Link:
 
 
 class OpenHalFirmwareDriver(Driver):
-    """Talks to a board running the OpenHAL Arduino library."""
+    """Connects to a board running the OpenHAL Arduino library."""
 
     info: ClassVar[DriverInfo] = DriverInfo(
         name="openhal-firmware",
@@ -336,7 +336,7 @@ class OpenHalFirmwareDriver(Driver):
             return Reading(channel, self._typed(channel, streamed[0]), unit, at=streamed[1])
         reply = await link.request("READ", channel)
         if len(reply.args) != 2 or reply.args[0] != channel:
-            raise DriverError(f"The board answered READ {channel} with {' '.join(reply.args)}.")
+            raise DriverError(f"The board returned {' '.join(reply.args)} for READ {channel}.")
         return Reading(channel, self._typed(channel, reply.args[1]), unit)
 
     async def _write(self, channel: str, value: float | bool | str) -> Reading | None:
@@ -344,7 +344,7 @@ class OpenHalFirmwareDriver(Driver):
             raise DriverError("OpenHAL boards take numbers and booleans only.")
         reply = await self._require_link().request("WRITE", channel, format_number(float(value)))
         if len(reply.args) != 2 or reply.args[0] != channel:
-            raise DriverError(f"The board answered WRITE {channel} with {' '.join(reply.args)}.")
+            raise DriverError(f"The board returned {' '.join(reply.args)} for WRITE {channel}.")
         return Reading(channel, self._typed(channel, reply.args[1]), self.device.channel_unit(channel))
 
     async def _action(self, name: str, args: dict[str, Any]) -> Any:
@@ -358,7 +358,7 @@ class OpenHalFirmwareDriver(Driver):
                 raise DriverError("OpenHAL boards take numbers and booleans as action arguments.")
         reply = await self._require_link().request("ACT", name, *words)
         if reply.args != (name,):
-            raise DriverError(f"The board answered ACT {name} with {' '.join(reply.args)}.")
+            raise DriverError(f"The board returned {' '.join(reply.args)} for ACT {name}.")
         return {"ran": name}
 
     async def _safe_state(self) -> None:

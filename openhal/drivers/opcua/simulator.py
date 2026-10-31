@@ -10,12 +10,12 @@ The address space lives in the namespace `urn:openhal:sim:pump` with string node
       Temperature      Double, read only, degC (CEL)
       Start(Rate)      method, Rate is a Double, returns a Boolean
       Stop()           method
-      Prime()          method, refused with BadInvalidState unless the pump runs
+      Prime()          method, fails with BadInvalidState unless the pump runs
     Tank               object
       Level            Float, read only, percent, EURange 0 to 100
       Pressure         Double, read only, kPa (KPA)
       TempF            Double, read only, degF (FAH)
-      Odd              Double, read only, a unit OpenHAL doesn't know
+      Odd              Double, read only, a unit OpenHAL doesn't support
 
 Starting asyncua's server loads the whole standard address space and takes seconds, so tests
 and the conformance case share one server per process through `shared()`.
@@ -217,7 +217,7 @@ class OpcuaSim:
             self.set(name, ua.DataValue(ua.Variant(value, kind) if kind else ua.Variant(value)))
 
     def hang(self, seconds: float) -> None:
-        """Block the server's loop, so it stops answering for a while, like a stalled PLC."""
+        """Block the server's loop, so it sends no replies for a while, like a stalled PLC."""
         assert self._loop is not None
         self._loop.call_soon_threadsafe(time.sleep, seconds)
 

@@ -1,4 +1,4 @@
-"""`openhal confirm`, the queue of commands that wait for a person."""
+"""`openhal confirm`, the queue of commands held for a person."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from openhal.cli import _tty
 from openhal.cli._common import console, exit_for, handled, hub, print_decision, print_json, styled
 from openhal.client.models import ConfirmationRequest
 
-app = typer.Typer(help="List, approve and reject commands that wait for a person.", no_args_is_help=True)
+app = typer.Typer(help="List, approve and reject commands held for a person.", no_args_is_help=True)
 
 
 def _describe(command: dict[str, object]) -> str:
@@ -27,8 +27,8 @@ def _describe(command: dict[str, object]) -> str:
 def _print_request(request: ConfirmationRequest) -> None:
     console.print(f"request {escape(request.id)}  {styled(request.status)}")
     console.print(f"command {escape(_describe(request.command))}")
-    console.print(f"asked by {escape(request.requested_by)}")
-    console.print(f"dry run when asked  {styled(request.dry_run.status)}  {escape(request.dry_run.message)}")
+    console.print(f"requested by {escape(request.requested_by)}")
+    console.print(f"dry run at request time  {styled(request.dry_run.status)}  {escape(request.dry_run.message)}")
     if request.decided_by:
         console.print(f"decided by {escape(request.decided_by)}")
     if request.result:
@@ -41,16 +41,16 @@ def list_requests(
     show_all: bool = typer.Option(False, "--all", help="Include approved, rejected and expired requests."),
     as_json: bool = typer.Option(False, "--json", help="Print JSON."),
 ) -> None:
-    """List requests waiting for a person."""
+    """List requests held for a person."""
     with hub() as client:
         requests = client.confirmations(include_done=show_all)
     if as_json:
         print_json(requests)
         return
     if not requests:
-        console.print("Nothing waits for approval.")
+        console.print("No request is pending approval.")
         return
-    table = Table("id", "status", "command", "asked by", "dry run", box=None, pad_edge=False)
+    table = Table("id", "status", "command", "requested by", "dry run", box=None, pad_edge=False)
     for request in requests:
         table.add_row(
             escape(request.id),
@@ -68,7 +68,7 @@ def show(
     request_id: str = typer.Argument(..., help="The request id."),
     as_json: bool = typer.Option(False, "--json", help="Print JSON."),
 ) -> None:
-    """Show one request with its command and the dry run at the time it was asked."""
+    """Show one request with its command and the dry run at the time of the request."""
     with hub() as client:
         request = client.confirmation(request_id)
     print_json(request) if as_json else _print_request(request)

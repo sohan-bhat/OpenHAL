@@ -158,7 +158,7 @@ exchanges:
     data:
       name: LIMIT_EXCEEDED
       kernelCode: above_max
-      kernelMessage: Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.
+      kernelMessage: Blocked. The extruder_target limit is 260 degC (max). Requested 300 degC.
       device: printer
       channel: extruder_target
       requested:
@@ -395,7 +395,7 @@ audit:
     who: agent:claude
     target: printer.cancel
     status: pending
-    message: Waiting for a human to approve action:cancel on printer.
+    message: Held until a human approves action:cancel on printer.
   - seq: 10
     event: action
     who: agent:claude
@@ -413,7 +413,7 @@ audit:
     who: agent:claude
     target: printer.extruder_target
     status: blocked
-    message: Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.
+    message: Blocked. The extruder_target limit is 260 degC (max). Requested 300 degC.
   - seq: 7
     event: write
     who: agent:claude
@@ -430,10 +430,10 @@ audit:
   - seq  time  event    who           target                   status   message
   - 13   TIME  action   agent:claude  printer.cancel           done     Done. cancel ran.
   - 12   TIME  confirm  human:owner   printer.cancel           done
-  - 11   TIME  action   agent:claude  printer.cancel           pending  Waiting for a human to approve action:cancel on printer.
+  - 11   TIME  action   agent:claude  printer.cancel           pending  Held until a human approves action:cancel on printer.
   - 10   TIME  action   agent:claude  printer.pause            done     Done. pause ran.
   - 9    TIME  read     agent:claude  printer-cam.frame        done
-  - 8    TIME  write    agent:claude  printer.extruder_target  blocked  Blocked. The extruder_target limit is 260 degC (max). Asked for 300 degC.
+  - 8    TIME  write    agent:claude  printer.extruder_target  blocked  Blocked. The extruder_target limit is 260 degC (max). Requested 300 degC.
   - 7    TIME  write    agent:claude  printer.bed_target       done     Done. bed_target is now 70 degC.
   - 6    TIME  read     agent:claude  printer-cam.frame        done
   masked:

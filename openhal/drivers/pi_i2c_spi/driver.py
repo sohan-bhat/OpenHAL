@@ -76,7 +76,7 @@ class PiBusParams(BaseModel):
         if kind == "i2c" and self.address is None:
             raise ValueError("I2C devices need address, for example address: 0x48.")
         if kind == "spi" and self.address is not None:
-            raise ValueError("SPI devices are chosen by the chip select in bus (spi0.1), so remove address.")
+            raise ValueError("SPI devices are selected by the chip select in bus (spi0.1), so remove address.")
         return self
 
     @property
@@ -382,7 +382,7 @@ class PiBusDriver(Driver):
             payload = bytes(read_map.command) + bytes(read_map.size - len(read_map.command))
             data = await self._run("transfer", lambda: self._spi_transfer(handle, payload))
         if len(data) != read_map.size:
-            raise DriverError(f"{self._where} returned {len(data)} bytes, expected {read_map.size}.")
+            raise DriverError(f"{self._where} returned {len(data)} bytes, not {read_map.size}.")
         return bytes(data)
 
     async def read(self, channel: str) -> Reading:

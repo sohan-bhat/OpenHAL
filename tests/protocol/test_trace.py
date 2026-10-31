@@ -19,7 +19,7 @@ EXPECTED_ERROR = {
         "data": {
             "name": "LIMIT_EXCEEDED",
             "kernelCode": "above_max",
-            "kernelMessage": "Blocked. The fan_speed limit is 100 % (max). Asked for 150 %.",
+            "kernelMessage": "Blocked. The fan_speed limit is 100 % (max). Requested 150 %.",
             "device": "desk-fan",
             "channel": "fan_speed",
             "requested": {"value": 150, "unit": "%"},

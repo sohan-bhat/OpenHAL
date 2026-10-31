@@ -1,6 +1,6 @@
 """A minimal in-process MQTT 3.1.1 broker and a simulated fan that lives on it.
 
-Written from the OASIS MQTT Version 3.1.1 standard (sections 2 and 3). It speaks enough of the
+Written from the OASIS MQTT Version 3.1.1 standard (sections 2 and 3). It implements enough of the
 protocol for a real paho-mqtt client to connect, subscribe, publish and get retained messages.
 CONNECT and CONNACK with username and password checks, PUBLISH at QoS 0 and 1 with PUBACK,
 SUBSCRIBE and SUBACK (every subscription is granted QoS 0), UNSUBSCRIBE, PINGREQ and DISCONNECT.
@@ -8,8 +8,8 @@ Topic filters support `+` and `#`. QoS 2 and persistent sessions are not impleme
 
 The broker runs on 127.0.0.1 in a background thread with its own event loop, so tests can
 start it from synchronous code. Fault injection. `kick_all()` drops every client, `paused`
-stops the broker from answering, `hold_acks` withholds PUBACK, and `password` makes it refuse
-clients with the wrong credentials.
+stops the broker's replies, `hold_acks` withholds PUBACK, and `password` makes it close the connection
+of clients with the wrong credentials.
 """
 
 from __future__ import annotations

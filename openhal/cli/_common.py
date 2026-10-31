@@ -1,6 +1,6 @@
 """Shared pieces of the CLI. Options, the hub client, error handling and output helpers.
 
-Exit codes. 0 success, 1 blocked, refused or failed, 2 usage error, 3 hub not running, 4 token problem.
+Exit codes. 0 success, 1 blocked or failed, 2 usage error, 3 hub not running, 4 token problem.
 """
 
 from __future__ import annotations
@@ -174,7 +174,7 @@ def print_decision(decision: Decision, *, prefix: str = "") -> None:
     console.print(f"{prefix}{styled(decision.status)}{code}  {escape(decision.message)}")
     if decision.pending and decision.request_id:
         console.print(
-            f"{prefix}  waiting for a person. Approve with openhal confirm approve {decision.request_id}",
+            f"{prefix}  held for a person. Approve with openhal confirm approve {decision.request_id}",
             style="yellow",
         )
 
@@ -190,7 +190,7 @@ def parse_bool(text: str) -> bool:
         return True
     if lowered in ("false", "off", "no", "0"):
         return False
-    raise ValueError(f"Expected true or false, got {text!r}.")
+    raise ValueError(f"Use true or false, not {text!r}.")
 
 
 def parse_quantity_text(text: str, name: str) -> dict[str, Any]:

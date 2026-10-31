@@ -1,6 +1,6 @@
 """Every API route as a `Call`, shared by the sync and async clients.
 
-A `Call` is the method, path, body and the parser for the answer. The clients only send calls
+A `Call` is the method, path, body and the parser for the response. The clients only send calls
 and map errors, so both stay in step with one list of routes.
 """
 
@@ -64,7 +64,7 @@ def split_target(target: str) -> tuple[str, str]:
     """Split `device.channel` or `device.action`. Device ids can't contain dots, names can't either."""
     device, dot, name = target.partition(".")
     if not dot or not device or not name:
-        raise ValueError(f"Expected device.channel, for example printer.bed_temp. Got {target!r}.")
+        raise ValueError(f"Use device.channel, for example printer.bed_temp, not {target!r}.")
     return device, name
 
 

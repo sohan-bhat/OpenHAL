@@ -1,4 +1,4 @@
-"""The safety kernel. The only code that decides whether a command may reach hardware.
+"""The safety kernel. The only code that checks whether a command may reach hardware.
 
 Names are loaded lazily, because the driver base class imports `openhal.kernel.grants` and the
 kernel itself imports the driver base class.

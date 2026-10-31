@@ -80,7 +80,7 @@ def _result(request: dict[str, Any], result: dict[str, Any], elided: str) -> dic
 
 
 def exchange(entry: dict[str, Any], arrows: tuple[str, str] = ARROWS) -> list[str]:
-    """One exchange: what held before it as a comment, the request and the hub's answer."""
+    """One exchange, with what held before it as a comment, the request and the hub's response."""
     to_hub, back = arrows
     out: list[str] = []
     if entry.get("before"):
@@ -129,16 +129,16 @@ def outcome(record: dict[str, Any]) -> str:
     person = str(approved["by"]).partition(":")[2]
     return (
         f"You'll see the agent raise the bed target from {celsius(bed['before'])} to {celsius(bed['after'])}, "
-        f"have a request for a nozzle temperature of {celsius(refused['requested'])} refused at the nozzle limit of "
+        f"have a request for a nozzle temperature of {celsius(refused['requested'])} blocked at the nozzle limit of "
         f"{celsius(refused['limit'])} and pause the print when the camera shows the print has come loose. "
         f"The {person} then approves the cancel, and the printer's state becomes {approved['printer']['state']}."
     )
 
 
 def counts(record: dict[str, Any]) -> str:
-    """What the audit log holds, as `6 requests, 1 refused, 1 confirmed by a person`."""
+    """What the audit log holds, as `6 requests, 1 blocked, 1 confirmed by a person`."""
     found = record["audit"]["counts"]
     return (
-        f"{found['requests']} requests, {found['refused']} refused, "
+        f"{found['requests']} requests, {found['refused']} blocked, "
         f"{found['confirmed_by_a_person']} confirmed by a person"
     )

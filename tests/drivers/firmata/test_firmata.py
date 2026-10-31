@@ -199,7 +199,7 @@ async def test_silent_board_times_out() -> None:
     driver, board, bench = make()
     await bench.connect()
     board.ignore_queries = True
-    assert_failed(await bench.write("led", True), "didn't answer")
+    assert_failed(await bench.write("led", True), "sent no reply")
     with pytest.raises(TimeoutError):
         await driver.read("led")
     board.analog_reporting.clear()

@@ -2,7 +2,7 @@
 
 It follows the host protocol described in the Marlin G-code reference (marlinfw.org/docs/gcode).
 Lines may carry `N<line>` numbers and a `*<checksum>` (XOR of every byte before the `*`). Every
-command is answered with `ok` once it finishes. Long moves such as G28 send
+command gets `ok` once it finishes. Long moves such as G28 send
 `echo:busy: processing` keepalives and queue later commands, as the real firmware does.
 
 Supported. M105, M104, M140, M141, M106, M107, M110, M114, M115, M155, M27, M24, M25, M524, M112

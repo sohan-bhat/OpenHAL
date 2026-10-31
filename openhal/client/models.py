@@ -1,6 +1,6 @@
-"""Typed views of the hub's answers.
+"""Typed views of the hub's responses.
 
-Every model accepts fields it does not know, so a newer hub never breaks an older client. Values
+Every model accepts unknown fields, so a newer hub never breaks an older client. Values
 are always in the unit named next to them. Timestamps named `at` are Unix seconds. The
 `created_at` and `expires_at` of a confirmation request use the hub's monotonic clock and are
 only meaningful relative to each other.
@@ -41,7 +41,7 @@ class HubStatus(Model):
     allow_lan: bool | None = Field(
         default=None, description="True when other machines may connect with a paired token."
     )
-    stopped: bool = Field(description="True after a stop until a human unlocks. Every command is refused meanwhile.")
+    stopped: bool = Field(description="True after a stop until a human unlocks. Every command is blocked meanwhile.")
     stop_reason: str | None = None
     devices: int
     connected: int
@@ -57,7 +57,7 @@ class DeviceSummary(Model):
     model: str | None = None
     manufacturer: str | None = None
     driver: str
-    hazard: str = Field(description="low, medium or high. High hazard commands always wait for a human.")
+    hazard: str = Field(description="low, medium or high. The hub always holds a high hazard command for a human.")
     writable: bool = Field(description="False while the device file has unconfirmed limits.")
     connected: bool
     unavailable: str | None = Field(default=None, description="Why the device can't take commands, if it can't.")
@@ -65,7 +65,7 @@ class DeviceSummary(Model):
     verification: str | None = None
     source: str | None = None
     conformance: str | None = Field(default=None, description="The driver's conformance level.")
-    simulated: bool = Field(default=False, description="True when the driver talks to a simulator, not hardware.")
+    simulated: bool = Field(default=False, description="True when the driver connects to a simulator, not hardware.")
 
 
 class ReadChannel(Model):
@@ -135,19 +135,19 @@ class Image(Model):
 
     mime_type: str = Field(alias="mimeType", description="The image format, for example image/jpeg.")
     bytes: int = Field(description="The image's size in bytes.")
-    width: int | None = Field(default=None, description="Width in pixels, when the format says.")
-    height: int | None = Field(default=None, description="Height in pixels, when the format says.")
-    data: str | None = Field(default=None, description="The image, base64 encoded. Device views leave it out.")
+    width: int | None = Field(default=None, description="Width in pixels, when the image header records the width.")
+    height: int | None = Field(default=None, description="Height in pixels, when the image header records the height.")
+    data: str | None = Field(default=None, description="The image, base64 encoded. Device views leave the data out.")
 
     def content(self) -> builtins.bytes:
-        """The image bytes, decoded from `data`. Empty when the answer left the pixels out."""
+        """The image bytes, decoded from `data`. Empty when the response left the pixels out."""
         return base64.b64decode(self.data) if self.data else b""
 
 
 class Reading(Model):
     device: str
     channel: str
-    ok: bool = Field(description="False when the driver could not read. `error` says why.")
+    ok: bool = Field(description="False when the driver could not read. `error` gives the reason.")
     value: Image | bool | int | float | str | dict[str, Any] | None = Field(
         default=None, description="A number in `unit`, a bool, text, or an Image for an image channel."
     )
@@ -162,7 +162,7 @@ DecisionStatus = Literal["allowed", "blocked", "needs_confirmation", "done", "pe
 
 
 class Decision(Model):
-    """The kernel's answer to one write or action."""
+    """The kernel's result for one write or action."""
 
     status: str = Field(description="allowed, blocked, needs_confirmation, done, pending or failed.")
     code: str | None = Field(default=None, description="The stable block code, for example above_max.")
@@ -172,7 +172,7 @@ class Decision(Model):
     value: Any = None
     unit: str | None = None
     limit: dict[str, Any] | None = Field(default=None, description="The limit that blocked the command, with unit.")
-    request_id: str | None = Field(default=None, description="Set when the command waits for a human.")
+    request_id: str | None = Field(default=None, description="Set when the hub holds the command for a human.")
 
     @property
     def ok(self) -> bool:

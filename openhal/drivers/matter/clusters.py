@@ -1,4 +1,4 @@
-"""The Matter clusters `describe()` knows, with the attribute scaling the Matter specification gives them.
+"""The Matter clusters `describe()` supports, with the attribute scaling the Matter specification gives them.
 
 Each entry proposes channels for one cluster on one endpoint. Ids are the decimal ids the Matter
 Server uses in attribute paths. Scales follow the Matter 1.3 Application Cluster specification,

@@ -190,7 +190,7 @@ async def test_a_camera_clock_far_ahead_still_authenticates(camera: OnvifCameraS
 
 
 async def test_credentials_are_checked(camera: OnvifCameraSim) -> None:
-    with pytest.raises(DriverError, match="refused the credentials for GetDeviceInformation"):
+    with pytest.raises(DriverError, match="did not accept the credentials for GetDeviceInformation"):
         await connected(device_file(), camera, environ=lambda name: "wrong")
     with pytest.raises(DriverError, match=TOKEN_ENV):
         await connected(device_file(), camera, environ=lambda name: None)
@@ -286,14 +286,14 @@ async def test_stop_is_the_native_safe_state(camera: OnvifCameraSim) -> None:
 async def test_faults_junk_and_timeouts(camera: OnvifCameraSim) -> None:
     driver = await connected(device_file(timeout="200 ms"), camera)
     camera.fault_next = "Motor jammed"
-    with pytest.raises(DriverError, match="refused GetStatus \\(ter:Action: Motor jammed\\)"):
+    with pytest.raises(DriverError, match="returned an error for GetStatus \\(ter:Action: Motor jammed\\)"):
         await driver.read("pan")
     camera.garbage = True
     with pytest.raises(DriverError, match="isn't SOAP"):
         await driver.read("pan")
     camera.garbage = False
     camera.latency_s = 1.5
-    with pytest.raises(TimeoutError, match="didn't answer GetStatus"):
+    with pytest.raises(TimeoutError, match="sent no reply to GetStatus"):
         await driver.read("pan")
     camera.latency_s = 0.0
     camera.offline = True

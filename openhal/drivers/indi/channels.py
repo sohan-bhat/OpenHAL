@@ -147,7 +147,7 @@ SAFE: Final[dict[str, tuple[str, str]]] = {
 def validate(model: type[BaseModel], raw: dict[str, Any] | None, default: dict[str, Any] | None, where: str) -> Any:
     data = raw if raw is not None else default
     if data is None:
-        raise DriverError(f"{where} is not an INDI property the driver knows. Add a map, see docs/drivers/indi.md.")
+        raise DriverError(f"{where} is not an INDI property the driver supports. Add a map, see docs/drivers/indi.md.")
     try:
         return model.model_validate(data)
     except ValidationError as exc:

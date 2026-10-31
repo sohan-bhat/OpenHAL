@@ -7,10 +7,10 @@ body or query template, and actions do the same with their arguments.
 
 Quirks worth knowing.
 
-- Many small devices answer slowly or drop connections under load, so every request has a hard
+- Many small devices reply slowly or drop connections under load, so every request has a hard
   deadline (`timeout`) enforced by the driver itself, not only by httpx.
 - Some devices change state with GET requests (Shelly Gen1 `/relay/0?turn=on`). The driver
-  allows GET for write channels because the device file says so, and never sends a write on its
+  allows GET for write channels because the device file sets it, and never sends a write on its
   own. Reads, identify, health and describe only ever send the requests the file names, plus a
   GET of `health` or `/`.
 - Secrets never go in the device file. `token_env` names an environment variable whose value is
@@ -194,7 +194,7 @@ class HttpDriver(Driver):
             parsed = self._parse(WriteMap, name, wspec.map)
             unknown = v.placeholders([parsed.path, parsed.query, parsed.body]) - {"value"}
             if unknown:
-                raise DriverError(f"write.{name} uses {sorted(unknown)} in its template. Only {{value}} is known.")
+                raise DriverError(f"write.{name} uses {sorted(unknown)} in its template. Only {{value}} is supported.")
             self.writes[name] = parsed
         for name, action in device.actions.items():
             amap = self._parse(ActionMap, name, action.map)
@@ -301,7 +301,7 @@ class HttpDriver(Driver):
             )
         except (TimeoutError, httpx.TimeoutException):
             raise TimeoutError(
-                f"{method} {url} got no answer within {self.settings.timeout:g} s. "
+                f"{method} {url} got no reply within {self.settings.timeout:g} s. "
                 "Check the device is powered and on the network, or raise timeout."
             ) from None
         except httpx.HTTPError as exc:
@@ -310,13 +310,11 @@ class HttpDriver(Driver):
             ) from None
         self._last_ok = time.monotonic()
         if len(response.content) > self.settings.max_response_bytes:
-            raise DriverError(
-                f"{method} {url} answered with {len(response.content)} bytes, more than max_response_bytes."
-            )
+            raise DriverError(f"{method} {url} returned {len(response.content)} bytes, more than max_response_bytes.")
         if not accept_any_status and response.status_code >= 400:
             excerpt = response.text[:200].strip()
             raise DriverError(
-                f"{method} {url} answered {response.status_code} {response.reason_phrase}. "
+                f"{method} {url} returned {response.status_code} {response.reason_phrase}. "
                 f"{excerpt!r}. Check the path and method in the channel map."
             )
         return response
@@ -332,7 +330,7 @@ class HttpDriver(Driver):
             return response.json()
         except (json.JSONDecodeError, UnicodeDecodeError):
             raise DriverError(
-                f"{where} expected JSON from {response.request.url.path} but got "
+                f"{where} needs JSON from {response.request.url.path} but got "
                 f"{response.text[:80]!r}. Check the path, or set format: text in the map."
             ) from None
 

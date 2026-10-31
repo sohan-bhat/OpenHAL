@@ -15,7 +15,7 @@
   "tests": "Alpaca server simulator on an httpx mock transport, discovery over local UDP",
   "estimate": {
     "devices": "hundreds of models, every ASCOM device reachable through ASCOM Remote",
-    "reasoning": "Alpaca is the network form of ASCOM, the standard driver interface for astronomy gear on Windows. ASCOM Remote exposes every installed ASCOM driver over Alpaca, and a growing number of mounts, focusers and observatory controllers speak Alpaca natively on Linux and embedded boards. The count is a model estimate.",
+    "reasoning": "Alpaca is the network form of ASCOM, the standard driver interface for astronomy gear on Windows. ASCOM Remote exposes every installed ASCOM driver over Alpaca, and a growing number of mounts, focusers and observatory controllers use Alpaca natively on Linux and embedded boards. The count is a model estimate.",
     "sources": [
       "https://ascom-standards.org/api/",
       "https://ascom-standards.org/Developer/Alpaca.htm",

@@ -1,6 +1,6 @@
 """Pydantic models for every protocol message (ADR 0015, spec/v0.1/basic/messages.md).
 
-Field names are snake_case in Python and camelCase on the wire. Params models refuse unknown fields,
+Field names are snake_case in Python and camelCase on the wire. Params models forbid unknown fields,
 so a typo is INVALID_PARAMS instead of being ignored. Fields marked optional in the spec, such as
 `Decision.error`, are left out when they don't apply, never sent as null. Times are RFC 3339 strings
 in UTC.
@@ -37,7 +37,7 @@ LEVELS: Final[dict[Conformance, int]] = {"core": 0, "control": 1, "full": 2}
 
 
 class Message(BaseModel):
-    """Base for every protocol model. camelCase on the wire, unknown fields refused."""
+    """Base for every protocol model. camelCase on the wire, unknown fields forbidden."""
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="forbid")
 
@@ -115,7 +115,7 @@ class ErrorData(Message):
     limit: Quantity | None = Field(default=None, description="The limit that applied, such as 100 % or 20 %/s.")
     requested: Quantity | bool | int | float | str | None = Field(
         default=None,
-        description="What was asked for, a Quantity in the limit's unit when it had one, otherwise as sent.",
+        description="The requested value, a Quantity in the limit's unit when it had one, otherwise as sent.",
     )
     runs: int | None = Field(default=None, description="How many runs an action's max_runs allows per window.")
     per: Quantity | None = Field(default=None, description="The window of an action's max_runs.")
@@ -137,7 +137,7 @@ class ErrorObject(Message):
 
 
 class Request(Message):
-    """A JSON-RPC request. It has an id and expects a response."""
+    """A JSON-RPC request, which has an id and gets a response."""
 
     jsonrpc: Literal["2.0"]
     id: int | str
@@ -191,7 +191,7 @@ class Capabilities(Message):
 
 
 class InitializeResult(Message):
-    protocol_version: str = Field(description="The version the hub answers with, such as 0.1.")
+    protocol_version: str = Field(description="The version the hub returns, such as 0.1.")
     hub_info: Info
     conformance: Conformance
     principal: PrincipalInfo
@@ -375,7 +375,7 @@ Step = Annotated[Write | Action | Wait, Field(discriminator="kind")]
 
 
 class Decision(Message):
-    """The Safety Kernel's answer to one command. A blocked one carries its registry error."""
+    """The Safety Kernel's result for one command. A blocked result carries its registry error."""
 
     omit_when_absent: ClassVar[frozenset[str]] = frozenset({"error", "request_id"})
 
@@ -564,7 +564,7 @@ class LogEntry(Message):
 
 @dataclass(frozen=True, slots=True)
 class MethodSpec:
-    """One method. `human_only` methods answer SCOPE_DENIED to every other principal."""
+    """One method. `human_only` methods return SCOPE_DENIED to every other principal."""
 
     params: type[Message]
     result: Any
@@ -593,7 +593,7 @@ METHODS: Final[dict[str, MethodSpec]] = {
     "hal/routines/dryRun": MethodSpec(params=RoutineDryRunParams, result=PlanResult, level="full"),
     "hal/audit/query": MethodSpec(params=AuditQueryParams, result=AuditQueryResult, level="full"),
 }
-"""Every method the hub answers, with its params, result and conformance level."""
+"""Every method the hub implements, with its params, result and conformance level."""
 
 NOTIFICATIONS: Final[dict[str, tuple[type[Message], Conformance]]] = {
     "hal/value": (Reading, "core"),
@@ -610,7 +610,7 @@ CLIENT_NOTIFICATIONS: Final[dict[str, type[Message]]] = {"hal/initialized": Empt
 
 
 def methods_for(level: Conformance) -> list[str]:
-    """The methods a hub at `level` answers."""
+    """The methods a hub at `level` implements."""
     return [name for name, spec in METHODS.items() if LEVELS[spec.level] <= LEVELS[level]]
 
 

@@ -6,11 +6,11 @@ written from the documentation and not from GRBL's GPL source. It plugs into
 
 - Line commands end with a newline and get `ok` or `error:N`. Motion lines get `ok` once they are
   queued, and the machine then moves at the programmed feed in simulated time.
-- Realtime bytes act at once and never get `ok`. `?` answers a status report, `!` holds the feed,
+- Realtime bytes act at once and never get `ok`. `?` returns a status report, `!` holds the feed,
   `~` resumes, 0x85 cancels a jog and 0x18 soft resets.
 - A reset while moving or holding raises ALARM:3. Soft and hard limit alarms block everything
   except `?` and a reset, and print `[MSG:Reset to continue]`, as GRBL does.
-- While in alarm, G-code is refused with error:9 until `$X` or `$H`.
+- While in alarm, G-code gets error:9 until `$X` or `$H`.
 """
 
 from __future__ import annotations
@@ -215,7 +215,7 @@ class GrblMachine:
             self._out.append("[MSG:Reset to continue]")
 
     def trip_hard_limit(self) -> None:
-        """Press a limit switch. GRBL halts at once and waits for a reset."""
+        """Press a limit switch. GRBL halts at once and stays halted until a reset."""
         with self._lock:
             self._alarm(1, critical=True)
 
@@ -249,7 +249,7 @@ class GrblMachine:
             return
 
     def status(self) -> str:
-        """The answer to `?`."""
+        """The reply to `?`."""
         self.reports += 1
         inch = self.settings[13] == 1
         scale = 1 / 25.4 if inch else 1.0

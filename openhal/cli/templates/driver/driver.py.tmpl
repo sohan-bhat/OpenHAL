@@ -1,6 +1,6 @@
 """${title} driver. Describe the protocol, how devices are found and identified, and its quirks.
 
-This scaffold talks to its simulator when the device file says `target: sim:<name>`. Replace
+This scaffold connects to its simulator when the device file sets `target: sim:<name>`. Replace
 `connect`, `read` and `_write` with the real transport, keep discovery and identification
 read-only, and keep every change going through `_write`, which only the safety kernel can reach.
 """
@@ -54,7 +54,7 @@ class ${cls}(Driver):
             raise DriverError(f"{self.device.device_id} is not connected. Connect it first.")
         if self._sim.silent:
             await asyncio.sleep(self.settings.timeout_s)
-            raise DriverError(f"{self.device.device_id} didn't answer within {self.settings.timeout_s:g} s.")
+            raise DriverError(f"{self.device.device_id} sent no reply within {self.settings.timeout_s:g} s.")
         return self._sim
 
     async def read(self, channel: str) -> Reading:

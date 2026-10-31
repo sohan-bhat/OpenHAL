@@ -1,8 +1,8 @@
 """Simulated boards running the OpenHAL Arduino library's examples.
 
-They speak the real protocol over an in-memory line transport, enforce their own limits and apply
+They implement the real protocol over an in-memory line transport, enforce their own limits and apply
 their safe state when heartbeats stop. The desk fan cools a warm room. The plant waterer
-(examples/plant-waterer/) wets the soil while its pump runs and refuses to pump from an empty tank.
+(examples/plant-waterer/) wets the soil while its pump runs and blocks pumping from an empty tank.
 Tests, the conformance case and `openhal demo` use them.
 """
 
@@ -44,7 +44,7 @@ class SimChannel:
 
 @dataclass
 class SimAction:
-    """An action the board runs. `run` gets the arguments by name and returns a refusal reason or None."""
+    """An action the board runs. `run` gets the arguments by name and returns a block reason or None."""
 
     name: str
     args: tuple[tuple[str, str, float, float], ...]

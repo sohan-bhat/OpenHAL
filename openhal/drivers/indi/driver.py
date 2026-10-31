@@ -5,13 +5,13 @@ Protocol (INDI protocol 1.7 white paper and the INDI standard properties). XML h
 
 - One device file is one INDI device, named in `device`, on an indiserver (TCP 7624). `kind`
   picks the channel conventions, telescope, focuser, camera or generic.
-- connect() asks for the device's properties, turns its CONNECTION switch on unless
-  `connect_device: false`, and waits until every property the file uses is defined. close()
+- connect() requests the device's properties, turns its CONNECTION switch on unless
+  `connect_device: false`, and returns once every property the file uses is defined. close()
   leaves the device connected, since another client such as Ekos may be using it.
 - Reads come from the property cache the server keeps current by pushing updates. Writes and
-  actions send new*Vector with only the changed members and wait for the server's answer. An
-  answer in the Alert state fails the command with the device's own message.
-- Actions with `wait` follow the property while it is Busy and answer `done`, or `started`
+  actions send new*Vector with only the changed members and complete on the server's reply. A
+  reply in the Alert state fails the command with the device's own message.
+- Actions with `wait` follow the property while it is Busy and return `done`, or `started`
   after `action_wait`.
 - BLOBs (images) are never requested, so camera frames are not downloaded.
 
@@ -279,7 +279,7 @@ class IndiDriver(Driver):
         return Reading(channel, text, None, at=vector.at)
 
     async def _send(self, vector: Vector, values: dict[str, float | bool | str]) -> None:
-        """Send new values and wait for the server's answer. Alert fails with the device's message."""
+        """Send new values and wait for the server's reply. Alert fails with the device's message."""
         if vector.perm == "ro":
             raise DriverError(f"{vector.device}.{vector.name} is read only. Nothing was sent.")
         for name in values:
@@ -297,12 +297,12 @@ class IndiDriver(Driver):
 
         if not await session.wait_for(answered, self.settings.timeout):
             raise TimeoutError(
-                f"{vector.device} didn't answer the change to {vector.name} within {self.settings.timeout:g} s."
+                f"{vector.device} sent no reply to the change of {vector.name} within {self.settings.timeout:g} s."
             )
         latest = current[(vector.device, vector.name)]
         if latest.state == "alert":
             reason = latest.message or session.messages.get(vector.device, "no reason given")
-            raise DriverError(f"{vector.device} refused the change to {vector.name} ({reason}).")
+            raise DriverError(f"{vector.device} returned an error for the change of {vector.name} ({reason}).")
 
     def _encode(
         self, value: float | bool | str, unit: str | None, protocol_unit: str | None, scale: float, where: str

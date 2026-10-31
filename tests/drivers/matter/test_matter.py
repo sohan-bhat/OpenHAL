@@ -252,7 +252,7 @@ async def test_slow_answers_time_out(server: MatterServerSim) -> None:
     server.latency_s = 1.0
     decision = await kernel.execute(Write(device="conformance-matter", channel="power", value=True), WHO)
     assert decision.status == "failed"
-    assert "didn't answer device_command" in decision.message
+    assert "sent no reply to device_command" in decision.message
     server.latency_s = 0.0
     await driver.close()
 

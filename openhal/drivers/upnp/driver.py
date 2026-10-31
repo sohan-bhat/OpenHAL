@@ -7,14 +7,14 @@ driver fetches the description once on connect, and every channel is one action 
 
 - A read channel names a service, an action such as `GetVolume`, its in-arguments and the
   out-argument to read, such as `CurrentVolume`. Reads call the action each time, because most
-  devices answer queries faster than they push GENA events.
+  devices reply to queries faster than they push GENA events.
 - A channel under `write` calls an action such as `SetVolume` with `{value}` in one argument, and
   reads back through its `state` map, or returns the last value sent.
 - An action calls one SOAP action with the action's arguments placed by `{name}`.
 - On connect every map is checked against the device's SCPD. Every in-argument must be given,
   the out-argument must exist, and enum channels must use the state variable's allowed values.
 
-Discovery sends one SSDP M-SEARCH, which only asks devices to announce themselves.
+Discovery sends one SSDP M-SEARCH, which only requests that devices announce themselves.
 
 Safe state. From the device file. UPnP has no emergency action of its own.
 """
@@ -122,7 +122,7 @@ def find_service(device: UpnpDevice, name: str) -> UpnpService | None:
 
 
 def _coerce(value: Any, action: UpnpAction, name: str) -> Any:
-    """A value in the Python type async-upnp-client expects for one in-argument's state variable."""
+    """A value in the Python type async-upnp-client requires for one in-argument's state variable."""
     argument = action.argument(name, "in")
     if argument is None or isinstance(value, bool):
         return value
@@ -206,7 +206,7 @@ class UpnpDriver(Driver):
 
     @classmethod
     async def discover(cls) -> list[Discovered]:
-        """Send one SSDP M-SEARCH for every root device and collect the answers for two seconds."""
+        """Send one SSDP M-SEARCH for every root device and collect the replies for two seconds."""
         from async_upnp_client.search import async_search
 
         found: dict[str, Discovered] = {}
@@ -324,7 +324,7 @@ class UpnpDriver(Driver):
         if self.upnp is None:
             raise DriverError(f"{self._where} is not connected. Connect it first.")
         if self._lost:
-            raise DriverError(f"{self._where} stopped answering ({self._lost}). Reconnect it.")
+            raise DriverError(f"{self._where} stopped sending replies ({self._lost}). Reconnect it.")
         return self.upnp
 
     async def health(self) -> Health:
@@ -356,18 +356,18 @@ class UpnpDriver(Driver):
             )
         except (TimeoutError, UpnpConnectionTimeoutError):
             raise TimeoutError(
-                f"{self._where} didn't answer {call.action} within {self.settings.timeout:g} s."
+                f"{self._where} sent no reply to {call.action} within {self.settings.timeout:g} s."
             ) from None
         except UpnpActionError as exc:
             raise DriverError(
-                f"{self._where} refused {call.action} "
-                f"(UPnP error {exc.error_code}, {exc.error_desc or 'no description'})."
+                f"{self._where} returned UPnP error {exc.error_code} for {call.action} "
+                f"({exc.error_desc or 'no description'})."
             ) from None
         except UpnpValueError as exc:
             raise DriverError(f"{where}: {call.action} can't take {exc}.") from None
         except UpnpCommunicationError as exc:
             self._lost = str(exc) or type(exc).__name__
-            raise DriverError(f"{self._where} didn't answer {call.action} ({exc}).") from None
+            raise DriverError(f"{self._where} sent no reply to {call.action} ({exc}).") from None
         except UpnpError as exc:
             raise DriverError(f"{self._where} sent a reply to {call.action} that doesn't parse ({exc}).") from None
         return dict(result)

@@ -3,15 +3,15 @@
 Protocol (docs.octoprint.org, REST API pages for version, printer operations and job operations).
 
 - Every request carries the API key from the environment variable named in `token_env` as
-  `X-Api-Key`. OctoPrint answers 403 for a missing or wrong key.
+  `X-Api-Key`. OctoPrint returns 403 for a missing or wrong key.
 - Temperatures come from `GET /api/printer?exclude=sd` (`temperature.tool0.actual`, `.target`,
   `bed`, `chamber`) and the state from its `state.flags`. While the printer is not connected to
-  OctoPrint these endpoints answer 409, which the driver reports as a disconnected device.
+  OctoPrint these endpoints return 409, which the driver reports as a disconnected device.
 - Heater targets are `POST /api/printer/tool` with `{"command": "target", "targets": {...}}`,
   and the same for `/bed` and `/chamber`. OctoPrint has no fan endpoint, so the part fan is set
   with `POST /api/printer/command` and `M106 P<n> S<0..255>`, and can't be read back.
 - Homing is `POST /api/printer/printhead` with `{"command": "home", "axes": [...]}`. OctoPrint
-  queues the G28 and answers at once.
+  queues the G28 and returns at once.
 - Pause, resume and cancel are `POST /api/job`, for prints OctoPrint streams itself.
 
 Mapping. Channel names follow the moonraker driver where the API allows it.
@@ -112,7 +112,7 @@ def _validate(model: type[BaseModel], raw: dict[str, Any] | None, default: dict[
     data = raw if raw is not None else default
     if data is None:
         raise DriverError(
-            f"{where} is not an OctoPrint channel the driver knows. Add a map, see docs/drivers/octoprint.md."
+            f"{where} is not an OctoPrint channel the driver supports. Add a map, see docs/drivers/octoprint.md."
         )
     try:
         return model.model_validate(data)
@@ -217,18 +217,22 @@ class OctoPrintDriver(Driver):
         try:
             response = await asyncio.wait_for(self._client.request(verb, path, json=body), self.settings.timeout)
         except (httpx.TimeoutException, TimeoutError):
-            raise TimeoutError(f"OctoPrint didn't answer {verb} {path} within {self.settings.timeout:g} s.") from None
+            raise TimeoutError(
+                f"OctoPrint sent no reply to {verb} {path} within {self.settings.timeout:g} s."
+            ) from None
         except httpx.HTTPError as exc:
             raise DriverError(
                 f"Could not reach OctoPrint at {self.settings.host}:{self.settings.port} ({exc}). "
                 "Check that the server is on and on the network."
             ) from exc
         if response.status_code in (401, 403):
-            raise DriverError(f"OctoPrint refused the API key in {self.settings.token_env}. Create a new key.")
+            raise DriverError(f"OctoPrint did not accept the API key in {self.settings.token_env}. Create a new key.")
         if response.status_code == 409:
-            raise DriverError(f"OctoPrint says the printer can't do this now ({_error(response)}).")
+            raise DriverError(f"OctoPrint reports that the printer can't do this now ({_error(response)}).")
         if response.status_code >= 400:
-            raise DriverError(f"OctoPrint refused {verb} {path} (HTTP {response.status_code}, {_error(response)}).")
+            raise DriverError(
+                f"OctoPrint returned an error for {verb} {path} (HTTP {response.status_code}, {_error(response)})."
+            )
         if response.status_code == 204 or not response.content:
             return None
         try:

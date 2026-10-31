@@ -10,8 +10,8 @@ the maps in `channels.py` and the describe() proposal in `describe.py`.
 - Changes publish a whole message (the map's `base` with one field set) or call a service.
   Topics the file publishes to are advertised during connect, so the first message isn't lost
   while DDS matches publishers and subscribers.
-- Actions call a service, publish a message, or send an action goal. A goal waits up to
-  `action_wait` for its result, then answers `started` and keeps running.
+- Actions call a service, publish a message, or send an action goal. A goal runs up to
+  `action_wait` for its result, then returns `started` and keeps running.
 
 Safe state. Native. Every action goal this driver started and that is still running is
 canceled. ROS has no general stop, so put the robot's own stop (a zero velocity on cmd_vel, a
@@ -163,7 +163,8 @@ class Ros2Driver(Driver):
         bridge = self._bridge()
         if read_map.topic in bridge.refused:
             raise DriverError(
-                f"rosbridge refused the subscription to {read_map.topic} ({bridge.refused[read_map.topic]})."
+                f"rosbridge returned an error for the subscription to {read_map.topic} "
+                f"({bridge.refused[read_map.topic]})."
             )
         latest = bridge.latest.get(read_map.topic)
         unit = self.device.channel_unit(channel)
@@ -215,7 +216,8 @@ class Ros2Driver(Driver):
         if write_map.topic is not None:
             if write_map.topic in bridge.refused:
                 raise DriverError(
-                    f"rosbridge refused to advertise {write_map.topic} ({bridge.refused[write_map.topic]})."
+                    f"rosbridge returned an error when advertising {write_map.topic} "
+                    f"({bridge.refused[write_map.topic]})."
                 )
             await bridge.publish(write_map.topic, message)
         else:
@@ -247,7 +249,7 @@ class Ros2Driver(Driver):
             values = await bridge.call(action_map.service, message, kind=action_map.type)
             if values.get("success") is False:
                 raise DriverError(
-                    f"{action_map.service} answered success false ({str(values.get('message', ''))[:200]})."
+                    f"{action_map.service} returned success false ({str(values.get('message', ''))[:200]})."
                 )
             return {"sent": action_map.service, "values": values}
         assert action_map.action is not None
@@ -291,7 +293,7 @@ class Ros2Driver(Driver):
         try:
             latency = await self.bridge.ping()
         except (DriverError, TimeoutError) as exc:
-            return Health(connected=False, detail=str(exc) or "rosbridge didn't answer a ping")
+            return Health(connected=False, detail=str(exc) or "rosbridge sent no reply to a ping")
         except Exception as exc:  # noqa: BLE001
             return Health(connected=False, detail=f"rosbridge connection failed ({exc})")
         running = len(self.bridge.goals)

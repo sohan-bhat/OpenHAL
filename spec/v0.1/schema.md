@@ -205,7 +205,7 @@ A human confirmation of limits.
 
 ### Decision
 
-The Safety Kernel's answer to one command. A blocked one carries its registry error.
+The Safety Kernel's result for one command. A blocked result carries its registry error.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
@@ -323,7 +323,7 @@ No fields.
 | `action` | string or null | no |  |
 | `argument` | string or null | no | The action argument the error is about. |
 | `limit` | [Quantity](#quantity) or null | no | The limit that applied, such as 100 % or 20 %/s. |
-| `requested` | [Quantity](#quantity) or boolean or integer or number or string or null | no | What was asked for, a Quantity in the limit's unit when it had one, otherwise as sent. |
+| `requested` | [Quantity](#quantity) or boolean or integer or number or string or null | no | The requested value, a Quantity in the limit's unit when it had one, otherwise as sent. |
 | `runs` | integer or null | no | How many runs an action's max_runs allows per window. |
 | `per` | [Quantity](#quantity) or null | no | The window of an action's max_runs. |
 | `interlock` | string or null | no | The reason the device file gives for an interlock. |
@@ -375,7 +375,7 @@ The JSON-RPC `error` member.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `protocolVersion` | string | yes | The version the hub answers with, such as 0.1. |
+| `protocolVersion` | string | yes | The version the hub returns, such as 0.1. |
 | `hubInfo` | [Info](#info) | yes |  |
 | `conformance` | `"core"` or `"control"` or `"full"` | yes |  |
 | `principal` | [PrincipalInfo](#principalinfo) | yes |  |
@@ -518,7 +518,7 @@ A number and its unit (ADR 0016), for example `{"value": 20, "unit": "s"}`.
 
 ### Request
 
-A JSON-RPC request. It has an id and expects a response.
+A JSON-RPC request, which has an id and gets a response.
 
 | Field | Type | Required | Description |
 |---|---|---|---|

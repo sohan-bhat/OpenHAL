@@ -39,19 +39,19 @@ async function queueCancel(name: string): Promise<string> {
   return String(pending.result?.requestId);
 }
 
-test("the cancel request says what the agent asked and why it waits, with the camera beside it", async ({ page }) => {
+test("the cancel request shows what the agent requested and why the request is held, with the camera beside it", async ({ page }) => {
   await showFrame("come-loose");
   const requestId = await queueCancel("print-watcher");
   await page.goto("/#/confirmations");
   const request = page.getByRole("main").getByRole("listitem").filter({ hasText: requestId });
-  await expect(request.getByRole("heading", { level: 3 })).toHaveText("The agent print-watcher asks to run cancel on Klipper 3D printer.");
+  await expect(request.getByRole("heading", { level: 3 })).toHaveText("The agent print-watcher sends a request to run cancel on Klipper 3D printer.");
   await expect(request).toContainText("agent:print-watcher");
   await expect(request).toContainText('"action": "cancel"');
   await expect(request).toContainText("Cancel the print. It can't be resumed afterwards.");
-  await expect(request).toContainText("printer.hal.yaml asks a person to confirm cancel each time.");
+  await expect(request).toContainText("printer.hal.yaml requires a person to confirm cancel each time.");
   await expect(request).toContainText(/Expires in\s+\d+ s/);
   await expect(request.getByRole("img", { name: /frame from/ })).toHaveCount(0);
-  await expect(request).toContainText("Pick the camera that watches Klipper 3D printer.");
+  await expect(request).toContainText("Pick the camera pointed at Klipper 3D printer.");
   await request.getByRole("combobox", { name: "Show a camera" }).selectOption("printer-cam/frame");
   const frame = request.getByRole("img", { name: /^Demo frame from Printer camera, frame/ });
   await expect(frame).toBeVisible();
@@ -73,7 +73,7 @@ test("a person approves a pending cancel and sees the result", async ({ page }) 
   const decided = page.getByRole("region", { name: "Your decisions" }).getByRole("listitem").filter({ hasText: requestId });
   await expect(decided).toContainText("approved");
   await expect(decided).toContainText("granted");
-  await expect(page.getByRole("main").getByRole("listitem").filter({ hasText: "asks to run" }).filter({ hasText: requestId })).toHaveCount(0);
+  await expect(page.getByRole("main").getByRole("listitem").filter({ hasText: "sends a request to run" }).filter({ hasText: requestId })).toHaveCount(0);
   await printAgain();
 });
 

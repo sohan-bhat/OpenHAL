@@ -29,7 +29,7 @@
     !view
       ? ""
       : stopped
-        ? "The hub is stopped. Commands are refused with error -32014 STOPPED until a person lifts the stop."
+        ? "The hub is stopped. Commands are blocked with error -32014 STOPPED until a person lifts the stop."
         : !view.writable
           ? "Read-only. A person has not confirmed this Device File's limits, so commands get error -32015 UNVERIFIED_LIMITS."
           : view.unavailable

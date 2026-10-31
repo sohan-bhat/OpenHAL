@@ -8,7 +8,7 @@
   "tests": "httpx.MockTransport with a simulated smart plug",
   "estimate": {
     "devices": "at least tens of thousands of models",
-    "reasoning": "Any device with a documented local HTTP API can be described in a device file without new code. Shelly alone documents a local HTTP API for its whole Gen1 and Gen2 range, Tasmota exposes an HTTP command endpoint on every flashed device, and most microcontroller web server sketches speak JSON over HTTP. The count is limited only by devices that need a protocol other than HTTP or a login flow the driver does not support.",
+    "reasoning": "Any device with a documented local HTTP API can be described in a device file without new code. Shelly alone documents a local HTTP API for its whole Gen1 and Gen2 range, Tasmota exposes an HTTP command endpoint on every flashed device, and most microcontroller web server sketches serve JSON over HTTP. The count is limited only by devices that need a protocol other than HTTP or a login flow the driver does not support.",
     "sources": [
       "https://www.rfc-editor.org/rfc/rfc9110",
       "https://spec.openapis.org/oas/v3.1.0",

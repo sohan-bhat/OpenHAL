@@ -8,11 +8,11 @@ units in `units.py` and the describe() proposal in `describe.py`.
 - connect() checks every node the file names. Variables must exist, changed ones must be
   writable for this user, and methods must exist with as many inputs as the map lists.
 - Units come from each variable's EngineeringUnits (UNECE codes), unless the map gives one.
-  A channel whose unit can't be converted from the node's unit is refused on connect, so a
+  A channel whose unit can't be converted from the node's unit fails on connect, so a
   degF node can never be read as degC by mistake.
 - Reads check the value's status. Bad fails the read, Uncertain marks it suspect.
-- Changes send a Variant of the node's own data type. Integer nodes refuse values that aren't
-  whole. Method calls send inputs in the order the map's `inputs` lists them.
+- Changes send a Variant of the node's own data type. Integer nodes return an error for values
+  that aren't whole. Method calls send inputs in the order the map's `inputs` lists them.
 
 Safe state. OPC UA has no general emergency behavior, so the driver has none of its own. Put the
 equipment's own stop (a method or setpoints of 0) in the device file's safe state.
@@ -145,9 +145,11 @@ class OpcuaDriver(Driver):
         try:
             return await asyncio.wait_for(call, self.settings.timeout)
         except TimeoutError:
-            raise TimeoutError(f"The OPC UA server didn't answer {what} within {self.settings.timeout:g} s.") from None
+            raise TimeoutError(
+                f"The OPC UA server sent no reply to {what} within {self.settings.timeout:g} s."
+            ) from None
         except UaStatusCodeError as exc:
-            raise DriverError(f"The OPC UA server refused {what} ({type(exc).__name__}, {exc}).") from exc
+            raise DriverError(f"The OPC UA server returned an error for {what} ({type(exc).__name__}, {exc}).") from exc
         except (ConnectionError, OSError, UaError) as exc:
             raise DriverError(f"The OPC UA connection failed during {what} ({exc}). Reconnect it.") from exc
 
@@ -267,7 +269,9 @@ class OpcuaDriver(Driver):
                 eu = units.from_eu(information)
                 if eu is None and strict:
                     text = getattr(getattr(information, "DisplayName", None), "Text", information)
-                    raise DriverError(f"{where} reports the unit {text!r}, which OpenHAL doesn't know. Set map.unit.")
+                    raise DriverError(
+                        f"{where} reports the unit {text!r}, which OpenHAL doesn't support. Set map.unit."
+                    )
             elif name == "EURange":
                 value = await self.request(prop.read_value(), f"the EURange of {where}")
                 low, high = getattr(value, "Low", None), getattr(value, "High", None)
@@ -314,14 +318,14 @@ class OpcuaDriver(Driver):
         stamp = {"at": at} if at else {}
         if spec.type == "number":
             if isinstance(raw, bool) or not isinstance(raw, int | float) or not math.isfinite(raw):
-                raise DriverError(f"{channel}: expected a number from the server, got {raw!r}.")
+                raise DriverError(f"{channel}: the server sent {raw!r}, not a number.")
             number = _convert(float(raw) * item.scale, variable.unit, unit, channel)
             span = getattr(spec, "range", None)
             outside = span is not None and not span[0] <= number <= span[1]
             return Reading(channel, number, unit, suspect=uncertain or outside, **stamp)
         if spec.type == "bool":
             if not isinstance(raw, bool):
-                raise DriverError(f"{channel}: expected true or false from the server, got {raw!r}.")
+                raise DriverError(f"{channel}: the server sent {raw!r}, not true or false.")
             return Reading(channel, raw, None, suspect=uncertain, **stamp)
         text = str(raw)
         if spec.type == "enum" and text not in spec.values:

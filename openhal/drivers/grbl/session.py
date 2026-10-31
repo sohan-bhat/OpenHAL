@@ -2,7 +2,7 @@
 
 Line commands go out one at a time and are matched to `ok` and `error:N` in order. Status
 reports, alarms, messages and the reset banner can arrive at any moment and are handled as
-they come. Nothing here knows about device files.
+they come. Nothing here depends on device files.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ RESET_WAIT_S = 3.0
 
 
 class GrblError(DriverError):
-    """GRBL answered a line with error:N."""
+    """GRBL returned error:N for a line."""
 
     def __init__(self, message: str, code: str) -> None:
         super().__init__(message)
@@ -102,7 +102,7 @@ class GrblSession:
                 return
             code = line[6:].strip()
             detail = protocol.error_text(int(code)) if code.isdigit() else code
-            head.future.set_exception(GrblError(f"GRBL refused {head.command} with {line} ({detail}).", code))
+            head.future.set_exception(GrblError(f"GRBL returned {line} for {head.command} ({detail}).", code))
             head.future.exception()
         elif line.startswith("<"):
             self._note_status(line)
@@ -160,12 +160,12 @@ class GrblSession:
                 pending.future.exception()
 
     async def send(self, line: str) -> Pending:
-        """Write one line and queue it for its answer. Hold `lock` around send and wait."""
+        """Write one line and queue it for its reply. Hold `lock` around send and wait."""
         link = self.require()
         mapping.plain_text(line, "G-code")
         if self.critical:
             raise DriverError(
-                f"GRBL is waiting for a reset after ALARM:{self.alarm} ({protocol.alarm_text(self.alarm)}). "
+                f"GRBL is halted until a reset after ALARM:{self.alarm} ({protocol.alarm_text(self.alarm)}). "
                 "Run the reset action or stop first. Nothing was sent."
             )
         pending = Pending(line, asyncio.get_running_loop().create_future())
@@ -184,7 +184,8 @@ class GrblSession:
                 with contextlib.suppress(ValueError):
                     self._inflight.remove(pending)
                 raise TimeoutError(
-                    f"GRBL didn't answer {line} within {wait:g} s. Check the baud rate and that the controller is on."
+                    f"GRBL sent no reply to {line} within {wait:g} s. "
+                    "Check the baud rate and that the controller is on."
                 ) from None
 
     async def realtime(self, byte: bytes) -> None:
@@ -202,7 +203,7 @@ class GrblSession:
             await self.realtime(protocol.STATUS_QUERY)
             return await asyncio.wait_for(asyncio.shield(waiter), self.timeout)
         except TimeoutError:
-            raise TimeoutError(f"GRBL didn't answer a status query within {self.timeout:g} s.") from None
+            raise TimeoutError(f"GRBL sent no reply to a status query within {self.timeout:g} s.") from None
         finally:
             with contextlib.suppress(ValueError):
                 self._waiters.remove(waiter)

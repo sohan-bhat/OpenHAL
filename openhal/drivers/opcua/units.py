@@ -82,7 +82,7 @@ def code_id(code: str) -> int:
 
 
 def from_eu(information: Any) -> str | None:
-    """An EUInformation as an OpenHAL unit name, or None when it isn't one the registry knows."""
+    """An EUInformation as an OpenHAL unit name, or None when the registry has no such unit."""
     unit_id = getattr(information, "UnitId", None)
     if isinstance(unit_id, int):
         found = UNECE.get(common_code(unit_id))

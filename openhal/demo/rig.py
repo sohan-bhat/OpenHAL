@@ -2,8 +2,8 @@
 
 `plugged_in()` puts a simulated board behind `sim:<device>` and lists that port for discovery, as
 a person would list a board's port in OPENHAL_FIRMWARE_PORTS. `running_hub()` serves a real hub on
-a free loopback port. `mcp_session()` starts `openhal mcp` with an agent token and talks to it as
-an MCP client over its stdio. `Board` reports what the simulated board received.
+a free loopback port. `mcp_session()` starts `openhal mcp` with an agent token and connects to it
+as an MCP client over its stdio. `Board` reports what the simulated board received.
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ QUIET_VERBS: Final = frozenset({"HB", "READ"})
 
 
 class DemoError(RuntimeError):
-    """The system didn't do what the demo expects. The message says which step and what happened."""
+    """The system didn't do what the demo requires. The message names the step and what happened."""
 
 
 def set_up_home(home: Path, person: str) -> str:
@@ -141,8 +141,9 @@ class Agent:
 async def mcp_session(url: str, token: str, home: Path) -> AsyncIterator[Agent]:
     """Start `openhal mcp --no-start` with the agent token and open a client session over its stdio.
 
-    The server gets the agent token in OPENHAL_TOKEN and this home in OPENHAL_HOME, so it never
-    sees the person's token or a real home. What it writes to stderr goes to mcp.log in the home.
+    The server gets the agent token in OPENHAL_TOKEN and this home in OPENHAL_HOME, so the server
+    never reads the person's token or a real home. What the server writes to stderr goes to mcp.log in
+    the home.
     """
     paths = [str(PACKAGE_ROOT), *filter(None, [os.environ.get("PYTHONPATH")])]
     server = StdioServerParameters(
@@ -181,4 +182,4 @@ def _innermost(exc: BaseException) -> BaseException:
 def _tail(log: TextIO) -> str:
     log.flush()
     text = Path(log.name).read_text(encoding="utf-8").strip()
-    return f"openhal mcp said {text[-600:]}" if text else "openhal mcp said nothing."
+    return f"openhal mcp printed {text[-600:]}" if text else "openhal mcp printed nothing."

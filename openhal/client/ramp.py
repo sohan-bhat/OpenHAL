@@ -60,7 +60,7 @@ def plan_ramp(
     if start is None:
         if not spec.known or not isinstance(spec.value, int | float) or isinstance(spec.value, bool):
             raise ValueError(
-                f"The hub doesn't know the current value of {view.id}.{channel} yet. Read it first, or pass start."
+                f"The hub has no current value of {view.id}.{channel} yet. Read the channel first, or pass start."
             )
         start = float(spec.value)
     rate = spec.max_change_per_s

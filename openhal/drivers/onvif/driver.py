@@ -175,24 +175,25 @@ class OnvifDriver(Driver):
                 client.post(url, content=soap.envelope(body, header), headers=headers), self.settings.timeout + 1
             )
         except (httpx.TimeoutException, TimeoutError):
-            raise TimeoutError(f"{self._where} didn't answer {name} within {self.settings.timeout:g} s.") from None
+            raise TimeoutError(f"{self._where} sent no reply to {name} within {self.settings.timeout:g} s.") from None
         except httpx.HTTPError as exc:
             raise DriverError(f"Could not reach {self._where} for {name} ({exc}). Check host and port.") from None
         if response.status_code == 401:
             raise DriverError(
-                f"{self._where} refused the credentials for {name}. Check username and {self.settings.token_env}."
+                f"{self._where} did not accept the credentials for {name}. "
+                f"Check username and {self.settings.token_env}."
             )
         try:
             return soap.parse(response.content)
         except soap.SoapFaultError as fault:
             if fault.not_authorized:
                 raise DriverError(
-                    f"{self._where} refused the credentials for {name} ({fault.reason or fault.subcode}). "
+                    f"{self._where} did not accept the credentials for {name} ({fault.reason or fault.subcode}). "
                     f"Check username, {self.settings.token_env} and the camera's clock."
                 ) from None
-            raise DriverError(f"{self._where} refused {name} ({fault}).") from None
+            raise DriverError(f"{self._where} returned an error for {name} ({fault}).") from None
         except ValueError as exc:
-            raise DriverError(f"{self._where} answered {name} with something that isn't SOAP ({exc}).") from None
+            raise DriverError(f"{self._where} sent a reply to {name} that isn't SOAP ({exc}).") from None
 
     async def connect(self) -> None:
         await self.close()

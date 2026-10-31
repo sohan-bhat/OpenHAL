@@ -4,19 +4,20 @@
 starts a real hub on a loopback port with an empty devices folder (openhal/demo/rig.py). Nothing
 touches hardware.
 
-1. Discovery. The person asks the hub to discover boards. The driver probes the ports listed in
+1. Discovery. The person starts discovery on the hub. The driver probes the ports listed in
    OPENHAL_FIRMWARE_PORTS and finds the plant waterer as an openhal-firmware device.
 2. Driver writer. The person starts the writer on that board and on
-   examples/plant-waterer/plant-waterer.ino, whether or not the device library knows the board.
+   examples/plant-waterer/plant-waterer.ino, whether or not the device library has the board.
 3. Limits interview. A script answers every question as the person, through the same calls
    `openhal writer interview` and `openhal writer finish` make. The hub then restarts, so it loads
    the saved file from its devices folder.
-4. Agent. `openhal mcp` runs with an agent token and a real MCP client session talks to it over
+4. Agent. `openhal mcp` runs with an agent token and a real MCP client session connects to it over
    stdio. The agent reads soil moisture and drafts a routine that waters below 40 %. The person
    enables it with the human token, the routine waters and soil moisture rises.
-5. Limit. The agent asks for a 120 s watering and gets LIMIT_EXCEEDED. Nothing reaches the board.
+5. Limit. The agent sends a request for a watering of 120 s and gets LIMIT_EXCEEDED. Nothing reaches
+   the board.
 
-The record keeps what the hub, the board and the MCP server answered. The only time in it is the
+The record keeps what the hub, the board and the MCP server returned. The only time in it is the
 date the person confirmed the limits. `stable()` masks that date, so two runs compare equal.
 """
 
@@ -156,7 +157,7 @@ async def _set_up(person: AsyncClient, board: Board, port: str) -> list[dict[str
     questions = (await person.interview(session.id)).questions
     missing = [question.id for question in questions if question.id not in ANSWERS]
     if missing:
-        raise DemoError(f"The interview asked {', '.join(missing)}, which the script has no answer for.")
+        raise DemoError(f"The interview has questions {', '.join(missing)}, which the script has no answer for.")
     answers = {question.id: ANSWERS[question.id] for question in questions}
     answered = await person.answer(session.id, answers)
     if answered.status != "ready":
@@ -223,7 +224,7 @@ async def _wait_for_run(person: AsyncClient, deadline: float) -> dict[str, Any]:
 
 
 async def _agent(mcp: Agent, person: AsyncClient, board: Board, longest: float) -> list[dict[str, Any]]:
-    """The agent's MCP session, the person enabling the routine, the routine's run and the refusal."""
+    """The agent's MCP session, the person enabling the routine, the routine's run and the blocked request."""
     agent = f"agent:{AGENT}"
     via = " ".join(MCP_COMMAND)
     soil = {"device": DEVICE, "channel": "soil_moisture"}

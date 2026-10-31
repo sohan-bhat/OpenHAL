@@ -3,9 +3,9 @@
 Protocol (Marlin G-code reference, marlinfw.org/docs/gcode, and the RepRap G-code wiki).
 
 - The host sends one G-code per line. Each line carries a line number and an XOR checksum,
-  `N12 M104 S200*93`, so the firmware can ask for a resend after line noise (`Resend: 12`).
+  `N12 M104 S200*93`, so the firmware can request a resend after line noise (`Resend: 12`).
   `M110 N0` resets the numbering after connect.
-- The firmware answers every command with `ok` once it has finished it, in order. The driver
+- The firmware sends `ok` for every command once it has finished it, in order. The driver
   keeps a FIFO of commands in flight and resolves them as the `ok` lines arrive.
 - Long commands such as G28 send `echo:busy: processing` keepalives and hold back later
   commands. The home action returns `started` after `action_wait` if the printer is still busy,
@@ -170,7 +170,9 @@ class _Pending:
 def _validate(model: type[BaseModel], raw: dict[str, Any] | None, defaults: dict[str, Any] | None, where: str) -> Any:
     data = raw if raw is not None else defaults
     if data is None:
-        raise DriverError(f"{where} is not a Marlin channel the driver knows. Add a map, see docs/drivers/marlin.md.")
+        raise DriverError(
+            f"{where} is not a Marlin channel the driver supports. Add a map, see docs/drivers/marlin.md."
+        )
     try:
         return model.model_validate(data)
     except ValidationError as exc:
@@ -447,14 +449,14 @@ class MarlinDriver(Driver):
                     raise
                 continue
             if pending.errors:
-                raise DriverError(f"The printer rejected {pending.command} ({'; '.join(pending.errors)}).")
+                raise DriverError(f"The printer returned an error for {pending.command} ({'; '.join(pending.errors)}).")
             unknown = [line for line in lines if line.startswith("echo:Unknown command")]
             if unknown:
                 raise DriverError(f"The firmware doesn't support {pending.command} ({unknown[0]}).")
             return lines
 
     def _idle(self, pending: _Pending) -> float:
-        """Seconds since the printer last said anything, counted from when this command was sent."""
+        """Seconds since the printer last sent anything, counted from when this command was sent."""
         return time.monotonic() - max(pending.touched, self._last_rx)
 
     async def _gcode(self, command: str, *, numbered: bool = True) -> list[str]:
@@ -489,7 +491,7 @@ class MarlinDriver(Driver):
                 report = next((ln for ln in lines if "X:" in ln), "")
                 positions = dict(POSITION.findall(report.split("Count", 1)[0]))
                 if read_map.position not in positions:
-                    raise DriverError(f"M114 didn't report {read_map.position}. The printer said {lines!r}.")
+                    raise DriverError(f"M114 didn't report {read_map.position}. The printer sent {lines!r}.")
                 return Reading(channel, self._from(float(positions[read_map.position]), "mm", unit), unit)
             return await self._read_sd(channel, read_map, unit)
         if channel in self.writes:

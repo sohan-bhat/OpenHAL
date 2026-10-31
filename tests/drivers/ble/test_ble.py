@@ -185,7 +185,7 @@ async def test_short_values_and_failures_raise() -> None:
         await driver.read("t")
     peripheral.fail_reads = False
     peripheral.delay_s = 1.0
-    with pytest.raises(TimeoutError, match="didn't answer"):
+    with pytest.raises(TimeoutError, match="sent no reply"):
         await driver.read("t")
 
 

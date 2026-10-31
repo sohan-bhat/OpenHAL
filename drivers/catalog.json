@@ -16,7 +16,7 @@
       "tests": "reference driver for the conformance suite",
       "estimate": {
         "devices": "none (simulation only)",
-        "reasoning": "The mock driver never talks to hardware and runs any device file in memory for tests, demos and the website playground.",
+        "reasoning": "The mock driver never connects to hardware and runs any device file in memory for tests, demos and the website playground.",
         "sources": []
       },
       "conformance": "control"
@@ -64,7 +64,7 @@
       "tests": "native API simulator over a local TCP socket, driven by the real aioesphomeapi client",
       "estimate": {
         "devices": "every ESPHome node, hundreds of thousands of installs",
-        "reasoning": "ESPHome is the most common firmware for DIY ESP-based devices and is preinstalled on a growing set of commercial products under the Made for ESPHome program. Every node speaks the same native API, and the driver maps the common entity types without per-device code.",
+        "reasoning": "ESPHome is the most common firmware for DIY ESP-based devices and is preinstalled on a growing set of commercial products under the Made for ESPHome program. Every node uses the same native API, and the driver maps the common entity types without per-device code.",
         "sources": [
           "https://esphome.io/components/api.html",
           "https://esphome.io/guides/made_for_esphome.html",
@@ -177,7 +177,7 @@
       "tests": "httpx.MockTransport with a simulated smart plug",
       "estimate": {
         "devices": "at least tens of thousands of models",
-        "reasoning": "Any device with a documented local HTTP API can be described in a device file without new code. Shelly alone documents a local HTTP API for its whole Gen1 and Gen2 range, Tasmota exposes an HTTP command endpoint on every flashed device, and most microcontroller web server sketches speak JSON over HTTP. The count is limited only by devices that need a protocol other than HTTP or a login flow the driver does not support.",
+        "reasoning": "Any device with a documented local HTTP API can be described in a device file without new code. Shelly alone documents a local HTTP API for its whole Gen1 and Gen2 range, Tasmota exposes an HTTP command endpoint on every flashed device, and most microcontroller web server sketches serve JSON over HTTP. The count is limited only by devices that need a protocol other than HTTP or a login flow the driver does not support.",
         "sources": [
           "https://www.rfc-editor.org/rfc/rfc9110",
           "https://spec.openapis.org/oas/v3.1.0",
@@ -263,7 +263,7 @@
       "tests": "pymodbus server with a simulated fan controller, TCP and RTU framing",
       "estimate": {
         "devices": "thousands of models",
-        "reasoning": "Modbus has been the default fieldbus for meters, drives and controllers since 1979 and is an open standard maintained by the Modbus Organization. Almost every vendor of energy meters, VFDs, PID controllers and inverters publishes a Modbus register map, and any device with a published map can be described in a device file without new code. Devices that only speak a vendor extension on top of Modbus are not covered.",
+        "reasoning": "Modbus has been the default fieldbus for meters, drives and controllers since 1979 and is an open standard maintained by the Modbus Organization. Almost every vendor of energy meters, VFDs, PID controllers and inverters publishes a Modbus register map, and any device with a published map can be described in a device file without new code. Devices that only use a vendor extension on top of Modbus are not covered.",
         "sources": [
           "https://www.modbus.org/docs/Modbus_Application_Protocol_V1_1b3.pdf",
           "https://www.modbus.org/docs/Modbus_over_serial_line_V1_02.pdf",
@@ -531,7 +531,7 @@
       "tests": "Alpaca server simulator on an httpx mock transport, discovery over local UDP",
       "estimate": {
         "devices": "hundreds of models, every ASCOM device reachable through ASCOM Remote",
-        "reasoning": "Alpaca is the network form of ASCOM, the standard driver interface for astronomy gear on Windows. ASCOM Remote exposes every installed ASCOM driver over Alpaca, and a growing number of mounts, focusers and observatory controllers speak Alpaca natively on Linux and embedded boards. The count is a model estimate.",
+        "reasoning": "Alpaca is the network form of ASCOM, the standard driver interface for astronomy gear on Windows. ASCOM Remote exposes every installed ASCOM driver over Alpaca, and a growing number of mounts, focusers and observatory controllers use Alpaca natively on Linux and embedded boards. The count is a model estimate.",
         "sources": [
           "https://ascom-standards.org/api/",
           "https://ascom-standards.org/Developer/Alpaca.htm",
@@ -580,7 +580,7 @@
         "astronomy cameras"
       ],
       "hazard_default": "medium",
-      "tests": "INDI server simulator on a local TCP port, speaking the XML protocol",
+      "tests": "INDI server simulator on a local TCP port, using the XML protocol",
       "estimate": {
         "devices": "hundreds of models across the INDI driver list",
         "reasoning": "INDI is the device layer of KStars and Ekos, and indiserver ships drivers for most amateur astronomy mounts, focusers, cameras, filter wheels and domes on Linux and the Raspberry Pi. The INDI device list names several hundred supported models. The count is a model estimate.",
@@ -824,7 +824,7 @@
       "tests": "real xknx tunneling against a fake KNXnet/IP server built from xknx's frame classes, with a simulated room",
       "estimate": {
         "devices": "thousands of certified products",
-        "reasoning": "KNX is a single standard across hundreds of manufacturers, and every certified device talks in group telegrams with standard datapoint types, which this driver maps from a group address list. KNX Secure devices and device programming are not covered, and the group addresses must come from the installation's ETS project.",
+        "reasoning": "KNX is a single standard across hundreds of manufacturers, and every certified device communicates in group telegrams with standard datapoint types, which this driver maps from a group address list. KNX Secure devices and device programming are not covered, and the group addresses must come from the installation's ETS project.",
         "sources": [
           "https://www.knx.org/knx-en/for-professionals/community/manufacturers/",
           "https://xknx.io/",

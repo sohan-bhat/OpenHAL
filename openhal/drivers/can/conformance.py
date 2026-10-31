@@ -69,7 +69,7 @@ class _Case:
         deadline = time.monotonic() + 2.0
         while (await driver.health()).connected:
             if time.monotonic() > deadline:
-                raise AssertionError("the driver did not notice the bus going down")
+                raise AssertionError("the driver did not detect the bus going down")
             await asyncio.sleep(0.02)
 
     async def cleanup(self) -> None:

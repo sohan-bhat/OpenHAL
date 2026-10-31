@@ -1,6 +1,6 @@
 """The text `openhal demo --full` prints, made from a record of the whole run (openhal/demo/e2e.py).
 
-Each part names who acts. MCP tool calls and their answers are shown as a message trace, in the
+Each part names who acts. MCP tool calls and their results are shown as a message trace, in the
 style of openhal/demo/trace.py, and the rest as short indented lines.
 """
 

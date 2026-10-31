@@ -211,7 +211,7 @@ async def test_type_mismatch_is_reported_by_rosbridge(robot: RosbridgeSim) -> No
     assert driver.bridge is not None
     bridge = driver.bridge
     await eventually(lambda: asyncio.sleep(0, "/battery_state" in bridge.refused))
-    with pytest.raises(DriverError, match="refused the subscription to /battery_state"):
+    with pytest.raises(DriverError, match="returned an error for the subscription to /battery_state"):
         await driver.read("battery")
     assert "already has type" in (await driver.health()).detail
     await bench.close()
@@ -227,7 +227,7 @@ async def test_missing_field_and_wrong_value_types(robot: RosbridgeSim) -> None:
     await eventually(lambda: _arrived(driver, "/battery_state"))
     with pytest.raises(DriverError, match=r"has no field cell_voltage\.7"):
         await driver.read("cell_1")
-    with pytest.raises(DriverError, match="expected a finite number"):
+    with pytest.raises(DriverError, match="not a finite number"):
         await driver.read("mode_bad")
     await bench.close()
 
@@ -263,7 +263,7 @@ async def test_silent_rosbridge_times_out(robot: RosbridgeSim) -> None:
     _driver, bench = make(robot)
     await bench.connect()
     robot.silent = True
-    assert_failed(await bench.act("reset_odometry"), "didn't answer")
+    assert_failed(await bench.act("reset_odometry"), "sent no reply")
     robot.silent = False
     await bench.close()
 

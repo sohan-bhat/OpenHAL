@@ -148,7 +148,7 @@ class RpiCameraDriver(Driver):
 
     @classmethod
     async def discover(cls, *, picamera2_class: Any = None) -> list[Discovered]:
-        """List attached camera modules. This asks libcamera what is attached and opens nothing."""
+        """List attached camera modules. This queries libcamera for attached modules and opens nothing."""
         try:
             camera_class = picamera2_class or _picamera2_class()
         except DriverError:
@@ -272,7 +272,7 @@ class RpiCameraDriver(Driver):
         try:
             return await asyncio.wait_for(asyncio.to_thread(self._read_metadata), self.settings.timeout)
         except TimeoutError:
-            self._failed = "stopped answering"
+            self._failed = "stopped sending frames"
             raise TimeoutError(f"Camera {self.number} gave no frame within {self.settings.timeout:g} s.") from None
 
     async def read(self, channel: str) -> Reading:
@@ -285,7 +285,7 @@ class RpiCameraDriver(Driver):
             try:
                 data = await asyncio.wait_for(asyncio.to_thread(self._jpeg), self.settings.timeout)
             except TimeoutError:
-                self._failed = "stopped answering"
+                self._failed = "stopped sending frames"
                 raise TimeoutError(f"Camera {self.number} gave no frame within {self.settings.timeout:g} s.") from None
             return Reading(channel, data, at=time.time())
         field = self.metadata[channel]

@@ -2,7 +2,7 @@
 
 The server pushes definitions and updates on its own. A reader task feeds them into the cache,
 and callers wait for conditions on the cache, such as a property being defined or leaving the
-Busy state. Nothing here knows about device files.
+Busy state. Nothing here depends on device files.
 """
 
 from __future__ import annotations

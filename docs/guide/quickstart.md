@@ -49,7 +49,7 @@ The hub listens on `127.0.0.1:7420` only.
 
 ```sh tested
 $ uv run openhal action plant-waterer.water duration=120s
-blocked above_max  Blocked. The duration limit is 30 s (max). Asked for 120 s.
+blocked above_max  Blocked. The duration limit is 30 s (max). Requested 120 s.
 $ uv run openhal action plant-waterer.water duration=20s
 done  Done. water ran.
 ```

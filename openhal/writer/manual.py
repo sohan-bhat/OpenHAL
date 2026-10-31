@@ -1,11 +1,11 @@
 """Command lists from a device manual (driver writer, step 5).
 
-The text comes from the user, usually pasted from a PDF or a web page. The parser looks for lines
+The text comes from the user, usually pasted from a PDF or a web page. The parser searches for lines
 that start with a command, in the shapes manuals use: SCPI (`VOLTage <value>`, `MEAS:CURR?`,
 `*IDN?`), G-code (`M104 S<temp>`) and plain uppercase words with an argument (`FAN <0-255>`).
 
 Every extracted command is unconfirmed. The hub never sends one during detection, because a
-command it hasn't been told is read-only might change something. Commands whose description
+command that isn't marked read-only might change something. Commands whose description
 mentions resets, erasing, firmware or power are flagged so the interview and the test plan
 treat them with care.
 """
@@ -100,7 +100,7 @@ def _name(command: str) -> str:
 
 def draft_sections(commands: list[ManualCommand]) -> dict[str, Any]:
     """Draft read and write channels from queries and set commands. Units and limits are left to the
-    person, so the interview asks for every one. Actions are listed in notes, never as channels."""
+    person, so the interview has a question for every one. Actions are listed in notes, never as channels."""
     read: dict[str, Any] = {}
     write: dict[str, Any] = {}
     listed: list[str] = []

@@ -7,11 +7,11 @@ paraphrased, not copied, because GRBL itself is GPL-3.0.
 Message shapes the controller sends.
 
     ok                                       a line command finished parsing
-    error:N                                  a line command was refused
+    error:N                                  a line command failed
     ALARM:N                                  the controller entered the alarm state
-    <Idle|MPos:0.000,0.000,0.000|FS:0,0>     a status report, the answer to the `?` byte
+    <Idle|MPos:0.000,0.000,0.000|FS:0,0>     a status report, the reply to the `?` byte
     [MSG:...] [GC:...] [VER:...] [G54:...]   feedback in square brackets
-    $N=value                                 one setting, part of the `$$` answer
+    $N=value                                 one setting, part of the `$$` reply
     Grbl 1.1h ['$' for help]                 the banner after a power-up or soft reset
 """
 
@@ -106,11 +106,11 @@ SETTING_UNITS: Final[dict[int, str]] = {
 
 
 def error_text(code: int) -> str:
-    return ERRORS.get(code, "an error code this driver does not know")
+    return ERRORS.get(code, "an error code this driver does not list")
 
 
 def alarm_text(code: int) -> str:
-    return ALARMS.get(code, "an alarm code this driver does not know")
+    return ALARMS.get(code, "an alarm code this driver does not list")
 
 
 @dataclass(frozen=True, slots=True)

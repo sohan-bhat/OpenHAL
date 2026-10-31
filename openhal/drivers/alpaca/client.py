@@ -46,7 +46,7 @@ ERROR_NAMES: Final[dict[int, str]] = {
 
 
 class AlpacaError(DriverError):
-    """The device answered with a non-zero ASCOM ErrorNumber."""
+    """The device returned a non-zero ASCOM ErrorNumber."""
 
     def __init__(self, message: str, number: int) -> None:
         super().__init__(message)
@@ -84,14 +84,16 @@ class AlpacaClient:
             request = self._http.get(path, params=fields) if method == "GET" else self._http.put(path, data=fields)
             response = await asyncio.wait_for(request, self.timeout)
         except (httpx.TimeoutException, TimeoutError):
-            raise TimeoutError(f"The Alpaca server didn't answer {method} {path} within {self.timeout:g} s.") from None
+            raise TimeoutError(
+                f"The Alpaca server sent no reply to {method} {path} within {self.timeout:g} s."
+            ) from None
         except httpx.HTTPError as exc:
             raise DriverError(
                 f"Could not reach the Alpaca server at {self.base_url} ({exc}). Check that it is running and reachable."
             ) from exc
         if response.status_code == 400:
             raise DriverError(
-                f"The Alpaca server refused {method} {path} as malformed ({response.text.strip()[:200]})."
+                f"The Alpaca server returned HTTP 400 for {method} {path} ({response.text.strip()[:200]})."
             )
         if response.status_code == 404:
             raise DriverError(f"The Alpaca server has no {path}. Check the device type and number.")
@@ -109,7 +111,7 @@ class AlpacaClient:
         if number != 0:
             message = str(body.get("ErrorMessage", ""))[:300]
             raise AlpacaError(
-                f"The device refused {path.rsplit('/', 1)[-1]} with ASCOM error 0x{number:X} "
+                f"The device returned ASCOM error 0x{number:X} for {path.rsplit('/', 1)[-1]} "
                 f"({error_name(number)}{', ' + message if message else ''}).",
                 number,
             )

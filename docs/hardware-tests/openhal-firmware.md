@@ -108,7 +108,7 @@ Expected. `done  Done. brightness is now 10 %.`, the LED glows dimly, and the re
 uv run openhal write openhal-led-strip.brightness "80 %"
 ```
 
-Expected. `blocked above_max  Blocked. The brightness limit is 60 % (max). Asked for 80 %.` The LED doesn't change.
+Expected. `blocked above_max  Blocked. The brightness limit is 60 % (max). Requested 80 %.` The LED doesn't change.
 
 ### 9. Stop
 

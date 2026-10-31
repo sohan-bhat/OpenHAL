@@ -146,7 +146,7 @@
   <section class="section" aria-labelledby="pending-title">
     <h2 id="pending-title">Pending <span class="muted mono">{pending.length}</span></h2>
     {#if !pending.length}
-      <p class="empty">Nothing waits for a person. A command with confirmation tier <code>confirm</code> appears here.</p>
+      <p class="empty">No command is held for a person. A command with confirmation tier <code>confirm</code> appears here.</p>
     {:else}
       <ol class="requests">
         {#each pending as request (request.id)}
@@ -159,11 +159,11 @@
           <li class="request appear" class:with-camera={cameras.length > 0} aria-labelledby="req-{request.id}">
             <div class="asked agent-rule">
               <h3 id="req-{request.id}" class="ask">
-                {ask.actor} <span class="mono nobreak">{ask.name}</span> asks to {ask.verb} <span class="mono nobreak">{ask.target}</span>{#if ask.value}{ask.verb === "set" ? " to " : " with "}<span class="mono nobreak">{ask.value}</span>{/if} on {ask.device}.
+                {ask.actor} <span class="mono nobreak">{ask.name}</span> sends a request to {ask.verb} <span class="mono nobreak">{ask.target}</span>{#if ask.value}{ask.verb === "set" ? " to " : " with "}<span class="mono nobreak">{ask.value}</span>{/if} on {ask.device}.
               </h3>
               <p class="who">
                 <span class="mono muted nobreak">{request.requested_by}</span>
-                <span class="muted">asked {asked(request)}</span>
+                <span class="muted">requested {asked(request)}</span>
                 <span class="mono muted">request <span class="nobreak">{request.id}</span></span>
               </p>
               <p class="trace">
@@ -179,7 +179,7 @@
                   <div><dt class="label">limit</dt><dd class="mono">{ask.limit}</dd></div>
                 {/if}
                 <div>
-                  <dt class="label">why the request waits</dt>
+                  <dt class="label">why the request is held</dt>
                   <dd><Reason text={ask.why} code={[ask.file ?? "", ask.target].filter(Boolean)} /></dd>
                 </div>
                 {#if dry.tone !== "pending"}
@@ -234,7 +234,7 @@
                   </CameraFrame>
                 {:else}
                   {@render picker()}
-                  <p class="muted small" id="pick-{request.id}">Pick the camera that watches {ask.device}. This browser keeps the choice.</p>
+                  <p class="muted small" id="pick-{request.id}">Pick the camera pointed at {ask.device}. This browser keeps the choice.</p>
                 {/if}
               </div>
             {/if}

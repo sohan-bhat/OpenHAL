@@ -6,12 +6,12 @@ Elwood Downey, and the INDI standard properties page (indilib.org).
 - The stream is a sequence of top-level XML elements with no document root. The parser wraps
   it in a root of its own and hands out each top-level element when it closes.
 - Servers define properties with def*Vector, update them with set*Vector, remove them with
-  delProperty and talk with message. Clients ask with getProperties and change values with
-  new*Vector, which carries only the members being changed.
+  delProperty and send text with message. Clients request properties with getProperties and
+  change values with new*Vector, which carries only the members being changed.
 - Vectors have a state (Idle, Ok, Busy, Alert) and a permission (ro, wo, rw). Numbers may be
   written in decimal or in sexagesimal (`12:30:15.5` or `12 30 15.5`).
 
-Document type declarations and entities are refused outright, since INDI never uses them and
+Document type declarations and entities fail the parse outright, since INDI never uses them and
 they are how XML parsers get attacked. Element text is capped, and BLOBs are never requested.
 """
 

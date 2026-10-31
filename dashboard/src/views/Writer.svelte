@@ -92,7 +92,7 @@
         planError = null;
       } catch (failure) {
         plan = null;
-        planError = failure instanceof Error ? failure.message : "The hub did not answer.";
+        planError = failure instanceof Error ? failure.message : "The hub sent no response.";
       }
     }
   }
@@ -103,7 +103,7 @@
     try {
       await work();
     } catch (failure) {
-      error = failure instanceof Error ? failure.message : "The hub refused.";
+      error = failure instanceof Error ? failure.message : "The hub blocked the request.";
     }
     busy = false;
   }
@@ -206,8 +206,8 @@
   <header class="section">
     <h1>Driver writer</h1>
     <p class="muted">
-      Turns an unknown device into a Device File. A draft suggests limits, and your answers in the limits interview
-      confirm the limits.
+      Turns an unknown device into a Device File. A draft holds suggested limits, and your answers in the limits
+      interview confirm the limits.
     </p>
   </header>
 
@@ -273,7 +273,7 @@
       {#each session.problems as problem, index (index)}<p class="problem">{problem}</p>{/each}
       {#if session.sources.length}
         <details>
-          <summary>Everything the device and its sources said</summary>
+          <summary>Everything the device and its sources reported</summary>
           {#each session.sources as source, index (index)}
             {@const block = dataBlock(source)}
             {#if block}

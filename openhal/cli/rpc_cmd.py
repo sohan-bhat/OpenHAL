@@ -44,7 +44,7 @@ def register(app: typer.Typer) -> None:
     def rpc(
         token_file: Path = typer.Option(None, "--token-file", help="A file holding the token to send."),  # noqa: B008
     ) -> None:
-        """Speak the hub protocol on stdio, one JSON-RPC message per line."""
+        """Serve the hub protocol on stdio, one JSON-RPC message per line."""
         from openhal.client.settings import TOKEN_ENV, read_token_file, resolve_url
         from openhal.protocol.stdio import rpc_url
 

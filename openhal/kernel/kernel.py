@@ -71,7 +71,7 @@ class Shadow:
     """Values a dry run has already 'written', so a plan's later steps see earlier ones.
 
     `now` is simulated seconds since the dry run started. A routine's wait steps advance it, so
-    rate limits are judged as they would be in a real run.
+    rate limits are checked as they would be in a real run.
     """
 
     values: dict[tuple[str, str], Any] = field(default_factory=dict)
@@ -108,7 +108,7 @@ _UNKNOWN: Final = _Unknown()
 
 
 class Kernel:
-    """The one place that decides whether a command may reach hardware."""
+    """The one place that checks whether a command may reach hardware."""
 
     def __init__(
         self,
@@ -268,7 +268,7 @@ class Kernel:
             self.note_reading(device_id, reading)
 
     async def connection_lost(self, device_id: str, detail: str) -> None:
-        """Called by the hub's heartbeat when a device stops answering."""
+        """Called by the hub's heartbeat when the connection to a device is lost."""
         runtime = self._runtime(device_id)
         runtime.connected = False
         self.grants.revoke_all(device_id)
@@ -282,7 +282,7 @@ class Kernel:
         """Record a value read from a device, converted into the channel's unit (review finding F20).
 
         A reading of None means the device can't report this channel, such as a CAN or KNX output
-        with no read-back. It adds nothing, so what the kernel already knows stands. A failed
+        with no read-back. Such a reading adds nothing, so the values the kernel holds stay. A failed
         command still marks its channels unknown.
         """
         runtime = self.devices.get(device_id)
@@ -311,7 +311,7 @@ class Kernel:
                     target=f"read:{reading.channel}",
                     status="failed",
                     code="bad_unit",
-                    detail=f"reported {reading.unit}, the file says {unit}",
+                    detail=f"reported {reading.unit}, the file sets {unit}",
                 )
                 return
         if isinstance(value, float) and not math.isfinite(value):
@@ -377,7 +377,7 @@ class Kernel:
     def evaluate(
         self, command: Command, principal: Principal, *, shadow: Shadow | None = None, wire: bool = False
     ) -> Decision:
-        """Decide a command without side effects, as a dry run. Never raises. Fails closed.
+        """Evaluate a command without side effects, as a dry run. Never raises. Fails closed.
 
         `wire` marks a command from a protocol message, REST body or MCP tool. Its numbers must travel
         with a separate unit, never as one string (ADR 0016).
@@ -553,13 +553,12 @@ class Kernel:
         if principal.kind == "routine":
             raise Block(
                 "needs_confirmation",
-                f"Blocked. {command.target} on {command.device} needs a human to confirm, "
-                "and routines can't wait for one.",
+                f"Blocked. {command.target} on {command.device} needs a human to confirm, so a routine can't run it.",
             )
         return Decision(
             status="needs_confirmation",
             code="needs_confirmation",
-            message=f"Waiting for a human to approve {command.target} on {command.device}.",
+            message=f"Held until a human approves {command.target} on {command.device}.",
             **decision_kwargs,
         )
 
@@ -845,7 +844,7 @@ class Kernel:
                         update={
                             "status": "failed",
                             "code": "driver_error",
-                            "message": "Cancelled before the device answered.",
+                            "message": "Cancelled before the device returned a result.",
                         }
                     ),
                     before=before,
@@ -1058,13 +1057,13 @@ class Kernel:
     def tighten(
         self, principal: Principal, device_id: str, channel: str, *, min: Any = None, max: Any = None, rate: Any = None
     ) -> dict[str, float]:
-        """Narrow a channel's limits for this principal's session. Widening is refused. Refusals are logged."""
+        """Narrow a channel's limits for this principal's session. Widening is blocked, and each block is logged."""
         target = f"write:{channel}"
         try:
             runtime = self._runtime(device_id)
             spec = runtime.file.write.get(channel)
             if spec is None or spec.type != "number" or spec.unit is None:
-                raise Block("unknown_target", f"Refused. {device_id} has no numeric write channel {channel!r}.")
+                raise Block("unknown_target", f"Blocked. {device_id} has no numeric write channel {channel!r}.")
             key = (principal.label, device_id, channel)
             current = effective_limits(spec, self._session_limits.get(key))
             updated = dict(self._session_limits.get(key, {}))
@@ -1074,7 +1073,7 @@ class Kernel:
                     if low < current.min:
                         raise Block(
                             "cannot_loosen",
-                            f"Refused. {channel} min is already {format_quantity(current.min, spec.unit)}. "
+                            f"Blocked. {channel} min is already {format_quantity(current.min, spec.unit)}. "
                             "Session limits can only be tightened.",
                         )
                     updated["min"] = low
@@ -1083,7 +1082,7 @@ class Kernel:
                     if high > current.max:
                         raise Block(
                             "cannot_loosen",
-                            f"Refused. {channel} max is already {format_quantity(current.max, spec.unit)}. "
+                            f"Blocked. {channel} max is already {format_quantity(current.max, spec.unit)}. "
                             "Session limits can only be tightened.",
                         )
                     updated["max"] = high
@@ -1092,15 +1091,15 @@ class Kernel:
                     if current.rate is not None and value > current.rate:
                         raise Block(
                             "cannot_loosen",
-                            f"Refused. {channel} may already change by at most "
+                            f"Blocked. {channel} may already change by at most "
                             f"{format_quantity(current.rate, spec.unit)} per second. "
                             "Session limits can only be tightened.",
                         )
                     updated["rate"] = value
             except UnitError as exc:
-                raise Block("bad_unit", f"Refused. {exc}") from exc
+                raise Block("bad_unit", f"Blocked. {exc}") from exc
             if updated.get("min", -math.inf) > updated.get("max", math.inf):
-                raise Block("cannot_loosen", "Refused. min would be above max.")
+                raise Block("cannot_loosen", "Blocked. min would be above max.")
         except Block as block:
             self.audit.append(
                 "tighten",

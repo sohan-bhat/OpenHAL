@@ -2,7 +2,7 @@
 
 A transport opens a session with `Dispatcher.open`, passes every received text to `receive`, and
 sends whatever `next` yields until `closed` is set. Responses are never dropped. A client that falls
-1,000 messages behind loses new notifications until it catches up, and `dropped` counts them.
+1,000 messages behind loses new notifications until its queue drains, and `dropped` counts them.
 """
 
 from __future__ import annotations
@@ -78,11 +78,11 @@ class Session:
             self._loop.call_soon_threadsafe(self.notify, message)
 
     async def next(self) -> dict[str, Any]:
-        """The next message to send, waiting until there is one."""
+        """The next message to send, blocking until there is one."""
         return await self._queue.get()
 
     def pending(self) -> list[dict[str, Any]]:
-        """Every queued message, without waiting."""
+        """Every queued message, without blocking."""
         items = []
         while not self._queue.empty():
             items.append(self._queue.get_nowait())
@@ -91,7 +91,7 @@ class Session:
     async def receive(self, text: str | bytes) -> None:
         """Handle one received frame or line.
 
-        `hal/initialize` is answered before the next frame is read, so a client may pipeline requests
+        `hal/initialize` gets its response before the next frame is read, so a client may pipeline requests
         after it. Other requests run concurrently, and their responses may arrive in any order.
         """
         message = self.dispatcher.parse(self, text)
@@ -111,7 +111,7 @@ class Session:
             self.send(response)
 
     async def drain(self) -> None:
-        """Wait for requests that are still running."""
+        """Await the requests that are still running."""
         if self._tasks:
             await asyncio.gather(*self._tasks, return_exceptions=True)
 

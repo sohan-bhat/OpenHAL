@@ -1,8 +1,8 @@
 """MCP client setup for Claude Desktop, Claude Code and Cursor (docs/interfaces/MCP.md).
 
 `openhal init` prints the setup for every client. It writes a client's config file only when the
-person asks, backs the file up first, keeps every other entry in it and refuses a file that isn't
-valid JSON. The client starts `openhal mcp` with a token file, so no token goes into its config.
+person asks, backs the file up first, keeps every other entry in it and leaves a file that isn't
+valid JSON as it is. The client starts `openhal mcp` with a token file, so no token goes into its config.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ CLIENT_KEYS: Final = ("claude-desktop", "claude-code", "cursor")
 
 
 class ClientConfigError(ValueError):
-    """A client config file can't be changed safely. The message says why."""
+    """A client config file can't be changed safely. The message gives the reason."""
 
 
 @dataclass(frozen=True, slots=True)

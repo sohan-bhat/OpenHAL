@@ -7,7 +7,7 @@
         decision = hub.write("printer", "bed_target", 70, "degC")
         print(decision.status, decision.message)
 
-The client makes no safety decisions. The hub's kernel decides every command, and a blocked
+The client makes no safety decisions. The hub's kernel checks every command, and a blocked
 command comes back as a `Decision`, not an exception. See docs/interfaces/PYTHON.md.
 """
 

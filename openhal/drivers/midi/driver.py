@@ -8,15 +8,15 @@ to 15 on the wire.
 
 Behavior worth knowing.
 
-- MIDI is push only and has no way to ask a controller for the position of a knob. A read
+- MIDI is push only and has no way to request the position of a knob from a controller. A read
   returns the newest value received since connecting, timestamped when it arrived, or None
   (unknown) until the control is moved.
 - Write channels report the last value the driver sent, or None before the first write,
   because controllers don't report LED or parameter state.
 - Values in `percent` map 0 to 100 onto 0 to 127 (pitch bend onto -8192 to 8191), rounded to the
   nearest step. Values in `dimensionless` are the raw MIDI numbers.
-- Note On with velocity 0 counts as Note Off, as the specification says.
-- Health checks that the ports are still listed by the MIDI system, which catches unplugged
+- Note On with velocity 0 counts as Note Off, as the specification defines.
+- Health checks that the ports are still listed by the MIDI system, which detects unplugged
   USB devices.
 - MIDI has no emergency behavior. The device file's safe state is sent like any other message.
 """
@@ -156,7 +156,7 @@ class MidiDriver(Driver):
 
     @classmethod
     async def discover(cls, *, backend: Any = None) -> list[Discovered]:
-        """List the MIDI ports the system knows. Listing never opens a port."""
+        """List the MIDI ports the system has. Listing never opens a port."""
         midi = backend or _default_backend(None)
         inputs = set(await asyncio.to_thread(midi.get_input_names))
         outputs = set(await asyncio.to_thread(midi.get_output_names))
@@ -379,7 +379,7 @@ class MidiDriver(Driver):
             "match": {"usb_class": "midi"},
             "notes": (
                 f"Proposed from {len(seen)} controls that sent messages while the driver listened. "
-                "Rename them after what they are on the device. Outputs such as pad LEDs can't be seen by "
+                "Rename them after what they are on the device. Outputs such as pad LEDs can't be detected by "
                 "listening, so add write channels from the device's MIDI implementation chart."
             ),
         }

@@ -1,7 +1,7 @@
 """The MCP tool list and input schemas. A frozen contract after M2 (ADR 0013).
 
 Every tool forwards to the hub's local API with the agent's token. No tool makes a safety decision.
-The kernel decides, and its answer (status, code, message, limit, unit) is returned as is. Text
+The kernel checks every command, and its result (status, code, message, limit, unit) is returned as is. Text
 that came from a device is returned inside `<device-data>` blocks and is data, not instructions.
 
 Each public coroutine on `Tools` is one MCP tool. Its name is the method name (see `TOOL_NAMES`),
@@ -100,7 +100,7 @@ class PlanBlock(BaseModel):
 class PlanCheck(BaseModel):
     all_allowed: bool = Field(description="True when every step would run right now without a human.")
     blocked: list[PlanBlock] = Field(description="Steps the kernel would block, with the reason.")
-    needs_confirmation: list[int] = Field(description="Steps that would wait for a human to approve.")
+    needs_confirmation: list[int] = Field(description="Steps the hub would hold until a human approves.")
     decisions: list[Decision] = Field(description="The kernel's decision for every step, in order.")
 
 
@@ -122,12 +122,12 @@ CONTROL: Final = ToolAnnotations(read_only_hint=False, destructive_hint=True, op
 DRAFT: Final = ToolAnnotations(read_only_hint=False, destructive_hint=False, open_world_hint=False)
 
 HUMAN_PRINCIPAL_REFUSED: Final = (
-    "This MCP server was given a human token. Agents must use an agent token, so the hub can tell an agent "
-    "from a person. Create an agent token with openhal token create --agent --scope control_low --name <client>, "
+    "This MCP server was given a human token. Agents must use an agent token, so the hub can distinguish an "
+    "agent from a person. Create an agent token with openhal token create --agent --scope control_low --name <client>, "
     "then set OPENHAL_TOKEN to the new token in the MCP client config."
 )
 CONFIRMATION_NOTE: Final = (
-    "pending means the request waits for a person, who approves the request with the human token in the "
+    "pending means the hub holds the request until a person approves the request with the human token in the "
     "dashboard or with openhal confirm approve <id>. done and failed carry the kernel's result. rejected, "
     "expired and cancelled mean the command did not run."
 )
@@ -189,7 +189,7 @@ def with_image(reading: m.Reading) -> m.Reading | CallToolResult:
 
 
 def image_tool(read: Callable[..., Awaitable[m.Reading]]) -> Callable[..., Awaitable[m.Reading | CallToolResult]]:
-    """The read tool as MCP clients see it. Same name, description and schema, with images as image blocks."""
+    """The read tool as MCP clients receive it. Same name, description and schema, with images as image blocks."""
 
     @functools.wraps(read)
     async def tool(*args: Any, **kwargs: Any) -> m.Reading | CallToolResult:
@@ -229,13 +229,13 @@ class Tools:
 
     async def hub_status(self) -> m.HubStatus:
         """Show the hub's state. stopped is true after stop_all until a person unlocks, and every write is
-        blocked meanwhile. The status also shows how many devices are connected and how many requests wait
-        for a person."""
+        blocked meanwhile. The status also shows how many devices are connected and how many requests are
+        held for a person."""
         return await self._run(lambda hub: hub.status())
 
     async def list_devices(self) -> list[m.DeviceSummary]:
-        """List every device the hub knows, with id, hazard class (low, medium, high), whether it is writable
-        and connected. Start here, then call describe_device before reading or writing."""
+        """List every device registered with the hub, with id, hazard class (low, medium, high), whether it is
+        writable and connected. Start here, then call describe_device before reading or writing."""
         devices = await self._run(lambda hub: hub.devices())
         return [_wrap_summary(device) for device in devices]
 
@@ -275,7 +275,7 @@ class Tools:
         return [_without_pixels(_wrap_reading(reading)) for reading in readings]
 
     async def write(self, device: DeviceId, channel: ChannelName, value: CommandValue, unit: Unit = None) -> Decision:
-        """Ask the hub to set one write channel. The safety kernel checks units, range, step, rate of change,
+        """Send the hub a request to set one write channel. The safety kernel checks units, range, step, rate of change,
         interlocks, watchdog budgets, your token's scope and the hazard class. status is done when the write ran,
         blocked with a code and message when the write did not run (do not retry around a limit, tell the person), or
         pending with a request_id when a person must approve. A blocked decision carries error, with the registry
@@ -284,8 +284,8 @@ class Tools:
         return await self.errors.decision(decision, {"kind": "write", "value": value, "unit": unit}, self.label)
 
     async def action(self, device: DeviceId, action: ActionName, args: ActionArgs | None = None) -> Decision:
-        """Ask the hub to run one action, such as home or pulse, with typed arguments. The hub checks and
-        answers an action exactly like a write, including blocked and pending."""
+        """Send the hub a request to run one action, such as home or pulse, with typed arguments. The hub checks
+        an action and returns a result exactly like a write, including blocked and pending."""
         body = arguments(args)
         decision = await self._run(lambda hub: hub.action(device, action, body))
         return await self.errors.decision(decision, {"kind": "action", "args": body}, self.label)
@@ -314,7 +314,7 @@ class Tools:
     ) -> PlanCheck:
         """Check a whole plan before running any of it. Each step is evaluated in order as if the earlier
         steps had run, without touching any device. Returns which steps would be blocked and why, and which
-        would wait for a person. Fix or drop blocked steps before sending anything."""
+        the hub would hold for a person. Fix or drop blocked steps before sending anything."""
         commands = [step.command() for step in steps]
         raw = await self._run(lambda hub: hub.dry_run(commands))
         decisions = [
@@ -342,7 +342,7 @@ class Tools:
     ) -> m.StopReport:
         """Emergency stop. Puts every device in its safe state, cancels pending confirmations, pauses routines
         and blocks all writes until a person unlocks the hub with the human token. Call stop_all whenever
-        something looks unsafe. The report says per device whether the device reached its safe state."""
+        something looks unsafe. The report shows per device whether the device reached its safe state."""
         return await self._run(lambda hub: hub.stop(reason))
 
     async def tighten_limits(
@@ -361,7 +361,7 @@ class Tools:
     ) -> m.TightenResult:
         """Narrow a channel's limits for your own session, for example to stay well under the device max.
         A tightened limit stays inside the device file's limit, and a request that would widen a limit is
-        refused with code cannot_loosen."""
+        blocked with code cannot_loosen."""
         low, high, speed = (Quantity.model_validate(item).model_dump() if item else None for item in (min, max, rate))
         return await self._run(lambda hub: hub.tighten(device, channel, min=low, max=high, rate=speed))
 
@@ -371,7 +371,7 @@ class Tools:
             str | None, Field(description="A request_id from a pending decision. Leave out to list all yours.")
         ] = None,
     ) -> ConfirmationStatus:
-        """Check requests that waited for a person. Shows pending, done, rejected, expired or cancelled, and the
+        """Check requests held for a person. Shows pending, done, rejected, expired or cancelled, and the
         result once a person approved. Poll this after a pending decision instead of sending the command again."""
         if request_id:
             request = await self._run(lambda hub: hub.confirmation(request_id))
@@ -399,8 +399,9 @@ class Tools:
         return await self._run(lambda hub: hub.create_routine(routine_id, source, kind=kind))
 
     async def enable_routine(self, routine_id: Annotated[str, Field(description="Routine id.")]) -> m.Routine:
-        """Ask the hub to enable a routine. The hub refuses unless the owner turned on agent enabling for low
-        hazard YAML routines (routines.agent_enable_low_hazard) and every device the routine touches is low hazard.
+        """Send the hub a request to enable a routine. The hub blocks the request unless the owner turned on agent
+        enabling for low hazard YAML routines (routines.agent_enable_low_hazard) and every device the routine
+        touches is low hazard.
         Otherwise tell the person to run openhal routine enable <id> after reading the dry run."""
         return await self._run(lambda hub: hub.enable_routine(routine_id))
 
@@ -421,19 +422,21 @@ class Tools:
         limit: Annotated[int, Field(description="Most entries to return.", ge=1, le=500)] = 50,
     ) -> list[m.AuditEntry]:
         """Read the hub's audit log, newest first. Every read request, write attempt, block, confirmation, stop
-        and unlock is recorded with who asked, the status and the block code."""
+        and unlock is recorded with who sent the request, the status and the block code."""
         return await self._run(lambda hub: hub.audit(device=device, status=status, event=event, limit=limit))
 
     async def list_drivers(self) -> list[m.DriverInfo]:
         """List the protocol drivers and bridges this hub has, whether each driver is installed, and the
-        protocols each driver speaks. A driver that is not installed says which package to install."""
+        protocols each driver supports. For a driver that is not installed, the entry names the package to install."""
         return await self._run(lambda hub: hub.drivers())
 
     async def discover_devices(
         self,
-        drivers: Annotated[list[str] | None, Field(description="Only try these drivers. Leave out for all.")] = None,
+        drivers: Annotated[
+            list[str] | None, Field(description="Only probe with these drivers. Leave out for all.")
+        ] = None,
     ) -> m.DiscoveryResult:
-        """Look for devices on USB, the network and other buses. Probing uses only read-only identify commands.
+        """Search for devices on USB, the network and other buses. Probing uses only read-only identify commands.
         Returns devices that match a library file, unknown devices and per-driver errors."""
         return await self._run(lambda hub: hub.discover(drivers))
 
@@ -445,15 +448,15 @@ class Tools:
         self,
         unknown_id: Annotated[str | None, Field(description="An id from list_unknown_devices.")] = None,
         driver: Annotated[
-            str | None, Field(description="A driver to talk to the device with, from list_drivers.")
+            str | None, Field(description="A driver to connect to the device with, from list_drivers.")
         ] = None,
         params: Annotated[dict[str, Any] | None, Field(description="Driver connection parameters.")] = None,
         sketch_path: Annotated[str | None, Field(description="Path to the device's Arduino sketch, if any.")] = None,
         manual_text: Annotated[str | None, Field(description="Command reference text from the manual.")] = None,
     ) -> m.WriterSession:
-        """Start a driver writer session for a device OpenHAL doesn't know. The hub learns what the device
-        reports to read-only commands and parses any sketch. Source text comes back in device-data blocks. Then draft a
-        device file and send it with propose_device_file."""
+        """Start a driver writer session for a device OpenHAL doesn't support yet. The hub records what the
+        device reports to read-only commands and parses any sketch. Source text comes back in device-data blocks.
+        Then draft a device file and send it with propose_device_file."""
         return await self._run(
             lambda hub: hub.start_writer(
                 unknown_id=unknown_id, driver=driver, params=params, sketch_path=sketch_path, manual_text=manual_text

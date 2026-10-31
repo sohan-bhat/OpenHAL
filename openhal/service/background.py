@@ -1,9 +1,9 @@
 """The hub as a background service. A launchd agent on macOS and a systemd user unit on Linux.
 
 The service runs `python -m openhal.hub.daemon` with the Python that installed it and the same
-config folder, so it starts the hub the CLI talks to. It runs as the person, never as root, and the
-hub keeps its own rule of listening on loopback only. Every command and file change goes through a
-`Runner`, so `--dry-run` and tests change nothing.
+config folder, so the service starts the hub the CLI connects to. The service runs as the person,
+never as root, and the hub keeps its own rule of listening on loopback only. Every command and file
+change goes through a `Runner`, so `--dry-run` and tests change nothing.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ LOG_NAME: Final = f"{DAEMON_NAME}.log"
 
 
 class ServiceError(RuntimeError):
-    """The service can't be set up here. The message says what to do instead."""
+    """The service can't be set up here. The message gives the next step."""
 
 
 def this_platform() -> Platform:

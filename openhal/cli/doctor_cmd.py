@@ -1,4 +1,4 @@
-"""`openhal doctor`, which checks the setup and says how to fix each problem."""
+"""`openhal doctor`, which checks the setup and shows how to fix each problem."""
 
 from __future__ import annotations
 
@@ -76,7 +76,7 @@ def _hub() -> list[Check]:
     except HubNotRunning as exc:
         return [*checks, Check("hub", "fail", str(exc))]
     except Unauthorized as exc:
-        return [*checks, Check("hub", "ok", "the hub answers"), Check("token", "fail", str(exc))]
+        return [*checks, Check("hub", "ok", "the hub is reachable"), Check("token", "fail", str(exc))]
     except OpenHALError as exc:
         return [*checks, Check("hub", "fail", str(exc))]
     checks.append(Check("hub", "ok", f"{status.product} {status.version} at {url}"))

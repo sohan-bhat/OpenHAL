@@ -1,9 +1,9 @@
 """Staged write tests (driver writer, step 8).
 
-The plan reads every channel first, then tries each write channel once at the smallest change from
+The plan reads every channel first, then tests each write channel once at the smallest change from
 its safe value, then returns it to safe, then tests the stop. Every write step needs a person's
 approval and nothing here runs it. `validate` replays the write steps through a real kernel with
-the mock driver and the confirmed draft, so a plan that the kernel would block is caught now
+the mock driver and the confirmed draft, so a plan that the kernel would block is detected now
 instead of on the bench.
 """
 
@@ -100,7 +100,7 @@ def build(file: DeviceFile) -> list[TestStep]:
                 True,
             )
     if file.write:
-        add("openhal stop", "Every channel goes to its safe value and the stop result says safe.", True)
+        add("openhal stop", "Every channel goes to its safe value and the stop result shows safe.", True)
         add("openhal unlock", "Writes are allowed again after you type unlock.", True)
     return steps
 

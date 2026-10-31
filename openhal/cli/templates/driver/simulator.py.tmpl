@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Simulator:
-    """Channel values, a connection flag and a switch that makes the device stop answering."""
+    """Channel values, a connection flag and a switch that stops the device's replies."""
 
     values: dict[str, float | bool | str] = field(default_factory=dict)
     connected: bool = False

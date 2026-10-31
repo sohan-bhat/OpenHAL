@@ -74,7 +74,7 @@ class EmbeddedHub:
                 if httpx.get(f"{self.url}/v1/status", timeout=0.5).status_code in (200, 401):
                     return
             time.sleep(0.05)
-        raise RuntimeError("The embedded hub did not answer in time.")
+        raise RuntimeError("The embedded hub sent no response in time.")
 
     def stop(self) -> None:
         if self.server is not None:

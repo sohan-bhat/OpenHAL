@@ -8,12 +8,12 @@
   </p>
   {#if why === "unpaired"}
     <p>
-      The hub refuses commands from a browser it hasn't paired with. Stop every device with
+      The hub blocks commands from a browser that isn't paired with the hub. Stop every device with
       <code>openhal stop</code> on the hub's machine.
     </p>
   {:else}
     <p>
-      No browser or agent can send STOP to <code class="nobreak">{host}</code> until the hub answers again. OpenHAL
+      No browser or agent can send STOP to <code class="nobreak">{host}</code> until the hub is reachable again. OpenHAL
       firmware boards fall to their safe state on their own when the hub's heartbeat stops. Use the hardware e-stop
       for anything else.
     </p>

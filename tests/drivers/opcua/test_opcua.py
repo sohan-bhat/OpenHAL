@@ -150,7 +150,7 @@ async def test_methods_and_a_refusal(sim: OpcuaSim) -> None:
         ),
         ('node: "' + NS + 'Tank.TempF"', 'node: "' + NS + 'Tank.Odd"', "zorp"),
         ('node: "' + NS + 'Pump.Running"', 'node: "' + NS + 'Pump"', "not a variable"),
-        ('node: "' + NS + 'Pump.Running"', 'node: "ns=2;s=Pump.Nope"', "refused"),
+        ('node: "' + NS + 'Pump.Running"', 'node: "ns=2;s=Pump.Nope"', "returned an error"),
         ('node: "' + NS + 'Pump.Running"', 'node: "nsu=urn:missing;s=X"', "has no namespace"),
         ('map: {{ node: "' + NS + 'Pump.Setpoint"', 'map: {{ node: "' + NS + 'Tank.Level"', "read only for this user"),
         ('method: "' + NS + 'Pump.Stop"', 'method: "' + NS + 'Pump.Speed"', "not a method"),
@@ -179,7 +179,7 @@ async def test_a_stalled_server_times_out(sim: OpcuaSim) -> None:
     driver, bench = make(sim)
     await bench.connect()
     sim.hang(1.5)
-    with pytest.raises(TimeoutError, match="didn't answer"):
+    with pytest.raises(TimeoutError, match="sent no reply"):
         await driver.read("pressure")
     assert not (await driver.health()).connected
     await asyncio.sleep(1.5)

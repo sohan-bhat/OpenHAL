@@ -148,7 +148,7 @@ async def test_api_key_problems(monkeypatch: pytest.MonkeyPatch) -> None:
     with pytest.raises(DriverError, match="Set the OCTO_TEST_KEY"):
         await bench.driver.connect()
     monkeypatch.setenv("OCTO_TEST_KEY", "wrong")
-    with pytest.raises(DriverError, match="refused the API key"):
+    with pytest.raises(DriverError, match="did not accept the API key"):
         await bench.driver.connect()
     await bench.close()
 
@@ -157,7 +157,7 @@ async def test_transport_faults() -> None:
     sim = OctoPrintSim()
     bench = await make(sim).connect()
     sim.latency_s = 1.0
-    with pytest.raises(TimeoutError, match="didn't answer"):
+    with pytest.raises(TimeoutError, match="sent no reply"):
         await bench.driver.read("extruder_temp")
     sim.latency_s = 0.0
     sim.malformed = True

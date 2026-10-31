@@ -73,7 +73,7 @@ class MockDriver(Driver):
     async def connect(self) -> None:
         await self._delay()
         if self.settings.fail_connect:
-            raise DriverError("The mock device refused the connection (fail_connect is set).")
+            raise DriverError("The mock device failed the connection (fail_connect is set).")
         for name, spec in self.device.write.items():
             if name in self.settings.initial:
                 self.values[name] = self.settings.initial[name]
@@ -115,7 +115,7 @@ class MockDriver(Driver):
         if not self.connected:
             raise DriverError("The mock device is not connected.")
         if self.settings.fail_reads:
-            raise DriverError("The mock device didn't answer (fail_reads is set).")
+            raise DriverError("The mock device sent no reply (fail_reads is set).")
         self.reads += 1
         if self.settings.disconnect_after_reads is not None and self.reads > self.settings.disconnect_after_reads:
             self.connected = False
@@ -147,7 +147,7 @@ class MockDriver(Driver):
         if not self.connected:
             raise DriverError("The mock device is not connected.")
         if self.settings.fail_writes:
-            raise DriverError("The mock device rejected the write (fail_writes is set).")
+            raise DriverError("The mock device returned an error for the write (fail_writes is set).")
         self.transport_log.append(("write", channel, value))
         self.values[channel] = value
         return Reading(channel=channel, value=value, unit=self.device.channel_unit(channel))
@@ -157,7 +157,7 @@ class MockDriver(Driver):
         if not self.connected:
             raise DriverError("The mock device is not connected.")
         if self.settings.fail_writes:
-            raise DriverError("The mock device rejected the action (fail_writes is set).")
+            raise DriverError("The mock device returned an error for the action (fail_writes is set).")
         self.transport_log.append(("action", name, dict(args)))
         return {"ran": name}
 

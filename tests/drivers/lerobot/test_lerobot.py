@@ -204,7 +204,7 @@ async def test_a_stalled_bus_times_out() -> None:
     driver, factory, bench = make()
     await bench.connect()
     arm(factory).latency_s = 2.0
-    with pytest.raises(TimeoutError, match="didn't answer reading the joints"):
+    with pytest.raises(TimeoutError, match="sent no reply to reading the joints"):
         await driver.read("shoulder_pan")
     arm(factory).latency_s = 0.0
     await bench.close()

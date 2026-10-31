@@ -2,8 +2,8 @@
 
 `openhal rpc` runs `bridge` for clients that spawn a process instead of opening a socket. Each line
 read is sent as one frame, and each frame received is written as one line. When input ends, the
-bridge waits for the answers to the requests it already sent, then closes. Nothing is changed on
-the way, so the hub's dispatcher sees exactly what the client wrote.
+bridge stays open until the responses to the requests already sent arrive, then closes. Nothing is
+changed on the way, so the hub's dispatcher receives exactly what the client wrote.
 
 The bridge sends a token as the Authorization header only when it was given one. It never reads
 the human token file, so a spawned agent can't act as a person by accident. Without a token the
@@ -41,7 +41,7 @@ def rpc_url(base: str) -> str:
 
 
 def expects_answer(line: bytes) -> bool:
-    """True when the hub answers this line. Only a well-formed notification gets no answer."""
+    """True when the hub sends a response to this line. Only a well-formed notification gets no response."""
     try:
         message: Any = json.loads(line)
     except ValueError:
@@ -52,7 +52,7 @@ def expects_answer(line: bytes) -> bool:
 
 
 async def bridge(url: str, token: str | None, read_line: ReadLine, write_line: WriteLine) -> None:
-    """Pump lines to frames and frames to lines until input ends and every answer arrived."""
+    """Pump lines to frames and frames to lines until input ends and every response arrived."""
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     async with connect(url, additional_headers=headers, max_size=MAX_MESSAGE_BYTES) as socket:
         waiting = 0

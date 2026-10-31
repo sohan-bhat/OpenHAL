@@ -178,7 +178,7 @@ def run(
 @handled
 def delete(
     routine_id: str = typer.Argument(..., help="The routine id."),
-    yes: bool = typer.Option(False, "--yes", "-y", help="Don't ask."),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip the prompt."),
 ) -> None:
     """Delete a routine. Needs the human token."""
     if not yes:
@@ -195,7 +195,7 @@ def approve(
     device: str = typer.Option(..., "--device", "-d", help="The high hazard device the approval is for."),
     phrase: str = typer.Option(None, "--phrase", help="Only when confirm.require_tty is false."),
 ) -> None:
-    """Sign an approval that lets this exact routine drive a high hazard device."""
+    """Sign an approval so this exact routine can drive a high hazard device."""
     with hub() as client:
         _print_routine(client.routine(routine_id))
         _tty.require_phrase("approve", f"let this routine drive {device}", given=phrase)

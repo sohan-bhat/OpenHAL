@@ -1,6 +1,6 @@
 """Text value mapping shared by drivers whose device files describe a text protocol.
 
-A channel's `map` says how the device writes a value as text and how to turn it into the
+A channel's `map` describes how the device writes a value as text and how to turn it into the
 channel's type and unit. The serial and scpi drivers use these helpers. Nothing here imports a
 protocol library.
 
@@ -9,7 +9,7 @@ Number conversion, in both directions.
     channel value = convert(raw * scale + offset, from map.unit to the channel unit)
     raw           = (convert(value, from the channel unit to map.unit) - offset) / scale
 
-`raw` is the number the device sends or expects. Without `map.unit` the device is taken to use
+`raw` is the number the device sends or receives. Without `map.unit` the device is taken to use
 the channel unit already.
 """
 
@@ -64,7 +64,7 @@ DEVICE_UNITS: Final[dict[str, str | None]] = {
 
 
 def device_unit(text: Any) -> str | None:
-    """A unit symbol a device or bridge reported, as a unit the OpenHAL registry knows, if any."""
+    """A unit symbol a device or bridge reported, as a unit the OpenHAL registry has, if any."""
     if not isinstance(text, str) or not text:
         return None
     if text in DEVICE_UNITS:
@@ -77,7 +77,7 @@ def device_unit(text: Any) -> str | None:
 
 
 def duration(value: Any) -> float:
-    """A parameter duration, written as a quantity (`2 s`, `500 ms`). Bare numbers are refused."""
+    """A parameter duration, written as a quantity (`2 s`, `500 ms`). A bare number is an error."""
     return parse_duration(value)
 
 
@@ -148,7 +148,7 @@ def check_template(template: str, allowed: set[str], where: str) -> None:
 
 
 def render(template: str, values: dict[str, Any], where: str) -> str:
-    """Fill a checked template. Refuse values that would smuggle extra commands."""
+    """Fill a checked template. Raise DriverError for values that would smuggle extra commands."""
     for name, value in values.items():
         if isinstance(value, str):
             plain_text(value, f"{where} {name}")
@@ -191,7 +191,7 @@ def decode(
         try:
             number = float(raw)
         except ValueError:
-            raise DriverError(f"{where}: expected a number from the device, got {raw!r}.") from None
+            raise DriverError(f"{where}: the device sent {raw!r}, not a number.") from None
         if not math.isfinite(number):
             raise DriverError(f"{where}: the device sent {raw!r}, which is not a finite number.")
         value = number * value_map.scale + value_map.offset
@@ -209,7 +209,7 @@ def decode(
             return True
         if word in falses:
             return False
-        raise DriverError(f"{where}: expected on or off from the device, got {raw!r}.")
+        raise DriverError(f"{where}: the device sent {raw!r}, not on or off.")
     if spec.type == "enum":
         word = value_map.lookup.get(raw, raw)
         if word not in spec.values:
@@ -219,7 +219,7 @@ def decode(
 
 
 def encode(value: float | bool | str, spec: WriteChannel, value_map: ValueMap, where: str) -> float | str:
-    """Turn a checked channel value into what the device expects in a template."""
+    """Turn a checked channel value into the text the device requires in a template."""
     if spec.type == "number":
         assert isinstance(value, int | float)
         assert not isinstance(value, bool)

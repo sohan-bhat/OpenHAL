@@ -1,8 +1,8 @@
 """`openhal init`, which sets up the config folder, tokens, devices, AI clients and the service.
 
-On a terminal it asks a few short questions. `--yes` takes the safe defaults without asking. A run
-that can't ask and has no `--yes`, such as a script, does only the config folder, the human token
-and the sample. In every mode nothing confirms a limit for the person, a client's config file
+On a terminal the command shows a few short questions. `--yes` takes the safe defaults without
+prompting. A run that can't prompt and has no `--yes`, such as a script, does only the config
+folder, the human token and the sample. In every mode nothing confirms a limit for the person, a client's config file
 changes only when they ask, and the service is installed only when they ask.
 """
 
@@ -31,10 +31,10 @@ CONFIG_TEMPLATE: Final = f"""\
 api:
   host: 127.0.0.1
   port: {DEFAULT_PORT}
-  allow_lan: false        # true lets other machines connect with a paired token
+  allow_lan: false        # true accepts connections from other machines with a paired token
 confirm:
   require_tty: true       # confirm, unlock and routine enable need a terminal and a typed phrase
-  ttl_s: 300              # how long a request waits for a person
+  ttl_s: 300              # how long a request is held for a person
 routines:
   agent_enable_low_hazard: false
 """
@@ -77,7 +77,7 @@ def _human_token(db_path: Path, token_path: Path, rotate: bool) -> str:
 
 
 def _agent_token(db_path: Path, token_path: Path, scope: Scope) -> str:
-    """An agent token for AI clients, kept while it works and has the scope asked for.
+    """An agent token for AI clients, kept while it works and has the requested scope.
 
     A replaced token is revoked once the new one is saved, so an old copy stops working.
     """
@@ -106,7 +106,7 @@ def _mode(yes: bool) -> Mode:
 
 
 def _choose(mode: Mode, flag: bool | None, question: str, default: bool) -> bool:
-    """A yes or no step. A flag decides it, then the person, then the safe default."""
+    """A yes or no step. A flag sets the answer first, then the person, then the safe default."""
     if flag is not None:
         return flag
     if mode == "ask":
@@ -133,7 +133,7 @@ def _devices(
     from openhal.hub.discovery import DISCOVER_TIMEOUT_S
     from openhal.service import devices
 
-    look = _choose(mode, discover, "Look for devices? Discovery only sends read-only identify commands.", True)
+    look = _choose(mode, discover, "Search for devices? Discovery only sends read-only identify commands.", True)
     if not look and not known:
         return 0
     if look:
@@ -322,8 +322,8 @@ def register(app: typer.Typer) -> None:
     def init(
         new_token: bool = typer.Option(False, "--new-token", help="Create a new human token even if one works."),
         sample: bool = typer.Option(True, "--sample/--no-sample", help="Add the simulated plant waterer."),
-        yes: bool = typer.Option(False, "--yes", "-y", help="Take the safe defaults without asking."),
-        discover: bool = typer.Option(None, "--discover/--no-discover", help="Look for devices. On with --yes."),
+        yes: bool = typer.Option(False, "--yes", "-y", help="Take the safe defaults without prompting."),
+        discover: bool = typer.Option(None, "--discover/--no-discover", help="Search for devices. On with --yes."),
         drivers: list[str] = typer.Option(None, "--driver", help="Look only with this driver. Repeat for more."),  # noqa: B008
         device: list[str] = typer.Option(None, "--device", help="A self-describing device at DRIVER=ADDRESS."),  # noqa: B008
         agent_scope: str = typer.Option(None, "--agent-scope", help="Scope of the AI client token. read with --yes."),

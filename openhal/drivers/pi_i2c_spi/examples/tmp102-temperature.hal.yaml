@@ -41,7 +41,7 @@ interlocks:
     message: "T_LOW must stay below T_HIGH or the alert pin never clears."
 hazard: low
 notes: >-
-  A TMP102 breakout on the Pi's I2C bus 1 (pins 3 and 5) with ADD0 tied to ground, so it answers at
+  A TMP102 breakout on the Pi's I2C bus 1 (pins 3 and 5) with ADD0 tied to ground, so its address is
   0x48. Registers come from the TI TMP102 datasheet (SBOS397). The ALERT pin follows T_HIGH and T_LOW,
   which this file sets. Shutdown stops conversions, and the temperature register then keeps its last value.
 safe_state_note: A sensor with no outputs. The alert thresholds stay as they were when the hub stops.

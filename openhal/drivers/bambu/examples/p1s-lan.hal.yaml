@@ -29,6 +29,6 @@ notes: >-
   Needs LAN-only mode with Developer Mode on (printer screen, Settings, Network). The serial and the
   access code are on the same screen. Replace cert_sha256 with the printer certificate's fingerprint
   from docs/hardware-tests/bambu.md step 2. The ludicrous speed level is left out on purpose.
-  The hub stops a print by sending stop, which ends the job and lets the printer cool down.
+  The hub stops a print by sending stop, which ends the job so the printer cools down.
 safe_state_note: The driver stops the print natively, which ends the job, turns the heaters off and parks the head.
 provenance: { source: hand-written, by: openhal bambu driver example, at: 2026-10-24, from: "https://github.com/Doridian/OpenBambuAPI/blob/main/mqtt.md" }

@@ -73,7 +73,7 @@ WRITE_DEFAULTS: dict[str, dict[str, Any]] = {
 def validate(model: type[BaseModel], raw: dict[str, Any] | None, default: dict[str, Any] | None, where: str) -> Any:
     data = raw if raw is not None else default
     if data is None:
-        raise DriverError(f"{where} is not a GRBL channel the driver knows. Add a map, see docs/drivers/grbl.md.")
+        raise DriverError(f"{where} is not a GRBL channel the driver supports. Add a map, see docs/drivers/grbl.md.")
     try:
         return model.model_validate(data)
     except ValidationError as exc:
@@ -149,7 +149,9 @@ def check_action(name: str, action_map: ActionMap, action: Action) -> None:
         if not set(args) & set(protocol.AXES):
             raise DriverError(f"{where}: {command} needs at least one axis argument.")
         if "feed" not in args and not (command == "move" and action_map.rapid):
-            raise DriverError(f"{where}: {command} needs a feed argument (GRBL refuses moves without a feed).")
+            raise DriverError(
+                f"{where}: {command} needs a feed argument (GRBL returns an error for moves without a feed)."
+            )
         for arg, spec in args.items():
             if spec.type != "number":
                 raise DriverError(f"{where}.args.{arg} must be a number.")

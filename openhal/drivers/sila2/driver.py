@@ -7,13 +7,13 @@ types are in `channels.py`.
   its Feature Definitions, so no generated code is needed.
 - connect() checks every feature, property, command and parameter the file names, and their
   types. Units come from SiLA Unit constraints unless the map gives one, and a channel whose unit
-  can't be converted from the SiLA unit is refused.
+  can't be converted from the SiLA unit fails on connect.
 - Unobservable properties are read on demand. Observable properties are streams. The driver
   subscribes on connect and keeps the newest value, so a read costs no round trip. Until the
-  first value arrives, a read asks the server for the current one.
+  first value arrives, a read requests the current one from the server.
 - SiLA properties are read only. A channel changes through a command with one parameter and is
-  read back from a property. Actions run commands. An observable command waits up to
-  `action_wait` and answers `done`, or answers `started` and keeps running on the server.
+  read back from a property. Actions run commands. An observable command runs up to
+  `action_wait` and returns `done`, or returns `started` and keeps running on the server.
 - Defined execution errors fail the command with the error's identifier and message.
 
 The sila2 client is blocking gRPC, so every call runs in a worker thread with a deadline.
@@ -144,11 +144,13 @@ class Sila2Driver(Driver):
             return await asyncio.wait_for(asyncio.to_thread(function, *args, **kwargs), budget or self.settings.timeout)
         except TimeoutError:
             wait = budget or self.settings.timeout
-            raise TimeoutError(f"The SiLA server didn't answer {what} within {wait:g} s.") from None
+            raise TimeoutError(f"The SiLA server sent no reply to {what} within {wait:g} s.") from None
         except DefinedExecutionError as exc:
-            raise DriverError(f"The device refused {what} with {exc.identifier} ({exc.message}).") from exc
+            raise DriverError(f"The device returned {exc.identifier} for {what} ({exc.message}).") from exc
         except ValidationError as exc:
-            raise DriverError(f"The SiLA server refused the parameters of {what} ({exc.message}).") from exc
+            raise DriverError(
+                f"The SiLA server returned an error for the parameters of {what} ({exc.message})."
+            ) from exc
         except SilaConnectionError as exc:
             raise DriverError(f"The SiLA connection failed during {what} ({exc}). Reconnect it.") from exc
         except SilaError as exc:
@@ -173,7 +175,7 @@ class Sila2Driver(Driver):
     def _unit(self, label: str | None, override: str | None, channel_unit: str | None, where: str) -> str | None:
         unit = override or device_unit(label)
         if label and unit is None:
-            raise DriverError(f"{where} is in {label!r}, which OpenHAL doesn't know. Set map.unit.")
+            raise DriverError(f"{where} is in {label!r}, which OpenHAL doesn't support. Set map.unit.")
         if unit and channel_unit:
             try:
                 convert(Quantity(1.0, parse_unit(unit)), channel_unit)
@@ -380,13 +382,13 @@ class Sila2Driver(Driver):
         unit = self.device.channel_unit(channel)
         if spec.type == "number":
             if isinstance(raw, bool) or not isinstance(raw, int | float) or not math.isfinite(raw):
-                raise DriverError(f"{channel}: expected a number from the SiLA server, got {raw!r}.")
+                raise DriverError(f"{channel}: the SiLA server sent {raw!r}, not a number.")
             value = _convert(float(raw) * scale, source, unit, channel)
             span = getattr(spec, "range", None)
             return Reading(channel, value, unit, at=at, suspect=span is not None and not span[0] <= value <= span[1])
         if spec.type == "bool":
             if not isinstance(raw, bool):
-                raise DriverError(f"{channel}: expected true or false from the SiLA server, got {raw!r}.")
+                raise DriverError(f"{channel}: the SiLA server sent {raw!r}, not true or false.")
             return Reading(channel, raw, None, at=at)
         text = str(raw)
         if spec.type == "enum" and text not in spec.values:
@@ -409,7 +411,7 @@ class Sila2Driver(Driver):
         if kind == "Integer":
             if abs(number - round(number)) > 1e-6:
                 raise DriverError(
-                    f"{where}: {number:g} is not a whole number, and SiLA wants an Integer. Nothing was sent."
+                    f"{where}: {number:g} is not a whole number, and SiLA requires an Integer. Nothing was sent."
                 )
             return round(number)
         return number

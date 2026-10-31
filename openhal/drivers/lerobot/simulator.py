@@ -68,7 +68,7 @@ class FakeBus:
             return dict.fromkeys(JOINTS, 1 if self.torque else 0)
         if data_name == "Present_Position":
             return self.arm.positions()
-        raise ValueError(f"the fake bus doesn't know {data_name}")
+        raise ValueError(f"the fake bus doesn't support {data_name}")
 
 
 class FakeFollower:
