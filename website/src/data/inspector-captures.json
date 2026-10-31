@@ -2,7 +2,7 @@
   "width": 1440,
   "height": 900,
   "quality": 0.8,
-  "bytes": 587250,
+  "bytes": 586428,
   "shots": [
     {
       "file": "inspector-device",
@@ -34,7 +34,7 @@
         "x": 321,
         "y": 152,
         "w": 1064,
-        "h": 722
+        "h": 747
       }
     },
     {

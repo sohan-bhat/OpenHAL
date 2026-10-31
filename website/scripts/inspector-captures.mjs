@@ -164,7 +164,7 @@ async function capture(browser, state, theme) {
   crops.camera = await box(page.locator("main section").filter({ has: page.locator("#frames-title") }), 16);
 
   await page.goto(`${state.url}/#/confirmations`);
-  const cancel = page.getByRole("main").getByRole("listitem").filter({ hasText: "asks to run cancel" }).first();
+  const cancel = page.getByRole("main").getByRole("listitem").filter({ hasText: "sends a request to run cancel" }).first();
   await cancel.getByRole("combobox", { name: "Show a camera" }).selectOption("printer-cam/frame");
   await cancel.getByRole("img", { name: /^Demo frame from Printer camera/ }).waitFor();
   await page.locator("#pending-title").evaluate((title) => window.scrollTo(0, window.scrollY + title.getBoundingClientRect().top - 130));
