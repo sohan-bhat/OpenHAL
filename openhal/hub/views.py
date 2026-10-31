@@ -38,7 +38,7 @@ def device_text(source: str, text: str | None) -> str | None:
 
 
 def device_value(file: Any, device_id: str, channel: str, value: Any, *, image_data: bool = False) -> Any:
-    """A reading as clients see it. Strings are wrapped, except enum values the device file lists.
+    """A reading as clients receive it. Strings are wrapped, except enum values the device file lists.
 
     Bytes are an image, sent as `{ mimeType, bytes, width, height }` (openhal/images.py). Only a read
     requests `image_data`, which adds the pixels as base64 in `data`.
@@ -54,7 +54,7 @@ def device_value(file: Any, device_id: str, channel: str, value: Any, *, image_d
 
 
 def audit_details(device_id: str | None, details: dict[str, Any]) -> dict[str, Any]:
-    """Audit details as clients see them. `detail` and `error` often quote a driver, so they are wrapped."""
+    """Audit details as clients receive them. `detail` and `error` often quote a driver, so they are wrapped."""
     shown = dict(details)
     for key in ("detail", "error"):
         if isinstance(shown.get(key), str):

@@ -220,7 +220,7 @@ _PERCENT_WORD: Final = re.compile(r"\bpercent\b")
 
 
 def wire_unit(unit: str | None) -> str | None:
-    """A unit as messages carry it. Device files may say `percent`, messages always say `%`."""
+    """A unit as messages carry it. Device files may write `percent`, and messages always carry `%`."""
     if unit is None:
         return None
     return _PERCENT_WORD.sub("%", unit).replace(" / ", "/")

@@ -26,7 +26,7 @@ shows the new value, and fails the write if the device doesn't report it. Fan sp
 nearest supported level, and the reading after the write is the speed the fan really has.
 
 Safe state. From the device file. ESPHome can define its own failsafes on the device (for
-example `api: reboot_timeout` or an `on_client_disconnected` automation), which the hub can't see.
+example `api: reboot_timeout` or an `on_client_disconnected` automation), which the hub can't detect.
 """
 
 from __future__ import annotations

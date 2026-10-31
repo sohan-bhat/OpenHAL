@@ -8,7 +8,7 @@ touches hardware.
    OPENHAL_FIRMWARE_PORTS and finds the plant waterer as an openhal-firmware device.
 2. Driver writer. The person starts the writer on that board and on
    examples/plant-waterer/plant-waterer.ino, whether or not the device library has the board.
-3. Limits interview. A script answers every question as the person, through the same calls
+3. Limits interview. Scripted answers stand in for the person on every question, through the same calls
    `openhal writer interview` and `openhal writer finish` make. The hub then restarts, so it loads
    the saved file from its devices folder.
 4. Agent. `openhal mcp` runs with an agent token and a real MCP client session connects to it over
