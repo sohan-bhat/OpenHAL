@@ -127,7 +127,7 @@ test.describe("the header", () => {
       const column = await page.locator("main .home-width").first().evaluate((el) => el.getBoundingClientRect().left + parseFloat(getComputedStyle(el).paddingLeft));
       expect(Math.abs(brand - column)).toBeLessThan(1);
       await page.goto(SPEC);
-      const pill = await page.locator(".sidebar-content .top-level > li").first().evaluate((el) => el.getBoundingClientRect().left);
+      const pill = await page.locator("[data-slot=sidebar-menu] > li").first().evaluate((el) => el.getBoundingClientRect().left);
       expect(Math.abs((await box(page, ".oh-brand"))[0] - pill)).toBeLessThan(1);
     });
   }
@@ -170,26 +170,41 @@ test.describe("the version label", () => {
 });
 
 test.describe("the sidebar", () => {
-  test("marks the current page and opens the groups around it", async ({ page }) => {
+  test("is shadcn/ui's Sidebar, marks the current page and opens the groups around it", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(SPEC);
-    const sidebar = page.locator(".sidebar-content");
-    await expect(sidebar.locator(".top-level a[aria-current='page']")).toHaveText("3.3 Messages");
-    for (const group of ["Specification v0.1", "3 Base protocol"]) await expect(sidebar.locator("details", { has: page.locator(`summary:has-text("${group}")`) }).first()).toHaveAttribute("open", "");
-    expect(await sidebar.locator(".top-level > li > details > summary").allInnerTexts()).toEqual(["Specification v0.1", "All versions", "Try the protocol"]);
+    const sidebar = page.locator("[data-slot=sidebar-content]");
+    await expect(page.locator("[data-slot=sidebar-wrapper] [data-slot=sidebar] [data-slot=sidebar-rail]")).toHaveCount(1);
+    await expect(sidebar.locator("a[aria-current='page']")).toHaveText("3.3 Messages");
+    await expect(sidebar.locator("a[aria-current='page']")).toHaveAttribute("data-active", "true");
+    for (const group of ["Specification v0.1", "Specification v0.1 / 3 Base protocol"]) await expect(page.locator(`[data-group='${group}']`)).toHaveAttribute("data-state", "open");
+    expect(await page.locator("[data-slot=sidebar-menu] > li[data-group] > button").allInnerTexts()).toEqual(["Specification v0.1", "All versions", "Try the protocol"]);
+  });
+
+  test("shows words only, with a chevron on a group and no other icon", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    for (const path of [SPEC, "/docs/quickstart/", "/drivers/"]) {
+      await page.goto(path);
+      const marks = await page.locator("[data-slot=sidebar]").evaluate((sidebar) => [...sidebar.querySelectorAll("svg, img")].map((mark) => `${mark.parentElement?.localName} ${mark.getAttribute("class")}`));
+      expect(marks.length, path).toBeGreaterThan(0);
+      for (const mark of marks) expect(mark, path).toMatch(/^button lucide lucide-chevron-right/);
+      expect(await page.locator("[data-group] > button").count(), path).toBe(marks.length);
+    }
   });
 
   test("collapses a group, which stays collapsed on the next page", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/docs/quickstart/");
-    const tutorials = page.locator(".sidebar-content details", { has: page.locator('summary:has-text("Tutorials")') });
-    await expect(tutorials).toHaveAttribute("open", "");
-    await tutorials.locator("summary").click();
-    await expect(tutorials).not.toHaveAttribute("open", "");
+    const tutorials = page.locator("[data-group='Tutorials']");
+    await expect(tutorials).toHaveAttribute("data-state", "open");
+    await tutorials.locator(":scope > button").click();
+    await expect(tutorials).toHaveAttribute("data-state", "closed");
+    await expect(tutorials.locator(":scope > button")).toHaveAttribute("aria-expanded", "false");
     await expect(tutorials.getByRole("link", { name: "Connect Claude" })).toBeHidden();
-    await page.locator(".sidebar-content").getByRole("link", { name: "Install" }).click();
+    await page.locator("[data-slot=sidebar-content]").getByRole("link", { name: "Install" }).click();
     await expect(page).toHaveURL(/\/docs\/install\/$/);
-    await expect(page.locator(".sidebar-content details", { has: page.locator('summary:has-text("Tutorials")') })).not.toHaveAttribute("open", "");
+    await expect(page.locator("[data-group='Tutorials']")).toHaveAttribute("data-state", "closed");
+    await expect(page.locator("[data-group='Tutorials']").getByRole("link", { name: "Connect Claude" })).toBeHidden();
   });
 
   test("is left out on a desktop where a page has no pages of its own, which keep the phone menu", async ({ page }) => {
@@ -197,6 +212,7 @@ test.describe("the sidebar", () => {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(path);
       await expect(page.locator("#starlight__sidebar"), path).toBeHidden();
+      await expect(page.locator("[data-slot=sidebar]"), path).toHaveCount(0);
       await page.setViewportSize({ width: 390, height: 844 });
       await page.locator(".sl-menu-button").click();
       await expect(page.locator(".oh-menu-sections"), path).toBeVisible();
@@ -218,11 +234,18 @@ test.describe("the sidebar", () => {
 });
 
 test.describe("the sidebar's collapse", () => {
-  const state = (page: Page) => page.evaluate(() => ({ collapsed: document.documentElement.dataset.sidebar === "collapsed", peek: document.documentElement.hasAttribute("data-sidebar-peek") }));
-  const settled = (page: Page) => page.waitForFunction(() => !document.documentElement.hasAttribute("data-sidebar-moving") && document.getAnimations().every((animation) => animation.playState !== "running"));
-  const hide = async (page: Page) => {
-    await page.getByRole("button", { name: "Hide sidebar" }).click();
-    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: false });
+  const state = (page: Page) =>
+    page.evaluate(() => ({
+      collapsed: document.documentElement.dataset.sidebar === "collapsed",
+      state: document.querySelector<HTMLElement>("[data-slot=sidebar]")?.dataset.state,
+    }));
+  const hydrated = (page: Page) => expect(page.locator("astro-island:has([data-slot=sidebar])")).not.toHaveAttribute("ssr", "");
+  const settled = (page: Page) => page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== "running"), undefined, { polling: 25 });
+  const rail = (page: Page) => page.locator("[data-slot=sidebar-rail]");
+  const container = (page: Page) => page.locator("[data-slot=sidebar-container]");
+  const collapse = async (page: Page) => {
+    await page.keyboard.press("Control+b");
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, state: "collapsed" });
     await settled(page);
   };
 
@@ -230,39 +253,86 @@ test.describe("the sidebar's collapse", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
   });
 
-  test("hides from the button at its top and shows from a button in the same place, while the content moves over", async ({ page }) => {
+  test("toggles from the rail on the sidebar's edge, which stays at the window's left edge while the content moves over", async ({ page }) => {
     await page.goto("/docs/quickstart/");
-    const hide = page.getByRole("button", { name: "Hide sidebar" });
-    await expect(hide).toHaveAttribute("aria-controls", "starlight__sidebar");
-    await expect(hide).toHaveAttribute("aria-expanded", "true");
-    const spot = await box(page, "[data-sidebar-hide]");
-    const docked = { title: (await box(page, "main h1"))[0], outline: (await box(page, ".right-sidebar-panel"))[0] };
-    await hide.click();
-    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: false });
+    const docked = { title: (await box(page, "main h1"))[0], outline: (await box(page, ".right-sidebar-panel"))[0], edge: (await box(page, "[data-slot=sidebar-container]"))[2] };
+    const open = await rail(page).boundingBox();
+    expect(Math.abs(open!.x + open!.width / 2 - docked.edge)).toBeLessThan(2);
+    await expect(rail(page)).toHaveAttribute("aria-expanded", "true");
+    await expect(rail(page)).toHaveAttribute("aria-controls", "oh-sidebar");
+    await rail(page).hover();
+    expect(await rail(page).evaluate((element) => getComputedStyle(element).cursor)).toBe("w-resize");
+    expect(await rail(page).evaluate((element) => getComputedStyle(element, "::after").backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+    await rail(page).click();
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, state: "collapsed" });
     await settled(page);
-    await expect(page.locator("#starlight__sidebar")).toBeHidden();
-    const show = page.getByRole("button", { name: "Show sidebar" });
-    await expect(show).toBeVisible();
-    await expect(show).toBeFocused();
-    await expect(show).toHaveAttribute("aria-expanded", "false");
-    expect(await box(page, "[data-sidebar-show]")).toEqual(spot);
+    await expect(container(page)).toBeHidden();
+    await expect(rail(page)).toHaveAttribute("aria-expanded", "false");
+    const hidden = (await rail(page).boundingBox())!;
+    expect(hidden.x + hidden.width).toBeGreaterThan(0);
+    expect(hidden.x + hidden.width).toBeLessThanOrEqual(8);
     const collapsed = { title: (await box(page, "main h1"))[0], outline: (await box(page, ".right-sidebar-panel"))[0] };
     expect(collapsed.title).toBeLessThan(docked.title);
     expect(collapsed.outline).toBeLessThan(docked.outline);
-    await show.click();
+    await page.mouse.move(3, 450);
+    expect(await rail(page).evaluate((element) => getComputedStyle(element).cursor)).toBe("e-resize");
+    await page.mouse.click(3, 450);
+    await expect.poll(() => state(page)).toEqual({ collapsed: false, state: "expanded" });
     await settled(page);
-    expect(await state(page)).toEqual({ collapsed: false, peek: false });
-    await expect(hide).toBeFocused();
+    await expect(container(page)).toBeVisible();
     expect((await box(page, "main h1"))[0]).toBe(docked.title);
   });
+
+  test("has no button that shows or hides it, and nothing peeks over the content", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    const toggles = page.getByRole("button", { name: /sidebar/i });
+    await expect(toggles).toHaveCount(1);
+    await expect(toggles).toHaveAttribute("data-slot", "sidebar-rail");
+    await expect(toggles).toHaveAttribute("tabindex", "-1");
+    expect((await toggles.boundingBox())!.width).toBeLessThanOrEqual(16);
+    await collapse(page);
+    await page.mouse.move(700, 500);
+    await page.mouse.move(4, 500);
+    await page.waitForTimeout(600);
+    await expect(container(page)).toBeHidden();
+    expect(await state(page)).toEqual({ collapsed: true, state: "collapsed" });
+    await expect(page.getByRole("button", { name: /sidebar/i })).toHaveAttribute("data-slot", "sidebar-rail");
+  });
+
+  for (const width of [1440, 1280, 1152, 1024, 900, 800]) {
+    test(`never covers the content at ${width} px, shown or hidden`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      for (const stored of ["", "collapsed"]) {
+        await page.addInitScript((value) => localStorage.setItem("openhal-sidebar", value), stored);
+        for (const path of ["/docs/quickstart/", SPEC, "/drivers/"]) {
+          await page.goto(path);
+          const right = await page.evaluate(() => {
+            const shown = [...document.querySelectorAll<HTMLElement>("[data-slot=sidebar-container], [data-slot=sidebar-rail]")].filter((element) => element.checkVisibility({ visibilityProperty: true }));
+            return Math.max(0, ...shown.map((element) => element.getBoundingClientRect().right));
+          });
+          const content = await page.evaluate(() => {
+            const texts = [...document.querySelectorAll("main h1, main p, main li, mobile-starlight-toc summary")].filter((part) => part.checkVisibility());
+            return Math.min(
+              ...texts.map((part) => {
+                const range = document.createRange();
+                range.selectNodeContents(part);
+                return range.getBoundingClientRect().left;
+              }),
+            );
+          });
+          expect(right, `${path} ${stored || "shown"}`).toBeLessThanOrEqual(content);
+        }
+      }
+    });
+  }
 
   test("moves the content from where it stood, both ways, so the title never jumps", async ({ page }) => {
     await page.goto("/docs/quickstart/");
     const title = () => box(page, "main h1").then((rect) => rect[0]);
-    const firstFrame = (selector: string) =>
-      page.evaluate(async (selector) => {
+    const firstFrame = () =>
+      page.evaluate(async () => {
         const main = document.querySelector("main")!;
-        document.querySelector<HTMLElement>(selector)!.click();
+        document.querySelector<HTMLElement>("[data-slot=sidebar-rail]")!.click();
         for (let frame = 0; frame < 120 && !main.getAnimations().length; frame++) await new Promise(requestAnimationFrame);
         const animations = main.getAnimations();
         for (const animation of animations) {
@@ -272,19 +342,17 @@ test.describe("the sidebar's collapse", () => {
         const left = document.querySelector("main h1")!.getBoundingClientRect().left;
         for (const animation of animations) animation.play();
         return { left, moving: animations.length };
-      }, selector);
-    await page.getByRole("button", { name: "Hide sidebar" }).hover();
-    await expect(page.locator("astro-island:has([data-sidebar-hide])")).not.toHaveAttribute("ssr", "");
+      });
+    await rail(page).hover();
+    await hydrated(page);
     const docked = await title();
-    const hiding = await firstFrame("[data-sidebar-hide]");
+    const hiding = await firstFrame();
     expect(hiding.moving).toBeGreaterThan(0);
     expect(Math.abs(hiding.left - docked)).toBeLessThan(2);
     await settled(page);
     const hidden = await title();
     expect(hidden).toBeLessThan(docked);
-    await page.getByRole("button", { name: "Show sidebar" }).hover();
-    await expect(page.locator("astro-island:has([data-sidebar-show])")).not.toHaveAttribute("ssr", "");
-    const showing = await firstFrame("[data-sidebar-show]");
+    const showing = await firstFrame();
     expect(Math.abs(showing.left - hidden)).toBeLessThan(2);
     await settled(page);
     expect(await title()).toBe(docked);
@@ -292,16 +360,16 @@ test.describe("the sidebar's collapse", () => {
 
   test("keeps the choice on the next page, hidden from the first frame without a layout shift", async ({ page, browserName }) => {
     await page.goto("/docs/quickstart/");
-    await hide(page);
+    await collapse(page);
+    expect(await page.evaluate(() => localStorage.getItem("openhal-sidebar"))).toBe("collapsed");
     await page.route(/\/_astro\/.*\.js$/, (route) => route.abort());
     await page.goto(SPEC);
-    expect(await state(page), "the head script alone applies the choice").toEqual({ collapsed: true, peek: false });
-    await expect(page.locator("#starlight__sidebar")).toBeHidden();
-    await expect(page.locator("[data-sidebar-show]")).toBeVisible();
+    expect(await state(page), "the head script and the sidebar's inline script alone apply the choice").toEqual({ collapsed: true, state: "collapsed" });
+    await expect(container(page)).toBeHidden();
+    await expect(rail(page)).toHaveAttribute("aria-expanded", "false");
     await page.unroute(/\/_astro\/.*\.js$/);
     await page.goto(SPEC);
-    expect(await state(page)).toEqual({ collapsed: true, peek: false });
-    await expect(page.getByRole("button", { name: "Show sidebar" })).toBeVisible();
+    expect(await state(page)).toEqual({ collapsed: true, state: "collapsed" });
     if (browserName === "chromium") {
       const shift = await page.evaluate(
         () =>
@@ -315,15 +383,21 @@ test.describe("the sidebar's collapse", () => {
       );
       expect(shift).toBeLessThan(0.001);
     }
+    await page.keyboard.press("Control+b");
+    await expect.poll(() => state(page)).toEqual({ collapsed: false, state: "expanded" });
   });
 
-  test("Control or Command and B hides and shows it, even before any script ran, but not while typing", async ({ page }) => {
+  test("Control or Command and B hides and shows it on the first press, before React loads, but not while typing", async ({ page }) => {
+    const fetched: string[] = [];
+    page.on("request", (request) => fetched.push(new URL(request.url()).pathname));
     await page.goto("/docs/quickstart/");
+    await page.waitForTimeout(500);
+    expect(fetched.filter((path) => /SidebarNav/.test(path))).toEqual([]);
     await page.keyboard.press("Control+b");
-    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: false });
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, state: "collapsed" });
     await settled(page);
     await page.keyboard.press("Control+b");
-    await expect.poll(() => state(page)).toEqual({ collapsed: false, peek: false });
+    await expect.poll(() => state(page)).toEqual({ collapsed: false, state: "expanded" });
     await page.goto("/spec/playground/");
     await page.locator("summary", { hasText: "Build your own request" }).click();
     await expect(page.locator("astro-island:has(#pg-text)")).not.toHaveAttribute("ssr", "");
@@ -331,64 +405,30 @@ test.describe("the sidebar's collapse", () => {
     await expect(page.locator("#pg-text")).toBeFocused();
     await page.keyboard.press("Control+b");
     await page.waitForTimeout(300);
-    expect(await state(page)).toEqual({ collapsed: false, peek: false });
-  });
-
-  test("a pointer resting at the left edge brings it in as a narrower panel, which leaves with the pointer", async ({ page }) => {
-    await page.goto("/docs/quickstart/");
-    const docked = await box(page, "#starlight__sidebar");
-    await hide(page);
-    await page.mouse.move(700, 500);
-    await page.mouse.move(6, 500);
-    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: true });
-    await settled(page);
-    const panel = await box(page, "#starlight__sidebar");
-    expect(panel[2]).toBeLessThan(docked[2]);
-    expect(panel[1]).toBeGreaterThan((await box(page, "[data-sidebar-show]"))[1]);
-    await expect(page.locator("#starlight__sidebar").getByRole("link", { name: "Install" })).toBeVisible();
-    await page.mouse.move(120, 500, { steps: 5 });
-    await page.waitForTimeout(250);
-    expect((await state(page)).peek, "stays while the pointer is on the panel").toBe(true);
-    await page.mouse.move(800, 500, { steps: 5 });
-    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: false });
-    await settled(page);
-    await expect(page.locator("#starlight__sidebar")).toBeHidden();
-    await page.mouse.move(6, 500);
-    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: true });
-    await page.keyboard.press("Escape");
-    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: false });
-  });
-
-  test("a pointer passing over the edge on its way somewhere does not bring it in", async ({ page }) => {
-    await page.goto("/docs/quickstart/");
-    await hide(page);
-    await page.mouse.move(700, 500);
-    await page.mouse.move(6, 500);
-    await page.mouse.move(700, 500);
-    await page.waitForTimeout(400);
-    expect(await state(page)).toEqual({ collapsed: true, peek: false });
+    expect(await state(page)).toEqual({ collapsed: false, state: "expanded" });
   });
 
   test("while hidden, its links leave the tab order and screen readers", async ({ page }) => {
     await page.goto("/docs/quickstart/");
-    await hide(page);
-    expect(await page.locator("#starlight__sidebar").evaluate((pane) => (pane as HTMLElement).inert)).toBe(true);
-    await page.getByRole("button", { name: "Show sidebar" }).focus();
+    await collapse(page);
+    expect(await container(page).evaluate((element) => getComputedStyle(element).visibility)).toBe("hidden");
+    await page.locator("header.header [data-picker='theme']").focus();
     for (let step = 0; step < 3; step++) {
       await page.keyboard.press("Tab");
-      expect(await page.evaluate(() => Boolean(document.activeElement?.closest("#starlight__sidebar")))).toBe(false);
+      expect(await page.evaluate(() => Boolean(document.activeElement?.closest("[data-slot=sidebar]")))).toBe(false);
     }
   });
 
   test("with reduced motion it switches at once and nothing slides", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/docs/quickstart/");
-    await page.getByRole("button", { name: "Hide sidebar" }).click();
-    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: false });
+    await page.keyboard.press("Control+b");
+    await expect.poll(() => state(page)).toEqual({ collapsed: true, state: "collapsed" });
     const moving = () => page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === "running" && Number(animation.effect?.getTiming().duration) > 0).length);
     expect(await moving()).toBe(0);
-    await page.mouse.move(6, 500);
-    await expect.poll(() => state(page)).toEqual({ collapsed: true, peek: true });
+    await expect(container(page)).toBeHidden();
+    await page.mouse.click(3, 450);
+    await expect.poll(() => state(page)).toEqual({ collapsed: false, state: "expanded" });
     expect(await moving()).toBe(0);
   });
 
@@ -402,20 +442,34 @@ test.describe("the sidebar's collapse", () => {
         edges[path] = (await box(page, "main h1"))[0];
       }
       for (const path of Object.keys(edges)) expect(edges[path], path).toBe(edges[SPEC]);
-      expect(edges[SPEC]).toBeGreaterThan((await box(page, "[data-sidebar-show]"))[0] + 32);
+      const edge = await rail(page).boundingBox();
+      expect(edges[SPEC]).toBeGreaterThan(edge!.x + edge!.width + 32);
     });
   }
+
+  test("keeps its links working without JavaScript", async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.goto("/docs/quickstart/");
+    await page.locator("[data-slot=sidebar-content]").getByRole("link", { name: "Concepts" }).click();
+    await expect(page).toHaveURL(/\/docs\/concepts\/$/);
+    await expect(page.locator("[data-slot=sidebar-content] a[aria-current='page']")).toHaveText("Concepts");
+    await context.close();
+  });
 
   test("leaves phones and the pages without a sidebar alone", async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem("openhal-sidebar", "collapsed"));
     for (const path of ["/", "/blog/", "/404.html"]) {
       await page.goto(path);
-      await expect(page.locator("[data-sidebar-show], [data-sidebar-hide]").locator("visible=true")).toHaveCount(0);
+      await expect(page.locator("[data-slot=sidebar-rail]")).toHaveCount(0);
     }
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/docs/quickstart/");
-    await expect(page.locator("[data-sidebar-show], [data-sidebar-hide]").locator("visible=true")).toHaveCount(0);
+    await expect(rail(page)).toBeHidden();
     await page.locator(".sl-menu-button").click();
+    await expect(page.locator("#starlight__sidebar").getByRole("link", { name: "Install" })).toBeVisible();
+    await page.keyboard.press("Control+b");
+    await page.waitForTimeout(300);
     await expect(page.locator("#starlight__sidebar").getByRole("link", { name: "Install" })).toBeVisible();
   });
 });
