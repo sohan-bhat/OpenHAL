@@ -586,12 +586,12 @@ export class Kernel {
       return this.decision("allowed", command, { ...fields, message: "Allowed." });
     }
     if (principal.kind === "routine") {
-      throw new Block("needs_confirmation", `Blocked. ${target(command)} on ${command.device} needs a human to confirm, and routines can't wait for one.`);
+      throw new Block("needs_confirmation", `Blocked. ${target(command)} on ${command.device} needs a human to confirm, so a routine can't run it.`);
     }
     return this.decision("needs_confirmation", command, {
       ...fields,
       code: "needs_confirmation",
-      message: `Waiting for a human to approve ${target(command)} on ${command.device}.`,
+      message: `Held until a human approves ${target(command)} on ${command.device}.`,
     });
   }
 
@@ -767,7 +767,7 @@ export class Kernel {
     const pending = [...this.requests.values()].filter((request) => request.status === "pending");
     const mine = pending.filter((request) => label(request.principal) === label(principal));
     if (mine.length >= 20) {
-      return `This client already has ${mine.length} requests waiting for a human. Wait for them to be decided.`;
+      return `This client already has ${mine.length} requests held for a human. Wait until a person decides those requests.`;
     }
     if (pending.length >= 100) return "The confirmation queue is full. Wait for pending requests to be decided.";
     this.requestCounter += 1;
@@ -839,7 +839,7 @@ export class Kernel {
     if (!runtime) throw new KernelError("lookup", `There is no device '${id}'.`);
     const spec = runtime.file.write[channel];
     if (!spec || spec.type !== "number" || spec.unit === null) {
-      throw new KernelError("lookup", `Refused. ${id} has no numeric write channel ${pyStrRepr(channel)}.`);
+      throw new KernelError("lookup", `Blocked. ${id} has no numeric write channel ${pyStrRepr(channel)}.`);
     }
     const k = key(label(principal), id, channel);
     const current = effectiveLimits(spec, this.sessionLimits.get(k));
@@ -848,14 +848,14 @@ export class Kernel {
       if (limits.min !== undefined && limits.min !== null) {
         const low = convert(parseQuantity(limits.min), spec.unit);
         if (low < current.min) {
-          throw new Block("cannot_loosen", `Refused. ${channel} min is already ${formatQuantity(current.min, spec.unit)}. Session limits can only be tightened.`);
+          throw new Block("cannot_loosen", `Blocked. ${channel} min is already ${formatQuantity(current.min, spec.unit)}. Session limits can only be tightened.`);
         }
         updated.min = low;
       }
       if (limits.max !== undefined && limits.max !== null) {
         const high = convert(parseQuantity(limits.max), spec.unit);
         if (high > current.max) {
-          throw new Block("cannot_loosen", `Refused. ${channel} max is already ${formatQuantity(current.max, spec.unit)}. Session limits can only be tightened.`);
+          throw new Block("cannot_loosen", `Blocked. ${channel} max is already ${formatQuantity(current.max, spec.unit)}. Session limits can only be tightened.`);
         }
         updated.max = high;
       }
@@ -864,16 +864,16 @@ export class Kernel {
         if (current.rate !== null && value > current.rate) {
           throw new Block(
             "cannot_loosen",
-            `Refused. ${channel} may already change by at most ${formatQuantity(current.rate, spec.unit)} per second. Session limits can only be tightened.`,
+            `Blocked. ${channel} may already change by at most ${formatQuantity(current.rate, spec.unit)} per second. Session limits can only be tightened.`,
           );
         }
         updated.rate = value;
       }
     } catch (error) {
-      if (error instanceof UnitError) throw new Block("bad_unit", `Refused. ${error.message}`);
+      if (error instanceof UnitError) throw new Block("bad_unit", `Blocked. ${error.message}`);
       throw error;
     }
-    if ((updated.min ?? -Infinity) > (updated.max ?? Infinity)) throw new Block("cannot_loosen", "Refused. min would be above max.");
+    if ((updated.min ?? -Infinity) > (updated.max ?? Infinity)) throw new Block("cannot_loosen", "Blocked. min would be above max.");
     this.sessionLimits.set(k, updated);
     return updated;
   }

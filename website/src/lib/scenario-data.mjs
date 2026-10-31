@@ -91,7 +91,7 @@ export function outcome(scenario = loadScenario()) {
   const person = by.includes(":") ? by.slice(by.indexOf(":") + 1) : "";
   return (
     `You'll see the agent raise the bed target from ${celsius(bed.before)} to ${celsius(bed.after)}, ` +
-    `have a request for a nozzle temperature of ${celsius(refused.requested)} refused at the nozzle limit of ` +
+    `have a request for a nozzle temperature of ${celsius(refused.requested)} blocked at the nozzle limit of ` +
     `${celsius(refused.limit)} and pause the print when the camera shows the print has come loose. ` +
     `The ${person} then approves the cancel, and the printer's state becomes ${approved.printer.state}.`
   );

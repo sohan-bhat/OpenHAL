@@ -199,7 +199,7 @@ export const ERROR_REGISTRY: RegistryEntry[] = [
     kernelCodes: ["needs_confirmation"],
     meaning: "Queued for a person, data.requestId names the request",
     template: (data) =>
-      has(data, "requestId") ? `${subject(data)} waits for a person to approve request ${data.requestId}` : `${subject(data)} needs a person to approve it`,
+      has(data, "requestId") ? `${subject(data)} is held until a person approves request ${data.requestId}` : `${subject(data)} needs a person to approve it`,
   },
   { code: -32014, name: "STOPPED", kernelCodes: ["stopped"], meaning: "The hub is stopped until a person unlocks", template: fixed("The hub is stopped until a person unlocks it") },
   {

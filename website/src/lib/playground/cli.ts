@@ -8,7 +8,7 @@ export function parseBool(text: string): boolean {
   const lowered = text.trim().toLowerCase();
   if (["true", "on", "yes", "1"].includes(lowered)) return true;
   if (["false", "off", "no", "0"].includes(lowered)) return false;
-  throw new CliError(`Expected true or false, got ${pyStrRepr(text)}.`);
+  throw new CliError(`Use true or false, not ${pyStrRepr(text)}.`);
 }
 
 export function writeValue(file: DeviceFile, channel: string, text: string): { value: unknown; unit: string | null } {

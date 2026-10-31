@@ -35,6 +35,6 @@ describe("the example page's messages", () => {
     expect(audit.command).toBe("uv run openhal log -n 8");
     expect(audit.entries.map((entry) => entry.seq)).toEqual([13, 12, 11, 10, 9, 8, 7, 6]);
     expect(audit.entries.map((entry) => entry.status)).toEqual(record.audit.entries.map((entry: { status: string }) => entry.status));
-    expect(audit.counts).toBe(`${record.audit.counts.requests} requests, ${record.audit.counts.refused} refused, ${record.audit.counts.confirmed_by_a_person} confirmed by a person.`);
+    expect(audit.counts).toBe(`${record.audit.counts.requests} requests, ${record.audit.counts.refused} blocked, ${record.audit.counts.confirmed_by_a_person} confirmed by a person.`);
   });
 });

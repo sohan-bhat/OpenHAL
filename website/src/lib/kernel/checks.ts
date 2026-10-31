@@ -138,13 +138,13 @@ function number(name: string, spec: WriteChannel | ArgSpec, raw: unknown, tighte
   const limits = effectiveLimits(spec, tightened);
   const asked = formatQuantity(value, unit);
   if (value < limits.min && !isClose(value, limits.min, 1e-12, 1e-12)) {
-    throw new Block("below_min", `Blocked. The ${name} limit is ${formatQuantity(limits.min, unit)} (min). Asked for ${asked}.`, {
+    throw new Block("below_min", `Blocked. The ${name} limit is ${formatQuantity(limits.min, unit)} (min). Requested ${asked}.`, {
       min: limits.min,
       unit,
     });
   }
   if (value > limits.max && !isClose(value, limits.max, 1e-12, 1e-12)) {
-    throw new Block("above_max", `Blocked. The ${name} limit is ${formatQuantity(limits.max, unit)} (max). Asked for ${asked}.`, {
+    throw new Block("above_max", `Blocked. The ${name} limit is ${formatQuantity(limits.max, unit)} (max). Requested ${asked}.`, {
       max: limits.max,
       unit,
     });
@@ -155,7 +155,7 @@ function number(name: string, spec: WriteChannel | ArgSpec, raw: unknown, tighte
     if (!isClose(steps, pyRound(steps), 0, 1e-6)) {
       throw new Block(
         "bad_step",
-        `Blocked. ${name} moves in steps of ${formatQuantity(spec.step, unit)} from ${formatQuantity(base, unit)}. Asked for ${asked}.`,
+        `Blocked. ${name} moves in steps of ${formatQuantity(spec.step, unit)} from ${formatQuantity(base, unit)}. Requested ${asked}.`,
         { step: spec.step, unit },
       );
     }
@@ -176,7 +176,7 @@ export function checkRate(name: string, unit: string, rate: number | null, next:
       "rate_limited",
       `Blocked. ${name} may change by ${formatQuantity(rate, unit)} per second. ` +
         `Right now it can go from ${formatQuantity(low, unit)} to ${formatQuantity(high, unit)}. ` +
-        `Asked for ${formatQuantity(next, unit)}, which is possible in ${formatF(wait, 1)} s, or use small steps.`,
+        `Requested ${formatQuantity(next, unit)}, which is possible in ${formatF(wait, 1)} s, or use small steps.`,
       { rate_per_s: rate, unit, from: low, to: high, wait_s: wait },
     );
   }

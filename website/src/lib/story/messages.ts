@@ -68,6 +68,6 @@ export function auditLog(scenario: Scenario = loadScenario()): { command: string
   return {
     command: audit.printed_with,
     entries: audit.entries.map((entry) => ({ ...entry, seq: Number(entry.seq), message: String(entry.message ?? "") })),
-    counts: `${counts.requests} requests, ${counts.refused} refused, ${counts.confirmed_by_a_person} confirmed by a person.`,
+    counts: `${counts.requests} requests, ${counts.refused} blocked, ${counts.confirmed_by_a_person} confirmed by a person.`,
   };
 }

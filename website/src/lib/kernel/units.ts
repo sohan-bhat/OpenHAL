@@ -241,7 +241,7 @@ function isPlainNumber(value: unknown): value is number | bigint {
 }
 
 export function parseQuantity(value: unknown, defaultUnit?: string): Quantity {
-  if (typeof value === "boolean") throw new UnitError("Expected a number with a unit, got a boolean.");
+  if (typeof value === "boolean") throw new UnitError("This value needs a number with a unit, not a boolean.");
   if (isPlainNumber(value)) {
     if (defaultUnit === undefined) throw new UnitError("This value needs a unit, for example 30 degC or 50 %.");
     return quantityOf(finite(Number(value), "Value"), parseUnit(defaultUnit));
@@ -269,7 +269,7 @@ export function parseQuantity(value: unknown, defaultUnit?: string): Quantity {
     }
     return quantityOf(finite(Number(number), "Value"), parseUnit(unit));
   }
-  throw new UnitError(`Expected a number with a unit, got ${pyTypeName(value)}.`);
+  throw new UnitError(`This value needs a number with a unit, not ${pyTypeName(value)}.`);
 }
 
 function pyTypeName(value: unknown): string {
