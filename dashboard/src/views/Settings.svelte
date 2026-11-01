@@ -101,10 +101,10 @@
   <section class="section" aria-labelledby="tokens-title">
     <div class="section-head">
       <h2 id="tokens-title">Client tokens</h2>
-      <div class="check">
+      <Label for="show-revoked" class="inline-flex cursor-pointer items-center gap-2 font-normal text-foreground">
         <Checkbox id="show-revoked" bind:checked={showRevoked} />
-        <Label for="show-revoked" class="font-normal text-foreground">Show revoked tokens</Label>
-      </div>
+        <span>Show revoked tokens</span>
+      </Label>
     </div>
     <p class="muted">
       Each client sends a bearer token. Agent tokens carry a scope. High hazard devices always need a person, whatever the
@@ -148,8 +148,8 @@
                         <AlertDialog.Header>
                           <AlertDialog.Title>Revoke {token.name}</AlertDialog.Title>
                           <AlertDialog.Description>
-                            The hub blocks every request that carries this token from then on, and the list keeps the token as
-                            revoked.
+                            The hub blocks every request that carries this token from then on, and Show revoked tokens still
+                            lists the token.
                           </AlertDialog.Description>
                         </AlertDialog.Header>
                         <AlertDialog.Footer>
@@ -260,12 +260,6 @@
 
   dd {
     margin: 0;
-  }
-
-  .check {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s-2);
   }
 
   .view :global(.tokens td) {

@@ -155,10 +155,10 @@
         triggerClass="max-w-[200px]"
         options={[{ value: "", label: "All outcomes" }, ...outcomes]}
       />
-      <div class="check">
+      <Label for="log-values" class="inline-flex min-h-8 cursor-pointer items-center gap-2 font-normal text-foreground">
         <Checkbox id="log-values" bind:checked={showValues} />
-        <Label for="log-values" class="font-normal text-foreground">Show <code>hal/value</code></Label>
-      </div>
+        <span>Show <code>hal/value</code></span>
+      </Label>
       <Button size="sm" onclick={copy} disabled={!visible.length}>
         {copied ? "Copied as text" : "Copy as text"}
       </Button>
@@ -290,13 +290,6 @@
     flex-wrap: wrap;
     align-items: end;
     gap: var(--s-2) var(--s-3);
-  }
-
-  .check {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s-2);
-    min-height: 32px;
   }
 
   .scroller {
