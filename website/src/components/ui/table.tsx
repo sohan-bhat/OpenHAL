@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 function Table({ className, containerClassName, ...props }: React.ComponentProps<"table"> & { containerClassName?: string }) {
   return (
     <div data-slot="table-container" className={cn("relative w-full overflow-x-auto", containerClassName)}>
-      <table data-slot="table" className={cn("w-full border-collapse text-base leading-normal", className)} {...props} />
+      <table data-slot="table" className={cn("w-full border-collapse text-base leading-normal [&_th[scope=row]~td]:align-baseline", className)} {...props} />
     </div>
   );
 }
@@ -43,7 +43,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
 }
 
 function TableCell({ className, ...props }: React.ComponentProps<"td">) {
-  return <td data-slot="table-cell" className={cn("border-b border-border py-2 pr-3 pl-0 align-top [th[scope=row]~&]:align-baseline", className)} {...props} />;
+  return <td data-slot="table-cell" className={cn("border-b border-border py-2 pr-3 pl-0 align-top", className)} {...props} />;
 }
 
 function TableCaption({ className, ...props }: React.ComponentProps<"caption">) {
