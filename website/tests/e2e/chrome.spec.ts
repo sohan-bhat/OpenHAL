@@ -648,7 +648,7 @@ test.describe("the sidebar's collapse", () => {
     await expect(input).toBeFocused();
     await page.keyboard.press("Escape");
     await page.goto("/spec/playground/");
-    await page.locator("summary", { hasText: "Build your own request" }).click();
+    await page.getByRole("button", { name: "Build your own request" }).click();
     await expect(page.locator("astro-island:has(#pg-text)")).not.toHaveAttribute("ssr", "");
     await page.locator("#pg-text").click();
     await page.keyboard.type("x");

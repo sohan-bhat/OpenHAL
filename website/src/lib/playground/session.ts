@@ -2,7 +2,6 @@ import { Kernel, agent, deviceId, deviceRefs, human, label, loadDeviceFile, type
 import { formatG } from "../kernel/pyformat";
 import { parseDeviceYaml } from "../kernel/yaml";
 import { rpcError } from "../protocol";
-import type { TraceEntry } from "../trace";
 import { CliError, actionArgs, splitPairs, writeValue } from "./cli";
 import { decisionWire, displayUnit, errorEntry, requestFor, responseFor } from "./rpc";
 import { afterAction } from "./simulate";

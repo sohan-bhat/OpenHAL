@@ -247,11 +247,8 @@ test.describe("the safety yellow accent", () => {
         expect(seen.roles, path).toEqual(expect.arrayContaining([...needs]));
       }
       await page.goto("/spec/playground/");
-      const build = page.locator("details", { has: page.locator("summary", { hasText: "Build your own request" }) });
-      await expect(async () => {
-        if (!(await build.evaluate((details: HTMLDetailsElement) => details.open))) await build.locator("summary").click();
-        await expect(page.getByRole("button", { name: /^Send / })).toBeVisible({ timeout: 2_000 });
-      }).toPass();
+      await page.getByRole("button", { name: "Build your own request" }).click();
+      await expect(page.getByRole("button", { name: /^Send / })).toBeVisible({ timeout: 15_000 });
       const playground = await accents(page);
       expect(playground.strays).toEqual([]);
       expect(playground.pending).toEqual([]);

@@ -124,7 +124,7 @@ test.describe("playground", () => {
   test("validates live and shows a problem with its place", async ({ page }) => {
     const errors = noErrors(page);
     await page.goto("/spec/playground/");
-    await page.locator("summary", { hasText: "Build your own request" }).click();
+    await page.getByRole("button", { name: "Build your own request" }).click();
     const editor = page.getByLabel("Device file YAML");
     await expect(page.locator("#pg-problems")).toContainText("valid");
     await editor.fill("device: Fan\nconnect: { mock: fan }\nwrite:\n  speed: { unit: percent, min: 0 }\n");
@@ -134,7 +134,7 @@ test.describe("playground", () => {
 
   test("opens on the story's requests, and a first click shows the hub's answer", async ({ page }) => {
     await page.goto("/spec/playground/");
-    await expect(page.locator("details.build")).not.toHaveAttribute("open", "");
+    await expect(page.getByRole("button", { name: "Build your own request" })).toHaveAttribute("aria-expanded", "false");
     await page.getByRole("button", { name: `Set the nozzle to ${(firstError.data as any).requested.value} °C` }).click();
     const latest = page.locator(".exchanges > li").first();
     await expect(latest).toContainText(`error ${firstError.code} ${firstError.data.name}`);
@@ -156,7 +156,7 @@ test.describe("playground", () => {
     const page = await context.newPage();
     await page.goto("/spec/playground/");
     const mark = page.getByRole("button", { name: "About hazard" });
-    const note = page.locator("#info-hazard");
+    const note = page.getByRole("dialog", { name: "About hazard" });
     await mark.focus();
     await page.keyboard.press("Enter");
     await expect(mark).toHaveAttribute("aria-expanded", "true");
@@ -201,7 +201,8 @@ test.describe("playground", () => {
     await expect(page.getByRole("button", { name: "Send hal/write" })).toBeEnabled();
     await page.getByLabel("Simulated reading for door_closed").fill("true");
     await page.getByLabel("Simulated reading for door_closed").press("Enter");
-    await page.getByLabel("Channel or action").selectOption("laser_power");
+    await page.locator("#pg-target").click();
+    await page.getByRole("menuitemradio", { name: "laser_power", exact: true }).click();
     await page.waitForTimeout(1000);
     await page.getByLabel("Value").fill("10 %");
     await page.getByRole("button", { name: "Send hal/write" }).click();
@@ -344,15 +345,16 @@ test.describe("site", () => {
   test("the playground's As picker shows its whole label", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/spec/playground/");
-    await page.locator("summary", { hasText: "Build your own request" }).click();
-    const fits = await page.locator(".request select").first().evaluate((select: HTMLSelectElement) => {
+    await page.getByRole("button", { name: "Build your own request" }).click();
+    const fits = await page.locator("#pg-as").evaluate((trigger: HTMLElement) => {
+      const value = trigger.querySelector<HTMLElement>(".pg-select-value")!;
       const probe = document.createElement("span");
-      probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font:${getComputedStyle(select).font}`;
-      probe.textContent = select.selectedOptions[0].textContent;
+      probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font:${getComputedStyle(value).font}`;
+      probe.textContent = value.textContent;
       document.body.append(probe);
       const width = probe.getBoundingClientRect().width;
       probe.remove();
-      return width + 40 <= select.clientWidth;
+      return value.textContent === "Agent, control_medium token" && width + 40 <= trigger.clientWidth && value.scrollWidth <= value.clientWidth;
     });
     expect(fits).toBe(true);
   });
