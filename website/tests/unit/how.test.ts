@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { IDS, readDeviceFile, storyFacts } from "../../src/lib/story/facts";
-import { CAPTIONS, COLUMNS, TIP, across, howSteps, howStepsFor, type Reply, type Request, type Span } from "../../src/lib/story/how";
+import { APPROVED, CAPTIONS, COLUMNS, TIP, across, howSteps, howStepsFor, type Mark, type Reply, type Request, type Span } from "../../src/lib/story/how";
 import type { Scenario } from "../../src/lib/scenario";
 import { SCENARIO_PATH, scenarioFrom } from "../../src/lib/scenario-data.mjs";
 
@@ -14,6 +14,7 @@ const steps = howSteps(facts);
 const ends = ([at, length]: Span) => at + length;
 const requests = (index: number) => steps[index].rows.filter((row): row is Request => row.kind === "request");
 const replies = (index: number) => steps[index].rows.filter((row): row is Reply => row.kind === "reply");
+const marks = (index: number) => steps[index].rows.filter((row): row is Mark => row.kind === "mark");
 const byId = (id: string) => fresh().record.exchanges.find((exchange) => exchange.id === id)!;
 
 describe("How it works", () => {
@@ -48,15 +49,16 @@ describe("How it works", () => {
   it("passes the bed write to the printer, and done returns while the bed changes from 60 °C to 70 °C", () => {
     const [request] = requests(0);
     expect(request.label).toBe(facts.said.warm[0].label);
-    expect(request.legs.map((leg) => [leg.from, leg.to, leg.held])).toEqual([
-      ["agent", "hub", false],
-      ["hub", "printer", false],
+    expect(request.legs.map((leg) => [leg.from, leg.to])).toEqual([
+      ["agent", "hub"],
+      ["hub", "printer"],
     ]);
+    expect(request.past).toBeUndefined();
     expect(replies(0)).toMatchObject([{ from: "printer", answer: "done", tone: "ok" }]);
     const bed = steps[0].readings.find((reading) => reading.name === "Bed")!;
-    expect([bed.value, bed.becomes?.value]).toEqual(["60 °C", "70 °C"]);
-    expect(bed.becomes!.at[0]).toBeGreaterThanOrEqual(ends(request.legs[1].draws));
-    expect(replies(0)[0].draws[0]).toBeGreaterThanOrEqual(ends(bed.becomes!.at));
+    expect([bed.value, ...bed.changes.map((change) => change.value)]).toEqual(["60 °C", "70 °C"]);
+    expect(bed.changes[0].at[0]).toBeGreaterThanOrEqual(ends(request.legs[1].draws));
+    expect(replies(0)[0].draws[0]).toBeGreaterThanOrEqual(ends(bed.changes[0].at));
   });
 
   it("stops the nozzle request at the hub, and LIMIT_EXCEEDED returns while the printer stays as it was", () => {
@@ -64,22 +66,34 @@ describe("How it works", () => {
     expect(request.label).toBe(facts.said.hot[0].label);
     expect(request.legs.map((leg) => [leg.from, leg.to])).toEqual([["agent", "hub"]]);
     expect(replies(1)).toMatchObject([{ from: "hub", answer: byId(IDS.nozzle).error!.data.name, tone: "blocked" }]);
-    expect(steps[1].readings.every((reading) => !reading.becomes)).toBe(true);
-    expect(steps[1].readings.map((reading) => reading.value)).toEqual(steps[0].readings.map((reading) => reading.becomes?.value ?? reading.value));
+    expect(steps[1].readings.every((reading) => reading.changes.length === 0)).toBe(true);
+    expect(steps[1].readings.map((reading) => reading.value)).toEqual(steps[0].readings.map((reading) => reading.changes.at(-1)?.value ?? reading.value));
   });
 
-  it("holds the cancel at the hub as pending in amber until Approve sends it on, and done returns as the state becomes cancelled", () => {
-    const [cancel, approve] = requests(2);
-    expect(cancel.label).toBe("cancel");
-    expect(cancel.legs).toMatchObject([{ from: "agent", to: "hub", held: true }]);
-    expect(approve).toMatchObject({ label: "Approve", approve: true, legs: [{ from: "hub", to: "printer", held: false }] });
-    expect(replies(2)).toMatchObject([
-      { from: "hub", answer: "pending", tone: "confirm" },
-      { from: "printer", answer: "done", tone: "ok" },
-    ]);
+  it("holds the cancel as pending, shows the approval at the hub, sends the cancel on and cools the nozzle as done returns", () => {
+    expect(steps[2].rows.map((row) => row.kind)).toEqual(["request", "reply", "mark", "request", "reply"]);
+    const [held, sent] = requests(2);
+    expect(held).toMatchObject({ label: facts.said.cancel[0].label, legs: [{ from: "agent", to: "hub" }] });
+    expect(replies(2)[0]).toMatchObject({ from: "hub", answer: "pending", tone: "confirm" });
+    expect(marks(2)).toEqual([expect.objectContaining({ at: "hub", text: APPROVED })]);
+    expect(APPROVED).toBe("Approved by you");
+    expect(sent).toMatchObject({ label: "cancel", legs: [{ from: "hub", to: "printer" }] });
+    expect(sent.label).toBe(facts.said.approve[facts.said.approve.length - 1].label);
+    expect(replies(2)[1]).toMatchObject({ from: "printer", answer: "done", tone: "ok" });
+    expect(steps[2].rows.some((row) => row.kind === "request" && /approve/i.test(row.label))).toBe(false);
+    expect(marks(2)[0].shows[0]).toBeGreaterThan(ends(replies(2)[0].draws));
+    expect(sent.shows[0]).toBeGreaterThan(ends(marks(2)[0].shows));
+    expect(held.past![0]).toBeGreaterThanOrEqual(ends(marks(2)[0].shows));
+    expect(held.past![0]).toBeLessThanOrEqual(sent.legs[0].draws[0]);
+    expect(sent.past).toBeUndefined();
     const state = steps[2].readings.find((reading) => reading.name === "State")!;
-    expect([state.value, state.becomes?.value]).toEqual(["printing", (byId(IDS.approve) as Record<string, any>).printer.state]);
-    expect(steps[2].rows.map((row) => row.kind)).toEqual(["request", "reply", "request", "reply"]);
+    expect([state.value, ...state.changes.map((change) => change.value)]).toEqual(["printing", (byId(IDS.approve) as Record<string, any>).printer.state]);
+    const nozzle = steps[2].readings.find((reading) => reading.name === "Nozzle")!;
+    expect([nozzle.value, ...nozzle.changes.map((change) => change.value)]).toEqual(["215 °C", "155 °C", "113 °C"]);
+    expect(nozzle.changes[0].at[0]).toBeGreaterThanOrEqual(ends(sent.legs[0].draws));
+    expect(nozzle.changes.at(-1)!.at[0]).toBeGreaterThan(ends(replies(2)[1].draws));
+    const cooling = nozzle.changes.map((change) => parseFloat(change.value));
+    expect(cooling).toEqual([...cooling].sort((a, b) => b - a));
   });
 
   it("times every piece inside its step, each after the one it follows, and holds the step at its end", () => {
@@ -87,7 +101,12 @@ describe("How it works", () => {
       const spans: Span[] = [step.rule.shows];
       let last = 0;
       for (const row of step.rows) {
-        if (row.kind === "request") {
+        if (row.kind === "mark") {
+          spans.push(row.shows);
+          expect(row.shows[0], `step ${index + 1}`).toBeGreaterThan(last);
+          last = ends(row.shows);
+        } else if (row.kind === "request") {
+          if (row.past) spans.push(row.past);
           spans.push(row.shows);
           expect(row.legs[0].draws[0], `step ${index + 1}`).toBeGreaterThanOrEqual(ends(row.shows) - 0.001);
           for (const [place, leg] of row.legs.entries()) {
@@ -100,6 +119,12 @@ describe("How it works", () => {
           spans.push(row.draws);
           expect(row.draws[0], `step ${index + 1}`).toBeGreaterThan(last);
           last = ends(row.draws);
+        }
+      }
+      for (const reading of step.readings) {
+        for (const [place, change] of reading.changes.entries()) {
+          spans.push(change.at);
+          if (place > 0) expect(change.at[0], `step ${index + 1} ${reading.name}`).toBeGreaterThan(ends(reading.changes[place - 1].at));
         }
       }
       for (const span of spans) {
