@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTimings } from "@/components/ui/motion";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Chevron as PickerChevron } from "@/components/islands/picker";
 import type { Request } from "@/lib/kernel";
 import { heldWhat } from "@/lib/playground/session";
 
@@ -78,30 +79,56 @@ export function Held({ pending, heading, onDecide }: { pending: Request[]; headi
 
 interface PickerProps {
   id: string;
+  label: string;
+  aside?: ReactNode;
   value: string;
   onChange: (value: string) => void;
   items: Array<{ value: string; label: string }>;
+  className?: string;
 }
 
 /**
- * One of the request form's choices on shadcn/ui's Select (Radix). The list opens 4 px under its
- * button, words only, with the current choice in bold on the surface highlight.
+ * One of the request form's choices, a picker like the header's on shadcn/ui's DropdownMenu
+ * (Radix), kept non-modal. The button reads its label and its choice, and the list opens 4 px under
+ * the button, words only, with the current choice in bold on the surface highlight.
  */
-export function Picker({ id, value, onChange, items }: PickerProps) {
-  const shown = items.find((item) => item.value === value)?.label;
+export function Picker({ id, label, aside, value, onChange, items, className }: PickerProps) {
+  const shown = items.find((item) => item.value === value)?.label ?? "";
+  const heading = (
+    <Label id={`${id}-label`} htmlFor={id} className="legend">
+      {label}
+    </Label>
+  );
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger id={id} className="pg-select">
-        <SelectValue>{shown}</SelectValue>
-      </SelectTrigger>
-      <SelectContent position="popper" sideOffset={4} className="pg-list">
-        {items.map((item) => (
-          <SelectItem key={item.value} value={item.value}>
-            {item.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className={className ? `field ${className}` : "field"}>
+      {aside ? (
+        <span className="legend as-label">
+          {heading}
+          {aside}
+        </span>
+      ) : (
+        heading
+      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button id={id} type="button" variant="outline" className="pg-select" aria-labelledby={`${id}-label ${id}-value`}>
+            <span id={`${id}-value`} className="pg-select-value">
+              {shown}
+            </span>
+            <PickerChevron />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" aria-label={label}>
+          <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
+            {items.map((item) => (
+              <DropdownMenuRadioItem key={item.value} value={item.value}>
+                {item.label}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }
 

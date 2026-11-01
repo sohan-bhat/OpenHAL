@@ -266,12 +266,14 @@ export default function Playground({ examples, initial, suggestion = null, quick
                     <section className="panel editor" aria-labelledby="pg-editor-title">
                       <div className="panel-head">
                         <h2 id="pg-editor-title">Device file</h2>
-                        <div className="example">
-                          <Label htmlFor="pg-example" className="legend">
-                            Start from
-                          </Label>
-                          <Picker id="pg-example" value={exampleName} onChange={chooseExample} items={examples.map((item) => ({ value: item.name, label: item.path }))} />
-                        </div>
+                        <Picker
+                          id="pg-example"
+                          label="Start from"
+                          className="example"
+                          value={exampleName}
+                          onChange={chooseExample}
+                          items={examples.map((item) => ({ value: item.name, label: item.path }))}
+                        />
                       </div>
                       <Suspense
                         fallback={
@@ -322,34 +324,34 @@ export default function Playground({ examples, initial, suggestion = null, quick
                             }}
                           >
                             <div className="fields">
-                              <div className="field">
-                                <span className="legend as-label">
-                                  <Label htmlFor="pg-as">As</Label>
+                              <Picker
+                                id="pg-as"
+                                label="As"
+                                aside={
                                   <InfoMark
                                     topic="tokens"
                                     text="Each client signs in with a token, and an agent's token sets which hazard classes the agent may control. Approving a request or lifting a stop takes a person's token."
                                     href="/docs/concepts/"
                                   />
-                                </span>
-                                <Picker id="pg-as" value={clientKey} onChange={setClientKey} items={CLIENTS.map((item) => ({ value: item.key, label: item.label }))} />
-                              </div>
-                              <div className="field">
-                                <Label htmlFor="pg-device" className="legend">
-                                  Device
-                                </Label>
-                                <Picker id="pg-device" value={targetDevice} onChange={(value) => update({ targetDevice: value })} items={[...kernel.devices.keys()].map((device) => ({ value: device, label: device }))} />
-                              </div>
-                              <div className="field">
-                                <Label htmlFor="pg-target" className="legend">
-                                  Channel or action
-                                </Label>
-                                <Picker
-                                  id="pg-target"
-                                  value={target}
-                                  onChange={(value) => update({ target: value })}
-                                  items={targetsOf(kernel, targetDevice).map((item) => ({ value: item.name, label: item.kind === "write" ? item.name : `${item.name} (action)` }))}
-                                />
-                              </div>
+                                }
+                                value={clientKey}
+                                onChange={setClientKey}
+                                items={CLIENTS.map((item) => ({ value: item.key, label: item.label }))}
+                              />
+                              <Picker
+                                id="pg-device"
+                                label="Device"
+                                value={targetDevice}
+                                onChange={(value) => update({ targetDevice: value })}
+                                items={[...kernel.devices.keys()].map((device) => ({ value: device, label: device }))}
+                              />
+                              <Picker
+                                id="pg-target"
+                                label="Channel or action"
+                                value={target}
+                                onChange={(value) => update({ target: value })}
+                                items={targetsOf(kernel, targetDevice).map((item) => ({ value: item.name, label: item.kind === "write" ? item.name : `${item.name} (action)` }))}
+                              />
                             </div>
                             <div className="field">
                               <Label htmlFor="pg-value" className="legend">
