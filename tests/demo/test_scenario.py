@@ -45,6 +45,8 @@ def test_the_story_runs_in_order() -> None:
 
 def test_every_exchange_has_a_reason_line() -> None:
     assert all(entry["before"] == scenario.BEFORE[entry["id"]] for entry in RECORD["exchanges"])
+    assert all(entry["step"] == scenario.STEP[entry["id"]] for entry in RECORD["exchanges"])
+    assert all(entry["step"][0].isupper() and entry["step"].endswith(".") for entry in RECORD["exchanges"])
     assert exchange(RECORD, "nozzle-too-hot")["before"] == "a hotter nozzle might help the corner stick"
 
 

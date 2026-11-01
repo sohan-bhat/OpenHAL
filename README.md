@@ -31,39 +31,58 @@ You'll see the agent raise the bed target from 60 °C to 70 °C, have a request 
 ## Message trace
 
 <!-- trace:start -->
+The agent reads a frame from the printer's camera to check how the print is starting.
+
 ```
-# the agent checks the first layer
 → hal/read    { "device": "printer-cam", "channel": "frame" }
 ← result      { "value": { "mimeType": "image/jpeg", "bytes": 19409,
                 "width": 640, "height": 480, "data": "…" } }
+```
 
-# a corner of the first layer is lifting
+A corner of the print is lifting off the bed, so the agent sends a request to raise the bed target. The new target is inside the bed limit, so the hub passes the request to the printer.
+
+```
 → hal/write   { "device": "printer", "channel": "bed_target",
                 "value": 70, "unit": "degC" }
 ← result      { "status": "done" }
+```
 
-# a hotter nozzle might help the corner stick
+A hotter nozzle might help the corner stick, so the agent sends a request for a higher nozzle temperature. The request is above the nozzle limit, so the hub blocks the request.
+
+```
 → hal/write   { "device": "printer", "channel": "extruder_target",
                 "value": 300, "unit": "degC" }
 ← error -32010 LIMIT_EXCEEDED
   extruder_target 300 degC exceeds the limit of 260 degC
   (printer.hal.yaml, confirmed by owner 2026-10-24)
+```
 
-# later the agent checks the print again
+Later the agent reads another frame to check the print again.
+
+```
 → hal/read    { "device": "printer-cam", "channel": "frame" }
 ← result      { "value": { "mimeType": "image/jpeg", "bytes": 23567,
                 "width": 640, "height": 480, "data": "…" } }
+```
 
-# the print has come loose
+The print has come loose, so the agent pauses the print.
+
+```
 → hal/action  { "device": "printer", "action": "pause" }
 ← result      { "status": "done" }
+```
 
-# cancelling can't be undone
+The agent sends a request to cancel the print. A cancel can't be undone, so the hub holds the request until the owner approves the request.
+
+```
 → hal/action  { "device": "printer", "action": "cancel" }
 ← result      { "status": "pending", "requestId": "REQUEST_ID",
                 "expiresInS": 300 }
+```
 
-# the owner approves the cancel
+The owner approves the cancel with the human token over the same protocol, and the cancel runs.
+
+```
 → hal/confirmations/approve { "requestId": "REQUEST_ID" }
 ← result      { "status": "done" }
 ```

@@ -132,6 +132,27 @@ BEFORE: Final = {
     "owner-approves": f"the {PERSON} approves the cancel",
 }
 """The narration before each exchange, a `#` line in the trace."""
+STEP: Final = {
+    "first-layer": "The agent reads a frame from the printer's camera to check how the print is starting.",
+    "bed-warmer": (
+        "A corner of the print is lifting off the bed, so the agent sends a request to raise the bed target. "
+        "The new target is inside the bed limit, so the hub passes the request to the printer."
+    ),
+    "nozzle-too-hot": (
+        "A hotter nozzle might help the corner stick, so the agent sends a request for a higher nozzle "
+        "temperature. The request is above the nozzle limit, so the hub blocks the request."
+    ),
+    "come-loose": "Later the agent reads another frame to check the print again.",
+    "paused": "The print has come loose, so the agent pauses the print.",
+    "cancel-waits": (
+        "The agent sends a request to cancel the print. A cancel can't be undone, so the hub holds the "
+        f"request until the {PERSON} approves the request."
+    ),
+    "owner-approves": (
+        f"The {PERSON} approves the cancel with the human token over the same protocol, and the cancel runs."
+    ),
+}
+"""The sentence before each exchange where a page shows the trace as steps, one code block each."""
 
 
 def example(folder: str, *parts: str) -> Path:
@@ -357,7 +378,7 @@ def _exchange(
     cooling: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """One exchange in the record's order. `kernel` stays empty until the audit log is read."""
-    entry: dict[str, Any] = {"id": name, "by": by.label, "before": BEFORE[name]}
+    entry: dict[str, Any] = {"id": name, "by": by.label, "before": BEFORE[name], "step": STEP[name]}
     entry.update({key: value for key, value in (("frame", frame), ("bed_target", bed_target)) if value is not None})
     entry["request"] = copy.deepcopy(request)
     if "error" in answer:

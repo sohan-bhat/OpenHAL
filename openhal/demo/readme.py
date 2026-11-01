@@ -24,7 +24,7 @@ PAGES: Final = (ROOT / "README.md", ROOT / "docs" / "QUICKSTART.md")
 def blocks(record: dict[str, Any]) -> dict[str, str]:
     """The generated text for each marker name."""
     return {
-        "trace": "```\n" + trace.text(record) + "```",
+        "trace": trace.steps(record),
         "outcome": trace.outcome(record),
         "audit": "```\n" + "\n".join(record["audit"]["lines"]) + "\n```\n\n" + trace.counts(record) + ".",
     }

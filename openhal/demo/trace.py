@@ -5,7 +5,8 @@ show. Requests and errors are shown as the hub sent them. A read shows the value
 an image shows its format and size with its base64 `data` elided, never the pixels. Long payloads
 wrap at a comma, and reasons wrap before the device file citation, so the trace stays narrow.
 Narration that is not a message, such as what held before an exchange, is a comment line that
-starts with `#`.
+starts with `#` in the terminal. A page shows the trace as steps instead, each a sentence and a
+code block with the step's request and response.
 """
 
 from __future__ import annotations
@@ -79,11 +80,11 @@ def _result(request: dict[str, Any], result: dict[str, Any], elided: str) -> dic
     return {"status": result.get("status")}
 
 
-def exchange(entry: dict[str, Any], arrows: tuple[str, str] = ARROWS) -> list[str]:
+def exchange(entry: dict[str, Any], arrows: tuple[str, str] = ARROWS, *, note: bool = True) -> list[str]:
     """One exchange, with what held before it as a comment, the request and the hub's response."""
     to_hub, back = arrows
     out: list[str] = []
-    if entry.get("before"):
+    if note and entry.get("before"):
         out.append(f"{COMMENT}{entry['before']}")
     request = entry["request"]
     out += wrapped(f"{to_hub} {request['method']}", request["params"])
@@ -113,6 +114,13 @@ def lines(record: dict[str, Any], arrows: tuple[str, str] = ARROWS, only: tuple[
 
 def text(record: dict[str, Any], only: tuple[str, ...] = ()) -> str:
     return "\n".join(lines(record, only=only)) + "\n"
+
+
+def steps(record: dict[str, Any]) -> str:
+    """The trace as Markdown steps, each exchange's sentence and then its messages in a code block."""
+    return "\n\n".join(
+        entry["step"] + "\n\n```\n" + "\n".join(exchange(entry, note=False)) + "\n```" for entry in record["exchanges"]
+    )
 
 
 def celsius(quantity: dict[str, Any]) -> str:

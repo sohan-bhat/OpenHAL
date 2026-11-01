@@ -62,6 +62,7 @@ exchanges:
 - id: first-layer
   by: agent:claude
   before: the agent checks the first layer
+  step: The agent reads a frame from the printer's camera to check how the print is starting.
   frame: examples/print-babysitter/frames/first-layer.jpg
   request:
     method: hal/read
@@ -99,6 +100,7 @@ exchanges:
 - id: bed-warmer
   by: agent:claude
   before: a corner of the first layer is lifting
+  step: A corner of the print is lifting off the bed, so the agent sends a request to raise the bed target. The new target is inside the bed limit, so the hub passes the request to the printer.
   bed_target:
     before:
       value: 60.0
@@ -145,6 +147,7 @@ exchanges:
 - id: nozzle-too-hot
   by: agent:claude
   before: a hotter nozzle might help the corner stick
+  step: A hotter nozzle might help the corner stick, so the agent sends a request for a higher nozzle temperature. The request is above the nozzle limit, so the hub blocks the request.
   request:
     method: hal/write
     params:
@@ -192,6 +195,7 @@ exchanges:
 - id: come-loose
   by: agent:claude
   before: later the agent checks the print again
+  step: Later the agent reads another frame to check the print again.
   frame: examples/print-babysitter/frames/come-loose.jpg
   request:
     method: hal/read
@@ -229,6 +233,7 @@ exchanges:
 - id: paused
   by: agent:claude
   before: the print has come loose
+  step: The print has come loose, so the agent pauses the print.
   request:
     method: hal/action
     params:
@@ -266,6 +271,7 @@ exchanges:
 - id: cancel-waits
   by: agent:claude
   before: cancelling can't be undone
+  step: The agent sends a request to cancel the print. A cancel can't be undone, so the hub holds the request until the owner approves the request.
   request:
     method: hal/action
     params:
@@ -302,6 +308,7 @@ exchanges:
 - id: owner-approves
   by: human:owner
   before: the owner approves the cancel
+  step: The owner approves the cancel with the human token over the same protocol, and the cancel runs.
   request:
     method: hal/confirmations/approve
     params:

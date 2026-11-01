@@ -60,8 +60,10 @@ MOCK = load(plant.example_file())
 def test_pages_match_the_recorded_scenario(page: Path) -> None:
     text = page.read_text(encoding="utf-8")
     assert readme.synced(text, RECORD) == text, "Run uv run python -m openhal.demo.readme"
-    assert "<!-- trace:start -->\n```" in text
-    assert "# the owner approves the cancel\n→ hal/confirmations/approve" in text
+    trace = text[text.index("<!-- trace:start -->") : text.index("<!-- trace:end -->")]
+    assert "\n# " not in trace, "the page shows each step as a sentence and a code block, with no comment lines"
+    for entry in RECORD["exchanges"]:
+        assert f"{entry['step']}\n\n```\n→ {entry['request']['method']}" in trace
 
 
 def test_the_docs_quickstart_ends_with_the_audit_log() -> None:
