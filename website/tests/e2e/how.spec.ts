@@ -406,8 +406,11 @@ test.describe("smooth scrolling", () => {
     await page.reload();
     await expect(page.getByRole("switch", { name: "Smooth scrolling" })).toHaveAttribute("aria-checked", "false");
     await page.getByRole("switch", { name: "Smooth scrolling" }).click();
+    await expect(page.getByRole("switch", { name: "Smooth scrolling" })).toHaveAttribute("aria-checked", "true");
     await page.reload();
     await expect(page.getByRole("switch", { name: "Smooth scrolling" })).toHaveAttribute("aria-checked", "true");
+    await page.getByText("Smooth scrolling", { exact: true }).click();
+    await expect(page.getByRole("switch", { name: "Smooth scrolling" })).toHaveAttribute("aria-checked", "false");
   });
 
   test("is off under reduced motion", async ({ page }) => {

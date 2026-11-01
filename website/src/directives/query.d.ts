@@ -2,6 +2,6 @@ export {};
 
 declare module "astro" {
   interface AstroClientDirectives {
-    "client:query"?: string;
+    "client:query"?: boolean | string;
   }
 }

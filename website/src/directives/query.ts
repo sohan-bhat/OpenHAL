@@ -15,10 +15,11 @@ function copy(event: Event): Event {
 }
 
 /**
- * Hydrates a form island, the catalog filters, at once when the address carries one of the query
- * fields the directive's value names, such as client:query="q tier hazard", so a shared filtered
- * view shows its choices, and otherwise on the first sign that a person means to use a field: the
- * pointer over the form, focus, a touch or typing. A press on a button or an opening key on a
+ * Hydrates an island of form controls, the catalog filters or the Smooth scrolling switch, at once
+ * when the address carries one of the query fields the directive's value names, such as
+ * client:query="q tier hazard", so a shared filtered view shows its choices, and otherwise on the
+ * first sign that a person means to use a control: the pointer over the island, a label included,
+ * focus, a touch or typing. A press on a button, a label's click included, or an opening key on a
  * select that arrives while the island loads is held and replayed once the island is ready, and
  * text typed meanwhile stays in its field for the island to read.
  */

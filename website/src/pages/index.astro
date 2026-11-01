@@ -102,9 +102,9 @@ const more = [
 </DocShell>
 
 <script>
-  import { smoothSwitch } from "../components/landing/smooth-switch";
+  import { smoothScrolling } from "../components/landing/smooth-switch";
 
-  for (const toggle of document.querySelectorAll<HTMLButtonElement>("[data-smooth]")) smoothSwitch(toggle);
+  if (document.querySelector("[data-smooth]")) smoothScrolling();
   const how = document.querySelector<HTMLElement>("[data-how]");
   if (how) {
     import("../components/landing/how-runtime")

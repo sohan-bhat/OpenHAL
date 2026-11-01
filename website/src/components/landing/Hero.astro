@@ -2,6 +2,7 @@
 import { PRODUCT_NAME } from "../../config/brand";
 import { latestSpecHref } from "../../lib/spec";
 import { SPELLED } from "../../lib/story/name";
+import { buttonVariants } from "../ui/button";
 
 interface Props {
   spell: string;
@@ -19,8 +20,8 @@ const labels = SPELLED.map((part) => ({ word: part.label, at: PRODUCT_NAME.lastI
     </p>
   </div>
   <p class="hero-actions">
-    <a class="button hero-go" href="/docs/quickstart/">Get started</a>
-    <a class="button quiet hero-spec" href={latestSpecHref()}>Read the specification</a>
+    <a class={buttonVariants({ size: "lg", className: "hero-go" })} data-slot="button" data-variant="default" href="/docs/quickstart/">Get started</a>
+    <a class={buttonVariants({ variant: "outline", size: "lg", className: "hero-spec" })} data-slot="button" data-variant="outline" href={latestSpecHref()}>Read the specification</a>
   </p>
 </section>
 <script is:inline set:html={spell} />
@@ -79,18 +80,9 @@ const labels = SPELLED.map((part) => ({ word: part.label, at: PRODUCT_NAME.lastI
     margin-top: var(--s-6);
   }
 
-  .hero-actions .button {
-    min-height: 48px;
-    padding: 0 var(--s-4);
-  }
-
   @media (min-width: 768px) {
     .hero {
       padding-top: var(--s-8);
-    }
-
-    .hero-actions .button {
-      padding: 0 var(--s-5);
     }
   }
 </style>

@@ -4,6 +4,8 @@ import { CAMERA } from "../../lib/story/camera";
 import { EXAMPLE } from "../../lib/story/example";
 import { COLUMNS, HEADS, TIP, across, howSteps, type Column, type HowStep, type Span } from "../../lib/story/how";
 import "../../styles/how.css";
+import SmoothSwitch from "../islands/SmoothSwitch";
+import { buttonVariants } from "../ui/button";
 import { KEY } from "./smooth-switch";
 
 interface Props {
@@ -46,11 +48,15 @@ const mode = `(() => {
     try {
       stored = localStorage.getItem(${JSON.stringify(KEY)});
     } catch {}
-    toggle.setAttribute("aria-checked", String(!reduce && stored !== "off"));
-    toggle.disabled = reduce;
+    const on = !reduce && stored !== "off";
+    const button = toggle.querySelector("[role=switch]");
+    if (button) {
+      button.setAttribute("aria-checked", String(on));
+      button.disabled = reduce;
+      if (reduce) button.setAttribute("data-disabled", "");
+      for (const part of [button, ...button.children]) part.setAttribute("data-state", on ? "checked" : "unchecked");
+    }
     toggle.removeAttribute("data-wait");
-    toggle.removeAttribute("tabindex");
-    toggle.removeAttribute("aria-hidden");
   }
   if (!matchMedia(${JSON.stringify(CAMERA)}).matches) return;
   const header = document.querySelector("header.header");
@@ -75,11 +81,8 @@ const mode = `(() => {
           <p class="how-count" aria-hidden="true" data-pagefind-ignore="all">
             {steps.map((_, index) => <span>{index + 1} / {count}</span>)}
           </p>
-          <a class="how-skip" href={`#${after}`}>Skip<span class="visually-hidden"> the three steps</span></a>
-          <button type="button" class="smooth" role="switch" aria-checked="false" data-smooth data-wait tabindex="-1" aria-hidden="true">
-            <span class="smooth-track" aria-hidden="true"><span class="smooth-knob"></span></span>
-            <span class="smooth-label">Smooth scrolling</span>
-          </button>
+          <a class={buttonVariants({ variant: "link", size: "inline", className: "how-skip" })} data-slot="button" data-variant="link" href={`#${after}`}>Skip<span class="visually-hidden"> the three steps</span></a>
+          <span class="smooth" data-smooth data-wait><SmoothSwitch client:query /></span>
         </div>
       </div>
       <ol class="how-steps" role="list">

@@ -1,6 +1,11 @@
 /** Where this browser remembers the Smooth scrolling choice. */
 export const KEY = "openhal:smooth-scroll";
 
+/** The window event the Smooth scrolling switch sends when a person turns smooth scrolling on or off. */
+export const CHANGED = "openhal:smooth-scroll-changed";
+
+const REDUCE = "(prefers-reduced-motion: reduce)";
+
 function stored(): string | null {
   try {
     return window.localStorage.getItem(KEY);
@@ -9,12 +14,28 @@ function stored(): string | null {
   }
 }
 
-function save(on: boolean): void {
+/** Remembers the choice in this browser and tells the page, which starts or stops the easing. */
+export function choose(on: boolean): void {
   try {
     window.localStorage.setItem(KEY, on ? "on" : "off");
   } catch {
     return;
+  } finally {
+    window.dispatchEvent(new Event(CHANGED));
   }
+}
+
+/** Whether the switch is on and whether a person can turn it, given the stored choice and reduced motion. */
+export function smoothState(): { on: boolean; disabled: boolean } {
+  const reduce = window.matchMedia(REDUCE).matches;
+  return { on: !reduce && stored() !== "off", disabled: reduce };
+}
+
+/** Calls back whenever reduced motion turns on or off, and returns a function that stops listening. */
+export function onReduceChange(callback: () => void): () => void {
+  const reduce = window.matchMedia(REDUCE);
+  reduce.addEventListener("change", callback);
+  return () => reduce.removeEventListener("change", callback);
 }
 
 function idle(run: () => void): void {
@@ -23,25 +44,22 @@ function idle(run: () => void): void {
 }
 
 /**
- * Wires the Smooth scrolling switch. Smooth scrolling is on unless the person turned it off, which
- * this browser remembers, and always off under prefers-reduced-motion. The easing itself loads
- * once the page is idle, and only while the switch is on.
+ * Runs the easing on the home page while smooth scrolling is on. Smooth scrolling is on unless the
+ * person turned it off, which this browser remembers, and always off under prefers-reduced-motion.
+ * The easing loads once the page is idle, and only while smooth scrolling is on.
  */
-export function smoothSwitch(toggle: HTMLButtonElement): void {
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+export function smoothScrolling(): void {
   let stop: (() => void) | null = null;
   let loading = false;
 
   const apply = () => {
-    const on = !reduce.matches && stored() !== "off";
-    toggle.setAttribute("aria-checked", String(on));
-    toggle.disabled = reduce.matches;
+    const { on } = smoothState();
     if (on && !stop && !loading) {
       loading = true;
       idle(() => {
         import("./smooth-scroll").then(({ smooth }) => {
           loading = false;
-          if (toggle.getAttribute("aria-checked") === "true" && !stop) stop = smooth();
+          if (smoothState().on && !stop) stop = smooth();
         });
       });
     }
@@ -51,13 +69,7 @@ export function smoothSwitch(toggle: HTMLButtonElement): void {
     }
   };
 
-  toggle.addEventListener("click", () => {
-    save(toggle.getAttribute("aria-checked") !== "true");
-    apply();
-  });
-  reduce.addEventListener("change", apply);
-  toggle.removeAttribute("data-wait");
-  toggle.removeAttribute("tabindex");
-  toggle.removeAttribute("aria-hidden");
+  window.addEventListener(CHANGED, apply);
+  onReduceChange(apply);
   apply();
 }

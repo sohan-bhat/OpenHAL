@@ -4,6 +4,7 @@ import { nb, storyFacts, storyLines, type Sending } from "../../lib/story/facts"
 import { COUNTED, LAST, during, held } from "../../lib/story/script";
 import { storySequence } from "../../lib/story/timeline";
 import "../../styles/story.css";
+import { Button } from "../ui/button";
 import Sequence from "./Sequence.astro";
 import Webcam from "./Webcam.astro";
 import walkSource from "./walk.ts?raw";
@@ -29,8 +30,8 @@ frames(story)(${stops[0]});`,
       <p class="story-count" aria-hidden="true">
         {COUNTED.map((item, index) => <span {...during([held(item.id)])}>{index + 1} / {COUNTED.length}</span>)}
       </p>
-      <button type="button" class="button quiet" data-previous aria-disabled="true">Previous<span class="visually-hidden"> step</span></button>
-      <button type="button" class="button quiet" data-next>Next<span class="visually-hidden"> step</span></button>
+      <Button type="button" variant="outline" className="text-base" data-previous="" aria-disabled="true">Previous<span class="visually-hidden"> step</span></Button>
+      <Button type="button" variant="outline" className="text-base" data-next="">Next<span class="visually-hidden"> step</span></Button>
     </div>
     <div class="story-notes" aria-hidden="true">
       {COUNTED.map((item) => <p class="story-note" {...during([held(item.id)])}>{nb(lines[item.id])}</p>)}
