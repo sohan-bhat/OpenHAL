@@ -3,6 +3,7 @@
 @import "@astrojs/starlight-tailwind";
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
+@import "tw-animate-css";
 @import "../../../design/tokens.css";
 @import "./fonts.css";
 
@@ -13,6 +14,9 @@
 @source "../components/starlight";
 @source "../components/landing";
 @source "../pages/index.astro";
+@source "../pages/drivers";
+@source "../pages/library";
+@source "../components/example";
 
 @theme {
   --color-*: initial;
@@ -416,6 +420,12 @@ pre {
 
 .table-wrap {
   overflow-x: auto;
+}
+
+@media (scripting: none) {
+  [data-filters] {
+    display: none;
+  }
 }
 
 .stack {
