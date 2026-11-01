@@ -14,7 +14,11 @@ const house = HighlightStyle.define([
   { tag: [tags.comment, tags.lineComment], color: "var(--syn-comment)", fontStyle: "italic" },
 ]);
 
-/** The field's frame, the site's 1.5 px control outline on the surface, with the accent focus ring. */
+/**
+ * The field's frame, the site's 1.5 px control outline on the surface, with the accent focus ring.
+ * CodeMirror draws the selection, on the accent fill with near-black text while the editor has
+ * focus and on the border gray once focus has moved on, as text selected anywhere else on the site.
+ */
 const frame = EditorView.theme({
   "&": {
     color: "var(--text)",
@@ -29,7 +33,10 @@ const frame = EditorView.theme({
   ".cm-content": { padding: "var(--s-3) 0", caretColor: "var(--text)" },
   ".cm-content:focus-visible": { outline: "none" },
   ".cm-line": { padding: "0 var(--s-3)" },
-  ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--text)" },
+  ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--text)", borderLeftWidth: "1.5px" },
+  "&.cm-editor .cm-selectionLayer .cm-selectionBackground": { background: "var(--border)" },
+  "&.cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground": { background: "var(--accent-fill)" },
+  "&.cm-editor:not(.cm-focused) .cm-content ::selection": { color: "var(--text)" },
 });
 
 const SETUP = {
@@ -39,7 +46,7 @@ const SETUP = {
   highlightActiveLineGutter: false,
   highlightSpecialChars: true,
   history: true,
-  drawSelection: false,
+  drawSelection: true,
   dropCursor: false,
   allowMultipleSelections: false,
   indentOnInput: false,
@@ -77,7 +84,7 @@ interface Props {
  */
 export default function DeviceEditor({ value, onChange, id, label, describedBy }: Props) {
   const extensions = useMemo(
-    () => [...BASE, EditorView.contentAttributes.of({ id, "aria-label": label, "aria-describedby": describedBy, spellcheck: "false", autocapitalize: "off", autocorrect: "off" })],
+    () => [...BASE, EditorView.contentAttributes.of({ id, tabindex: "0", "aria-label": label, "aria-describedby": describedBy, spellcheck: "false", autocapitalize: "off", autocorrect: "off" })],
     [id, label, describedBy],
   );
   return <CodeMirror className="pg-editor" value={value} onChange={onChange} theme="none" indentWithTab={false} basicSetup={SETUP} extensions={extensions} />;
