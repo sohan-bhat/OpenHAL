@@ -3,6 +3,7 @@
 @import "@astrojs/starlight-tailwind";
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
+@import "tw-animate-css";
 @import "../../../design/tokens.css";
 @import "./fonts.css";
 
@@ -158,24 +159,6 @@ pre {
   .oh-content p {
     margin: 0;
     text-wrap: pretty;
-  }
-
-  .oh-content :is(input, select, textarea) {
-    font: inherit;
-    color: var(--text);
-    background: var(--bg);
-    border: 1px solid var(--oh-control-border);
-    box-shadow: var(--oh-control-ring) var(--oh-control-border);
-    border-radius: var(--radius);
-  }
-
-  .oh-content :is(input, select) {
-    min-height: 40px;
-    padding: 0 var(--s-3);
-  }
-
-  .oh-content :is(input, textarea)::placeholder {
-    color: var(--text-2);
   }
 
   .oh-content table {
@@ -368,54 +351,14 @@ pre {
   white-space: nowrap;
 }
 
-.button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--s-2);
-  min-height: 40px;
-  padding: 0 var(--s-4);
-  border: 1px solid var(--oh-line, var(--accent));
-  box-shadow: var(--oh-control-ring) var(--oh-line, var(--accent));
-  border-radius: var(--radius);
-  background: var(--accent-fill);
-  color: var(--on-accent);
-  font: inherit;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background-color var(--motion-status) var(--ease), transform var(--motion-status) var(--ease);
-}
-
-.button:not(.quiet, .person, :disabled, [aria-disabled="true"]):hover {
-  background: var(--accent-fill-hover);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .button:not(.quiet, .person, :disabled, [aria-disabled="true"]):hover {
-    transform: translateY(-1px);
-  }
-}
-
-.button.quiet {
-  --oh-line: var(--border);
-  background: transparent;
-  color: var(--text);
-}
-
-.button.quiet:not(:disabled, [aria-disabled="true"]):hover {
-  --oh-line: var(--text-2);
-}
-
-.button:disabled {
-  --oh-line: var(--border);
-  background: var(--surface);
-  color: var(--text-2);
-  cursor: default;
-}
-
 .table-wrap {
   overflow-x: auto;
+}
+
+@media (scripting: none) {
+  [data-filters] {
+    display: none;
+  }
 }
 
 .stack {

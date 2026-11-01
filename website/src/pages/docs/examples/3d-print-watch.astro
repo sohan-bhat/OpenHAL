@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import Walkthrough from "../../../components/example/Walkthrough.astro";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table";
 import DocShell from "../../../layouts/DocShell.astro";
 import { codeHtml } from "../../../lib/code";
 import { EXAMPLE, docsSidebar } from "../../../lib/docs-nav";
@@ -67,36 +68,34 @@ const TONES: Record<string, string> = { done: "ok", blocked: "blocked", pending:
 
   <h2 id="audit-log"><a class="heading-link" href="#audit-log">The audit log</a></h2>
   <p>The run ends with <code>{audit.command}</code>, which prints the hub's audit log, newest first. The log holds every request, including the blocked one, and the owner's approval.</p>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th scope="col">Seq</th>
-          <th scope="col">Event</th>
-          <th scope="col">Who</th>
-          <th scope="col">Target</th>
-          <th scope="col">Status</th>
-          <th scope="col">Message</th>
-        </tr>
-      </thead>
-      <tbody>
+  <Table containerClassName="table-wrap">
+      <TableHeader>
+        <TableRow>
+          <TableHead scope="col">Seq</TableHead>
+          <TableHead scope="col">Event</TableHead>
+          <TableHead scope="col">Who</TableHead>
+          <TableHead scope="col">Target</TableHead>
+          <TableHead scope="col">Status</TableHead>
+          <TableHead scope="col">Message</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {
           audit.entries.map((entry) => (
-            <tr>
-              <td class="mono">{entry.seq}</td>
-              <td>{entry.event}</td>
-              <td class="mono">{entry.who}</td>
-              <td class="mono">{entry.target}</td>
-              <td>
+            <TableRow>
+              <TableCell className="mono">{entry.seq}</TableCell>
+              <TableCell>{entry.event}</TableCell>
+              <TableCell className="mono">{entry.who}</TableCell>
+              <TableCell className="mono">{entry.target}</TableCell>
+              <TableCell>
                 <span class:list={["status", TONES[entry.status]]}>{entry.status}</span>
-              </td>
-              <td>{entry.message}</td>
-            </tr>
+              </TableCell>
+              <TableCell>{entry.message}</TableCell>
+            </TableRow>
           ))
         }
-      </tbody>
-    </table>
-  </div>
+      </TableBody>
+    </Table>
   <p>{audit.counts}</p>
 </DocShell>
 

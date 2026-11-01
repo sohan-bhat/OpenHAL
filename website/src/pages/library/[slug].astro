@@ -1,5 +1,6 @@
 ---
 import { codeHtml } from "../../lib/code";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import VerificationBadge from "../../components/VerificationBadge.astro";
 import DocShell from "../../layouts/DocShell.astro";
 import { formatG } from "../../lib/kernel/pyformat";
@@ -45,16 +46,16 @@ function argText(name: string, spec: ArgSpec): string {
     {
       file && (
         <div class="sheet">
-          <table class="facts">
-            <tbody>
-              <tr><th scope="row">Id</th><td class="mono">{entry.deviceId}</td></tr>
-              <tr><th scope="row">Manufacturer</th><td>{entry.manufacturer ?? "not set"}</td></tr>
-              <tr><th scope="row">Model</th><td>{entry.model ?? "not set"}</td></tr>
-              <tr><th scope="row">Driver</th><td class="mono"><a href={`/drivers/${entry.driver}/`}>{entry.driver}</a></td></tr>
-              <tr><th scope="row">Hazard</th><td class="mono">{entry.hazard}</td></tr>
-              <tr>
-                <th scope="row">Limits</th>
-                <td>
+          <Table className="facts">
+            <TableBody>
+              <TableRow><TableHead scope="row">Id</TableHead><TableCell className="mono">{entry.deviceId}</TableCell></TableRow>
+              <TableRow><TableHead scope="row">Manufacturer</TableHead><TableCell>{entry.manufacturer ?? "not set"}</TableCell></TableRow>
+              <TableRow><TableHead scope="row">Model</TableHead><TableCell>{entry.model ?? "not set"}</TableCell></TableRow>
+              <TableRow><TableHead scope="row">Driver</TableHead><TableCell className="mono"><a href={`/drivers/${entry.driver}/`}>{entry.driver}</a></TableCell></TableRow>
+              <TableRow><TableHead scope="row">Hazard</TableHead><TableCell className="mono">{entry.hazard}</TableCell></TableRow>
+              <TableRow>
+                <TableHead scope="row">Limits</TableHead>
+                <TableCell>
                   {entry.confirmed ? (
                     <span class="status ok">confirmed</span>
                   ) : (
@@ -70,49 +71,46 @@ function argText(name: string, spec: ArgSpec): string {
                       {entry.writes + entry.actions > 0 && <a href="/docs/library/#confirmation">How a person confirms the limits</a>}
                     </span>
                   )}
-                </td>
-              </tr>
-              {entry.report && <tr><th scope="row">Report</th><td class="mono">{entry.report}</td></tr>}
-            </tbody>
-          </table>
+                </TableCell>
+              </TableRow>
+              {entry.report && <TableRow><TableHead scope="row">Report</TableHead><TableCell className="mono">{entry.report}</TableCell></TableRow>}
+            </TableBody>
+          </Table>
 
           {Object.keys(file.write).length > 0 && (
-            <div class="table-wrap stack">
-              <table>
-                <caption class="legend">Control channels</caption>
-                <thead>
-                  <tr><th scope="col">Channel</th><th scope="col">Min</th><th scope="col">Max</th><th scope="col">Step</th><th scope="col">Rate per s</th><th scope="col">Unit</th><th scope="col">Confirm</th><th scope="col">Limit</th></tr>
-                </thead>
-                <tbody>
+            <Table containerClassName="table-wrap stack">
+                <TableCaption className="legend">Control channels</TableCaption>
+                <TableHeader>
+                  <TableRow><TableHead scope="col">Channel</TableHead><TableHead scope="col">Min</TableHead><TableHead scope="col">Max</TableHead><TableHead scope="col">Step</TableHead><TableHead scope="col">Rate per s</TableHead><TableHead scope="col">Unit</TableHead><TableHead scope="col">Confirm</TableHead><TableHead scope="col">Limit</TableHead></TableRow>
+                </TableHeader>
+                <TableBody>
                   {Object.entries(file.write).map(([name, spec]) => (
-                    <tr>
-                      <td data-label="Channel" class="mono">{name}</td>
-                      <td data-label="Min" class="mono">{num(spec.min)}</td>
-                      <td data-label="Max" class="mono">{num(spec.max)}</td>
-                      <td data-label="Step" class="mono">{num(spec.step)}</td>
-                      <td data-label="Rate per s" class="mono">{num(spec.max_change_per_s)}</td>
-                      <td data-label="Unit">{displayUnit(spec.unit) ?? spec.type}</td>
-                      <td data-label="Confirm">{spec.confirm}</td>
-                      <td data-label="Limit">{limitWord(spec)}</td>
-                    </tr>
+                    <TableRow>
+                      <TableCell data-label="Channel" className="mono">{name}</TableCell>
+                      <TableCell data-label="Min" className="mono">{num(spec.min)}</TableCell>
+                      <TableCell data-label="Max" className="mono">{num(spec.max)}</TableCell>
+                      <TableCell data-label="Step" className="mono">{num(spec.step)}</TableCell>
+                      <TableCell data-label="Rate per s" className="mono">{num(spec.max_change_per_s)}</TableCell>
+                      <TableCell data-label="Unit">{displayUnit(spec.unit) ?? spec.type}</TableCell>
+                      <TableCell data-label="Confirm">{spec.confirm}</TableCell>
+                      <TableCell data-label="Limit">{limitWord(spec)}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
           )}
 
           {Object.keys(file.actions).length > 0 && (
-            <div class="table-wrap stack">
-              <table>
-                <caption class="legend">Actions</caption>
-                <thead>
-                  <tr><th scope="col">Action</th><th scope="col">Arguments</th><th scope="col">Confirm</th><th scope="col">Limit</th></tr>
-                </thead>
-                <tbody>
+            <Table containerClassName="table-wrap stack">
+                <TableCaption className="legend">Actions</TableCaption>
+                <TableHeader>
+                  <TableRow><TableHead scope="col">Action</TableHead><TableHead scope="col">Arguments</TableHead><TableHead scope="col">Confirm</TableHead><TableHead scope="col">Limit</TableHead></TableRow>
+                </TableHeader>
+                <TableBody>
                   {Object.entries(file.actions).map(([name, spec]) => (
-                    <tr>
-                      <td data-label="Action" class="mono">{name}</td>
-                      <td data-label="Arguments">
+                    <TableRow>
+                      <TableCell data-label="Action" className="mono">{name}</TableCell>
+                      <TableCell data-label="Arguments">
                         {Object.keys(spec.args).length === 0 ? (
                           <span class="muted">none</span>
                         ) : (
@@ -122,35 +120,32 @@ function argText(name: string, spec: ArgSpec): string {
                             ))}
                           </ul>
                         )}
-                      </td>
-                      <td data-label="Confirm">{spec.confirm}</td>
-                      <td data-label="Limit">{limitWord(spec)}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell data-label="Confirm">{spec.confirm}</TableCell>
+                      <TableCell data-label="Limit">{limitWord(spec)}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
           )}
 
           {Object.keys(file.read).length > 0 && (
-            <div class="table-wrap stack">
-              <table>
-                <caption class="legend">Read channels</caption>
-                <thead>
-                  <tr><th scope="col">Channel</th><th scope="col">Type</th><th scope="col">Unit</th><th scope="col">Every</th></tr>
-                </thead>
-                <tbody>
+            <Table containerClassName="table-wrap stack">
+                <TableCaption className="legend">Read channels</TableCaption>
+                <TableHeader>
+                  <TableRow><TableHead scope="col">Channel</TableHead><TableHead scope="col">Type</TableHead><TableHead scope="col">Unit</TableHead><TableHead scope="col">Every</TableHead></TableRow>
+                </TableHeader>
+                <TableBody>
                   {Object.entries(file.read).map(([name, spec]) => (
-                    <tr>
-                      <td data-label="Channel" class="mono">{name}</td>
-                      <td data-label="Type">{spec.type}</td>
-                      <td data-label="Unit">{displayUnit(spec.unit) ?? ""}</td>
-                      <td data-label="Every" class="mono">{spec.every === null ? (spec.stream ? "stream" : "on request") : `${formatG(spec.every)} s`}</td>
-                    </tr>
+                    <TableRow>
+                      <TableCell data-label="Channel" className="mono">{name}</TableCell>
+                      <TableCell data-label="Type">{spec.type}</TableCell>
+                      <TableCell data-label="Unit">{displayUnit(spec.unit) ?? ""}</TableCell>
+                      <TableCell data-label="Every" className="mono">{spec.every === null ? (spec.stream ? "stream" : "on request") : `${formatG(spec.every)} s`}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
           )}
         </div>
       )
@@ -173,13 +168,8 @@ function argText(name: string, spec: ArgSpec): string {
     gap: var(--s-6);
   }
 
-  .facts th {
+  .sheet :global(.facts th) {
     width: 10em;
-  }
-
-  caption {
-    text-align: left;
-    padding-bottom: var(--s-2);
   }
 
   .problems {

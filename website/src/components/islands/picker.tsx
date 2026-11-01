@@ -3,9 +3,11 @@ import { ChevronDown } from "lucide-react";
 import { useMenuOpen } from "@/components/ui/dropdown-menu";
 import { useTimings } from "@/components/ui/motion";
 
-/** A picker's menu button in the header and the phone menu: its word and a chevron, never an icon. */
-export const PICKER =
-  "inline-flex h-9 shrink-0 cursor-pointer items-center gap-0.5 rounded-md bg-transparent pr-1 pl-2 text-sm leading-[1.4] font-semibold whitespace-nowrap text-muted-foreground hover:bg-muted hover:text-foreground data-[state=open]:bg-muted data-[state=open]:text-foreground";
+/**
+ * What a picker's menu button, shadcn/ui's ghost Button at its small size, adds in the header and the
+ * phone menu: a tighter fit around its word and chevron, never an icon, and the surface while open.
+ */
+export const PICKER = "gap-0.5 pr-1 pl-2 leading-[1.4] data-[state=open]:bg-muted data-[state=open]:text-foreground";
 
 /** The chevron after a picker's word, which turns over in 200 ms while the list is open. */
 export function Chevron() {

@@ -1,4 +1,5 @@
 ---
+import { Badge } from "./ui/badge";
 import type { Verification } from "../lib/library";
 
 interface Props {
@@ -10,7 +11,7 @@ const look = {
   "verified-on-hardware": { cls: "ok", word: "verified on hardware" },
   "tested-reads": { cls: "unverified", word: "reads tested" },
   unverified: { cls: "unverified", word: "unverified" },
-}[status];
+}[status] as { cls: "ok" | "unverified"; word: string };
 ---
 
-<span class={`status ${look.cls}`}>{look.word}</span>
+<Badge variant={look.cls} className={`status ${look.cls}`}>{look.word}</Badge>

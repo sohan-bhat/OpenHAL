@@ -1,6 +1,9 @@
 ---
+import CatalogFilters from "../../components/islands/CatalogFilters";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import VerificationBadge from "../../components/VerificationBadge.astro";
 import DocShell from "../../layouts/DocShell.astro";
+import { SEARCH } from "../../lib/catalog-filter";
 import { libraryEntries } from "../../lib/library";
 import { librarySidebar } from "../../lib/library-nav";
 
@@ -30,41 +33,40 @@ const channels = (entry: { reads: number; writes: number; actions: number }) =>
     {
       entries.length > 0 ? (
         <>
-          <form class="filters" role="search" aria-label="Filter device files" data-filters>
-            <label class="field">
-              <span class="legend">Filter</span>
-              <input type="search" name="q" placeholder="Model, manufacturer or driver" autocomplete="off" />
-            </label>
-          </form>
-          <p class="shown muted" aria-live="polite" data-shown>{entries.length} device files.</p>
-          <div class="table-wrap stack">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Device</th>
-                  <th scope="col">Driver</th>
-                  <th scope="col">Hazard</th>
-                  <th scope="col">Channels</th>
-                  <th scope="col">Verification</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((entry) => (
-                  <tr data-entry data-text={[entry.title, entry.manufacturer ?? "", entry.driver, entry.deviceId].join(" ").toLowerCase()}>
-                    <td data-label="Device">
-                      <a href={`/library/${entry.slug}/`}>{entry.title}</a>
-                    </td>
-                    <td data-label="Driver" class="mono">{entry.driver}</td>
-                    <td data-label="Hazard" class="mono">{entry.hazard}</td>
-                    <td data-label="Channels">{channels(entry)}</td>
-                    <td data-label="Verification">
-                      {entry.problems.length > 0 ? <span class="status blocked">invalid</span> : <VerificationBadge status={entry.verification} />}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <CatalogFilters client:query={SEARCH} label="Filter device files" placeholder="Model, manufacturer or driver" />
+          <p class="shown muted" aria-live="polite" data-shown data-noun="device files" data-fields={SEARCH}>
+            {entries.length} device files.
+          </p>
+          <Table containerClassName="table-wrap stack">
+            <TableHeader>
+              <TableRow>
+                <TableHead scope="col">Device</TableHead>
+                <TableHead scope="col">Driver</TableHead>
+                <TableHead scope="col">Hazard</TableHead>
+                <TableHead scope="col">Channels</TableHead>
+                <TableHead scope="col">Verification</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {entries.map((entry) => (
+                <TableRow data-filter-row="" data-entry="" data-text={[entry.title, entry.manufacturer ?? "", entry.driver, entry.deviceId].join(" ").toLowerCase()}>
+                  <TableCell data-label="Device">
+                    <a href={`/library/${entry.slug}/`}>{entry.title}</a>
+                  </TableCell>
+                  <TableCell data-label="Driver" className="mono">
+                    {entry.driver}
+                  </TableCell>
+                  <TableCell data-label="Hazard" className="mono">
+                    {entry.hazard}
+                  </TableCell>
+                  <TableCell data-label="Channels">{channels(entry)}</TableCell>
+                  <TableCell data-label="Verification">
+                    {entry.problems.length > 0 ? <span class="status blocked">invalid</span> : <VerificationBadge status={entry.verification} />}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
           <p class="empty muted" data-empty hidden>No device file matches the search, so clear the search to see every file.</p>
         </>
       ) : (
@@ -76,21 +78,7 @@ const channels = (entry: { reads: number; writes: number; actions: number }) =>
 </DocShell>
 
 <script>
-  const form = document.querySelector<HTMLFormElement>("[data-filters]");
-  const rows = [...document.querySelectorAll<HTMLElement>("[data-entry]")];
-  const shown = document.querySelector<HTMLElement>("[data-shown]");
-  const empty = document.querySelector<HTMLElement>("[data-empty]");
-  form?.addEventListener("input", () => {
-    const words = String(new FormData(form).get("q") ?? "").toLowerCase().split(/\s+/).filter(Boolean);
-    let count = 0;
-    for (const row of rows) {
-      row.hidden = !words.every((word) => (row.dataset.text ?? "").includes(word));
-      if (!row.hidden) count += 1;
-    }
-    if (shown) shown.textContent = words.length ? `${count} of ${rows.length} device files.` : `${rows.length} device files.`;
-    if (empty) empty.hidden = count > 0;
-  });
-  form?.addEventListener("submit", (event) => event.preventDefault());
+  if (window.location.search) import("../../lib/catalog-filter").then(({ restoreFromAddress }) => restoreFromAddress());
 </script>
 
 <style>
@@ -101,22 +89,8 @@ const channels = (entry: { reads: number; writes: number; actions: number }) =>
     max-width: var(--measure);
   }
 
-  .filters {
-    max-width: 420px;
-    margin-bottom: var(--s-3);
-  }
-
   .shown {
-    margin-bottom: var(--s-3);
+    margin: var(--s-3) 0;
     font-size: var(--t-small);
-  }
-
-  .field {
-    display: grid;
-    gap: var(--s-1);
-  }
-
-  .field input {
-    width: 100%;
   }
 </style>

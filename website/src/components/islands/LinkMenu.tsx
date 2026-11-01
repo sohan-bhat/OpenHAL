@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MotionRoot } from "@/components/ui/motion";
 import { cn } from "@/lib/utils";
@@ -34,7 +35,7 @@ export default function LinkMenu({ kind, label, items, placeholder, align = "end
     <MotionRoot>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button ref={trigger} type="button" data-picker={kind} className={PICKER}>
+          <Button ref={trigger} type="button" variant="ghost" size="sm" data-picker={kind} className={PICKER}>
             {(current || !placeholder) && <span className="sr-only">{label} </span>}
             <span className="grid text-start">
               {items.map((item) => (
@@ -45,7 +46,7 @@ export default function LinkMenu({ kind, label, items, placeholder, align = "end
               {placeholder && <span className={cn("[grid-area:1/1]", current && "invisible")}>{placeholder}</span>}
             </span>
             <Chevron />
-          </button>
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent data-menu={kind} align={align} aria-label={label} container={menuContainer(place)}>
           {items.map((item) => (

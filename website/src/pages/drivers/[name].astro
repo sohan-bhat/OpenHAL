@@ -1,5 +1,6 @@
 ---
 import { getCollection, render } from "astro:content";
+import { Table, TableBody, TableCell, TableHead, TableRow } from "../../components/ui/table";
 import DocShell from "../../layouts/DocShell.astro";
 import { type Driver, TIER_NAMES, conformanceOf, drivers, isReference, statusClass, statusWord } from "../../lib/catalog";
 import { DEFAULT_BRANCH, REPOSITORY_URL } from "../../config/site";
@@ -45,20 +46,18 @@ const rows: Array<[string, string]> = [
       )
     }
   </p>
-  <div class="table-wrap">
-    <table class="sheet">
-      <tbody>
+  <Table containerClassName="table-wrap" className="sheet">
+      <TableBody>
         {
           rows.map(([label, value]) => (
-            <tr>
-              <th scope="row">{label}</th>
-              <td>{value}</td>
-            </tr>
+            <TableRow>
+              <TableHead scope="row">{label}</TableHead>
+              <TableCell>{value}</TableCell>
+            </TableRow>
           ))
         }
-      </tbody>
-    </table>
-  </div>
+      </TableBody>
+    </Table>
   {
     driver.estimate && (
       <p class="muted">
@@ -87,7 +86,7 @@ const rows: Array<[string, string]> = [
   }
 
   @media (min-width: 600px) {
-    .sheet th {
+    :global(.table-wrap > .sheet th) {
       width: 11em;
       vertical-align: top;
       border-bottom: var(--rule);

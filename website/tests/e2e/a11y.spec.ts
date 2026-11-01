@@ -75,6 +75,14 @@ for (const scheme of ["light", "dark"] as const) {
       await expect(page.locator("[data-empty]")).toBeVisible();
       problems.push(...(await violations(page)).map((item) => `drivers empty ${item}`));
 
+      await page.goto("/drivers/?hazard=high");
+      await expect(page.getByRole("combobox", { name: "Hazard", exact: true })).toHaveText("high");
+      problems.push(...(await violations(page)).map((item) => `drivers filtered ${item}`));
+      await page.getByRole("combobox", { name: "Tier", exact: true }).click();
+      await expect(page.getByRole("listbox")).toBeVisible();
+      problems.push(...(await violations(page)).map((item) => `drivers select open ${item}`));
+      await page.keyboard.press("Escape");
+
       await page.goto("/library/");
       await page.getByLabel("Filter", { exact: true }).fill("no such device");
       await expect(page.locator("[data-empty]")).toBeVisible();
@@ -131,6 +139,26 @@ for (const scheme of ["light", "dark"] as const) {
     await palette.getByRole("combobox").fill("qzqzqz");
     await expect(palette.locator("[cmdk-empty]")).toBeVisible({ timeout: 15_000 });
     problems.push(...(await violations(page)).map((item) => `no results ${item}`));
+    expect(problems).toEqual([]);
+  });
+
+  test(`the catalog filters, filtered and with a select open, have no WCAG AA violations on a desktop in the ${scheme} theme`, async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "axe runs once, in Chromium");
+    test.setTimeout(120_000);
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const problems: string[] = [];
+    await page.goto("/drivers/?hazard=high");
+    await expect(page.getByRole("combobox", { name: "Hazard", exact: true })).toHaveText("high");
+    problems.push(...(await violations(page)).map((item) => `drivers filtered ${item}`));
+    await page.getByRole("combobox", { name: "Conformance", exact: true }).click();
+    await expect(page.getByRole("listbox")).toBeVisible();
+    await page.keyboard.press("ArrowDown");
+    problems.push(...(await violations(page)).map((item) => `drivers select open ${item}`));
+    await page.keyboard.press("Escape");
+    await page.goto("/library/?q=rigol");
+    await expect(page.getByLabel("Filter", { exact: true })).toHaveValue("rigol");
+    problems.push(...(await violations(page)).map((item) => `library filtered ${item}`));
     expect(problems).toEqual([]);
   });
 

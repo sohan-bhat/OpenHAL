@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import api from "../../../content/generated/python-api.json";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table";
 import DocShell from "../../../layouts/DocShell.astro";
 import { highlightLinesHtml } from "../../../lib/highlight.mjs";
 import { formatSignature, inlineCode, methodGuide, paragraphs, placeOf } from "../../../lib/python-api";
@@ -82,24 +83,22 @@ const sigHtml = (signature: string) => highlightLinesHtml(formatSignature(signat
             )}
             {paragraphs(item.doc).map((part) => <p set:html={inlineCode(part)} />)}
             {item.fields && item.fields.length > 0 && (
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col">Field</th>
-                      <th scope="col">Type</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <Table containerClassName="table-wrap">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead scope="col">Field</TableHead>
+                      <TableHead scope="col">Type</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {item.fields.map((field) => (
-                      <tr>
-                        <td class="mono">{field.name}</td>
-                        <td class="mono">{field.type}</td>
-                      </tr>
+                      <TableRow>
+                        <TableCell className="mono">{field.name}</TableCell>
+                        <TableCell className="mono">{field.type}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </TableBody>
+                </Table>
             )}
             {item.name === "AsyncClient" && (
               <p>

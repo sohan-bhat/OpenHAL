@@ -26,11 +26,6 @@
   grid-area: 1 / 1;
 }
 
-.story-controls .button[aria-disabled="true"] {
-  color: var(--text-2);
-  cursor: default;
-}
-
 .story-notes {
   display: none;
 }

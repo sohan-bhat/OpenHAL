@@ -219,7 +219,9 @@ test.describe("catalog pages", () => {
     await expect(page.getByText("verified on hardware")).toHaveCount(0);
     const all = await page.locator("[data-driver]").count();
     expect(all).toBeGreaterThan(1);
-    await page.getByLabel("Tier").selectOption({ label: "Tier 3" });
+    await page.getByRole("combobox", { name: "Tier", exact: true }).click();
+    await page.getByRole("option", { name: "Tier 3", exact: true }).click();
+    await expect(page.getByRole("combobox", { name: "Tier", exact: true })).toHaveText("Tier 3");
     const shown = await page.locator("[data-driver]:visible").count();
     expect(shown).toBeLessThan(all);
     await expect(page.locator("[data-shown]")).toHaveText(`${shown} of ${all} drivers.`);
