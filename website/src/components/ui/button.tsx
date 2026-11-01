@@ -29,7 +29,7 @@ const buttonVariants = cva(
   },
 );
 
-/** shadcn/ui's Button on the site's tokens: the house primary on the safety yellow fill with near-black text, outline, ghost and link buttons. */
+/** shadcn/ui's Button on the site's tokens: the house primary on the pink fill with near-black text, outline, ghost and link buttons. */
 function Button({
   className,
   variant = "default",
