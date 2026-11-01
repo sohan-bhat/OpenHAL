@@ -1,18 +1,19 @@
 import { expect, test, type Page } from "@playwright/test";
-import { CAPTIONS, howSteps, type Reply } from "../../src/lib/story/how";
+import { APPROVED, CAPTIONS, howSteps, type Reply } from "../../src/lib/story/how";
 
 const steps = howSteps();
 const flat = (text: string) => text.replace(/\s+/g, " ").trim();
 
-/** Scrolls to the point of How it works where step `step` (from 1) is `along` of the way through. */
+/** Scrolls to the point of How it works where step `step` (from 1) is `along` of the way through, along the run the steps play over. */
 async function howAt(page: Page, step: number, along: number): Promise<void> {
   await page.evaluate(
     ([at, count]) => {
       const track = document.querySelector<HTMLElement>(".how-track")!;
+      const run = document.querySelector<HTMLElement>(".how-run")!;
       const header = document.querySelector<HTMLElement>("header.header")?.offsetHeight ?? 0;
       let top = 0;
       for (let el: HTMLElement | null = track; el; el = el.offsetParent as HTMLElement | null) top += el.offsetTop;
-      const distance = track.offsetHeight - (window.innerHeight - header);
+      const distance = (run.offsetHeight || track.offsetHeight) - (window.innerHeight - header);
       window.scrollTo({ top: top - header + (at / count) * distance, behavior: "instant" });
     },
     [step - 1 + along, steps.length] as const,
@@ -54,10 +55,23 @@ const geometry = (page: Page, index: number) =>
         dashed: stroke.classList.contains("how-dash"),
         drawn: stroke.classList.contains("how-dash") ? 1 - hidden : drawn,
         tip: Number(getComputedStyle(el.querySelector(".how-tip")!).opacity),
-        color: getComputedStyle(el).color,
+        color: getComputedStyle([...el.querySelectorAll<HTMLElement>(".how-ink")].filter((layer) => Number(getComputedStyle(layer).opacity) > 0.5).pop() ?? el).color,
       };
     });
     return { x, legs };
+  }, index);
+
+/** Where each row of one step's diagram crosses the lifelines, its arrow line or its label's middle, and where the lifelines start and end, in px from the top of the window. */
+const rows = (page: Page, index: number) =>
+  page.evaluate((at) => {
+    const step = document.querySelectorAll<HTMLElement>(".how-step")[at];
+    const life = step.querySelector<HTMLElement>(".how-life")!.getBoundingClientRect();
+    const found = new Map<number, number>();
+    for (const el of step.querySelectorAll<HTMLElement>(".how-leg, .how-mark")) {
+      const box = el.getBoundingClientRect();
+      found.set(Number(el.dataset.row), box.top + box.height / 2);
+    }
+    return { top: life.top, bottom: life.bottom, at: [...found.entries()].sort(([a], [b]) => a - b).map(([, y]) => y) };
   }, index);
 
 const tokens = (page: Page) =>
@@ -68,7 +82,7 @@ const tokens = (page: Page) =>
       probe.style.color = `var(${name})`;
       return getComputedStyle(probe).color;
     };
-    const out = { ok: resolve("--ok"), confirm: resolve("--confirm"), blocked: resolve("--blocked"), accent: resolve("--accent") };
+    const out = { ok: resolve("--ok"), confirm: resolve("--confirm"), blocked: resolve("--blocked"), accent: resolve("--accent"), past: resolve("--text-2") };
     probe.remove();
     return out;
   });
@@ -87,7 +101,7 @@ test.describe("How it works", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
   for (const form of FORMS) {
-    test(`pins under the header, shows one step at a time and fills the screen, at ${form.width} by ${form.height}`, async ({ page }) => {
+    test(`pins under the header, shows one step at a time and fits the screen, at ${form.width} by ${form.height}`, async ({ page }) => {
       await page.setViewportSize(form);
       await page.goto("/");
       const how = page.locator("[data-how]");
@@ -103,8 +117,14 @@ test.describe("How it works", () => {
         expect(stage.y + stage.height, where).toBeLessThanOrEqual(form.height + 1);
         expect(await shown(page, ".how-caption"), where).toEqual([flat(step.caption)]);
         expect(await shown(page, ".how-count > *"), where).toEqual([`${index + 1} / ${steps.length}`]);
-        const bottom = await page.locator(".how-step").nth(index).locator(".how-life").first().evaluate((el) => el.getBoundingClientRect().bottom);
-        expect(stage.y + stage.height - bottom, `${where} leaves no band under the diagram`).toBeLessThan(40);
+        const drawn = await rows(page, index);
+        expect(drawn.at.length, where).toBe(step.rows.length);
+        expect(drawn.at[0] - drawn.top, `${where} starts the first arrow near the top of the lifelines`).toBeLessThan(48);
+        const pitches = drawn.at.slice(1).map((y, place) => y - drawn.at[place]);
+        for (const pitch of pitches) expect(Math.abs(pitch - pitches[0]), `${where} spaces the arrows evenly`).toBeLessThan(3);
+        expect(Math.max(...pitches), `${where} leaves no wide band between arrows`).toBeLessThan(80);
+        expect(drawn.bottom - drawn.at[drawn.at.length - 1], `${where} leaves no band under the last arrow`).toBeLessThan(36);
+        expect(drawn.bottom, where).toBeLessThanOrEqual(stage.y + stage.height);
         places.push(JSON.stringify(await page.locator(".how-step").nth(index).locator(".how-head, .how-life").evaluateAll((items) => items.map((el) => [Math.round(el.getBoundingClientRect().x), Math.round(el.getBoundingClientRect().y)]))));
       }
       expect(new Set(places).size, "the diagram stays in one place from step to step").toBe(1);
@@ -128,6 +148,7 @@ test.describe("How it works", () => {
       expect(Math.abs(x.hub - x.agent - (x.printer - x.hub))).toBeLessThan(2);
       const where = `step ${index + 1}`;
       for (const [place, row] of step.rows.entries()) {
+        if (row.kind === "mark") continue;
         const drawn = legs.filter((leg) => leg.row === place);
         if (row.kind === "request") {
           expect(drawn.map((leg) => `${leg.from} ${leg.to}`), where).toEqual(row.legs.map((leg) => `${leg.from} ${leg.to}`));
@@ -137,7 +158,7 @@ test.describe("How it works", () => {
             expect(leg.dashed, where).toBe(false);
             expect(leg.drawn, where).toBeGreaterThan(0.98);
             expect(leg.tip, where).toBeGreaterThan(0.9);
-            expect(leg.color, where).toBe(row.legs[n].held ? color.confirm : color.accent);
+            expect(leg.color, `${where} draws the current request in the accent and an earlier one muted`).toBe(row.past ? color.past : color.accent);
           }
         } else {
           const [reply] = drawn;
@@ -151,9 +172,34 @@ test.describe("How it works", () => {
       }
       expect(await shown(page, `.how-step:nth-child(${index + 1}) .how-answer > span`), where).toEqual(step.rows.flatMap((row) => (row.kind === "reply" ? [row.answer] : [])));
       expect(await shown(page, `.how-step:nth-child(${index + 1}) .how-rule > span`), where).toEqual([flat(step.rule.text)]);
-      expect(await shown(page, `.how-step:nth-child(${index + 1}) .how-printer dd > span`), where).toEqual(step.readings.map((reading) => flat(reading.becomes?.value ?? reading.value)));
+      expect(await shown(page, `.how-step:nth-child(${index + 1}) .how-printer dd > span`), where).toEqual(step.readings.map((reading) => flat(reading.changes.at(-1)?.value ?? reading.value)));
     }
-    expect(await shown(page, ".how-step:nth-child(3) .how-label > span")).toEqual(["cancel", "Approve"]);
+    expect(await shown(page, ".how-step:nth-child(3) .how-label > span")).toEqual(["cancel", "cancel"]);
+    expect(await shown(page, ".how-step:nth-child(3) .how-mark > span")).toEqual([APPROVED]);
+    const hub = (await geometry(page, 2)).x.hub;
+    const mark = (await page.locator(".how-step:nth-child(3) .how-mark > span").boundingBox())!;
+    expect(Math.abs(mark.x + mark.width / 2 - hub)).toBeLessThan(2);
+  });
+
+  test("shows pending, then the approval at the hub, then the cancel and done, while the nozzle cools", async ({ page }) => {
+    await page.goto("/");
+    const step = steps[2];
+    const order = step.rows.map((row) => (row.kind === "mark" ? row.shows[0] : row.kind === "request" ? row.shows[0] : row.draws[0]));
+    const seen = async (selector: string) => shown(page, `.how-step:nth-child(3) ${selector}`);
+    await howAt(page, 3, (order[1] + order[2]) / 2);
+    expect(await seen(".how-answer > span")).toEqual(["pending"]);
+    expect(await seen(".how-mark > span")).toEqual([]);
+    const mark = step.rows[2];
+    await howAt(page, 3, (mark.kind === "mark" ? mark.shows[0] + mark.shows[1] + order[3] : 0) / 2);
+    expect(await seen(".how-mark > span")).toEqual([APPROVED]);
+    expect(await seen(".how-label > span")).toEqual(["cancel"]);
+    const nozzle = step.readings.find((reading) => reading.name === "Nozzle")!;
+    const values: string[] = [];
+    for (const at of [0.5, ...nozzle.changes.map((change) => change.at[0] + change.at[1] + 0.01)]) {
+      await howAt(page, 3, at);
+      values.push((await seen(".how-printer div:first-child dd > span"))[0]);
+    }
+    expect(values).toEqual([nozzle.value, ...nozzle.changes.map((change) => change.value)].map(flat));
   });
 
   test("starts each step with nothing drawn, and plays back the same way it plays forward", async ({ page }) => {
@@ -217,9 +263,31 @@ test.describe("How it works", () => {
     expect(await page.evaluate(() => Math.abs(window.scrollY + innerHeight - document.documentElement.scrollHeight))).toBeLessThan(2);
     await howAt(page, 3, 1);
     const gap = await page.evaluate(() => document.querySelector(".how-onward")!.getBoundingClientRect().top - document.querySelector(".how-stage")!.getBoundingClientRect().bottom);
-    expect(gap).toBeGreaterThanOrEqual(0);
+    expect(gap).toBeGreaterThanOrEqual(-0.5);
     expect(gap).toBeLessThan(48);
   });
+
+  for (const form of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    test(`slides the content after it over the stage, so no caption line passes under the header, at ${form.width} px`, async ({ page }) => {
+      await page.setViewportSize(form);
+      await page.goto("/");
+      await howAt(page, 3, 1);
+      const header = await page.locator("header.header").evaluate((el) => el.getBoundingClientRect().bottom);
+      const start = await page.evaluate(() => window.scrollY);
+      for (let moved = 0; moved <= form.height; moved += 40) {
+        await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), start + moved);
+        await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const seen = await page.evaluate(() => {
+          const stage = document.querySelector<HTMLElement>(".how-stage")!;
+          const caption = document.querySelector<HTMLElement>(".how-step:nth-child(3) .how-caption")!.getBoundingClientRect();
+          const cover = document.querySelector<HTMLElement>(".how-onward")!.getBoundingClientRect();
+          return { visible: getComputedStyle(stage).visibility === "visible", caption: caption.top, cover: cover.top };
+        });
+        if (seen.visible && seen.cover > seen.caption) expect(seen.caption, `${moved} px past the last step`).toBeGreaterThanOrEqual(header - 0.5);
+      }
+      await expect(page.locator("#safe-title")).toBeInViewport();
+    });
+  }
 
   test("ends with a link to the full example", async ({ page }) => {
     await page.goto("/");
@@ -312,7 +380,7 @@ test.describe("How it works", () => {
         expect(leg.drawn, `step ${index + 1}`).toBeGreaterThan(0.98);
         expect(leg.tip, `step ${index + 1}`).toBeGreaterThan(0.9);
       }
-      expect(await shown(page, `.how-step:nth-child(${index + 1}) .how-printer dd > span`)).toEqual(step.readings.map((reading) => flat(reading.becomes?.value ?? reading.value)));
+      expect(await shown(page, `.how-step:nth-child(${index + 1}) .how-printer dd > span`)).toEqual(step.readings.map((reading) => flat(reading.changes.at(-1)?.value ?? reading.value)));
     }
     await expect(page.locator(".how-count")).toBeHidden();
     expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
