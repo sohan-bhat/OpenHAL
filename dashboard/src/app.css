@@ -1,4 +1,68 @@
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@import "tw-animate-css";
 @import "../../design/tokens.css";
+
+@source "./";
+
+@theme {
+  --color-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --blur-*: initial;
+  --text-*: initial;
+  --font-*: initial;
+}
+
+@theme inline {
+  --font-sans: var(--font-text);
+  --font-mono: var(--font-mono);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-popover: var(--bg);
+  --color-popover-foreground: var(--text);
+  --color-primary: var(--accent-fill);
+  --color-primary-foreground: var(--on-accent);
+  --color-muted: var(--surface);
+  --color-muted-foreground: var(--text-2);
+  --color-accent: var(--accent);
+  --color-accent-fill: var(--accent-fill);
+  --color-accent-fill-hover: var(--accent-fill-hover);
+  --color-on-accent: var(--on-accent);
+  --color-border: var(--border);
+  --color-input: var(--control-border);
+  --color-ring: var(--accent);
+  --color-ok: var(--ok);
+  --color-confirm: var(--confirm);
+  --color-blocked: var(--blocked);
+  --color-unverified: var(--unverified);
+  --text-xs: var(--t-legend);
+  --text-xs--line-height: 1.4;
+  --text-sm: var(--t-label);
+  --text-sm--line-height: 1.4;
+  --text-base: var(--t-ui);
+  --text-base--line-height: 1.5;
+  --text-lg: 16px;
+  --text-lg--line-height: 1.5;
+  --text-xl: 18px;
+  --text-xl--line-height: 1.4;
+  --text-2xl: 20px;
+  --text-2xl--line-height: 1.25;
+  --text-3xl: 22px;
+  --text-3xl--line-height: 1.25;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius);
+  --ease-out: var(--ease);
+  --ease-in-out: var(--ease);
+  --default-transition-duration: var(--motion-status);
+  --default-transition-timing-function: var(--ease);
+}
 
 :root {
   --t-label: 14px;
