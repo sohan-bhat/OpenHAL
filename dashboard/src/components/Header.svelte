@@ -2,6 +2,9 @@
   import { NAV, href, router } from "../lib/router.svelte";
   import { inspector } from "../lib/state.svelte";
   import type { StatusWord } from "../lib/status";
+  import ArrowDownIcon from "@lucide/svelte/icons/arrow-down";
+  import { Button } from "$lib/components/ui/button/index.js";
+  import * as NavigationMenu from "$lib/components/ui/navigation-menu/index.js";
   import StatusMark from "./StatusMark.svelte";
   import StopControl from "./StopControl.svelte";
 
@@ -64,29 +67,34 @@
 
 {@render facts("narrow")}
 
-<nav class="views" aria-label="Views">
-  <ul>
+<NavigationMenu.Root class="views" aria-label="Views">
+  <NavigationMenu.List class="flex-wrap gap-x-1 px-4 max-lg:gap-x-0 max-lg:px-2">
     {#each NAV as item (item.view)}
-      <li>
-        <a href={href(item.view)} aria-current={router.route.view === item.view ? "page" : undefined}>
+      <NavigationMenu.Item>
+        <NavigationMenu.Link
+          href={href(item.view)}
+          active={router.route.view === item.view}
+          class="-mb-px inline-flex min-h-10 items-center gap-2 border-b-2 border-transparent px-2 font-bold text-muted-foreground underline-offset-4 hover:underline data-active:border-accent data-active:text-foreground max-lg:px-1.5"
+        >
           {item.label}
           {#if item.view === "confirmations" && pending > 0}
             <span class="count">{pending}<span class="visually-hidden"> pending confirmation</span></span>
           {/if}
-        </a>
-      </li>
+        </NavigationMenu.Link>
+      </NavigationMenu.Item>
     {/each}
-    <li class="jump">
-      <button type="button" onclick={showLog}>
-        <svg width="12" height="14" viewBox="0 0 12 14" aria-hidden="true" focusable="false">
-          <path d="M6 1v7.5" stroke="currentColor" stroke-width="1.5" />
-          <path d="M6 13 2.5 7h7z" fill="currentColor" />
-        </svg>
+    <NavigationMenu.Item class="ml-auto">
+      <Button
+        variant="ghost"
+        class="min-h-10 px-2 font-bold underline-offset-4 not-disabled:hover:bg-transparent not-disabled:hover:text-muted-foreground hover:underline max-lg:px-1.5"
+        onclick={showLog}
+      >
+        <ArrowDownIcon class="size-3.5" aria-hidden="true" />
         Message log
-      </button>
-    </li>
-  </ul>
-</nav>
+      </Button>
+    </NavigationMenu.Item>
+  </NavigationMenu.List>
+</NavigationMenu.Root>
 
 {#if status?.stopped}
   <div class="stopped" id="stopped-state" role="status">
@@ -158,57 +166,9 @@
     min-width: 7.5em;
   }
 
-  .views {
+  :global(.views) {
     border-bottom: var(--rule);
     background: var(--bg);
-  }
-
-  .views ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0 var(--s-1);
-    margin: 0;
-    padding: 0 var(--s-4);
-    list-style: none;
-  }
-
-  .views a,
-  .jump button {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s-2);
-    min-height: 40px;
-    padding: 0 var(--s-2);
-    color: var(--text-2);
-    font: inherit;
-    font-weight: 700;
-    text-decoration: none;
-    text-underline-offset: 4px;
-  }
-
-  .views a {
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-  }
-
-  .views a:hover,
-  .jump button:hover {
-    text-decoration: underline;
-  }
-
-  .jump {
-    margin-left: auto;
-  }
-
-  .jump button {
-    border: 0;
-    background: none;
-    cursor: pointer;
-  }
-
-  .views a[aria-current="page"] {
-    color: var(--text);
-    border-bottom-color: var(--accent);
   }
 
   .stop-slot {
@@ -269,16 +229,6 @@
       grid-column: 2;
       grid-row: 1;
       min-height: 48px;
-    }
-
-    .views ul {
-      gap: 0;
-      padding: 0 var(--s-2);
-    }
-
-    .views a,
-    .jump button {
-      padding: 0 6px;
     }
   }
 </style>

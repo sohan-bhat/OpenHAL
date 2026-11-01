@@ -1,4 +1,10 @@
 <script lang="ts">
+  import ChevronRightIcon from "@lucide/svelte/icons/chevron-right";
+  import { Button } from "$lib/components/ui/button/index.js";
+  import * as Collapsible from "$lib/components/ui/collapsible/index.js";
+  import { Input } from "$lib/components/ui/input/index.js";
+  import { Label } from "$lib/components/ui/label/index.js";
+  import { Textarea } from "$lib/components/ui/textarea/index.js";
   import Json from "../components/Json.svelte";
   import Prose from "../components/Prose.svelte";
   import StatusMark from "../components/StatusMark.svelte";
@@ -215,7 +221,7 @@
     <section class="section" aria-labelledby="unknown-title">
       <div class="section-head">
         <h2 id="unknown-title">Unknown devices</h2>
-        <button class="button small" type="button" onclick={discover} disabled={busy}>Look for devices</button>
+        <Button size="sm" onclick={discover} disabled={busy}>Look for devices</Button>
       </div>
       <p class="muted small">Looking for devices runs each installed driver's discovery. Drivers send only read-only identify commands.</p>
       {#if discoverNote}<p role="status">{discoverNote}</p>{/if}
@@ -232,9 +238,9 @@
                   <Prose text={Object.entries(device.identifiers).map(([key, value]) => `${key} ${value}`).join(", ")} />
                 </span>
               </div>
-              <button class="button primary" type="button" disabled={busy} onclick={() => start(device)}>
+              <Button variant="primary" disabled={busy} onclick={() => start(device)}>
                 Start the driver writer
-              </button>
+              </Button>
             </li>
           {/each}
         </ul>
@@ -272,16 +278,21 @@
       {/if}
       {#each session.problems as problem, index (index)}<p class="problem">{problem}</p>{/each}
       {#if session.sources.length}
-        <details>
-          <summary>Everything the device and its sources reported</summary>
-          {#each session.sources as source, index (index)}
-            {@const block = dataBlock(source)}
-            {#if block}
-              <p class="label source-label">{block.source ?? "source"}</p>
-              <pre class="data-block">{block.text}</pre>
-            {/if}
-          {/each}
-        </details>
+        <Collapsible.Root class="raw">
+          <Collapsible.Trigger class="group/raw inline-flex cursor-pointer items-center gap-1 text-foreground">
+            <ChevronRightIcon class="size-4 text-muted-foreground transition-transform group-data-[state=open]/raw:rotate-90" aria-hidden="true" />
+            Everything the device and its sources reported
+          </Collapsible.Trigger>
+          <Collapsible.Content class="grid gap-2 pt-2">
+            {#each session.sources as source, index (index)}
+              {@const block = dataBlock(source)}
+              {#if block}
+                <p class="label source-label">{block.source ?? "source"}</p>
+                <pre class="data-block">{block.text}</pre>
+              {/if}
+            {/each}
+          </Collapsible.Content>
+        </Collapsible.Root>
       {/if}
     </section>
 
@@ -290,8 +301,11 @@
         <h2 id="propose-title">Propose a draft</h2>
         <p class="muted">Paste a Device File draft, for example one your agent wrote from the manual. Every limit in the draft stays suggested.</p>
         <form onsubmit={propose} class="stack">
-          <label class="field"><span>Draft YAML</span><textarea bind:value={proposal} rows="12" spellcheck="false"></textarea></label>
-          <div><button class="button primary" type="submit" disabled={busy || !proposal.trim()}>Propose the draft</button></div>
+          <div class="field">
+            <Label for="draft-yaml">Draft YAML</Label>
+            <Textarea id="draft-yaml" bind:value={proposal} rows={12} spellcheck="false" />
+          </div>
+          <div><Button type="submit" variant="primary" disabled={busy || !proposal.trim()}>Propose the draft</Button></div>
         </form>
       </section>
     {/if}
@@ -303,26 +317,33 @@
         <form onsubmit={submitAnswers} class="stack">
           {#each questions as question (question.id)}
             <div class="question">
-              <label class="q-label" for="q-{question.id}">
+              <Label for="q-{question.id}" class="grid gap-0.5 text-base font-normal text-foreground">
                 <span class="mono q-id">{question.id}</span>
                 <span>{question.prompt}</span>
-              </label>
+              </Label>
               {#if question.reason}<p class="muted small">{question.reason}</p>{/if}
               <div class="answer">
-                <input id="q-{question.id}" type="text" bind:value={answers[question.id]} autocomplete="off" spellcheck="false" />
+                <Input
+                  id="q-{question.id}"
+                  type="text"
+                  value={answers[question.id] ?? ""}
+                  oninput={(event) => (answers = { ...answers, [question.id]: (event.currentTarget as HTMLInputElement).value })}
+                  autocomplete="off"
+                  spellcheck="false"
+                  class="w-[18ch] font-mono"
+                />
                 <span class="muted small">Suggested <span class="mono">{suggestedText(question)}</span></span>
-                <button
-                  class="button small"
-                  type="button"
-                  onclick={() => (answers[question.id] = suggestedText(question))}
+                <Button
+                  size="sm"
+                  onclick={() => (answers = { ...answers, [question.id]: suggestedText(question) })}
                   aria-label="Use suggested value for {question.id}"
                 >
                   Use suggested
-                </button>
+                </Button>
               </div>
             </div>
           {/each}
-          <div><button class="button primary" type="submit" disabled={busy || !allAnswered}>Confirm these limits</button></div>
+          <div><Button type="submit" variant="primary" disabled={busy || !allAnswered}>Confirm these limits</Button></div>
         </form>
       </section>
     {/if}
@@ -381,11 +402,14 @@
       <section class="section" aria-labelledby="save-title">
         <h2 id="save-title">Save</h2>
         <form onsubmit={save} class="save">
-          <label class="field">
-            <span>File name</span>
-            <span class="name-input"><input type="text" bind:value={saveAs} spellcheck="false" autocomplete="off" /><span class="mono muted">.hal.yaml</span></span>
-          </label>
-          <button class="button primary" type="submit" disabled={busy || !saveAs.trim()}>Save the Device File</button>
+          <div class="field">
+            <Label for="save-as">File name</Label>
+            <span class="name-input">
+              <Input id="save-as" type="text" bind:value={saveAs} spellcheck="false" autocomplete="off" class="w-[24ch]" />
+              <span class="mono muted">.hal.yaml</span>
+            </span>
+          </div>
+          <Button type="submit" variant="primary" disabled={busy || !saveAs.trim()}>Save the Device File</Button>
         </form>
         {#if session.status === "interview"}
           <p class="muted small">Saving before the interview is done gives a read-only file.</p>
@@ -531,15 +555,6 @@
     overflow-wrap: break-word;
   }
 
-  details summary {
-    cursor: pointer;
-    color: var(--text);
-  }
-
-  details pre {
-    margin-top: var(--s-2);
-  }
-
   .stack {
     display: grid;
     gap: var(--s-4);
@@ -552,11 +567,6 @@
     border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
   }
 
-  .q-label {
-    display: grid;
-    gap: 2px;
-  }
-
   .q-id {
     color: var(--text);
     font-weight: 700;
@@ -567,11 +577,6 @@
     flex-wrap: wrap;
     align-items: center;
     gap: var(--s-2) var(--s-3);
-  }
-
-  .answer input {
-    width: 18ch;
-    font-family: var(--font-mono);
   }
 
   .diff,

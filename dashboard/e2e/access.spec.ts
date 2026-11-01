@@ -49,11 +49,11 @@ test("the Inspector works from the keyboard with visible focus", async ({ page, 
   await expect(page.getByRole("heading", { name: "Resin curing heater", level: 1 })).toBeVisible();
   const slider = page.getByRole("slider", { name: "power new value" });
   await slider.focus();
-  const before = Number(await slider.inputValue());
+  const before = Number(await slider.getAttribute("aria-valuenow"));
   await page.keyboard.press(before >= 60 ? "ArrowLeft" : "ArrowRight");
-  expect(Number(await slider.inputValue())).not.toBe(before);
+  await expect(slider).not.toHaveAttribute("aria-valuenow", String(before));
   await page.keyboard.press("End");
-  expect(await slider.inputValue()).toBe("60");
+  await expect(slider).toHaveAttribute("aria-valuenow", "60");
 });
 
 const VIEWS = ["#/devices/printer", "#/devices/printer-cam", "#/devices/plant-waterer", "#/devices/curing-heater", "#/devices/bench-lamp", "#/confirmations", "#/audit", "#/routines", "#/writer", "#/settings"];

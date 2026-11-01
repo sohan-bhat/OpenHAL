@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { Badge } from "$lib/components/ui/badge/index.js";
+  import * as NavigationMenu from "$lib/components/ui/navigation-menu/index.js";
   import { isSimulated } from "../lib/devices";
   import { conformanceFor } from "../lib/protocol";
   import { href, router } from "../lib/router.svelte";
@@ -32,39 +34,37 @@
       No devices. Put a Device File in <code>~/.openhal/devices</code> or run <code>openhal discover</code>.
     </p>
   {:else}
-    <ul>
-      {#each devices as device (device.id)}
-        {@const connection = connectionStatus(device)}
-        {@const verification = verificationStatus(device.verification)}
-        <li>
-          <a
-            class="device"
-            href={href("devices", device.id)}
-            aria-current={selected === device.id ? "page" : undefined}
-          >
-            <span class="name">{device.name}</span>
-            <span class="id-line">
-              <span class="id mono nobreak">{device.id}</span>
-              {#if isSimulated(device)}<span class="sim">simulated</span>{/if}
-            </span>
-            <span class="states">
-              <StatusMark tone={connection.tone} label={connection.label} />
-              {#if verification.detail}<span class="detail">{verification.detail}</span>{/if}
-              <StatusMark tone={verification.tone} label={verification.label} />
-            </span>
-            {#if unavailableReason(device)}
-              <span class="unavailable"><span class="label">unavailable</span> {unavailableReason(device)}</span>
-            {/if}
-            <span class="facts">
-              <span><span class="label">driver</span> <span class="mono nobreak">{device.driver}</span></span>
-              <span><span class="label">conformance</span> {conformanceFor(device)}</span>
-              <span><span class="label">hazard</span> {device.hazard}</span>
-              {#if !device.writable}<span class="read-only">read-only</span>{/if}
-            </span>
-          </a>
-        </li>
-      {/each}
-    </ul>
+    <NavigationMenu.Root orientation="vertical" aria-labelledby="devices-title">
+      <NavigationMenu.List class="grid gap-2">
+        {#each devices as device (device.id)}
+          {@const connection = connectionStatus(device)}
+          {@const verification = verificationStatus(device.verification)}
+          <NavigationMenu.Item>
+            <NavigationMenu.Link class="device" href={href("devices", device.id)} active={selected === device.id}>
+              <span class="name">{device.name}</span>
+              <span class="id-line">
+                <span class="id mono nobreak">{device.id}</span>
+                {#if isSimulated(device)}<Badge variant={selected === device.id ? "page" : "surface"}>simulated</Badge>{/if}
+              </span>
+              <span class="states">
+                <StatusMark tone={connection.tone} label={connection.label} />
+                {#if verification.detail}<span class="detail">{verification.detail}</span>{/if}
+                <StatusMark tone={verification.tone} label={verification.label} />
+              </span>
+              {#if unavailableReason(device)}
+                <span class="unavailable"><span class="label">unavailable</span> {unavailableReason(device)}</span>
+              {/if}
+              <span class="facts">
+                <span><span class="label">driver</span> <span class="mono nobreak">{device.driver}</span></span>
+                <span><span class="label">conformance</span> {conformanceFor(device)}</span>
+                <span><span class="label">hazard</span> {device.hazard}</span>
+                {#if !device.writable}<span class="read-only">read-only</span>{/if}
+              </span>
+            </NavigationMenu.Link>
+          </NavigationMenu.Item>
+        {/each}
+      </NavigationMenu.List>
+    </NavigationMenu.Root>
   {/if}
   {#if inspector.status?.load_problems?.length}
     <div class="problems">
@@ -111,15 +111,7 @@
     border-radius: var(--radius);
   }
 
-  ul {
-    display: grid;
-    gap: var(--s-2);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .device {
+  .device-list :global(.device) {
     display: grid;
     gap: var(--s-1);
     padding: var(--s-3);
@@ -130,11 +122,11 @@
     background: var(--bg);
   }
 
-  .device:hover {
+  .device-list :global(.device:hover) {
     border-color: var(--text-2);
   }
 
-  .device[aria-current="page"] {
+  .device-list :global(.device[aria-current="page"]) {
     border-color: var(--accent);
     border-left-width: 3px;
     padding-left: calc(var(--s-3) - 2px);
@@ -155,18 +147,6 @@
 
   .id {
     color: var(--text);
-  }
-
-  .sim {
-    font-size: var(--t-label);
-    color: var(--text-2);
-    padding: 0 6px;
-    background: var(--surface);
-    border-radius: var(--radius);
-  }
-
-  .device[aria-current="page"] .sim {
-    background: var(--bg);
   }
 
   .states {

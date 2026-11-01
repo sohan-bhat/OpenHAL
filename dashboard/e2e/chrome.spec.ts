@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { AgentClient, hubState, signIn } from "./hub";
+import { AgentClient, choose, hubState, signIn } from "./hub";
 
 test.beforeEach(async ({ context }) => {
   await signIn(context);
@@ -88,12 +88,12 @@ test("the log shows readings on request, expands long messages and copies the tr
     expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("-> hal/write");
   }
 
-  await page.getByRole("combobox", { name: "Client", exact: true }).selectOption("chrome-agent");
-  await page.getByRole("combobox", { name: "Method", exact: true }).selectOption("hal/initialize");
-  await page.getByRole("combobox", { name: "Outcome", exact: true }).selectOption("pending");
+  await choose(page.getByRole("combobox", { name: "Client", exact: true }), "chrome-agent");
+  await choose(page.getByRole("combobox", { name: "Method", exact: true }), "hal/initialize");
+  await choose(page.getByRole("combobox", { name: "Outcome", exact: true }), "confirmation required");
   await expect(page.getByText("No messages match these filters.")).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();
-  await expect(page.getByRole("combobox", { name: "Client", exact: true })).toHaveValue("");
+  await expect(page.getByRole("combobox", { name: "Client", exact: true })).toHaveText("All clients");
   await expect(log.locator("li").first()).toBeVisible();
 });
 
@@ -127,7 +127,7 @@ test("the stop action reads as the device safe state, not as the global STOP", a
   const stop = page.locator("form.action").filter({ hasText: "Turn the pump off now." });
   const run = stop.getByRole("button", { name: "Run stop" });
   await expect(run).toBeVisible();
-  await expect(run).not.toHaveClass(/primary/);
+  await expect(run).toHaveAttribute("data-variant", "outline");
   await expect(stop).toContainText("is this device's safe state");
 });
 
@@ -171,15 +171,15 @@ test("the audit log filters, and verifies its hash chain", async ({ page }) => {
   await agent.call("hal/action", { device: "printer", action: "pause" });
   agent.close();
   await page.goto("/#/audit");
-  const entries = page.locator("li.entry");
+  const entries = page.locator("tbody.entry");
   await expect(entries.first()).toBeVisible({ timeout: 20_000 });
   await page.getByRole("button", { name: "Verify the hash chain" }).click();
   await expect(page.getByText("chain intact")).toBeVisible();
-  for (const [label, value] of [["Device", "curing-heater"], ["Status", "blocked"], ["Event", "action"]] as const) {
-    const select = page.getByRole("group", { name: "Filter the audit log" }).getByLabel(label);
-    await select.selectOption(value);
-    await expect.poll(async () => (await entries.allTextContents()).every((text) => text.includes(value === "blocked" ? "blocked" : value))).toBe(true);
-    await select.selectOption("");
+  for (const [label, value, all] of [["Device", "curing-heater", "All devices"], ["Status", "blocked", "All statuses"], ["Event", "action", "All events"]] as const) {
+    const select = page.getByRole("group", { name: "Filter the audit log" }).getByRole("combobox", { name: label, exact: true });
+    await choose(select, value);
+    await expect.poll(async () => (await entries.allTextContents()).every((text) => text.includes(value))).toBe(true);
+    await choose(select, all);
   }
 });
 
@@ -189,7 +189,7 @@ test("the audit log labels values on a phone and an agent stays dashed when bloc
   agent.close();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/#/audit");
-  const blocked = page.locator("li.entry.agent.blocked").first();
+  const blocked = page.locator("tbody.entry.agent.blocked").first();
   await expect(blocked).toBeVisible({ timeout: 20_000 });
   for (const label of ["event", "by", "target", "status"]) await expect(blocked.locator(".cell .key", { hasText: label })).toBeVisible();
   expect(await blocked.evaluate((row) => getComputedStyle(row).borderLeftStyle)).toBe("dashed");
@@ -227,11 +227,16 @@ test("settings create, copy and revoke a token, and hand out a pairing code", as
     expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/^ohal_/);
   }
   const row = page.getByRole("row").filter({ hasText: name });
+  const confirm = page.getByRole("alertdialog", { name: `Revoke ${name}` });
   await row.getByRole("button", { name: `Revoke ${name}` }).click();
-  await row.getByRole("button", { name: "Keep" }).click();
-  await expect(row.getByRole("button", { name: `Revoke ${name}` })).toBeVisible();
+  await expect(confirm).toBeVisible();
+  await expect(confirm.getByRole("button", { name: "Keep" })).toBeFocused();
+  await confirm.getByRole("button", { name: "Keep" }).click();
+  await expect(confirm).toBeHidden();
+  await expect(row.getByRole("button", { name: `Revoke ${name}` })).toBeFocused();
   await row.getByRole("button", { name: `Revoke ${name}` }).click();
-  await row.getByRole("button", { name: `Revoke ${name}` }).click();
+  await confirm.getByRole("button", { name: `Revoke ${name}` }).click();
+  await expect(confirm).toBeHidden();
   await expect(page.getByRole("row").filter({ hasText: name })).toHaveCount(0);
   await page.getByLabel("Show revoked tokens").check();
   await expect(page.getByRole("row").filter({ hasText: name })).toContainText("revoked");
@@ -281,9 +286,10 @@ test("the driver writer searches for devices, opens the raw data, takes answers 
   await expect(page.locator(".data-table")).toContainText("firmware.product herb-waterer");
   await expect(page.locator(".question .q-id").first()).toBeVisible();
   expect(await page.locator(".question .q-id").allTextContents()).not.toContain("fan_speed.max");
-  const raw = page.locator("details").filter({ hasText: "Everything the device" });
-  await raw.locator("summary").click();
-  await expect(raw).toHaveAttribute("open", "");
+  const raw = page.locator(".raw").filter({ hasText: "Everything the device" });
+  await raw.getByRole("button", { name: "Everything the device and its sources reported" }).click();
+  await expect(raw).toHaveAttribute("data-state", "open");
+  await expect(raw.locator("pre.data-block").first()).toBeVisible();
   const first = page.getByRole("button", { name: /^Use suggested value for / }).first();
   const field = page.locator(".question input").first();
   await field.fill("");

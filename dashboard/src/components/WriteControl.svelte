@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { Button } from "$lib/components/ui/button/index.js";
+  import { Input } from "$lib/components/ui/input/index.js";
+  import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
   import Reason from "./Reason.svelte";
   import { api } from "../lib/api";
   import { describeDecision, type DecisionSummary } from "../lib/devices";
@@ -34,6 +37,7 @@
   const confirms = $derived(tier.tone === "confirm");
   const ident = $derived(`${device}-${channel}`.replace(/[^a-z0-9-]/gi, "-"));
 
+  const choices = $derived(spec.type === "bool" ? ["false", "true"] : (spec.values ?? []));
   const lo = $derived(spec.min ?? 0);
   const hi = $derived(spec.max ?? 100);
 
@@ -124,7 +128,7 @@
       {#if isNumber}
         <label class="number">
           <span class="visually-hidden">{channel} value in {symbol || "its unit"}</span>
-          <input
+          <Input
             id="{ident}-input"
             type="number"
             inputmode="decimal"
@@ -134,37 +138,32 @@
             value={draft}
             {disabled}
             oninput={(event) => setDraft((event.currentTarget as HTMLInputElement).value)}
+            class="w-auto font-mono text-right tabular-nums"
             style="width: {width + 4}ch"
           />
           {#if symbol}<span class="unit mono">{symbol}</span>{/if}
         </label>
-      {:else if spec.type === "bool"}
-        <div class="choices" role="radiogroup" aria-label="{channel} new value">
-          {#each ["false", "true"] as option (option)}
-            <label class="choice">
-              <input type="radio" name="{ident}-bool" value={option} checked={draft === option} {disabled} onchange={() => setDraft(option)} />
-              <span class="mono">{option}</span>
-            </label>
+      {:else if spec.type === "bool" || (spec.type === "enum" && spec.values)}
+        <RadioGroup.Root
+          value={draft}
+          onValueChange={setDraft}
+          {disabled}
+          orientation="horizontal"
+          aria-label="{channel} new value"
+        >
+          {#each choices as option (option)}
+            <RadioGroup.Item value={option}><span class="mono">{option}</span></RadioGroup.Item>
           {/each}
-        </div>
-      {:else if spec.type === "enum" && spec.values}
-        <div class="choices" role="radiogroup" aria-label="{channel} new value">
-          {#each spec.values as option (option)}
-            <label class="choice">
-              <input type="radio" name="{ident}-enum" value={option} checked={draft === option} {disabled} onchange={() => setDraft(option)} />
-              <span class="mono">{option}</span>
-            </label>
-          {/each}
-        </div>
+        </RadioGroup.Root>
       {:else}
         <label class="number">
           <span class="visually-hidden">{channel} new value</span>
-          <input id="{ident}-input" type="text" value={draft} {disabled} oninput={(event) => setDraft((event.currentTarget as HTMLInputElement).value)} />
+          <Input id="{ident}-input" type="text" value={draft} {disabled} class="w-auto" oninput={(event) => setDraft((event.currentTarget as HTMLInputElement).value)} />
         </label>
       {/if}
-      <button class="button primary" type="submit" disabled={disabled || busy || !draftValid}>
+      <Button type="submit" variant="primary" disabled={disabled || busy || !draftValid}>
         <span>{confirms ? "Confirm and set" : "Set"} <span class="mono">{channel}</span></span>
-      </button>
+      </Button>
     </div>
     {#if confirms}
       <p class="muted reason-line">Changes to this channel need a person's confirmation. Your click is that confirmation.</p>
@@ -271,51 +270,8 @@
     gap: var(--s-2);
   }
 
-  .number input {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-    text-align: right;
-  }
-
   .unit {
     color: var(--text-2);
-  }
-
-  .choices {
-    display: inline-flex;
-    flex-wrap: wrap;
-    border: var(--rule);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-
-  .choice {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s-1);
-    min-height: 36px;
-    padding: 0 var(--s-3);
-    border-right: var(--rule);
-    cursor: pointer;
-  }
-
-  .choice:last-child {
-    border-right: 0;
-  }
-
-  .choice:has(input:checked) {
-    background: var(--surface);
-    font-weight: 700;
-  }
-
-  .choice:has(input:focus-visible) {
-    outline: var(--focus);
-    outline-offset: -2px;
-  }
-
-  .choice input {
-    accent-color: var(--accent);
-    margin: 0;
   }
 
   .meta {

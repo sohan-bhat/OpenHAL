@@ -1,5 +1,9 @@
 <script lang="ts">
+  import { Button } from "$lib/components/ui/button/index.js";
+  import { Checkbox } from "$lib/components/ui/checkbox/index.js";
+  import { Label } from "$lib/components/ui/label/index.js";
   import Prose from "./Prose.svelte";
+  import SelectField from "./SelectField.svelte";
   import { onMount, tick } from "svelte";
   import { SvelteSet } from "svelte/reactivity";
   import { isValueNotification } from "../lib/logstore";
@@ -112,48 +116,52 @@
       {#if inspector.logAvailable}<StatusMark tone={live.tone} label={live.label} />{/if}
       <span class="muted count">{matching.length} of {rows.length} messages</span>
       {#if ontoggle}
-        <button type="button" class="button small toggle" aria-expanded={!collapsed} aria-controls="log-body" onclick={ontoggle}>
+        <Button size="sm" class="ml-2" aria-expanded={!collapsed} aria-controls="log-body" onclick={ontoggle}>
           {collapsed ? "Show the log" : "Hide the log"}
-        </button>
+        </Button>
       {/if}
     </div>
     {#if !collapsed}
     <div class="filters" role="group" aria-label="Filter the message log">
-      <label class="field">
-        <span>Client</span>
-        <select bind:value={filters.client}>
-          <option value="">All clients</option>
-          {#each options.clients as client (client)}<option value={client}>{client}</option>{/each}
-        </select>
-      </label>
-      <label class="field">
-        <span>Device</span>
-        <select bind:value={filters.device}>
-          <option value="">All devices</option>
-          {#each options.devices as device (device)}<option value={device}>{device}</option>{/each}
-        </select>
-      </label>
-      <label class="field">
-        <span>Method</span>
-        <select bind:value={filters.method}>
-          <option value="">All methods</option>
-          {#each options.methods as method (method)}<option value={method}>{method}</option>{/each}
-        </select>
-      </label>
-      <label class="field">
-        <span>Outcome</span>
-        <select bind:value={filters.outcome}>
-          <option value="">All outcomes</option>
-          {#each outcomes as outcome (outcome.value)}<option value={outcome.value}>{outcome.label}</option>{/each}
-        </select>
-      </label>
-      <label class="check">
-        <input type="checkbox" bind:checked={showValues} />
+      <SelectField
+        id="log-client"
+        label="Client"
+        bind:value={filters.client}
+        size="sm"
+        triggerClass="max-w-[200px]"
+        options={[{ value: "", label: "All clients" }, ...options.clients.map((client) => ({ value: client, label: client }))]}
+      />
+      <SelectField
+        id="log-device"
+        label="Device"
+        bind:value={filters.device}
+        size="sm"
+        triggerClass="max-w-[200px]"
+        options={[{ value: "", label: "All devices" }, ...options.devices.map((device) => ({ value: device, label: device }))]}
+      />
+      <SelectField
+        id="log-method"
+        label="Method"
+        bind:value={filters.method}
+        size="sm"
+        triggerClass="max-w-[200px]"
+        options={[{ value: "", label: "All methods" }, ...options.methods.map((method) => ({ value: method, label: method }))]}
+      />
+      <SelectField
+        id="log-outcome"
+        label="Outcome"
+        bind:value={filters.outcome}
+        size="sm"
+        triggerClass="max-w-[200px]"
+        options={[{ value: "", label: "All outcomes" }, ...outcomes]}
+      />
+      <Label for="log-values" class="inline-flex min-h-8 cursor-pointer items-center gap-2 font-normal text-foreground">
+        <Checkbox id="log-values" bind:checked={showValues} />
         <span>Show <code>hal/value</code></span>
-      </label>
-      <button type="button" class="button small" onclick={copy} disabled={!visible.length}>
+      </Label>
+      <Button size="sm" onclick={copy} disabled={!visible.length}>
         {copied ? "Copied as text" : "Copy as text"}
-      </button>
+      </Button>
     </div>
     {/if}
   </div>
@@ -174,13 +182,13 @@
     {:else if !matching.length}
       <div class="empty filters-empty">
         <p>No messages match these filters.</p>
-        <button type="button" class="button small" onclick={() => (filters = { ...NO_FILTERS })}>Clear filters</button>
+        <Button size="sm" onclick={() => (filters = { ...NO_FILTERS })}>Clear filters</Button>
       </div>
     {:else}
       {#if hidden > 0}
-        <button type="button" class="button small older" onclick={() => (shown += PAGE)}>
+        <Button size="sm" class="my-2" onclick={() => (shown += PAGE)}>
           Show {Math.min(hidden, PAGE)} older messages
-        </button>
+        </Button>
       {/if}
       <ol class="trace" aria-label="JSON-RPC messages, oldest first" translate="no">
         {#each painted ? visible : [] as row (row.seq)}
@@ -208,14 +216,15 @@
                   <Json value={row.payload} limit={long && !expanded.has(row.seq) ? short : 100000} />
                 {/if}
                 {#if long}
-                  <button
-                    type="button"
-                    class="more"
+                  <Button
+                    variant="link"
+                    size="inline"
+                    class="font-sans"
                     aria-expanded={expanded.has(row.seq)}
                     onclick={() => (expanded.has(row.seq) ? expanded.delete(row.seq) : expanded.add(row.seq))}
                   >
                     {expanded.has(row.seq) ? "Show less" : "Show the whole message"}
-                  </button>
+                  </Button>
                 {/if}
               {/if}
               {#if row.tone === "pending"}<StatusMark tone="confirm" label="confirmation required" compact />{/if}
@@ -253,10 +262,6 @@
     display: none;
   }
 
-  .toggle {
-    margin-left: var(--s-2);
-  }
-
   .log-head {
     display: flex;
     flex-wrap: wrap;
@@ -287,24 +292,6 @@
     gap: var(--s-2) var(--s-3);
   }
 
-  .filters select {
-    min-height: 32px;
-    max-width: 200px;
-    font-size: var(--t-label);
-  }
-
-  .check {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s-1);
-    min-height: 32px;
-    font-size: var(--t-label);
-  }
-
-  .check input {
-    accent-color: var(--accent);
-  }
-
   .scroller {
     overflow: auto;
     min-height: 0;
@@ -324,10 +311,6 @@
     display: grid;
     gap: var(--s-2);
     justify-items: start;
-  }
-
-  .older {
-    margin: var(--s-2) 0;
   }
 
   .trace {
@@ -429,19 +412,6 @@
     align-items: baseline;
     gap: var(--s-1) var(--s-3);
     min-width: 0;
-  }
-
-  .more {
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--accent);
-    font: inherit;
-    font-family: var(--font-text);
-    font-size: var(--t-label);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    cursor: pointer;
   }
 
   .reason {

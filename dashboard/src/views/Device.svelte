@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { Badge } from "$lib/components/ui/badge/index.js";
+  import * as Table from "$lib/components/ui/table/index.js";
   import ActionControl from "../components/ActionControl.svelte";
   import CameraFrame from "../components/CameraFrame.svelte";
   import Prose from "../components/Prose.svelte";
@@ -73,7 +75,7 @@
       <div class="title">
         <h1 id="device-title">{view.name}</h1>
         <span class="mono id nobreak">{view.id}</span>
-        {#if isSimulated(view)}<span class="sim">simulated</span>{/if}
+        {#if isSimulated(view)}<Badge>simulated</Badge>{/if}
       </div>
       <dl class="facts">
         <div><dt class="label">state</dt><dd><StatusMark tone={connection.tone} label={connection.label} /></dd></div>
@@ -136,17 +138,20 @@
     {#if Object.keys(view.read).length}
       <section class="section" aria-labelledby="read-title">
         <h2 id="read-title">Read channels</h2>
-        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-        <div class="table-scroll" tabindex="0" role="region" aria-label="Read channels table">
-          <table class="grid">
-          <thead>
-            <tr><th scope="col">Channel</th><th scope="col" class="num">Value</th><th scope="col">Range</th><th scope="col">Every</th></tr>
-          </thead>
-          <tbody>
+        <Table.Root region="Read channels table">
+          <Table.Header>
+            <Table.Row>
+              <Table.Head scope="col">Channel</Table.Head>
+              <Table.Head scope="col" class="text-right">Value</Table.Head>
+              <Table.Head scope="col">Range</Table.Head>
+              <Table.Head scope="col">Every</Table.Head>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
             {#each Object.entries(view.read) as [name, spec] (name)}
-              <tr>
-                <th scope="row" class="mono">{name}</th>
-                <td class="num">
+              <Table.Row>
+                <Table.Head scope="row" class="align-top font-mono text-(length:--t-mono) font-normal text-foreground border-[color-mix(in_srgb,var(--border)_60%,transparent)]">{name}</Table.Head>
+                <Table.Cell class="text-right">
                   {#if spec.type === "image"}
                     <output class="value mono image" class:unknown={!spec.known}>
                       {#if spec.known && isImageReading(spec.value)}{@const facts = imageFacts(spec.value)}{#each facts as fact, index (fact)}<span class="nobreak">{fact}{index < facts.length - 1 ? "," : ""}</span>{index < facts.length - 1 ? " " : ""}{/each}{:else}not read yet{/if}
@@ -156,16 +161,15 @@
                       {spec.known ? formatQuantity(spec.value, spec.unit) : "unknown"}
                     </output>
                   {/if}
-                </td>
-                <td class="mono">
+                </Table.Cell>
+                <Table.Cell class="font-mono text-(length:--t-mono)">
                   {#if spec.range}{formatQuantity(spec.range[0], spec.unit)} to {formatQuantity(spec.range[1], spec.unit)}{:else if spec.values}{spec.values.join(", ")}{:else}<span class="muted">{unitSymbol(spec.unit) || spec.type}</span>{/if}
-                </td>
-                <td class="mono">{seconds(spec.every_s)}</td>
-              </tr>
+                </Table.Cell>
+                <Table.Cell class="font-mono text-(length:--t-mono)">{seconds(spec.every_s)}</Table.Cell>
+              </Table.Row>
             {/each}
-          </tbody>
-          </table>
-        </div>
+          </Table.Body>
+        </Table.Root>
       </section>
     {/if}
 
@@ -288,14 +292,6 @@
     font-size: 16px;
   }
 
-  .sim {
-    font-size: var(--t-label);
-    color: var(--text-2);
-    padding: 1px 6px;
-    background: var(--surface);
-    border-radius: var(--radius);
-  }
-
   .facts,
   .safety {
     display: grid;
@@ -353,10 +349,6 @@
     font-size: var(--t-label);
   }
 
-  .num {
-    text-align: right;
-  }
-
   .value {
     display: inline-block;
     text-align: right;
@@ -382,13 +374,6 @@
   .value.unknown {
     color: var(--text-2);
     font-weight: 400;
-  }
-
-  table.grid th[scope="row"] {
-    font-weight: 400;
-    color: var(--text);
-    font-size: var(--t-mono);
-    border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
   }
 
   @media (max-width: 767px) {
