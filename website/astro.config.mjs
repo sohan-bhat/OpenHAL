@@ -32,6 +32,7 @@ const interactDirective = {
     "astro:config:setup": ({ addClientDirective }) => {
       addClientDirective({ name: "interact", entrypoint: fileURLToPath(new URL("./src/directives/interact.mjs", import.meta.url)) });
       addClientDirective({ name: "intent", entrypoint: fileURLToPath(new URL("./src/directives/intent.ts", import.meta.url)) });
+      addClientDirective({ name: "query", entrypoint: fileURLToPath(new URL("./src/directives/query.ts", import.meta.url)) });
     },
   },
 };
