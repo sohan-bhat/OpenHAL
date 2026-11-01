@@ -8,7 +8,9 @@ Phase D. The starter library (M12), packaging (M13), verification (M14) and hand
 
 Cap is 3 agents at once (owner, 2026-10-25). Every coding agent runs on Opus 5.5, writes no code comments and starts no subagents. Briefs are in docs/agents/.
 
-None running.
+- website-20, every website control on shadcn/ui and the catalog filters on Select (BRIEF-website-20.md).
+- website-21, the Playground in React on shadcn/ui with a CodeMirror editor (BRIEF-website-21.md).
+- inspector-6, the Inspector on shadcn-svelte and bits-ui (BRIEF-inspector-6.md).
 
 The final critic scored the website 3.5 and the Inspector 4 of 5 (FINAL-REPORT.md). The website is live at https://sohan-bhat.github.io/OpenHAL/ and redeploys from main.
 
@@ -69,6 +71,7 @@ Design round screenshots live in docs/design-rounds/, which is gitignored so the
 - The sidebar flush left with its own button, and a magenta accent (website-18, merged 2026-10-31, at the owner's "the left sidebar has so much empty space all the way to the left", "have a button as well", "a visiually striking accent color" and "make it the tab key"). The 1360 px centered frame is gone, so the sidebar starts at the window's edge and every left edge sits on one 8 px grid, the rows at 16 px and the wordmark at 56 px at every width. shadcn/ui's SidebarTrigger sits at the header's far left with shadcn/ui's Tooltip naming Tab. Tab hides and shows the sidebar after a pointer press with focus on the page and keeps toggling until another key, while a keyboard's Tab moves focus as before. The new `--spark` magenta, #CC1475 light and #FF4FA3 dark, fills primary buttons and marks the current section and page with a 2 px bar. Lighthouse scored 100 on desktop and 96 to 100 on mobile, and the trigger's first press loads 143 KB gz shared with the pickers and the palette.
 - How it works with the approval at the hub (orchestrator, 2026-11-01, at the owner's "looks like the hub approved its own request"). In step 3 pending returns to the agent, "Approved by you" shows on the hub's lifeline, the hub sends cancel to the printer and done returns while the nozzle reads 215, 155 and 113 °C. The arrows start just under the top of the lifelines at one even spacing, the stage pins at the header's measured height, and the content after the section slides up over the pinned stage, so no caption line passes under the header.
 - Safety yellow as the one accent (website-19, merged 2026-11-01, at the owner's "change the site's accent color from pink and blue to safety yellow"). `--accent` is #7A5C00 mustard in the light theme and #FFD60A in the dark theme for links and thin marks, `--accent-fill` #FFD60A fills Get started, selected text and the Smooth scrolling switch with #0D0F12 text, and `--spark` is gone. Pending moved from amber to blue, and the nav highlight, selected rows, syntax, Mermaid, the social images, the Inspector and the README flow diagram use neutrals, so blue means pending only. Every pair passes AA, and under protanopia, deuteranopia and tritanopia simulations the status colors stay at least 7 CIEDE2000 apart. Six Firefox picker and palette tests fail on this loaded machine before and after the change.
+- A pinker pink and a themed scrollbar (orchestrator, 2026-11-01, at the owner's "nvm go back to a pinkier pink", "change the scrollbar everywhere to match the theme" and "the right side scrollbar dissappears it should be a hovering thing"). The accent is #FF6EB4 for fills and dark theme marks and #C0156E for light theme links, with near-black text on the fill. The scrollbar takes a neutral thumb on a clear track from design/tokens.css on the site and in the Inspector, and the search palette and selects float over the page with the page scrollbar in place.
 
 ## Next
 
