@@ -57,6 +57,14 @@
   margin: var(--s-5) 0 0;
 }
 
+.prose .trace-step + .trace-figure {
+  margin-top: var(--s-3);
+}
+
+.prose .trace-figure + .trace-step {
+  margin-top: var(--s-6);
+}
+
 .prose :not(pre) > code {
   font-size: 0.9em;
   padding: 0.05em 0.3em;

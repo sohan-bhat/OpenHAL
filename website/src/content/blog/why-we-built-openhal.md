@@ -22,7 +22,7 @@ OpenHAL is an open protocol with a versioned specification, and the specificatio
 ```yaml tested include=examples/print-babysitter/printer.hal.yaml
 ```
 
-A request over a limit is blocked with a stable code, a registry name and a reason that cites the rule. A request inside every limit runs, and the hub holds a request that can't be undone until a person approves the request. This trace is recorded from the reference hub with a simulated printer and its webcam.
+A request over a limit is blocked with a stable code, a registry name and a reason that cites the rule. A request inside every limit runs, and the hub holds a request that can't be undone until a person approves the request. These steps are recorded from the reference hub with a simulated printer and its webcam.
 
 ```scenario
 ```

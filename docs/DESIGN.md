@@ -45,6 +45,7 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
 - **Method or outcome column.** The method name in the accent color. `error` plus the numeric code and the registry name in the blocked red. `result` in the granted green. Each is paired with its word, never color alone.
 - **Payload.** JSON in the mono face with the house syntax theme. Reasons as plain mono text on their own line.
 - Method names, codes and names match ADR 0015 and the generated schema exactly, everywhere.
+- **A run as steps.** Where a page shows a recorded run, such as the README, the docs quickstart and the blog, each exchange gets a plain sentence that says what the agent did and how the hub handled the request, then the exchange's own trace block, as the owner asked on 2026-10-31. No comment lines sit inside the code. The sentence sits 12 px above its block and 32 px below the block before it, so a reader pairs each sentence with its own messages. Only `openhal demo` in a terminal prints the narration as `#` lines.
 
 ### The home page hero
 

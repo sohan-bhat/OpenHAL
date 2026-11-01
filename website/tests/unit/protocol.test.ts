@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { ERROR_REGISTRY } from "../../src/lib/protocol";
 import { SCENARIO_PATH, outcome, scenarioFrom, scenarioTrace } from "../../src/lib/scenario";
+import { scenarioTraceHtml } from "../../src/lib/scenario-data.mjs";
 import { traceText } from "../../src/lib/trace";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
@@ -74,6 +75,16 @@ describe("the recorded scenario", () => {
     for (const entry of entries) {
       if (entry.kind === "error") expect(ERROR_REGISTRY.find((item) => item.code === entry.code)?.name).toBe(entry.name);
     }
+  });
+
+  it("shows the run as steps, each sentence before its own trace block with no comment lines", () => {
+    const html = scenarioTraceHtml(scenario);
+    const steps = [...html.matchAll(/<p class="trace-step">([^<]*)<\/p><figure class="trace-figure">/g)].map((match) => match[1]);
+    expect(steps).toEqual(scenario.record.exchanges.map((exchange) => exchange.step!));
+    expect(html.match(/<figure /g)).toHaveLength(scenario.record.exchanges.length);
+    expect(html).not.toContain('class="note"');
+    const labels = [...html.matchAll(/aria-label="([^"]*)"/g)].map((match) => match[1]);
+    expect(new Set(labels).size).toBe(labels.length);
   });
 
   it("refuses a file without exchanges", () => {

@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse } from "yaml";
 import { REPO_ROOT } from "./spec-meta.mjs";
+import { escapeHtml } from "./highlight.mjs";
 import { traceHtml } from "./trace-html.mjs";
 
 export const SCENARIO_PATH = "docs/demo/scenario.yaml";
@@ -20,6 +21,7 @@ export function scenarioFrom(text, path = SCENARIO_PATH) {
   record.exchanges.forEach((exchange, index) => {
     need(isObject(exchange?.request) && typeof exchange.request.method === "string", path, `exchanges[${index}] has no request method.`);
     need(isObject(exchange.error) || isObject(exchange.result), path, `exchanges[${index}] has neither an error nor a result.`);
+    need(typeof exchange.step === "string" && exchange.step.length > 0, path, `exchanges[${index}] has no step sentence.`);
   });
   const command = record.exchanges.find((exchange) => exchange.request.method !== "hal/read");
   const device = typeof command?.request.params?.device === "string" ? command.request.params.device : null;
@@ -97,6 +99,17 @@ export function outcome(scenario = loadScenario()) {
   );
 }
 
+/**
+ * The recorded run as steps, each exchange's sentence and then its request and response in their
+ * own trace block, so a page reads like prose with no comment lines inside the code.
+ */
 export function scenarioTraceHtml(scenario = loadScenario()) {
-  return traceHtml(scenarioEntries(scenario), { label: "Message trace recorded with openhal demo" });
+  const exchanges = scenario.record.exchanges;
+  return exchanges
+    .map((exchange, index) => {
+      const entries = exchangeEntries(exchange).filter((entry) => entry.kind !== "note");
+      const label = `Step ${index + 1} of ${exchanges.length}, recorded with openhal demo`;
+      return `<p class="trace-step">${escapeHtml(exchange.step)}</p>${traceHtml(entries, { label })}`;
+    })
+    .join("");
 }

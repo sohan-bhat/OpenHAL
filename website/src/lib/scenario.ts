@@ -13,6 +13,7 @@ export { SCENARIO_PATH };
 export interface Exchange {
   id?: string;
   before?: string;
+  step?: string;
   request: { method: string; params: Record<string, any> };
   error?: { code: number; message: string; data: Record<string, any> };
   result?: Record<string, any>;

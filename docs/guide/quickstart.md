@@ -12,7 +12,7 @@ $ cd OpenHAL
 $ uv run openhal demo
 ```
 
-The demo starts a hub with a simulated Klipper printer and its camera, and connects an agent to watch a print. The agent reads camera frames and warms the bed, the hub blocks the agent's request for a nozzle temperature above the limit, and the agent pauses the print and sends a request to cancel the print. Because a cancel can't be undone, the hub holds the cancel until the owner approves the cancel over the same protocol. The demo prints this trace.
+The demo starts a hub with a simulated Klipper printer and its camera, and connects an agent to watch a print. The agent reads camera frames and warms the bed, the hub blocks the agent's request for a nozzle temperature above the limit, and the agent pauses the print and sends a request to cancel the print. Because a cancel can't be undone, the hub holds the cancel until the owner approves the cancel over the same protocol. The demo prints these messages, one step at a time.
 
 ```scenario
 ```
