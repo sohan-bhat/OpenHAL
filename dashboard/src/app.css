@@ -7,16 +7,6 @@
   --pane-left: 300px;
   --focus: 2px solid var(--accent);
   --row-gap: var(--s-3);
-  --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2 5 8.6l4.6-5.2' fill='none' stroke='%23fcfcfd' stroke-width='1.8'/%3E%3C/svg%3E");
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2 5 8.6l4.6-5.2' fill='none' stroke='%230d0f12' stroke-width='1.8'/%3E%3C/svg%3E");
-  }
-}
-
-:root[data-theme="dark"] {
   --check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2 5 8.6l4.6-5.2' fill='none' stroke='%230d0f12' stroke-width='1.8'/%3E%3C/svg%3E");
 }
 
@@ -175,13 +165,13 @@ pre {
 }
 
 .button.primary {
-  background: var(--accent);
+  background: var(--accent-fill);
   border-color: var(--accent);
-  color: var(--bg);
+  color: var(--on-accent);
 }
 
 .button.primary:hover {
-  border-color: var(--text);
+  background: var(--accent-fill-hover);
 }
 
 .button.primary:disabled {
@@ -259,7 +249,7 @@ input[type="radio"] {
 
 input[type="checkbox"]:checked {
   border-color: var(--accent);
-  background-color: var(--accent);
+  background-color: var(--accent-fill);
   background-image: var(--check-mark);
 }
 

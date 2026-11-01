@@ -27,9 +27,9 @@ body{width:1200px;height:630px;background:#fcfcfd;color:#15181c;font-family:"Atk
 h1{margin-top:44px;font-size:${size}px;line-height:1.12;font-weight:700;letter-spacing:-0.01em;max-width:1060px}
 .trace{margin-top:auto;background:#f4f5f7;border:1px solid #dadde2;border-radius:10px;padding:26px 30px;font-family:"Atkinson Hyperlegible Mono";font-size:22px;line-height:1.6;display:grid;grid-template-columns:30px 1fr;column-gap:14px;row-gap:6px;align-items:baseline}
 .trace svg{width:22px;height:12px;color:#15181c;align-self:center}
-.method{color:#1d5fb4;font-weight:700;margin-right:22px}
+.method{color:#15181c;font-weight:700;margin-right:22px}
 .error{color:#a14034;font-weight:700}.result{color:#3c754f;font-weight:700}
-.syn-key,.syn-punct{color:#4f5661}.syn-str{color:#15181c}.syn-num{color:#1d5fb4}
+.syn-key,.syn-punct{color:#4f5661}.syn-str{color:#15181c}.syn-num{color:#15181c}
 .reason{grid-column:2;color:#15181c;font-size:20px}
 </style></head><body>
 <div class="top">${wordmarkLightSvg(44)}<span class="kind">${escape(kind)}</span></div>

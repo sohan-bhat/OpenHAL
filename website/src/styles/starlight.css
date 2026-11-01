@@ -2,7 +2,7 @@
   --oh-control-border: color-mix(in srgb, var(--text-2) 60%, var(--border));
   --oh-control-line: 1.5px;
   --oh-control-ring: inset 0 0 0 calc(var(--oh-control-line) - 1px);
-  --oh-highlight: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  --oh-highlight: var(--surface);
   --oh-lead: var(--sl-nav-pad-x);
 
   --sl-font: var(--font-text);
@@ -43,20 +43,20 @@
   --sl-color-bg-nav: var(--bg);
   --sl-color-bg-sidebar: var(--bg);
   --sl-color-bg-inline-code: var(--surface);
-  --sl-color-bg-accent: var(--accent);
+  --sl-color-bg-accent: var(--accent-fill);
   --sl-color-hairline-light: var(--border);
   --sl-color-hairline: var(--border);
   --sl-color-hairline-shade: var(--border);
   --sl-color-green: var(--ok);
   --sl-color-green-high: var(--ok);
-  --sl-color-orange: var(--confirm);
-  --sl-color-orange-high: var(--confirm);
+  --sl-color-orange: var(--text-2);
+  --sl-color-orange-high: var(--text-2);
   --sl-color-red: var(--blocked);
   --sl-color-red-high: var(--blocked);
-  --sl-color-blue: var(--accent);
-  --sl-color-blue-high: var(--accent);
-  --sl-color-purple: var(--accent);
-  --sl-color-purple-high: var(--accent);
+  --sl-color-blue: var(--text-2);
+  --sl-color-blue-high: var(--text-2);
+  --sl-color-purple: var(--text-2);
+  --sl-color-purple-high: var(--text-2);
   --sl-shadow-sm: none;
   --sl-shadow-md: none;
   --sl-shadow-lg: none;
@@ -122,6 +122,22 @@
 .site-title,
 .sl-skip-link {
   box-shadow: none;
+}
+
+.sl-skip-link:focus {
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+a[rel="me"] {
+  color: var(--text-2);
+}
+
+a[rel="me"]:hover {
+  color: var(--text);
 }
 
 #starlight__sidebar[data-closing] {
@@ -204,12 +220,12 @@ html:root:has(.oh-home) {
 }
 
 .pagination-links a:hover {
-  border-color: var(--accent);
-  box-shadow: var(--oh-control-ring) var(--accent);
+  border-color: var(--text-2);
+  box-shadow: var(--oh-control-ring) var(--text-2);
 }
 
 .pagination-links .link-title {
-  color: var(--accent);
+  color: var(--text);
   font-size: var(--t-body);
   font-weight: 700;
 }
@@ -230,7 +246,12 @@ html:root:has(.oh-home) {
 }
 
 .right-sidebar-panel a:hover {
-  color: var(--accent);
+  color: var(--text);
+}
+
+.right-sidebar-panel a[aria-current="true"] {
+  color: var(--text);
+  font-weight: 700;
 }
 
 mobile-starlight-toc .toggle {
@@ -238,7 +259,8 @@ mobile-starlight-toc .toggle {
 }
 
 mobile-starlight-toc details[open] .toggle {
-  box-shadow: var(--oh-control-ring) var(--accent);
+  border-color: var(--text-2);
+  box-shadow: var(--oh-control-ring) var(--text-2);
 }
 
 mobile-starlight-toc details .toggle:hover {

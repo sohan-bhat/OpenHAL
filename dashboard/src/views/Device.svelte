@@ -284,7 +284,7 @@
   }
 
   .id {
-    color: var(--accent);
+    color: var(--text);
     font-size: 16px;
   }
 
