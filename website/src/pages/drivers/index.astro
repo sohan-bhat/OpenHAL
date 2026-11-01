@@ -61,7 +61,7 @@ const fields = [SEARCH, ...selects.map((select) => select.name)].join(" ");
             <TableBody data-filter-group="">
               {headed && (
                 <TableRow className="group-row">
-                  <TableHead scope="colgroup" colSpan={columns} className="pt-6 border-border">
+                  <TableHead scope="colgroup" colSpan={columns}>
                     {group.name}
                   </TableHead>
                 </TableRow>
@@ -77,7 +77,7 @@ const fields = [SEARCH, ...selects.map((select) => select.name)].join(" ");
                   data-conformance={conformanceOf(driver) ?? ""}
                   data-text={[driver.name, ...driver.protocols, ...driver.families].join(" ").toLowerCase()}
                 >
-                  <TableCell data-label="Driver" className="whitespace-nowrap">
+                  <TableCell data-label="Driver">
                     <a class="mono" href={`/drivers/${driver.name}/`}>{driver.name}</a>
                   </TableCell>
                   <TableCell data-label="Status">
@@ -121,9 +121,7 @@ const fields = [SEARCH, ...selects.map((select) => select.name)].join(" ");
 </DocShell>
 
 <script>
-  import { restoreFromAddress } from "../../lib/catalog-filter";
-
-  restoreFromAddress();
+  if (window.location.search) import("../../lib/catalog-filter").then(({ restoreFromAddress }) => restoreFromAddress());
 </script>
 
 <style>
@@ -149,7 +147,12 @@ const fields = [SEARCH, ...selects.map((select) => select.name)].join(" ");
   }
 
   .driver-list :global(.group-row th) {
-    color: var(--text-2);
+    padding-top: var(--s-5);
+    border-bottom-color: var(--border);
+  }
+
+  .driver-list :global(td:first-child) {
+    white-space: nowrap;
   }
 
   @container (min-width: 940px) {

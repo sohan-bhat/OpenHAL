@@ -14,9 +14,6 @@
 @source "../components/starlight";
 @source "../components/landing";
 @source "../pages/index.astro";
-@source "../pages/drivers";
-@source "../pages/library";
-@source "../components/example";
 
 @theme {
   --color-*: initial;

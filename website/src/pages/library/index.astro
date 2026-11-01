@@ -78,9 +78,7 @@ const channels = (entry: { reads: number; writes: number; actions: number }) =>
 </DocShell>
 
 <script>
-  import { restoreFromAddress } from "../../lib/catalog-filter";
-
-  restoreFromAddress();
+  if (window.location.search) import("../../lib/catalog-filter").then(({ restoreFromAddress }) => restoreFromAddress());
 </script>
 
 <style>

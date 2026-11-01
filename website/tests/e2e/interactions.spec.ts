@@ -431,7 +431,7 @@ test.describe("control outlines", () => {
     await controls(page, outlined, 3);
 
     await page.goto("/drivers/");
-    await controls(page, ["[data-filters] input[name='q']", "[data-filters] select"], 1.5);
+    await controls(page, ["[data-filters] input[name='q']", "[data-filters] [data-slot=select-trigger]"], 1.5);
     expect(await page.locator("table.drivers td").first().evaluate((cell) => getComputedStyle(cell).borderBottomWidth)).toBe("1px");
 
     await page.goto("/spec/playground/");
