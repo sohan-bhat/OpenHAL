@@ -37,9 +37,9 @@
 }
 
 .copy-button:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-  box-shadow: var(--oh-control-ring) var(--accent);
+  color: var(--text);
+  border-color: var(--text-2);
+  box-shadow: var(--oh-control-ring) var(--text-2);
 }
 
 .code-block pre {

@@ -123,7 +123,7 @@ function DropdownMenuContent({
 }
 
 const ITEM =
-  "relative flex w-full cursor-pointer items-center rounded-sm px-3 py-1.5 text-sm leading-[1.4] whitespace-nowrap text-foreground no-underline outline-none select-none data-[highlighted]:bg-muted focus-visible:-outline-offset-2! data-[disabled]:pointer-events-none data-[disabled]:opacity-55 aria-[current]:bg-accent aria-[current]:text-primary data-[state=checked]:bg-accent data-[state=checked]:text-primary";
+  "relative flex w-full cursor-pointer items-center rounded-sm px-3 py-1.5 text-sm leading-[1.4] whitespace-nowrap text-foreground no-underline outline-none select-none data-[highlighted]:bg-muted focus-visible:-outline-offset-2! data-[disabled]:pointer-events-none data-[disabled]:opacity-55 aria-[current]:bg-highlight aria-[current]:font-bold data-[state=checked]:bg-highlight data-[state=checked]:font-bold";
 
 function DropdownMenuItem({ className, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Item>) {
   return <DropdownMenuPrimitive.Item data-slot="dropdown-menu-item" className={cn(ITEM, className)} {...props} />;
@@ -133,7 +133,7 @@ function DropdownMenuRadioGroup({ ...props }: React.ComponentProps<typeof Dropdo
   return <DropdownMenuPrimitive.RadioGroup data-slot="dropdown-menu-radio-group" {...props} />;
 }
 
-/** A choice in a radio group, shown as its word only, with the checked one on the nav's blue highlight. */
+/** A choice in a radio group, shown as its word only, with the checked one in bold on the neutral highlight. */
 function DropdownMenuRadioItem({ className, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
   return <DropdownMenuPrimitive.RadioItem data-slot="dropdown-menu-radio-item" className={cn(ITEM, className)} {...props} />;
 }

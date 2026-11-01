@@ -132,7 +132,7 @@ function row(id: Sending, facts: StoryFacts): Row {
   return { id, legs, words, ...(reply ? { reply } : {}), live: [start + SHOWS, end], lands };
 }
 
-/** Whether the hub holds a row's request at its lifeline, which its amber answer says. */
+/** Whether the hub holds a row's request at its lifeline, shown by a pending answer in blue. */
 const holds = (item: Pick<Row, "reply">) => item.reply?.answer.tone === "confirm";
 
 /** The changes of one value over the story, as the spans each text shows in. */

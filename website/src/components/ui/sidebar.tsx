@@ -261,7 +261,7 @@ const sidebarMenuButtonVariants = cva(
 
 /**
  * shadcn/ui's SidebarMenuButton. A row turns the surface gray under the pointer, and the current
- * page sits on the nav's blue highlight in the accent at weight 700.
+ * page sits on the neutral highlight in the text color at weight 700.
  */
 function SidebarMenuButton({
   asChild = false,

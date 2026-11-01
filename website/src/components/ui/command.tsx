@@ -10,12 +10,12 @@ function Command({ className, ...props }: React.ComponentProps<typeof CommandPri
 
 /**
  * The search field. Its row draws a rule underneath that turns to the accent while the field has
- * focus, which stands in for the outline.
+ * focus, which stands in for the outline, and the magnifier stays in the text color.
  */
 function CommandInput({ className, children, ...props }: React.ComponentProps<typeof CommandPrimitive.Input>) {
   return (
-    <div data-slot="command-input-wrapper" className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border px-4 focus-within:border-primary focus-within:[box-shadow:inset_0_-0.5px_0_var(--accent)]">
-      <SearchIcon aria-hidden="true" strokeWidth={1.75} className="size-[18px] shrink-0 text-primary" />
+    <div data-slot="command-input-wrapper" className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border px-4 focus-within:border-accent focus-within:[box-shadow:inset_0_-0.5px_0_var(--accent)]">
+      <SearchIcon aria-hidden="true" strokeWidth={1.75} className="size-[18px] shrink-0 text-foreground" />
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
@@ -58,13 +58,13 @@ function CommandSeparator({ className, ...props }: React.ComponentProps<typeof C
   return <CommandPrimitive.Separator data-slot="command-separator" className={cn("mx-3 my-2 h-px bg-border", className)} {...props} />;
 }
 
-/** A row of the list. The active row sits on the nav's blue highlight with its title in the accent. */
+/** A row of the list. The active row sits on the neutral highlight with its title in the text color. */
 function CommandItem({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Item>) {
   return (
     <CommandPrimitive.Item
       data-slot="command-item"
       className={cn(
-        "relative flex cursor-pointer flex-col gap-0.5 rounded-sm px-3 py-2 text-sm text-foreground no-underline outline-none select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-55 data-[selected=true]:bg-accent [&[data-selected=true]_[data-title]]:text-primary",
+        "relative flex cursor-pointer flex-col gap-0.5 rounded-sm px-3 py-2 text-sm text-foreground no-underline outline-none select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-55 data-[selected=true]:bg-highlight",
         className,
       )}
       {...props}

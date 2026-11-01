@@ -29,7 +29,7 @@ function Text({ parts, className }: { parts: Segment[]; className?: string }) {
     <span className={className}>
       {parts.map((part, index) =>
         part.mark ? (
-          <mark key={index} className="rounded-xs bg-transparent font-bold text-primary">
+          <mark key={index} className="rounded-xs bg-transparent font-extrabold text-foreground">
             {part.text}
           </mark>
         ) : (
@@ -130,11 +130,11 @@ export default function SearchPalette({ sections, suggestions }: Props) {
             className={cn(
               "flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md bg-transparent text-sm text-muted-foreground",
               "min-[50rem]:w-full min-[50rem]:max-w-[260px] min-[50rem]:justify-start min-[50rem]:border min-[50rem]:border-input min-[50rem]:bg-background min-[50rem]:pr-2 min-[50rem]:pl-3 min-[50rem]:[box-shadow:var(--oh-control-ring)_var(--oh-control-border)]",
-              "min-[50rem]:hover:border-primary min-[50rem]:hover:text-foreground min-[50rem]:hover:[box-shadow:var(--oh-control-ring)_var(--accent)]",
+              "min-[50rem]:hover:border-muted-foreground min-[50rem]:hover:text-foreground min-[50rem]:hover:[box-shadow:var(--oh-control-ring)_var(--text-2)]",
               "min-[64rem]:max-[71.24rem]:w-10 min-[64rem]:max-[71.24rem]:justify-center min-[64rem]:max-[71.24rem]:p-0",
             )}
           >
-            <SearchIcon aria-hidden="true" strokeWidth={2.25} className="size-[15px] shrink-0 text-primary" />
+            <SearchIcon aria-hidden="true" strokeWidth={2.25} className="size-[15px] shrink-0 text-foreground" />
             <span className="sr-only min-[50rem]:not-sr-only min-[64rem]:max-[71.24rem]:sr-only">Search</span>
             <Kbd className="ml-auto hidden min-[50rem]:inline-flex min-[64rem]:max-[71.24rem]:hidden">
               <span className="[:root[data-platform=mac]_&]:hidden">Ctrl</span>
@@ -168,7 +168,7 @@ export default function SearchPalette({ sections, suggestions }: Props) {
                   }}
                   placeholder="Search the docs, spec, drivers and devices…"
                 >
-                  <DialogClose className="h-9 shrink-0 cursor-pointer rounded-md bg-transparent px-2 text-sm font-semibold text-primary hover:bg-muted min-[50rem]:hidden">Cancel</DialogClose>
+                  <DialogClose className="h-9 shrink-0 cursor-pointer rounded-md bg-transparent px-2 text-sm font-semibold text-foreground hover:bg-muted min-[50rem]:hidden">Cancel</DialogClose>
                 </CommandInput>
                 {found.status === "loading" && <CommandLoading label="Searching">Searching…</CommandLoading>}
                 {found.status === "error" && <CommandEmpty>Search could not load. Check your connection, then try again.</CommandEmpty>}
