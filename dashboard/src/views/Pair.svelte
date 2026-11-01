@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { Button } from "$lib/components/ui/button/index.js";
+  import { Input } from "$lib/components/ui/input/index.js";
+  import { Label } from "$lib/components/ui/label/index.js";
   import StopUnavailable from "../components/StopUnavailable.svelte";
   import { api } from "../lib/api";
 
@@ -33,22 +36,24 @@
     <p>The Inspector acts as you, a human Principal. Run this on the machine that runs the hub, then enter the code.</p>
     <pre class="command"><code>openhal pair</code></pre>
     <form onsubmit={pair}>
-      <label class="field">
-        <span>Pairing code</span>
-        <input
+      <div class="field">
+        <Label for="pair-code">Pairing code</Label>
+        <Input
+          id="pair-code"
           type="text"
           inputmode="numeric"
           autocomplete="one-time-code"
           pattern={"[0-9]{6}"}
-          maxlength="6"
+          maxlength={6}
           bind:value={code}
           aria-describedby={error ? "pair-error" : "pair-help"}
           aria-invalid={error ? "true" : undefined}
+          class="w-[12ch] font-mono text-2xl tracking-[0.15em]"
         />
-      </label>
+      </div>
       <p id="pair-help" class="muted">Six digits. Each code works once and expires after 300 s.</p>
       {#if error}<p id="pair-error" class="problem" role="alert">{error}</p>{/if}
-      <button class="button primary" type="submit" disabled={busy || !/^\d{6}$/.test(code.trim())}>Pair</button>
+      <Button variant="primary" class="justify-self-start" type="submit" disabled={busy || !/^\d{6}$/.test(code.trim())}>Pair</Button>
     </form>
   </section>
 </main>
@@ -109,16 +114,5 @@
     border: var(--rule);
     border-radius: var(--radius);
     background: var(--surface);
-  }
-
-  input {
-    width: 12ch;
-    font-family: var(--font-mono);
-    font-size: 20px;
-    letter-spacing: 0.15em;
-  }
-
-  form .button {
-    justify-self: start;
   }
 </style>

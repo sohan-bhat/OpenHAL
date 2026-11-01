@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { Button } from "$lib/components/ui/button/index.js";
+  import { Input } from "$lib/components/ui/input/index.js";
+  import { Label } from "$lib/components/ui/label/index.js";
+  import * as Table from "$lib/components/ui/table/index.js";
+  import SelectField from "../components/SelectField.svelte";
   import CameraFrame from "../components/CameraFrame.svelte";
   import Reason from "../components/Reason.svelte";
   import { onDestroy } from "svelte";
@@ -195,19 +200,18 @@
               </dl>
             </div>
             {#snippet picker()}
-              <label class="field pick">
-                <span>{camera ? "Camera" : "Show a camera"}</span>
-                <select
-                  value={camera ? cameraKey(camera) : ""}
-                  aria-describedby={camera ? undefined : `pick-${request.id}`}
-                  onchange={(event) => keep(device, event.currentTarget.value)}
-                >
-                  <option value="">None</option>
-                  {#each cameras as option (cameraKey(option))}
-                    <option value={cameraKey(option)}>{option.name}, {option.channel}</option>
-                  {/each}
-                </select>
-              </label>
+              <SelectField
+                id="pick-camera-{request.id}"
+                label={camera ? "Camera" : "Show a camera"}
+                value={camera ? cameraKey(camera) : ""}
+                onchange={(next) => keep(device, next)}
+                describedby={camera ? undefined : `pick-${request.id}`}
+                class="w-[min(100%,320px)]"
+                options={[
+                  { value: "", label: "None" },
+                  ...cameras.map((option) => ({ value: cameraKey(option), label: `${option.name}, ${option.channel}` })),
+                ]}
+              />
             {/snippet}
             {#if cameras.length}
               <div class="camera">
@@ -244,17 +248,24 @@
                 Expires in <span class="mono countdown">{String(remaining(request)).padStart(3, " ")} s</span>
               </p>
               <div class="buttons">
-                <button type="button" class="button primary" disabled={busy[request.id]} onclick={() => approve(request)}>
+                <Button variant="primary" disabled={busy[request.id]} onclick={() => approve(request)}>
                   Approve and {ask.verb} {ask.target}
-                </button>
+                </Button>
               </div>
               <p class="muted small">The Safety Kernel checks every limit again before the command runs.</p>
               <div class="buttons">
-                <label class="field reason">
-                  <span>Reason to reject, optional</span>
-                  <input type="text" bind:value={reasons[request.id]} maxlength="200" autocomplete="off" />
-                </label>
-                <button type="button" class="button" disabled={busy[request.id]} onclick={() => reject(request)}>Reject</button>
+                <div class="field reason">
+                  <Label for="reject-{request.id}">Reason to reject, optional</Label>
+                  <Input
+                    id="reject-{request.id}"
+                    type="text"
+                    value={reasons[request.id] ?? ""}
+                    oninput={(event) => (reasons = { ...reasons, [request.id]: (event.currentTarget as HTMLInputElement).value })}
+                    maxlength={200}
+                    autocomplete="off"
+                  />
+                </div>
+                <Button disabled={busy[request.id]} onclick={() => reject(request)}>Reject</Button>
               </div>
               {#if errors[request.id]}<p class="problem" role="alert">{errors[request.id]}</p>{/if}
             </form>
@@ -290,26 +301,29 @@
     {#if !decided.length}
       <p class="empty">No decided requests yet.</p>
     {:else}
-      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-      <div class="table-scroll" tabindex="0" role="region" aria-label="Decided requests table">
-        <table class="grid">
-        <thead>
-          <tr><th scope="col">Request</th><th scope="col">Command</th><th scope="col">Requested by</th><th scope="col">Status</th><th scope="col">Decided by</th></tr>
-        </thead>
-        <tbody>
+      <Table.Root region="Decided requests table">
+        <Table.Header>
+          <Table.Row>
+            <Table.Head scope="col">Request</Table.Head>
+            <Table.Head scope="col">Command</Table.Head>
+            <Table.Head scope="col">Requested by</Table.Head>
+            <Table.Head scope="col">Status</Table.Head>
+            <Table.Head scope="col">Decided by</Table.Head>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
           {#each decided as request (request.id)}
             {@const status = decisionStatus(request.status)}
-            <tr>
-              <td class="mono">{request.id}</td>
-              <td><span class="mono method">{method(request.command)}</span> <Json value={params(request.command)} /></td>
-              <td class="mono">{request.requested_by}</td>
-              <td><StatusMark tone={status.tone} label={status.label} /></td>
-              <td class="mono">{request.decided_by ?? "expired"}</td>
-            </tr>
+            <Table.Row>
+              <Table.Cell class="font-mono text-(length:--t-mono)">{request.id}</Table.Cell>
+              <Table.Cell><span class="mono method">{method(request.command)}</span> <Json value={params(request.command)} /></Table.Cell>
+              <Table.Cell class="font-mono text-(length:--t-mono)">{request.requested_by}</Table.Cell>
+              <Table.Cell><StatusMark tone={status.tone} label={status.label} /></Table.Cell>
+              <Table.Cell class="font-mono text-(length:--t-mono)">{request.decided_by ?? "expired"}</Table.Cell>
+            </Table.Row>
           {/each}
-        </tbody>
-        </table>
-      </div>
+        </Table.Body>
+      </Table.Root>
     {/if}
   </section>
 </div>
@@ -397,14 +411,6 @@
     gap: var(--s-1) var(--s-2);
   }
 
-  .pick {
-    width: min(100%, 320px);
-  }
-
-  .pick select {
-    width: 100%;
-  }
-
   .who,
   .dry {
     display: flex;
@@ -463,10 +469,6 @@
 
   .reason {
     flex: 1 1 160px;
-  }
-
-  .reason input {
-    width: 100%;
   }
 
   .decisions {
