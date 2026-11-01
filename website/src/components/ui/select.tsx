@@ -1,4 +1,5 @@
 import * as React from "react";
+import { suppressOthers } from "aria-hidden";
 import { cn } from "@/lib/utils";
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Select as SelectPrimitive } from "radix-ui";
@@ -44,6 +45,8 @@ function SelectTrigger({ className, children, ...props }: React.ComponentProps<t
  * The list, 4 px under its button or above it where the screen has no room, on the page background
  * in a 1 px border box with no shadow, like the header's pickers. It grows from the button in 200 ms
  * and shrinks back in 150 ms on the site's ease, and with reduced motion it opens and closes at once.
+ * While the list is open the rest of the page is inert as well as hidden, through aria-hidden's
+ * suppressOthers, because the list holds focus until it closes.
  */
 function SelectContent({
   className,
@@ -53,9 +56,16 @@ function SelectContent({
   sideOffset = 4,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+  const undo = React.useRef<(() => void) | null>(null);
+  const suppress = React.useCallback((node: HTMLDivElement | null) => {
+    undo.current?.();
+    undo.current = node?.isConnected ? suppressOthers(node) : null;
+  }, []);
+  React.useEffect(() => () => undo.current?.(), []);
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
+        ref={suppress}
         data-slot="select-content"
         className={cn(
           "relative z-50 max-h-(--radix-select-content-available-height) min-w-(--radix-select-trigger-width) origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground outline-none",

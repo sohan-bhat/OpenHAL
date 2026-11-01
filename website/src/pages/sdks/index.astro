@@ -11,8 +11,7 @@ const { Content: Example } = await render(snippet!);
 
 <DocShell title="SDKs" description="Client libraries for the OpenHAL hub protocol." sidebar={sdkSidebar()}>
   <p>An SDK handles the hub protocol for you, and the hub's safety kernel still checks every command.</p>
-  <div class="table-wrap">
-    <Table>
+  <Table containerClassName="table-wrap">
       <TableHeader>
         <TableRow><TableHead scope="col">Language</TableHead><TableHead scope="col">Package</TableHead><TableHead scope="col">Status</TableHead></TableRow>
       </TableHeader>
@@ -29,7 +28,6 @@ const { Content: Example } = await render(snippet!);
         </TableRow>
       </TableBody>
     </Table>
-  </div>
   <h2 id="python">Python</h2>
   <p>The Python SDK ships in the repository, and a blocked command returns a decision that carries the error code.</p>
   <Example />

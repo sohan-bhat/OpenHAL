@@ -78,8 +78,7 @@ function argText(name: string, spec: ArgSpec): string {
           </Table>
 
           {Object.keys(file.write).length > 0 && (
-            <div class="table-wrap stack">
-              <Table>
+            <Table containerClassName="table-wrap stack">
                 <TableCaption className="legend">Control channels</TableCaption>
                 <TableHeader>
                   <TableRow><TableHead scope="col">Channel</TableHead><TableHead scope="col">Min</TableHead><TableHead scope="col">Max</TableHead><TableHead scope="col">Step</TableHead><TableHead scope="col">Rate per s</TableHead><TableHead scope="col">Unit</TableHead><TableHead scope="col">Confirm</TableHead><TableHead scope="col">Limit</TableHead></TableRow>
@@ -99,12 +98,10 @@ function argText(name: string, spec: ArgSpec): string {
                   ))}
                 </TableBody>
               </Table>
-            </div>
           )}
 
           {Object.keys(file.actions).length > 0 && (
-            <div class="table-wrap stack">
-              <Table>
+            <Table containerClassName="table-wrap stack">
                 <TableCaption className="legend">Actions</TableCaption>
                 <TableHeader>
                   <TableRow><TableHead scope="col">Action</TableHead><TableHead scope="col">Arguments</TableHead><TableHead scope="col">Confirm</TableHead><TableHead scope="col">Limit</TableHead></TableRow>
@@ -130,12 +127,10 @@ function argText(name: string, spec: ArgSpec): string {
                   ))}
                 </TableBody>
               </Table>
-            </div>
           )}
 
           {Object.keys(file.read).length > 0 && (
-            <div class="table-wrap stack">
-              <Table>
+            <Table containerClassName="table-wrap stack">
                 <TableCaption className="legend">Read channels</TableCaption>
                 <TableHeader>
                   <TableRow><TableHead scope="col">Channel</TableHead><TableHead scope="col">Type</TableHead><TableHead scope="col">Unit</TableHead><TableHead scope="col">Every</TableHead></TableRow>
@@ -151,7 +146,6 @@ function argText(name: string, spec: ArgSpec): string {
                   ))}
                 </TableBody>
               </Table>
-            </div>
           )}
         </div>
       )

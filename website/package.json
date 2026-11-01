@@ -19,6 +19,7 @@
     "@astrojs/svelte": "9.0.1",
     "@tailwindcss/vite": "4.3.3",
     "ajv": "8.20.0",
+    "aria-hidden": "1.2.6",
     "astro": "7.3.8",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",

@@ -83,8 +83,7 @@ const sigHtml = (signature: string) => highlightLinesHtml(formatSignature(signat
             )}
             {paragraphs(item.doc).map((part) => <p set:html={inlineCode(part)} />)}
             {item.fields && item.fields.length > 0 && (
-              <div class="table-wrap">
-                <Table>
+              <Table containerClassName="table-wrap">
                   <TableHeader>
                     <TableRow>
                       <TableHead scope="col">Field</TableHead>
@@ -100,7 +99,6 @@ const sigHtml = (signature: string) => highlightLinesHtml(formatSignature(signat
                     ))}
                   </TableBody>
                 </Table>
-              </div>
             )}
             {item.name === "AsyncClient" && (
               <p>

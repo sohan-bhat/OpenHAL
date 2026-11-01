@@ -46,8 +46,7 @@ const rows: Array<[string, string]> = [
       )
     }
   </p>
-  <div class="table-wrap">
-    <Table className="sheet">
+  <Table containerClassName="table-wrap" className="sheet">
       <TableBody>
         {
           rows.map(([label, value]) => (
@@ -59,7 +58,6 @@ const rows: Array<[string, string]> = [
         }
       </TableBody>
     </Table>
-  </div>
   {
     driver.estimate && (
       <p class="muted">
@@ -88,7 +86,7 @@ const rows: Array<[string, string]> = [
   }
 
   @media (min-width: 600px) {
-    .table-wrap :global(.sheet th) {
+    :global(.table-wrap > .sheet th) {
       width: 11em;
       vertical-align: top;
       border-bottom: var(--rule);

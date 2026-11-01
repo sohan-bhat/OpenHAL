@@ -44,7 +44,7 @@ const fields = [SEARCH, ...selects.map((select) => select.name)].join(" ");
     <p class="shown muted" aria-live="polite" data-shown data-noun="drivers" data-fields={fields}>{total} drivers.</p>
 
     <div class="driver-list">
-      <Table className="drivers" aria-label="Drivers">
+      <Table containerClassName="table-wrap" className="drivers" aria-label="Drivers">
         <TableHeader>
           <TableRow>
             <TableHead scope="col">Driver</TableHead>

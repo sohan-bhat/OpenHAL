@@ -68,8 +68,7 @@ const TONES: Record<string, string> = { done: "ok", blocked: "blocked", pending:
 
   <h2 id="audit-log"><a class="heading-link" href="#audit-log">The audit log</a></h2>
   <p>The run ends with <code>{audit.command}</code>, which prints the hub's audit log, newest first. The log holds every request, including the blocked one, and the owner's approval.</p>
-  <div class="table-wrap">
-    <Table>
+  <Table containerClassName="table-wrap">
       <TableHeader>
         <TableRow>
           <TableHead scope="col">Seq</TableHead>
@@ -97,7 +96,6 @@ const TONES: Record<string, string> = { done: "ok", blocked: "blocked", pending:
         }
       </TableBody>
     </Table>
-  </div>
   <p>{audit.counts}</p>
 </DocShell>
 
