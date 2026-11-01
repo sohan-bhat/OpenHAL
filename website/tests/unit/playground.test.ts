@@ -73,10 +73,12 @@ describe("the Playground's simulated hub", () => {
   });
 
   it("keeps the form and drops the hub when the device file has a problem", () => {
-    const session = prepare("device: Fan\nconnect: { mock: fan }\nwrite:\n  speed: { unit: percent, min: 0 }\n", { targetDevice: "printer", target: "bed_target", requestText: "70 degC" }, library, null);
+    const previous = { ...prepare(text("printer"), empty, library, SUGGESTION), target: "bed_target", requestText: "70 degC" };
+    const session = prepare("device: Fan\nconnect: { mock: fan }\nwrite:\n  speed: { unit: percent, min: 0 }\n", previous, library, null);
     expect(session.kernel).toBeNull();
+    expect(session.companions).toEqual([]);
     expect(session.checked.problems.map((problem) => problem.message)).toContain("Number values need both min and max.");
-    expect(session.target).toBe("bed_target");
+    expect(session).toMatchObject({ targetDevice: "printer", target: "bed_target", requestText: "70 degC" });
   });
 
   it("answers an over-limit write with the registry error, word for word", () => {

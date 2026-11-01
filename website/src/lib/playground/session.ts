@@ -158,9 +158,10 @@ export interface Session {
  */
 export function prepare(text: string, current: Pick<Session, "targetDevice" | "target" | "requestText">, library: () => Library, suggestion: Suggestion | null): Session {
   const checked = deviceProblems(text);
-  if (!checked.file) return { checked, kernel: null, companions: [], ...current };
+  const { targetDevice, target, requestText } = current;
+  if (!checked.file) return { checked, kernel: null, companions: [], targetDevice, target, requestText };
   const { kernel, companions } = buildKernel(checked.file, library, suggestion);
-  return { checked, kernel, companions, targetDevice: deviceId(checked.file), ...startingRequest(checked.file, suggestion, current.target, current.requestText) };
+  return { checked, kernel, companions, targetDevice: deviceId(checked.file), ...startingRequest(checked.file, suggestion, target, requestText) };
 }
 
 /** Notes every reading again and lets the kernel's clock run, once a second. */
