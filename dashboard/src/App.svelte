@@ -4,6 +4,7 @@
   import Header from "./components/Header.svelte";
   import MessageLog from "./components/MessageLog.svelte";
   import StopUnavailable from "./components/StopUnavailable.svelte";
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
   import { router, type View } from "./lib/router.svelte";
   import { inspector } from "./lib/state.svelte";
   import Device from "./views/Device.svelte";
@@ -87,6 +88,7 @@
   onDestroy(() => inspector.shutdown());
 </script>
 
+<Tooltip.Provider>
 {#if inspector.auth === "unpaired"}
   {#if Pair}<Pair onpaired={() => void inspector.boot()} />{/if}
 {:else if inspector.auth === "offline"}
@@ -125,6 +127,7 @@
     </div>
   </div>
 {/if}
+</Tooltip.Provider>
 
 <style>
   .app {
