@@ -1,0 +1,222 @@
+.pg [data-slot="button"] {
+  font-size: inherit;
+}
+
+.pg [data-slot="button"]:disabled {
+  opacity: 1;
+  border-color: var(--border);
+  box-shadow: var(--oh-control-ring) var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+}
+
+.pg .pg-quick {
+  min-height: 44px;
+  height: auto;
+}
+
+.pg .pg-small {
+  height: 32px;
+  padding: 0 var(--s-3);
+}
+
+.pg .pg-person,
+.pg .pg-person:hover {
+  border-color: var(--text);
+  box-shadow: var(--oh-control-ring) var(--text);
+  background: var(--text);
+  color: var(--bg);
+}
+
+.pg .stop,
+.pg .stop:hover {
+  height: auto;
+  min-height: 56px;
+  min-width: 160px;
+  padding: 0 var(--s-6);
+  border: 2px solid var(--blocked);
+  box-shadow: none;
+  background: var(--blocked);
+  color: var(--bg);
+  font-size: var(--t-h3);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.pg .stop:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 3px;
+}
+
+.pg .pg-build-trigger,
+.pg .pg-build-trigger:hover {
+  height: auto;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 0 var(--s-2) 0 0;
+  gap: var(--s-2);
+  background: none;
+  color: var(--text);
+  font-size: var(--t-h3);
+  font-weight: 700;
+  white-space: normal;
+  text-align: left;
+}
+
+.pg .pg-chevron {
+  display: inline-flex;
+}
+
+.pg .pg-chevron svg {
+  width: 20px;
+  height: 20px;
+}
+
+.pg .pg-field {
+  height: 40px;
+  font-size: inherit;
+  line-height: inherit;
+  background: var(--bg);
+  border-color: var(--oh-control-border);
+  box-shadow: var(--oh-control-ring) var(--oh-control-border);
+}
+
+.pg .pg-field:focus-visible {
+  border-color: var(--oh-control-border);
+  box-shadow: var(--oh-control-ring) var(--oh-control-border);
+}
+
+.pg .pg-field.mono {
+  font-family: var(--font-mono);
+}
+
+.pg .pg-select {
+  width: 100%;
+  min-width: 0;
+  justify-content: space-between;
+  padding: 0 var(--s-1) 0 var(--s-3);
+  font-size: inherit;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.pg .pg-select[data-state="open"] {
+  border-color: var(--text-2);
+  box-shadow: var(--oh-control-ring) var(--text-2);
+}
+
+.pg .pg-select-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.pg .pg-info {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  vertical-align: middle;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  margin-left: 6px;
+  padding: 0;
+  border: 1px solid var(--text-2);
+  box-shadow: var(--oh-control-ring) var(--text-2);
+  border-radius: 50%;
+  background: none;
+  color: var(--text-2);
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pg .pg-info:hover {
+  background: none;
+  color: var(--text-2);
+}
+
+.pg .pg-info::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+
+.pg .pg-info[data-state="open"] {
+  color: var(--text);
+  border-color: var(--text);
+  box-shadow: var(--oh-control-ring) var(--text);
+}
+
+.pg-info-pop {
+  z-index: 50;
+  width: max-content;
+  max-width: min(300px, 80vw);
+  padding: var(--s-3);
+  background: var(--bg);
+  border: var(--rule);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-text);
+  font-size: var(--t-small);
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  transform-origin: var(--radix-popover-content-transform-origin);
+}
+
+.pg-info-pop:focus-visible {
+  outline: none;
+}
+
+.pg-info-pop a {
+  display: block;
+  margin-top: var(--s-1);
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.pg-info-pop a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.pg .pg-table {
+  caption-side: top;
+  font-size: var(--t-body);
+}
+
+.pg .pg-table caption {
+  margin: 0;
+  padding-bottom: var(--s-1);
+  text-align: left;
+  font-size: var(--t-small);
+  color: var(--text-2);
+}
+
+.pg .pg-table tr,
+.pg .pg-table tr:hover {
+  border: 0;
+  background: none;
+}
+
+.pg .pg-table :is(th, td) {
+  height: auto;
+  padding: var(--s-2) var(--s-3) var(--s-2) 0;
+  white-space: normal;
+  vertical-align: top;
+}
+
+.pg .pg-table th {
+  font-size: var(--t-small);
+  font-weight: 700;
+  color: var(--text-2);
+  vertical-align: bottom;
+}
+
+.pg .pg-table td.mono {
+  font-family: var(--font-mono);
+}

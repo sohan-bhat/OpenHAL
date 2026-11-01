@@ -3,7 +3,6 @@ import { unified } from "@astrojs/markdown-remark";
 import sitemap from "@astrojs/sitemap";
 import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
-import svelte from "@astrojs/svelte";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import { fileURLToPath } from "node:url";
@@ -72,7 +71,6 @@ export default defineConfig({
       },
     }),
     classScopedStyles,
-    svelte(),
     react(),
     interactDirective,
     sitemap({ filter: (page) => !MOVED.some((part) => page.includes(part)) && !page.endsWith("/spec/") }),

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Slider } from "$lib/components/ui/slider/index.js";
   import { formatQuantity, quantityString } from "../lib/units";
 
   let {
@@ -33,6 +34,13 @@
   const pct = (point: number) => ((point - scaleMin) / (scaleMax - scaleMin)) * 100;
   const middle = $derived(span >= 10 ? Math.round(min + span / 2) : min + span / 2);
   const clamp = (point: number) => Math.min(Math.max(point, scaleMin), scaleMax);
+  const stride = $derived(step ?? (span >= 10 ? 1 : 10 ** Math.floor(Math.log10(span / 10))));
+  const places = $derived(Math.max(0, -Math.floor(Math.log10(stride))));
+  const shown = $derived(value === null ? min : Math.min(Math.max(value, min), max));
+
+  function moved(next: number) {
+    oninput?.(String(Number(next.toFixed(places))));
+  }
 </script>
 
 <div class="meter">
@@ -43,20 +51,19 @@
       <div class="now-tick" style="left: {pct(clamp(current))}%"></div>
     {/if}
     {#if interactive}
-      <input
-        {id}
-        class="range"
-        type="range"
-        {min}
-        {max}
-        step={step ?? "any"}
-        value={value ?? min}
-        style="left: calc({pct(min)}% - 8px); width: calc({pct(max) - pct(min)}% + 16px)"
-        aria-label={label}
-        aria-valuetext={value !== null ? quantityString(value, unit) : undefined}
-        {disabled}
-        oninput={(event) => oninput?.((event.currentTarget as HTMLInputElement).value)}
-      />
+      <div class="range" style="left: {pct(min)}%; width: {pct(max) - pct(min)}%">
+        <Slider
+          {id}
+          {label}
+          {min}
+          {max}
+          step={stride}
+          value={shown}
+          valueText={value !== null ? quantityString(value, unit) : undefined}
+          {disabled}
+          onValueChange={moved}
+        />
+      </div>
     {:else}
       <div class="track" style="left: {pct(min)}%; width: {pct(max) - pct(min)}%"></div>
     {/if}
@@ -93,68 +100,7 @@
   .range {
     position: absolute;
     top: 0;
-    height: 28px;
-    margin: 0;
-    padding: 0;
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent;
-    cursor: pointer;
-  }
-
-  .range::-webkit-slider-runnable-track {
-    height: 4px;
-    border-radius: 2px;
-    background: var(--border);
-  }
-
-  .range::-moz-range-track {
-    height: 4px;
-    border-radius: 2px;
-    background: var(--border);
-  }
-
-  .range::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    box-sizing: border-box;
-    width: 16px;
-    height: 16px;
-    margin-top: -6px;
-    border: 2px solid var(--bg);
-    border-radius: 50%;
-    background: var(--accent-fill);
-    box-shadow: 0 0 0 1px var(--accent);
-  }
-
-  .range::-moz-range-thumb {
-    box-sizing: border-box;
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--bg);
-    border-radius: 50%;
-    background: var(--accent-fill);
-    box-shadow: 0 0 0 1px var(--accent);
-  }
-
-  .range:disabled::-webkit-slider-thumb {
-    background: var(--text-2);
-    box-shadow: 0 0 0 1px var(--text-2);
-  }
-
-  .range:disabled::-moz-range-thumb {
-    background: var(--text-2);
-    box-shadow: 0 0 0 1px var(--text-2);
-  }
-
-  .range:focus-visible {
-    outline: var(--focus);
-    outline-offset: 0;
-    border-radius: var(--radius);
-  }
-
-  .range:disabled {
-    cursor: not-allowed;
+    z-index: 1;
   }
 
   .track {
@@ -217,5 +163,4 @@
     padding-right: 8px;
     transform: translateX(-100%);
   }
-
 </style>

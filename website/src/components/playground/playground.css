@@ -1,0 +1,392 @@
+.pg.frame {
+  container: playground / inline-size;
+  display: grid;
+  gap: var(--s-6);
+}
+
+.pg .try {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.pg h2 {
+  font-size: var(--t-h3);
+}
+
+.pg .try-grid {
+  display: grid;
+  gap: var(--s-5);
+  align-items: start;
+}
+
+.pg .quick {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.pg .answers {
+  display: grid;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.pg .small-head {
+  font-size: var(--t-body);
+  font-weight: 700;
+}
+
+.pg .printer {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  background: var(--surface);
+  border: var(--rule);
+  border-radius: var(--radius);
+}
+
+.pg .readout {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+}
+
+.pg .readout div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-3);
+}
+
+.pg .readout dt {
+  color: var(--text-2);
+}
+
+.pg .readout dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.pg .build {
+  border-top: var(--rule);
+  padding-top: var(--s-4);
+}
+
+.pg .build-body {
+  display: flow-root;
+  overflow: clip;
+  overflow-clip-margin: var(--s-2);
+}
+
+.pg .build-body > .playground {
+  margin-top: var(--s-4);
+}
+
+.pg .as-label {
+  display: inline-flex;
+  align-items: center;
+}
+
+.pg .printer .stop-area {
+  margin-top: var(--s-2);
+}
+
+.pg .playground {
+  display: grid;
+  gap: var(--s-5);
+  align-items: start;
+}
+
+.pg .panel {
+  border: var(--rule);
+  border-radius: var(--radius);
+  padding: var(--s-4);
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.pg .panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-4);
+  margin-bottom: var(--s-3);
+}
+
+.pg .editor .panel-head {
+  display: grid;
+  justify-content: stretch;
+}
+
+.pg .example {
+  display: grid;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.pg .pg-editor .cm-editor,
+.pg .pg-editor-wait {
+  height: 562px;
+  min-height: 420px;
+}
+
+.pg .pg-editor .cm-editor {
+  resize: vertical;
+  overflow: hidden;
+}
+
+.pg .pg-editor-wait {
+  margin: 0;
+  padding: var(--s-3);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--oh-control-border);
+  box-shadow: var(--oh-control-ring) var(--oh-control-border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pg .problems {
+  margin-top: var(--s-3);
+  display: grid;
+  gap: var(--s-2);
+}
+
+.pg .problems ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--s-2);
+}
+
+.pg .problems li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-2);
+}
+
+.pg .side {
+  display: grid;
+  gap: var(--s-5);
+  min-width: 0;
+}
+
+.pg .facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2) var(--s-4);
+  margin: 0 0 var(--s-4);
+}
+
+.pg .facts dd {
+  margin: 0;
+}
+
+.pg .table-wrap + .table-wrap {
+  margin-top: var(--s-4);
+}
+
+.pg .sim {
+  display: flex;
+  gap: var(--s-1);
+}
+
+.pg .sim .pg-field {
+  width: 7em;
+  height: 32px;
+  min-height: 32px;
+}
+
+.pg .note {
+  margin-top: var(--s-3);
+}
+
+.pg .request {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.pg .fields {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.pg .field {
+  display: grid;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.pg .buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.pg .waiting {
+  margin-top: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: var(--rule);
+}
+
+.pg .waiting-head {
+  font-weight: 700;
+}
+
+.pg .waiting ul {
+  list-style: none;
+  margin: var(--s-2) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-2);
+}
+
+.pg .waiting li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+}
+
+.pg .decide {
+  display: flex;
+  gap: var(--s-2);
+  margin-left: auto;
+}
+
+.pg .stop-area {
+  margin-top: var(--s-5);
+  padding-top: var(--s-4);
+  border-top: var(--rule);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3) var(--s-4);
+}
+
+.pg .stopped-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+}
+
+.pg .stopped-row .pg-field {
+  width: 10em;
+}
+
+.pg .unlock-error {
+  width: 100%;
+  color: var(--text);
+}
+
+.pg .log {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.pg .log .empty {
+  font-family: var(--font-text);
+  color: var(--text-2);
+}
+
+.pg .log .exchanges {
+  gap: var(--s-4);
+}
+
+.pg .log .exchange {
+  display: block;
+  padding: var(--s-2) var(--s-3);
+  border-radius: 4px;
+}
+
+.pg .log .exchange.agent {
+  border-left: 2px dashed var(--text-2);
+}
+
+.pg .log .exchange.person {
+  border-left: 4px solid var(--text);
+  background: var(--bg);
+}
+
+.pg .log .exchange > ol {
+  margin-top: var(--s-1);
+}
+
+.pg .log .pg-arrow {
+  display: contents;
+}
+
+@container (min-width: 440px) {
+  .pg .fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pg .fields .field:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@container (min-width: 760px) {
+  .pg .fields {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .pg .fields .field:first-child {
+    grid-column: auto;
+  }
+}
+
+@container (min-width: 600px) {
+  .pg .facts {
+    grid-template-columns: repeat(4, auto);
+    justify-content: start;
+    column-gap: var(--s-6);
+  }
+}
+
+@container playground (min-width: 760px) {
+  .pg .try-grid {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "quick printer" "answers printer";
+  }
+
+  .pg .quick {
+    grid-area: quick;
+  }
+
+  .pg .printer {
+    grid-area: printer;
+  }
+
+  .pg .answers {
+    grid-area: answers;
+  }
+}
+
+@container playground (min-width: 900px) {
+  .pg .playground {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  }
+
+  .pg .editor {
+    position: sticky;
+    top: 76px;
+  }
+
+  .pg .pg-editor .cm-editor,
+  .pg .pg-editor-wait {
+    height: max(562px, calc(100dvh - 330px));
+  }
+}

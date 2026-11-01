@@ -482,3 +482,8 @@ pre {
   --sidebar-border: var(--border);
   --sidebar-ring: var(--accent);
 }
+
+html body[data-scroll-locked] {
+  overflow: visible !important;
+  margin-right: 0 !important;
+}

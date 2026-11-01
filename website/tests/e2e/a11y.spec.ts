@@ -59,8 +59,16 @@ for (const scheme of ["light", "dark"] as const) {
       await page.getByRole("button", { name: "Set the nozzle to 300 °C" }).click();
       await expect(page.locator(".exchanges > li").first()).toBeVisible();
       await page.getByRole("button", { name: "About hazard" }).click();
-      await page.locator("summary", { hasText: "Build your own request" }).click();
+      await expect(page.getByRole("dialog", { name: "About hazard" })).toBeVisible();
+      problems.push(...(await violations(page)).map((item) => `playground information mark ${item}`));
+      await page.keyboard.press("Escape");
+      await page.getByRole("button", { name: "Build your own request" }).click();
+      await expect(page.getByLabel("Device file YAML")).toBeVisible({ timeout: 15_000 });
       problems.push(...(await violations(page)).map((item) => `playground trace ${item}`));
+      await page.locator("#pg-as").click();
+      await expect(page.getByRole("menu", { name: "As" })).toBeVisible();
+      problems.push(...(await violations(page)).map((item) => `playground picker ${item}`));
+      await page.keyboard.press("Escape");
 
       await page.goto("/drivers/");
       await page.getByLabel("Filter", { exact: true }).fill("no such driver");

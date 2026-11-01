@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { Button } from "$lib/components/ui/button/index.js";
+  import * as NavigationMenu from "$lib/components/ui/navigation-menu/index.js";
+  import * as Table from "$lib/components/ui/table/index.js";
   import Prose from "../components/Prose.svelte";
   import Reason from "../components/Reason.svelte";
   import StatusMark from "../components/StatusMark.svelte";
@@ -101,23 +104,23 @@
     <p class="empty">No routines. Add one with <code><Prose text="openhal routine new keep-cool --file keep-cool.routine.yaml" /></code>.</p>
   {:else}
     <div class="layout">
-      <nav class="list" aria-label="Routines">
-        <ul>
+      <NavigationMenu.Root orientation="vertical" aria-label="Routines" class="list">
+        <NavigationMenu.List class="grid gap-2">
           {#each routines as routine (routine.id)}
             {@const drafted = principalInfo(routine.drafted_by)}
-            <li>
-              <a href={href("routines", routine.id)} aria-current={selected === routine.id ? "page" : undefined}>
+            <NavigationMenu.Item>
+              <NavigationMenu.Link class="routine" href={href("routines", routine.id)} active={selected === routine.id}>
                 <span class="mono name">{routine.id}</span>
                 <StatusMark tone={routine.enabled ? "ok" : "neutral"} label={routine.enabled ? "enabled" : "disabled"} />
                 <span class="muted small">{routine.max_hazard} hazard, {routine.kind}</span>
                 {#if routine.drafted_by}
                   <span class="small drafted" class:agent={drafted.kind === "agent"}>drafted by <span class="mono nobreak">{routine.drafted_by}</span></span>
                 {/if}
-              </a>
-            </li>
+              </NavigationMenu.Link>
+            </NavigationMenu.Item>
           {/each}
-        </ul>
-      </nav>
+        </NavigationMenu.List>
+      </NavigationMenu.Root>
 
       {#if detail}
         <article class="detail" aria-labelledby="routine-title">
@@ -135,20 +138,20 @@
           </dl>
 
           <div class="buttons">
-            <button class="button" type="button" disabled={busy} onclick={() => act("dry")}>Dry run</button>
+            <Button disabled={busy} onclick={() => act("dry")}>Dry run</Button>
             {#if detail.enabled}
-              <button class="button" type="button" disabled={busy} onclick={() => act("disable")}>Disable</button>
+              <Button disabled={busy} onclick={() => act("disable")}>Disable</Button>
             {:else}
-              <button class="button primary" type="button" disabled={busy} onclick={() => act("enable")}>Enable</button>
+              <Button variant="primary" disabled={busy} onclick={() => act("enable")}>Enable</Button>
             {/if}
-            <button class="button" type="button" disabled={busy} onclick={() => act("run")}>Run now</button>
+            <Button disabled={busy} onclick={() => act("run")}>Run now</Button>
           </div>
           {#if message}
             <p class="result {message.tone}" role="status">{message.text}</p>
           {/if}
 
           {#if dryRun}
-            <section class="block" aria-labelledby="dry-title">
+            <section class="part" aria-labelledby="dry-title">
               <div class="section-head">
                 <h3 id="dry-title">Dry run</h3>
                 <StatusMark tone={dryRun.ok ? "ok" : "blocked"} label={dryRun.ok ? "every command allowed" : "not every command allowed"} />
@@ -172,34 +175,39 @@
             </section>
           {/if}
 
-          <section class="block" aria-labelledby="source-title">
+          <section class="part" aria-labelledby="source-title">
             <h3 id="source-title">Source</h3>
             <pre class="source"><code><Prose text={detail.source_raw} /></code></pre>
           </section>
 
-          <section class="block" aria-labelledby="history-title">
+          <section class="part" aria-labelledby="history-title">
             <h3 id="history-title">Run history</h3>
             {#if !detail.history.length}
               <p class="empty">This routine has not run yet.</p>
             {:else}
-              <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-              <div class="table-scroll" tabindex="0" role="region" aria-label="Run history table">
-                <table class="grid">
-                <thead><tr><th scope="col">Run</th><th scope="col">Trigger</th><th scope="col">Started</th><th scope="col">Status</th><th scope="col">Message</th></tr></thead>
-                <tbody>
+              <Table.Root region="Run history table">
+                <Table.Header>
+                  <Table.Row>
+                    <Table.Head scope="col">Run</Table.Head>
+                    <Table.Head scope="col">Trigger</Table.Head>
+                    <Table.Head scope="col">Started</Table.Head>
+                    <Table.Head scope="col">Status</Table.Head>
+                    <Table.Head scope="col">Message</Table.Head>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
                   {#each detail.history as run (run.run_id)}
                     {@const mark = decisionStatus(run.status)}
-                    <tr>
-                      <td class="mono">{run.run_id}</td>
-                      <td class="mono">{run.trigger ? formatTrigger(run.trigger) : ""}</td>
-                      <td class="mono">{formatDateTime(run.started_at)}</td>
-                      <td><StatusMark tone={mark.tone} label={mark.label} /></td>
-                      <td>{run.message}</td>
-                    </tr>
+                    <Table.Row>
+                      <Table.Cell class="font-mono text-(length:--t-mono)">{run.run_id}</Table.Cell>
+                      <Table.Cell class="font-mono text-(length:--t-mono)">{run.trigger ? formatTrigger(run.trigger) : ""}</Table.Cell>
+                      <Table.Cell class="font-mono text-(length:--t-mono)">{formatDateTime(run.started_at)}</Table.Cell>
+                      <Table.Cell><StatusMark tone={mark.tone} label={mark.label} /></Table.Cell>
+                      <Table.Cell>{run.message}</Table.Cell>
+                    </Table.Row>
                   {/each}
-                </tbody>
-                </table>
-              </div>
+                </Table.Body>
+              </Table.Root>
             {/if}
           </section>
         </article>
@@ -222,15 +230,7 @@
     border-top: var(--rule);
   }
 
-  .list ul {
-    display: grid;
-    gap: var(--s-2);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .list a {
+  .layout :global(.routine) {
     display: grid;
     gap: var(--s-1);
     padding: var(--s-3);
@@ -240,7 +240,7 @@
     text-decoration: none;
   }
 
-  .list a[aria-current="page"] {
+  .layout :global(.routine[aria-current="page"]) {
     border-color: var(--accent);
     border-left-width: 3px;
     padding-left: calc(var(--s-3) - 2px);
@@ -293,7 +293,7 @@
     margin: 0;
   }
 
-  .block {
+  .part {
     display: grid;
     gap: var(--s-3);
     padding-top: var(--s-4);

@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { AgentClient, hubState, signIn } from "./hub";
+import { AgentClient, choose, hubState, signIn } from "./hub";
 
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 const VIEWS = [
@@ -42,7 +42,7 @@ for (const scheme of ["light", "dark"] as const) {
   for (const width of [1440, 390]) {
     test(`every view and state passes axe WCAG 2.1 AA at ${width} px in the ${scheme} theme`, async ({ browser, browserName }) => {
       test.skip(browserName !== "chromium" && width < 800, "the phone pass runs in Chromium");
-      test.setTimeout(browserName === "firefox" ? 600_000 : 300_000);
+      test.setTimeout(browserName === "firefox" || width < 800 ? 600_000 : 300_000);
       const context = await browser.newContext({ viewport: { width, height: width < 800 ? 844 : 900 }, colorScheme: scheme });
       await signIn(context);
       const page = await context.newPage();
@@ -62,7 +62,7 @@ for (const scheme of ["light", "dark"] as const) {
 
       await page.goto("/#/confirmations");
       const cancel = page.getByRole("main").getByRole("listitem").filter({ hasText: "sends a request to run cancel" }).first();
-      await cancel.getByRole("combobox", { name: "Show a camera" }).selectOption("printer-cam/frame");
+      await choose(cancel.getByRole("combobox", { name: "Show a camera" }), "Printer camera, frame");
       await expect(cancel.getByRole("img", { name: /^Demo frame from Printer camera/ })).toBeVisible();
       problems.push(...(await violations(page, "cancel with its camera")));
 
@@ -79,6 +79,26 @@ for (const scheme of ["light", "dark"] as const) {
       await page.getByRole("button", { name: "Start the driver writer" }).click();
       await expect(page.getByRole("heading", { name: "Limits interview" })).toBeVisible();
       problems.push(...(await violations(page, "writer interview")));
+
+      await page.goto("/#/devices/printer");
+      await page.getByRole("combobox", { name: "Client", exact: true }).click();
+      await expect(page.getByRole("listbox")).toBeVisible();
+      problems.push(...(await violations(page, "select open")));
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("listbox")).toBeHidden();
+
+      await page.goto("/#/audit");
+      await page.getByRole("button", { name: "Verify the hash chain" }).hover();
+      await expect(page.getByRole("tooltip")).toBeVisible();
+      problems.push(...(await violations(page, "tooltip open")));
+
+      await page.goto("/#/settings");
+      await page.getByRole("button", { name: /^Revoke / }).first().click();
+      const confirm = page.getByRole("alertdialog");
+      await expect(confirm).toBeVisible();
+      problems.push(...(await violations(page, "revoke confirmation")));
+      await confirm.getByRole("button", { name: "Keep" }).click();
+      await expect(confirm).toBeHidden();
 
       await page.goto("/#/devices/printer");
       await page.getByRole("button", { name: "Hide the log" }).click();

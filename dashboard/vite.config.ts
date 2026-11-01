@@ -1,4 +1,5 @@
 import { svelte } from "@sveltejs/vite-plugin-svelte";
+import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
@@ -6,7 +7,10 @@ const hub = process.env.OPENHAL_HUB ?? "http://127.0.0.1:7420";
 const repo = fileURLToPath(new URL("..", import.meta.url));
 
 export default defineConfig({
-  plugins: [svelte()],
+  plugins: [tailwindcss(), svelte()],
+  resolve: {
+    alias: { $lib: fileURLToPath(new URL("./src/lib", import.meta.url)) },
+  },
   base: "/",
   build: {
     outDir: "../openhal/hub/static",

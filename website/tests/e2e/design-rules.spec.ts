@@ -145,7 +145,7 @@ test.describe("the search index", () => {
 });
 
 /**
- * Every place the page paints the safety yellow or the blue of pending, read from the computed
+ * Every place the page paints the pink accent or the blue of pending, read from the computed
  * styles of every element and its ::before and ::after, with the role each place plays. Anything
  * else is reported by its tag and class. How it works is left to how.spec.ts.
  */
@@ -160,7 +160,7 @@ const accents = (page: Page) =>
     const accent = resolve("var(--accent)");
     const fill = resolve("var(--accent-fill)");
     const confirm = resolve("var(--confirm)");
-    const retired = ["#cc1475", "#ff4fa3", "#8a5a00", "#e8b341"].map(resolve);
+    const retired = ["#cc1475", "#ff4fa3", "#8a5a00", "#e8b341", "#ffd60a", "#7a5c00", "#ffe14d"].map(resolve);
     probe.remove();
     const roles: string[] = [];
     const strays: string[] = [];
@@ -180,17 +180,17 @@ const accents = (page: Page) =>
         for (const old of retired) if (paints(style, old, pseudo, element).any) strays.push(`${name} paints a retired color ${old}`);
         const blue = paints(style, confirm, pseudo, element);
         if (blue.any && !element.closest(".status.confirm, .stroke.held, .stroke.live.confirm")) pending.push(name);
-        const yellow = paints(style, fill, pseudo, element);
-        const mark = accent === fill ? yellow : paints(style, accent, pseudo, element);
-        if (!yellow.any && !mark.any) continue;
+        const pink = paints(style, fill, pseudo, element);
+        const mark = accent === fill ? pink : paints(style, accent, pseudo, element);
+        if (!pink.any && !mark.any) continue;
         if (style.backgroundImage !== "none" && (style.backgroundImage.includes(fill) || style.backgroundImage.includes(accent))) strays.push(`${name} draws an image or a gradient`);
-        if (yellow.back) {
+        if (pink.back) {
           const box = element.getBoundingClientRect();
           if (box.width * box.height > 30_000) large.push(`${name} fills ${Math.round(box.width)} by ${Math.round(box.height)} px`);
         }
         if (!pseudo && element.matches(".button:not(.quiet, .person), [data-slot=button][data-variant=default]")) roles.push("primary button");
         else if (element.matches(".nav-mark") || (pseudo === "::before" && element.matches("li:has(> [aria-current=page]), .oh-menu-sections a[aria-current=page]"))) roles.push("current location");
-        else if (!pseudo && element.closest("a[href]") && !yellow.back) {
+        else if (!pseudo && element.closest("a[href]") && !pink.back) {
           const link = getComputedStyle(element.closest("a[href]")!);
           if (link.textDecorationLine.includes("underline")) roles.push("link");
           else strays.push(`${name} is a link in the accent without an underline`);
@@ -219,10 +219,10 @@ const contrast = (one: string, two: string) => {
   return (a + 0.05) / (b + 0.05);
 };
 
-test.describe("the safety yellow accent", () => {
+test.describe("the pink accent", () => {
   for (const [scheme, accent] of [
-    ["light", "rgb(122, 92, 0)"],
-    ["dark", "rgb(255, 214, 10)"],
+    ["light", "rgb(192, 21, 110)"],
+    ["dark", "rgb(255, 110, 180)"],
   ] as const) {
     test(`marks only buttons, links, the current location and the walkthrough's step, with blue for pending alone, in the ${scheme} theme`, async ({ page }) => {
       test.slow();
@@ -240,18 +240,15 @@ test.describe("the safety yellow accent", () => {
         await page.goto(path);
         const seen = await accents(page);
         expect(seen.accent, path).toBe(accent);
-        expect(seen.fill, path).toBe("rgb(255, 214, 10)");
+        expect(seen.fill, path).toBe("rgb(255, 110, 180)");
         expect(seen.strays, `${path} uses the accent only for its roles`).toEqual([]);
-        expect(seen.large, `${path} never fills a large area with yellow`).toEqual([]);
+        expect(seen.large, `${path} never fills a large area with pink`).toEqual([]);
         expect(seen.pending, `${path} keeps blue for pending`).toEqual([]);
         expect(seen.roles, path).toEqual(expect.arrayContaining([...needs]));
       }
       await page.goto("/spec/playground/");
-      const build = page.locator("details", { has: page.locator("summary", { hasText: "Build your own request" }) });
-      await expect(async () => {
-        if (!(await build.evaluate((details: HTMLDetailsElement) => details.open))) await build.locator("summary").click();
-        await expect(page.getByRole("button", { name: /^Send / })).toBeVisible({ timeout: 2_000 });
-      }).toPass();
+      await page.getByRole("button", { name: "Build your own request" }).click();
+      await expect(page.getByRole("button", { name: /^Send / })).toBeVisible({ timeout: 15_000 });
       const playground = await accents(page);
       expect(playground.strays).toEqual([]);
       expect(playground.pending).toEqual([]);
@@ -266,7 +263,7 @@ test.describe("the safety yellow accent", () => {
         const style = getComputedStyle(element);
         return { background: style.backgroundColor, color: style.color, weight: style.fontWeight, image: style.backgroundImage, shadow: style.boxShadow, edge: style.borderTopColor, page: getComputedStyle(document.body).backgroundColor };
       });
-      expect(look.background).toBe("rgb(255, 214, 10)");
+      expect(look.background).toBe("rgb(255, 110, 180)");
       expect(look.color).toBe("rgb(13, 15, 18)");
       expect(look.weight).toBe("600");
       expect(look.image, "no gradient").toBe("none");
@@ -280,18 +277,18 @@ test.describe("the safety yellow accent", () => {
     await page.goto("/");
     const button = page.getByRole("link", { name: "Get started" });
     await button.hover();
-    await expect.poll(() => button.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(255, 225, 77)");
+    await expect.poll(() => button.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(255, 142, 197)");
     await expect.poll(() => button.evaluate((element) => getComputedStyle(element).transform)).toBe("matrix(1, 0, 0, 1, 0, -1)");
     await page.mouse.move(0, 0);
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.reload();
     await button.hover();
-    await expect.poll(() => button.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(255, 225, 77)");
+    await expect.poll(() => button.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(255, 142, 197)");
     expect(await button.evaluate((element) => getComputedStyle(element).transform)).toBe("none");
   });
 
   for (const scheme of ["light", "dark"] as const) {
-    test(`selects text on the yellow fill with near-black text, in the ${scheme} theme`, async ({ page }) => {
+    test(`selects text on the pink fill with near-black text, in the ${scheme} theme`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme });
       await page.goto("/docs/quickstart/");
       const selection = await page.evaluate(() => {
@@ -306,7 +303,7 @@ test.describe("the safety yellow accent", () => {
         probe.remove();
         return found;
       });
-      expect(selection).toEqual([{ background: "rgb(255, 214, 10)", color: "rgb(13, 15, 18)" }]);
+      expect(selection).toEqual([{ background: "rgb(255, 110, 180)", color: "rgb(13, 15, 18)" }]);
     });
   }
 

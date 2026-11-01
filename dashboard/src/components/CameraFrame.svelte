@@ -1,5 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import { AspectRatio } from "$lib/components/ui/aspect-ratio/index.js";
+  import { Badge } from "$lib/components/ui/badge/index.js";
+  import { Button } from "$lib/components/ui/button/index.js";
   import { frames } from "../lib/frames.svelte";
   import { imageFacts, imageSize, type ImageReading } from "../lib/images";
   import { formatTime } from "../lib/trace";
@@ -26,7 +29,7 @@
   const image = $derived(frame?.image ?? latest);
   const size = $derived(image ? imageSize(image) : null);
   const shownWidth = $derived(Math.min(width, size?.width ?? width));
-  const ratio = $derived(size ? `${size.width} / ${size.height}` : "4 / 3");
+  const ratio = $derived(size && size.height > 0 ? size.width / size.height : 4 / 3);
   const time = $derived(frame?.at ? formatTime(new Date(frame.at * 1000)).slice(0, 8) : "");
 
   $effect(() => {
@@ -37,12 +40,12 @@
 <div class="frame" style="max-width: {shownWidth}px">
   <div class="head">
     {@render heading?.()}
-    <button type="button" class="button small" disabled={frame?.reading} onclick={() => void frames.read(device, channel)}>
+    <Button size="sm" class="ml-auto" disabled={frame?.reading} onclick={() => void frames.read(device, channel)}>
       Read frame
-    </button>
+    </Button>
   </div>
   <figure>
-    <div class="picture" style="aspect-ratio: {ratio}">
+    <AspectRatio ratio={ratio} class="overflow-hidden rounded-md border border-border bg-muted">
       {#if frame?.src}
         <img
           src={frame.src}
@@ -57,10 +60,10 @@
       {:else}
         <p class="none" aria-hidden="true">&emsp;</p>
       {/if}
-    </div>
+    </AspectRatio>
     <figcaption>
       <span class="facts mono">
-        {#if demo}<span class="demo">demo frame</span>{/if}
+        {#if demo}<Badge class="font-sans">demo frame</Badge>{/if}
         {#if image}{#each imageFacts(image) as fact (fact)}<span>{fact}</span>{/each}{:else}<span>no frame read yet</span>{/if}
       </span>
       <span class="when" aria-live="polite">
@@ -93,22 +96,10 @@
     min-height: 30px;
   }
 
-  .head .button {
-    margin-left: auto;
-  }
-
   figure {
     display: grid;
     gap: var(--s-2);
     margin: 0;
-  }
-
-  .picture {
-    width: 100%;
-    overflow: hidden;
-    border: var(--rule);
-    border-radius: var(--radius);
-    background: var(--surface);
   }
 
   img {
@@ -149,14 +140,6 @@
 
   .when .mono {
     font-size: var(--t-label);
-  }
-
-  .demo {
-    padding: 0 6px;
-    border-radius: var(--radius);
-    background: var(--surface);
-    font-family: var(--font-text);
-    color: var(--text-2);
   }
 
   .problem .label {

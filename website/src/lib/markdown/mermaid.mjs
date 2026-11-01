@@ -69,8 +69,8 @@ function theme({ text, text2, bg, surface, border, accent }) {
   };
 }
 
-const LIGHT = theme({ text: "#15181c", text2: "#4f5661", bg: "#fcfcfd", surface: "#f4f5f7", border: "#dadde2", accent: "#7a5c00" });
-const DARK = theme({ text: "#e7eaee", text2: "#a0a7b1", bg: "#0d0f12", surface: "#15181d", border: "#2a2f36", accent: "#ffd60a" });
+const LIGHT = theme({ text: "#15181c", text2: "#4f5661", bg: "#fcfcfd", surface: "#f4f5f7", border: "#dadde2", accent: "#c0156e" });
+const DARK = theme({ text: "#e7eaee", text2: "#a0a7b1", bg: "#0d0f12", surface: "#15181d", border: "#2a2f36", accent: "#ff6eb4" });
 
 let renderer = null;
 let css = null;

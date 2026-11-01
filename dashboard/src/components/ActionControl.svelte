@@ -1,5 +1,9 @@
 <script lang="ts">
   import { untrack } from "svelte";
+  import { Button } from "$lib/components/ui/button/index.js";
+  import { Input } from "$lib/components/ui/input/index.js";
+  import { Label } from "$lib/components/ui/label/index.js";
+  import SelectField from "./SelectField.svelte";
   import { api } from "../lib/api";
   import { describeDecision, type DecisionSummary } from "../lib/devices";
   import { href } from "../lib/router.svelte";
@@ -109,20 +113,25 @@
     <div class="args">
       {#each args as [arg, argSpec] (arg)}
         {@const fieldId = `${ident}-${arg}`}
-        <div class="field arg">
-          <label for={fieldId} class="mono arg-name">{arg}{argSpec.unit ? ` in ${unitSymbol(argSpec.unit)}` : ""}</label>
-          {#if argSpec.values?.length}
-            <select id={fieldId} bind:value={values[arg]} {disabled}>
-              <option value="">Choose</option>
-              {#each argSpec.values ?? [] as option (option)}<option value={option}>{option}</option>{/each}
-            </select>
-          {:else if argSpec.type === "bool"}
-            <select id={fieldId} bind:value={values[arg]} {disabled}>
-              <option value="">Choose</option>
-              <option value="false">false</option>
-              <option value="true">true</option>
-            </select>
-          {:else}
+        {@const argLabel = arg + (argSpec.unit ? ` in ${unitSymbol(argSpec.unit)}` : "")}
+        {#if argSpec.values?.length || argSpec.type === "bool"}
+          <SelectField
+            id={fieldId}
+            label={argLabel}
+            value={values[arg] ?? ""}
+            onchange={(next) => (values[arg] = next)}
+            {disabled}
+            class="arg"
+            labelClass="font-mono text-base text-foreground"
+            triggerClass="w-auto min-w-[12ch] justify-self-start font-mono"
+            options={[
+              { value: "", label: "Choose" },
+              ...(argSpec.values?.length ? argSpec.values : ["false", "true"]).map((option) => ({ value: option, label: option })),
+            ]}
+          />
+        {:else}
+          <div class="field arg">
+            <Label for={fieldId} class="font-mono text-base text-foreground">{argLabel}</Label>
             {#if numeric(arg) && argSpec.min !== undefined && argSpec.max !== undefined}
               <LimitScale
                 id="{fieldId}-range"
@@ -141,24 +150,26 @@
                 <small class="muted mono nobreak">{formatQuantity(argSpec.min, argSpec.unit)} to {formatQuantity(argSpec.max, argSpec.unit)}</small>
               {/if}
             {:else}
-            <span class="entry">
-              <input
-                id={fieldId}
-                type={numeric(arg) ? "number" : "text"}
-                inputmode={numeric(arg) ? "decimal" : undefined}
-                autocomplete="off"
-                min={argSpec.min}
-                max={argSpec.max}
-                bind:value={values[arg]}
-                {disabled}
-              />
-              {#if argSpec.min !== undefined && argSpec.max !== undefined}
-                <small class="muted mono nobreak">{formatQuantity(argSpec.min, argSpec.unit)} to {formatQuantity(argSpec.max, argSpec.unit)}</small>
-              {/if}
-            </span>
+              <span class="entry">
+                <Input
+                  id={fieldId}
+                  type={numeric(arg) ? "number" : "text"}
+                  inputmode={numeric(arg) ? "decimal" : undefined}
+                  autocomplete="off"
+                  min={argSpec.min}
+                  max={argSpec.max}
+                  value={values[arg] ?? ""}
+                  oninput={(event) => (values[arg] = (event.currentTarget as HTMLInputElement).value)}
+                  {disabled}
+                  class="w-[10ch] font-mono text-right"
+                />
+                {#if argSpec.min !== undefined && argSpec.max !== undefined}
+                  <small class="muted mono nobreak">{formatQuantity(argSpec.min, argSpec.unit)} to {formatQuantity(argSpec.max, argSpec.unit)}</small>
+                {/if}
+              </span>
             {/if}
-          {/if}
-        </div>
+          </div>
+        {/if}
       {/each}
     </div>
   {/if}
@@ -181,9 +192,9 @@
   {/if}
   {#if !readOnly}
     <div class="run">
-      <button class="button" class:primary={!safeState} type="submit" disabled={disabled || busy || !ready}>
+      <Button variant={safeState ? "outline" : "primary"} type="submit" disabled={disabled || busy || !ready}>
         <span>{confirms ? "Confirm and run" : "Run"} <span class="mono">{name}</span></span>
-      </button>
+      </Button>
       {#if confirms}
         <p class="muted note"><span class="mono">{name}</span> needs a person's confirmation each time. Your click is that confirmation.</p>
       {:else if safeState}
@@ -237,23 +248,11 @@
     gap: var(--s-3);
   }
 
-  .arg-name {
-    font-size: var(--t-ui);
-    font-weight: 700;
-    color: var(--text);
-  }
-
   .entry {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--s-2) var(--s-3);
-  }
-
-  .entry input {
-    width: 10ch;
-    font-family: var(--font-mono);
-    text-align: right;
   }
 
   small {

@@ -168,11 +168,11 @@ test.describe("the interactive parts", () => {
     await page.goto("/spec/playground/");
     await ready(page);
     await page.getByRole("button", { name: "About hazard" }).click();
-    await expect(page.getByRole("note")).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "About hazard" })).toBeVisible();
     await settled(page);
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("note")).toBeHidden();
-    await page.locator("summary", { hasText: "Build your own request" }).click();
+    await expect(page.getByRole("dialog", { name: "About hazard" })).toBeHidden();
+    await page.getByRole("button", { name: "Build your own request" }).click();
     await settled(page);
     within(await taken(page), "information mark and the builder");
 
@@ -435,8 +435,9 @@ test.describe("control outlines", () => {
     expect(await page.locator("table.drivers td").first().evaluate((cell) => getComputedStyle(cell).borderBottomWidth)).toBe("1px");
 
     await page.goto("/spec/playground/");
-    await page.locator("summary", { hasText: "Build your own request" }).click();
-    await controls(page, ["#pg-text", ".request select", ".button.quiet", ".info"], 1.5);
+    await page.getByRole("button", { name: "Build your own request" }).click();
+    await expect(page.getByLabel("Device file YAML")).toBeVisible({ timeout: 15_000 });
+    await controls(page, [".pg-editor .cm-editor", ".request .pg-select", ".request input", ".request .buttons [data-variant=outline]", ".pg-info"], 1.5);
     await controls(page, [".panel"], 1);
 
     await page.setViewportSize({ width: 390, height: 844 });

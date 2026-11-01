@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { AgentClient, hubState, printAgain, showFrame, signIn } from "./hub";
+import { AgentClient, choose, hubState, printAgain, showFrame, signIn } from "./hub";
 
 test.beforeEach(async ({ context }) => {
   await signIn(context);
@@ -52,7 +52,7 @@ test("the cancel request shows what the agent requested and why the request is h
   await expect(request).toContainText(/Expires in\s+\d+ s/);
   await expect(request.getByRole("img", { name: /frame from/ })).toHaveCount(0);
   await expect(request).toContainText("Pick the camera pointed at Klipper 3D printer.");
-  await request.getByRole("combobox", { name: "Show a camera" }).selectOption("printer-cam/frame");
+  await choose(request.getByRole("combobox", { name: "Show a camera" }), "Printer camera, frame");
   const frame = request.getByRole("img", { name: /^Demo frame from Printer camera, frame/ });
   await expect(frame).toBeVisible();
   await expect(request).toContainText("24 KB");
