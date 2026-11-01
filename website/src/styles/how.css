@@ -96,13 +96,13 @@
 }
 
 .smooth[aria-checked="true"] .smooth-track {
-  background: var(--accent);
+  background: var(--accent-fill);
   border-color: var(--accent);
   box-shadow: var(--oh-control-ring) var(--accent);
 }
 
 .smooth[aria-checked="true"] .smooth-knob {
-  background: var(--bg);
+  background: var(--on-accent);
   transform: translateX(12px);
 }
 
