@@ -47,8 +47,8 @@ STATIC_FONTS = {
 }
 
 THEMES = {
-    "light": {"accent": "#1D5FB4", "line": "#8A919C", "blocked": "#A14034", "label": "#4F5661", "border": "#DADDE2"},
-    "dark": {"accent": "#7DB2F0", "line": "#5A626D", "blocked": "#D57A72", "label": "#A0A7B1", "border": "#2A2F36"},
+    "light": {"line": "#8A919C", "blocked": "#A14034", "label": "#4F5661", "border": "#DADDE2"},
+    "dark": {"line": "#5A626D", "blocked": "#D57A72", "label": "#A0A7B1", "border": "#2A2F36"},
 }
 SHARED = ("theme-light.d2", "theme-dark.d2", "house.d2")
 MANIFEST = DIAGRAMS / "diagrams.json"
@@ -368,7 +368,7 @@ def postprocess_flow(svg: str, colors: dict[str, str], narrow: bool = False) -> 
         elif abs(x1 - x2) < 0.5 and label:
             body = relabel(body, x1 + 9, (y1 + y2) / 2 + 4)
             body = body.replace("text-anchor:middle", "text-anchor:start", 1)
-        color = colors["blocked"] if is_blocked else colors["accent"]
+        color = colors["blocked"] if is_blocked else colors["label"]
         flows.append(flow_path(d, color, "blocked" if is_blocked else label))
         return f'<g class="{match["id"]} wire">{body}</g>'
 

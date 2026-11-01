@@ -24,7 +24,6 @@ THEMES = {
         "border": "#DADDE2",
         "text": "#15181C",
         "text2": "#4F5661",
-        "accent": "#1D5FB4",
         "ok": "#3C754F",
         "blocked": "#A14034",
     },
@@ -33,7 +32,6 @@ THEMES = {
         "border": "#2A2F36",
         "text": "#E7EAEE",
         "text2": "#A0A7B1",
-        "accent": "#7DB2F0",
         "ok": "#72B88E",
         "blocked": "#D57A72",
     },
@@ -79,26 +77,6 @@ class Canvas:
             + "\n".join(self.parts)
             + "\n</svg>\n"
         )
-
-
-Run = tuple[str, str, int]
-
-
-def json_runs(t: dict[str, str], pairs: list[tuple[str, str | int]]) -> list[Run]:
-    """A one-line JSON object as (text, color, weight) runs in the house syntax theme."""
-    runs: list[Run] = [("{ ", t["text2"], 400)]
-    for index, (key, value) in enumerate(pairs):
-        runs += [(f'"{key}"', t["text2"], 400), (": ", t["text2"], 400)]
-        runs.append((f'"{value}"', t["text"], 400) if isinstance(value, str) else (str(value), t["accent"], 400))
-        if index < len(pairs) - 1:
-            runs.append((", ", t["text2"], 400))
-    runs.append((" }", t["text2"], 400))
-    return runs
-
-
-def draw_runs(c: Canvas, runs: list[Run], x: float, y: float, size: float) -> None:
-    for value, color, weight in runs:
-        x += c.text(value, x, y, face="mono", size=size, fill=color, weight=weight)
 
 
 WORD = "OpenHAL"
