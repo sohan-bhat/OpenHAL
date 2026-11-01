@@ -2,6 +2,7 @@ import * as React from "react";
 import { AnimatePresence } from "motion/react";
 import { ArrowDown, ArrowUp, SearchIcon } from "lucide-react";
 import { isShortcut } from "../../directives/intent";
+import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from "@/components/ui/command";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
@@ -122,13 +123,15 @@ export default function SearchPalette({ sections, suggestions }: Props) {
         }}
       >
         <DialogTrigger asChild>
-          <button
+          <Button
             ref={trigger}
             type="button"
+            variant="ghost"
+            size="icon"
             data-search-trigger=""
             aria-keyshortcuts="Control+K Meta+K"
             className={cn(
-              "flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md bg-transparent text-sm text-muted-foreground",
+              "flex font-normal hover:bg-transparent",
               "min-[50rem]:w-full min-[50rem]:max-w-[260px] min-[50rem]:justify-start min-[50rem]:border min-[50rem]:border-input min-[50rem]:bg-background min-[50rem]:pr-2 min-[50rem]:pl-3 min-[50rem]:[box-shadow:var(--oh-control-ring)_var(--oh-control-border)]",
               "min-[50rem]:hover:border-muted-foreground min-[50rem]:hover:text-foreground min-[50rem]:hover:[box-shadow:var(--oh-control-ring)_var(--text-2)]",
               "min-[64rem]:max-[71.24rem]:w-10 min-[64rem]:max-[71.24rem]:justify-center min-[64rem]:max-[71.24rem]:p-0",
@@ -141,7 +144,7 @@ export default function SearchPalette({ sections, suggestions }: Props) {
               <span className="[:root:not([data-platform=mac])_&]:hidden">⌘</span>
               <span>K</span>
             </Kbd>
-          </button>
+          </Button>
         </DialogTrigger>
         <AnimatePresence>
           {open && (
@@ -168,7 +171,11 @@ export default function SearchPalette({ sections, suggestions }: Props) {
                   }}
                   placeholder="Search the docs, spec, drivers and devices…"
                 >
-                  <DialogClose className="h-9 shrink-0 cursor-pointer rounded-md bg-transparent px-2 text-sm font-semibold text-foreground hover:bg-muted min-[50rem]:hidden">Cancel</DialogClose>
+                  <DialogClose asChild>
+                    <Button type="button" variant="ghost" size="sm" className="px-2 text-foreground min-[50rem]:hidden">
+                      Cancel
+                    </Button>
+                  </DialogClose>
                 </CommandInput>
                 {found.status === "loading" && <CommandLoading label="Searching">Searching…</CommandLoading>}
                 {found.status === "error" && <CommandEmpty>Search could not load. Check your connection, then try again.</CommandEmpty>}

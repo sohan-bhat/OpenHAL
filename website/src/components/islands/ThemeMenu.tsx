@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MotionRoot } from "@/components/ui/motion";
 import { cn } from "@/lib/utils";
@@ -46,7 +47,7 @@ export default function ThemeMenu({ place = "header" }: { place?: "header" | "me
     <MotionRoot>
       <DropdownMenu onOpenChange={(open) => open && setChoice(stored())}>
         <DropdownMenuTrigger asChild>
-          <button ref={trigger} type="button" data-picker="theme" className={PICKER}>
+          <Button ref={trigger} type="button" variant="ghost" size="sm" data-picker="theme" className={PICKER}>
             <span className="sr-only">Theme</span>
             <span className="grid text-start">
               {CHOICES.map((item) => (
@@ -56,7 +57,7 @@ export default function ThemeMenu({ place = "header" }: { place?: "header" | "me
               ))}
             </span>
             <Chevron />
-          </button>
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" aria-label="Theme" container={menuContainer(place)}>
           <DropdownMenuRadioGroup
