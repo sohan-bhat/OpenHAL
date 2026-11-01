@@ -8,10 +8,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "border border-spark bg-spark text-background [box-shadow:var(--oh-control-ring)_var(--spark)]",
-        outline: "border border-input bg-background text-foreground [box-shadow:var(--oh-control-ring)_var(--oh-control-border)] hover:border-primary hover:[box-shadow:var(--oh-control-ring)_var(--accent)]",
+        default:
+          "border border-accent bg-accent-fill text-on-accent [box-shadow:var(--oh-control-ring)_var(--accent)] transition-[background-color,translate] duration-(--motion-status) hover:bg-accent-fill-hover motion-safe:hover:-translate-y-px",
+        outline: "border border-input bg-background text-foreground [box-shadow:var(--oh-control-ring)_var(--oh-control-border)] hover:border-muted-foreground hover:[box-shadow:var(--oh-control-ring)_var(--text-2)]",
         ghost: "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
-        link: "text-primary underline-offset-[3px] hover:underline",
+        link: "text-accent underline underline-offset-[3px] hover:decoration-2",
       },
       size: {
         default: "h-10 px-4",
@@ -28,7 +29,7 @@ const buttonVariants = cva(
   },
 );
 
-/** shadcn/ui's Button on the site's tokens: the house primary in the flat magenta accent, outline, ghost and link buttons. */
+/** shadcn/ui's Button on the site's tokens: the house primary on the safety yellow fill with near-black text, outline, ghost and link buttons. */
 function Button({
   className,
   variant = "default",

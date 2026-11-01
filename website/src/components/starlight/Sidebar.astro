@@ -77,8 +77,8 @@ const restore = menuOnly ? "" : await inlineScript(`${sidebarSource}\nrestore(do
   }
 
   .oh-menu-sections a[aria-current="page"] {
-    color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+    font-weight: 700;
+    background: var(--oh-highlight);
   }
 
   .oh-menu-sections a[aria-current="page"]::before {
@@ -87,7 +87,7 @@ const restore = menuOnly ? "" : await inlineScript(`${sidebarSource}\nrestore(do
     inset-block: 0;
     inset-inline-start: calc(-1 * var(--s-2));
     width: 2px;
-    background: var(--spark);
+    background: var(--accent);
   }
 
   .oh-menu-sections[data-menu-only] {

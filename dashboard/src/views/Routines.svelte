@@ -249,7 +249,7 @@
 
   .name {
     font-weight: 700;
-    color: var(--accent);
+    color: var(--text);
   }
 
   .small {

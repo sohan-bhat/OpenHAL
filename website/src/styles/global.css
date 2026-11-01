@@ -30,14 +30,17 @@
   --color-card-foreground: var(--text);
   --color-popover: var(--bg);
   --color-popover-foreground: var(--text);
-  --color-primary: var(--accent);
-  --color-primary-foreground: var(--bg);
+  --color-primary: var(--accent-fill);
+  --color-primary-foreground: var(--on-accent);
   --color-secondary: var(--surface);
   --color-secondary-foreground: var(--text);
   --color-muted: var(--surface);
   --color-muted-foreground: var(--text-2);
-  --color-accent: var(--oh-highlight);
-  --color-accent-foreground: var(--accent);
+  --color-accent: var(--accent);
+  --color-accent-fill: var(--accent-fill);
+  --color-accent-fill-hover: var(--accent-fill-hover);
+  --color-on-accent: var(--on-accent);
+  --color-highlight: var(--oh-highlight);
   --color-destructive: var(--blocked);
   --color-border: var(--border);
   --color-input: var(--oh-control-border);
@@ -46,7 +49,6 @@
   --color-confirm: var(--confirm);
   --color-blocked: var(--blocked);
   --color-unverified: var(--unverified);
-  --color-spark: var(--spark);
   --text-xs: var(--t-legend);
   --text-xs--line-height: 1.4;
   --text-sm: var(--t-small);
@@ -94,8 +96,8 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 22%, var(--bg));
-  color: var(--text);
+  background-color: var(--accent-fill);
+  color: var(--on-accent);
 }
 
 code,
@@ -242,7 +244,7 @@ pre {
   animation-duration: 240ms;
   animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  background: var(--oh-highlight);
 }
 
 ::view-transition-old(nav-pill),
@@ -373,21 +375,36 @@ pre {
   gap: var(--s-2);
   min-height: 40px;
   padding: 0 var(--s-4);
-  border: 1px solid var(--oh-line, var(--spark));
-  box-shadow: var(--oh-control-ring) var(--oh-line, var(--spark));
+  border: 1px solid var(--oh-line, var(--accent));
+  box-shadow: var(--oh-control-ring) var(--oh-line, var(--accent));
   border-radius: var(--radius);
-  background: var(--spark);
-  color: var(--bg);
+  background: var(--accent-fill);
+  color: var(--on-accent);
   font: inherit;
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
+  transition: background-color var(--motion-status) var(--ease), transform var(--motion-status) var(--ease);
+}
+
+.button:not(.quiet, .person, :disabled, [aria-disabled="true"]):hover {
+  background: var(--accent-fill-hover);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .button:not(.quiet, .person, :disabled, [aria-disabled="true"]):hover {
+    transform: translateY(-1px);
+  }
 }
 
 .button.quiet {
   --oh-line: var(--border);
   background: transparent;
-  color: var(--accent);
+  color: var(--text);
+}
+
+.button.quiet:not(:disabled, [aria-disabled="true"]):hover {
+  --oh-line: var(--text-2);
 }
 
 .button:disabled {
@@ -451,10 +468,10 @@ pre {
 :root {
   --sidebar: var(--bg);
   --sidebar-foreground: var(--text-2);
-  --sidebar-primary: var(--accent);
-  --sidebar-primary-foreground: var(--bg);
+  --sidebar-primary: var(--accent-fill);
+  --sidebar-primary-foreground: var(--on-accent);
   --sidebar-accent: var(--oh-highlight);
-  --sidebar-accent-foreground: var(--accent);
+  --sidebar-accent-foreground: var(--text);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--accent);
 }

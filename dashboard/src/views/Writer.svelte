@@ -533,7 +533,7 @@
 
   details summary {
     cursor: pointer;
-    color: var(--accent);
+    color: var(--text);
   }
 
   details pre {
@@ -558,7 +558,7 @@
   }
 
   .q-id {
-    color: var(--accent);
+    color: var(--text);
     font-weight: 700;
   }
 

@@ -123,7 +123,7 @@
     margin-top: -6px;
     border: 2px solid var(--bg);
     border-radius: 50%;
-    background: var(--accent);
+    background: var(--accent-fill);
     box-shadow: 0 0 0 1px var(--accent);
   }
 
@@ -133,7 +133,7 @@
     height: 16px;
     border: 2px solid var(--bg);
     border-radius: 50%;
-    background: var(--accent);
+    background: var(--accent-fill);
     box-shadow: 0 0 0 1px var(--accent);
   }
 

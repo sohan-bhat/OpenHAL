@@ -207,7 +207,7 @@
   }
 
   .views a[aria-current="page"] {
-    color: var(--accent);
+    color: var(--text);
     border-bottom-color: var(--accent);
   }
 

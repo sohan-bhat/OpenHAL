@@ -129,7 +129,7 @@ const hasSidebar = Astro.locals.starlightRoute.sidebar.length > 0;
   }
 
   .oh-sections a[aria-current="page"] {
-    color: var(--accent);
+    color: var(--text);
     background: none;
   }
 
@@ -139,7 +139,7 @@ const hasSidebar = Astro.locals.starlightRoute.sidebar.length > 0;
     inset: 0;
     z-index: -1;
     border-radius: var(--radius);
-    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+    background: var(--oh-highlight);
   }
 
   .nav-mark {
@@ -148,7 +148,7 @@ const hasSidebar = Astro.locals.starlightRoute.sidebar.length > 0;
     inset-inline: 10px;
     bottom: -1px;
     height: 2px;
-    background: var(--spark);
+    background: var(--accent);
   }
 
   .oh-end {

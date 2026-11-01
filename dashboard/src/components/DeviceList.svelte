@@ -154,7 +154,7 @@
   }
 
   .id {
-    color: var(--accent);
+    color: var(--text);
   }
 
   .sim {
