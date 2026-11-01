@@ -30,25 +30,26 @@ interface Weight {
  * about 0.1 to 0.6 KB gzipped, and the two catalog pages gained about 0.3 KB of script that applies
  * a shared address's filters before the island loads. The CSS of every template was set again the
  * same way when the controls became shadcn/ui's Input, Select, Switch, Table and Badge on the site's
- * tokens and tw-animate-css joined for the Select's open and close, which add about 2.8 KB gzipped.
+ * tokens and tw-animate-css joined for the Select's open and close, which add about 1.1 KB gzipped
+ * once the primitives no page imports were removed from the components the CSS scans.
  */
 const BUDGETS: Record<string, { path: string } & Weight> = {
-  home: { path: "/", html: 15_000, css: 24_800, js: 13_800, fonts: 28_100 },
-  "docs index": { path: "/docs/", html: 16_400, css: 22_100, js: 1_500, fonts: 17_800 },
-  "guide page": { path: "/docs/quickstart/", html: 18_800, css: 22_100, js: 3_000, fonts: 34_500 },
-  "example page": { path: "/docs/examples/3d-print-watch/", html: 24_200, css: 24_300, js: 4_200, fonts: 28_100 },
-  "page with diagrams": { path: "/docs/architecture/", html: 29_600, css: 22_100, js: 3_000, fonts: 28_100 },
-  "spec page": { path: "/spec/v0.1/basic/messages/", html: 28_500, css: 22_100, js: 3_000, fonts: 28_100 },
-  "schema reference": { path: "/spec/v0.1/schema/", html: 25_800, css: 22_100, js: 3_000, fonts: 28_100 },
-  drivers: { path: "/drivers/", html: 25_500, css: 22_100, js: 1_800, fonts: 28_100 },
-  "driver page": { path: "/drivers/moonraker/", html: 21_500, css: 22_100, js: 3_000, fonts: 28_100 },
-  library: { path: "/library/", html: 20_800, css: 22_100, js: 1_800, fonts: 28_100 },
-  "library device": { path: "/library/scpi-rigol-dp832/", html: 18_900, css: 22_100, js: 1_500, fonts: 28_100 },
-  playground: { path: "/spec/playground/", html: 23_200, css: 24_200, js: 1_500, fonts: 28_100 },
-  "Python reference": { path: "/sdks/python/reference/", html: 24_300, css: 22_100, js: 3_000, fonts: 28_100 },
-  "Inspector page": { path: "/inspector/", html: 15_900, css: 22_100, js: 1_500, fonts: 28_100 },
-  blog: { path: "/blog/", html: 10_900, css: 22_100, js: 1_500, fonts: 28_100 },
-  "not found": { path: "/404.html", html: 11_300, css: 22_100, js: 1_500, fonts: 28_100 },
+  home: { path: "/", html: 15_000, css: 22_900, js: 13_800, fonts: 28_100 },
+  "docs index": { path: "/docs/", html: 16_400, css: 20_300, js: 1_500, fonts: 17_800 },
+  "guide page": { path: "/docs/quickstart/", html: 18_800, css: 20_300, js: 3_000, fonts: 34_500 },
+  "example page": { path: "/docs/examples/3d-print-watch/", html: 24_200, css: 22_400, js: 4_200, fonts: 28_100 },
+  "page with diagrams": { path: "/docs/architecture/", html: 29_600, css: 20_300, js: 3_000, fonts: 28_100 },
+  "spec page": { path: "/spec/v0.1/basic/messages/", html: 28_500, css: 20_300, js: 3_000, fonts: 28_100 },
+  "schema reference": { path: "/spec/v0.1/schema/", html: 25_800, css: 20_300, js: 3_000, fonts: 28_100 },
+  drivers: { path: "/drivers/", html: 25_500, css: 20_300, js: 1_800, fonts: 28_100 },
+  "driver page": { path: "/drivers/moonraker/", html: 21_500, css: 20_300, js: 3_000, fonts: 28_100 },
+  library: { path: "/library/", html: 20_800, css: 20_300, js: 1_800, fonts: 28_100 },
+  "library device": { path: "/library/scpi-rigol-dp832/", html: 18_900, css: 20_300, js: 1_500, fonts: 28_100 },
+  playground: { path: "/spec/playground/", html: 23_200, css: 22_500, js: 1_500, fonts: 28_100 },
+  "Python reference": { path: "/sdks/python/reference/", html: 24_300, css: 20_300, js: 3_000, fonts: 28_100 },
+  "Inspector page": { path: "/inspector/", html: 15_900, css: 20_300, js: 1_500, fonts: 28_100 },
+  blog: { path: "/blog/", html: 10_900, css: 20_300, js: 1_500, fonts: 28_100 },
+  "not found": { path: "/404.html", html: 11_300, css: 20_300, js: 1_500, fonts: 28_100 },
 };
 
 /**

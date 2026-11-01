@@ -188,7 +188,7 @@ const accents = (page: Page) =>
           const box = element.getBoundingClientRect();
           if (box.width * box.height > 30_000) large.push(`${name} fills ${Math.round(box.width)} by ${Math.round(box.height)} px`);
         }
-        if (!pseudo && element.matches(".button:not(.quiet, .person), [data-slot=button][data-variant=default]")) roles.push("primary button");
+        if (!pseudo && element.matches("[data-slot=button][data-variant=default]")) roles.push("primary button");
         else if (element.matches(".nav-mark") || (pseudo === "::before" && element.matches("li:has(> [aria-current=page]), .oh-menu-sections a[aria-current=page]"))) roles.push("current location");
         else if (!pseudo && element.closest("a[href]") && !pink.back) {
           const link = getComputedStyle(element.closest("a[href]")!);
