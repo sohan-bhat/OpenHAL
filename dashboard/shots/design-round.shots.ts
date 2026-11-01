@@ -1,7 +1,7 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { mkdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { AgentClient, hubState, printAgain, showFrame, signIn } from "../e2e/hub";
+import { AgentClient, choose, hubState, printAgain, showFrame, signIn } from "../e2e/hub";
 
 const ROUND = process.env.INSPECTOR_ROUND ?? "2";
 const OUT = process.env.INSPECTOR_SHOTS ?? fileURLToPath(new URL(`../../docs/design-rounds/inspector-round-${ROUND}/`, import.meta.url));
@@ -127,13 +127,13 @@ for (const theme of THEMES) {
 
       await page.goto("/#/confirmations");
       const cancel = page.getByRole("main").getByRole("listitem").filter({ hasText: "sends a request to run cancel" }).first();
-      await cancel.getByRole("combobox", { name: /camera/i }).selectOption("printer-cam/frame");
+      await choose(cancel.getByRole("combobox", { name: /camera/i }), "Printer camera, frame");
       await expect(cancel.getByRole("img", { name: /^Demo frame from Printer camera/ })).toBeVisible();
       await scrollTo(page, "#pending-title", header);
       await shoot(page, "confirmations", width, theme);
 
       await page.goto("/#/audit");
-      await expect(page.locator("li.entry").first()).toBeVisible();
+      await expect(page.locator("tbody.entry").first()).toBeVisible();
       await shoot(page, "audit", width, theme);
 
       await page.goto("/#/routines/water-when-dry");

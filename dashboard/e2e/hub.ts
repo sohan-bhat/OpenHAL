@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import type { BrowserContext } from "@playwright/test";
+import { expect, type BrowserContext, type Locator } from "@playwright/test";
 
 export const PORT = Number(process.env.INSPECTOR_PORT ?? 7431);
 export const STATE_PATH =
@@ -29,6 +29,23 @@ async function harness(path: string, what: string): Promise<void> {
 export const showFrame = (name: "first-layer" | "come-loose") => harness(`printer-cam/show/${name}`, `show the ${name} frame`);
 export const printAgain = () => harness("printer/print", "start the print again");
 export const printerError = () => harness("printer/error", "put the printer in its error state");
+
+export async function choose(select: Locator, option: string | RegExp): Promise<void> {
+  await select.click();
+  const list = select.page().getByRole("listbox");
+  await expect(list).toBeVisible();
+  await list.getByRole("option", { name: option, exact: typeof option === "string" }).click();
+  await expect(list).toBeHidden();
+}
+
+export async function liftStop(): Promise<void> {
+  const state = hubState();
+  await fetch(`${state.url}/v1/unlock`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${state.humanToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ phrase: "unlock" }),
+  });
+}
 
 export async function signIn(context: BrowserContext): Promise<HubState> {
   const state = hubState();

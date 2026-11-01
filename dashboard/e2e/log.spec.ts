@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { AgentClient, hubState, printAgain, printerError, signIn } from "./hub";
+import { AgentClient, choose, hubState, printAgain, printerError, signIn } from "./hub";
 
 test.beforeEach(async ({ context, page }) => {
   await signIn(context);
@@ -62,20 +62,20 @@ test("the log filters by client, device, method and outcome", async ({ page }) =
 
   const log = page.getByRole("region", { name: "Messages" });
   await expect(log.locator("li").filter({ hasText: "filter-agent" }).first()).toBeVisible();
-  await page.getByRole("combobox", { name: "Client", exact: true }).selectOption("filter-agent");
-  await page.getByRole("combobox", { name: "Outcome", exact: true }).selectOption("error");
+  await choose(page.getByRole("combobox", { name: "Client", exact: true }), "filter-agent");
+  await choose(page.getByRole("combobox", { name: "Outcome", exact: true }), "error");
   const rows = log.locator("li");
   await expect(rows.first()).toBeVisible();
   for (const text of await rows.allTextContents()) expect(text).toContain("filter-agent");
   await expect(log.locator('li[data-kind="error"]').first()).toContainText("LIMIT_EXCEEDED");
 
-  await page.getByRole("combobox", { name: "Outcome", exact: true }).selectOption("");
-  await page.getByRole("combobox", { name: "Device", exact: true }).selectOption("printer-cam");
+  await choose(page.getByRole("combobox", { name: "Outcome", exact: true }), "All outcomes");
+  await choose(page.getByRole("combobox", { name: "Device", exact: true }), "printer-cam");
   await expect(log.locator("li").filter({ hasText: "hal/read" }).first()).toBeVisible();
   await expect(log.locator("li").filter({ hasText: "hal/write" })).toHaveCount(0);
 
-  await page.getByRole("combobox", { name: "Device", exact: true }).selectOption("");
-  await page.getByRole("combobox", { name: "Method", exact: true }).selectOption("hal/write");
+  await choose(page.getByRole("combobox", { name: "Device", exact: true }), "All devices");
+  await choose(page.getByRole("combobox", { name: "Method", exact: true }), "hal/write");
   await expect(log.locator("li").filter({ hasText: "hal/read" })).toHaveCount(0);
 });
 
@@ -84,11 +84,12 @@ test("a change from the Inspector stops at the limit and is decided by the kerne
   const control = page.locator("form.write").filter({ hasText: "power" });
   const slider = control.getByRole("slider", { name: "power new value" });
   const number = control.getByRole("spinbutton");
-  await expect(slider).toHaveAttribute("max", "60");
+  await expect(slider).toHaveAttribute("aria-valuemax", "60");
   await expect(control.getByText("max 60 W")).toBeVisible();
   await expect(control.getByText("min 0 W")).toBeVisible();
   await expect(control.locator(".ticks .tick")).toHaveText("30 W");
-  await slider.fill("60");
+  await slider.focus();
+  await page.keyboard.press("End");
   await expect(number).toHaveValue("60");
 
   await expect(control.locator("output")).toHaveText(/\d+ W/);
@@ -102,10 +103,10 @@ test("a change from the Inspector stops at the limit and is decided by the kerne
 test("the printer's targets stop at the limits its device file confirms", async ({ page }) => {
   await page.goto("/#/devices/printer");
   const nozzle = page.locator("form.write").filter({ hasText: "extruder_target" });
-  await expect(nozzle.getByRole("slider", { name: "extruder_target new value" })).toHaveAttribute("max", "260");
+  await expect(nozzle.getByRole("slider", { name: "extruder_target new value" })).toHaveAttribute("aria-valuemax", "260");
   await expect(nozzle.getByText("max 260 °C")).toBeVisible();
   const bed = page.locator("form.write").filter({ hasText: "bed_target" });
-  await expect(bed.getByRole("slider", { name: "bed_target new value" })).toHaveAttribute("max", "110");
+  await expect(bed.getByRole("slider", { name: "bed_target new value" })).toHaveAttribute("aria-valuemax", "110");
   await expect(page.locator("form.action").filter({ hasText: "cancel" })).toContainText("confirmation required each time");
 });
 
@@ -113,7 +114,7 @@ test("an action argument stops at its limit", async ({ page }) => {
   await page.goto("/#/devices/plant-waterer");
   const action = page.locator("form.action").filter({ hasText: "Run the pump" });
   const slider = action.getByRole("slider", { name: "duration for water, slider" });
-  await expect(slider).toHaveAttribute("max", "30");
+  await expect(slider).toHaveAttribute("aria-valuemax", "30");
   await expect(action.getByText("max 30 s")).toBeVisible();
   await expect(action.getByText("min 1 s")).toBeVisible();
   await expect(action.locator(".ticks .tick")).toHaveText("16 s");
@@ -121,6 +122,7 @@ test("an action argument stops at its limit", async ({ page }) => {
   await expect(action.getByText("at most 3 runs per 1 h")).toBeVisible();
   await expect(action.getByText("pump can't run while tank is empty")).toBeVisible();
   await expect(page.getByText("5 of 5 devices are simulated.")).toBeVisible();
-  await slider.fill("30");
+  await slider.focus();
+  await page.keyboard.press("End");
   await expect(action.getByRole("spinbutton", { name: "duration in s" })).toHaveValue("30");
 });
