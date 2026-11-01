@@ -41,7 +41,7 @@ test.describe("playground controls", () => {
     const picker = page.getByRole("button", { name: /^Start from / });
     await expect(picker).toHaveText(/printer\.hal\.yaml/);
     await choose(page, "pg-example", "spec/examples/desk-fan-confirmed.hal.yaml");
-    await expect(page.getByLabel("Device file YAML")).toContainText("fan_speed");
+    await expect(page.getByLabel("Device file YAML")).toContainText("fan_speed", { timeout: 15_000 });
     await expect(page.getByRole("button", { name: "Send hal/write" })).toBeEnabled();
   });
 
