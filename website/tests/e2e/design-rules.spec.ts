@@ -145,86 +145,168 @@ test.describe("the search index", () => {
 });
 
 /**
- * Every place the page paints the magenta accent, read from the computed styles of every element
- * and its ::before and ::after, with the role each place plays: a primary button or the marker of
- * where a person is. Anything else is reported by its tag and class, so a third use fails.
+ * Every place the page paints the safety yellow or the blue of pending, read from the computed
+ * styles of every element and its ::before and ::after, with the role each place plays. Anything
+ * else is reported by its tag and class. How it works is left to how.spec.ts.
  */
-const sparks = (page: Page) =>
+const accents = (page: Page) =>
   page.evaluate(() => {
     const probe = document.createElement("span");
-    probe.style.color = "var(--spark)";
     document.body.append(probe);
-    const spark = getComputedStyle(probe).color;
+    const resolve = (value: string) => {
+      probe.style.color = value;
+      return getComputedStyle(probe).color;
+    };
+    const accent = resolve("var(--accent)");
+    const fill = resolve("var(--accent-fill)");
+    const confirm = resolve("var(--confirm)");
+    const retired = ["#cc1475", "#ff4fa3", "#8a5a00", "#e8b341"].map(resolve);
     probe.remove();
     const roles: string[] = [];
     const strays: string[] = [];
-    for (const element of document.querySelectorAll<HTMLElement>("body *")) {
-      if (!element.checkVisibility({ visibilityProperty: true })) continue;
+    const large: string[] = [];
+    const pending: string[] = [];
+    const paints = (style: CSSStyleDeclaration, color: string, pseudo: string | null, element: Element) => {
+      const border = ["top", "right", "bottom", "left"].some((side) => parseFloat(style.getPropertyValue(`border-${side}-width`)) > 0 && style.getPropertyValue(`border-${side}-color`) === color);
+      const text = !pseudo && style.color === color && [...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
+      return { any: style.backgroundColor === color || border || Boolean(text) || style.boxShadow.includes(color) || style.backgroundImage.includes(color) || style.stroke === color || style.fill === color, back: style.backgroundColor === color };
+    };
+    for (const element of document.querySelectorAll<HTMLElement | SVGElement>("body *")) {
+      if (!element.checkVisibility({ visibilityProperty: true }) || element.closest(".how")) continue;
       for (const pseudo of [null, "::before", "::after"] as const) {
         const style = getComputedStyle(element, pseudo);
         if (pseudo && (style.content === "none" || style.content === "normal")) continue;
-        const border = ["Top", "Right", "Bottom", "Left"].some((side) => parseFloat(style.getPropertyValue(`border-${side.toLowerCase()}-width`)) > 0 && style.getPropertyValue(`border-${side.toLowerCase()}-color`) === spark);
-        const text = !pseudo && style.color === spark && [...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
-        const paints = style.backgroundColor === spark || border || text || style.boxShadow.includes(spark) || style.backgroundImage.includes(spark);
-        if (!paints) continue;
-        const name = `${element.localName}${pseudo ?? ""}.${String(element.className).slice(0, 60)}`;
-        if (style.backgroundImage !== "none") strays.push(`${name} draws an image or a gradient`);
-        if (text) strays.push(`${name} sets text in the accent`);
-        if (element.matches(".button:not(.quiet), [data-slot=button][data-variant=default]") && !pseudo) roles.push("primary button");
+        const name = `${element.localName}${pseudo ?? ""}.${String(element.getAttribute("class") ?? "").slice(0, 60)}`;
+        for (const old of retired) if (paints(style, old, pseudo, element).any) strays.push(`${name} paints a retired color ${old}`);
+        const blue = paints(style, confirm, pseudo, element);
+        if (blue.any && !element.closest(".status.confirm, .stroke.held, .stroke.live.confirm")) pending.push(name);
+        const yellow = paints(style, fill, pseudo, element);
+        const mark = accent === fill ? yellow : paints(style, accent, pseudo, element);
+        if (!yellow.any && !mark.any) continue;
+        if (style.backgroundImage !== "none" && (style.backgroundImage.includes(fill) || style.backgroundImage.includes(accent))) strays.push(`${name} draws an image or a gradient`);
+        if (yellow.back) {
+          const box = element.getBoundingClientRect();
+          if (box.width * box.height > 30_000) large.push(`${name} fills ${Math.round(box.width)} by ${Math.round(box.height)} px`);
+        }
+        if (!pseudo && element.matches(".button:not(.quiet, .person), [data-slot=button][data-variant=default]")) roles.push("primary button");
         else if (element.matches(".nav-mark") || (pseudo === "::before" && element.matches("li:has(> [aria-current=page]), .oh-menu-sections a[aria-current=page]"))) roles.push("current location");
+        else if (!pseudo && element.closest("a[href]") && !yellow.back) {
+          const link = getComputedStyle(element.closest("a[href]")!);
+          if (link.textDecorationLine.includes("underline")) roles.push("link");
+          else strays.push(`${name} is a link in the accent without an underline`);
+        } else if (!pseudo && element.matches(".story-count, .story-count *")) roles.push("step counter");
+        else if (element.closest(".seq .stroke.live:not(.confirm, .ok, .blocked)")) roles.push("request arrow");
+        else if (element.closest(".cam .seen")) roles.push("what the agent spots");
         else strays.push(name);
       }
     }
-    return { spark, roles: [...new Set(roles)].sort(), strays };
+    return { accent, fill, roles: [...new Set(roles)].sort(), strays, large, pending: [...new Set(pending)] };
   });
 
-test.describe("the magenta accent", () => {
-  for (const [scheme, value, least] of [
-    ["light", "rgb(204, 20, 117)", 5.2],
-    ["dark", "rgb(255, 79, 163)", 6.3],
+const luminance = (color: string) => {
+  const [r, g, b] = color
+    .match(/[\d.]+/g)!
+    .slice(0, 3)
+    .map((part) => {
+      const c = Number(part) / 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+
+const contrast = (one: string, two: string) => {
+  const [a, b] = [luminance(one), luminance(two)].sort((x, y) => y - x);
+  return (a + 0.05) / (b + 0.05);
+};
+
+test.describe("the safety yellow accent", () => {
+  for (const [scheme, accent] of [
+    ["light", "rgb(122, 92, 0)"],
+    ["dark", "rgb(255, 214, 10)"],
   ] as const) {
-    test(`fills the primary buttons and marks the current location, two uses at most per screen, in the ${scheme} theme`, async ({ page }) => {
+    test(`marks only buttons, links, the current location and the walkthrough's step, with blue for pending alone, in the ${scheme} theme`, async ({ page }) => {
+      test.slow();
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
       await page.setViewportSize({ width: 1440, height: 900 });
-      for (const [path, roles] of [
+      for (const [path, needs] of [
         ["/", ["current location", "primary button"]],
-        ["/docs/quickstart/", ["current location"]],
-        ["/spec/v0.1/basic/messages/", ["current location"]],
+        ["/docs/quickstart/", ["current location", "link"]],
+        ["/spec/v0.1/basic/messages/", ["current location", "link"]],
         ["/drivers/", ["current location"]],
+        ["/blog/", []],
+        ["/docs/examples/3d-print-watch/", ["current location", "step counter"]],
         ["/404.html", []],
       ] as const) {
         await page.goto(path);
-        const seen = await sparks(page);
-        expect(seen.spark, path).toBe(value);
-        expect(seen.strays, `${path} uses the accent only for its two roles`).toEqual([]);
-        expect(seen.roles, path).toEqual(roles);
+        const seen = await accents(page);
+        expect(seen.accent, path).toBe(accent);
+        expect(seen.fill, path).toBe("rgb(255, 214, 10)");
+        expect(seen.strays, `${path} uses the accent only for its roles`).toEqual([]);
+        expect(seen.large, `${path} never fills a large area with yellow`).toEqual([]);
+        expect(seen.pending, `${path} keeps blue for pending`).toEqual([]);
+        expect(seen.roles, path).toEqual(expect.arrayContaining([...needs]));
       }
       await page.goto("/spec/playground/");
-      await page.locator("summary", { hasText: "Build your own request" }).click();
-      const playground = await sparks(page);
+      const build = page.locator("details", { has: page.locator("summary", { hasText: "Build your own request" }) });
+      await expect(async () => {
+        if (!(await build.evaluate((details: HTMLDetailsElement) => details.open))) await build.locator("summary").click();
+        await expect(page.getByRole("button", { name: /^Send / })).toBeVisible({ timeout: 2_000 });
+      }).toPass();
+      const playground = await accents(page);
       expect(playground.strays).toEqual([]);
-      expect(playground.roles.length, "the Playground shows its primary button and the current location, no third use").toBeLessThanOrEqual(2);
+      expect(playground.pending).toEqual([]);
+      expect(playground.roles).toContain("primary button");
+    });
 
+    test(`fills Get started with near-black text at weight 600 and a visible edge, in the ${scheme} theme`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
       await page.goto("/");
-      const colors = await page.getByRole("link", { name: "Get started" }).evaluate((element) => {
+      const button = page.getByRole("link", { name: "Get started" });
+      const look = await button.evaluate((element) => {
         const style = getComputedStyle(element);
-        return { background: style.backgroundColor, color: style.color, page: getComputedStyle(document.body).backgroundColor, image: style.backgroundImage };
+        return { background: style.backgroundColor, color: style.color, weight: style.fontWeight, image: style.backgroundImage, shadow: style.boxShadow, edge: style.borderTopColor, page: getComputedStyle(document.body).backgroundColor };
       });
-      expect(colors.background).toBe(value);
-      expect(colors.color, "the button's text is the page background").toBe(colors.page);
-      expect(colors.image, "no gradient").toBe("none");
-      const ratio = await page.evaluate(([one, two]) => {
-        const luminance = (color: string) => {
-          const [r, g, b] = color.match(/[\d.]+/g)!.slice(0, 3).map((part) => {
-            const c = Number(part) / 255;
-            return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-          });
-          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      expect(look.background).toBe("rgb(255, 214, 10)");
+      expect(look.color).toBe("rgb(13, 15, 18)");
+      expect(look.weight).toBe("600");
+      expect(look.image, "no gradient").toBe("none");
+      expect(look.shadow.split(/,(?![^(]*\))/).every((part) => part.includes("inset")), "no shadow or glow").toBe(true);
+      expect(contrast(look.color, look.background), "text on the fill").toBeGreaterThanOrEqual(4.5);
+      expect(contrast(look.edge, look.page), "the edge against the page").toBeGreaterThanOrEqual(3);
+    });
+  }
+
+  test("brightens Get started and lifts it 1 px on hover, and only brightens it with reduced motion", async ({ page }) => {
+    await page.goto("/");
+    const button = page.getByRole("link", { name: "Get started" });
+    await button.hover();
+    await expect.poll(() => button.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(255, 225, 77)");
+    await expect.poll(() => button.evaluate((element) => getComputedStyle(element).transform)).toBe("matrix(1, 0, 0, 1, 0, -1)");
+    await page.mouse.move(0, 0);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.reload();
+    await button.hover();
+    await expect.poll(() => button.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(255, 225, 77)");
+    expect(await button.evaluate((element) => getComputedStyle(element).transform)).toBe("none");
+  });
+
+  for (const scheme of ["light", "dark"] as const) {
+    test(`selects text on the yellow fill with near-black text, in the ${scheme} theme`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.goto("/docs/quickstart/");
+      const selection = await page.evaluate(() => {
+        const rules = [...document.styleSheets].flatMap((sheet) => [...sheet.cssRules]).filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule && rule.selectorText === "::selection");
+        const probe = document.createElement("span");
+        document.body.append(probe);
+        const resolve = (value: string) => {
+          probe.style.color = value;
+          return getComputedStyle(probe).color;
         };
-        const [a, b] = [luminance(one), luminance(two)].sort((x, y) => y - x);
-        return (a + 0.05) / (b + 0.05);
-      }, [colors.background, colors.page]);
-      expect(ratio, "the accent against the page, which is also the button's text").toBeGreaterThanOrEqual(least);
+        const found = rules.map((rule) => ({ background: resolve(rule.style.getPropertyValue("background-color") || rule.style.getPropertyValue("background")), color: resolve(rule.style.getPropertyValue("color")) }));
+        probe.remove();
+        return found;
+      });
+      expect(selection).toEqual([{ background: "rgb(255, 214, 10)", color: "rgb(13, 15, 18)" }]);
     });
   }
 
