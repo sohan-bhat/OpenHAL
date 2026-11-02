@@ -31,11 +31,12 @@ export function themeTokens(root = REPO_ROOT) {
     Object.fromEntries([...(css.match(pattern)?.[1] ?? "").matchAll(/(--[\w-]+):\s*(#[0-9a-fA-F]{3,6})\s*;/g)].map((match) => [match[1], match[2].toLowerCase()]));
   const light = block(/:root\s*\{([^}]*)\}/);
   const dark = block(/:root\[data-theme="dark"\]\s*\{([^}]*)\}/);
-  return new Map(
-    Object.keys(dark)
-      .filter((name) => light[name])
-      .map((name) => [`${light[name]}>${dark[name]}`, name]),
-  );
+  const named = new Map();
+  for (const name of Object.keys(dark).filter((name) => light[name])) {
+    const pair = `${light[name]}>${dark[name]}`;
+    if (!named.has(pair)) named.set(pair, name);
+  }
+  return named;
 }
 
 function d2Id(svg) {
