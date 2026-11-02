@@ -60,7 +60,7 @@ The file now records who confirmed it, the date and a hash of the limits.
 
 ## Test it
 
-Copy the file into `~/.openhal/devices/`, restart the hub, read every channel and then try each change at the change's smallest value. Run `uv run openhal stop`, check that the device reached its safe state, and record what you tested in `provenance.verification`.
+Copy the file into `~/.openhal/devices/` and start OpenHAL with `uv run openhal start`. When OpenHAL runs already, run `uv run openhal file confirm` on the copy, which loads the copy at once. Read every channel and then try each change at the change's smallest value. Run `uv run openhal stop`, check that the device reached its safe state, and record what you tested in `provenance.verification`.
 
 | Status | Meaning |
 |---|---|

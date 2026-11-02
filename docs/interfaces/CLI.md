@@ -37,8 +37,10 @@ Most commands take `--json` and then print JSON on stdout instead of tables.
 | `routine approve` | `approve` |
 | `writer finish` | `save` |
 | `file confirm` | `confirm` |
+| `limits set`, to widen a limit | `confirm` |
 
-`writer interview` reads every answer from the terminal.
+`file confirm` on a file with suggested limits and `writer interview` read every answer from the terminal, where Enter keeps a suggestion. Where no phrase can be typed, `limits set` doesn't fail. A wider limit becomes a pending limit change that `confirm approve` takes with the phrase `approve`.
+
 
 ## Setup
 
@@ -48,7 +50,7 @@ Most commands take `--json` and then print JSON on stdout instead of tables.
 openhal init [--new-token] [--no-sample]
 ```
 
-`openhal init` creates the config folder (mode 0700), `config.yaml` with the defaults, the human token in `human.token` (mode 0600) and `devices/plant-waterer.hal.yaml`, the simulated plant waterer from `examples/plant-waterer/mock/`. Because confirming limits takes a person, the sample loads read-only until you confirm its limits with `openhal file confirm`. Running `init` again keeps a working token, and `--new-token` creates a new token.
+`openhal init` creates the config folder (mode 0700), `config.yaml` with the defaults, the human token in `human.token` (mode 0600) and `devices/plant-waterer.hal.yaml`, the simulated plant waterer from `examples/plant-waterer/mock/`. Because confirming limits takes a person, the sample loads read-only until you confirm its limits with `openhal file confirm`. Running `init` again keeps a working token, and `--new-token` creates a new token. In a terminal, init also walks the limits interview for each device the init adds, so the first device takes one step.
 
 ### openhal doctor
 
@@ -204,7 +206,7 @@ openhal confirm approve REQUEST_ID [--phrase approve]
 openhal confirm reject REQUEST_ID [--reason TEXT]
 ```
 
-The hub holds commands that need a person in the confirmation queue. `show` and `approve` print the command, who sent the request and the dry run at the time of the request. Approval makes the kernel check the command again against the current state, so a request that the current state would block is blocked instead of run. Rejecting needs the human token and no phrase.
+The hub holds commands that need a person in the confirmation queue, and a pending limit change from `openhal limits set` shows in the same list. `show` and `approve` print the command, who sent the request and the dry run at the time of the request. Approval makes the kernel check the command again against the current state, so a request that the current state would block is blocked instead of run. Rejecting needs the human token and no phrase.
 
 ## Audit log
 
@@ -274,7 +276,16 @@ openhal file schema
 openhal file confirm PATH [--by NAME] [--phrase confirm]
 ```
 
-`validate` checks files against the spec, and `schema` prints the JSON Schema. `confirm` prints every limit in a file, then adds a top-level `confirmed` with your name, the date and the hash of the limits, so any later change to a limit makes the file read-only again. `confirm` exits 1 without confirming the file while any entry is still marked `suggested: true`, and OpenHAL loads the change after a restart.
+`validate` checks files against the spec, and `schema` prints the JSON Schema. `confirm` on a file with suggested limits walks the limits interview, one plain question per limit with the suggestion as the default, and a value past what the device reports is asked again. `confirm` then prints every limit and adds a top-level `confirmed` with your name, the date and the hash of the limits, so any later change to a limit makes the file read-only again. A running OpenHAL that serves this config folder loads the file at once, and the command says the device is now writable.
+
+## Limits
+
+```
+openhal limits show DEVICE[.CHANNEL] [--json]
+openhal limits set DEVICE.CHANNEL [--min VALUE] [--max VALUE] [--rate VALUE|none] [--phrase confirm]
+```
+
+`show` prints each number channel's min, max and max change with the range the device itself reports. `set` takes values with units, such as `--max "80 %"` or `--rate "5 %/s"`, and never goes past the device's own range. A narrower limit applies at once and is written into the device file, with the confirmation bound again to the hash of the limits. In a terminal, a wider limit shows the change before and after and takes the typed phrase `confirm`. From a script, an agent's shell or an agent token, a wider limit waits as a pending limit change in `openhal confirm list` and in the Inspector until a person approves the change. An agent's narrower limit applies to that agent's session, as `tighten_limits` does.
 
 ## Device library
 
@@ -296,7 +307,7 @@ openhal init [--yes] [--discover | --no-discover] [--driver NAME ...] [--device 
              [--new-token] [--no-sample]
 ```
 
-In an interactive terminal, `init` sets up the config folder, the human token and the sample as above, then prompts you to choose whether to look for devices, which found devices to add, the scope of a token for your AI client, which client config to save and whether to install the background service. With `--yes`, `init` takes the safe defaults without prompting. A run that can't prompt and has no `--yes`, such as a script, stops after the sample.
+In an interactive terminal, `init` sets up the config folder, the human token and the sample as above, then prompts you to choose whether to look for devices, which found devices to add, whether to answer each device's limits now, the scope of a token for your AI client, which MCP clients to add OpenHAL to and whether to install the background service. With `--yes`, `init` takes the safe defaults without prompting. A run that can't prompt and has no `--yes`, such as a script, stops after the sample.
 
 | Step | In a terminal | With `--yes` |
 |---|---|---|
@@ -304,12 +315,13 @@ In an interactive terminal, `init` sets up the config folder, the human token an
 | Add each device found | yes, default yes | yes |
 | Agent token in `agent.token` | scope, default `read` | `read`, or `--agent-scope` |
 | Print the MCP client setup | always, once there is an agent token | always |
-| Save a client config | which one, default none | only `--client` |
+| Answer each limit of a device it adds | yes or no, default yes | never |
+| Add OpenHAL to each MCP client found | yes or no for each, default yes | every client found |
 | Install the background service | yes or no, default no | only `--service` |
 
-Found devices are saved as read-only device files, where a library match is copied with the address discovery found and an `openhal-firmware` board or an ESPHome node returns its own description in reply to read-only commands. Every limit is marked `suggested: true` and every confirmation is dropped, so a person confirms the file before anything can change. A device that already has a file is left out, `--driver` limits discovery to some drivers, and `--device` adds a self-describing device at a known address, such as `openhal-firmware=/dev/ttyACM0`.
+Found devices are saved as device files, where a library match is copied with the address discovery found and an `openhal-firmware` board or an ESPHome node returns its own description in reply to read-only commands. Every limit is marked `suggested: true` and every confirmation is dropped, so the file stays read-only until a person answers the limits interview, in init or later with `openhal file confirm`. A device that already has a file is left out, `--driver` limits discovery to some drivers, and `--device` adds a self-describing device at a known address, such as `openhal-firmware=/dev/ttyACM0`.
 
-`init` keeps the agent token while the token works and has the requested scope. The client setup for Claude Desktop, Claude Code and Cursor starts `openhal mcp --token-file ~/.openhal/agent.token` with the full path to `openhal`. `--client claude-desktop`, `claude-code` or `cursor` saves that client's config file. An existing file is copied to `NAME.openhal-backup-DATE` first and keeps every other entry and its mode. A file that isn't valid JSON is left as it is, and `init` exits 1 if a step you asked for failed.
+`init` keeps the agent token while the token works and has the requested scope. The client setup for Claude Desktop, Claude Code and Cursor starts `openhal mcp --token-file ~/.openhal/agent.token` with the full path to `openhal`. Init finds Claude Code by the `claude` program on your PATH and Claude Desktop and Cursor by their app or config folder. Claude Code gets `claude mcp add openhal --scope user`, so every session has the server, after a backup of `~/.claude.json`. `--client claude-desktop`, `claude-code` or `cursor` adds that client even when init doesn't find the client. An existing file is copied to `NAME.openhal-backup-DATE` first and keeps every other entry and its mode. A file that isn't valid JSON is left as it is, and `init` exits 1 if a step you asked for failed.
 
 ### openhal service
 

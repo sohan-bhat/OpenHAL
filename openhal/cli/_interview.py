@@ -78,7 +78,7 @@ def summary(device: DeviceFile) -> None:
         limits = f"{show(spec.min, spec.unit)} to {show(spec.max, spec.unit)}" if spec.unit else ""
         limits = limits or ", ".join(spec.values or []) or spec.type
         rate = f", at most {show(spec.max_change_per_s, spec.unit)}/s" if spec.max_change_per_s else ""
-        tier = f", {spec.confirm}" if spec.confirm else ""
+        tier = f", confirm tier {spec.confirm}" if spec.confirm else ""
         console.print(f"control {escape(name)}  {escape(limits)}{escape(rate)}{escape(tier)}")
     for name in device.actions:
         console.print(f"action  {escape(name)}")

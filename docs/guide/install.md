@@ -42,12 +42,13 @@ openhal init
 In a terminal, `openhal init` prompts with a few short questions.
 
 1. Search for devices, using only read-only identify commands.
-2. Add each device discovery found as a read-only device file. OpenHAL firmware boards and ESPHome nodes send their own descriptions, and library matches come from the device library, but no limit is confirmed for you.
-3. Make a token for your AI client, read-only unless you pick another scope.
-4. Save a client's config for you. The setup for Claude Desktop, Claude Code and Cursor is printed either way, and a file is backed up before it changes.
-5. Run the hub in the background, starting at login.
+2. Add each device discovery found. OpenHAL firmware boards and ESPHome nodes send their own descriptions, and library matches come from the device library.
+3. Answer each limit of each device now. Enter keeps a suggestion, a typed value replaces the suggestion, and you type `confirm` once at the end, so the device file is saved writable. Say no to keep the file read-only and answer later with `openhal file confirm`.
+4. Make a token for your AI client, read-only unless you pick another scope.
+5. Add OpenHAL to each MCP client init finds, Claude Code at user scope, Claude Desktop and Cursor, with yes as the default. The setup for every client is printed either way, and a file is backed up before the file changes.
+6. Run the hub in the background, starting at login.
 
-`openhal init --yes` takes the safe defaults without prompting. With `--yes`, init scans for devices, adds every device read-only and makes a read token. A client config is saved only with `--client NAME`, and the service installs only with `--service`.
+`openhal init --yes` takes the safe defaults without prompting. With `--yes`, init scans for devices, adds every device read-only, makes a read token and adds OpenHAL to every MCP client init finds, naming each backup. The service installs only with `--service`.
 
 A device that discovery can't find, such as a board on a known port, goes in with `--device`.
 

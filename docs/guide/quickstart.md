@@ -31,7 +31,7 @@ $ uv run openhal demo --full
 
 ## Run the hub yourself
 
-`init` creates `~/.openhal` with a human token and a [Device File](glossary:device-file) for the simulated plant waterer. The file is read-only until a person confirms its limits.
+`init` creates `~/.openhal` with a human token and a [Device File](glossary:device-file) for the simulated plant waterer. The file is read-only until a person confirms its limits, and `file confirm` shows each limit before you type `confirm`.
 
 ```sh tested
 $ uv run openhal init
@@ -43,7 +43,13 @@ $ uv run openhal status
 devices 1 of 1 connected
 ```
 
-The hub listens on `127.0.0.1:7420` only.
+The hub listens on `127.0.0.1:7420` only, and a running hub loads each confirmed file at once, so a confirm never needs a restart.
+
+## Your first device
+
+Plug in a board running the OpenHAL firmware, or an ESPHome node, and run `uv run openhal init` again. Init finds the device and shows the limits interview. Each question names one channel, its unit and a suggestion, such as "brightness, in percent. The most an agent may set. Suggested 100 %." Enter keeps the suggestion, a typed value replaces the suggestion, and a value past what the device reports is asked again with the reason. You type `confirm` once at the end, and the device is writable. The Inspector's Review limits action on a read-only device shows the same questions.
+
+To raise a limit later, run `uv run openhal limits set DEVICE.CHANNEL --max VALUE` and type `confirm`. A narrower limit applies at once, and a wider limit asked for from a script or an agent waits in `openhal confirm list` for you to approve.
 
 ## Send two commands
 
