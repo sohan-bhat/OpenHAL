@@ -1,14 +1,16 @@
 <script lang="ts">
   import { Badge } from "$lib/components/ui/badge/index.js";
+  import { Button } from "$lib/components/ui/button/index.js";
   import * as Table from "$lib/components/ui/table/index.js";
   import ActionControl from "../components/ActionControl.svelte";
   import CameraFrame from "../components/CameraFrame.svelte";
   import Prose from "../components/Prose.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import WriteControl from "../components/WriteControl.svelte";
-  import { imageChannels, isSimulated } from "../lib/devices";
+  import { imageChannels, isSimulated, reviewable as canReview } from "../lib/devices";
   import { latestImage } from "../lib/frames.svelte";
   import { imageFacts, isImageReading } from "../lib/images";
+  import { api } from "../lib/api";
   import { conformanceFor } from "../lib/protocol";
   import { router } from "../lib/router.svelte";
   import { inspector } from "../lib/state.svelte";
@@ -27,6 +29,27 @@
   const fileName = $derived(view?.path ? view.path.split("/").pop() : null);
   const cameraChannels = $derived(view ? imageChannels(view) : []);
   const commands = $derived(view ? Object.keys(view.write).length + Object.keys(view.actions).length : 0);
+  const reviewable = $derived(!!view && canReview(view, inspector.you));
+  let reviewing = $state(false);
+  let reviewError = $state<string | null>(null);
+
+  $effect(() => {
+    void id;
+    reviewError = null;
+  });
+
+  async function review() {
+    if (!view) return;
+    reviewing = true;
+    reviewError = null;
+    try {
+      const session = await api.writerStart({ device: view.id });
+      router.go("writer", session.id);
+    } catch (failure) {
+      reviewError = failure instanceof Error ? failure.message : "The hub sent no response.";
+    }
+    reviewing = false;
+  }
   const disabledReason = $derived(
     !view
       ? ""
@@ -101,12 +124,16 @@
         <div class="notice">
           <StatusMark tone="unverified" label="limits not confirmed" />
           <p>
-            Commands get <code>error -32015 UNVERIFIED_LIMITS</code> until a person confirms the limits with
-            <code><Prose text="openhal file confirm {fileName ?? view.id}" /></code> or the limits interview.
+            Commands get <code>error -32015 UNVERIFIED_LIMITS</code> until a person answers each limit, here or with
+            <code><Prose text="openhal file confirm {fileName ?? view.id}" /></code>.
           </p>
           {#if view.unconfirmed.length}
             <p class="muted">Unconfirmed <span class="mono">{view.unconfirmed.join(", ")}</span></p>
           {/if}
+          {#if reviewable}
+            <Button variant="primary" onclick={review} disabled={reviewing}>Review limits</Button>
+          {/if}
+          {#if reviewError}<p class="problem" role="alert">{reviewError}</p>{/if}
         </div>
       {/if}
     </header>

@@ -3,18 +3,21 @@
 Every device runs on the mock driver or a firmware simulator. Nothing reaches hardware. The plant
 waterer is the canonical demo device, examples/plant-waterer/mock/plant-waterer.hal.yaml on the
 simulated board behind `sim:plant-waterer`. The harness adds two routes for tests, under /_harness,
-that refill and drain its tank. The last discovery holds one unknown board for the driver writer, a
-herb waterer at `sim:herb-waterer` that runs the plant waterer's firmware under its own product name,
-so no library file matches it and the writer screens stay on the canonical example.
+that refill and drain its tank, and one that puts a harness device file back, such as the bench
+lamp's read-only file after a test reviews its limits. The last discovery holds one unknown board for
+the driver writer, a herb waterer at `sim:herb-waterer` that runs the plant waterer's firmware under
+its own product name, so no library file matches it and the writer screens stay on the canonical
+example.
 """
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 from openhal.demo.plant import example_file
 from openhal.drivers.openhal_firmware.simulator import SIMULATORS, PlantWatererSimulator
@@ -73,6 +76,7 @@ provenance:
   source: manual
   by: openhal writer
   at: 2026-10-24
+x-device-limits: { brightness: [0, 100] }
 """
 
 WATER_WHEN_DRY = """\
@@ -129,6 +133,18 @@ def write_device_files(home: Path) -> None:
     (devices / waterer.name).write_text(waterer.read_text(encoding="utf-8"), encoding="utf-8")
 
 
+def mount_files(app: FastAPI, hub: Hub) -> None:
+    @app.post("/_harness/{device_id}/reset", include_in_schema=False)
+    async def reset_file(device_id: str) -> dict[str, bool]:
+        if device_id not in DEVICE_FILES:
+            raise HTTPException(404, f"The harness has no device file for {device_id}.")
+        path = hub.config.devices_dir / f"{device_id}.hal.yaml"
+        await asyncio.to_thread(path.write_text, DEVICE_FILES[device_id], "utf-8")
+        await hub.load_device_file(path)
+        hub.limits.requests.clear()
+        return {"writable": hub.kernel.devices[device_id].file.writable}
+
+
 def mount_board(app: FastAPI, board: PlantWatererSimulator) -> None:
     @app.post("/_harness/plant-waterer/refill", include_in_schema=False)
     async def refill() -> dict[str, bool]:
@@ -154,6 +170,7 @@ async def start(home: Path) -> Harness:
     hub.last_discovery = DiscoveryResult(unknown=[SIMULATED_BOARD])
     app = create_app(hub)
     mount_board(app, board)
+    mount_files(app, hub)
     human_token, _ = hub.tokens.create("owner", "human")
     agent_token, _ = hub.tokens.create("bench-agent", "agent", "control_low")
     medium_token, _ = hub.tokens.create("lab-script", "agent", "control_medium")

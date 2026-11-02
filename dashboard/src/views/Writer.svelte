@@ -22,6 +22,11 @@
     { status: "ready", label: "Review" },
     { status: "saved", label: "Saved" },
   ];
+  const REVIEW_STEPS: { status: WriterSession["status"]; label: string }[] = [
+    { status: "interview", label: "Limits interview" },
+    { status: "saved", label: "Confirmed" },
+  ];
+  const PHRASE = "confirm";
 
   let unknown = $state<UnknownDevice[]>([]);
   let unknownLoaded = $state(false);
@@ -33,13 +38,20 @@
   let planError = $state<string | null>(null);
   let proposal = $state("");
   let saveAs = $state("");
-  let saved = $state<{ path: string; device_id: string; writable: boolean } | null>(null);
+  let saved = $state<{ path: string; device_id: string; writable: boolean; loaded?: boolean } | null>(null);
+  let phrase = $state("");
   let busy = $state(false);
   let error = $state<string | null>(null);
   let discoverNote = $state<string | null>(null);
 
   const sessionId = $derived(router.route.id);
-  const stepIndex = $derived(session ? STEPS.findIndex((step) => step.status === session!.status) : -1);
+  const reviewing = $derived(session?.device ?? null);
+  const steps = $derived(reviewing ? REVIEW_STEPS : STEPS);
+  const stepIndex = $derived(
+    session ? steps.findIndex((step) => step.status === (reviewing && session!.status === "ready" ? "interview" : session!.status)) : -1,
+  );
+  const phraseTyped = $derived(phrase.trim().toLowerCase() === PHRASE);
+  const answerProblems = $derived(session?.answer_problems ?? {});
   const diff = $derived(baseline && session?.draft_yaml && session.status !== "interview" ? diffLines(baseline, session.draft_yaml) : null);
   const stats = $derived(diff ? diffStats(diff) : null);
   const facts = $derived(session ? detected(session.detected) : []);
@@ -55,6 +67,8 @@
     plan = null;
     planError = null;
     error = null;
+    phrase = "";
+    answers = {};
     if (id) void loadSession(id);
     else session = null;
   });
@@ -85,14 +99,14 @@
 
   async function afterSession() {
     if (!session) return;
-    if (session.status === "interview") {
+    if (session.status === "interview" || (session.device && session.status === "ready")) {
       if (session.draft_yaml) baseline = session.draft_yaml;
       questions = (await api.writerInterview(session.id)).questions;
     } else {
       questions = [];
     }
     if (!saveAs) saveAs = suggestedName(session);
-    if (session.status === "ready" || session.status === "interview") {
+    if (!session.device && (session.status === "ready" || session.status === "interview")) {
       try {
         plan = await api.writerTestPlan(session.id);
         planError = null;
@@ -153,10 +167,22 @@
     event.preventDefault();
     if (!session) return;
     const id = session.id;
+    const review = !!session.device;
     void guard(async () => {
-      session = await api.writerAnswers(id, { ...answers });
+      if (!(review && session!.status === "ready")) session = await api.writerAnswers(id, { ...answers });
+      if (review && session!.status === "ready" && phraseTyped) {
+        saved = await api.writerFinish(id, null, phrase.trim());
+        session = await api.writerSession(id);
+        await inspector.refreshDevices();
+        if (saved.device_id) await inspector.refreshDevice(saved.device_id);
+        return;
+      }
       await afterSession();
     });
+  }
+
+  function problemFor(question: Question): string | null {
+    return answerProblems[question.id] ?? null;
   }
 
   function save(event: SubmitEvent) {
@@ -210,11 +236,16 @@
 
 <div class="view">
   <header class="section">
-    <h1>Driver writer</h1>
-    <p class="muted">
-      Turns an unknown device into a Device File. A draft holds suggested limits, and your answers in the limits
-      interview confirm the limits.
-    </p>
+    {#if reviewing}
+      <h1>Review limits</h1>
+      <p class="muted">Answer each limit of <span class="mono">{reviewing}</span>. Agents can change the device only inside the limits you confirm.</p>
+    {:else}
+      <h1>Driver writer</h1>
+      <p class="muted">
+        Turns an unknown device into a Device File. A draft holds suggested limits, and your answers in the limits
+        interview confirm the limits.
+      </p>
+    {/if}
   </header>
 
   {#if !sessionId}
@@ -248,7 +279,7 @@
     </section>
   {:else if session}
     <ol class="steps" aria-label="Progress">
-      {#each STEPS as step, index (step.status)}
+      {#each steps as step, index (step.status)}
         <li class:done={index < stepIndex} class:current={index === stepIndex} aria-current={index === stepIndex ? "step" : undefined}>
           <span class="mono n">{index + 1}</span> {step.label}
         </li>
@@ -258,7 +289,11 @@
     <section class="section" aria-labelledby="detected-title">
       <div class="section-head">
         <h2 id="detected-title">Session <span class="mono">{session.id}</span></h2>
-        <a href={href("writer")}>All unknown devices</a>
+        {#if reviewing}
+          <a href={href("devices", reviewing)}>Back to <span class="mono">{reviewing}</span></a>
+        {:else}
+          <a href={href("writer")}>All unknown devices</a>
+        {/if}
       </div>
       <dl class="facts">
         {#each facts.filter((fact) => !fact.data) as fact (fact.key)}
@@ -310,7 +345,65 @@
       </section>
     {/if}
 
-    {#if session.status === "interview" && questions.length}
+    {#if reviewing && (session.status === "interview" || session.status === "ready")}
+      <section class="section" aria-labelledby="interview-title">
+        <h2 id="interview-title">Limits interview</h2>
+        <p class="muted">Use a suggestion, or type a value to replace it. The suggestions come from the Device File.</p>
+        <form onsubmit={submitAnswers} class="stack">
+          {#each questions as question (question.id)}
+            {@const problem = problemFor(question)}
+            <div class="question">
+              <Label for="q-{question.id}" class="grid gap-0.5 text-base font-normal text-foreground">
+                <span class="mono q-id">{question.id}</span>
+                <span>{question.prompt}</span>
+              </Label>
+              {#if question.reason}<p class="muted small" id="r-{question.id}">{question.reason}</p>{/if}
+              <div class="answer">
+                <Input
+                  id="q-{question.id}"
+                  type="text"
+                  value={answers[question.id] ?? ""}
+                  oninput={(event) => (answers = { ...answers, [question.id]: (event.currentTarget as HTMLInputElement).value })}
+                  autocomplete="off"
+                  spellcheck="false"
+                  aria-invalid={problem ? "true" : undefined}
+                  aria-describedby={[question.reason ? `r-${question.id}` : "", problem ? `p-${question.id}` : ""].filter(Boolean).join(" ") || undefined}
+                  class="w-[18ch] font-mono"
+                />
+                <span class="muted small">Suggested <span class="mono">{suggestedText(question)}</span></span>
+                <Button
+                  size="sm"
+                  onclick={() => (answers = { ...answers, [question.id]: suggestedText(question) })}
+                  aria-label="Use suggested value for {question.id}"
+                >
+                  Use suggested
+                </Button>
+              </div>
+              {#if problem}<p class="problem" id="p-{question.id}">{problem}</p>{/if}
+            </div>
+          {/each}
+          <div class="field">
+            <Label for="review-phrase">Phrase</Label>
+            <Input
+              id="review-phrase"
+              type="text"
+              bind:value={phrase}
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              aria-describedby="review-phrase-hint"
+              class="w-[18ch] font-mono"
+            />
+            <p class="muted small" id="review-phrase-hint">Type <code>{PHRASE}</code> to confirm these limits as safe for this device.</p>
+          </div>
+          <div>
+            <Button type="submit" variant="primary" disabled={busy || !phraseTyped || (session.status === "interview" && !allAnswered)}>
+              Confirm the limits
+            </Button>
+          </div>
+        </form>
+      </section>
+    {:else if session.status === "interview" && questions.length}
       <section class="section" aria-labelledby="interview-title">
         <h2 id="interview-title">Limits interview</h2>
         <p class="muted">Answer each question from the device's datasheet or your own setup. The suggestions come from the draft.</p>
@@ -348,7 +441,7 @@
       </section>
     {/if}
 
-    {#if session.draft_yaml}
+    {#if session.draft_yaml && (!reviewing || session.status === "saved")}
       <section class="section" aria-labelledby="file-title">
         <div class="section-head">
           <h2 id="file-title">File preview</h2>
@@ -398,7 +491,7 @@
       </section>
     {/if}
 
-    {#if session.status === "ready" || session.status === "interview"}
+    {#if !reviewing && (session.status === "ready" || session.status === "interview")}
       <section class="section" aria-labelledby="save-title">
         <h2 id="save-title">Save</h2>
         <form onsubmit={save} class="save">
@@ -417,7 +510,19 @@
       </section>
     {/if}
 
-    {#if saved}
+    {#if saved && reviewing}
+      <section class="section human-surface saved" aria-live="polite">
+        <StatusMark tone="ok" label="confirmed" />
+        <p>
+          Confirmed <code>{saved.path.split("/").pop()}</code>.
+          {#if saved.writable && saved.loaded}
+            <a class="mono" href={href("devices", saved.device_id)}>{saved.device_id}</a> is now writable.
+          {:else}
+            <a class="mono" href={href("devices", saved.device_id)}>{saved.device_id}</a> stays read-only until the hub loads the file.
+          {/if}
+        </p>
+      </section>
+    {:else if saved}
       <section class="section human-surface saved" aria-live="polite">
         <StatusMark tone="ok" label="saved" />
         <p>Saved <code>{saved.path}</code> as device <a class="mono" href={href("devices", saved.device_id)}>{saved.device_id}</a>, {saved.writable ? "taking commands" : "read-only"}.</p>
@@ -658,5 +763,9 @@
   .saved {
     padding: var(--s-3) var(--s-4);
     border-top: 0;
+  }
+
+  .saved code {
+    overflow-wrap: anywhere;
   }
 </style>
