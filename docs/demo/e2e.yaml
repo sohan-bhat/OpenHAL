@@ -7,7 +7,7 @@ person: human:owner
 agent: agent:claude
 confirmed:
   by: owner
-  at: '2026-10-30'
+  at: '2026-11-01'
 limits:
   water_duration:
     min:
@@ -92,47 +92,47 @@ steps:
   call: answer
   answers:
   - question: device.hazard
-    prompt: What hazard class is this device? low, medium or high.
+    prompt: The device's hazard class, low, medium or high.
     suggested: medium
     answer: low
   - question: water.duration.min
-    prompt: What is the lowest safe duration for water?
+    prompt: duration of water, in s. The least an agent may send.
     suggested: 1.0
     answer: 1 s
   - question: water.duration.max
-    prompt: What is the highest safe duration for water?
+    prompt: duration of water, in s. The most an agent may send.
     suggested: 30.0
     answer: 30 s
   - question: water.require
-    prompt: What must hold before water runs? One per line as <condition>, or <condition> because <reason>. Answer none for none.
+    prompt: water. What must hold before water runs, one condition per line, or none.
     suggested: none
     answer: tank == ok because pump can't run while tank is empty
   - question: water.max_runs
-    prompt: How often may water run? Answer like 3 per 1 h, or none for no limit.
+    prompt: water. How often water may run, such as 3 per 1 h, or none.
     suggested: none
     answer: 3 per 1 h
   - question: water.confirm
-    prompt: Should water need a person's approval? none, confirm or confirm-each-time.
+    prompt: water. Whether a person approves each run, none, confirm or confirm-each-time.
     suggested: confirm
     answer: none
   - question: stop.require
-    prompt: What must hold before stop runs? One per line as <condition>, or <condition> because <reason>. Answer none for none.
+    prompt: stop. What must hold before stop runs, one condition per line, or none.
     suggested: none
     answer: none
   - question: stop.max_runs
-    prompt: How often may stop run? Answer like 3 per 1 h, or none for no limit.
+    prompt: stop. How often stop may run, such as 3 per 1 h, or none.
     suggested: none
     answer: none
   - question: stop.confirm
-    prompt: Should stop need a person's approval? none, confirm or confirm-each-time.
+    prompt: stop. Whether a person approves each run, none, confirm or confirm-each-time.
     suggested: confirm
     answer: none
   - question: device.safe_action
-    prompt: Which action makes the device safe when OpenHAL stops everything? Name one, or none.
+    prompt: The action OpenHAL runs when everything stops, or none.
     suggested: stop
     answer: stop
   - question: device.interlocks
-    prompt: 'Any interlocks? One per line as: if <condition> require <condition>. Answer none for none.'
+    prompt: Interlocks, one per line as if <condition> require <condition>, or none.
     suggested: none
     answer: none
   status: ready
@@ -147,7 +147,7 @@ steps:
   writable: true
   confirmed:
     by: owner
-    at: '2026-10-30'
+    at: '2026-11-01'
   water:
     args:
       duration:
@@ -264,7 +264,7 @@ steps:
     error:
       code: -32010
       name: LIMIT_EXCEEDED
-      message: water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-10-30)
+      message: water duration 120 s exceeds the limit of 30 s (plant-waterer.hal.yaml, confirmed by owner 2026-11-01)
       data:
         name: LIMIT_EXCEEDED
         kernelCode: above_max
@@ -280,5 +280,5 @@ steps:
           unit: s
         file: plant-waterer.hal.yaml
         confirmedBy: owner
-        confirmedAt: '2026-10-30'
+        confirmedAt: '2026-11-01'
   board_received: []
