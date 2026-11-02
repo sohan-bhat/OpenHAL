@@ -66,6 +66,7 @@ def binaries(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Path]:
         "ServoArm": build("ServoArm", out),
         "SoilPump": build("SoilPump", out, "PUMP_MAX_RUN_MS=300"),
         "PlantWaterer": build("PlantWaterer", out),
+        "BareBoard": build("BareBoard", out),
     }
 
 
@@ -198,7 +199,7 @@ async def test_the_compiled_plant_waterer_passes_the_action_checks(binaries: dic
     } <= ran
 
 
-@pytest.mark.parametrize("example", ["DeskFan", "LedStrip", "ServoArm", "SoilPump", "PlantWaterer"])
+@pytest.mark.parametrize("example", ["DeskFan", "LedStrip", "ServoArm", "SoilPump", "PlantWaterer", "BareBoard"])
 async def test_every_example_describes_itself_into_a_valid_read_only_file(
     binaries: dict[str, Path], example: str
 ) -> None:
