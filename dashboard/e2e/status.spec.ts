@@ -11,6 +11,7 @@ async function offenders(page: Page, view: string): Promise<string[]> {
       return getComputedStyle(probe).color;
     };
     const status = new Set(["--ok", "--confirm", "--blocked", "--unverified"].map(color));
+    for (const plain of ["--text", "--text-2"].map(color)) status.delete(plain);
     probe.remove();
     const name = (element: Element) =>
       `${element.tagName.toLowerCase()}.${[...element.classList].join(".")} "${(element.textContent ?? "").trim().slice(0, 40)}"`;
