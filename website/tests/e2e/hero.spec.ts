@@ -54,7 +54,7 @@ test.describe("the hero", () => {
     await expect(page.locator(".hero").getByRole("link", { name: "Read the specification" })).toHaveAttribute("href", /^\/spec\/v\d+\.\d+\/$/);
   });
 
-  test("draws the built wordmark with the arrow H, named OpenHAL for screen readers and search", async ({ page, request }) => {
+  test("draws the built wordmark, named OpenHAL for screen readers and search", async ({ page, request }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1, name: PRODUCT_NAME })).toBeVisible();
     const file = await (await request.get("/brand/wordmark-light.svg")).text();

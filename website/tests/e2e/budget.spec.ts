@@ -34,7 +34,7 @@ interface Weight {
  * once the primitives no page imports were removed from the components the CSS scans. Every
  * template's JavaScript was set again 200 bytes higher when the header gained the script that hands
  * the nav highlight's slide to Motion, which loads Motion only after a click on a section, and the
- * home page's HTML 1.6 KB higher when the hero began drawing the built wordmark with the arrow H.
+ * home page's HTML 1.6 KB higher when the hero began drawing the built wordmark.
  * The guide page's HTML was set again the same way when the quickstart gained the first device's
  * guided step and openhal limits and the phone's section pages button, about 2 KB gzipped together.
  */

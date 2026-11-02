@@ -31,31 +31,26 @@ describe("the mark matches docs/assets", () => {
   });
 });
 
-describe("the arrow H", () => {
+describe("the plain H", () => {
   const letters = (svg: string) => [...svg.matchAll(/<path data-at="(\d+)" d="([^"]+)"/g)].map((match) => match[2]);
   const polygons = (d: string) => d.split("Z").filter(Boolean).length;
+  const xs = (d: string) => [...d.matchAll(/([ML])([\d.]+) [\d.]+|H([\d.]+)/g)].map((match) => Number(match[2] ?? match[3]));
 
-  it("draws the wordmark one letter to a path, the H as two stems and a crossbar that runs through the right stem to a point", () => {
+  it("draws the wordmark one letter to a path, the H as the font's own single outline with nothing past its right stem", () => {
     const light = asset("wordmark-light.svg");
     const dark = asset("wordmark-dark.svg");
     expect(letters(light)).toHaveLength(7);
     expect(letters(dark)).toEqual(letters(light));
     expect(light.replace(/fill="#[0-9A-F]{6}"/, "")).toBe(dark.replace(/fill="#[0-9A-F]{6}"/, ""));
     const h = letters(light)[4];
-    expect(polygons(h)).toBe(3);
-    const xs = (d: string) => [...d.matchAll(/([ML])([\d.]+) [\d.]+|H([\d.]+)/g)].map((match) => Number(match[2] ?? match[3]));
-    const stems = xs(h.split("Z")[0]);
-    const right = xs(h.split("Z")[1]);
-    const stem = Math.max(...stems) - Math.min(...stems);
-    const reach = Math.max(...right) - Math.max(...right.filter((x) => x < Math.max(...right)));
-    expect(reach).toBeGreaterThan(0);
-    expect(reach).toBeLessThanOrEqual(stem);
+    expect(polygons(h)).toBe(1);
+    expect(new Set(xs(h)).size).toBe(4);
   });
 
-  it("draws the same H in the mark and the favicon", () => {
+  it("draws the O and the plain H in the mark and the favicon", () => {
     for (const name of ["mark-light.svg", "mark-dark.svg", "favicon.svg"]) {
       const d = /\sd="([^"]+)"/.exec(asset(name))![1];
-      expect(polygons(d), name).toBe(5);
+      expect(polygons(d), name).toBe(3);
     }
   });
 });
