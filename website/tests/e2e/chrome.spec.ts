@@ -1014,9 +1014,14 @@ test.describe("page turns", () => {
           const link = pill.closest("a")!;
           samples.push({ background: style.backgroundColor, opacity: style.opacity, transform: style.transform, z: style.zIndex, under: getComputedStyle(link).isolation === "isolate" && getComputedStyle(pill).viewTransitionName === "none" });
         }
-        if (samples.length >= 240) clearInterval(timer);
+        const moved = samples.some((sample) => sample.transform !== "none");
+        if ((moved && samples.at(-1)?.transform === "none") || performance.now() - started > 8000) {
+          clearInterval(timer);
+          (window as unknown as { settled: boolean }).settled = true;
+        }
       };
       let timer = 0;
+      const started = performance.now();
       requestAnimationFrame(() => (timer = window.setInterval(tick, 8)));
     });
     const nav = page.getByRole("navigation", { name: "Main" });
@@ -1035,7 +1040,7 @@ test.describe("page turns", () => {
       });
       await nav.getByRole("link", { name: to, exact: true }).click();
       await expect(page).toHaveURL(url);
-      await page.waitForTimeout(700);
+      await page.waitForFunction(() => (window as unknown as { settled?: boolean }).settled === true, null, { timeout: 15_000 });
       const samples = await page.evaluate(() => (window as unknown as { samples: Array<{ background: string; opacity: string; transform: string; z: string; under: boolean }> }).samples);
       expect(samples.length, to).toBeGreaterThan(3);
       for (const sample of samples) {
