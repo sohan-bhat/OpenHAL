@@ -197,8 +197,7 @@ class Hub:
         what happened, added, reloaded or unchanged, and the file. Raises DeviceFileError for a file
         that doesn't load and ValueError for a path outside the devices folder or a clashing id.
         """
-        resolved, file = await asyncio.to_thread(self._read_device_file, path)
-        previous = next((key for key, info in self.info.items() if info.path == str(resolved)), None)
+        resolved, file, previous = await asyncio.to_thread(self._read_device_file, path)
         if file.device_id in self.kernel.devices and previous != file.device_id:
             other = self.info.get(file.device_id)
             where = other.path if other is not None and other.path else "another device file"
@@ -217,12 +216,17 @@ class Hub:
         )
         return status, file
 
-    def _read_device_file(self, path: Path) -> tuple[Path, DeviceFile]:
+    def _read_device_file(self, path: Path) -> tuple[Path, DeviceFile, str | None]:
+        """The file's real path, the file, and the device that file registered already, if any."""
         folder = self.config.devices_dir.resolve()
         resolved = path.expanduser().resolve()
         if resolved.parent != folder or not resolved.name.endswith(DEVICE_FILE_SUFFIX):
             raise ValueError(f"The hub loads device files from {folder} only, ending in {DEVICE_FILE_SUFFIX}.")
-        return resolved, load(resolved)
+        file = load(resolved)
+        previous = next(
+            (key for key, info in self.info.items() if info.path and Path(info.path).resolve() == resolved), None
+        )
+        return resolved, file, previous
 
     async def _remove_device(self, device_id: str) -> None:
         runtime = self.kernel.devices[device_id]

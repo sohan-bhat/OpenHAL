@@ -116,3 +116,20 @@ async def test_files_that_cannot_load_say_why(
     loaded = await client.post("/v1/device_files/load", json={"path": str(path)}, headers=bearer(person))
     assert loaded.status_code == code, loaded.text
     assert sorted(hub.kernel.devices) == ["desk-lamp"]
+
+
+async def test_a_config_folder_reached_through_a_symlink_reloads_its_own_file(tmp_path: Path) -> None:
+    real = tmp_path / "real"
+    (real / "devices").mkdir(parents=True)
+    (real / "devices" / "desk-lamp.hal.yaml").write_text(LAMP)
+    linked = tmp_path / "linked"
+    linked.symlink_to(real)
+    hub = Hub(HubConfig(home=linked), in_memory=True)
+    await hub.start()
+    try:
+        (linked / "devices" / "desk-lamp.hal.yaml").write_text(confirmed_text())
+        status, file = await hub.load_device_file(linked / "devices" / "desk-lamp.hal.yaml")
+        assert (status, file.writable) == ("reloaded", True)
+        assert sorted(hub.kernel.devices) == ["desk-lamp"]
+    finally:
+        await hub.close()
