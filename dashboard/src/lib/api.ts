@@ -4,6 +4,7 @@ import type {
   Decision,
   DeviceSummary,
   DeviceView,
+  LimitChange,
   Principal,
   Question,
   ReadResult,
@@ -86,7 +87,9 @@ export const api = {
   unlock: (phrase: string) => post<{ ok: boolean; stopped: boolean }>("/v1/unlock", { phrase }),
   confirmations: (includeDone = false) =>
     get<ConfirmationRequest[]>(`/v1/confirmations${query({ include_done: includeDone || undefined })}`),
-  approve: (id: string) => post<Decision>(`/v1/confirmations/${encodeURIComponent(id)}/approve`),
+  approve: (id: string, phrase?: string) =>
+    post<Decision>(`/v1/confirmations/${encodeURIComponent(id)}/approve`, phrase === undefined ? {} : { phrase }),
+  limits: (body: Record<string, unknown>) => post<LimitChange>("/v1/limits", body),
   reject: (id: string, reason: string) =>
     post<ConfirmationRequest>(`/v1/confirmations/${encodeURIComponent(id)}/reject`, { reason }),
   audit: (filters: { device?: string; status?: string; event?: string; limit?: number }) =>
@@ -102,8 +105,13 @@ export const api = {
     post<Record<string, unknown>>(`/v1/routines/${encodeURIComponent(id)}/approve`, { device }),
   discover: () => post<{ matched: unknown[]; unknown: UnknownDevice[]; errors: { driver: string; error: string }[] }>("/v1/discover", {}),
   unknownDevices: () => get<UnknownDevice[]>("/v1/discover/unknown"),
-  writerStart: (body: { unknown_id?: string; driver?: string; params?: Record<string, unknown>; manual_text?: string }) =>
-    post<WriterSession>("/v1/writer/sessions", body),
+  writerStart: (body: {
+    unknown_id?: string;
+    driver?: string;
+    params?: Record<string, unknown>;
+    manual_text?: string;
+    device?: string;
+  }) => post<WriterSession>("/v1/writer/sessions", body),
   writerSession: (id: string) => get<WriterSession>(`/v1/writer/sessions/${encodeURIComponent(id)}`),
   writerPropose: (id: string, draft_yaml: string) =>
     post<WriterSession>(`/v1/writer/sessions/${encodeURIComponent(id)}/propose`, { draft_yaml }),
@@ -112,10 +120,10 @@ export const api = {
     post<WriterSession>(`/v1/writer/sessions/${encodeURIComponent(id)}/answers`, { answers }),
   writerTestPlan: (id: string) =>
     get<{ steps: TestStep[]; problems: string[] }>(`/v1/writer/sessions/${encodeURIComponent(id)}/test_plan`),
-  writerFinish: (id: string, save_as: string) =>
-    post<{ path: string; device_id: string; writable: boolean; bundle: string }>(
+  writerFinish: (id: string, save_as: string | null, phrase?: string) =>
+    post<{ path: string; device_id: string; writable: boolean; bundle?: string; loaded?: boolean }>(
       `/v1/writer/sessions/${encodeURIComponent(id)}/finish`,
-      { save_as },
+      phrase === undefined ? { save_as } : { save_as, phrase },
     ),
   tokens: () => get<TokenInfo[]>("/v1/tokens"),
   createToken: (name: string, kind: "agent" | "human", scope: string) =>

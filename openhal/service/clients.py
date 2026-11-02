@@ -1,8 +1,10 @@
 """MCP client setup for Claude Desktop, Claude Code and Cursor (docs/interfaces/MCP.md).
 
-`openhal init` prints the setup for every client. It writes a client's config file only when the
-person asks, backs the file up first, keeps every other entry in it and leaves a file that isn't
-valid JSON as it is. The client starts `openhal mcp` with a token file, so no token goes into its config.
+`openhal init` prints the setup for every client, finds the clients this person has installed and
+offers to register OpenHAL with each one. A config file is backed up before it changes, keeps every
+other entry and is left as it is when it isn't valid JSON. Claude Code is registered at user scope
+with its own `claude mcp add`, so every session gets the server. The client starts `openhal mcp`
+with a token file, so no token goes into its config.
 """
 
 from __future__ import annotations
@@ -22,6 +24,15 @@ from openhal.service.runner import Runner
 
 SERVER_NAME: Final = CLI_NAME
 CLIENT_KEYS: Final = ("claude-desktop", "claude-code", "cursor")
+APPLICATION_DIRS: tuple[Path, ...] = (Path("/Applications"),)
+"""Where macOS apps live besides ~/Applications. Tests point this at an empty folder."""
+APPS: Final = {"claude-desktop": "Claude.app", "cursor": "Cursor.app"}
+PROGRAMS: Final = {"claude-code": "claude", "cursor": "cursor"}
+
+
+def find_program(name: str) -> str | None:
+    """A program on PATH. Tests replace this so no real install is ever found."""
+    return shutil.which(name)
 
 
 class ClientConfigError(ValueError):
@@ -46,6 +57,23 @@ def known_clients(user_home: Path, platform: str) -> list[McpClient]:
         McpClient("claude-code", "Claude Code", user_home / ".claude.json"),
         McpClient("cursor", "Cursor", user_home / ".cursor" / "mcp.json"),
     ]
+
+
+def installed(user_home: Path, platform: str) -> list[McpClient]:
+    """The clients this person has, found by the program on PATH, the app or the client's config folder."""
+    apps = [*APPLICATION_DIRS, user_home / "Applications"] if platform == "macos" else []
+    found = []
+    for client in known_clients(user_home, platform):
+        program = PROGRAMS.get(client.key)
+        app = APPS.get(client.key)
+        present = (
+            (program is not None and find_program(program) is not None)
+            or (app is not None and any((folder / app).exists() for folder in apps))
+            or (client.key != "claude-code" and client.path.parent.is_dir())
+        )
+        if present:
+            found.append(client)
+    return found
 
 
 def client_for(key: str, user_home: Path, platform: str) -> McpClient:
@@ -82,6 +110,31 @@ def setup_text(client: McpClient, entry: dict[str, Any]) -> str:
     return json.dumps({"mcpServers": {SERVER_NAME: shown}}, indent=2)
 
 
+def _backup(path: Path, runner: Runner) -> Path | None:
+    if not path.exists():
+        return None
+    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    backup = path.with_name(f"{path.name}.openhal-backup-{stamp}")
+    runner.copy(path, backup)
+    return backup
+
+
+def register(client: McpClient, entry: dict[str, Any], runner: Runner) -> tuple[Path | None, bool]:
+    """Add the server to one client. Returns the backup's path and whether Claude Code's own CLI did it.
+
+    Claude Code gets `claude mcp add` at user scope when `claude` is on PATH, after removing an older
+    openhal entry at that scope. Every other client, and Claude Code without its CLI, gets its config
+    file changed directly.
+    """
+    claude = find_program("claude") if client.key == "claude-code" else None
+    if claude is None:
+        return write_config(client, entry, runner), False
+    backup = _backup(client.path, runner)
+    runner.run([claude, "mcp", "remove", SERVER_NAME, "--scope", "user"], check=False)
+    runner.run([claude, "mcp", "add", SERVER_NAME, "--scope", "user", "--", entry["command"], *entry["args"]])
+    return backup, True
+
+
 def write_config(client: McpClient, entry: dict[str, Any], runner: Runner) -> Path | None:
     """Add the server to the client's config. Returns the backup's path, or None for a new file."""
     path = client.path
@@ -101,9 +154,7 @@ def write_config(client: McpClient, entry: dict[str, Any], runner: Runner) -> Pa
             raise ClientConfigError(f"mcpServers in {path} is not an object, so the file was left as it is.")
         data = loaded
         mode = stat.S_IMODE(path.stat().st_mode)
-        stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-        backup = path.with_name(f"{path.name}.openhal-backup-{stamp}")
-        runner.copy(path, backup)
+        backup = _backup(path, runner)
     servers = data.setdefault("mcpServers", {})
     servers[SERVER_NAME] = entry
     runner.write(path, json.dumps(data, indent=2) + "\n", mode=mode)

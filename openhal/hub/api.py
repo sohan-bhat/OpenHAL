@@ -30,6 +30,8 @@ from openhal.drivers import registry
 from openhal.drivers.base import DriverError
 from openhal.hub import discovery, views
 from openhal.hub.hub import Hub
+from openhal.hub.limits import LimitError
+from openhal.hub.locks import DeviceLocked
 from openhal.kernel.checks import Block
 from openhal.kernel.commands import Action, Write
 from openhal.kernel.principals import Principal
@@ -40,6 +42,7 @@ from openhal.routines.engine import RoutineError
 from openhal.spec.loader import DeviceFileError
 from openhal.spec.models import DeviceFile
 from openhal.spec.units import wire_unit
+from openhal.writer import interview
 from openhal.writer.engine import NotHumanError, WriterError
 
 SESSION_COOKIE = "openhal_session"
@@ -55,6 +58,7 @@ class WriterStartBody(BaseModel):
     params: dict[str, Any] | None = None
     sketch_path: str | None = Field(default=None, max_length=1024)
     manual_text: str | None = Field(default=None, max_length=400_000)
+    device: str | None = Field(default=None, max_length=64)
 
 
 class ProposeBody(BaseModel):
@@ -67,6 +71,12 @@ class AnswersBody(BaseModel):
 
 class FinishBody(BaseModel):
     save_as: str | None = Field(default=None, max_length=80)
+    phrase: str | None = Field(default=None, max_length=40)
+
+
+class LoadFileBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    path: str = Field(min_length=1, max_length=1024)
 
 
 class TokenBody(BaseModel):
@@ -106,6 +116,24 @@ class TightenBody(BaseModel):
     min: QuantityBody | None = None
     max: QuantityBody | None = None
     rate: QuantityBody | None = Field(default=None, description="A rate such as 5 %/s.")
+
+
+class LimitsBody(BaseModel):
+    """A change to one channel's limits. Values are quantities, and a rate of none removes the rate limit."""
+
+    model_config = ConfigDict(extra="forbid")
+    device: str = Field(max_length=64)
+    channel: str = Field(max_length=64)
+    min: QuantityBody | None = None
+    max: QuantityBody | None = None
+    rate: QuantityBody | Literal["none"] | None = Field(default=None, description="A rate such as 5 %/s, or none.")
+    phrase: str | None = Field(default=None, max_length=40, description="confirm, typed by a person to widen.")
+    dry_run: bool = Field(default=False, description="Check the change and report what it widens, without it.")
+
+
+class ApproveBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    phrase: str | None = Field(default=None, max_length=40)
 
 
 class StopBody(BaseModel):
@@ -299,6 +327,57 @@ def create_app(hub: Hub) -> FastAPI:
             raise HTTPException(404, str(exc)) from exc
         return {"ok": True, "limits": limits}
 
+    @app.get("/v1/devices/{device_id}/limits")
+    async def device_limits(device_id: str, who: Who) -> dict[str, Any]:
+        """Every number channel's limits, with the range the device itself reports."""
+        device_or_404(device_id)
+        file = hub.kernel.devices[device_id].file
+        data = {**file.model_dump(mode="json", by_alias=True), **file.extensions}
+        reported = interview.device_limits(data)
+        channels = {
+            name: {
+                "unit": spec.unit,
+                "min": spec.min,
+                "max": spec.max,
+                "rate": spec.max_change_per_s,
+                "confirm": spec.confirm,
+                "device_range": list(reported[name]) if name in reported else None,
+            }
+            for name, spec in file.write.items()
+            if spec.type == "number" and spec.unit
+        }
+        confirmed = file.confirmed.model_dump(mode="json") if file.confirmed else None
+        info = hub.info.get(device_id)
+        return {
+            "device": device_id,
+            "writable": file.writable,
+            "path": info.path if info else None,
+            "confirmed": confirmed,
+            "channels": channels,
+        }
+
+    @app.post("/v1/limits")
+    async def change_limits(body: LimitsBody, who: Who) -> dict[str, Any]:
+        """Change one channel's limits. Narrowing applies at once, and widening needs a person."""
+        device_or_404(body.device)
+
+        def text(value: QuantityBody | str | None) -> str | None:
+            if value is None or isinstance(value, str):
+                return value
+            return f"{value.value:.12g} {value.unit}"
+
+        values = {"min": text(body.min), "max": text(body.max), "rate": text(body.rate)}
+        try:
+            if body.dry_run:
+                try:
+                    change = hub.limits.plan(body.device, body.channel, **values)
+                except LimitError as exc:
+                    return {"status": "blocked", "code": exc.code, "message": exc.message, "device": body.device}
+                return {"status": "allowed", "message": "", **change.view()}
+            return await hub.limits.request(who, body.device, body.channel, phrase=body.phrase, **values)
+        except KeyError as exc:
+            raise HTTPException(404, str(exc.args[0])) from exc
+
     @app.post("/v1/stop")
     async def stop(body: StopBody, who: Who) -> dict[str, Any]:
         return views.stop_view(await hub.kernel.stop_all(who, body.reason))
@@ -315,12 +394,25 @@ def create_app(hub: Hub) -> FastAPI:
     @app.get("/v1/confirmations")
     async def confirmations(who: Who, include_done: bool = False) -> list[dict[str, Any]]:
         requests = hub.kernel.queue.recent(100) if include_done else hub.kernel.pending()
+        changes = hub.limits.recent(100) if include_done else hub.limits.pending()
         if who.kind != "human":
             requests = [request for request in requests if request.principal.label == who.label]
-        return [views.request_view(request, hub.kernel.clock()) for request in requests]
+            changes = [change for change in changes if change.principal.label == who.label]
+        held = [views.request_view(request, hub.kernel.clock()) for request in requests]
+        return held + [hub.limits.view(change) for change in changes]
+
+    def limit_change_or_none(request_id: str, who: Principal) -> Any:
+        change = hub.limits.get(request_id)
+        if change is not None and who.kind != "human" and change.principal.label != who.label:
+            raise HTTPException(404, f"There is no request {request_id}.")
+        return change
 
     @app.get("/v1/confirmations/{request_id}")
     async def confirmation(request_id: str, who: Who) -> dict[str, Any]:
+        change = limit_change_or_none(request_id, who)
+        if change is not None:
+            hub.limits.expire()
+            return hub.limits.view(change)
         request = hub.kernel.queue.get(request_id)
         if request is None or (who.kind != "human" and request.principal.label != who.label):
             raise HTTPException(404, f"There is no request {request_id}.")
@@ -328,8 +420,17 @@ def create_app(hub: Hub) -> FastAPI:
         return views.request_view(request, hub.kernel.clock())
 
     @app.post("/v1/confirmations/{request_id}/approve")
-    async def approve(request_id: str, who: Who) -> dict[str, Any]:
+    async def approve(request_id: str, who: Who, body: ApproveBody | None = None) -> dict[str, Any]:
         human_only(who)
+        if hub.limits.get(request_id) is not None:
+            try:
+                change = await hub.limits.approve(request_id, who, body.phrase if body else None)
+            except LookupError as exc:
+                raise HTTPException(409, str(exc)) from exc
+            except LimitError as exc:
+                raise HTTPException(400, exc.message) from exc
+            decided = hub.limits.view(change)["result"]
+            return dict(decided) if decided else {}
         try:
             return views.decision_view(await hub.kernel.confirm(request_id, who))
         except LookupError as exc:
@@ -338,6 +439,11 @@ def create_app(hub: Hub) -> FastAPI:
     @app.post("/v1/confirmations/{request_id}/reject")
     async def reject(request_id: str, body: RejectBody, who: Who) -> dict[str, Any]:
         human_only(who)
+        if hub.limits.get(request_id) is not None:
+            try:
+                return hub.limits.view(hub.limits.reject(request_id, who, body.reason))
+            except LookupError as exc:
+                raise HTTPException(409, str(exc)) from exc
         try:
             return views.request_view(hub.kernel.reject(request_id, who, body.reason), hub.kernel.clock())
         except LookupError as exc:
@@ -499,7 +605,9 @@ def create_app(hub: Hub) -> FastAPI:
             raise HTTPException(403, "Starting the driver writer needs a control scope.")
         try:
             session = await hub.writer.start(who, **body.model_dump())
-        except (WriterError, ValueError, OSError) as exc:
+        except KeyError as exc:
+            raise HTTPException(404, str(exc.args[0])) from exc
+        except (WriterError, NotHumanError, ValueError, OSError) as exc:
             raise writer_errors(exc) from exc
         return hub.writer.view(session)
 
@@ -532,7 +640,7 @@ def create_app(hub: Hub) -> FastAPI:
     async def writer_finish(session_id: str, body: FinishBody, who: Who) -> dict[str, Any]:
         session_or_404(session_id)
         try:
-            return await hub.writer.finish(who, session_id, body.save_as)
+            return await hub.writer.finish(who, session_id, body.save_as, body.phrase)
         except (WriterError, NotHumanError, FileExistsError, DeviceFileError) as exc:
             raise writer_errors(exc) from exc
 
@@ -543,6 +651,28 @@ def create_app(hub: Hub) -> FastAPI:
             return await hub.writer.test_plan(session_id)
         except WriterError as exc:
             raise writer_errors(exc) from exc
+
+    @app.post("/v1/device_files/load")
+    async def load_device_file(body: LoadFileBody, who: Who) -> dict[str, Any]:
+        """Load a device file from the devices folder while the hub runs. Takes a human principal."""
+        human_only(who)
+        try:
+            status, file = await hub.load_device_file(Path(body.path), by=who.label)
+        except FileNotFoundError as exc:
+            raise HTTPException(404, f"There is no device file at {body.path}.") from exc
+        except DeviceFileError as exc:
+            raise HTTPException(400, f"{body.path} doesn't load. " + " ".join(exc.problems)) from exc
+        except (ValueError, OSError, registry.UnknownDriver, DeviceLocked) as exc:
+            raise HTTPException(409, str(exc)) from exc
+        runtime = hub.kernel.devices.get(file.device_id)
+        info = hub.info.get(file.device_id)
+        return {
+            "status": status,
+            "device_id": file.device_id,
+            "path": info.path if info is not None else body.path,
+            "writable": file.writable,
+            "connected": bool(runtime and runtime.connected),
+        }
 
     @app.post("/v1/tokens")
     async def create_token(body: TokenBody, who: Who) -> dict[str, Any]:

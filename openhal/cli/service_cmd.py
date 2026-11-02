@@ -12,7 +12,7 @@ from pathlib import Path
 import typer
 from rich.markup import escape
 
-from openhal._brand import DAEMON_NAME
+from openhal._brand import PRODUCT_NAME, START_COMMAND
 from openhal.cli._common import EXIT_FAILED, console, fail, home
 from openhal.service.background import PLATFORMS, Platform, Service, ServiceError, this_platform
 from openhal.service.runner import RunError, Runner
@@ -75,14 +75,14 @@ def uninstall(dry_run: bool = DRY_RUN) -> None:
 
 @app.command()
 def restart(dry_run: bool = DRY_RUN) -> None:
-    """Restart the hub, for example so the hub loads new device files."""
+    """Restart OpenHAL, for example after a change to config.yaml. Device files load without a restart."""
     service = _service(dry_run)
     try:
         service.restart()
     except (RunError, ServiceError) as exc:
         fail(str(exc))
     if not dry_run:
-        console.print("[green]restarted[/green]  the hub")
+        console.print("[green]restarted[/green]  OpenHAL")
 
 
 @app.command()
@@ -95,8 +95,8 @@ def status() -> None:
         pid = f", pid {state.pid}" if state.pid else ""
         console.print(f"state    {escape(state.detail)}{pid}")
     if not state.running:
-        hint = "openhal service install" if not state.installed else f"openhal service restart, or {DAEMON_NAME}"
-        console.print(f"Start the hub with {hint}.")
+        hint = "openhal service install" if not state.installed else f"openhal service restart, or {START_COMMAND}"
+        console.print(f"Start {PRODUCT_NAME} with {hint}.")
         raise typer.Exit(EXIT_FAILED)
 
 

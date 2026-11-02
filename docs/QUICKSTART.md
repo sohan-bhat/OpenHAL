@@ -92,14 +92,16 @@ seq  time  event    who           target                   status   message
 
 ## Run your own hub
 
-1. `uv run openhal init` creates the config folder, your human token and `devices/plant-waterer.hal.yaml`, the simulated Arduino plant waterer.
-2. Read the file's limits, then run `uv run openhal file confirm` on the file. The hub loads the file read-only until you confirm the limits.
-3. `uv run openhald` starts the hub on `127.0.0.1:7420`.
-4. `uv run openhal token create --agent --scope control_low --name claude` makes a token for your agent. [MCP setup](interfaces/MCP.md) has the config for each client.
+1. `uv run openhal init` creates the config folder, your human token and `devices/plant-waterer.hal.yaml`, the simulated Arduino plant waterer, and looks for your devices. For each device init adds, you answer each limit once at the terminal, where Enter keeps the suggestion, and then you type `confirm`. The device file is saved with every limit confirmed, and nothing needs editing by hand.
+2. Run `uv run openhal file confirm` on the plant waterer's file, which confirms the sample's limits the same way.
+3. `uv run openhal start` starts OpenHAL on `127.0.0.1:7420`. A running OpenHAL loads each confirmed file at once, so a confirm never needs a restart.
+4. When init finds Claude Code, Claude Desktop or Cursor, you can add OpenHAL to each one with a token for your agent. [MCP setup](interfaces/MCP.md) has the config for any other client.
+
+To raise a limit later, run `uv run openhal limits set DEVICE.CHANNEL --max VALUE` and type `confirm`. A narrower limit applies at once. A wider limit asked for from a script or an agent waits for you in `openhal confirm list` and in the Inspector.
 
 ## Use a real printer
 
-Copy [printer.hal.yaml](../examples/print-babysitter/printer.hal.yaml) and [printer-cam.hal.yaml](../examples/print-babysitter/printer-cam.hal.yaml) into your hub's `devices` folder and set your printer's host name in both. Remove the `confirmed` line, read every limit, then run `uv run openhal file confirm` on each file. The [example's README](../examples/print-babysitter/) explains each limit.
+Copy [printer.hal.yaml](../examples/print-babysitter/printer.hal.yaml) and [printer-cam.hal.yaml](../examples/print-babysitter/printer-cam.hal.yaml) into your hub's `devices` folder and set your printer's host name in both. Remove the `confirmed` line, then run `uv run openhal file confirm` on each file, which shows every limit before you type `confirm`. The [example's README](../examples/print-babysitter/) explains each limit.
 
 ## Use a real board
 

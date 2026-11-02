@@ -8,7 +8,7 @@ Each step is timed.
 3. init        openhal init --yes --no-sample, in a temporary HOME, adds the simulated plant
                waterer, a self-describing board, as a read-only device file, plus the agent
                token and the MCP client setup.
-4. hub         openhald starts on a free loopback port and answers.
+4. hub         openhal start runs on a free loopback port and answers.
 5. first read  openhal mcp starts the way an AI client starts it, and the agent lists the
                devices and reads one channel.
 
@@ -119,9 +119,9 @@ def answers(url: str) -> bool:
 
 
 def hub(work: Path, env: dict[str, str], port: int, processes: list[subprocess.Popen]) -> str:
-    with (work / "openhald.log").open("ab") as log:
+    with (work / "openhal.log").open("ab") as log:
         process = subprocess.Popen(
-            [str(work / "bin" / "openhald"), "--port", str(port)],
+            [str(work / "bin" / "openhal"), "start", "--port", str(port)],
             env=env,
             stdin=subprocess.DEVNULL,
             stdout=log,
@@ -133,11 +133,11 @@ def hub(work: Path, env: dict[str, str], port: int, processes: list[subprocess.P
     deadline = time.monotonic() + WAIT_S
     while time.monotonic() < deadline:
         if process.poll() is not None:
-            raise StepFailed(f"openhald exited {process.returncode}. See {work / 'openhald.log'}.")
+            raise StepFailed(f"openhal start exited {process.returncode}. See {work / 'openhal.log'}.")
         if answers(url):
-            return f"openhald answers at {url}, pid {process.pid}"
+            return f"openhal start answers at {url}, pid {process.pid}"
         time.sleep(0.05)
-    raise StepFailed(f"openhald didn't answer at {url} within {WAIT_S:g} s.")
+    raise StepFailed(f"openhal start didn't answer at {url} within {WAIT_S:g} s.")
 
 
 class McpClient:

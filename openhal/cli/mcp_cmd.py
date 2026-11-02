@@ -13,7 +13,7 @@ def register(app: typer.Typer) -> None:
     @app.command()
     def mcp(
         token_file: Path = typer.Option(None, "--token-file", help="A file holding the agent token."),  # noqa: B008
-        start: bool = typer.Option(True, "--start/--no-start", help="Start openhald if it is not running."),
+        start: bool = typer.Option(True, "--start/--no-start", help="Start OpenHAL if it is not running."),
     ) -> None:
         """Run the MCP server on stdio. Reads the agent token from OPENHAL_TOKEN or --token-file."""
         try:

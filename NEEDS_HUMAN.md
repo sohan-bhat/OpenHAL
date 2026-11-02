@@ -26,9 +26,8 @@ The PyPI name `openhal` belongs to an unrelated project (HAL, Harmful Action Lim
 Options if you want a different public name, all checked free on PyPI and npm as of 2026-10-24 unless noted.
 1. `openhal-hub` (current default)
 2. `openhal-core`
-3. `openhald` (the daemon name, free on PyPI)
-4. Ask the PyPI owner of `openhal` about transferring the name (https://pypi.org/project/openhal/, repository https://github.com/otherland/hal)
-5. Rename the whole project. Five alternatives that searched clean on 2026-10-24, said as words where possible.
+3. Ask the PyPI owner of `openhal` about transferring the name (https://pypi.org/project/openhal/, repository https://github.com/otherland/hal)
+4. Rename the whole project. Five alternatives that searched clean on 2026-10-24, said as words where possible.
    - OpenHAIL (Open Hardware Agent Interface Layer, "open hail")
    - OpenHARI (Open Hardware Agent Runtime Interface, "open harry")
    - OpenAHI (Open Agent Hardware Interface)

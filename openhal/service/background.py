@@ -1,7 +1,7 @@
 """The hub as a background service. A launchd agent on macOS and a systemd user unit on Linux.
 
-The service runs `python -m openhal.hub.daemon` with the Python that installed it and the same
-config folder, so the service starts the hub the CLI connects to. The service runs as the person,
+The service runs `openhal start` with the Python that installed it and the same config folder, so
+the service starts the hub the CLI connects to. The service runs as the person,
 never as root, and the hub keeps its own rule of listening on loopback only. Every command and file
 change goes through a `Runner`, so `--dry-run` and tests change nothing.
 """
@@ -17,14 +17,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Final, Literal
 
-from openhal._brand import CONFIG_DIR_ENV, DAEMON_NAME, PACKAGE_NAME, PRODUCT_NAME
+from openhal._brand import CLI_NAME, CONFIG_DIR_ENV, DAEMON_ALIAS, PACKAGE_NAME, PRODUCT_NAME, START_COMMAND
 from openhal.service.runner import Runner
 
 Platform = Literal["macos", "linux"]
 PLATFORMS: Final[tuple[Platform, ...]] = ("macos", "linux")
 LABEL: Final = f"org.{PACKAGE_NAME}.hub"
-UNIT: Final = f"{DAEMON_NAME}.service"
-LOG_NAME: Final = f"{DAEMON_NAME}.log"
+UNIT: Final = f"{CLI_NAME}.service"
+LEGACY_UNIT: Final = f"{DAEMON_ALIAS}.service"
+"""The unit name before ADR 0018. Its ExecStart still works, and install replaces it."""
+LOG_NAME: Final = f"{CLI_NAME}.log"
 
 
 class ServiceError(RuntimeError):
@@ -36,12 +38,14 @@ def this_platform() -> Platform:
         return "macos"
     if sys.platform.startswith("linux"):
         return "linux"
-    raise ServiceError(f"The background service runs on macOS and Linux. Start {DAEMON_NAME} yourself on this system.")
+    raise ServiceError(
+        f"The background service runs on macOS and Linux. Start {PRODUCT_NAME} with {START_COMMAND} on this system."
+    )
 
 
 def daemon_command() -> list[str]:
-    """The hub, started with this Python so the service uses this install."""
-    return [sys.executable, "-m", "openhal.hub.daemon"]
+    """`openhal start`, run with this Python so the service uses this install."""
+    return [sys.executable, "-m", "openhal.cli.main", "start"]
 
 
 def _systemd_quote(word: str) -> str:
@@ -72,10 +76,21 @@ class Service:
     user: str = field(default_factory=getpass.getuser)
 
     @property
+    def units_dir(self) -> Path:
+        return self.user_home / ".config" / "systemd" / "user"
+
+    @property
+    def unit(self) -> str:
+        """The unit to act on. An install from before ADR 0018 keeps its name until install replaces it."""
+        if not (self.units_dir / UNIT).exists() and (self.units_dir / LEGACY_UNIT).exists():
+            return LEGACY_UNIT
+        return UNIT
+
+    @property
     def path(self) -> Path:
         if self.platform == "macos":
             return self.user_home / "Library" / "LaunchAgents" / f"{LABEL}.plist"
-        return self.user_home / ".config" / "systemd" / "user" / UNIT
+        return self.units_dir / self.unit
 
     @property
     def log_path(self) -> Path:
@@ -128,11 +143,15 @@ class Service:
             self.runner.write(self.path, self.render())
             self.runner.run(["launchctl", "bootstrap", f"gui/{self.uid}", str(self.path)])
             return [f"Logs go to {self.log_path}."]
-        self.runner.write(self.path, self.render())
+        legacy = self.units_dir / LEGACY_UNIT
+        if legacy.exists():
+            self.runner.run(["systemctl", "--user", "disable", "--now", LEGACY_UNIT], check=False)
+            self.runner.remove(legacy)
+        self.runner.write(self.units_dir / UNIT, self.render())
         self.runner.run(["systemctl", "--user", "daemon-reload"])
         self.runner.run(["systemctl", "--user", "enable", UNIT])
         self.runner.run(["systemctl", "--user", "restart", UNIT])
-        notes = [f"Logs are in journalctl --user -u {DAEMON_NAME}."]
+        notes = [f"Logs are in journalctl --user -u {CLI_NAME}."]
         linger = self.runner.run(["loginctl", "show-user", self.user, "--property=Linger", "--value"], check=False)
         if linger.ok and linger.output.strip() == "no":
             notes.append(f"Run sudo loginctl enable-linger {self.user} so the hub keeps running after you log out.")
@@ -145,8 +164,9 @@ class Service:
             self.runner.run(["launchctl", "bootout", self.target], check=False)
             self.runner.remove(self.path)
             return installed
-        self.runner.run(["systemctl", "--user", "disable", "--now", UNIT], check=False)
-        self.runner.remove(self.path)
+        unit, path = self.unit, self.path
+        self.runner.run(["systemctl", "--user", "disable", "--now", unit], check=False)
+        self.runner.remove(path)
         self.runner.run(["systemctl", "--user", "daemon-reload"], check=False)
         return installed
 
@@ -156,7 +176,7 @@ class Service:
         if self.platform == "macos":
             self.runner.run(["launchctl", "kickstart", "-k", self.target])
         else:
-            self.runner.run(["systemctl", "--user", "restart", UNIT])
+            self.runner.run(["systemctl", "--user", "restart", self.unit])
 
     def status(self) -> Status:
         if not self.path.exists():
@@ -170,9 +190,10 @@ class Service:
             launchd_state = found_state.group(1) if found_state else "loaded"
             launchd_pid = int(found_pid.group(1)) if found_pid else None
             return Status(True, launchd_state == "running", launchd_pid, launchd_state)
-        active = self.runner.run(["systemctl", "--user", "is-active", UNIT], check=False)
+        unit = self.unit
+        active = self.runner.run(["systemctl", "--user", "is-active", unit], check=False)
         state = active.output.strip() or "unknown"
-        main_pid = self.runner.run(["systemctl", "--user", "show", UNIT, "--property=MainPID", "--value"], check=False)
+        main_pid = self.runner.run(["systemctl", "--user", "show", unit, "--property=MainPID", "--value"], check=False)
         number = main_pid.output.strip()
         pid = int(number) if number.isdigit() and int(number) > 0 else None
         return Status(True, state == "active", pid, state)

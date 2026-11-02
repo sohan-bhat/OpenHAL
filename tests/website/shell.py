@@ -1,9 +1,11 @@
 """Run the shell commands the website shows, against the real CLI and an embedded hub.
 
 A `Session` owns a temporary OPENHAL_HOME. `openhal ...` runs the real Typer app in-process.
-`openhald` starts the real hub on a free loopback port. Install and client setup commands that
-can't run offline are checked against pyproject.toml and the CLI's own options instead. Commands
-that need a person's typed phrase get it, as a person at a terminal would type it.
+`openhal start` starts the real hub on a free loopback port. Install and client setup commands
+that can't run offline are checked against pyproject.toml and the CLI's own options instead.
+Commands that need a person's typed phrase get it, as a person at a terminal would type it. While
+no hub runs, OPENHAL_URL points at a loopback port nothing listens on, so a command can never reach
+a hub that runs on this machine outside the test.
 """
 
 from __future__ import annotations
@@ -62,8 +64,11 @@ class SnippetError(AssertionError):
     pass
 
 
+NO_HUB_URL = "http://127.0.0.1:4449"
+"""Where commands look for a hub while the session runs none. Nothing listens there."""
+
 HUB_SETTLE_S = 2.5
-"""After `openhald`, wait as long as a person takes to type the next command, so rate limits
+"""After `openhal start`, wait as long as a person takes to type the next command, so rate limits
 measured from the hub's first reading behave as they would at a real terminal."""
 
 
@@ -88,10 +93,7 @@ class Session:
         saved = {key: os.environ.get(key) for key in ("OPENHAL_HOME", "OPENHAL_URL", "OPENHAL_TOKEN")}
         os.environ["OPENHAL_HOME"] = str(self.home)
         os.environ.pop("OPENHAL_TOKEN", None)
-        if self.hub is not None:
-            os.environ["OPENHAL_URL"] = self.hub.url
-        else:
-            os.environ.pop("OPENHAL_URL", None)
+        os.environ["OPENHAL_URL"] = self.hub.url if self.hub is not None else NO_HUB_URL
         try:
             yield
         finally:
@@ -127,11 +129,11 @@ class Session:
         words = shlex.split(self.expand(line))
         if not words:
             return Result(line, 0, "")
-        if words[:2] == ["uv", "run"] and len(words) > 2 and words[2] in ("openhal", "openhald"):
+        if words[:2] == ["uv", "run"] and len(words) > 2 and words[2] == "openhal":
             words = words[2:]
         program = words[0]
-        if program == "openhald":
-            return self.start_hub(words[1:])
+        if words[:2] == ["openhal", "start"]:
+            return self.start_hub(words[2:])
         if program == "openhal":
             result = self.openhal(words[1:])
         elif program == "chmod":
@@ -165,12 +167,12 @@ class Session:
 
     def start_hub(self, args: list[str]) -> Result:
         if args and args != ["&"]:
-            raise SnippetError(f"openhald is only run without options in snippets, not {args}.")
+            raise SnippetError(f"openhal start is only run without options in snippets, not {args}.")
         if self.hub is None:
             self.hub = EmbeddedHub(self.home)
             self.hub.start()
             time.sleep(HUB_SETTLE_S)
-        return Result("openhald", 0, "")
+        return Result("openhal start", 0, "")
 
     def pytest(self, args: list[str]) -> Result:
         """Run pytest on part of the repository's own suite, as a contributor would."""
@@ -197,9 +199,8 @@ class Session:
         if folder != url.rstrip("/").rsplit("/", 1)[-1]:
             raise SnippetError(f"git clone {url} creates {url.rsplit('/', 1)[-1]}, not {folder}.")
         project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
-        for script in ("openhal", "openhald"):
-            if script not in project["scripts"]:
-                raise SnippetError(f"pyproject.toml has no {script} script for uv run.")
+        if "openhal" not in project["scripts"]:
+            raise SnippetError("pyproject.toml has no openhal script for uv run.")
         return Result(f"git clone {url} && cd {folder}", 0, "")
 
     def check_install(self, words: list[str]) -> Result:
@@ -214,9 +215,8 @@ class Session:
         missing = set(extras) - set(project.get("optional-dependencies", {}))
         if missing:
             raise SnippetError(f"Install snippet asks for extras {sorted(missing)} that pyproject.toml lacks.")
-        for script in ("openhal", "openhald"):
-            if script not in project["scripts"]:
-                raise SnippetError(f"pyproject.toml has no {script} script.")
+        if "openhal" not in project["scripts"]:
+            raise SnippetError("pyproject.toml has no openhal script.")
         return Result(shlex.join(words), 0, "")
 
     def check_claude(self, words: list[str]) -> Result:

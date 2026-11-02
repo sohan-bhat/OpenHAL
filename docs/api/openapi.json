@@ -51,6 +51,25 @@
         "title": "AnswersBody",
         "type": "object"
       },
+      "ApproveBody": {
+        "additionalProperties": false,
+        "properties": {
+          "phrase": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phrase"
+          }
+        },
+        "title": "ApproveBody",
+        "type": "object"
+      },
       "ApproveRoutineBody": {
         "additionalProperties": false,
         "properties": {
@@ -120,6 +139,18 @@
       },
       "FinishBody": {
         "properties": {
+          "phrase": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phrase"
+          },
           "save_as": {
             "anyOf": [
               {
@@ -147,6 +178,99 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "LimitsBody": {
+        "additionalProperties": false,
+        "description": "A change to one channel's limits. Values are quantities, and a rate of none removes the rate limit.",
+        "properties": {
+          "channel": {
+            "maxLength": 64,
+            "title": "Channel",
+            "type": "string"
+          },
+          "device": {
+            "maxLength": 64,
+            "title": "Device",
+            "type": "string"
+          },
+          "dry_run": {
+            "default": false,
+            "description": "Check the change and report what it widens, without it.",
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "max": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantityBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "min": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantityBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "phrase": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "confirm, typed by a person to widen.",
+            "title": "Phrase"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantityBody"
+              },
+              {
+                "const": "none",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A rate such as 5 %/s, or none.",
+            "title": "Rate"
+          }
+        },
+        "required": [
+          "device",
+          "channel"
+        ],
+        "title": "LimitsBody",
+        "type": "object"
+      },
+      "LoadFileBody": {
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "LoadFileBody",
         "type": "object"
       },
       "PairBody": {
@@ -501,6 +625,18 @@
       "WriterStartBody": {
         "additionalProperties": false,
         "properties": {
+          "device": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device"
+          },
           "driver": {
             "anyOf": [
               {
@@ -836,6 +972,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ApproveBody"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -914,6 +1067,47 @@
         "summary": "Reject"
       }
     },
+    "/v1/device_files/load": {
+      "post": {
+        "description": "Load a device file from the devices folder while the hub runs. Takes a human principal.",
+        "operationId": "load_device_file_v1_device_files_load_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoadFileBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Load Device File V1 Device Files Load Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Load Device File"
+      }
+    },
     "/v1/devices": {
       "get": {
         "operationId": "devices_v1_devices_get",
@@ -976,6 +1170,48 @@
           }
         },
         "summary": "Device"
+      }
+    },
+    "/v1/devices/{device_id}/limits": {
+      "get": {
+        "description": "Every number channel's limits, with the range the device itself reports.",
+        "operationId": "device_limits_v1_devices__device_id__limits_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "device_id",
+            "required": true,
+            "schema": {
+              "title": "Device Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Device Limits V1 Devices  Device Id  Limits Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Device Limits"
       }
     },
     "/v1/discover": {
@@ -1105,6 +1341,47 @@
           }
         },
         "summary": "Dry Run"
+      }
+    },
+    "/v1/limits": {
+      "post": {
+        "description": "Change one channel's limits. Narrowing applies at once, and widening needs a person.",
+        "operationId": "change_limits_v1_limits_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LimitsBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Change Limits V1 Limits Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Limits"
       }
     },
     "/v1/pair": {

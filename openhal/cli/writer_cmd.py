@@ -89,36 +89,43 @@ def propose(
 def _ask(question_text: str, require_tty: bool) -> str:
     if require_tty:
         return _tty.read_phrase(question_text + " ")
-    answer: str = typer.prompt(question_text)
+    answer: str = typer.prompt(question_text, default="", show_default=False)
     return answer
 
 
 @app.command()
 @handled
 def interview(session_id: str = typer.Argument(..., help="The session id.")) -> None:
-    """Answer the limits interview. Each limit needs your own answer. Needs the human token."""
+    """Answer the limits interview. Enter keeps a suggestion. Each limit needs your own answer and the human token."""
     require_tty = config().confirm.require_tty
     if require_tty and not _tty.interactive():
         fail("Run the interview yourself in an interactive terminal. confirm.require_tty is true.")
+    held: dict[str, str] = {}
     with hub() as client:
         questions = client.interview(session_id).questions
         if not questions:
             console.print("No open questions.")
             return
-        answers: dict[str, Any] = {}
-        for index, question in enumerate(questions, start=1):
-            console.print(f"\n[bold]{index}. {escape(question.prompt)}[/bold]")
-            if question.suggested is not None:
-                console.print(f"suggested {escape(show(question.suggested, question.unit))}", style="dim")
-            if question.reason:
-                console.print(f"why {escape(question.reason)}", style="dim")
-            answer = ""
-            while not answer:
-                answer = _ask("your answer" + (f" in {question.unit}" if question.unit else ""), require_tty).strip()
-            if question.unit and _BARE_NUMBER.match(answer):
-                answer = f"{answer} {question.unit}"
-            answers[question.id] = answer
-        session = client.answer(session_id, answers)
+        console.print("Press Enter to keep a suggestion, or type a value to replace it.")
+        while questions:
+            answers: dict[str, Any] = {}
+            for index, question in enumerate(questions, start=1):
+                suggestion = show(question.suggested, question.unit) if question.suggested is not None else None
+                offer = f" Suggested {suggestion}." if suggestion else ""
+                console.print(f"\n[bold]{index} of {len(questions)}  {escape(question.prompt)}[/bold]{escape(offer)}")
+                if question.id in held:
+                    console.print(f"[yellow]again[/yellow]  {escape(held[question.id])}")
+                if question.reason:
+                    console.print(escape(question.reason), style="dim")
+                answer = ""
+                while not answer:
+                    answer = _ask(_tty.MARK.strip(), require_tty).strip() or (suggestion or "")
+                if question.unit and _BARE_NUMBER.match(answer):
+                    answer = f"{answer} {question.unit}"
+                answers[question.id] = answer
+            session = client.answer(session_id, answers)
+            held = dict(getattr(session, "answer_problems", None) or {})
+            questions = [question for question in client.interview(session_id).questions if question.id in held]
     _print_session(session)
     if session.status == "ready":
         console.print(f"Every limit is answered. Save the device file with openhal writer finish {escape(session_id)}")

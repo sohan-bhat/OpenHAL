@@ -1,8 +1,9 @@
-"""`openhal confirm`, the queue of commands held for a person."""
+"""`openhal confirm`, the queue of commands and limit changes held for a person."""
 
 from __future__ import annotations
 
 import json
+from urllib.parse import quote
 
 import typer
 from rich.markup import escape
@@ -10,13 +11,19 @@ from rich.table import Table
 
 from openhal.cli import _tty
 from openhal.cli._common import console, exit_for, handled, hub, print_decision, print_json, styled
-from openhal.client.models import ConfirmationRequest
+from openhal.client.calls import Call
+from openhal.client.models import ConfirmationRequest, Decision
 
-app = typer.Typer(help="List, approve and reject commands held for a person.", no_args_is_help=True)
+app = typer.Typer(help="List, approve and reject commands and limit changes held for a person.", no_args_is_help=True)
 
 
 def _describe(command: dict[str, object]) -> str:
     device = command.get("device")
+    if command.get("kind") == "limits":
+        changes = command.get("changes") or {}
+        steps = changes.items() if isinstance(changes, dict) else []
+        shown = ", ".join(f"{name} {step['from']} to {step['to']}" for name, step in steps)
+        return f"limits {device}.{command.get('channel')} {shown}".strip()
     if command.get("kind") == "action":
         args = command.get("args") or {}
         shown = " ".join(f"{key}={value}" for key, value in dict(args).items()) if isinstance(args, dict) else ""
@@ -87,8 +94,19 @@ def approve(
         if request.status != "pending":
             console.print(f"This request is {escape(request.status)}, so there is nothing to approve.")
             raise typer.Exit(1)
-        _tty.require_phrase("approve", "run this command", given=phrase)
-        decision = client.approve(request_id)
+        if request.command.get("kind") == "limits":
+            typed = _tty.require_phrase("approve", "widen these limits", given=phrase)
+            decision = client.call(
+                Call(
+                    "POST",
+                    f"/v1/confirmations/{quote(request_id, safe='')}/approve",
+                    Decision.model_validate,
+                    json={"phrase": typed},
+                )
+            )
+        else:
+            _tty.require_phrase("approve", "run this command", given=phrase)
+            decision = client.approve(request_id)
     print_decision(decision)
     exit_for(decision)
 

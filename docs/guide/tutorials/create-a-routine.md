@@ -7,7 +7,7 @@ A routine is an automation that runs on the [Hub](glossary:hub) without a model.
 ```sh tested
 $ uv run openhal init
 $ uv run openhal file confirm ~/.openhal/devices/plant-waterer.hal.yaml
-$ uv run openhald &
+$ uv run openhal start &
 $ uv run openhal read plant-waterer.soil_moisture
 ```
 

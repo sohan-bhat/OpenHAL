@@ -20,7 +20,7 @@ from openhal.client.errors import (
 )
 from openhal.client.settings import TokenSource
 
-START_HINT = "Start the hub with openhald, or run openhal doctor to see what is wrong."
+START_HINT = "Start OpenHAL with openhal start, or run openhal doctor to see what is wrong."
 _ROUTE_MISSING = {"Not Found", "Method Not Allowed"}
 
 

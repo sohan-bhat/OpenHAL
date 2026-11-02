@@ -5,7 +5,7 @@
 ## Before you start
 
 1. Run `openhal init` once to create `~/.openhal`, the human token and a simulated sample device.
-2. Start the hub with `openhald` and check it with `openhal status`.
+2. Start OpenHAL with `openhal start` and check the hub with `openhal status`.
 3. Create an agent token for the client.
 
 ```sh
@@ -82,11 +82,11 @@ Add the server to `~/.cursor/mcp.json` for every project, or `.cursor/mcp.json` 
 | Command | `openhal mcp` (or the full path to `openhal`) |
 | Token | `OPENHAL_TOKEN` environment variable, or `--token-file <path>` |
 | Hub address | `OPENHAL_URL` or `--url`, default from `api.host` and `api.port` in `config.yaml` |
-| Options | `--no-start` to never start `openhald` |
+| Options | `--no-start` to never start OpenHAL |
 
 ## When the hub is not running
 
-On start, `openhal mcp` checks the hub. If the hub doesn't respond, `openhal mcp` starts `openhald` in the background once (output goes to `~/.openhal/openhald.log`) and waits up to 8 seconds. With `--no-start`, or if the start fails, the server still runs, and every tool returns an error stating that the hub is not running and how to start the hub. Because stdout carries the MCP protocol, messages for people go to stderr and never to stdout.
+On start, `openhal mcp` checks the hub. If the hub doesn't respond, `openhal mcp` runs `openhal start` in the background once (output goes to `~/.openhal/openhal.log`) and waits up to 8 seconds. With `--no-start`, or if the start fails, the server still runs, and every tool returns an error stating that the hub is not running and how to start the hub. Because stdout carries the MCP protocol, messages for people go to stderr and never to stdout.
 
 ## Tools
 
@@ -107,6 +107,7 @@ Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)
 | `plan_check` | Check a list of steps in order without running any |
 | `stop_all` | Emergency stop. Every device goes to its safe state |
 | `tighten_limits` | Narrow min, max or rate for this session. Never widens |
+| `request_limit_change` | Narrow a limit at once, or file a wider limit as a pending change that a person approves |
 | `get_confirmation_status` | Status of requests held for a person's approval |
 | `list_routines` | Routines with state, devices, hazard and last run |
 | `get_routine` | One routine with source and history |

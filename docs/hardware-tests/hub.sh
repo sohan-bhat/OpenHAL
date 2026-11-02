@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage="Usage: bash docs/hardware-tests/hub.sh start|stop|restart|kill|status"
 home="${OPENHAL_HOME:?Set OPENHAL_HOME to the test home first, for example export OPENHAL_HOME=\"\$PWD/openhal-test\".}"
-daemon=".venv/bin/openhald"
+openhal=".venv/bin/openhal"
 pidfile="$home/hub.pid"
 logfile="$home/hub.log"
 
@@ -16,11 +16,11 @@ start() {
     echo "hub already running, pid $(cat "$pidfile")"
     return
   fi
-  if [[ ! -x "$daemon" ]]; then
-    echo "No $daemon here. Run this from the checkout's root after uv sync." >&2
+  if [[ ! -x "$openhal" ]]; then
+    echo "No $openhal here. Run this from the checkout's root after uv sync." >&2
     exit 1
   fi
-  "$daemon" --verbose >> "$logfile" 2>&1 &
+  "$openhal" start --verbose >> "$logfile" 2>&1 &
   echo $! > "$pidfile"
   for _ in $(seq 120); do
     if uv run openhal status > /dev/null 2>&1; then

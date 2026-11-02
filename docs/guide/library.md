@@ -29,14 +29,12 @@ A library file's control channels and actions are marked `suggested: true`, and 
 
 ## Confirmation
 
-A library file loads read-only, and the hub blocks every change to the device until you do four things.
+A library file loads read-only, and the hub blocks every change to the device until you do two things.
 
 1. Set the connection, such as the host name, the serial port or the entity ids.
-2. Check each limit against your device and what is wired to the device, change the limit if you need to, and remove `suggested: true`.
-3. Run `openhal file confirm` on the file. You type confirm, and the command records your name, the date and a hash of the limits.
-4. Restart `openhald`.
+2. Run `openhal file confirm` on the file. The command shows each limit in turn as a question, where Enter keeps the suggestion and a typed value replaces the suggestion, then you type `confirm`. The command records your name, the date and a hash of the limits, and a running OpenHAL loads the file at once.
 
-Changing any limit later makes the file read-only again until you confirm the file again.
+To change a limit later, run `openhal limits set DEVICE.CHANNEL` with `--min`, `--max` or `--rate`, which writes the change into the file and binds the confirmation to the new limits.
 
 ## Adding a product
 

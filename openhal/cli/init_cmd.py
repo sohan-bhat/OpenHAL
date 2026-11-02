@@ -1,9 +1,11 @@
 """`openhal init`, which sets up the config folder, tokens, devices, AI clients and the service.
 
-On a terminal the command shows a few short questions. `--yes` takes the safe defaults without
-prompting. A run that can't prompt and has no `--yes`, such as a script, does only the config
-folder, the human token and the sample. In every mode nothing confirms a limit for the person, a client's config file
-changes only when they ask, and the service is installed only when they ask.
+On a terminal the command shows a few short questions, and for each device it adds it offers the
+limits interview, so the person answers each limit once and the file is saved writable. `--yes`
+takes the safe defaults without prompting and adds devices read-only. A run that can't prompt and
+has no `--yes`, such as a script, does only the config folder, the human token and the sample. In
+every mode only the person's own answers at the terminal confirm a limit, and the service is
+installed only when the person asks.
 """
 
 from __future__ import annotations
@@ -11,15 +13,17 @@ from __future__ import annotations
 import asyncio
 import getpass
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, Literal, cast
 
 import click
 import typer
+import yaml
 from rich.markup import escape
 
-from openhal._brand import DAEMON_NAME, DEFAULT_PORT
-from openhal.cli import _tty, service_cmd
+from openhal._brand import DEFAULT_PORT, DEVICE_FILE_SUFFIX, PRODUCT_NAME, START_COMMAND
+from openhal.cli import _interview, _live, _tty, service_cmd
 from openhal.cli._common import console, home
 from openhal.kernel.principals import Scope
 
@@ -44,6 +48,15 @@ AGENT_TOKEN_FILE: Final = "agent.token"  # noqa: S105 (a file name)
 AGENT_TOKEN_NAME: Final = "ai-client"  # noqa: S105 (a token label)
 AGENT_SCOPES: Final[tuple[Scope, ...]] = ("read", "control_low", "control_medium")
 Mode = Literal["ask", "yes", "quiet"]
+
+
+@dataclass
+class Added:
+    """A device file init saved, and whether a person confirmed its limits during init."""
+
+    path: Path
+    device_id: str
+    writable: bool = False
 
 
 def sample_device() -> str:
@@ -126,21 +139,42 @@ def _parse_known(values: list[str] | None) -> list[tuple[str, str]]:
     return known
 
 
+def _set_limits(path: Path, label: str) -> bool:
+    """Walk the limits interview for a file init just saved. Returns True when the file is now writable."""
+    from openhal.spec.loader import load, parse_yaml
+
+    if not typer.confirm(
+        f"Answer each limit of {label} now? The device stays read-only until a person does.", default=True
+    ):
+        return False
+    require_tty = _interview.require_person(None)
+    who = (getpass.getuser() or "owner").strip()[:80]
+    try:
+        confirmed = _interview.confirm(parse_yaml(path.read_text(encoding="utf-8")), by=who, require_tty=require_tty)
+    except typer.Exit:
+        console.print(f"read-only      {escape(str(path))} kept read-only. openhal file confirm asks again")
+        return False
+    path.write_text(yaml.safe_dump(confirmed, sort_keys=False, allow_unicode=True, width=100), encoding="utf-8")
+    writable = load(path).writable
+    console.print(f"confirmed      {escape(str(path))} by {escape(who)}, {'writable' if writable else 'read-only'}")
+    return writable
+
+
 def _devices(
     mode: Mode, devices_dir: Path, discover: bool | None, drivers: list[str], known: list[tuple[str, str]]
-) -> int:
-    """Offer found devices as read-only device files. Returns how many were added."""
+) -> list[Added]:
+    """Offer found devices as read-only device files, and in a terminal offer the limits interview."""
     from openhal.hub.discovery import DISCOVER_TIMEOUT_S
     from openhal.service import devices
 
     look = _choose(mode, discover, "Search for devices? Discovery only sends read-only identify commands.", True)
     if not look and not known:
-        return 0
+        return []
     if look:
         console.print(f"\nLooking for devices, for up to {DISCOVER_TIMEOUT_S:g} s")
     existing = devices.Existing.scan(devices_dir)
     found = asyncio.run(devices.find(existing, discover=look, drivers=drivers or None, known=known))
-    added = 0
+    added: list[Added] = []
     for offer in found.offers:
         where = f"{offer.label} at {offer.address}"
         if offer.data is None:
@@ -152,8 +186,11 @@ def _devices(
         if not _choose(mode, explicit, "Add the device as a read-only device file?", True):
             continue
         path = devices.save(offer, devices_dir, existing)
-        added += 1
         console.print(f"device         {escape(str(path))} added, read-only until you confirm its limits")
+        entry = Added(path, path.name.removesuffix(DEVICE_FILE_SUFFIX))
+        if mode == "ask":
+            entry.writable = _set_limits(path, offer.label)
+        added.append(entry)
     for offer in found.unknown:
         console.print(
             f"unknown        {escape(offer.label)} at {escape(offer.address)} ({escape(offer.driver)}). "
@@ -196,8 +233,9 @@ def _agent(mode: Mode, scope: str | None, config_home: Path, db_path: Path) -> P
 
 
 def _clients(mode: Mode, token_file: Path, write: list[str]) -> bool:
-    """Print the setup for every client, then write the configs the person asked for."""
+    """Print the setup for every client, then register OpenHAL with each installed client the person picks."""
     from openhal.service import clients
+    from openhal.service.runner import RunError
 
     platform = "macos" if sys.platform == "darwin" else "linux"
     user_home = Path.home()
@@ -209,30 +247,38 @@ def _clients(mode: Mode, token_file: Path, write: list[str]) -> bool:
         console.print(f"[bold]{client.title}[/bold], {escape(where)}")
         console.print(escape(clients.setup_text(client, entry)), style="dim")
     chosen = list(write)
-    if not chosen and mode == "ask":
-        answer = typer.prompt(
-            f"Write a client config for you? {', '.join(clients.CLIENT_KEYS)} or skip", default="skip"
-        )
-        chosen = [item.strip() for item in answer.split(",") if item.strip() and item.strip() != "skip"]
+    if not chosen and mode in ("ask", "yes"):
+        found = clients.installed(user_home, platform)
+        if found:
+            console.print(f"\nFound {escape(', '.join(client.title for client in found))}")
+        for client in found:
+            if mode == "yes" or typer.confirm(f"Add OpenHAL to {client.title}?", default=True):
+                chosen.append(client.key)
     ok = True
     for key in chosen:
         try:
             client = clients.client_for(key, user_home, platform)
-            backup = clients.write_config(
+            backup, by_cli = clients.register(
                 client, clients.server_entry(client, command, token_file), service_cmd.runner_for(False)
             )
-        except (clients.ClientConfigError, OSError) as exc:
+        except (clients.ClientConfigError, RunError, OSError) as exc:
             console.print(f"[red]error[/red]  {escape(str(exc))}")
             ok = False
             continue
-        saved = f", backup at {backup}" if backup else ""
-        console.print(
-            f"client         {escape(str(client.path))} updated{escape(saved)}. Restart {escape(client.title)}"
-        )
+        saved = f", backup of {client.path} at {backup}" if backup else ""
+        if by_cli:
+            console.print(
+                f"client         {escape(client.title)} updated at user scope with claude mcp add{escape(saved)}. "
+                f"New {escape(client.title)} sessions start openhal mcp"
+            )
+        else:
+            backup_note = f", backup at {backup}" if backup else ""
+            where = escape(str(client.path))
+            console.print(f"client         {where} updated{escape(backup_note)}. Restart {escape(client.title)}")
     return ok
 
 
-def _service(mode: Mode, flag: bool | None, added: int) -> tuple[bool, bool]:
+def _service(mode: Mode, flag: bool | None) -> tuple[bool, bool]:
     """Install the service if asked. Returns whether it runs, and whether every step worked."""
     from openhal.service.background import ServiceError
     from openhal.service.runner import RunError
@@ -244,8 +290,6 @@ def _service(mode: Mode, flag: bool | None, added: int) -> tuple[bool, bool]:
             console.print(f"[red]error[/red]  {escape(str(exc))}")
         return False, not flag
     if service.path.exists() and flag is None:
-        if added:
-            console.print("The background service runs already. Load the new devices with openhal service restart")
         return True, True
     if not _choose(mode, flag, "Run the hub in the background, starting at login?", False):
         return False, True
@@ -258,6 +302,15 @@ def _service(mode: Mode, flag: bool | None, added: int) -> tuple[bool, bool]:
     for note in notes:
         console.print(escape(note))
     return True, True
+
+
+def _installed() -> bool:
+    from openhal.service.background import ServiceError
+
+    try:
+        return service_cmd.build_service().path.exists()
+    except ServiceError:
+        return False
 
 
 def _base(config: HubConfig, new_token: bool, sample: bool) -> Path | None:
@@ -292,11 +345,22 @@ def _base(config: HubConfig, new_token: bool, sample: bool) -> Path | None:
     return sample_path
 
 
-def _next_steps(sample_path: Path | None, running: bool, has_agent_token: bool, looked: bool) -> None:
+def _load(added: list[Added]) -> None:
+    """Load each new file into a running OpenHAL that serves this config folder, so no restart is needed."""
+    if not added or not _live.hub_runs_here():
+        return
+    for entry in added:
+        loaded = _live.load(entry.path, entry.device_id)
+        console.print(f"loaded         {escape(_live.sentence(loaded, writable=entry.writable))}")
+
+
+def _next_steps(
+    sample_path: Path | None, running: bool, has_agent_token: bool, looked: bool, added: list[Added]
+) -> None:
     hub = (
         "Check the hub with openhal status"
         if running
-        else f"Start the hub with {DAEMON_NAME}, then check the hub with openhal status"
+        else f"Start {PRODUCT_NAME} with {START_COMMAND}, then check the hub with openhal status"
     )
     if has_agent_token:
         clients = ["Add openhal to your MCP client with the setup above"]
@@ -306,6 +370,11 @@ def _next_steps(sample_path: Path | None, running: bool, has_agent_token: bool, 
             "Add openhal mcp to the client. docs/interfaces/MCP.md has the config for each client",
         ]
     steps = [
+        *[
+            f"Answer each limit of {entry.device_id} with openhal file confirm {entry.path}"
+            for entry in added
+            if not entry.writable
+        ],
         *([f"Confirm the sample's limits with openhal file confirm {sample_path}"] if sample_path else []),
         hub,
         *clients,
@@ -345,7 +414,10 @@ def register(app: typer.Typer) -> None:
         if client and token_file is None:
             console.print("[red]error[/red]  --client needs an agent token. Add --agent-scope read")
             ok = False
-        running, service_ok = _service(mode, service, added)
-        _next_steps(sample_path, running, token_file is not None, mode == "quiet" and not known)
+        installed_before = _installed()
+        running, service_ok = _service(mode, service)
+        if installed_before or not running:
+            _load(added)
+        _next_steps(sample_path, running, token_file is not None, mode == "quiet" and not known, added)
         if not (ok and service_ok):
             raise typer.Exit(1)

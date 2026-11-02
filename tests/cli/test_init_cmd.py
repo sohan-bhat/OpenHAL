@@ -182,7 +182,8 @@ def test_a_device_that_does_not_answer_is_skipped(machine: Machine) -> None:
 
 def test_the_wizard_asks(machine: Machine, fake_discovery: list[set[str]], monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(_tty, "interactive", lambda: True)
-    answers = "\n".join(["", "n", "y", "control_low", "cursor", "n"]) + "\n"
+    (machine.home / ".cursor").mkdir()
+    answers = "\n".join(["", "n", "y", "n", "control_low", "", "n"]) + "\n"
     code, out = run("init", input=answers)
     assert code == 0, out
     folder = machine.config / "devices"
@@ -257,4 +258,5 @@ def test_service_flag_installs_through_the_runner(machine: Machine) -> None:
     assert "Check the hub with openhal status" in out
     code, out = run("init", "--yes", "--no-discover", "--device", "openhal-firmware=sim:desk-fan")
     assert code == 0, out
-    assert "openhal service restart" in out
+    assert "restart" not in out
+    assert "Answer each limit of desk-fan with openhal file confirm" in out

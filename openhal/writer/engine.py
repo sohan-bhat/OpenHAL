@@ -15,6 +15,10 @@ A session turns an unknown device into a confirmed device file in this order.
 8. Saving. The file goes into the devices folder with provenance, plus a library submission
    bundle with a test report template.
 
+A review session starts from a device file the hub already loaded, such as a read-only file
+`openhal init` saved. A person answers the same interview, types confirm, and the file is saved in
+place and loaded again at once. A review can't take a proposed draft.
+
 Text from sketches, manuals and devices is only ever returned inside data blocks.
 """
 
@@ -44,6 +48,7 @@ if TYPE_CHECKING:
     from openhal.hub.hub import Hub
 
 MAX_SESSIONS: Final = 50
+REVIEW_PHRASE: Final = "confirm"
 DESCRIBE_TIMEOUT_S: Final = 20.0
 SKETCH_SUFFIXES: Final = (".ino", ".pde", ".cpp", ".c", ".h", ".hpp")
 FILE_NAME: Final = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
@@ -70,6 +75,10 @@ class Session:
     answers: dict[str, Any] = field(default_factory=dict)
     problems: list[str] = field(default_factory=list)
     saved_path: str | None = None
+    device: str | None = None
+    path: str | None = None
+    file_text: str | None = None
+    answer_problems: dict[str, str] = field(default_factory=dict)
 
 
 def _dump(data: dict[str, Any]) -> str:
@@ -95,7 +104,7 @@ def force_suggested(data: dict[str, Any]) -> dict[str, Any]:
     return cleaned
 
 
-OWN_KEYS: Final = frozenset({"driver", "source", "kind", "type", "unit", "status"})
+OWN_KEYS: Final = frozenset({"driver", "source", "kind", "type", "unit", "status", "device", "file"})
 """Detected fields OpenHAL sets itself. Every other string came from a device, sketch or manual."""
 
 
@@ -134,6 +143,8 @@ class WriterEngine:
             "draft_yaml": _dump(draft) if draft is not None else None,
             "problems": session.problems,
             "unconfirmed": unconfirmed,
+            "device": session.device,
+            "answer_problems": dict(session.answer_problems),
         }
 
     def get(self, session_id: str) -> Session:
@@ -151,7 +162,10 @@ class WriterEngine:
         params: dict[str, Any] | None = None,
         sketch_path: str | None = None,
         manual_text: str | None = None,
+        device: str | None = None,
     ) -> Session:
+        if device is not None:
+            return self._review(who, device)
         if not (unknown_id or driver or sketch_path or manual_text):
             raise WriterError("Give an unknown device id, a driver, a sketch or a manual to start from.")
         if len(self.sessions) >= MAX_SESSIONS:
@@ -186,6 +200,37 @@ class WriterEngine:
             self._set_draft(session, merged)
         else:
             session.status = "drafting"
+        return session
+
+    def _review(self, who: Principal, device_id: str) -> Session:
+        """A session that answers the interview for a device file the hub has loaded."""
+        if who.kind != "human":
+            self.hub.audit.append("writer_start", who.label, device=device_id, status="blocked", code="not_permitted")
+            raise NotHumanError("Reviewing a device file's limits takes a human principal.")
+        if device_id not in self.hub.kernel.devices:
+            raise KeyError(f"There is no device {device_id!r}.")
+        info = self.hub.info.get(device_id)
+        if info is None or not info.path:
+            raise WriterError(f"{device_id} has no device file in the devices folder to review.")
+        text = Path(info.path).read_text(encoding="utf-8")
+        try:
+            data = parse_yaml(text)
+            from_data(data)
+        except DeviceFileError as exc:
+            raise WriterError(f"{info.path} doesn't load. " + " ".join(exc.problems)) from exc
+        if not (data.get("write") or data.get("actions")):
+            raise WriterError(f"{device_id} has no controls or actions, so the file has no limits to confirm.")
+        if len(self.sessions) >= MAX_SESSIONS:
+            oldest = min(self.sessions.values(), key=lambda item: item.created_at)
+            del self.sessions[oldest.id]
+        session = Session(secrets.token_hex(4), who.label, time.time(), status="interview")
+        session.device, session.path, session.file_text = device_id, info.path, text
+        session.draft = data
+        provenance = data.get("provenance")
+        source = provenance.get("source") if isinstance(provenance, dict) else None
+        session.detected = {"device": device_id, "file": Path(info.path).name, **({"source": source} if source else {})}
+        self.sessions[session.id] = session
+        self.hub.audit.append("writer_start", who.label, device=device_id, target=session.id, status="interview")
         return session
 
     def _unknown(self, unknown_id: str) -> Any:
@@ -306,6 +351,8 @@ class WriterEngine:
 
     def propose(self, who: Principal, session_id: str, draft_yaml: str) -> Session:
         session = self.get(session_id)
+        if session.device is not None:
+            raise WriterError("A review keeps the device file as it is, so a draft can't replace the file.")
         if session.status == "saved":
             raise WriterError("This session is saved already. Start a new one to change the file.")
         try:
@@ -341,11 +388,21 @@ class WriterEngine:
             raise WriterError("There is no valid draft to interview yet. Propose one first.")
         if session.status not in ("interview", "ready"):
             raise WriterError(f"The session is {session.status}, so the session can't take answers.")
-        known = {question.id for question in interview.questions(session.draft)}
+        asked = interview.questions(session.draft)
+        known = {question.id for question in asked}
         unknown = sorted(set(answers) - known)
         if unknown:
             raise WriterError(f"There are no questions {', '.join(unknown)}.")
-        session.answers.update({key: value for key, value in answers.items() if str(value).strip()})
+        session.answer_problems = {}
+        for question in asked:
+            if question.id not in answers or not str(answers[question.id]).strip():
+                continue
+            reason = interview.problem(question, answers[question.id], {**session.answers, **answers})
+            if reason is None:
+                session.answers[question.id] = answers[question.id]
+            else:
+                session.answers.pop(question.id, None)
+                session.answer_problems[question.id] = reason
         session.problems = [problem for problem in session.problems if not problem.startswith("Interview. ")]
         if known <= set(session.answers):
             try:
@@ -379,13 +436,17 @@ class WriterEngine:
         )
         return {"steps": [step.view() for step in steps], "problems": problems}
 
-    async def finish(self, who: Principal, session_id: str, save_as: str | None = None) -> dict[str, Any]:
+    async def finish(
+        self, who: Principal, session_id: str, save_as: str | None = None, phrase: str | None = None
+    ) -> dict[str, Any]:
         if who.kind != "human":
             self.hub.audit.append("writer_finish", who.label, target=session_id, status="blocked", code="not_permitted")
             raise NotHumanError("Saving a device file from the driver writer takes a human principal.")
         session = self.get(session_id)
         if session.status == "saved":
             raise WriterError(f"This session is saved already, at {session.saved_path}.")
+        if session.device is not None:
+            return await self._finish_review(who, session, phrase)
         file = self._current_file(session)
         source = session.confirmed if session.confirmed is not None else session.draft
         data: dict[str, Any] = copy.deepcopy(source) if source is not None else {}
@@ -417,9 +478,39 @@ class WriterEngine:
         if file.device_id not in self.hub.kernel.devices:
             try:
                 await self.hub.add_and_start(file, path=path)
-            except Exception as exc:  # noqa: BLE001 (saved anyway, the person restarts the hub)
+            except Exception as exc:  # noqa: BLE001 (saved anyway, the hub loads the file when it starts)
                 session.problems.append(f"Saved, but the hub couldn't load it now. {exc}")
         return {"path": str(path), "device_id": file.device_id, "writable": file.writable, "bundle": str(bundle)}
+
+    async def _finish_review(self, who: Principal, session: Session, phrase: str | None) -> dict[str, Any]:
+        """Save the confirmed limits over the reviewed file and load the file again, after the typed phrase."""
+        if session.confirmed is None:
+            raise WriterError("Answer every question of the limits interview first.")
+        if (phrase or "").strip().lower() != REVIEW_PHRASE:
+            raise WriterError(f"Type {REVIEW_PHRASE} to confirm these limits as safe for this device.")
+        path = Path(session.path or "")
+        data = copy.deepcopy(session.confirmed)
+        data["confirmed"] = {**data["confirmed"], "by": who.name[:80]}
+        file = from_data(data)
+        await asyncio.to_thread(_replace, path, session.file_text or "", _dump(data))
+        session.confirmed, session.status, session.saved_path = data, "saved", str(path)
+        self.hub.audit.append(
+            "writer_finish", who.label, target=session.id, device=file.device_id, status="done", path=str(path)
+        )
+        loaded = False
+        try:
+            await self.hub.load_device_file(path, by=who.label)
+            loaded = True
+        except Exception as exc:  # noqa: BLE001 (saved anyway, the hub loads the file when it starts)
+            session.problems.append(f"Saved, but loading the file into the hub failed. {exc}")
+        return {"path": str(path), "device_id": file.device_id, "writable": file.writable, "loaded": loaded}
+
+
+def _replace(path: Path, expected: str, text: str) -> None:
+    """Write `text` over a file that still holds `expected`. A file changed meanwhile is left alone."""
+    if path.read_text(encoding="utf-8") != expected:
+        raise WriterError("The device file changed after the review started. Start the review again.")
+    path.write_text(text, encoding="utf-8")
 
 
 def _report_template(file: Any, steps: list[plan.TestStep]) -> str:

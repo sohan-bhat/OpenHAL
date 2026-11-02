@@ -134,13 +134,27 @@ export interface Decision {
 }
 
 export interface Command {
-  kind: "write" | "action";
+  kind: "write" | "action" | "limits";
   device: string;
   channel?: string;
   action?: string;
   value?: unknown;
   unit?: string | null;
   args?: Record<string, unknown>;
+  changes?: Record<string, { from: string; to: string }>;
+}
+
+export interface LimitChange {
+  status: "allowed" | "done" | "pending" | "blocked";
+  code?: string | null;
+  message: string;
+  device: string;
+  channel: string;
+  unit: string;
+  changes: Record<string, { from: string; to: string }>;
+  loosens: string[];
+  request_id?: string;
+  scope?: "file" | "session";
 }
 
 export interface ConfirmationRequest {
@@ -223,6 +237,8 @@ export interface WriterSession {
   draft_yaml: string | null;
   problems: string[];
   unconfirmed: string[];
+  device?: string | null;
+  answer_problems?: Record<string, string>;
 }
 
 export interface Question {
@@ -233,6 +249,7 @@ export interface Question {
   suggested: unknown;
   unit: string | null;
   reason: string | null;
+  range?: [number, number] | null;
 }
 
 export interface TestStep {

@@ -5,7 +5,7 @@ title: Python SDK
 ```sh tested
 $ uv run openhal init
 $ uv run openhal file confirm ~/.openhal/devices/plant-waterer.hal.yaml
-$ uv run openhald
+$ uv run openhal start
 ```
 
 ```python tested

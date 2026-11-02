@@ -1,6 +1,6 @@
 """One daemon per config folder, and an audit chain two writers can't fork.
 
-A second openhald on the same home used to write hub_start and hub_stop before it found the port
+A second hub on the same home used to write hub_start and hub_stop before it found the port
 taken, and two writers each chained from their own memory of the last hash, which broke
 `openhal log --verify`.
 """

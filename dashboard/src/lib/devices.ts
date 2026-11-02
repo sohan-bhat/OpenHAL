@@ -1,7 +1,12 @@
 import { fromKernelCode } from "./protocol";
 import { compareText } from "./text";
-import type { Decision, DeviceSummary, DeviceView } from "./types";
+import type { Decision, DeviceSummary, DeviceView, Principal } from "./types";
 import { formatQuantity } from "./units";
+
+export function reviewable(view: DeviceView, you: Principal | null): boolean {
+  const commands = Object.keys(view.write).length + Object.keys(view.actions).length;
+  return !view.writable && !!view.path && commands > 0 && you?.kind === "human";
+}
 
 export interface ReadingEvent {
   type: "reading";

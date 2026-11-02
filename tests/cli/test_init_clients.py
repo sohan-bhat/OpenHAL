@@ -90,3 +90,36 @@ def test_dry_run_writes_nothing(tmp_path: Path) -> None:
     clients.write_config(cursor, clients.server_entry(cursor, COMMAND, TOKEN), Runner(dry_run=True, echo=lines.append))
     assert not cursor.path.exists()
     assert lines == [f"would write  {cursor.path}"]
+
+
+def test_installed_clients_are_found_by_program_app_or_config_folder(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from tests.conftest import FIND_CLIENTS
+
+    apps = tmp_path / "Applications"
+    apps.mkdir()
+    monkeypatch.setattr(clients, "APPLICATION_DIRS", (apps,))
+    assert FIND_CLIENTS(tmp_path, "macos") == []
+    (apps / "Cursor.app").mkdir()
+    monkeypatch.setattr(clients, "find_program", lambda name: "/usr/local/bin/claude" if name == "claude" else None)
+    assert [item.key for item in FIND_CLIENTS(tmp_path, "macos")] == ["claude-code", "cursor"]
+    (tmp_path / ".config" / "Claude").mkdir(parents=True)
+    assert [item.key for item in FIND_CLIENTS(tmp_path, "linux")] == ["claude-desktop", "claude-code"]
+
+
+def test_claude_code_is_registered_at_user_scope_with_its_own_cli(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    code = client(tmp_path, "claude-code")
+    code.path.write_text(json.dumps({"mcpServers": {"openhal": {"command": "old"}}}))
+    monkeypatch.setattr(clients, "find_program", lambda name: "/usr/local/bin/claude" if name == "claude" else None)
+    seen: list[str] = []
+    backup, by_cli = clients.register(code, clients.server_entry(code, COMMAND, TOKEN), Runner(True, seen.append))
+    assert by_cli
+    assert backup is not None
+    assert backup.name.startswith(".claude.json.openhal-backup-")
+    assert seen[1:] == [
+        "would run    /usr/local/bin/claude mcp remove openhal --scope user",
+        f"would run    /usr/local/bin/claude mcp add openhal --scope user -- {COMMAND[0]} mcp --token-file {TOKEN}",
+    ]
