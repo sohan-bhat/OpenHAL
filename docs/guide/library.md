@@ -34,7 +34,7 @@ A library file loads read-only, and the hub blocks every change to the device un
 1. Set the connection, such as the host name, the serial port or the entity ids.
 2. Run `openhal file confirm` on the file. The command shows each limit in turn as a question, where Enter keeps the suggestion and a typed value replaces the suggestion, then you type `confirm`. The command records your name, the date and a hash of the limits, and a running OpenHAL loads the file at once.
 
-To change a limit later, run `openhal limits set DEVICE.CHANNEL` with `--min`, `--max` or `--rate`, which writes the change into the file and binds the confirmation to the new limits.
+To change a limit later, run `openhal limits set DEVICE.CHANNEL` with `--min`, `--max` or `--rate`, which saves the change in the file and binds the confirmation to the new limits. A wider limit takes your typed confirm.
 
 ## Adding a product
 
