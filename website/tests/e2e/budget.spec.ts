@@ -35,11 +35,13 @@ interface Weight {
  * template's JavaScript was set again 200 bytes higher when the header gained the script that hands
  * the nav highlight's slide to Motion, which loads Motion only after a click on a section, and the
  * home page's HTML 1.6 KB higher when the hero began drawing the built wordmark with the arrow H.
+ * The guide page's HTML was set again the same way when the quickstart gained the first device's
+ * guided step and openhal limits and the phone's section pages button, about 2 KB gzipped together.
  */
 const BUDGETS: Record<string, { path: string } & Weight> = {
   home: { path: "/", html: 16_600, css: 22_900, js: 14_000, fonts: 28_100 },
   "docs index": { path: "/docs/", html: 16_400, css: 20_300, js: 1_700, fonts: 17_800 },
-  "guide page": { path: "/docs/quickstart/", html: 18_800, css: 20_300, js: 3_200, fonts: 34_500 },
+  "guide page": { path: "/docs/quickstart/", html: 21_000, css: 20_300, js: 3_200, fonts: 34_500 },
   "example page": { path: "/docs/examples/3d-print-watch/", html: 24_200, css: 22_400, js: 4_400, fonts: 28_100 },
   "page with diagrams": { path: "/docs/architecture/", html: 29_600, css: 20_300, js: 3_200, fonts: 28_100 },
   "spec page": { path: "/spec/v0.1/basic/messages/", html: 28_500, css: 20_300, js: 3_200, fonts: 28_100 },
