@@ -25,17 +25,20 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 import yaml
 
+from openhal.drivers.base import DriverError
 from openhal.kernel.checks import Block
 from openhal.kernel.principals import Principal
 from openhal.spec.loader import DeviceFileError, from_data, parse_yaml
 from openhal.spec.units import Quantity, UnitError, convert, convert_rate, format_quantity, parse_quantity
 from openhal.writer import interview
+from openhal.writer.engine import force_suggested
 
 if TYPE_CHECKING:
     from openhal.hub.hub import Hub
 
 APPLY_PHRASE: Final = "confirm"
 APPROVE_PHRASE: Final = "approve"
+DESCRIBE_TIMEOUT_S: Final = 5.0
 FIELDS: Final = ("min", "max", "rate")
 MAX_PENDING: Final = 100
 PER_PRINCIPAL: Final = 20
@@ -205,7 +208,46 @@ class LimitChanges:
             )
         return path, data
 
-    def plan(self, device_id: str, channel: str, *, min: Any = None, max: Any = None, rate: Any = None) -> Change:
+    async def reported(self, device_id: str, data: dict[str, Any]) -> dict[str, tuple[float, float]]:
+        """The range the device reports for each channel and action argument, by `channel` or `action.arg`.
+
+        A file keeps the range in `x-device-limits`. A file the device described, saved before OpenHAL
+        kept that entry, takes the missing ranges from the connected device's own description, so the
+        device's range stays the hard edge. A hand-written or library file keeps only its own entries.
+        """
+        kept = interview.device_limits(data)
+        provenance = data.get("provenance")
+        source = provenance.get("source") if isinstance(provenance, dict) else None
+        runtime = self.hub.kernel.devices.get(device_id)
+        if source not in interview.REPORTING_SOURCES or runtime is None or not runtime.connected:
+            return kept
+        try:
+            described = await asyncio.wait_for(runtime.driver.describe(), DESCRIBE_TIMEOUT_S)
+        except (DriverError, TimeoutError, OSError, ValueError, KeyError):
+            return kept
+        if not described:
+            return kept
+        live = interview.device_limits({**force_suggested(described), "provenance": {"source": source}})
+        return {**live, **kept}
+
+    async def check(
+        self, device_id: str, channel: str, *, min: Any = None, max: Any = None, rate: Any = None
+    ) -> Change:
+        """The change a request asks for, checked against the file and the range the device reports."""
+        _, data = self._read(device_id)
+        reported = await self.reported(device_id, data)
+        return self.plan(device_id, channel, min=min, max=max, rate=rate, reported=reported)
+
+    def plan(
+        self,
+        device_id: str,
+        channel: str,
+        *,
+        min: Any = None,
+        max: Any = None,
+        rate: Any = None,
+        reported: dict[str, tuple[float, float]] | None = None,
+    ) -> Change:
         """The change a request asks for, checked against the file and the device's own range."""
         _, data = self._read(device_id)
         spec = (data.get("write") or {}).get(channel)
@@ -230,19 +272,19 @@ class LimitChanges:
         low, high = _num(after["min"]), _num(after["max"])
         if low > high:
             raise LimitError("bad_request", "Blocked. min would be above max.")
-        reported = interview.device_limits(data).get(channel)
-        if reported is not None:
-            span = f"from {format_quantity(reported[0], unit)} to {format_quantity(reported[1], unit)}"
-            if high > reported[1]:
+        edge = (interview.device_limits(data) if reported is None else reported).get(channel)
+        if edge is not None:
+            span = f"from {format_quantity(edge[0], unit)} to {format_quantity(edge[1], unit)}"
+            if high > edge[1]:
                 raise LimitError(
                     "above_max",
-                    f"Blocked. {format_quantity(high, unit)} is above {format_quantity(reported[1], unit)}, "
+                    f"Blocked. {format_quantity(high, unit)} is above {format_quantity(edge[1], unit)}, "
                     f"the most {device_id} reports for {channel}. Keep {channel} {span}.",
                 )
-            if low < reported[0]:
+            if low < edge[0]:
                 raise LimitError(
                     "below_min",
-                    f"Blocked. {format_quantity(low, unit)} is below {format_quantity(reported[0], unit)}, "
+                    f"Blocked. {format_quantity(low, unit)} is below {format_quantity(edge[0], unit)}, "
                     f"the least {device_id} reports for {channel}. Keep {channel} {span}.",
                 )
         safe = _safe_value(data, channel, unit)
@@ -329,7 +371,7 @@ class LimitChanges:
     ) -> dict[str, Any]:
         """Tighten at once, apply a person's confirmed loosening, or hold any other loosening."""
         try:
-            change = self.plan(device_id, channel, min=min, max=max, rate=rate)
+            change = await self.check(device_id, channel, min=min, max=max, rate=rate)
             if who.kind == "agent" and who.scope == "read" and change.loosens:
                 raise LimitError("not_permitted", "Blocked. A read-only token can't ask for wider limits.")
             if not change.loosens:
@@ -420,7 +462,7 @@ class LimitChanges:
                 raise LimitError(
                     "misconfigured", "Blocked. The limits changed after the request. Ask for the change again."
                 )
-            change = self.plan(
+            change = await self.check(
                 request.change.device,
                 request.change.channel,
                 **{name: _limit_text(request.change, name) for name in request.change.changed},

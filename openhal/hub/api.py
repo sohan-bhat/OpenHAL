@@ -42,7 +42,6 @@ from openhal.routines.engine import RoutineError
 from openhal.spec.loader import DeviceFileError
 from openhal.spec.models import DeviceFile
 from openhal.spec.units import wire_unit
-from openhal.writer import interview
 from openhal.writer.engine import NotHumanError, WriterError
 
 SESSION_COOKIE = "openhal_session"
@@ -333,7 +332,7 @@ def create_app(hub: Hub) -> FastAPI:
         device_or_404(device_id)
         file = hub.kernel.devices[device_id].file
         data = {**file.model_dump(mode="json", by_alias=True), **file.extensions}
-        reported = interview.device_limits(data)
+        reported = await hub.limits.reported(device_id, data)
         channels = {
             name: {
                 "unit": spec.unit,
@@ -370,7 +369,7 @@ def create_app(hub: Hub) -> FastAPI:
         try:
             if body.dry_run:
                 try:
-                    change = hub.limits.plan(body.device, body.channel, **values)
+                    change = await hub.limits.check(body.device, body.channel, **values)
                 except LimitError as exc:
                     return {"status": "blocked", "code": exc.code, "message": exc.message, "device": body.device}
                 return {"status": "allowed", "message": "", **change.view()}

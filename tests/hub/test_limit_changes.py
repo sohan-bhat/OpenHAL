@@ -175,6 +175,30 @@ async def test_nothing_goes_past_the_range_the_device_reports(
     assert lamp_file(hub).write["brightness"].max == 80
 
 
+async def test_a_file_saved_without_the_device_range_takes_the_range_from_the_device(
+    hub: Hub, client: httpx.AsyncClient, tokens: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = hub.config.devices_dir / "desk-lamp.hal.yaml"
+    data = parse_yaml(confirmed())
+    data.pop(interview.DEVICE_LIMITS)
+    path.write_text(yaml.safe_dump(data, sort_keys=False))
+    await hub.load_device_file(path)
+    driver = hub.kernel.devices["desk-lamp"].driver
+
+    async def described() -> dict[str, Any]:
+        return {"write": {"brightness": {"unit": "percent", "min": 0, "max": 100}}}
+
+    monkeypatch.setattr(driver, "describe", described)
+    shown = (await client.get("/v1/devices/desk-lamp/limits", headers=bearer(tokens["person"]))).json()
+    assert shown["channels"]["brightness"]["device_range"] == [0, 100]
+    result = await change(client, tokens["person"], max={"value": 120, "unit": "%"}, phrase="confirm")
+    assert (result["status"], result["code"]) == ("blocked", "above_max")
+    assert "the most desk-lamp reports for brightness" in result["message"]
+    done = await change(client, tokens["person"], max={"value": 100, "unit": "%"}, phrase="confirm")
+    assert done["status"] == "done"
+    assert lamp_file(hub).write["brightness"].max == 100
+
+
 async def test_a_read_only_token_and_a_read_only_file_change_nothing(
     hub: Hub, client: httpx.AsyncClient, tokens: dict[str, str]
 ) -> None:
