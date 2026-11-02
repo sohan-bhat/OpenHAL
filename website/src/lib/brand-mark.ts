@@ -36,6 +36,21 @@ export function faviconSvg(): string {
   return favicon();
 }
 
+/**
+ * The built wordmark for inline use, such as the home page hero: the same letters as the files, one
+ * path each, set in the current text color and hidden from screen readers, which read the heading's
+ * own text instead.
+ */
+export function wordmarkInlineSvg(className: string): string {
+  return asset("wordmark-light.svg")
+    .trim()
+    .replace(/<title[^>]*>.*?<\/title>\s*/s, "")
+    .replace(/<desc[^>]*>.*?<\/desc>\s*/s, "")
+    .replace(/\s(width|height)="[\d.]+"/g, "")
+    .replace(/\srole="img"\saria-labelledby="t d"/, ` class="${className}" aria-hidden="true" focusable="false"`)
+    .replace(/<g fill="#[0-9A-Fa-f]{6}"/, '<g fill="currentColor"');
+}
+
 export function wordmarkLightSvg(height: number): string {
   return fit(asset("wordmark-light.svg").trim(), wordmarkWidth(height), height);
 }

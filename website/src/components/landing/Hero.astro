@@ -1,5 +1,6 @@
 ---
 import { PRODUCT_NAME } from "../../config/brand";
+import { wordmarkInlineSvg } from "../../lib/brand-mark";
 import { latestSpecHref } from "../../lib/spec";
 import { SPELLED } from "../../lib/story/name";
 import { buttonVariants } from "../ui/button";
@@ -14,7 +15,7 @@ const labels = SPELLED.map((part) => ({ word: part.label, at: PRODUCT_NAME.lastI
 
 <section class="home-width hero" aria-labelledby="home-title">
   <div class="hero-name" data-spell>
-    <h1 id="home-title" class="hero-mark">{PRODUCT_NAME}</h1>
+    <h1 id="home-title" class="hero-mark"><span class="visually-hidden">{PRODUCT_NAME}</span><Fragment set:html={wordmarkInlineSvg("hero-word")} /></h1>
     <p class="hero-spell" aria-hidden="true" data-pagefind-ignore="all">
       {labels.map((item) => <span data-at={item.at}>{item.word}</span>)}
     </p>
@@ -45,9 +46,15 @@ const labels = SPELLED.map((part) => ({ word: part.label, at: PRODUCT_NAME.lastI
 
   .hero-mark {
     font-size: var(--mark);
-    font-weight: 800;
-    letter-spacing: -0.06em;
-    line-height: 0.95;
+    line-height: 1;
+  }
+
+  .hero-mark :global(.hero-word) {
+    display: block;
+    width: auto;
+    height: calc(var(--mark) * 44 / 38);
+    margin-block: calc(var(--mark) * -0.12) calc(var(--mark) * -0.1);
+    color: var(--text);
   }
 
   .hero-spell {

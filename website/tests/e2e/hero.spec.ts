@@ -2,36 +2,28 @@ import { expect, test, type Page } from "@playwright/test";
 import { PITCH, PRODUCT_NAME } from "../../src/config/brand";
 import { SPELLED } from "../../src/lib/story/name";
 
-/** Each label of the hero with the ink box of its letter, in px from the left of the page. */
+/** Each label of the hero with the ink box of its letter in the wordmark, in px from the left of the page. */
 const labels = (page: Page) =>
-  page.evaluate(() => {
-    const mark = document.querySelector(".hero-mark")!;
-    const text = mark.firstChild!;
-    const style = getComputedStyle(mark);
-    const context = document.createElement("canvas").getContext("2d")!;
-    context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  page.evaluate((name) => {
+    const word = document.querySelector(".hero-mark svg")!;
     return [...document.querySelectorAll<HTMLElement>(".hero-spell [data-at]")].map((label) => {
       const at = Number(label.dataset.at);
-      const range = document.createRange();
-      range.setStart(text, at);
-      range.setEnd(text, at + 1);
-      const glyph = range.getBoundingClientRect();
-      const ink = context.measureText(text.textContent!.charAt(at));
+      const glyph = word.querySelector(`[data-at="${at}"]`)!.getBoundingClientRect();
       const box = label.getBoundingClientRect();
       return {
-        letter: text.textContent!.charAt(at),
+        letter: name.charAt(at),
         word: label.textContent!,
         left: box.left,
         right: box.right,
         top: box.top,
         center: box.left + box.width / 2,
-        inkLeft: glyph.left - ink.actualBoundingBoxLeft,
-        inkRight: glyph.left + ink.actualBoundingBoxRight,
+        inkLeft: glyph.left,
+        inkRight: glyph.right,
         glyphTop: glyph.top,
         size: parseFloat(getComputedStyle(label).fontSize),
       };
     });
-  });
+  }, PRODUCT_NAME);
 
 /** The contrast ratio of two CSS colors, as WCAG computes it. */
 const contrast = (page: Page, selector: string) =>
@@ -62,9 +54,20 @@ test.describe("the hero", () => {
     await expect(page.locator(".hero").getByRole("link", { name: "Read the specification" })).toHaveAttribute("href", /^\/spec\/v\d+\.\d+\/$/);
   });
 
+  test("draws the built wordmark with the arrow H, named OpenHAL for screen readers and search", async ({ page, request }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1, name: PRODUCT_NAME })).toBeVisible();
+    const file = await (await request.get("/brand/wordmark-light.svg")).text();
+    const built = [...file.matchAll(/<path data-at="(\d+)" d="([^"]+)"/g)].map((match) => match[2]);
+    const drawn = await page.locator(".hero-mark svg path[data-at]").evaluateAll((paths) => paths.map((path) => path.getAttribute("d")));
+    expect(built).toHaveLength(PRODUCT_NAME.length);
+    expect(drawn).toEqual(built);
+    await expect(page.locator(".hero-mark svg")).toHaveAttribute("aria-hidden", "true");
+  });
+
   test("shows no diagram and none of the old full-screen letter sections", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".hero svg, .hero .seq, .hero-demo, .hero-letters, .hero-briefs, .hero-runway, .hero-list, [data-sequence]")).toHaveCount(0);
+    await expect(page.locator(".hero svg:not(.hero-word), .hero .seq, .hero-demo, .hero-letters, .hero-briefs, .hero-runway, .hero-list, [data-sequence]")).toHaveCount(0);
     for (const brief of ["The hardware is any device", "A hardware abstraction layer gives every device", "The layer is the hub"]) {
       await expect(page.locator("main")).not.toContainText(brief);
     }

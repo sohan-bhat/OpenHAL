@@ -28,32 +28,26 @@
   };
 
   const place = (root) => {
-    const mark = root.querySelector(".hero-mark");
+    const word = root.querySelector(".hero-mark svg");
     const spell = root.querySelector(".hero-spell");
-    const text = mark && mark.firstChild;
-    if (!mark || !spell || !text || text.nodeType !== Node.TEXT_NODE) return;
-    const style = getComputedStyle(mark);
-    const context = document.createElement("canvas").getContext("2d");
-    if (!context) return;
-    context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const letters = word && word.querySelector("[data-baseline]");
+    if (!word || !spell || !letters) return;
     const box = root.getBoundingClientRect();
-    const range = document.createRange();
+    const frame = word.getBoundingClientRect();
+    const scale = frame.height / word.viewBox.baseVal.height;
+    const baseline = frame.top - box.top + Number(letters.dataset.baseline) * scale;
+    const size = Number(letters.dataset.size) * scale;
     const spots = Array.from(spell.querySelectorAll("[data-at]"), (label) => {
-      const at = Number(label.dataset.at);
-      range.setStart(text, at);
-      range.setEnd(text, at + 1);
-      const glyph = range.getBoundingClientRect();
-      const metrics = context.measureText(text.textContent.charAt(at));
-      const origin = glyph.left - box.left;
-      const ink = [origin - metrics.actualBoundingBoxLeft, origin + metrics.actualBoundingBoxRight];
-      return { label, ink, center: (ink[0] + ink[1]) / 2, half: label.getBoundingClientRect().width / 2, baseline: glyph.top + metrics.fontBoundingBoxAscent - box.top };
+      const glyph = letters.querySelector(`[data-at="${label.dataset.at}"]`).getBoundingClientRect();
+      const ink = [glyph.left - box.left, glyph.right - box.left];
+      return { label, ink, center: (ink[0] + ink[1]) / 2, half: label.getBoundingClientRect().width / 2 };
     });
     const placed = spread(spots, 8 - box.left, document.documentElement.clientWidth - box.left - 8);
     const line = parseFloat(getComputedStyle(spell).fontSize) * 1.3;
     spots.forEach((spot, index) => {
       const row = placed ? 0 : index % 2;
       spot.label.style.setProperty("--x", `${(placed ? placed[index] : spot.center).toFixed(1)}px`);
-      spot.label.style.setProperty("--y", `${(spot.baseline + parseFloat(style.fontSize) * 0.08 + row * line).toFixed(1)}px`);
+      spot.label.style.setProperty("--y", `${(baseline + size * 0.08 + row * line).toFixed(1)}px`);
     });
     spell.toggleAttribute("data-placed", true);
   };

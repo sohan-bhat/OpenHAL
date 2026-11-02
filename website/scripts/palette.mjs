@@ -59,11 +59,23 @@ export function diagramsPy(source) {
   return source.replace(/THEMES = \{\n    "light": \{[^}]*\},\n    "dark": \{[^}]*\},\n\}/, `THEMES = {\n    "light": ${dict("light")},\n    "dark": ${dict("dark")},\n}`);
 }
 
+const BRAND = { surface: "surface", border: "border", text: "text", text2: "text-2", ok: "ok", blocked: "blocked" };
+
+/** tools/readme/build.py with the colors of its wordmark, mark and favicon from the palette. */
+export function brandPy(source) {
+  const theme = (name) =>
+    `    "${name}": {\n${Object.entries(BRAND)
+      .map(([key, token]) => `        "${key}": "${palette[name][token].toUpperCase()}",`)
+      .join("\n")}\n    },`;
+  return source.replace(/THEMES = \{\n    "light": \{[^}]*\},\n    "dark": \{[^}]*\},\n\}/, `THEMES = {\n${theme("light")}\n${theme("dark")}\n}`);
+}
+
 export const FILES = {
   "design/tokens.css": tokensCss,
   "docs/diagrams/theme-light.d2": () => d2Theme("light"),
   "docs/diagrams/theme-dark.d2": () => d2Theme("dark"),
   "scripts/diagrams.py": diagramsPy,
+  "tools/readme/build.py": brandPy,
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

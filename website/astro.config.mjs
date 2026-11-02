@@ -6,6 +6,7 @@ import starlight from "@astrojs/starlight";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import { fileURLToPath } from "node:url";
+import { iconHref } from "./src/config/icons.mjs";
 import { REPOSITORY_URL } from "./src/config/repo.mjs";
 import { rehypeDiagrams } from "./src/lib/markdown/mermaid.mjs";
 import { rehypeCodeBlocks, rehypeGlossaryLinks, rehypeHeadingLinks, rehypeSpecSections, rehypeTables, rehypeTypography, remarkRepoLinks, remarkTitle } from "./src/lib/markdown/plugins.mjs";
@@ -45,7 +46,7 @@ export default defineConfig({
     starlight({
       title: "OpenHAL",
       description: "An open-source protocol for AI agents to control hardware.",
-      favicon: "/favicon.svg",
+      favicon: iconHref("/favicon.svg"),
       social: [{ icon: "github", label: "GitHub", href: REPOSITORY_URL }],
       expressiveCode: false,
       disable404Route: true,

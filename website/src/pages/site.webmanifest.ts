@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { PITCH, PRODUCT_NAME } from "../config/brand";
+import { iconHref } from "../config/icons.mjs";
 import { palette } from "../lib/palette.mjs";
 
 export const GET: APIRoute = () =>
@@ -14,8 +15,8 @@ export const GET: APIRoute = () =>
         background_color: palette.light.bg,
         theme_color: palette.light.bg,
         icons: [
-          { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
-          { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+          { src: iconHref("/icon-192.png"), sizes: "192x192", type: "image/png" },
+          { src: iconHref("/icon-512.png"), sizes: "512x512", type: "image/png" },
         ],
       },
       null,

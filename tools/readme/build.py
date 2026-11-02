@@ -14,24 +14,24 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from svgtext import path, width
+from svgtext import Outline, letters, outline, path, width
 
 OUT = Path(__file__).resolve().parents[2] / "docs" / "assets"
 
 THEMES = {
     "light": {
-        "surface": "#F4F5F7",
-        "border": "#DADDE2",
-        "text": "#15181C",
-        "text2": "#4F5661",
+        "surface": "#EFF1EF",
+        "border": "#D7DAD7",
+        "text": "#1D211C",
+        "text2": "#60655F",
         "ok": "#3C754F",
         "blocked": "#A14034",
     },
     "dark": {
-        "surface": "#15181D",
-        "border": "#2A2F36",
-        "text": "#E7EAEE",
-        "text2": "#A0A7B1",
+        "surface": "#212220",
+        "border": "#383A36",
+        "text": "#ECEEEC",
+        "text2": "#AFB5AD",
         "ok": "#72B88E",
         "blocked": "#D57A72",
     },
@@ -84,12 +84,51 @@ INITIALS = "OH"
 WEIGHT = 800
 TRACKING = -0.06
 INITIALS_TRACKING = -0.1
-"""The brand is the name set tight in the text face at its heaviest weight. There is no logo shape."""
+"""The brand is the name set tight in the text face at its heaviest weight, with the H's crossbar
+drawn as an arrow toward the A and the L."""
+
+
+def arrow_h() -> Outline:
+    """The font's own H with its crossbar as an arrow's shaft. The shaft keeps the crossbar's height
+    and thickness and runs on through the right stem, where it ends in a point that reaches out half
+    the crossbar's thickness, a right angle, toward the next letter."""
+    (contour,) = outline("H", "text", WEIGHT)
+    xs = sorted({x for x, _ in contour})
+    ys = sorted({y for _, y in contour})
+    left, inner_left, inner_right, right = xs
+    bottom, bar_bottom, bar_top, top = ys
+    middle = (bar_bottom + bar_top) / 2
+    reach = (bar_top - bar_bottom) / 2
+    return [
+        [(left, bottom), (left, top), (inner_left, top), (inner_left, bottom)],
+        [
+            (inner_right, bottom),
+            (inner_right, top),
+            (right, top),
+            (right, bar_top),
+            (right + reach, middle),
+            (right, bar_bottom),
+            (right, bottom),
+        ],
+        [(inner_left, bar_bottom), (inner_left, bar_top), (inner_right, bar_top), (inner_right, bar_bottom)],
+    ]
+
+
+ARROW = {"H": arrow_h()}
+
+
+def overhang(text: str, size: float) -> float:
+    """How far the arrow's point reaches past the last letter's advance, when the last letter is H."""
+    if not text.endswith("H"):
+        return 0.0
+    advance = width("H", "text", 1000, WEIGHT)
+    reach = max(x for polygon in ARROW["H"] for x, _ in polygon)
+    return max(0.0, reach - advance) * size / 1000
 
 
 def fitted(text: str, box: float, size: float, tracking: float = TRACKING) -> float:
-    """The largest size up to `size` at which `text` fits in `box` wide."""
-    return min(size, box / width(text, "text", 1, WEIGHT, tracking))
+    """The largest size up to `size` at which `text`, the arrow's point included, fits in `box` wide."""
+    return min(size, box / (width(text, "text", 1, WEIGHT, tracking) + overhang(text, 1)))
 
 
 def initials(c: Canvas, side: float, color: str) -> None:
@@ -98,7 +137,7 @@ def initials(c: Canvas, side: float, color: str) -> None:
     c.add(
         path(
             INITIALS,
-            side / 2,
+            side / 2 - overhang(INITIALS, size) / 2,
             baseline,
             face="text",
             size=size,
@@ -106,12 +145,13 @@ def initials(c: Canvas, side: float, color: str) -> None:
             fill=color,
             anchor="middle",
             tracking=INITIALS_TRACKING,
+            outlines=ARROW,
         )
     )
 
 
 def mark_svg(t: dict[str, str]) -> str:
-    c = Canvas(64, 64, "OpenHAL", "The OpenHAL initials, OH, set tight in the brand face.")
+    c = Canvas(64, 64, "OpenHAL", "The OpenHAL initials, OH, set tight in the brand face, the H's crossbar an arrow.")
     initials(c, 64, t["text"])
     return c.svg().replace('viewBox="0 0 64 64"', 'viewBox="0 0 64 64" shape-rendering="geometricPrecision"')
 
@@ -122,7 +162,7 @@ def favicon() -> str:
     size = fitted(INITIALS, 16, 15, INITIALS_TRACKING)
     shape = path(
         INITIALS,
-        8,
+        8 - overhang(INITIALS, size) / 2,
         8 + size * 0.35,
         face="text",
         size=size,
@@ -130,6 +170,7 @@ def favicon() -> str:
         fill="currentColor",
         anchor="middle",
         tracking=INITIALS_TRACKING,
+        outlines=ARROW,
     )
     style = f"g{{color:{light['text']}}}@media (prefers-color-scheme: dark){{g{{color:{dark['text']}}}}}"
     return (
@@ -139,10 +180,16 @@ def favicon() -> str:
 
 
 def wordmark(t: dict[str, str]) -> str:
+    """The wordmark with each letter its own path, numbered by its place in the word, so the home page
+    hero can set its [hardware], [abstraction] and [layer] labels under the H, the A and the L."""
     size = 38
     text_w = width(WORD, "text", size, WEIGHT, TRACKING)
-    c = Canvas(round(text_w + 4), 44, "OpenHAL", "The OpenHAL wordmark.")
-    c.add(path(WORD, 2, 34, face="text", size=size, weight=WEIGHT, fill=t["text"], tracking=TRACKING))
+    c = Canvas(
+        round(text_w + 4), 44, "OpenHAL", "The OpenHAL wordmark, the H's crossbar an arrow toward the A and the L."
+    )
+    drawn = letters(WORD, 2, 34, face="text", size=size, weight=WEIGHT, tracking=TRACKING, outlines=ARROW)
+    marks = "".join(f'<path data-at="{index}" d="{d}"/>' for index, d in enumerate(drawn))
+    c.add(f'<g fill="{t["text"]}" data-baseline="34" data-size="{size}">{marks}</g>')
     return c.svg()
 
 
