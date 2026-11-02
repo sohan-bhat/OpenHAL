@@ -83,4 +83,7 @@ def sentence(loaded: Loaded, *, writable: bool) -> str:
     state = "writable" if writable else "loaded read-only"
     if loaded.status == "not_running":
         return f"{device} is {state} once {PRODUCT_NAME} starts. Start {PRODUCT_NAME} with {START_COMMAND}."
-    return f"{device} is {state} once {PRODUCT_NAME} starts again, because loading the file now failed. {loaded.detail}"
+    return (
+        f"Loading {device} into the running {PRODUCT_NAME} failed. {loaded.detail} "
+        f"{PRODUCT_NAME} loads the file when {PRODUCT_NAME} starts again."
+    )

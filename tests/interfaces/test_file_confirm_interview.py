@@ -124,7 +124,7 @@ def test_an_agent_token_cannot_load_the_file_into_the_hub(cli_hub: SyncHub, monk
         code, out = run("file", "confirm", str(path))
     assert code == 0, out
     assert "desk-lamp" not in cli_hub.hub.kernel.devices
-    assert "loading the file now failed" in out
+    assert "Loading desk-lamp into the running OpenHAL failed." in out
     assert "human principal" in out
 
 
@@ -133,3 +133,22 @@ def cli_hub(sync_hub: SyncHub, monkeypatch: pytest.MonkeyPatch) -> SyncHub:
     monkeypatch.setattr(_common, "TRANSPORT", sync_hub.transport)
     monkeypatch.setenv("OPENHAL_TOKEN", sync_hub.tokens.human)
     return sync_hub
+
+
+def test_init_loads_a_new_device_into_the_running_hub(
+    cli_hub: SyncHub, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("OPENHAL_HOME", str(cli_hub.hub.config.home))
+    monkeypatch.setenv("HOME", str(tmp_path / "user"))
+    from openhal.drivers.openhal_firmware.simulator import SIMULATORS
+
+    try:
+        code, out = run(
+            "init", "--yes", "--no-discover", "--no-sample", "--device", "openhal-firmware=sim:plant-waterer"
+        )
+    finally:
+        SIMULATORS.clear()
+    assert code == 0, out
+    assert "loaded         plant-waterer is loaded read-only." in out, out
+    assert not cli_hub.hub.kernel.devices["plant-waterer"].file.writable
+    assert "restart" not in out
