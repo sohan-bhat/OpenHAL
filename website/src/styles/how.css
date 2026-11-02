@@ -216,6 +216,10 @@
   color: var(--accent);
 }
 
+.how-skip {
+  padding-block: 2px;
+}
+
 .how-past {
   color: var(--text-2);
 }

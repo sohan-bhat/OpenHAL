@@ -19,7 +19,7 @@
   --sl-nav-pad-y: 0px;
   --sl-nav-pad-x: var(--s-4);
   --sl-nav-gap: var(--s-4);
-  --sl-menu-button-size: 40px;
+  --sl-menu-button-size: 44px;
   --oh-reading-width: 48.25rem;
   --sl-content-width: var(--oh-reading-width);
   --sl-sidebar-pad-x: var(--s-4);
@@ -150,11 +150,20 @@ details[data-closing]::details-content {
 }
 
 .sl-menu-button {
+  top: calc((var(--sl-nav-height) - 1px - var(--sl-menu-button-size)) / 2);
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--oh-control-border);
   box-shadow: var(--oh-control-ring) var(--oh-control-border);
   border-radius: var(--radius);
   background: var(--bg);
   color: var(--text);
+}
+
+.sl-menu-button svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
 }
 
 html:root:has(.oh-home) {
