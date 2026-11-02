@@ -120,6 +120,18 @@
       },
       "FinishBody": {
         "properties": {
+          "phrase": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phrase"
+          },
           "save_as": {
             "anyOf": [
               {
@@ -517,6 +529,18 @@
       "WriterStartBody": {
         "additionalProperties": false,
         "properties": {
+          "device": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device"
+          },
           "driver": {
             "anyOf": [
               {

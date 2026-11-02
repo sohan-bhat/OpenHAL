@@ -56,6 +56,7 @@ class WriterStartBody(BaseModel):
     params: dict[str, Any] | None = None
     sketch_path: str | None = Field(default=None, max_length=1024)
     manual_text: str | None = Field(default=None, max_length=400_000)
+    device: str | None = Field(default=None, max_length=64)
 
 
 class ProposeBody(BaseModel):
@@ -68,6 +69,7 @@ class AnswersBody(BaseModel):
 
 class FinishBody(BaseModel):
     save_as: str | None = Field(default=None, max_length=80)
+    phrase: str | None = Field(default=None, max_length=40)
 
 
 class LoadFileBody(BaseModel):
@@ -505,7 +507,9 @@ def create_app(hub: Hub) -> FastAPI:
             raise HTTPException(403, "Starting the driver writer needs a control scope.")
         try:
             session = await hub.writer.start(who, **body.model_dump())
-        except (WriterError, ValueError, OSError) as exc:
+        except KeyError as exc:
+            raise HTTPException(404, str(exc.args[0])) from exc
+        except (WriterError, NotHumanError, ValueError, OSError) as exc:
             raise writer_errors(exc) from exc
         return hub.writer.view(session)
 
@@ -538,7 +542,7 @@ def create_app(hub: Hub) -> FastAPI:
     async def writer_finish(session_id: str, body: FinishBody, who: Who) -> dict[str, Any]:
         session_or_404(session_id)
         try:
-            return await hub.writer.finish(who, session_id, body.save_as)
+            return await hub.writer.finish(who, session_id, body.save_as, body.phrase)
         except (WriterError, NotHumanError, FileExistsError, DeviceFileError) as exc:
             raise writer_errors(exc) from exc
 
