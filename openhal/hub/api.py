@@ -30,6 +30,7 @@ from openhal.drivers import registry
 from openhal.drivers.base import DriverError
 from openhal.hub import discovery, views
 from openhal.hub.hub import Hub
+from openhal.hub.locks import DeviceLocked
 from openhal.kernel.checks import Block
 from openhal.kernel.commands import Action, Write
 from openhal.kernel.principals import Principal
@@ -67,6 +68,11 @@ class AnswersBody(BaseModel):
 
 class FinishBody(BaseModel):
     save_as: str | None = Field(default=None, max_length=80)
+
+
+class LoadFileBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    path: str = Field(min_length=1, max_length=1024)
 
 
 class TokenBody(BaseModel):
@@ -543,6 +549,28 @@ def create_app(hub: Hub) -> FastAPI:
             return await hub.writer.test_plan(session_id)
         except WriterError as exc:
             raise writer_errors(exc) from exc
+
+    @app.post("/v1/device_files/load")
+    async def load_device_file(body: LoadFileBody, who: Who) -> dict[str, Any]:
+        """Load a device file from the devices folder while the hub runs. Takes a human principal."""
+        human_only(who)
+        try:
+            status, file = await hub.load_device_file(Path(body.path), by=who.label)
+        except FileNotFoundError as exc:
+            raise HTTPException(404, f"There is no device file at {body.path}.") from exc
+        except DeviceFileError as exc:
+            raise HTTPException(400, f"{body.path} doesn't load. " + " ".join(exc.problems)) from exc
+        except (ValueError, OSError, registry.UnknownDriver, DeviceLocked) as exc:
+            raise HTTPException(409, str(exc)) from exc
+        runtime = hub.kernel.devices.get(file.device_id)
+        info = hub.info.get(file.device_id)
+        return {
+            "status": status,
+            "device_id": file.device_id,
+            "path": info.path if info is not None else body.path,
+            "writable": file.writable,
+            "connected": bool(runtime and runtime.connected),
+        }
 
     @app.post("/v1/tokens")
     async def create_token(body: TokenBody, who: Who) -> dict[str, Any]:

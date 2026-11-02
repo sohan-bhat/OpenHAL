@@ -149,6 +149,22 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "LoadFileBody": {
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "LoadFileBody",
+        "type": "object"
+      },
       "PairBody": {
         "additionalProperties": false,
         "properties": {
@@ -912,6 +928,47 @@
           }
         },
         "summary": "Reject"
+      }
+    },
+    "/v1/device_files/load": {
+      "post": {
+        "description": "Load a device file from the devices folder while the hub runs. Takes a human principal.",
+        "operationId": "load_device_file_v1_device_files_load_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoadFileBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Load Device File V1 Device Files Load Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Load Device File"
       }
     },
     "/v1/devices": {

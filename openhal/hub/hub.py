@@ -189,6 +189,66 @@ class Hub:
         self.info[device_id] = DeviceInfo(str(path) if path else None, warnings_for(file))
         return runtime
 
+    async def load_device_file(self, path: Path, *, by: str = SYSTEM.label) -> tuple[str, DeviceFile]:
+        """Load one file from the devices folder while the hub runs, so no restart is needed.
+
+        A device the file already registered is replaced, with its polling stopped, its driver closed
+        and its lock released first. A file that hasn't changed leaves the device as it is. Returns
+        what happened, added, reloaded or unchanged, and the file. Raises DeviceFileError for a file
+        that doesn't load and ValueError for a path outside the devices folder or a clashing id.
+        """
+        resolved, file = await asyncio.to_thread(self._read_device_file, path)
+        previous = next((key for key, info in self.info.items() if info.path == str(resolved)), None)
+        if file.device_id in self.kernel.devices and previous != file.device_id:
+            other = self.info.get(file.device_id)
+            where = other.path if other is not None and other.path else "another device file"
+            raise ValueError(f"A device with id {file.device_id!r} is already loaded from {where}.")
+        status = "added"
+        if previous is not None and previous in self.kernel.devices:
+            current = self.kernel.devices[previous].file
+            if previous == file.device_id and current.model_dump(mode="json") == file.model_dump(mode="json"):
+                return "unchanged", current
+            await self._remove_device(previous)
+            status = "reloaded"
+        await self.add_and_start(file, path=resolved)
+        self.load_problems = [item for item in self.load_problems if item.path != str(resolved)]
+        self.audit.append(
+            "device_file_loaded", by, device=file.device_id, status="done", path=str(resolved), result=status
+        )
+        return status, file
+
+    def _read_device_file(self, path: Path) -> tuple[Path, DeviceFile]:
+        folder = self.config.devices_dir.resolve()
+        resolved = path.expanduser().resolve()
+        if resolved.parent != folder or not resolved.name.endswith(DEVICE_FILE_SUFFIX):
+            raise ValueError(f"The hub loads device files from {folder} only, ending in {DEVICE_FILE_SUFFIX}.")
+        return resolved, load(resolved)
+
+    async def _remove_device(self, device_id: str) -> None:
+        runtime = self.kernel.devices[device_id]
+        names = {f"openhal-poll-{device_id}", f"openhal-heartbeat-{device_id}"}
+        for task in [task for task in self._tasks if task.get_name() in names]:
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                await task
+            self._tasks.remove(task)
+        locked = False
+        with contextlib.suppress(TimeoutError):
+            await asyncio.wait_for(runtime.lock.acquire(), 5.0)
+            locked = True
+        try:
+            with contextlib.suppress(Exception):
+                await asyncio.wait_for(runtime.driver.close(), 5.0)
+            self.kernel.unregister(device_id)
+        finally:
+            if locked:
+                runtime.lock.release()
+        lock = self._locks.pop(device_id, None)
+        if lock is not None:
+            lock.release()
+        self.info.pop(device_id, None)
+        self._emit({"type": "state", "device": device_id})
+
     async def add_and_start(
         self, file: DeviceFile, *, driver: Driver | None = None, path: Path | None = None
     ) -> DeviceRuntime:
