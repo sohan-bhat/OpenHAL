@@ -142,6 +142,7 @@ def test_init_loads_a_new_device_into_the_running_hub(
     monkeypatch.setenv("HOME", str(tmp_path / "user"))
     from openhal.drivers.openhal_firmware.simulator import SIMULATORS
 
+    SIMULATORS.clear()
     try:
         code, out = run(
             "init", "--yes", "--no-discover", "--no-sample", "--device", "openhal-firmware=sim:plant-waterer"
