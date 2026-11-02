@@ -31,7 +31,13 @@
   const timer = setInterval(() => (now = Date.now()), 1000);
   onDestroy(() => clearInterval(timer));
 
-  const pending = $derived(inspector.confirmations.filter((request) => request.status === "pending"));
+  const pending = $derived(
+    inspector.confirmations.filter((request) => request.status === "pending" && request.command.kind !== "limits"),
+  );
+  const limitChanges = $derived(
+    inspector.confirmations.filter((request) => request.status === "pending" && request.command.kind === "limits"),
+  );
+  let phrases = $state<Record<string, string>>({});
   const decided = $derived(recent.filter((request) => request.status !== "pending").slice(0, 20));
 
   let watching = false;
@@ -106,10 +112,16 @@
   }
 
   function method(command: Command): string {
+    if (command.kind === "limits") return "limits";
     return command.kind === "action" ? "hal/action" : "hal/write";
   }
 
+  function changeLines(command: Command): string[] {
+    return Object.entries(command.changes ?? {}).map(([name, step]) => `${name} ${step.from} to ${step.to}`);
+  }
+
   function params(command: Command): Record<string, unknown> {
+    if (command.kind === "limits") return { device: command.device, channel: command.channel, changes: command.changes };
     const { kind: _kind, ...rest } = command;
     return rest;
   }
@@ -117,7 +129,8 @@
   async function approve(request: ConfirmationRequest) {
     busy = { ...busy, [request.id]: true };
     try {
-      const decision = await api.approve(request.id);
+      const phrase = request.command.kind === "limits" ? (phrases[request.id] ?? "").trim() : undefined;
+      const decision = await api.approve(request.id, phrase);
       outcomes = { ...outcomes, [request.id]: { by: "approved", decision } };
     } catch (error) {
       errors = { ...errors, [request.id]: error instanceof Error ? error.message : "Approving failed." };
@@ -275,6 +288,81 @@
     {/if}
   </section>
 
+  {#if limitChanges.length}
+    <section class="section" aria-labelledby="limit-changes-title">
+      <h2 id="limit-changes-title">Limit changes <span class="muted mono">{limitChanges.length}</span></h2>
+      <ol class="requests">
+        {#each limitChanges as request (request.id)}
+          <li class="request appear" aria-labelledby="req-{request.id}">
+            <div class="asked agent-rule">
+              <h3 id="req-{request.id}" class="ask">
+                <span class="mono nobreak">{request.requested_by}</span> sends a request to widen the limits of
+                <span class="mono nobreak">{request.command.device}.{request.command.channel}</span>.
+              </h3>
+              <p class="who">
+                <span class="muted">requested {asked(request)}</span>
+                <span class="mono muted">request <span class="nobreak">{request.id}</span></span>
+              </p>
+              <ul class="changes">
+                {#each changeLines(request.command) as line (line)}<li class="mono">{line}</li>{/each}
+              </ul>
+              <dl class="facts">
+                <div>
+                  <dt class="label">why the request is held</dt>
+                  <dd>{request.dry_run.message}</dd>
+                </div>
+              </dl>
+            </div>
+            <form class="decide human-surface" onsubmit={(event) => event.preventDefault()}>
+              <span class="label">your decision</span>
+              <p class="expires">
+                Expires in <span class="mono countdown">{String(remaining(request)).padStart(3, " ")} s</span>
+              </p>
+              <div class="field">
+                <Label for="phrase-{request.id}">Phrase</Label>
+                <Input
+                  id="phrase-{request.id}"
+                  type="text"
+                  value={phrases[request.id] ?? ""}
+                  oninput={(event) => (phrases = { ...phrases, [request.id]: (event.currentTarget as HTMLInputElement).value })}
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  aria-describedby="phrase-hint-{request.id}"
+                />
+                <p class="muted small" id="phrase-hint-{request.id}">Type <code>approve</code> to widen these limits.</p>
+              </div>
+              <div class="buttons">
+                <Button
+                  variant="primary"
+                  disabled={busy[request.id] || (phrases[request.id] ?? "").trim().toLowerCase() !== "approve"}
+                  onclick={() => approve(request)}
+                >
+                  Approve the change
+                </Button>
+              </div>
+              <div class="buttons">
+                <div class="field reason">
+                  <Label for="reject-{request.id}">Reason to reject, optional</Label>
+                  <Input
+                    id="reject-{request.id}"
+                    type="text"
+                    value={reasons[request.id] ?? ""}
+                    oninput={(event) => (reasons = { ...reasons, [request.id]: (event.currentTarget as HTMLInputElement).value })}
+                    maxlength={200}
+                    autocomplete="off"
+                  />
+                </div>
+                <Button disabled={busy[request.id]} onclick={() => reject(request)}>Reject</Button>
+              </div>
+              {#if errors[request.id]}<p class="problem" role="alert">{errors[request.id]}</p>{/if}
+            </form>
+          </li>
+        {/each}
+      </ol>
+    </section>
+  {/if}
+
   {#if Object.keys(outcomes).length}
     <section class="section" aria-labelledby="yours-title" aria-live="polite">
       <h2 id="yours-title">Your decisions</h2>
@@ -336,6 +424,13 @@
 
   header p {
     max-width: 72ch;
+  }
+
+  .changes {
+    display: grid;
+    gap: var(--s-1);
+    margin: var(--s-2) 0;
+    padding-left: var(--s-5);
   }
 
   .requests {

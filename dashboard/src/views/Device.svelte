@@ -4,6 +4,7 @@
   import * as Table from "$lib/components/ui/table/index.js";
   import ActionControl from "../components/ActionControl.svelte";
   import CameraFrame from "../components/CameraFrame.svelte";
+  import LimitsEditor from "../components/LimitsEditor.svelte";
   import Prose from "../components/Prose.svelte";
   import StatusMark from "../components/StatusMark.svelte";
   import WriteControl from "../components/WriteControl.svelte";
@@ -30,6 +31,11 @@
   const cameraChannels = $derived(view ? imageChannels(view) : []);
   const commands = $derived(view ? Object.keys(view.write).length + Object.keys(view.actions).length : 0);
   const reviewable = $derived(!!view && canReview(view, inspector.you));
+  const limitChannels = $derived(
+    view && view.writable && inspector.you?.kind === "human"
+      ? Object.entries(view.write).filter(([, spec]) => spec.type === "number" && spec.unit && spec.min !== null && spec.max !== null)
+      : [],
+  );
   let reviewing = $state(false);
   let reviewError = $state<string | null>(null);
 
@@ -217,6 +223,21 @@
               {disabledReason}
               onwritten={() => id && void inspector.refreshDevice(id)}
             />
+          {/each}
+        </div>
+      </section>
+    {/if}
+
+    {#if limitChannels.length}
+      <section class="section" aria-labelledby="limits-title">
+        <h2 id="limits-title">Limits</h2>
+        <p class="muted small">
+          A narrower limit saves at once. A wider limit needs the typed phrase <code>confirm</code>. OpenHAL writes each
+          change into the Device File and loads the file again.
+        </p>
+        <div class="controls">
+          {#each limitChannels as [name, spec] (name)}
+            <LimitsEditor device={view.id} channel={name} {spec} onchanged={() => id && void inspector.refreshDevice(id)} />
           {/each}
         </div>
       </section>
