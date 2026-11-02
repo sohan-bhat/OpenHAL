@@ -75,14 +75,14 @@ def uninstall(dry_run: bool = DRY_RUN) -> None:
 
 @app.command()
 def restart(dry_run: bool = DRY_RUN) -> None:
-    """Restart the hub, for example so the hub loads new device files."""
+    """Restart OpenHAL, for example after a change to config.yaml. Device files load without a restart."""
     service = _service(dry_run)
     try:
         service.restart()
     except (RunError, ServiceError) as exc:
         fail(str(exc))
     if not dry_run:
-        console.print("[green]restarted[/green]  the hub")
+        console.print("[green]restarted[/green]  OpenHAL")
 
 
 @app.command()

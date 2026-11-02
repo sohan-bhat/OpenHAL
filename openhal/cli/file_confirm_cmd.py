@@ -4,7 +4,7 @@ A file that still has suggested limits gets the limits interview inline. Either 
 writes a top-level `confirmed` with the person's name, today's date and the hash of the file's
 limits, so any later change to a limit makes the file read-only again. The command needs an
 interactive terminal and the typed phrase confirm, like every other human-only command, and then
-asks a running OpenHAL to load the file, so no restart is needed.
+sends a running OpenHAL a request to load the file, so no restart is needed.
 """
 
 from __future__ import annotations

@@ -56,6 +56,13 @@ def test_a_library_file_has_no_device_range_to_hold_to() -> None:
     assert interview.problem(questions["brightness.max"], "120 %") is None
 
 
+def test_a_confirmed_limit_is_the_person_s_and_never_taken_as_the_device_range() -> None:
+    confirmed = lamp()
+    confirmed["write"]["brightness"] = {"unit": "percent", "min": 0, "max": 60}
+    assert interview.device_limits(confirmed) == {}
+    assert interview.device_limits(lamp()) == {"brightness": (0.0, 100.0)}
+
+
 def test_answers_are_checked_against_each_other_as_they_come() -> None:
     questions = asked(lamp())
     answers = {"brightness.min": "50 %"}

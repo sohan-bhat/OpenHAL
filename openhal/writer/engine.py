@@ -478,7 +478,7 @@ class WriterEngine:
         if file.device_id not in self.hub.kernel.devices:
             try:
                 await self.hub.add_and_start(file, path=path)
-            except Exception as exc:  # noqa: BLE001 (saved anyway, the person restarts the hub)
+            except Exception as exc:  # noqa: BLE001 (saved anyway, the hub loads the file when it starts)
                 session.problems.append(f"Saved, but the hub couldn't load it now. {exc}")
         return {"path": str(path), "device_id": file.device_id, "writable": file.writable, "bundle": str(bundle)}
 

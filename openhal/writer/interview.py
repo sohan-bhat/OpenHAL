@@ -142,7 +142,9 @@ def device_limits(draft: dict[str, Any]) -> dict[str, tuple[float, float]]:
     """The range of each channel and action argument on the device itself, by `channel` or `action.arg`.
 
     A file keeps them in `x-device-limits`. A draft the device described itself, and that has no such
-    entry yet, takes them from its own min and max, which are what the device reported.
+    entry yet, takes them from the min and max of each entry still marked suggested, which are what
+    the device reported. A confirmed min or max is the person's own limit, so it says nothing about
+    the device.
     """
     kept = draft.get(DEVICE_LIMITS)
     if isinstance(kept, dict):
@@ -151,11 +153,13 @@ def device_limits(draft: dict[str, Any]) -> dict[str, tuple[float, float]]:
         return {}
     found: dict[str, tuple[float, float]] = {}
     for name, spec in (draft.get("write") or {}).items():
-        if isinstance(spec, dict) and spec.get("type", "number") == "number":
+        if isinstance(spec, dict) and spec.get("suggested") and spec.get("type", "number") == "number":
             pair = _pair([spec.get("min"), spec.get("max")])
             if pair is not None:
                 found[name] = pair
     for name, spec in (draft.get("actions") or {}).items():
+        if not (spec or {}).get("suggested"):
+            continue
         for arg, arg_spec in ((spec or {}).get("args") or {}).items():
             if isinstance(arg_spec, dict) and arg_spec.get("type", "number") == "number":
                 pair = _pair([arg_spec.get("min"), arg_spec.get("max")])
