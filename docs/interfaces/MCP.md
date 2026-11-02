@@ -107,6 +107,7 @@ Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)
 | `plan_check` | Check a list of steps in order without running any |
 | `stop_all` | Emergency stop. Every device goes to its safe state |
 | `tighten_limits` | Narrow min, max or rate for this session. Never widens |
+| `request_limit_change` | Narrow a limit at once, or file a wider limit as a pending change that a person approves |
 | `get_confirmation_status` | Status of requests held for a person's approval |
 | `list_routines` | Routines with state, devices, hazard and last run |
 | `get_routine` | One routine with source and history |

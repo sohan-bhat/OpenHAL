@@ -22,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from openhal._brand import DATA_BLOCK_TAG
 from openhal.client import AsyncClient, OpenHALError
 from openhal.client import models as m
+from openhal.client.calls import Call
 from openhal.mcp.errors import Decision, ErrorMapper, tool_error_text
 from openhal.spec.schema import device_file_schema
 
@@ -365,6 +366,30 @@ class Tools:
         low, high, speed = (Quantity.model_validate(item).model_dump() if item else None for item in (min, max, rate))
         return await self._run(lambda hub: hub.tighten(device, channel, min=low, max=high, rate=speed))
 
+    async def request_limit_change(
+        self,
+        device: DeviceId,
+        channel: ChannelName,
+        min: Annotated[Quantity | None, Field(description='New min, for example {"value": 10, "unit": "%"}.')] = None,
+        max: Annotated[Quantity | None, Field(description='New max, for example {"value": 90, "unit": "%"}.')] = None,
+        rate: Annotated[
+            Quantity | None, Field(description='New max change per second, for example {"value": 5, "unit": "%/s"}.')
+        ] = None,
+    ) -> dict[str, Any]:
+        """Ask for new limits on a channel. A narrower limit applies at once to your own session. A wider limit
+        never applies on your request, because a person must approve it. The hub files it as a pending limit
+        change with a request_id, and the person approves it with openhal confirm approve or in the Inspector.
+        Nothing goes past the range the device itself reports."""
+        body: dict[str, Any] = {"device": device, "channel": channel}
+        for name, item in (("min", min), ("max", max), ("rate", rate)):
+            if item is not None:
+                body[name] = Quantity.model_validate(item).model_dump()
+
+        def parse(data: Any) -> dict[str, Any]:
+            return dict(data)
+
+        return await self._run(lambda hub: hub.call(Call("POST", "/v1/limits", parse, json=body)))
+
     async def get_confirmation_status(
         self,
         request_id: Annotated[
@@ -515,6 +540,7 @@ TOOLS: Final[dict[str, ToolAnnotations]] = {
     "plan_check": READ_ONLY,
     "stop_all": CONTROL,
     "tighten_limits": DRAFT,
+    "request_limit_change": DRAFT,
     "get_confirmation_status": READ_ONLY,
     "list_routines": READ_ONLY,
     "get_routine": READ_ONLY,
