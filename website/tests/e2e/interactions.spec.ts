@@ -230,6 +230,11 @@ test.describe("the interactive parts", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.locator(".sl-menu-button").click();
     await expect(page.locator("#starlight__sidebar")).toHaveCSS("opacity", "1");
+    await page.keyboard.press("Escape");
+    await page.locator("[data-section-pages-trigger]").click();
+    await expect(page.getByRole("dialog", { name: "Specification" })).toBeVisible();
+    expect(await page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === "running").length), "the page sheet opens at once").toBe(0);
+    await page.keyboard.press("Escape");
     expect((await taken(page)).filter((item) => item.duration > 0)).toEqual([]);
     expect(fetched.filter((path) => /\/_astro\/mini\./.test(path))).toEqual([]);
   });

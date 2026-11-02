@@ -234,7 +234,7 @@ test.describe("the left edge", () => {
     });
   }
 
-  test("lines the phone menu's sections and rows up with the header's wordmark", async ({ page }) => {
+  test("lines the phone menu's sections and the page sheet's rows up with the header's wordmark", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(SPEC);
     await page.locator(".sl-menu-button").click();
@@ -242,11 +242,16 @@ test.describe("the left edge", () => {
     const seen = await page.evaluate(() => ({
       brand: Math.round(document.querySelector(".oh-brand")!.getBoundingClientRect().left),
       sections: [...document.querySelectorAll(".oh-menu-sections a")].map((link) => Math.round(link.getBoundingClientRect().left)),
-      rows: [...document.querySelectorAll("#starlight__sidebar [data-sidebar=menu-button]")].filter((row) => row.getClientRects().length).map((row) => Math.round(row.getBoundingClientRect().left)),
     }));
     expect(seen.brand).toBe(16);
     expect(new Set(seen.sections)).toEqual(new Set([16]));
-    expect(new Set(seen.rows)).toEqual(new Set([16]));
+    await page.keyboard.press("Escape");
+    await page.locator("[data-section-pages-trigger]").click();
+    const sheet = page.getByRole("dialog", { name: "Specification" });
+    await expect(sheet).toBeVisible();
+    await page.waitForTimeout(300);
+    const rows = await sheet.locator("[data-sidebar=menu-button]").evaluateAll((list) => list.filter((row) => row.getClientRects().length).map((row) => Math.round(row.getBoundingClientRect().left)));
+    expect(new Set(rows)).toEqual(new Set([16]));
   });
 });
 
@@ -724,8 +729,8 @@ test.describe("the sidebar's collapse", () => {
     await page.keyboard.press("Tab");
     expect(await focused(page), "Tab moves focus on a phone").not.toBe("body");
     expect(await page.evaluate(() => document.documentElement.dataset.sidebar ?? "shown")).toBe("collapsed");
-    await page.locator(".sl-menu-button").click();
-    await expect(page.locator("#starlight__sidebar").getByRole("link", { name: "Install" })).toBeVisible();
+    await page.locator("[data-section-pages-trigger]").click();
+    await expect(page.getByRole("dialog", { name: "Docs" }).getByRole("link", { name: "Install" })).toBeVisible();
   });
 });
 
@@ -734,15 +739,16 @@ test.describe("the phone menu", () => {
     await page.setViewportSize({ width: 390, height: 844 });
   });
 
-  test("lists the sections first, then the section's pages, the version and the theme", async ({ page }) => {
+  test("lists only the sections and the theme, with the current section marked", async ({ page }) => {
     await page.goto(SPEC);
     await page.locator(".sl-menu-button").click();
     const menu = page.locator("#starlight__sidebar");
     await expect(menu).toBeVisible();
     await expect(menu.locator(".oh-menu-sections a")).toHaveText(SECTIONS);
     await expect(menu.locator(".oh-menu-sections a[aria-current='page']")).toHaveText("Specification");
-    await expect(menu.locator(".sidebar-content a[aria-current='page']:not([role='menuitem'])").last()).toHaveText("3.3 Messages");
-    await expect(picker(page, "version", ".mobile-preferences")).toHaveAccessibleName("Specification version v0.1");
+    expect(await menu.getByRole("link").evaluateAll((links) => links.filter((link) => link.checkVisibility()).map((link) => link.textContent!.trim()))).toEqual(SECTIONS);
+    expect(await menu.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
+    await expect(menu.locator("[data-picker='version'], a[rel='me']")).toHaveCount(0);
     await expect(picker(page, "theme", ".mobile-preferences")).toHaveAccessibleName("Theme Auto");
     await picker(page, "theme", ".mobile-preferences").click();
     await expect(menu.getByRole("menu")).toBeVisible();
@@ -750,6 +756,54 @@ test.describe("the phone menu", () => {
     await expect(menu.getByRole("menu")).toHaveCount(0);
     await menu.locator(".oh-menu-sections").getByRole("link", { name: "Device Library" }).click();
     await expect(page).toHaveURL(/\/library\/$/);
+  });
+
+  test("moves a section's pages into a sheet beside On this page, with the current page marked and groups that collapse", async ({ page }) => {
+    await page.goto(SPEC);
+    const trigger = page.locator("[data-section-pages-trigger]");
+    await expect(trigger).toHaveAccessibleName("Specification pages");
+    const bar = await page.evaluate(() => {
+      const button = document.querySelector("[data-section-pages-trigger]")!.getBoundingClientRect();
+      const toggle = document.querySelector("mobile-starlight-toc .toggle")!.getBoundingClientRect();
+      return { gap: toggle.left - button.right, middle: Math.abs(button.top + button.height / 2 - (toggle.top + toggle.height / 2)) };
+    });
+    expect(bar.gap).toBeGreaterThanOrEqual(4);
+    expect(bar.middle).toBeLessThan(1.5);
+    await trigger.click();
+    const sheet = page.getByRole("dialog", { name: "Specification" });
+    await expect(sheet).toBeVisible();
+    await expect(sheet.locator("a[aria-current='page']")).toHaveText("3.3 Messages");
+    await expect(sheet.locator("a[aria-current='page']")).toBeInViewport();
+    const group = sheet.locator("[data-group][data-current]").first();
+    await group.getByRole("button").first().click();
+    await expect(group).toHaveAttribute("data-state", "closed");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await page.goto("/drivers/");
+    await expect(page.locator("[data-section-pages-trigger]")).toHaveAccessibleName("Drivers pages");
+    await expect(page.locator("[data-section-pages-trigger]")).toBeInViewport();
+    await page.goto("/");
+    await expect(page.locator("[data-section-pages-trigger]")).toHaveCount(0);
+  });
+
+  test("keeps every page's link reachable in the menu without JavaScript", async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    await page.goto(SPEC);
+    await expect(page.locator("[data-section-pages-trigger]")).toBeHidden();
+    await page.locator(".sl-menu-button").click();
+    const menu = page.locator("#starlight__sidebar");
+    await expect(menu.getByRole("link", { name: "3.3 Messages" })).toBeVisible();
+    await expect(menu.locator(".oh-menu-sections a")).toHaveText(SECTIONS);
+    await context.close();
+  });
+
+  test("leaves GitHub and the specification version to the page footer", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    const footer = page.locator(".oh-site-footer");
+    await expect(footer.getByRole("link", { name: "Source on GitHub" })).toHaveAttribute("href", /github\.com/);
+    await expect(footer.getByRole("link", { name: "Specification v0.1" })).toHaveAttribute("href", "/spec/v0.1/#versions");
   });
 
   test("closes on Escape and gives focus back to its button", async ({ page }) => {

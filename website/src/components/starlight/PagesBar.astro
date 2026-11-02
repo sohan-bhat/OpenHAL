@@ -1,0 +1,52 @@
+---
+import SectionPages from "../islands/SectionPages";
+import { navEntries } from "../../lib/nav-entries";
+import type { Section } from "../../lib/sections";
+
+interface Props {
+  links: Section[];
+}
+
+const route = Astro.locals.starlightRoute;
+const section = Astro.props.links.find((link) => link.current);
+---
+
+{
+  section && route.sidebar.length > 0 && !route.toc && (
+    <div class="oh-pages md:sl-hidden print:hidden" data-section-pages>
+      <SectionPages client:intent label={section.label} entries={navEntries(route.sidebar)} />
+    </div>
+  )
+}
+
+<style>
+  .oh-pages {
+    position: fixed;
+    z-index: var(--sl-z-index-toc);
+    top: calc(var(--sl-nav-height) - 1px);
+    inset-inline: 0;
+    display: flex;
+    align-items: center;
+    height: calc(var(--sl-mobile-toc-height) + 1px);
+    padding-inline: var(--sl-nav-pad-x);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  @media (max-width: 49.99rem) {
+    :global(html:not([data-has-toc]):has(.oh-pages)) {
+      --sl-mobile-toc-height: 3rem;
+    }
+  }
+
+  @media (scripting: none) {
+    .oh-pages {
+      display: none;
+    }
+
+    :global(html:not([data-has-toc]):has(.oh-pages)) {
+      --sl-mobile-toc-height: 0rem;
+    }
+  }
+</style>

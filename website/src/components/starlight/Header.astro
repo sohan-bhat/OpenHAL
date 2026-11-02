@@ -6,6 +6,7 @@ import { wordmarkWidth } from "../../lib/brand-mark";
 import { inlineScript } from "../../lib/inline-script";
 import slideSource from "../../lib/nav-slide-start.ts?raw";
 import { sections } from "../../lib/sections";
+import PagesBar from "./PagesBar.astro";
 import SectionSelect from "./SectionSelect.astro";
 import Search from "./Search.astro";
 import ThemeSelect from "./ThemeSelect.astro";
@@ -52,6 +53,7 @@ const slide = await inlineScript(slideSource, "nav-slide-start.ts", { iife: true
       <ThemeSelect />
     </div>
   </div>
+  <PagesBar links={links} />
 </div>
 
 <script>

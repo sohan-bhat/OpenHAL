@@ -2,9 +2,12 @@
 import Default from "@astrojs/starlight/components/Footer.astro";
 import { PRODUCT_NAME } from "../../config/brand";
 import { REPOSITORY_URL } from "../../config/site";
+import { latestVersion } from "../../lib/spec";
+import { specBase, versionLabel } from "../../lib/spec-meta.mjs";
 
 const { editUrl, pagination } = Astro.locals.starlightRoute;
 const meta = Boolean(editUrl || pagination.prev || pagination.next);
+const latest = latestVersion();
 ---
 
 {meta && <Default />}
@@ -12,6 +15,7 @@ const meta = Boolean(editUrl || pagination.prev || pagination.next);
   <p><strong>{PRODUCT_NAME}</strong> <span class="muted">is an open protocol, released under Apache 2.0.</span></p>
   <p class="muted">{PRODUCT_NAME} is not affiliated with Anthropic or MHS.</p>
   <p><a href={REPOSITORY_URL} rel="noopener">Source on GitHub</a></p>
+  {latest && <p><a href={`${specBase(latest)}#versions`}>Specification {versionLabel(latest)}</a></p>}
 </div>
 
 <style>

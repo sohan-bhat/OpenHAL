@@ -1,6 +1,7 @@
 ---
-import SidebarNav, { type NavEntry } from "../islands/SidebarNav";
+import SidebarNav from "../islands/SidebarNav";
 import { inlineScript } from "../../lib/inline-script";
+import { navEntries } from "../../lib/nav-entries";
 import { sections } from "../../lib/sections";
 import sidebarSource from "../../lib/sidebar.ts?raw";
 import MobileMenuFooter from "./MobileMenuFooter.astro";
@@ -10,16 +11,6 @@ type RouteEntry = typeof Astro.locals.starlightRoute.sidebar[number];
 const links = await sections(Astro.url.pathname);
 const route = Astro.locals.starlightRoute.sidebar;
 const menuOnly = route.length === 0;
-
-/** Starlight's route data for the island, keeping only what the sidebar shows. */
-function entries(list: RouteEntry[]): NavEntry[] {
-  return list.map((entry) => {
-    const badge = entry.badge ? { badge: entry.badge.text } : {};
-    if (entry.type === "group") return { label: entry.label, entries: entries(entry.entries), ...(entry.collapsed ? { closed: true } : {}), ...badge };
-    const attrs = Object.fromEntries(Object.entries(entry.attrs).filter((pair): pair is [string, string | number | boolean] => ["string", "number", "boolean"].includes(typeof pair[1])));
-    return { label: entry.label, href: entry.href, ...(entry.isCurrent ? { current: true } : {}), ...badge, ...(Object.keys(attrs).length ? { attrs } : {}) };
-  });
-}
 
 /** Names a section's sidebar by its labels and links, the same on every page of the section. */
 function hashOf(list: RouteEntry[]): string {
@@ -43,7 +34,7 @@ const restore = menuOnly ? "" : await inlineScript(`${sidebarSource}\nrestore(do
     ))
   }
 </ul>
-{!menuOnly && <SidebarNav client:intent="tab" entries={entries(route)} hash={hashOf(route)} />}
+{!menuOnly && <SidebarNav client:intent="tab" entries={navEntries(route)} hash={hashOf(route)} />}
 {!menuOnly && <script is:inline set:html={restore} />}
 <div class="md:sl-hidden">
   <MobileMenuFooter />
@@ -92,5 +83,15 @@ const restore = menuOnly ? "" : await inlineScript(`${sidebarSource}\nrestore(do
 
   .oh-menu-sections[data-menu-only] {
     border-bottom: 0;
+  }
+
+  @media (max-width: 49.99rem) and (scripting: enabled) {
+    .oh-menu-sections {
+      border-bottom: 0;
+    }
+
+    :global(#starlight__sidebar [data-slot="sidebar-wrapper"]) {
+      display: none;
+    }
   }
 </style>
