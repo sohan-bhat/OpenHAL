@@ -804,7 +804,7 @@ test.describe("the theme picker", () => {
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await expect(picker(page, "theme")).toHaveAccessibleName("Theme Dark");
     await expect(picker(page, "theme")).toBeFocused();
-    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(13, 15, 18)");
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(17, 18, 16)");
     await page.goto(SPEC);
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await expect(picker(page, "theme")).toHaveAccessibleName("Theme Dark");
@@ -933,16 +933,64 @@ test.describe("site search", () => {
 });
 
 test.describe("page turns", () => {
-  test("the nav highlight has one view transition name on every page", async ({ page }) => {
+  test("the nav highlight has no view transition name of its own, so it stays inside the header under its labels", async ({ page }) => {
+    test.slow();
     await page.setViewportSize({ width: 1440, height: 900 });
     for (const path of ["/", "/docs/", SPEC, "/spec/playground/", "/drivers/", "/library/", "/sdks/"]) {
       await page.goto(path);
       const names = await page.evaluate(() =>
         [...document.querySelectorAll<HTMLElement>("*")].map((el) => getComputedStyle(el).viewTransitionName).filter((name) => name && name !== "none"),
       );
-      expect(names.filter((name) => name === "nav-pill"), path).toHaveLength(1);
+      expect(names.filter((name) => name.startsWith("nav-")), path).toEqual([]);
       expect(names.filter((name) => name === "site-header"), path).toHaveLength(1);
       expect(new Set(names).size, path).toBe(names.length);
+    }
+  });
+
+  test("the nav highlight keeps its fill and opacity under the labels while it slides from Docs to Overview and back", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.addInitScript(() => {
+      const samples: Array<{ background: string; opacity: string; transform: string; z: string; under: boolean }> = [];
+      (window as unknown as { samples: typeof samples }).samples = samples;
+      const tick = () => {
+        const pill = document.querySelector<HTMLElement>(".oh-sections [aria-current=page] .nav-pill");
+        if (pill) {
+          const style = getComputedStyle(pill);
+          const link = pill.closest("a")!;
+          samples.push({ background: style.backgroundColor, opacity: style.opacity, transform: style.transform, z: style.zIndex, under: getComputedStyle(link).isolation === "isolate" && getComputedStyle(pill).viewTransitionName === "none" });
+        }
+        if (samples.length >= 240) clearInterval(timer);
+      };
+      let timer = 0;
+      requestAnimationFrame(() => (timer = window.setInterval(tick, 8)));
+    });
+    const nav = page.getByRole("navigation", { name: "Main" });
+    for (const [from, to, url] of [
+      ["/docs/", "Overview", /\/$/],
+      ["/", "Docs", /\/docs\/$/],
+    ] as const) {
+      await page.goto(from);
+      const fill = await page.evaluate(() => {
+        const probe = document.createElement("span");
+        probe.style.color = "var(--oh-highlight)";
+        document.body.append(probe);
+        const color = getComputedStyle(probe).color;
+        probe.remove();
+        return color;
+      });
+      await nav.getByRole("link", { name: to, exact: true }).click();
+      await expect(page).toHaveURL(url);
+      await page.waitForTimeout(700);
+      const samples = await page.evaluate(() => (window as unknown as { samples: Array<{ background: string; opacity: string; transform: string; z: string; under: boolean }> }).samples);
+      expect(samples.length, to).toBeGreaterThan(3);
+      for (const sample of samples) {
+        expect(sample.background, to).toBe(fill);
+        expect(sample.opacity, to).toBe("1");
+        expect(sample.z, to).toBe("-1");
+        expect(sample.under, `${to}'s label stays over the highlight`).toBe(true);
+      }
+      expect(samples.some((sample) => sample.transform !== "none"), `the highlight slides to ${to}`).toBe(true);
+      expect(samples.at(-1)!.transform, `the highlight rests on ${to}`).toBe("none");
     }
   });
 

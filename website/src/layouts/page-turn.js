@@ -17,7 +17,18 @@
     });
     return found;
   };
-  addEventListener("click", (event) => (clicked = event.target.closest?.(".oh-sections a[data-match], .oh-menu-sections a, [data-menu=section] a")?.href), true);
+  addEventListener(
+    "click",
+    (event) => {
+      const link = event.target.closest?.(".oh-sections a[data-match], .oh-menu-sections a, [data-menu=section] a");
+      clicked = link?.href;
+      if (!link?.matches(".oh-sections a")) return;
+      try {
+        sessionStorage["openhal:nav-from"] = JSON.stringify({ from: section([...document.querySelectorAll(".oh-sections a[data-match]")], location.href), to: new URL(link.href).pathname, at: Date.now() });
+      } catch {}
+    },
+    true,
+  );
   addEventListener("pageswap", ({ viewTransition, activation }) => {
     if (!viewTransition) return;
     const links = [...document.querySelectorAll(".oh-sections a[data-match]")];
