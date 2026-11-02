@@ -773,6 +773,7 @@ test.describe("the phone menu", () => {
     const sheet = page.getByRole("dialog", { name: "Specification" });
     await expect(sheet).toBeVisible();
     await expect(sheet.locator("a[aria-current='page']")).toHaveText("3.3 Messages");
+    expect(await sheet.evaluate((element) => getComputedStyle(element).outlineStyle), "no ring around the whole sheet").toBe("none");
     await expect(sheet.locator("a[aria-current='page']")).toBeInViewport();
     const group = sheet.locator("[data-group][data-current]").first();
     await group.getByRole("button").first().click();

@@ -385,7 +385,7 @@ test.describe("the pickers", () => {
     await expect(picker(page, "theme")).toHaveAttribute("aria-expanded", "false");
   });
 
-  test("open below their button, or above it at the foot of the phone menu", async ({ page }) => {
+  test("open below their button, in the header and in the phone menu's short list", async ({ page }) => {
     await page.goto(SPEC);
     await ready(page);
     const placed = async (scope: string) => {
@@ -403,7 +403,7 @@ test.describe("the pickers", () => {
     await page.locator(".sl-menu-button").click();
     await page.locator(".mobile-preferences").scrollIntoViewIfNeeded();
     const foot = await placed(".mobile-preferences");
-    expect(Math.abs(foot.gapAbove - 4)).toBeLessThan(1);
+    expect(Math.abs(foot.gapBelow - 4)).toBeLessThan(1);
     expect(Math.abs(foot.right)).toBeLessThan(1);
   });
 });

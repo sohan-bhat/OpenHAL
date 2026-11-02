@@ -32,7 +32,7 @@ export default function SectionPages({ label, entries }: Props) {
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="w-[min(85vw,20rem)] max-w-none sm:max-w-none"
+        className="w-[min(85vw,20rem)] max-w-none outline-none! sm:max-w-none"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           const content = event.target as HTMLElement;
