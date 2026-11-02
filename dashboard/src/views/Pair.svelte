@@ -1,4 +1,6 @@
 <script lang="ts">
+  import wordmarkLight from "../../../docs/assets/wordmark-light.svg";
+  import wordmarkDark from "../../../docs/assets/wordmark-dark.svg";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Input } from "$lib/components/ui/input/index.js";
   import { Label } from "$lib/components/ui/label/index.js";
@@ -27,7 +29,7 @@
 </script>
 
 <header class="bar">
-  <div class="brand"><span class="wordmark">OpenHAL</span> <span class="muted">Inspector</span></div>
+  <div class="brand"><picture class="wordmark"><source srcset={wordmarkDark} media="(prefers-color-scheme: dark)" /><img src={wordmarkLight} alt="OpenHAL" width="88" height="24" /></picture> <span class="muted">Inspector</span></div>
   <StopUnavailable why="unpaired" {host} />
 </header>
 <main class="pair" id="main">
@@ -95,8 +97,14 @@
   }
 
   .wordmark {
-    font-weight: 800;
-    letter-spacing: -0.06em;
+    display: block;
+    line-height: 0;
+  }
+
+  .wordmark img {
+    display: block;
+    width: auto;
+    height: 24px;
   }
 
   section,

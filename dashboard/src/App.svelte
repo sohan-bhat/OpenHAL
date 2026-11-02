@@ -1,4 +1,6 @@
 <script lang="ts">
+  import wordmarkLight from "../../docs/assets/wordmark-light.svg";
+  import wordmarkDark from "../../docs/assets/wordmark-dark.svg";
   import { onDestroy, onMount, tick, untrack, type Component } from "svelte";
   import DeviceList from "./components/DeviceList.svelte";
   import Header from "./components/Header.svelte";
@@ -93,7 +95,7 @@
   {#if Pair}<Pair onpaired={() => void inspector.boot()} />{/if}
 {:else if inspector.auth === "offline"}
   <header class="bar">
-    <div class="brand"><strong class="wordmark">OpenHAL</strong> <span class="muted">Inspector</span></div>
+    <div class="brand"><picture class="wordmark"><source srcset={wordmarkDark} media="(prefers-color-scheme: dark)" /><img src={wordmarkLight} alt="OpenHAL" width="88" height="24" /></picture> <span class="muted">Inspector</span></div>
     <StopUnavailable why="offline" host={location.host} />
   </header>
   <main class="offline" id="main">
@@ -222,8 +224,14 @@
   }
 
   .bar .wordmark {
-    font-weight: 800;
-    letter-spacing: -0.06em;
+    display: block;
+    line-height: 0;
+  }
+
+  .bar .wordmark img {
+    display: block;
+    width: auto;
+    height: 24px;
   }
 
   @media (max-width: 1023px) {

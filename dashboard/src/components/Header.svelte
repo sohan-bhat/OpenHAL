@@ -1,4 +1,6 @@
 <script lang="ts">
+  import wordmarkLight from "../../../docs/assets/wordmark-light.svg";
+  import wordmarkDark from "../../../docs/assets/wordmark-dark.svg";
   import { NAV, href, router } from "../lib/router.svelte";
   import { inspector } from "../lib/state.svelte";
   import type { StatusWord } from "../lib/status";
@@ -56,7 +58,7 @@
 
 <header class="top">
   <a class="brand" href={href("devices")} aria-label="OpenHAL Inspector, devices">
-    <span class="wordmark">OpenHAL</span>
+    <picture class="wordmark"><source srcset={wordmarkDark} media="(prefers-color-scheme: dark)" /><img src={wordmarkLight} alt="" width="88" height="24" /></picture>
     <span class="product">Inspector</span>
   </a>
   {@render facts("wide")}
@@ -127,9 +129,14 @@
   }
 
   .wordmark {
-    font-weight: 800;
-    font-size: 20px;
-    letter-spacing: -0.06em;
+    display: block;
+    line-height: 0;
+  }
+
+  .wordmark img {
+    display: block;
+    width: auto;
+    height: 24px;
   }
 
   .product {
