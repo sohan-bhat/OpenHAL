@@ -54,6 +54,12 @@ for (const scheme of ["light", "dark"] as const) {
       await page.keyboard.press("Escape");
       await page.locator("mobile-starlight-toc summary").click();
       problems.push(...(await violations(page)).map((item) => `spec outline ${item}`));
+      await page.keyboard.press("Escape");
+      await page.locator("[data-section-pages-trigger]").click();
+      await expect(page.getByRole("dialog", { name: "Specification" })).toBeVisible();
+      await page.waitForTimeout(300);
+      problems.push(...(await violations(page)).map((item) => `spec page sheet ${item}`));
+      await page.keyboard.press("Escape");
 
       await page.goto("/spec/playground/");
       await page.getByRole("button", { name: "Set the nozzle to 300 °C" }).click();
