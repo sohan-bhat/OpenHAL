@@ -44,5 +44,31 @@ for (const scheme of ["light", "dark"] as const) {
       await context.close();
       await resetLamp();
     });
+
+    test(`Limits and a pending limit change at ${width} px in the ${scheme} theme`, async ({ browser }) => {
+      const state = hubState();
+      await fetch(`${state.url}/_harness/curing-heater/reset`, { method: "POST" });
+      const context = await browser.newContext({ viewport: { width, height: width < 800 ? 844 : 900 }, colorScheme: scheme });
+      await signIn(context);
+      const page = await context.newPage();
+      const tag = `${width}-${scheme}`;
+      await page.goto("/#/devices/curing-heater");
+      const editor = page.getByRole("form", { name: "Limits of power" });
+      await editor.getByLabel("Max, in W").fill("65");
+      await editor.getByRole("button", { name: "Review the change" }).click();
+      await expect(editor.getByLabel("Phrase")).toBeVisible();
+      await editor.scrollIntoViewIfNeeded();
+      await shot(page, `6-limits-widen-${tag}`);
+      await fetch(`${state.url}/v1/limits`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${state.mediumToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ device: "curing-heater", channel: "power", max: { value: 70, unit: "W" } }),
+      });
+      await page.goto("/#/confirmations");
+      await expect(page.getByRole("heading", { name: /^Limit changes/ })).toBeVisible();
+      await shot(page, `7-limit-change-pending-${tag}`);
+      await context.close();
+      await fetch(`${state.url}/_harness/curing-heater/reset`, { method: "POST" });
+    });
   }
 }

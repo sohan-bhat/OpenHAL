@@ -168,7 +168,8 @@
     display: grid;
     gap: var(--s-1);
     margin: 0;
-    padding-left: var(--s-5);
+    padding: 0;
+    list-style: none;
   }
 
   .small {

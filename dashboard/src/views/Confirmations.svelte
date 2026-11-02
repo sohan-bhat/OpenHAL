@@ -430,7 +430,8 @@
     display: grid;
     gap: var(--s-1);
     margin: var(--s-2) 0;
-    padding-left: var(--s-5);
+    padding: 0;
+    list-style: none;
   }
 
   .requests {
