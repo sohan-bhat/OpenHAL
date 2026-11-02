@@ -1,0 +1,79 @@
+---
+import Default from "@astrojs/starlight/components/MobileTableOfContents.astro";
+import SectionPages from "../islands/SectionPages";
+import { navEntries } from "../../lib/nav-entries";
+import { sections } from "../../lib/sections";
+
+const route = Astro.locals.starlightRoute;
+const section = (await sections(Astro.url.pathname)).find((link) => link.current);
+const pages = route.sidebar.length > 0 ? section : undefined;
+---
+
+<div class="oh-toc-bar" data-section-pages={pages ? "" : undefined}>
+  {
+    pages && (
+      <div class="oh-toc-pages md:sl-hidden print:hidden">
+        <SectionPages client:intent label={pages.label} entries={navEntries(route.sidebar)} />
+      </div>
+    )
+  }
+  <Default />
+</div>
+
+<style>
+  .oh-toc-bar {
+    display: contents;
+  }
+
+  @media (max-width: 49.99rem) and (scripting: enabled) {
+    .oh-toc-bar[data-section-pages] {
+      position: fixed;
+      z-index: var(--sl-z-index-toc);
+      top: calc(var(--sl-nav-height) - 1px);
+      inset-inline: 0;
+      display: flex;
+      align-items: center;
+      gap: var(--s-2);
+      height: calc(var(--sl-mobile-toc-height) + 1px);
+      padding-inline-start: var(--sl-nav-pad-x);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .oh-toc-pages {
+      display: flex;
+      flex: none;
+    }
+
+    .oh-toc-bar[data-section-pages] :global(mobile-starlight-toc) {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .oh-toc-bar[data-section-pages] :global(mobile-starlight-toc nav) {
+      position: static;
+      border: 0;
+      background: none;
+    }
+
+    .oh-toc-bar[data-section-pages] :global(mobile-starlight-toc summary) {
+      height: calc(var(--sl-mobile-toc-height) - 1px);
+      padding-inline-start: 0;
+      border-bottom: 0;
+    }
+
+    .oh-toc-bar[data-section-pages] :global(mobile-starlight-toc .dropdown) {
+      position: fixed;
+      top: calc(var(--sl-nav-height) + var(--sl-mobile-toc-height));
+      inset-inline: 0;
+      margin-top: 0;
+    }
+  }
+
+  @media (scripting: none) {
+    .oh-toc-pages {
+      display: none;
+    }
+  }
+</style>

@@ -2,7 +2,7 @@
   --oh-control-border: color-mix(in srgb, var(--text-2) 60%, var(--border));
   --oh-control-line: 1.5px;
   --oh-control-ring: inset 0 0 0 calc(var(--oh-control-line) - 1px);
-  --oh-highlight: var(--surface);
+  --oh-highlight: var(--highlight);
   --oh-lead: var(--sl-nav-pad-x);
 
   --sl-font: var(--font-text);
@@ -19,7 +19,7 @@
   --sl-nav-pad-y: 0px;
   --sl-nav-pad-x: var(--s-4);
   --sl-nav-gap: var(--s-4);
-  --sl-menu-button-size: 40px;
+  --sl-menu-button-size: 44px;
   --oh-reading-width: 48.25rem;
   --sl-content-width: var(--oh-reading-width);
   --sl-sidebar-pad-x: var(--s-4);
@@ -37,7 +37,7 @@
   --sl-color-accent: var(--accent);
   --sl-color-accent-high: var(--accent);
   --sl-color-text: var(--text);
-  --sl-color-text-accent: var(--accent);
+  --sl-color-text-accent: var(--neutral);
   --sl-color-text-invert: var(--bg);
   --sl-color-bg: var(--bg);
   --sl-color-bg-nav: var(--bg);
@@ -150,11 +150,20 @@ details[data-closing]::details-content {
 }
 
 .sl-menu-button {
+  top: calc((var(--sl-nav-height) - 1px - var(--sl-menu-button-size)) / 2);
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--oh-control-border);
   box-shadow: var(--oh-control-ring) var(--oh-control-border);
   border-radius: var(--radius);
   background: var(--bg);
   color: var(--text);
+}
+
+.sl-menu-button svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
 }
 
 html:root:has(.oh-home) {
@@ -209,7 +218,7 @@ html:root:has(.oh-home) {
 }
 
 .starlight-aside__content a {
-  color: var(--accent);
+  color: var(--neutral);
 }
 
 .pagination-links a {
@@ -254,8 +263,15 @@ html:root:has(.oh-home) {
   font-weight: 700;
 }
 
+mobile-starlight-toc summary {
+  font-size: var(--t-small);
+}
+
 mobile-starlight-toc .toggle {
-  box-shadow: var(--oh-control-ring) var(--border);
+  min-height: 36px;
+  border-color: var(--oh-control-border);
+  border-radius: var(--radius);
+  box-shadow: var(--oh-control-ring) var(--oh-control-border);
 }
 
 mobile-starlight-toc details[open] .toggle {

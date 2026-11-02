@@ -25,6 +25,22 @@ Copyleft code is never copied into this repository. Libraries under weak copylef
 | mcp | 2.3.0 | MIT | Official MCP Python SDK |
 | zeroconf | 0.151.5 | LGPL-2.1-or-later | mDNS discovery. Used unmodified as a dependency |
 
+## Website
+
+The website's packages are pinned in website/package.json and website/pnpm-lock.yaml. These are the ones the palette, the phone menu, the nav highlight and the brand build rely on.
+
+| Package | Version | License | Why |
+|---|---|---|---|
+| @radix-ui/colors | 3.0.0 | MIT | The palette's olive, gold and pink steps, read by website/src/lib/palette.mjs. Development only |
+| culori | 4.0.2 | MIT | WCAG contrast and CIEDE2000 distance under Machado 2009 color vision simulations for the palette's checks. Development only |
+| @types/culori | 4.0.1 | MIT | Types for culori in the unit tests. Development only |
+| radix-ui | 1.8.1 | MIT | Dialog under shadcn/ui's Sheet, which holds a section's pages on a phone |
+| shadcn/ui Sheet | new-york-v4 registry, 2026-11-01 | MIT | The phone's page sheet, copied from the registry and themed with design/tokens.css |
+| tw-animate-css | 1.4.0 | MIT | The Sheet's slide in and out |
+| motion | 14.2.0 | MIT | The nav highlight's slide between sections |
+| lucide-react | 1.57.0 | ISC | The Sheet's close icon and its button's chevron |
+| fonttools | 4.67.0 | MIT | Draws the wordmark, the mark and the favicon from the brand face, run through uv by tools/readme/build.py |
+
 ## Development
 
 | Package | Version | License | Why |

@@ -234,7 +234,7 @@ test.describe("the left edge", () => {
     });
   }
 
-  test("lines the phone menu's sections and rows up with the header's wordmark", async ({ page }) => {
+  test("lines the phone menu's sections and the page sheet's rows up with the header's wordmark", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(SPEC);
     await page.locator(".sl-menu-button").click();
@@ -242,11 +242,16 @@ test.describe("the left edge", () => {
     const seen = await page.evaluate(() => ({
       brand: Math.round(document.querySelector(".oh-brand")!.getBoundingClientRect().left),
       sections: [...document.querySelectorAll(".oh-menu-sections a")].map((link) => Math.round(link.getBoundingClientRect().left)),
-      rows: [...document.querySelectorAll("#starlight__sidebar [data-sidebar=menu-button]")].filter((row) => row.getClientRects().length).map((row) => Math.round(row.getBoundingClientRect().left)),
     }));
     expect(seen.brand).toBe(16);
     expect(new Set(seen.sections)).toEqual(new Set([16]));
-    expect(new Set(seen.rows)).toEqual(new Set([16]));
+    await page.keyboard.press("Escape");
+    await page.locator("[data-section-pages-trigger]").click();
+    const sheet = page.getByRole("dialog", { name: "Specification" });
+    await expect(sheet, "the first tap opens the sheet once the island loads").toBeVisible({ timeout: 15_000 });
+    await page.waitForTimeout(300);
+    const rows = await sheet.locator("[data-sidebar=menu-button]").evaluateAll((list) => list.filter((row) => row.getClientRects().length).map((row) => Math.round(row.getBoundingClientRect().left)));
+    expect(new Set(rows)).toEqual(new Set([16]));
   });
 });
 
@@ -724,8 +729,8 @@ test.describe("the sidebar's collapse", () => {
     await page.keyboard.press("Tab");
     expect(await focused(page), "Tab moves focus on a phone").not.toBe("body");
     expect(await page.evaluate(() => document.documentElement.dataset.sidebar ?? "shown")).toBe("collapsed");
-    await page.locator(".sl-menu-button").click();
-    await expect(page.locator("#starlight__sidebar").getByRole("link", { name: "Install" })).toBeVisible();
+    await page.locator("[data-section-pages-trigger]").click();
+    await expect(page.getByRole("dialog", { name: "Docs" }).getByRole("link", { name: "Install" })).toBeVisible({ timeout: 15_000 });
   });
 });
 
@@ -734,15 +739,16 @@ test.describe("the phone menu", () => {
     await page.setViewportSize({ width: 390, height: 844 });
   });
 
-  test("lists the sections first, then the section's pages, the version and the theme", async ({ page }) => {
+  test("lists only the sections and the theme, with the current section marked", async ({ page }) => {
     await page.goto(SPEC);
     await page.locator(".sl-menu-button").click();
     const menu = page.locator("#starlight__sidebar");
     await expect(menu).toBeVisible();
     await expect(menu.locator(".oh-menu-sections a")).toHaveText(SECTIONS);
     await expect(menu.locator(".oh-menu-sections a[aria-current='page']")).toHaveText("Specification");
-    await expect(menu.locator(".sidebar-content a[aria-current='page']:not([role='menuitem'])").last()).toHaveText("3.3 Messages");
-    await expect(picker(page, "version", ".mobile-preferences")).toHaveAccessibleName("Specification version v0.1");
+    expect(await menu.getByRole("link").evaluateAll((links) => links.filter((link) => link.checkVisibility()).map((link) => link.textContent!.trim()))).toEqual(SECTIONS);
+    expect(await menu.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
+    await expect(menu.locator("[data-picker='version'], a[rel='me']")).toHaveCount(0);
     await expect(picker(page, "theme", ".mobile-preferences")).toHaveAccessibleName("Theme Auto");
     await picker(page, "theme", ".mobile-preferences").click();
     await expect(menu.getByRole("menu")).toBeVisible();
@@ -750,6 +756,55 @@ test.describe("the phone menu", () => {
     await expect(menu.getByRole("menu")).toHaveCount(0);
     await menu.locator(".oh-menu-sections").getByRole("link", { name: "Device Library" }).click();
     await expect(page).toHaveURL(/\/library\/$/);
+  });
+
+  test("moves a section's pages into a sheet beside On this page, with the current page marked and groups that collapse", async ({ page }) => {
+    await page.goto(SPEC);
+    const trigger = page.locator("[data-section-pages-trigger]");
+    await expect(trigger).toHaveAccessibleName("Specification pages");
+    const bar = await page.evaluate(() => {
+      const button = document.querySelector("[data-section-pages-trigger]")!.getBoundingClientRect();
+      const toggle = document.querySelector("mobile-starlight-toc .toggle")!.getBoundingClientRect();
+      return { gap: toggle.left - button.right, middle: Math.abs(button.top + button.height / 2 - (toggle.top + toggle.height / 2)) };
+    });
+    expect(bar.gap).toBeGreaterThanOrEqual(4);
+    expect(bar.middle).toBeLessThan(1.5);
+    await trigger.click();
+    const sheet = page.getByRole("dialog", { name: "Specification" });
+    await expect(sheet, "the first tap opens the sheet once the island loads").toBeVisible({ timeout: 15_000 });
+    await expect(sheet.locator("a[aria-current='page']")).toHaveText("3.3 Messages");
+    expect(await sheet.evaluate((element) => getComputedStyle(element).outlineStyle), "no ring around the whole sheet").toBe("none");
+    await expect(sheet.locator("a[aria-current='page']")).toBeInViewport();
+    const group = sheet.locator("[data-group][data-current]").first();
+    await group.getByRole("button").first().click();
+    await expect(group).toHaveAttribute("data-state", "closed");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await page.goto("/drivers/");
+    await expect(page.locator("[data-section-pages-trigger]")).toHaveAccessibleName("Drivers pages");
+    await expect(page.locator("[data-section-pages-trigger]")).toBeInViewport();
+    await page.goto("/");
+    await expect(page.locator("[data-section-pages-trigger]")).toHaveCount(0);
+  });
+
+  test("keeps every page's link reachable in the menu without JavaScript", async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    await page.goto(SPEC);
+    await expect(page.locator("[data-section-pages-trigger]")).toBeHidden();
+    await page.locator(".sl-menu-button").click();
+    const menu = page.locator("#starlight__sidebar");
+    await expect(menu.getByRole("link", { name: "3.3 Messages" })).toBeVisible();
+    await expect(menu.locator(".oh-menu-sections a")).toHaveText(SECTIONS);
+    await context.close();
+  });
+
+  test("leaves GitHub and the specification version to the page footer", async ({ page }) => {
+    await page.goto("/docs/quickstart/");
+    const footer = page.locator(".oh-site-footer");
+    await expect(footer.getByRole("link", { name: "Source on GitHub" })).toHaveAttribute("href", /github\.com/);
+    await expect(footer.getByRole("link", { name: "Specification v0.1" })).toHaveAttribute("href", "/spec/v0.1/#versions");
   });
 
   test("closes on Escape and gives focus back to its button", async ({ page }) => {
@@ -804,7 +859,7 @@ test.describe("the theme picker", () => {
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await expect(picker(page, "theme")).toHaveAccessibleName("Theme Dark");
     await expect(picker(page, "theme")).toBeFocused();
-    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(13, 15, 18)");
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(17, 18, 16)");
     await page.goto(SPEC);
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await expect(picker(page, "theme")).toHaveAccessibleName("Theme Dark");
@@ -906,7 +961,7 @@ test.describe("site search", () => {
     await expect(palette(page)).toBeVisible();
     await page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== "running"));
     expect(await box(page, "[role='dialog']")).toEqual([0, 0, 390, 844]);
-    expect((await box(page, "[data-search-trigger]")).slice(2), "the icon button is as easy to tap as the menu button").toEqual([40, 40]);
+    expect((await box(page, "[data-search-trigger]")).slice(2), "the icon button is as easy to tap as the menu button, 44 px").toEqual([44, 44]);
     await palette(page).getByRole("combobox").fill("print babysitter");
     await expect(palette(page).locator("[cmdk-item] mark").first()).toBeVisible({ timeout: 15_000 });
     await palette(page).getByRole("button", { name: "Cancel" }).click();
@@ -933,16 +988,69 @@ test.describe("site search", () => {
 });
 
 test.describe("page turns", () => {
-  test("the nav highlight has one view transition name on every page", async ({ page }) => {
+  test("the nav highlight has no view transition name of its own, so it stays inside the header under its labels", async ({ page }) => {
+    test.slow();
     await page.setViewportSize({ width: 1440, height: 900 });
     for (const path of ["/", "/docs/", SPEC, "/spec/playground/", "/drivers/", "/library/", "/sdks/"]) {
       await page.goto(path);
       const names = await page.evaluate(() =>
         [...document.querySelectorAll<HTMLElement>("*")].map((el) => getComputedStyle(el).viewTransitionName).filter((name) => name && name !== "none"),
       );
-      expect(names.filter((name) => name === "nav-pill"), path).toHaveLength(1);
+      expect(names.filter((name) => name.startsWith("nav-")), path).toEqual([]);
       expect(names.filter((name) => name === "site-header"), path).toHaveLength(1);
       expect(new Set(names).size, path).toBe(names.length);
+    }
+  });
+
+  test("the nav highlight keeps its fill and opacity under the labels while it slides from Docs to Overview and back", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.addInitScript(() => {
+      const samples: Array<{ background: string; opacity: string; transform: string; z: string; under: boolean }> = [];
+      (window as unknown as { samples: typeof samples }).samples = samples;
+      const tick = () => {
+        const pill = document.querySelector<HTMLElement>(".oh-sections [aria-current=page] .nav-pill");
+        if (pill) {
+          const style = getComputedStyle(pill);
+          const link = pill.closest("a")!;
+          samples.push({ background: style.backgroundColor, opacity: style.opacity, transform: style.transform, z: style.zIndex, under: getComputedStyle(link).isolation === "isolate" && getComputedStyle(pill).viewTransitionName === "none" });
+        }
+        const moved = samples.some((sample) => sample.transform !== "none");
+        if ((moved && samples.at(-1)?.transform === "none") || performance.now() - started > 8000) {
+          clearInterval(timer);
+          (window as unknown as { settled: boolean }).settled = true;
+        }
+      };
+      let timer = 0;
+      const started = performance.now();
+      requestAnimationFrame(() => (timer = window.setInterval(tick, 8)));
+    });
+    const nav = page.getByRole("navigation", { name: "Main" });
+    for (const [from, to, url] of [
+      ["/docs/", "Overview", /\/$/],
+      ["/", "Docs", /\/docs\/$/],
+    ] as const) {
+      await page.goto(from);
+      const fill = await page.evaluate(() => {
+        const probe = document.createElement("span");
+        probe.style.color = "var(--oh-highlight)";
+        document.body.append(probe);
+        const color = getComputedStyle(probe).color;
+        probe.remove();
+        return color;
+      });
+      await nav.getByRole("link", { name: to, exact: true }).click();
+      await expect(page).toHaveURL(url);
+      await page.waitForFunction(() => (window as unknown as { settled?: boolean }).settled === true, null, { timeout: 15_000 });
+      const samples = await page.evaluate(() => (window as unknown as { samples: Array<{ background: string; opacity: string; transform: string; z: string; under: boolean }> }).samples);
+      expect(samples.length, to).toBeGreaterThan(3);
+      for (const sample of samples) {
+        expect(sample.background, to).toBe(fill);
+        expect(sample.opacity, to).toBe("1");
+        expect(sample.z, to).toBe("-1");
+        expect(sample.under, `${to}'s label stays over the highlight`).toBe(true);
+      }
+      expect(samples.some((sample) => sample.transform !== "none"), `the highlight slides to ${to}`).toBe(true);
+      expect(samples.at(-1)!.transform, `the highlight rests on ${to}`).toBe("none");
     }
   });
 

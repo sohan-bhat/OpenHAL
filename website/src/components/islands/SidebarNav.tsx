@@ -150,7 +150,8 @@ function Group({ group, path, depth }: { group: NavGroup; path: string; depth: n
   );
 }
 
-function Entry({ entry, path, depth }: { entry: NavEntry; path: string; depth: number }) {
+/** One row or group of a section's pages, shared by the sidebar and the phone's page sheet. */
+export function Entry({ entry, path, depth }: { entry: NavEntry; path: string; depth: number }) {
   if (isGroup(entry)) return <Group group={entry} path={path} depth={depth} />;
   const current = Boolean(entry.current);
   const { class: className, ...attrs } = entry.attrs ?? {};

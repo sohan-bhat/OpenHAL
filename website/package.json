@@ -44,8 +44,11 @@
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
     "@playwright/test": "1.64.1",
+    "@radix-ui/colors": "3.0.0",
+    "@types/culori": "4.0.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "culori": "4.0.2",
     "hast-util-from-html": "2.0.3",
     "mermaid-isomorphic": "3.1.0",
     "pagefind": "1.5.2",

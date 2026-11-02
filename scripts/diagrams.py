@@ -47,8 +47,8 @@ STATIC_FONTS = {
 }
 
 THEMES = {
-    "light": {"line": "#8A919C", "blocked": "#A14034", "label": "#4F5661", "border": "#DADDE2"},
-    "dark": {"line": "#5A626D", "blocked": "#D57A72", "label": "#A0A7B1", "border": "#2A2F36"},
+    "light": {"line": "#898E87", "blocked": "#A14034", "label": "#60655F", "border": "#D7DAD7"},
+    "dark": {"line": "#687066", "blocked": "#D57A72", "label": "#AFB5AD", "border": "#383A36"},
 }
 SHARED = ("theme-light.d2", "theme-dark.d2", "house.d2")
 MANIFEST = DIAGRAMS / "diagrams.json"

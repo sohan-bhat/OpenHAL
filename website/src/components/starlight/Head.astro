@@ -4,8 +4,10 @@ import atkinsonMono from "../../fonts/atkinson-hyperlegible-mono-normal.woff2?ur
 import atkinson from "../../fonts/atkinson-hyperlegible-next-normal.woff2?url";
 import pageTurnSource from "../../layouts/page-turn.js?raw";
 import { PRODUCT_NAME } from "../../config/brand";
+import { iconHref } from "../../config/icons.mjs";
 import { inlineScript } from "../../lib/inline-script";
 import { ogPath } from "../../lib/pages";
+import { palette } from "../../lib/palette.mjs";
 
 const { entry } = Astro.locals.starlightRoute;
 const data = entry.data as { title: string; mono?: boolean };
@@ -23,10 +25,10 @@ const speculation = JSON.stringify({
 <link rel="preload" href={atkinson} as="font" type="font/woff2" crossorigin />
 {data.mono !== false && <link rel="preload" href={atkinsonMono} as="font" type="font/woff2" crossorigin />}
 <script type="speculationrules" is:inline set:html={speculation} />
-<meta name="theme-color" content="#fcfcfd" media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content="#0d0f12" media="(prefers-color-scheme: dark)" />
-<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<meta name="theme-color" content={palette.light.bg} media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content={palette.dark.bg} media="(prefers-color-scheme: dark)" />
+<link rel="icon" href={iconHref("/favicon-32.png")} sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href={iconHref("/apple-touch-icon.png")} />
 <link rel="manifest" href="/site.webmanifest" />
 <meta property="og:image" content={image} />
 <meta property="og:image:width" content="1200" />

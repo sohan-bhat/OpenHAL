@@ -13,7 +13,7 @@ const buttonVariants = cva(
         outline:
           "border border-input bg-background text-foreground [box-shadow:var(--oh-control-ring)_var(--oh-control-border)] hover:border-muted-foreground hover:[box-shadow:var(--oh-control-ring)_var(--text-2)] aria-disabled:cursor-default aria-disabled:text-muted-foreground aria-disabled:hover:border-input aria-disabled:hover:[box-shadow:var(--oh-control-ring)_var(--oh-control-border)]",
         ghost: "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
-        link: "font-bold text-accent underline decoration-1 underline-offset-[3px] hover:decoration-2",
+        link: "font-bold text-neutral underline decoration-1 underline-offset-[3px] hover:decoration-2",
       },
       size: {
         default: "h-10 px-4",

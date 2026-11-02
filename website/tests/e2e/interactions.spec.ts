@@ -230,6 +230,19 @@ test.describe("the interactive parts", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.locator(".sl-menu-button").click();
     await expect(page.locator("#starlight__sidebar")).toHaveCSS("opacity", "1");
+    await page.keyboard.press("Escape");
+    await page.locator("[data-section-pages-trigger]").click();
+    await expect(page.getByRole("dialog", { name: "Specification" })).toBeVisible({ timeout: 15_000 });
+    const sheetMoving = () =>
+      document
+        .getAnimations()
+        .filter((animation) => animation.playState === "running")
+        .filter((animation) => {
+          const target = (animation.effect as KeyframeEffect | null)?.target;
+          return target instanceof Element && Boolean(target.closest("[data-slot=sheet-content], [data-slot=sheet-overlay]"));
+        }).length;
+    expect(await page.evaluate(sheetMoving), "the page sheet opens at once").toBe(0);
+    await page.keyboard.press("Escape");
     expect((await taken(page)).filter((item) => item.duration > 0)).toEqual([]);
     expect(fetched.filter((path) => /\/_astro\/mini\./.test(path))).toEqual([]);
   });
@@ -380,7 +393,7 @@ test.describe("the pickers", () => {
     await expect(picker(page, "theme")).toHaveAttribute("aria-expanded", "false");
   });
 
-  test("open below their button, or above it at the foot of the phone menu", async ({ page }) => {
+  test("open below their button, in the header and in the phone menu's short list", async ({ page }) => {
     await page.goto(SPEC);
     await ready(page);
     const placed = async (scope: string) => {
@@ -398,7 +411,7 @@ test.describe("the pickers", () => {
     await page.locator(".sl-menu-button").click();
     await page.locator(".mobile-preferences").scrollIntoViewIfNeeded();
     const foot = await placed(".mobile-preferences");
-    expect(Math.abs(foot.gapAbove - 4)).toBeLessThan(1);
+    expect(Math.abs(foot.gapBelow - 4)).toBeLessThan(1);
     expect(Math.abs(foot.right)).toBeLessThan(1);
   });
 });

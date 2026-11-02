@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fromHtml } from "hast-util-from-html";
 import { createMermaidRenderer } from "mermaid-isomorphic";
 import { visit } from "unist-util-visit";
+import { palette } from "../palette.mjs";
 import { REPO_ROOT } from "../spec-meta.mjs";
 import { fontless, themedDiagram } from "./diagram-theme.mjs";
 
@@ -19,7 +20,7 @@ function fontCss() {
   return `data:text/css;base64,${Buffer.from(css).toString("base64")}`;
 }
 
-function theme({ text, text2, bg, surface, border, accent }) {
+function theme({ text, text2, bg, surface, border, link }) {
   return {
     theme: "base",
     fontFamily: `"${FONT}", sans-serif`,
@@ -64,13 +65,14 @@ function theme({ text, text2, bg, surface, border, accent }) {
       transitionColor: text2,
       transitionLabelColor: text,
       altBackground: surface,
-      linkColor: accent,
+      linkColor: link,
     },
   };
 }
 
-const LIGHT = theme({ text: "#15181c", text2: "#4f5661", bg: "#fcfcfd", surface: "#f4f5f7", border: "#dadde2", accent: "#c0156e" });
-const DARK = theme({ text: "#e7eaee", text2: "#a0a7b1", bg: "#0d0f12", surface: "#15181d", border: "#2a2f36", accent: "#ff6eb4" });
+const tones = (mode) => ({ text: palette[mode].text, text2: palette[mode]["text-2"], bg: palette[mode].bg, surface: palette[mode].surface, border: palette[mode].border, link: palette[mode].neutral });
+const LIGHT = theme(tones("light"));
+const DARK = theme(tones("dark"));
 
 let renderer = null;
 let css = null;

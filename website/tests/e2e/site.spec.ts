@@ -361,6 +361,15 @@ test.describe("site", () => {
     expect(fits).toBe(true);
   });
 
+  test("versions every icon link, so a browser drops a cached favicon when the mark changes", async ({ page, request }) => {
+    await page.goto("/docs/");
+    const links = await page.locator("link[rel~='icon'], link[rel='apple-touch-icon']").evaluateAll((list) => list.map((link) => link.getAttribute("href")!));
+    expect(links.length).toBeGreaterThanOrEqual(3);
+    for (const href of links) expect(href, href).toMatch(/\?v=\d+$/);
+    const manifest = await (await request.get("/site.webmanifest")).json();
+    for (const icon of manifest.icons) expect(icon.src).toMatch(/\?v=\d+$/);
+  });
+
   test("keyboard users can skip to the content and see focus", async ({ page, browserName }) => {
     test.skip(browserName === "webkit", "WebKit only tabs to links with the macOS full keyboard setting");
     await page.goto("/docs/");

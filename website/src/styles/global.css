@@ -38,6 +38,7 @@
   --color-muted: var(--surface);
   --color-muted-foreground: var(--text-2);
   --color-accent: var(--accent);
+  --color-neutral: var(--neutral);
   --color-accent-fill: var(--accent-fill);
   --color-accent-fill-hover: var(--accent-fill-hover);
   --color-on-accent: var(--on-accent);
@@ -126,7 +127,7 @@ pre {
   }
 
   .oh-content a {
-    color: var(--accent);
+    color: var(--neutral);
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
   }
@@ -221,24 +222,11 @@ pre {
 ::view-transition-old(site-header),
 ::view-transition-new(site-header) {
   animation: none;
+  mix-blend-mode: normal;
 }
 
-::view-transition-group(nav-pill) {
-  animation-duration: 240ms;
-  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
-  border-radius: var(--radius);
-  background: var(--oh-highlight);
-}
-
-::view-transition-old(nav-pill),
-::view-transition-new(nav-pill) {
-  animation: none;
+::view-transition-old(site-header) {
   opacity: 0;
-}
-
-::view-transition-group(nav-mark) {
-  animation-duration: 240ms;
-  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
 
 :root:active-view-transition-type(forward)::view-transition-old(root) {
