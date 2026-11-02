@@ -1,5 +1,7 @@
 # 0002 Naming lives in one module, and the PyPI distribution is openhal-hub
 
+Superseded in part by [ADR 0018](0018-one-command-openhal-start.md), which replaces the daemon name with `openhal start`. The rest of this decision stands.
+
 ## Context
 
 The product is OpenHAL. The import name, CLI and daemon are `openhal`, `openhal` and `openhald`. Device files end in `.hal.yaml`. The PyPI name `openhal` is already used by an unrelated project (checked 2026-10-24).
