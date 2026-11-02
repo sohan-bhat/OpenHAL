@@ -104,7 +104,7 @@ def force_suggested(data: dict[str, Any]) -> dict[str, Any]:
     return cleaned
 
 
-OWN_KEYS: Final = frozenset({"driver", "source", "kind", "type", "unit", "status"})
+OWN_KEYS: Final = frozenset({"driver", "source", "kind", "type", "unit", "status", "device", "file"})
 """Detected fields OpenHAL sets itself. Every other string came from a device, sketch or manual."""
 
 

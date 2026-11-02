@@ -426,6 +426,11 @@ def questions(draft: dict[str, Any]) -> list[Question]:
     return asked
 
 
+def _tidy(value: float) -> float | int:
+    """A whole number as an int, so a saved file reads max: 60 and not max: 60.0."""
+    return int(value) if float(value).is_integer() else value
+
+
 def _number(text: Any, unit: str, question: str) -> float:
     answer = str(text).strip()
     if unit != "dimensionless":
@@ -620,14 +625,14 @@ def _apply_channels(data: dict[str, Any], answers: dict[str, Any]) -> dict[str, 
             if unit_answer is not None:
                 spec["unit"] = normalize_unit(str(unit_answer).strip())
             unit = spec.get("unit") or "dimensionless"
-            spec["min"] = _number(answers[f"{name}.min"], unit, f"{name}.min")
-            spec["max"] = _number(answers[f"{name}.max"], unit, f"{name}.max")
+            spec["min"] = _tidy(_number(answers[f"{name}.min"], unit, f"{name}.min"))
+            spec["max"] = _tidy(_number(answers[f"{name}.max"], unit, f"{name}.max"))
             rate = _rate(answers[f"{name}.max_change_per_s"], unit, f"{name}.max_change_per_s")
             if rate is None:
                 spec.pop("max_change_per_s", None)
             else:
-                spec["max_change_per_s"] = rate
-            safe[name] = _number(answers[f"{name}.safe"], unit, f"{name}.safe")
+                spec["max_change_per_s"] = _tidy(rate)
+            safe[name] = _tidy(_number(answers[f"{name}.safe"], unit, f"{name}.safe"))
         elif kind == "bool":
             safe[name] = _bool(answers[f"{name}.safe"], f"{name}.safe")
         elif kind == "enum":
@@ -645,8 +650,12 @@ def _apply_actions(data: dict[str, Any], answers: dict[str, Any]) -> None:
             if arg_spec.get("type", "number") != "number":
                 continue
             for field in ("min", "max"):
-                arg_spec[field] = _number(
-                    answers[f"{name}.{arg}.{field}"], arg_spec.get("unit") or "dimensionless", f"{name}.{arg}.{field}"
+                arg_spec[field] = _tidy(
+                    _number(
+                        answers[f"{name}.{arg}.{field}"],
+                        arg_spec.get("unit") or "dimensionless",
+                        f"{name}.{arg}.{field}",
+                    )
                 )
             if arg_spec["min"] > arg_spec["max"]:
                 raise AnswerError(f"{name}.{arg}.min is above {name}.{arg}.max.")
@@ -711,7 +720,7 @@ def apply(draft: dict[str, Any], answers: dict[str, Any], *, by: str, today: dt.
         else:
             data.pop("interlocks", None)
     if bounds:
-        data[DEVICE_LIMITS] = {key: [low, high] for key, (low, high) in bounds.items()}
+        data[DEVICE_LIMITS] = {key: [_tidy(low), _tidy(high)] for key, (low, high) in bounds.items()}
 
     try:
         unconfirmed_file = from_data(data)
