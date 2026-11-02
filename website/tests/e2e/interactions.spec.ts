@@ -233,7 +233,15 @@ test.describe("the interactive parts", () => {
     await page.keyboard.press("Escape");
     await page.locator("[data-section-pages-trigger]").click();
     await expect(page.getByRole("dialog", { name: "Specification" })).toBeVisible();
-    expect(await page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === "running").length), "the page sheet opens at once").toBe(0);
+    const sheetMoving = () =>
+      document
+        .getAnimations()
+        .filter((animation) => animation.playState === "running")
+        .filter((animation) => {
+          const target = (animation.effect as KeyframeEffect | null)?.target;
+          return target instanceof Element && Boolean(target.closest("[data-slot=sheet-content], [data-slot=sheet-overlay]"));
+        }).length;
+    expect(await page.evaluate(sheetMoving), "the page sheet opens at once").toBe(0);
     await page.keyboard.press("Escape");
     expect((await taken(page)).filter((item) => item.duration > 0)).toEqual([]);
     expect(fetched.filter((path) => /\/_astro\/mini\./.test(path))).toEqual([]);

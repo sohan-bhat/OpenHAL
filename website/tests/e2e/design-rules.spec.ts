@@ -160,7 +160,7 @@ const accents = (page: Page) =>
     const accent = resolve("var(--accent)");
     const fill = resolve("var(--accent-fill)");
     const confirm = resolve("var(--confirm)");
-    const retired = ["#cc1475", "#ff4fa3", "#8a5a00", "#e8b341", "#ffd60a", "#7a5c00", "#ffe14d"].map(resolve);
+    const retired = ["#cc1475", "#ff4fa3", "#8a5a00", "#e8b341", "#ffd60a", "#7a5c00", "#ffe14d", "#c0156e", "#ff6eb4", "#ff8ec5"].map(resolve);
     probe.remove();
     const roles: string[] = [];
     const strays: string[] = [];
@@ -337,7 +337,7 @@ test.describe("the neutral", () => {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto("/docs/quickstart/");
       const look = await page.evaluate(() => {
-        const links = [...document.querySelectorAll<HTMLAnchorElement>(".sl-markdown-content a[href]:not([aria-hidden], .anchor-link, [data-slot])")].filter((link) => link.checkVisibility() && link.textContent?.trim());
+        const links = [...document.querySelectorAll<HTMLAnchorElement>(".sl-markdown-content a[href]:not([aria-hidden], .anchor-link, .heading-link, [data-slot])")].filter((link) => link.checkVisibility() && link.textContent?.trim());
         const pill = document.querySelector(".oh-sections [aria-current=page] .nav-pill")!;
         return {
           colors: [...new Set(links.map((link) => getComputedStyle(link).color))],

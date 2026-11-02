@@ -961,7 +961,7 @@ test.describe("site search", () => {
     await expect(palette(page)).toBeVisible();
     await page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== "running"));
     expect(await box(page, "[role='dialog']")).toEqual([0, 0, 390, 844]);
-    expect((await box(page, "[data-search-trigger]")).slice(2), "the icon button is as easy to tap as the menu button").toEqual([40, 40]);
+    expect((await box(page, "[data-search-trigger]")).slice(2), "the icon button is as easy to tap as the menu button, 44 px").toEqual([44, 44]);
     await palette(page).getByRole("combobox").fill("print babysitter");
     await expect(palette(page).locator("[cmdk-item] mark").first()).toBeVisible({ timeout: 15_000 });
     await palette(page).getByRole("button", { name: "Cancel" }).click();

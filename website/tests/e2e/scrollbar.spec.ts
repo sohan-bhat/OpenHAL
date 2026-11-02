@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const THUMB = { light: "rgb(138, 145, 156)", dark: "rgb(90, 98, 109)" } as const;
+const THUMB = { light: "rgb(137, 142, 135)", dark: "rgb(104, 112, 102)" } as const;
 
 const bars = (page: Page) =>
   page.evaluate(() => {
