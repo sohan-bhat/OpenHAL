@@ -182,7 +182,8 @@ def test_a_device_that_does_not_answer_is_skipped(machine: Machine) -> None:
 
 def test_the_wizard_asks(machine: Machine, fake_discovery: list[set[str]], monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(_tty, "interactive", lambda: True)
-    answers = "\n".join(["", "n", "y", "n", "control_low", "cursor", "n"]) + "\n"
+    (machine.home / ".cursor").mkdir()
+    answers = "\n".join(["", "n", "y", "n", "control_low", "", "n"]) + "\n"
     code, out = run("init", input=answers)
     assert code == 0, out
     folder = machine.config / "devices"

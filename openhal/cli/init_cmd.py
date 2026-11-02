@@ -233,8 +233,9 @@ def _agent(mode: Mode, scope: str | None, config_home: Path, db_path: Path) -> P
 
 
 def _clients(mode: Mode, token_file: Path, write: list[str]) -> bool:
-    """Print the setup for every client, then write the configs the person asked for."""
+    """Print the setup for every client, then register OpenHAL with each installed client the person picks."""
     from openhal.service import clients
+    from openhal.service.runner import RunError
 
     platform = "macos" if sys.platform == "darwin" else "linux"
     user_home = Path.home()
@@ -246,26 +247,34 @@ def _clients(mode: Mode, token_file: Path, write: list[str]) -> bool:
         console.print(f"[bold]{client.title}[/bold], {escape(where)}")
         console.print(escape(clients.setup_text(client, entry)), style="dim")
     chosen = list(write)
-    if not chosen and mode == "ask":
-        answer = typer.prompt(
-            f"Write a client config for you? {', '.join(clients.CLIENT_KEYS)} or skip", default="skip"
-        )
-        chosen = [item.strip() for item in answer.split(",") if item.strip() and item.strip() != "skip"]
+    if not chosen and mode in ("ask", "yes"):
+        found = clients.installed(user_home, platform)
+        if found:
+            console.print(f"\nFound {escape(', '.join(client.title for client in found))}")
+        for client in found:
+            if mode == "yes" or typer.confirm(f"Add OpenHAL to {client.title}?", default=True):
+                chosen.append(client.key)
     ok = True
     for key in chosen:
         try:
             client = clients.client_for(key, user_home, platform)
-            backup = clients.write_config(
+            backup, by_cli = clients.register(
                 client, clients.server_entry(client, command, token_file), service_cmd.runner_for(False)
             )
-        except (clients.ClientConfigError, OSError) as exc:
+        except (clients.ClientConfigError, RunError, OSError) as exc:
             console.print(f"[red]error[/red]  {escape(str(exc))}")
             ok = False
             continue
-        saved = f", backup at {backup}" if backup else ""
-        console.print(
-            f"client         {escape(str(client.path))} updated{escape(saved)}. Restart {escape(client.title)}"
-        )
+        saved = f", backup of {client.path} at {backup}" if backup else ""
+        if by_cli:
+            console.print(
+                f"client         {escape(client.title)} updated at user scope with claude mcp add{escape(saved)}. "
+                f"New {escape(client.title)} sessions start openhal mcp"
+            )
+        else:
+            backup_note = f", backup at {backup}" if backup else ""
+            where = escape(str(client.path))
+            console.print(f"client         {where} updated{escape(backup_note)}. Restart {escape(client.title)}")
     return ok
 
 
