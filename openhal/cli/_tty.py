@@ -13,24 +13,30 @@ import typer
 
 from openhal.cli._common import EXIT_FAILED, config, err, fail
 
+TTY = "/dev/tty"
+
 
 def interactive() -> bool:
     """True when standard input and output are a terminal and the process has a controlling terminal."""
     if not (sys.stdin.isatty() and sys.stdout.isatty()):
         return False
     try:
-        with open("/dev/tty", "rb"):
+        with open(TTY, "rb"):
             return True
     except OSError:
         return False
 
 
 def read_phrase(prompt: str) -> str:
-    """Read one line straight from the controlling terminal."""
-    with open("/dev/tty", "r+", encoding="utf-8") as tty:
-        tty.write(prompt)
-        tty.flush()
-        return tty.readline().strip()
+    """Read one line straight from the controlling terminal.
+
+    The terminal opens twice, once to write the prompt and once to read the line, because a terminal
+    can't be seeked and a text stream opened for both reading and writing needs a seekable file.
+    """
+    with open(TTY, "w", encoding="utf-8") as out, open(TTY, encoding="utf-8") as typed:
+        out.write(prompt)
+        out.flush()
+        return typed.readline().strip()
 
 
 def require_phrase(phrase: str, what: str, *, given: str | None = None) -> str:
