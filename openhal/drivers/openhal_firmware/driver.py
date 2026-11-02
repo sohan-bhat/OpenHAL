@@ -45,6 +45,7 @@ from openhal.drivers.openhal_firmware.protocol import (
 )
 from openhal.drivers.openhal_firmware.simulator import SimTransport, simulator_for
 
+DESC_TRIES: Final = 3
 BOARD_USB_VENDORS: Final = {"2341", "2a03", "1a86", "10c4", "303a", "239a", "0403"}
 """Arduino, Arduino.org, WCH CH340, Silicon Labs CP210x, Espressif, Adafruit, FTDI."""
 
@@ -301,12 +302,24 @@ class OpenHalFirmwareDriver(Driver):
         return {"protocol": self._hello[1], "product": self._hello[2], "version": self._hello[3]}
 
     async def _describe_raw(self) -> dict[str, Any]:
+        """The board's description, asked for again when a reply arrives garbled or not at all.
+
+        The description is the longest line a board sends, so a USB serial bridge that drops bytes
+        under load loses that line first. The line's checksum or the JSON check catches the loss.
+        """
         if self._description is None:
-            reply = await self._require_link().request("DESC")
-            try:
-                self._description = parse_description(reply.args[0] if reply.args else "")
-            except ProtocolError as exc:
-                raise DriverError(f"The board's description is invalid ({exc}).") from exc
+            problem = ""
+            for _ in range(DESC_TRIES):
+                try:
+                    reply = await self._require_link().request("DESC")
+                    self._description = parse_description(reply.args[0] if reply.args else "")
+                    break
+                except ProtocolError as exc:
+                    problem = f"The board's description is invalid ({exc})."
+                except DriverError as exc:
+                    problem = str(exc)
+            else:
+                raise DriverError(f"{problem} The board was asked {DESC_TRIES} times.")
         return self._description
 
     async def describe(self) -> dict[str, Any] | None:

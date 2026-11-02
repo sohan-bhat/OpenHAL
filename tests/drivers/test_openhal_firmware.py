@@ -12,7 +12,7 @@ from hypothesis import strategies as st
 from openhal.drivers.base import DriverError
 from openhal.drivers.openhal_firmware import protocol
 from openhal.drivers.openhal_firmware.driver import OpenHalFirmwareDriver
-from openhal.drivers.openhal_firmware.simulator import SIMULATORS, FirmwareSimulator, SimTransport
+from openhal.drivers.openhal_firmware.simulator import SIMULATORS, FirmwareSimulator, SimTransport, simulator_for
 from openhal.kernel import Kernel, Write, human
 from openhal.spec import DeviceFile, loads
 
@@ -244,3 +244,50 @@ async def test_a_non_openhal_board_is_refused(file: DeviceFile) -> None:
     with pytest.raises(DriverError, match="OpenHAL library"):
         await driver.connect()
     await driver.close()
+
+
+
+async def test_a_garbled_description_is_asked_for_again(file: DeviceFile, monkeypatch: pytest.MonkeyPatch) -> None:
+    board = simulator_for("bench")
+    answer = board.handle
+    garbled: list[str] = []
+
+    def garble_first_description(line: str) -> None:
+        if " DESC" in line and not garbled:
+            garbled.append(line)
+            board.corrupt_next = True
+        answer(line)
+
+    monkeypatch.setattr(board, "handle", garble_first_description)
+    device = OpenHalFirmwareDriver(file)
+    await device.connect()
+    try:
+        assert device.connected
+        described = await device.describe()
+        assert described is not None
+        assert "fan_speed" in described["write"]
+        assert sum(" DESC" in line for line in board.received) == 2
+    finally:
+        await device.close()
+        SIMULATORS.pop("bench", None)
+
+
+async def test_a_description_that_never_arrives_names_the_tries(
+    file: DeviceFile, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    board = simulator_for("bench")
+    answer = board.handle
+
+    def garble_every_description(line: str) -> None:
+        if " DESC" in line:
+            board.corrupt_next = True
+        answer(line)
+
+    monkeypatch.setattr(board, "handle", garble_every_description)
+    device = OpenHalFirmwareDriver(file)
+    try:
+        with pytest.raises(DriverError, match="asked 3 times"):
+            await device.connect()
+    finally:
+        await device.close()
+        SIMULATORS.pop("bench", None)
