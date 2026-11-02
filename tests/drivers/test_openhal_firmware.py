@@ -246,7 +246,6 @@ async def test_a_non_openhal_board_is_refused(file: DeviceFile) -> None:
     await driver.close()
 
 
-
 async def test_a_garbled_description_is_asked_for_again(file: DeviceFile, monkeypatch: pytest.MonkeyPatch) -> None:
     board = simulator_for("bench")
     answer = board.handle
