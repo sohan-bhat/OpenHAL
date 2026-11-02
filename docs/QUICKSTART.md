@@ -94,7 +94,7 @@ seq  time  event    who           target                   status   message
 
 1. `uv run openhal init` creates the config folder, your human token and `devices/plant-waterer.hal.yaml`, the simulated Arduino plant waterer.
 2. Read the file's limits, then run `uv run openhal file confirm` on the file. The hub loads the file read-only until you confirm the limits.
-3. `uv run openhald` starts the hub on `127.0.0.1:7420`.
+3. `uv run openhal start` starts OpenHAL on `127.0.0.1:7420`.
 4. `uv run openhal token create --agent --scope control_low --name claude` makes a token for your agent. [MCP setup](interfaces/MCP.md) has the config for each client.
 
 ## Use a real printer

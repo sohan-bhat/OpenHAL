@@ -14,7 +14,7 @@ uv run openhal demo
 
 ## As a tool
 
-`uv tool install` and `pipx install` put `openhal` and `openhald` on your PATH, each in its own environment. OpenHAL isn't on PyPI yet, so install OpenHAL from GitHub.
+`uv tool install` and `pipx install` put `openhal` on your PATH in its own environment. OpenHAL isn't on PyPI yet, so install OpenHAL from GitHub.
 
 ```text
 uv tool install --compile-bytecode git+https://github.com/sohan-bhat/OpenHAL

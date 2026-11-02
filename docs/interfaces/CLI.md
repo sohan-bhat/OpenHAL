@@ -1,6 +1,6 @@
 # Command line reference
 
-`openhal` connects to the hub's local API, so every command except `init`, `file` and `doctor`'s local checks needs a running hub (`openhald`). The CLI runs no safety checks, because the hub's kernel checks every command.
+`openhal` connects to the hub's local API, so every command except `init`, `file` and `doctor`'s local checks needs OpenHAL running, which `openhal start` does. The CLI runs no safety checks, because the hub's kernel checks every command.
 
 ## Global options
 
@@ -87,6 +87,14 @@ openhal token revoke TOKEN_ID
 These commands use the hub's token routes, and when the hub is not running or has no token routes yet, the commands work on `hub.db` in the config folder directly, which only the folder's owner can open.
 
 ## The hub and devices
+
+### openhal start
+
+```
+openhal start [--host HOST] [--port PORT] [--verbose]
+```
+
+`openhal start` runs OpenHAL in the foreground on `api.host` and `api.port` from `config.yaml`, `127.0.0.1:7420` by default, until you press Control and C. `openhal service install` runs the same command in the background at every login. A second `openhal start` on the same config folder exits with an error, so two hubs never open the same devices.
 
 ### openhal status
 
@@ -266,7 +274,7 @@ openhal file schema
 openhal file confirm PATH [--by NAME] [--phrase confirm]
 ```
 
-`validate` checks files against the spec, and `schema` prints the JSON Schema. `confirm` prints every limit in a file, then adds a top-level `confirmed` with your name, the date and the hash of the limits, so any later change to a limit makes the file read-only again. `confirm` exits 1 without confirming the file while any entry is still marked `suggested: true`, and `openhald` loads the change after a restart.
+`validate` checks files against the spec, and `schema` prints the JSON Schema. `confirm` prints every limit in a file, then adds a top-level `confirmed` with your name, the date and the hash of the limits, so any later change to a limit makes the file read-only again. `confirm` exits 1 without confirming the file while any entry is still marked `suggested: true`, and OpenHAL loads the change after a restart.
 
 ## Device library
 
@@ -317,10 +325,10 @@ openhal service print [--platform macos|linux]
 
 | | macOS | Linux |
 |---|---|---|
-| File | `~/Library/LaunchAgents/org.openhal.hub.plist` | `~/.config/systemd/user/openhald.service` |
+| File | `~/Library/LaunchAgents/org.openhal.hub.plist` | `~/.config/systemd/user/openhal.service` |
 | Install | `launchctl bootstrap gui/UID` | `systemctl --user enable` and `restart` |
 | Restart | `launchctl kickstart -k` | `systemctl --user restart` |
 | Uninstall | `launchctl bootout` | `systemctl --user disable --now` |
-| Logs | `~/.openhal/openhald.log` | `journalctl --user -u openhald` |
+| Logs | `~/.openhal/openhal.log` | `journalctl --user -u openhal` |
 
 The service restarts the hub after a crash but not after a clean stop. Because a user unit stops at logout when lingering is off, `install` on Linux reports when lingering is off. `status` exits 1 when the service isn't running, and `--dry-run` prints every file and command and changes nothing. `print` shows the plist or unit, for this machine or the one `--platform` names.

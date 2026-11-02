@@ -38,7 +38,7 @@ $ uv run openhal init
 sample device  ~/.openhal/devices/plant-waterer.hal.yaml created, read-only until you confirm it
 $ uv run openhal file confirm ~/.openhal/devices/plant-waterer.hal.yaml
 action  water
-$ uv run openhald &
+$ uv run openhal start &
 $ uv run openhal status
 devices 1 of 1 connected
 ```

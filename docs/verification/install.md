@@ -6,7 +6,7 @@ Recorded on 2026-10-25 on an Intel Mac (Core i7-8750H, 12 threads, 16 GB, macOS 
 
 ## scripts/time-first-read
 
-The script builds the wheel, installs it into a fresh temporary tool folder, runs `openhal init --yes --no-discover --no-sample --device openhal-firmware=sim:plant-waterer` in a temporary HOME, starts `openhald` on a free loopback port and starts `openhal mcp` the way an AI client does. The agent calls `list_devices`, then `read` on `plant-waterer.soil_moisture`. Init doesn't run discovery, so nothing probes the machine's ports or network. The simulated plant waterer stands in for a board discovery finds on a serial port, and it describes itself over the real firmware protocol. `--no-sample` leaves out the sample file, so the board is added the way a real self-describing board is.
+The script builds the wheel, installs it into a fresh temporary tool folder, runs `openhal init --yes --no-discover --no-sample --device openhal-firmware=sim:plant-waterer` in a temporary HOME, starts `openhal start` on a free loopback port and starts `openhal mcp` the way an AI client does. The agent calls `list_devices`, then `read` on `plant-waterer.soil_moisture`. Init doesn't run discovery, so nothing probes the machine's ports or network. The simulated plant waterer stands in for a board discovery finds on a serial port, and it describes itself over the real firmware protocol. `--no-sample` leaves out the sample file, so the board is added the way a real self-describing board is.
 
 Run 1, uv tool install with a warm package cache.
 
@@ -15,7 +15,7 @@ Run 1, uv tool install with a warm package cache.
 | build | 1.14 s | `uv build --wheel` made openhal_hub-0.1.0.dev0-py3-none-any.whl |
 | install | 2.00 s | `uv tool install --compile-bytecode` into a temporary tool folder |
 | init | 2.66 s | config folder, human token, plant-waterer added read-only, agent token, client setup printed |
-| hub | 2.12 s | `openhald` answered at 127.0.0.1 |
+| hub | 2.12 s | `openhal start` answered at 127.0.0.1 |
 | first read | 2.83 s | `list_devices`, then `read` gave plant-waterer.soil_moisture = 31.0 % |
 | install to first read | 9.61 s | |
 

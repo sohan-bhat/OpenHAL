@@ -108,7 +108,6 @@ run "$UV" venv --allow-existing --system-site-packages --python "$PYTHON" "$VENV
 run "$UV" pip install --python "$VENV/bin/python" --compile-bytecode "$SPEC"
 run mkdir -p "$BIN"
 run ln -sf "$VENV/bin/openhal" "$BIN/openhal"
-run ln -sf "$VENV/bin/openhald" "$BIN/openhald"
 
 ADD=""
 for group in $WANTED_GROUPS; do

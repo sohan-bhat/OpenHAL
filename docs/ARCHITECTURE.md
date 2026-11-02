@@ -15,7 +15,7 @@ flowchart LR
     DASH["Dashboard<br/>(Svelte, served by hub)"]
   end
 
-  subgraph Hub["openhald (one process)"]
+  subgraph Hub["openhal start (one process)"]
     API["Local API<br/>FastAPI + WebSocket<br/>127.0.0.1:7420"]
     AUTH["Tokens and principals"]
     REG["Device registry"]

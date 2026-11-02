@@ -1,6 +1,6 @@
 """A real hub on a background thread, for the website's tested snippets and demo storyboard.
 
-It loads the config folder at `home` exactly as `openhald` would and serves the local API on a free
+It loads the config folder at `home` exactly as `openhal start` would and serves the local API on a free
 loopback port, never port 4000. Devices come from that folder, so with the `openhal init` sample it
 runs the simulated plant waterer. Nothing here can reach hardware.
 """

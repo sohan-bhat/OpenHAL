@@ -4,7 +4,7 @@ Commands come from fenced shell blocks and from inline code in the prose. Each o
 against the real command line first, so a command, option or argument the CLI doesn't have fails.
 Then every runnable command in a page runs in order against the mock setup, the way a reader
 follows the page. Each page gets a fresh OPENHAL_HOME. A hub on a loopback port with the simulated
-plant waterer starts when the page starts one with `openhald`, or before the first command that
+plant waterer starts when the page starts one with `openhal start`, or before the first command that
 needs one. A command shown with output must print it, and output that starts with `blocked`,
 `failed` or `error` means the command must exit non-zero. A fence with `file=NAME` is saved in the
 working folder for the commands after it.
@@ -54,13 +54,13 @@ SKIPPED_PAGES: Final[dict[str, str]] = {
 }
 """Pages whose commands are checked for syntax only."""
 
-NO_HUB: Final = frozenset({"init", "file", "demo", "driver", "--version", "--help"})
+NO_HUB: Final = frozenset({"init", "file", "demo", "driver", "start", "--version", "--help"})
 """First words of commands that run without a hub, so the check doesn't start one for them."""
 
 MOCK_SETUP: Final = (
     "openhal init",
     "openhal file confirm ~/.openhal/devices/plant-waterer.hal.yaml",
-    "openhald",
+    "openhal start",
 )
 DAEMON_OPTIONS: Final = frozenset({"--host", "--port", "--verbose", "--help"})
 TARGETED: Final = (["write"], ["action"], ["dry-run"])
@@ -96,7 +96,7 @@ class Command:
     @property
     def head(self) -> str:
         """The command before any pipe or output redirect, which is the part the CLI parses."""
-        return re.split(r" \| | > ", self.text.removeprefix("uv run "), maxsplit=1)[0]
+        return re.split(r" \| | > ", self.text.removeprefix("uv run "), maxsplit=1)[0].removesuffix(" &")
 
     @property
     def words(self) -> list[str]:
@@ -407,6 +407,9 @@ def test_the_syntax_check_catches_commands_the_cli_lacks() -> None:
     assert check("openhal action plant-waterer.water duration 20s")
     assert check("openhal action plant-waterer.water --seconds 2")
     assert check("openhald --daemon")
+    assert check("openhal start --daemon")
+    assert not check("openhal start --port 4441")
+    assert not check("uv run openhal start &")
     assert not check("openhal log --verify")
     assert not check("openhal file migrate")
     assert not check("openhal dry-run --file plan.yaml")

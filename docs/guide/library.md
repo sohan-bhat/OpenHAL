@@ -34,7 +34,7 @@ A library file loads read-only, and the hub blocks every change to the device un
 1. Set the connection, such as the host name, the serial port or the entity ids.
 2. Check each limit against your device and what is wired to the device, change the limit if you need to, and remove `suggested: true`.
 3. Run `openhal file confirm` on the file. You type confirm, and the command records your name, the date and a hash of the limits.
-4. Restart `openhald`.
+4. Start OpenHAL with `openhal start`, or restart OpenHAL if OpenHAL runs already.
 
 Changing any limit later makes the file read-only again until you confirm the file again.
 
