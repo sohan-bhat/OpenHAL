@@ -76,7 +76,7 @@ def error_for(call: Call[Any], response: httpx.Response, source: TokenSource) ->
     if code in (404, 405) and text in _ROUTE_MISSING:
         return NotSupported(
             f"This hub has no {call.method} {call.path.split('?')[0]}. It is older than this client. "
-            "Update openhal-hub and restart openhald.",
+            "Update openhal-hub and restart the hub.",
             status_code=code,
             detail=detail,
         )

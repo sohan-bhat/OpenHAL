@@ -84,4 +84,4 @@ def confirm(
     remaining = again.unconfirmed()
     if remaining:
         fail(f"Still unconfirmed after saving {path}. {', '.join(remaining)}")
-    console.print(f"[green]confirmed[/green]  {escape(str(path))} by {escape(who)}. Restart openhald to load the file.")
+    console.print(f"[green]confirmed[/green]  {escape(str(path))} by {escape(who)}. Restart the hub to load the file.")

@@ -14,6 +14,7 @@ import typer
 from openhal.cli._common import EXIT_FAILED, config, err, fail
 
 TTY = "/dev/tty"
+MARK = "\u203a "
 
 
 def interactive() -> bool:
@@ -54,7 +55,7 @@ def require_phrase(phrase: str, what: str, *, given: str | None = None) -> str:
                 f"To {what}, run this command yourself in an interactive terminal. confirm.require_tty is true, "
                 "so the phrase can't come from a script or an agent."
             )
-        typed = read_phrase(f"Type {phrase} to {what}. ")
+        typed = read_phrase(f"\nType {phrase} and press Enter to {what}. Anything else cancels.\n{MARK}")
     elif given is not None:
         typed = given
     else:

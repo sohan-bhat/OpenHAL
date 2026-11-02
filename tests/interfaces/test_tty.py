@@ -19,9 +19,23 @@ def test_read_phrase_writes_the_prompt_and_reads_the_typed_line_from_the_termina
     try:
         monkeypatch.setattr(_tty, "TTY", os.ttyname(terminal))
         os.write(controller, b"confirm\n")
-        assert _tty.read_phrase("Type confirm to confirm these limits. ") == "confirm"
+        assert _tty.read_phrase("Type confirm and press Enter to confirm these limits.\n\u203a ") == "confirm"
         shown = os.read(controller, 1024).decode()
-        assert "Type confirm to confirm these limits. " in shown
+        assert "Type confirm and press Enter to confirm these limits." in shown
+        assert "\u203a " in shown
     finally:
         os.close(controller)
         os.close(terminal)
+
+
+def test_the_phrase_prompt_says_what_typing_does_and_waits_on_its_own_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: list[str] = []
+    monkeypatch.setattr(_tty, "interactive", lambda: True)
+    monkeypatch.setattr(_tty, "read_phrase", lambda prompt: seen.append(prompt) or "confirm")
+    monkeypatch.setattr(_tty, "config", lambda: type("C", (), {"confirm": type("R", (), {"require_tty": True})()})())
+    assert _tty.require_phrase("confirm", "confirm these limits as safe for this device") == "confirm"
+    lines = seen[0].split("\n")
+    assert lines[-2] == (
+        "Type confirm and press Enter to confirm these limits as safe for this device. Anything else cancels."
+    )
+    assert lines[-1] == _tty.MARK
