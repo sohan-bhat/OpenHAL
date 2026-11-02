@@ -38,7 +38,7 @@
 
 .how-count {
   display: none;
-  color: var(--accent);
+  color: var(--neutral);
   font-weight: 700;
   font-size: var(--t-small);
   font-variant-numeric: tabular-nums;

@@ -38,6 +38,7 @@
   --color-muted: var(--surface);
   --color-muted-foreground: var(--text-2);
   --color-accent: var(--accent);
+  --color-neutral: var(--neutral);
   --color-accent-fill: var(--accent-fill);
   --color-accent-fill-hover: var(--accent-fill-hover);
   --color-on-accent: var(--on-accent);

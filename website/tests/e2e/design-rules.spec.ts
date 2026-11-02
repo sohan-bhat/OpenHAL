@@ -190,11 +190,6 @@ const accents = (page: Page) =>
         }
         if (!pseudo && element.matches("[data-slot=button][data-variant=default]")) roles.push("primary button");
         else if (element.matches(".nav-mark") || (pseudo === "::before" && element.matches("li:has(> [aria-current=page]), .oh-menu-sections a[aria-current=page]"))) roles.push("current location");
-        else if (!pseudo && element.closest("a[href]") && !pink.back) {
-          const link = getComputedStyle(element.closest("a[href]")!);
-          if (link.textDecorationLine.includes("underline")) roles.push("link");
-          else strays.push(`${name} is a link in the accent without an underline`);
-        } else if (!pseudo && element.matches(".story-count, .story-count *")) roles.push("step counter");
         else if (element.closest(".seq .stroke.live:not(.confirm, .ok, .blocked)")) roles.push("request arrow");
         else if (element.closest(".cam .seen")) roles.push("what the agent spots");
         else strays.push(name);
@@ -221,26 +216,26 @@ const contrast = (one: string, two: string) => {
 
 test.describe("the pink accent", () => {
   for (const [scheme, accent] of [
-    ["light", "rgb(192, 21, 110)"],
-    ["dark", "rgb(255, 110, 180)"],
+    ["light", "rgb(194, 41, 138)"],
+    ["dark", "rgb(255, 141, 204)"],
   ] as const) {
-    test(`marks only buttons, links, the current location and the walkthrough's step, with blue for pending alone, in the ${scheme} theme`, async ({ page }) => {
+    test(`marks only buttons, the current location, the request being drawn and what the agent spots, with blue for pending alone, in the ${scheme} theme`, async ({ page }) => {
       test.slow();
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
       await page.setViewportSize({ width: 1440, height: 900 });
       for (const [path, needs] of [
         ["/", ["current location", "primary button"]],
-        ["/docs/quickstart/", ["current location", "link"]],
-        ["/spec/v0.1/basic/messages/", ["current location", "link"]],
+        ["/docs/quickstart/", ["current location"]],
+        ["/spec/v0.1/basic/messages/", ["current location"]],
         ["/drivers/", ["current location"]],
         ["/blog/", []],
-        ["/docs/examples/3d-print-watch/", ["current location", "step counter"]],
+        ["/docs/examples/3d-print-watch/", ["current location"]],
         ["/404.html", []],
       ] as const) {
         await page.goto(path);
         const seen = await accents(page);
         expect(seen.accent, path).toBe(accent);
-        expect(seen.fill, path).toBe("rgb(255, 110, 180)");
+        expect(seen.fill, path).toBe("rgb(255, 141, 204)");
         expect(seen.strays, `${path} uses the accent only for its roles`).toEqual([]);
         expect(seen.large, `${path} never fills a large area with pink`).toEqual([]);
         expect(seen.pending, `${path} keeps blue for pending`).toEqual([]);
@@ -263,8 +258,8 @@ test.describe("the pink accent", () => {
         const style = getComputedStyle(element);
         return { background: style.backgroundColor, color: style.color, weight: style.fontWeight, image: style.backgroundImage, shadow: style.boxShadow, edge: style.borderTopColor, page: getComputedStyle(document.body).backgroundColor };
       });
-      expect(look.background).toBe("rgb(255, 110, 180)");
-      expect(look.color).toBe("rgb(13, 15, 18)");
+      expect(look.background).toBe("rgb(255, 141, 204)");
+      expect(look.color).toBe("rgb(17, 18, 16)");
       expect(look.weight).toBe("600");
       expect(look.image, "no gradient").toBe("none");
       expect(look.shadow.split(/,(?![^(]*\))/).every((part) => part.includes("inset")), "no shadow or glow").toBe(true);
@@ -277,13 +272,13 @@ test.describe("the pink accent", () => {
     await page.goto("/");
     const button = page.getByRole("link", { name: "Get started" });
     await button.hover();
-    await expect.poll(() => button.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(255, 142, 197)");
+    await expect.poll(() => button.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(222, 81, 168)");
     await expect.poll(() => button.evaluate((element) => getComputedStyle(element).transform)).toBe("matrix(1, 0, 0, 1, 0, -1)");
     await page.mouse.move(0, 0);
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.reload();
     await button.hover();
-    await expect.poll(() => button.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(255, 142, 197)");
+    await expect.poll(() => button.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(222, 81, 168)");
     expect(await button.evaluate((element) => getComputedStyle(element).transform)).toBe("none");
   });
 
@@ -303,7 +298,7 @@ test.describe("the pink accent", () => {
         probe.remove();
         return found;
       });
-      expect(selection).toEqual([{ background: "rgb(255, 110, 180)", color: "rgb(13, 15, 18)" }]);
+      expect(selection).toEqual([{ background: "rgb(255, 141, 204)", color: "rgb(17, 18, 16)" }]);
     });
   }
 
@@ -330,4 +325,31 @@ test.describe("the pink accent", () => {
     });
     expect(side).toEqual({ width: "2px", bar: side.guide, guide: side.guide, tall: true });
   });
+});
+
+test.describe("the neutral", () => {
+  for (const [scheme, neutral, highlight] of [
+    ["light", "rgb(113, 98, 75)", "rgb(234, 230, 219)"],
+    ["dark", "rgb(203, 185, 159)", "rgb(45, 43, 38)"],
+  ] as const) {
+    test(`sets links and step counters in khaki and puts the current section on its highlight, in the ${scheme} theme`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto("/docs/quickstart/");
+      const look = await page.evaluate(() => {
+        const links = [...document.querySelectorAll<HTMLAnchorElement>(".sl-markdown-content a[href]:not([aria-hidden], .anchor-link, [data-slot])")].filter((link) => link.checkVisibility() && link.textContent?.trim());
+        const pill = document.querySelector(".oh-sections [aria-current=page] .nav-pill")!;
+        return {
+          colors: [...new Set(links.map((link) => getComputedStyle(link).color))],
+          underlined: links.every((link) => getComputedStyle(link).textDecorationLine.includes("underline")),
+          pill: getComputedStyle(pill).backgroundColor,
+        };
+      });
+      expect(look.colors).toEqual([neutral]);
+      expect(look.underlined).toBe(true);
+      expect(look.pill).toBe(highlight);
+      await page.goto("/docs/examples/3d-print-watch/");
+      expect(await page.locator(".story-count").evaluate((element) => getComputedStyle(element).color)).toBe(neutral);
+    });
+  }
 });

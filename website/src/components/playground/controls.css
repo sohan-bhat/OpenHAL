@@ -175,7 +175,7 @@
   display: block;
   margin-top: var(--s-1);
   font-weight: 700;
-  color: var(--accent);
+  color: var(--neutral);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }

@@ -2,7 +2,7 @@
   --oh-control-border: color-mix(in srgb, var(--text-2) 60%, var(--border));
   --oh-control-line: 1.5px;
   --oh-control-ring: inset 0 0 0 calc(var(--oh-control-line) - 1px);
-  --oh-highlight: var(--surface);
+  --oh-highlight: var(--highlight);
   --oh-lead: var(--sl-nav-pad-x);
 
   --sl-font: var(--font-text);
@@ -37,7 +37,7 @@
   --sl-color-accent: var(--accent);
   --sl-color-accent-high: var(--accent);
   --sl-color-text: var(--text);
-  --sl-color-text-accent: var(--accent);
+  --sl-color-text-accent: var(--neutral);
   --sl-color-text-invert: var(--bg);
   --sl-color-bg: var(--bg);
   --sl-color-bg-nav: var(--bg);
@@ -209,7 +209,7 @@ html:root:has(.oh-home) {
 }
 
 .starlight-aside__content a {
-  color: var(--accent);
+  color: var(--neutral);
 }
 
 .pagination-links a {
