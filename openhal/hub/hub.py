@@ -77,6 +77,9 @@ class Hub:
         from openhal.writer.engine import WriterEngine
 
         self.writer = WriterEngine(self)
+        from openhal.hub.limits import LimitChanges
+
+        self.limits = LimitChanges(self)
         self.load_problems: list[LoadProblem] = []
         self.last_discovery: Any = None
         self.started_at: float | None = None
