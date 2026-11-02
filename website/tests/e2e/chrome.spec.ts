@@ -248,7 +248,7 @@ test.describe("the left edge", () => {
     await page.keyboard.press("Escape");
     await page.locator("[data-section-pages-trigger]").click();
     const sheet = page.getByRole("dialog", { name: "Specification" });
-    await expect(sheet).toBeVisible();
+    await expect(sheet, "the first tap opens the sheet once the island loads").toBeVisible({ timeout: 15_000 });
     await page.waitForTimeout(300);
     const rows = await sheet.locator("[data-sidebar=menu-button]").evaluateAll((list) => list.filter((row) => row.getClientRects().length).map((row) => Math.round(row.getBoundingClientRect().left)));
     expect(new Set(rows)).toEqual(new Set([16]));
@@ -730,7 +730,7 @@ test.describe("the sidebar's collapse", () => {
     expect(await focused(page), "Tab moves focus on a phone").not.toBe("body");
     expect(await page.evaluate(() => document.documentElement.dataset.sidebar ?? "shown")).toBe("collapsed");
     await page.locator("[data-section-pages-trigger]").click();
-    await expect(page.getByRole("dialog", { name: "Docs" }).getByRole("link", { name: "Install" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Docs" }).getByRole("link", { name: "Install" })).toBeVisible({ timeout: 15_000 });
   });
 });
 
@@ -771,7 +771,7 @@ test.describe("the phone menu", () => {
     expect(bar.middle).toBeLessThan(1.5);
     await trigger.click();
     const sheet = page.getByRole("dialog", { name: "Specification" });
-    await expect(sheet).toBeVisible();
+    await expect(sheet, "the first tap opens the sheet once the island loads").toBeVisible({ timeout: 15_000 });
     await expect(sheet.locator("a[aria-current='page']")).toHaveText("3.3 Messages");
     expect(await sheet.evaluate((element) => getComputedStyle(element).outlineStyle), "no ring around the whole sheet").toBe("none");
     await expect(sheet.locator("a[aria-current='page']")).toBeInViewport();

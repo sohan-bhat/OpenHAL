@@ -58,7 +58,7 @@ const pages = route.sidebar.length > 0 ? section : undefined;
     }
 
     .oh-toc-bar[data-section-pages] :global(mobile-starlight-toc summary) {
-      height: auto;
+      height: calc(var(--sl-mobile-toc-height) - 1px);
       padding-inline-start: 0;
       border-bottom: 0;
     }

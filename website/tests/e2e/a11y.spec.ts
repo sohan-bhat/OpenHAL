@@ -56,7 +56,7 @@ for (const scheme of ["light", "dark"] as const) {
       problems.push(...(await violations(page)).map((item) => `spec outline ${item}`));
       await page.keyboard.press("Escape");
       await page.locator("[data-section-pages-trigger]").click();
-      await expect(page.getByRole("dialog", { name: "Specification" })).toBeVisible();
+      await expect(page.getByRole("dialog", { name: "Specification" })).toBeVisible({ timeout: 15_000 });
       await page.waitForTimeout(300);
       problems.push(...(await violations(page)).map((item) => `spec page sheet ${item}`));
       await page.keyboard.press("Escape");

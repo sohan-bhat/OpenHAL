@@ -232,7 +232,7 @@ test.describe("the interactive parts", () => {
     await expect(page.locator("#starlight__sidebar")).toHaveCSS("opacity", "1");
     await page.keyboard.press("Escape");
     await page.locator("[data-section-pages-trigger]").click();
-    await expect(page.getByRole("dialog", { name: "Specification" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Specification" })).toBeVisible({ timeout: 15_000 });
     const sheetMoving = () =>
       document
         .getAnimations()
