@@ -18,7 +18,7 @@ import click
 import typer
 from rich.markup import escape
 
-from openhal._brand import DAEMON_NAME, DEFAULT_PORT
+from openhal._brand import DEFAULT_PORT, PRODUCT_NAME, START_COMMAND
 from openhal.cli import _tty, service_cmd
 from openhal.cli._common import console, home
 from openhal.kernel.principals import Scope
@@ -296,7 +296,7 @@ def _next_steps(sample_path: Path | None, running: bool, has_agent_token: bool, 
     hub = (
         "Check the hub with openhal status"
         if running
-        else f"Start the hub with {DAEMON_NAME}, then check the hub with openhal status"
+        else f"Start {PRODUCT_NAME} with {START_COMMAND}, then check the hub with openhal status"
     )
     if has_agent_token:
         clients = ["Add openhal to your MCP client with the setup above"]

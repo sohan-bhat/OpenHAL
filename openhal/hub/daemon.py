@@ -1,4 +1,8 @@
-"""`openhald`, the hub daemon. Runs one Hub and serves the local API until stopped."""
+"""The hub process that `openhal start` runs. Runs one Hub and serves the local API until stopped.
+
+`openhald` is kept as an alias for this module's `main` (ADR 0018), so services installed before
+`openhal start` keep working.
+"""
 
 from __future__ import annotations
 
@@ -10,7 +14,7 @@ import socket
 
 import uvicorn
 
-from openhal._brand import DAEMON_NAME
+from openhal._brand import PRODUCT_NAME, START_COMMAND
 from openhal.hub.api import create_app
 from openhal.hub.config import HubConfig, load_config
 from openhal.hub.hub import Hub
@@ -32,7 +36,7 @@ def claim(config: HubConfig) -> DeviceLock:
         lock.acquire()
     except DeviceLocked:
         raise SystemExit(
-            f"Another {DAEMON_NAME} already runs with the config folder {config.home}. Stop it first, or use it."
+            f"{PRODUCT_NAME} already runs with the config folder {config.home}. Stop it first, or use it."
         ) from None
     family = socket.AF_INET6 if ":" in config.api.host else socket.AF_INET
     with socket.socket(family, socket.SOCK_STREAM) as probe:
@@ -79,14 +83,19 @@ async def _run(config: HubConfig) -> None:
         await hub.close()
 
 
+def run(host: str | None = None, port: int | None = None, *, verbose: bool = False) -> None:
+    """Run the hub in the foreground until Control and C or SIGTERM."""
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.WARNING)
+    asyncio.run(serve(host, port))
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(prog=DAEMON_NAME, description="Run the OpenHAL hub.")
+    parser = argparse.ArgumentParser(prog=START_COMMAND, description=f"Run {PRODUCT_NAME}.")
     parser.add_argument("--host", default=None)
     parser.add_argument("--port", type=int, default=None)
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
-    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.WARNING)
-    asyncio.run(serve(args.host, args.port))
+    run(args.host, args.port, verbose=args.verbose)
 
 
 if __name__ == "__main__":

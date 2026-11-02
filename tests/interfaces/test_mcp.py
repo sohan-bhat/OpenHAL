@@ -154,7 +154,7 @@ async def test_a_human_token_is_refused(async_transport: httpx.ASGITransport, to
 
 async def test_hub_not_running_says_how_to_start() -> None:
     tools = Tools(AsyncClient("http://127.0.0.1:9", "ohal_x", use_human_token_file=False, timeout=2))
-    with pytest.raises(ToolError, match="Start the hub with openhald"):
+    with pytest.raises(ToolError, match="Start OpenHAL with openhal start"):
         await tools.list_devices()
 
 

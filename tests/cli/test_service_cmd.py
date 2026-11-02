@@ -12,7 +12,7 @@ from typer.testing import CliRunner
 
 from openhal.cli import service_cmd
 from openhal.cli.main import app
-from openhal.service.background import LABEL, UNIT, Service
+from openhal.service.background import LABEL, LEGACY_UNIT, UNIT, Service
 from openhal.service.runner import Runner
 from tests.cli.conftest import Machine
 
@@ -33,17 +33,17 @@ def test_print_macos_plist(machine: Machine) -> None:
     assert code == 0, out
     plist = plistlib.loads(out.encode())
     assert plist["Label"] == LABEL
-    assert plist["ProgramArguments"] == [sys.executable, "-m", "openhal.hub.daemon"]
+    assert plist["ProgramArguments"] == [sys.executable, "-m", "openhal.cli.main", "start"]
     assert plist["EnvironmentVariables"] == {"OPENHAL_HOME": str(machine.config)}
     assert plist["RunAtLoad"] is True
     assert plist["KeepAlive"] == {"SuccessfulExit": False}
-    assert plist["StandardErrorPath"] == str(machine.config / "openhald.log")
+    assert plist["StandardErrorPath"] == str(machine.config / "openhal.log")
 
 
 def test_print_linux_unit(machine: Machine) -> None:
     code, out = run("service", "print", "--platform", "linux")
     assert code == 0, out
-    assert f"ExecStart={sys.executable} -m openhal.hub.daemon" in out
+    assert f"ExecStart={sys.executable} -m openhal.cli.main start" in out
     assert f"Environment=OPENHAL_HOME={machine.config}" in out
     assert "Restart=on-failure" in out
     assert "WantedBy=default.target" in out
@@ -79,7 +79,8 @@ def test_install_on_linux_enables_the_user_unit(machine: Machine, monkeypatch: p
     code, out = run("service", "install")
     assert code == 0, out
     unit = machine.home / ".config" / "systemd" / "user" / UNIT
-    assert "openhal.hub.daemon" in unit.read_text()
+    assert UNIT == "openhal.service"
+    assert "-m openhal.cli.main start" in unit.read_text()
     assert machine.runner.commands == [
         "systemctl --user daemon-reload",
         f"systemctl --user enable {UNIT}",
@@ -148,3 +149,28 @@ def test_linux_status_reads_systemctl(machine: Machine, monkeypatch: pytest.Monk
     code, out = run("service", "status")
     assert code == 0, out
     assert "active, pid 917" in out
+
+
+def test_a_unit_from_before_openhal_start_keeps_working_until_install_replaces_it(
+    machine: Machine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(service_cmd, "this_platform", lambda: "linux")
+    units = machine.home / ".config" / "systemd" / "user"
+    units.mkdir(parents=True)
+    (units / LEGACY_UNIT).write_text("[Service]\nExecStart=/usr/bin/python3 -m openhal.hub.daemon\n")
+    machine.runner.answers["systemctl --user is-active"] = (0, "active\n")
+    machine.runner.answers["systemctl --user show"] = (0, "917\n")
+    code, out = run("service", "status")
+    assert code == 0, out
+    assert machine.runner.commands[0] == f"systemctl --user is-active {LEGACY_UNIT}"
+    machine.runner.commands.clear()
+    code, out = run("service", "install")
+    assert code == 0, out
+    assert not (units / LEGACY_UNIT).exists()
+    assert (units / UNIT).exists()
+    assert machine.runner.commands[:2] == [
+        f"systemctl --user disable --now {LEGACY_UNIT}",
+        "systemctl --user daemon-reload",
+    ]
+    assert "journalctl --user -u openhal." in out
+    assert "openhald" not in out

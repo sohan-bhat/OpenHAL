@@ -3,7 +3,7 @@
 The server forwards every tool call to the hub with an agent token. The server reads that token
 from `OPENHAL_TOKEN` or a file given with `--token-file`, never from the human token file, and
 stops with an error on a human token. If the hub is not running, the server makes one attempt to
-start `openhald`, and when that fails each tool result shows how to start the hub.
+start OpenHAL with `openhal start`, and when that fails each tool result shows how to start OpenHAL.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ import httpx
 from mcp.server.mcpserver import MCPServer
 
 from openhal import __version__
-from openhal._brand import DAEMON_NAME, PRODUCT_NAME
+from openhal._brand import PRODUCT_NAME, START_COMMAND
 from openhal.client import AsyncClient
 from openhal.client.settings import TOKEN_ENV, home_dir, read_token_file, resolve_url
 from openhal.mcp import prompts
@@ -105,12 +105,12 @@ def hub_answers(url: str, timeout: float = 1.0) -> bool:
 
 
 def start_hub(home: Path, url: str, wait_s: float = 8.0) -> bool:
-    """Start `openhald` in the background once and poll until the hub responds. Returns True if it does."""
+    """Run `openhal start` in the background once and poll until the hub responds. Returns True if it does."""
     home.mkdir(parents=True, exist_ok=True)
-    log_path = home / "openhald.log"
+    log_path = home / "openhal.log"
     with log_path.open("ab") as log:
         subprocess.Popen(
-            [sys.executable, "-m", "openhal.hub.daemon"],
+            [sys.executable, "-m", "openhal.cli.main", "start"],
             stdin=subprocess.DEVNULL,
             stdout=log,
             stderr=log,
@@ -148,10 +148,10 @@ def run(
     base = resolve_url(url, home=home)
     if not hub_answers(base):
         if start and start_hub(home_dir(home), base):
-            print(f"Started {DAEMON_NAME} at {base}.", file=sys.stderr)
+            print(f"Started {PRODUCT_NAME} at {base}.", file=sys.stderr)
         else:
             print(
-                f"The hub is not running at {base}. Start the hub with {DAEMON_NAME}. "
+                f"The hub is not running at {base}. Start {PRODUCT_NAME} with {START_COMMAND}. "
                 "Every tool call returns the same error until the hub is running.",
                 file=sys.stderr,
             )

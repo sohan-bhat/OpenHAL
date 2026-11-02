@@ -19,7 +19,7 @@ import typer
 from rich.markup import escape
 from rich.table import Table
 
-from openhal._brand import CLI_NAME, DAEMON_NAME, DEVICE_FILE_SUFFIX
+from openhal._brand import CLI_NAME, DEVICE_FILE_SUFFIX
 from openhal.cli._common import EXIT_USAGE, config, console, fail, print_json, show
 from openhal.spec.loader import DeviceFileError, load
 from openhal.spec.models import DeviceFile, Match
@@ -249,9 +249,8 @@ def add_file(name: str = typer.Argument(..., help="A library name, such as rigol
         fail(f"{target} already exists. The library never overwrites a device file. Edit that file instead.")
     console.print(f"[green]added[/green]  {escape(str(target))}")
     console.print(
-        "The file loads read-only. Set the connection for your device, check every limit and remove suggested: true "
-        f"from each limit you checked. Then run {CLI_NAME} file confirm {escape(str(target))} and restart "
-        f"{DAEMON_NAME}."
+        "The file loads read-only. Set the connection for your device in the file, then answer each limit with "
+        f"{CLI_NAME} file confirm {escape(str(target))}"
     )
 
 

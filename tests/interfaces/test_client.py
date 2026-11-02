@@ -165,7 +165,7 @@ async def test_errors_are_specific(async_transport: httpx.ASGITransport, tokens:
         with pytest.raises(NotFound, match="no driver writer session"):
             await human.writer_session("s1")
     async with AsyncClient("http://127.0.0.1:9", "ohal_x", use_human_token_file=False, timeout=2) as nobody:
-        with pytest.raises(HubNotRunning, match="openhald"):
+        with pytest.raises(HubNotRunning, match="Start OpenHAL with openhal start"):
             await nobody.status()
 
 

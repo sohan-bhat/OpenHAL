@@ -98,7 +98,7 @@
   </header>
   <main class="offline" id="main">
     <h1>The hub is unreachable</h1>
-    <p>No response comes from <code>{location.host}</code>. Start the hub with <code>openhald</code>.</p>
+    <p>No response comes from <code>{location.host}</code>. Start OpenHAL with <code>openhal start</code>.</p>
     <p class="muted">Retrying every 3 s.</p>
   </main>
 {:else if !shell}

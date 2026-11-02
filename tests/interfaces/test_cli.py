@@ -238,7 +238,7 @@ def test_errors_have_exit_codes(monkeypatch: pytest.MonkeyPatch, cli_hub: SyncHu
     monkeypatch.setattr(_common, "TRANSPORT", None)
     code, out = run("--url", "http://127.0.0.1:9", "status")
     assert code == 3
-    assert "Start the hub with openhald" in out
+    assert "Start OpenHAL with openhal start" in out
     code, out = run("devices", "nope")
     assert code in (1, 3)
 

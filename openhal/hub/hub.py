@@ -1,6 +1,6 @@
 """The hub. Owns the kernel, every device, polling, heartbeats and live events (ADR 0003).
 
-`openhald` runs one Hub. Tests, `openhal demo` and scripts can run the same class embedded.
+`openhal start` runs one Hub. Tests, `openhal demo` and scripts can run the same class embedded.
 """
 
 from __future__ import annotations

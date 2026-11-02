@@ -235,7 +235,8 @@
     </dl>
     <p class="muted">
       The Inspector shows LAN access read-only. To change it, set <code>api.allow_lan</code> in
-      <code>~/.openhal/config.yaml</code> and restart <code>openhald</code>. It is off unless you turn it on.
+      <code>~/.openhal/config.yaml</code>, then stop OpenHAL and start OpenHAL again with <code>openhal start</code>. It is
+      off unless you turn it on.
     </p>
   </section>
 </div>
