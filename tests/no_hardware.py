@@ -12,7 +12,8 @@ real serial port, HID device, MIDI port, Bluetooth device or Raspberry Pi camera
 
 `isolate_environment()` points the hub's home at a temporary folder and the hub address at a
 loopback port nothing listens on, so a test, and every process a test starts, never reads the real
-`~/.openhal`, never sends the developer's token and never reaches a running hub.
+`~/.openhal`, never sends the developer's token and never reaches a running hub. A developer's own
+OPENHAL_FIRMWARE_PORTS is cleared too, so no exported list of real boards reaches discovery.
 """
 
 from __future__ import annotations
@@ -73,16 +74,17 @@ REAL_COMPORTS = _real_serial_lister()
 
 
 def real_serial_ports() -> set[str]:
-    """The serial ports the OS lists right now, with the /dev/tty twin of each macOS /dev/cu port."""
+    """The serial ports the OS lists right now, with the /dev/tty twin of each macOS /dev/cu port, all resolved."""
     listed = {port.device for port in REAL_COMPORTS()}
-    return listed | {name.replace("/dev/cu.", "/dev/tty.", 1) for name in listed}
+    listed |= {name.replace("/dev/cu.", "/dev/tty.", 1) for name in listed}
+    return {os.path.realpath(name) for name in listed}
 
 
 def _serial_without_real_ports() -> Callable[..., Any]:
     real_open = _real("serial.serial_for_url")
 
     def open_port(url: str, *args: object, **kwargs: object) -> Any:
-        if url in real_serial_ports():
+        if "://" not in url and os.path.realpath(url) in real_serial_ports():
             raise RealHardwareError(f"Tests never open the real serial port {url}. Use sim:, loop:// or a pty.")
         return real_open(url, *args, **kwargs)
 
@@ -235,5 +237,6 @@ def isolate_environment() -> Path:
     os.environ["OPENHAL_HOME"] = str(folder / "home")
     os.environ["OPENHAL_URL"] = NO_HUB_URL
     os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
-    os.environ.pop("OPENHAL_TOKEN", None)
+    for name in ("OPENHAL_TOKEN", "OPENHAL_FIRMWARE_PORTS"):
+        os.environ.pop(name, None)
     return folder
