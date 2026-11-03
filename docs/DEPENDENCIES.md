@@ -13,6 +13,11 @@ Copyleft code is never copied into this repository. Libraries under weak copylef
 | PyYAML | 6.0.3 | MIT | Device file parsing with a restricted safe loader |
 | typer | 0.27.3 | MIT | CLI |
 | rich | 15.0.0 | MIT | CLI output |
+| questionary | 2.1.1 | MIT | The CLI's pickers and typed answers for a left-out argument (ADR 0020) |
+| prompt_toolkit | 3.0.53 | BSD-3-Clause | The terminal input and output under questionary, pointed at the controlling terminal |
+| wcwidth | 0.9.4 | MIT | Character widths for prompt_toolkit. Installed with prompt_toolkit |
+
+The CLI's pickers use questionary on prompt_toolkit, chosen on 2026-11-02 over InquirerPy. questionary had a release in August 2025, while InquirerPy's last release was in June 2022. Both are MIT and both run on Windows through prompt_toolkit's console input. questionary's select prompt filters the list as the person types. The CLI styles each picker in plain bold with no colors, so a picker matches the rich output around the picker.
 
 ## Hub extra
 
