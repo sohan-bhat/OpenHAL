@@ -98,6 +98,28 @@ def loudness(source: Path, target: Path) -> dict[str, float]:
     )
     found = re.search(r"\{[^{}]*\"output_i\"[^{}]*\}", second.stderr)
     result = json.loads(found.group(0)) if found else {}
+    trim = TARGET_LUFS - float(result.get("output_i", TARGET_LUFS))
+    if abs(trim) > 0.1 and float(result.get("output_tp", 0.0)) + trim <= TRUE_PEAK:
+        trimmed = target.with_suffix(".trim.wav")
+        run(
+            [
+                str(FFMPEG),
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-y",
+                "-i",
+                str(target),
+                "-af",
+                f"volume={trim:.2f}dB",
+                "-c:a",
+                "pcm_s24le",
+                str(trimmed),
+            ]
+        )
+        trimmed.replace(target)
+        result["output_i"] = str(float(result["output_i"]) + trim)
+        result["output_tp"] = str(float(result["output_tp"]) + trim)
     return {
         "input_i": float(m["input_i"]),
         "input_tp": float(m["input_tp"]),
