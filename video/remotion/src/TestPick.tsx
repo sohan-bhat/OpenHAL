@@ -17,7 +17,7 @@ RectAreaLightUniformsLib.init();
 
 const shot = shotData as unknown as Shot;
 
-export const LIGHTS = {key: 3.2, rim: 5.0, fill: 0.5, wash: 1.2, environment: 0.32};
+export const LIGHTS = {key: 3.2, rim: 5.0, fill: 0.5, wash: 0.5, environment: 0.32};
 
 const physical = (hex: string, roughness: number) =>
   new MeshPhysicalMaterial({color: new Color(hex), roughness, metalness: 0, ior: 1.46});
@@ -127,7 +127,7 @@ const Set: React.FC<{materials: ReturnType<typeof useMaterials>}> = ({materials}
       <mesh position={[cx, cy, -sz / 2]} material={materials.desk} receiveShadow>
         <boxGeometry args={[sx * 2.2, sy * 2.6, sz]} />
       </mesh>
-      <mesh position={[center.x, center.y, height / 2 - 0.05]} rotation={[Math.PI / 2, 0, yaw]} material={materials.backdrop} receiveShadow>
+      <mesh position={[center.x, center.y, height / 2 - 0.05]} rotation={[Math.PI / 2, 0, yaw, 'ZYX']} material={materials.backdrop} receiveShadow>
         <planeGeometry args={[look.backdrop.width, height]} />
       </mesh>
     </group>
