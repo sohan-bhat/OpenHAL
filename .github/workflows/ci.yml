@@ -24,3 +24,65 @@ jobs:
       - run: uv run ruff format --check openhal tests
       - run: uv run mypy openhal
       - run: uv run pytest -q
+
+  installers:
+    name: installers on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      OPENHAL_SOURCE: git+https://github.com/${{ github.repository }}@${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run install.sh in a clean home from this commit's git source
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          clean="$RUNNER_TEMP/clean/home"
+          mkdir -p "$clean"
+          path=""
+          IFS=:
+          for folder in $PATH; do
+            [ -x "$folder/uv" ] || path="${path:+$path:}$folder"
+          done
+          unset IFS
+          env -i HOME="$clean" PATH="$path" OPENHAL_SOURCE="$OPENHAL_SOURCE" sh website/public/install.sh
+          test -x "$clean/.local/bin/uv"
+          version=$(sed -n 's/^version = "\(.*\)"$/\1/p' pyproject.toml | head -n 1)
+          printed=$("$clean/.local/bin/openhal" --version)
+          echo "$printed"
+          if [ "$printed" != "openhal $version" ]; then
+            echo "::error::openhal --version printed \"$printed\", not \"openhal $version\"."
+            exit 1
+          fi
+      - name: Run install.ps1 in a clean home from this commit's git source
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("$PWD\website\public\install.ps1", [ref]$null, [ref]$errors) | Out-Null
+          if ($errors) { throw "install.ps1 does not parse. $errors" }
+          $clean = Join-Path $env:RUNNER_TEMP 'clean\home'
+          New-Item -ItemType Directory -Force $clean | Out-Null
+          $env:HOME = $clean
+          $env:USERPROFILE = $clean
+          $env:LOCALAPPDATA = Join-Path $clean 'AppData\Local'
+          $env:APPDATA = Join-Path $clean 'AppData\Roaming'
+          $env:UV_INSTALL_DIR = Join-Path $clean '.local\bin'
+          $env:UV_TOOL_BIN_DIR = $env:UV_INSTALL_DIR
+          $env:UV_TOOL_DIR = Join-Path $clean '.local\share\uv\tools'
+          $env:UV_PYTHON_INSTALL_DIR = Join-Path $clean '.local\share\uv\python'
+          $env:UV_CACHE_DIR = Join-Path $clean '.cache\uv'
+          $env:Path = (($env:Path -split ';') | Where-Object { $_ -and -not (Test-Path (Join-Path $_ 'uv.exe')) }) -join ';'
+          Get-Content -Raw website/public/install.ps1 | Invoke-Expression
+          if ($LASTEXITCODE -ne 0) { throw 'install.ps1 stopped with an error.' }
+          if (-not (Test-Path (Join-Path $env:UV_INSTALL_DIR 'uv.exe'))) { throw 'install.ps1 did not put uv in place.' }
+          $version = (Select-String -Path pyproject.toml -Pattern '^version = "(.+)"$').Matches[0].Groups[1].Value
+          $printed = (& (Join-Path $env:UV_TOOL_BIN_DIR 'openhal.exe') --version | Out-String).Trim()
+          Write-Host $printed
+          if ($printed -ne "openhal $version") { throw "openhal --version printed `"$printed`", not `"openhal $version`"." }
