@@ -1,7 +1,7 @@
 """A MuJoCo world that steps in real time, behind the mujoco driver.
 
-The driver never steps MuJoCo itself. It talks to a `World`, the way other drivers speak their
-protocol to a simulator. A world is one compiled MJCF model and its state, stepped on its own
+The driver never steps MuJoCo itself. It calls a `World`, where other drivers have a protocol
+and a simulator behind it. A world is one compiled MJCF model and its state, stepped on its own
 thread so that simulated time keeps pace with the hub's clock.
 
 - Position goals move every actuator along a minimum-jerk path. A path is as slow as it needs to
@@ -11,9 +11,9 @@ thread so that simulated time keeps pace with the hub's clock.
 - `hold()` ends every move at once and freezes every setpoint where it is, so position servos
   hold the joints there and a closed gripper keeps its grip.
 - `solve()` finds joint positions that put a site at a point, optionally with one of the site's
-  axes along a world direction, by damped least squares on MuJoCo's site Jacobian. It tries the
-  present pose first, then the model's keyframes, then a fixed spread of poses inside the limits,
-  and keeps the reachable answer that moves for the shortest time. Nothing in it is random.
+  axes along a world direction, by damped least squares on MuJoCo's site Jacobian. It starts
+  from the present pose, then the model's keyframes, then a fixed spread of poses inside the
+  limits, and keeps the reachable solution that moves for the shortest time. Nothing in it is random.
 - `watch()` calls a function every few physics steps with the live data, for recordings.
 """
 
@@ -34,7 +34,7 @@ PEAK: float = 1.875
 MAX_BURST_S: float = 0.25
 """The most simulated time one pass of the loop catches up before the thread gives up the lock."""
 SEEDS: int = 12
-"""How many fixed spread poses `solve()` tries after the present pose and the keyframes."""
+"""How many fixed spread poses `solve()` starts from after the present pose and the keyframes."""
 ITERATIONS: int = 100
 """Damped least squares iterations per starting pose."""
 DAMPING: float = 1e-4
@@ -304,7 +304,7 @@ class World:
     ) -> Solution:
         """Joint positions within `joints` (id to low and high, in native units) that put `site` at `target`.
 
-        Only the listed joints move. The answer that is reached and takes the least time at
+        Only the listed joints move. The solution that is reached and takes the least time at
         `speeds` wins, and when nothing reaches, the closest miss comes back with `reached` false.
         """
         with self._lock:
