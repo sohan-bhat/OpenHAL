@@ -13,9 +13,15 @@ Every cue comes from the same edit.json and shot files the pictures use.
   on the freeze, through the black after the shot.
 - Devices. A pluck for each device as the hub's connect event comes, one pitch per device.
 - Room tone under everything else, a low swell under the cold open and a soft chord under the end card.
+- The music bed, generated here like every other sound. Each beat of the edit holds one soft chord
+  that changes on the beat's first cut, a clean pluck steps through the chord on a 100 BPM grid
+  that restarts with each chord, and a low tock marks each cut inside a beat. The bed dips under the
+  block, the hold, the approval and each device, and stops dead on the STOP press. It stays out
+  through the black after STOP and comes back on the cut to the devices.
 
---music mixes an optional royalty-free track into the marked music slot, 16 dB under the effects
-by default, ducked under STOP. The track's license goes in video/CREDITS.md before it ships.
+--music replaces the bed with an outside track in the music slot, 16 dB under the effects by
+default and cut with everything else from STOP to the end of the black. That track's license goes
+in video/CREDITS.md before it ships. --no-bed leaves the music out.
 The script writes 48 kHz, 24-bit stereo PCM. Loudness is set afterwards by assemble.py.
 """
 
@@ -48,6 +54,26 @@ VOICES = {
 }
 DEVICE_NOTES = {"printer": 523.25, "board": 659.25, "psu": 783.99}
 SEED = 7
+SEMITONES = {"C": -9, "D": -7, "E": -5, "F": -4, "G": -2, "A": 0, "B": 2}
+BED = {
+    1: (("A1", "E2", "A2"), ("A3", "E4")),
+    2: (("A2", "E3", "B3"), ("A3", "E4", "B4", "E4")),
+    3: (("F2", "C3", "E3", "A3"), ("F3", "C4", "E4", "G4", "A4", "G4", "E4", "C4")),
+    4: (("D2", "A2", "E3"), ("D4", "A3", "E4", "A3")),
+    5: (("E2", "B2", "D3", "G3"), ("E4", "G4", "B4", "D5", "B4", "G4")),
+    6: (("A2", "E3", "B3"), ("A3", "E4", "B4", "D5")),
+    7: (("A1", "E2", "G2", "C3"), ("A3", "C4", "E4", "G4")),
+    8: (("A1", "E2", "C#3", "B3"), ("A3", "E4", "C#4", "B4")),
+}
+"""Each beat's chord and the notes its pluck steps through, by storyboard beat."""
+STEP_S = 0.3
+"""One grid step, an eighth note at 100 BPM."""
+PLUCK_EVERY = {1: 2, 2: 1, 3: 1, 4: 2, 5: 1, 6: 1, 7: 2, 8: 2}
+"""Grid steps between plucks in each beat."""
+BED_TRIM_DB = {1: -3.0, 2: -3.0, 7: -3.0}
+"""Beats where the bed sits lower, under the still arm and under the device plucks."""
+BED_DB = -22.0
+"""Level of the music bed against the effects, before loudness normalization."""
 
 
 def db(value: float) -> float:
@@ -255,6 +281,161 @@ def beds(mix: Mix, edit: dict, quiet: list[tuple[float, float]], rng: np.random.
     mix.add(start + 0.25, chord * shape, db(-22), 0.0)
 
 
+def note(name: str) -> float:
+    """Equal-tempered frequency of a note name such as A2, C#3 or Bb4."""
+    accidental = name[1:-1]
+    steps = SEMITONES[name[0]] + accidental.count("#") - accidental.count("b") + 12 * (int(name[-1]) - 4)
+    return 440.0 * 2 ** (steps / 12)
+
+
+def pad(freqs: list[float], length: float, attack: float, release: float) -> np.ndarray:
+    """A soft chord of slightly detuned sines that swells in over attack and fades out over release."""
+    n = int((length + release) * RATE)
+    t = np.arange(n) / RATE
+    out = np.zeros(n)
+    for i, f in enumerate(freqs):
+        weight = 1.0 / (1.0 + 0.3 * i)
+        for j, cents in enumerate((-4.0, 0.0, 4.0)):
+            phase = 2 * np.pi * f * 2 ** (cents / 1200) * t + 1.7 * i + 0.9 * j
+            out += weight * (np.sin(phase) + 0.16 * np.sin(2 * phase) + 0.05 * np.sin(3 * phase))
+    rise = 0.5 - 0.5 * np.cos(np.pi * np.clip(t / max(attack, 1e-3), 0, 1))
+    fall = 0.5 - 0.5 * np.cos(np.pi * np.clip((length + release - t) / max(release, 1e-3), 0, 1))
+    breath = 1.0 + 0.08 * np.sin(2 * np.pi * 0.12 * t)
+    return out * rise * fall * breath / (3 * len(freqs))
+
+
+def pluck(freq: float, length: float = 0.8) -> np.ndarray:
+    """A short, clean FM pluck whose brightness falls away in the first 50 ms."""
+    n = int(length * RATE)
+    t = np.arange(n) / RATE
+    index = 1.4 * np.exp(-t / 0.05)
+    return np.sin(2 * np.pi * freq * t + index * np.sin(2 * np.pi * 2 * freq * t)) * envelope(n, 0.002, 0.17)
+
+
+def tock(freq: float, rng: np.random.Generator) -> np.ndarray:
+    """A low, short knock with a faint tick on top, for a cut."""
+    n = int(0.3 * RATE)
+    t = np.arange(n) / RATE
+    f = freq * (1 + 0.6 * np.exp(-t / 0.012))
+    body = np.sin(2 * np.pi * np.cumsum(f) / RATE) * envelope(n, 0.001, 0.07)
+    return body + 0.2 * band_noise(n, 4000, 10000, rng) * envelope(n, 0.0003, 0.004)
+
+
+def reverb(mono: np.ndarray, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
+    """The wet left and right of a small, dark room around a mono signal, from two noise tails convolved by FFT."""
+    n_ir = int(2.4 * RATE)
+    t = np.arange(n_ir) / RATE
+    shape = np.exp(-t / 0.38) * np.clip(t / 0.012, 0, 1)
+    size = 1 << int(np.ceil(np.log2(len(mono) + n_ir)))
+    dry = np.fft.rfft(mono, size)
+    out = []
+    for _ in range(2):
+        ir = band_noise(n_ir, 180, 5200, rng) * shape
+        ir /= np.sqrt(np.sum(ir**2))
+        out.append(np.fft.irfft(dry * np.fft.rfft(ir, size), size)[: len(mono)])
+    return out[0], out[1]
+
+
+def beats(edit: dict) -> dict[int, tuple[float, float]]:
+    """Start and end of every storyboard beat in the edit, in film seconds."""
+    fps = edit["fps"]
+    spans: dict[int, tuple[float, float]] = {}
+    for item in edit["items"]:
+        if "storyboard" not in item:
+            continue
+        a, b = item["start"] / fps, (item["start"] + item["frames"]) / fps
+        lo, hi = spans.get(item["storyboard"], (a, b))
+        spans[item["storyboard"]] = (min(lo, a), max(hi, b))
+    return spans
+
+
+def bed_cues(edit: dict) -> list[tuple[float, float]]:
+    """Film times of the cues the bed dips under, with how far it dips, in dB."""
+    fps = edit["fps"]
+    cues = []
+    for item in edit["items"]:
+        if item["kind"] != "shot":
+            continue
+        shot = json.loads((FILM / f"{item['id']}.json").read_text())
+        t0 = item["start"] / fps
+        has_devices = "devices" in shot["set"]
+        for e in shot["events"]:
+            when = t0 + (e["frame"] - 1) / fps
+            if when < t0 - 0.05 or when > t0 + item["frames"] / fps:
+                continue
+            held = e["source"] == "hub" and e["kind"] == "response" and e.get("status") == "pending"
+            approved = e["source"] == "person" and str(e.get("path", "")).endswith("/approve")
+            if e.get("audit") == "action" and e.get("status") == "blocked":
+                cues.append((when, 9.0))
+            elif held or approved:
+                cues.append((when, 5.0))
+            elif e.get("audit") == "connect" and e.get("device") in DEVICE_NOTES and has_devices:
+                cues.append((when, 3.0))
+    return cues
+
+
+def music_bed(edit: dict, gates: list[tuple[float, float]], n: int) -> tuple[np.ndarray, np.ndarray]:
+    """The music bed, n samples long, silent inside every gate span."""
+    rng = np.random.default_rng(SEED + 1)
+    fps = edit["fps"]
+    spans = beats(edit)
+    mono = np.zeros(n)
+    left, right = np.zeros(n), np.zeros(n)
+
+    def place(buf: np.ndarray, at: float, sound: np.ndarray, gain: float) -> None:
+        start = int(at * RATE)
+        end = min(start + len(sound), n)
+        if start < n:
+            buf[start:end] += sound[: end - start] * gain
+
+    reentry = {round(b, 3) for _, b in gates}
+    end_of_film = edit["frames"] / fps
+    for beat, (start, end) in spans.items():
+        chord, steps = BED[beat]
+        freqs = [note(name) for name in chord]
+        if beat == 1:
+            attack, release, length = 2.4, 0.3, end - start
+        elif beat == max(spans):
+            attack, release, length = 0.3, 2.2, end_of_film - start - 2.2
+        else:
+            attack, release, length = (0.35 if round(start, 3) in reentry else 0.12), 0.3, end - start
+        trim = db(BED_TRIM_DB.get(beat, 0.0))
+        place(mono, start, pad(freqs, length, attack, release), trim)
+        first = start + (3.0 if beat == 1 else 0.0)
+        last = start + 3.6 if beat == max(spans) else end
+        every = PLUCK_EVERY[beat] * STEP_S
+        k = 0
+        at = first
+        while at < last - 0.05:
+            sound = pluck(note(steps[k % len(steps)]))
+            gain = (0.32 if k % 4 == 0 else 0.24) * trim
+            pan = -0.3 if k % 2 == 0 else 0.3
+            place(left, at, sound, gain * math.cos((pan + 1) * math.pi / 4))
+            place(right, at, sound, gain * math.sin((pan + 1) * math.pi / 4))
+            k += 1
+            at = first + k * every
+    beat_starts = {round(a, 3) for a, _ in spans.values()}
+    for item in edit["items"]:
+        at = item["start"] / fps
+        if item["kind"] == "shot" and round(at, 3) not in beat_starts:
+            beat = item.get("storyboard", 1)
+            place(mono, at, tock(note(BED[beat][0][0]) * 2, rng), 0.5)
+    wet_l, wet_r = reverb(mono + 0.5 * (left + right), rng)
+    left = mono + left + 0.24 * wet_l
+    right = mono + right + 0.24 * wet_r
+    t = np.arange(n) / RATE
+    duck = np.zeros(n)
+    for when, depth in bed_cues(edit):
+        shape = np.clip((t - when + 0.02) / 0.02, 0, 1) * np.exp(-np.maximum(t - when - 0.25, 0) / 0.45)
+        duck = np.maximum(duck, depth * shape)
+    gain = 10 ** (-duck / 20)
+    for press, back in gates:
+        gain[(t >= press) & (t < back)] = 0.0
+        ramp = (t >= press - 0.004) & (t < press)
+        gain[ramp] *= (press - t[ramp]) / 0.004
+    return left * gain, right * gain
+
+
 def write_wav(path: Path, left: np.ndarray, right: np.ndarray) -> None:
     """48 kHz, 24-bit stereo PCM."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -296,8 +477,10 @@ def main() -> int:
     """Write the effects mix, with the music slot filled when --music is given."""
     p = argparse.ArgumentParser()
     p.add_argument("--out", required=True)
-    p.add_argument("--music", default="", help="optional 48 kHz PCM WAV for the music slot")
+    p.add_argument("--music", default="", help="optional 48 kHz PCM WAV that replaces the music bed")
     p.add_argument("--music-db", type=float, default=-16.0)
+    p.add_argument("--bed-db", type=float, default=BED_DB)
+    p.add_argument("--no-bed", action="store_true")
     opts = p.parse_args()
     edit = json.loads((FILM / "edit.json").read_text())
     rec = recording.load()
@@ -319,6 +502,11 @@ def main() -> int:
             duck[(t >= a) & (t < b)] = 0.0
         mix.left += music_l * db(opts.music_db) * duck
         mix.right += music_r * db(opts.music_db) * duck
+    elif not opts.no_bed:
+        gates = [(press, back) for (press, _), (_, back) in zip(freezes, quiet, strict=True)]
+        bed_l, bed_r = music_bed(edit, gates, mix.n)
+        mix.left += bed_l * db(opts.bed_db)
+        mix.right += bed_r * db(opts.bed_db)
     length = int(edit["frames"] / edit["fps"] * RATE)
     left = np.tanh(mix.left[:length] * 1.4) / 1.4
     right = np.tanh(mix.right[:length] * 1.4) / 1.4

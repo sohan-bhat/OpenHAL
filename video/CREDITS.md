@@ -73,15 +73,17 @@ IBM Plex Sans and IBM Plex Mono, under the SIL Open Font License 1.1, from `desi
 
 Every sound in the film is synthesized by `video/scenes/sound.py` from the edit and the hub recording. No sample, recording or library sound is used.
 
-## Music slot
+## Music
 
-The film has one marked slot for an optional royalty-free music track. `video/scenes/assemble.py --music <file>` passes the file to `sound.py`, which mixes it 16 dB under the effects and mutes it with everything else from STOP to the end of the black after it. The file must be a 48 kHz PCM WAV. The slot is empty in the preview.
+The music is generated in code by `video/scenes/sound.py`, the same way as the sound effects. No track, sample or loop is downloaded, so the music needs no license.
 
-Fill in this table before a cut with music ships.
+The bed holds one soft chord per beat of the edit, a quiet pluck on a 100 BPM grid and a low tock on the cuts inside a beat. The bed sits under the effects, dips under the block, the hold, the approval and each device, stops on the STOP press and stays silent through the black after STOP.
+
+`video/scenes/assemble.py --music <file>` replaces the generated bed with an outside track, a 48 kHz PCM WAV mixed 16 dB under the effects and muted with everything else from STOP to the end of the black after STOP. Fill in this table before a cut with an outside track ships.
 
 | | |
 |---|---|
-| Track | none yet |
+| Track | none, the film uses the generated bed |
 | Composer | |
 | Source | |
 | License | |
