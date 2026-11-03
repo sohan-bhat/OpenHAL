@@ -788,6 +788,19 @@ test.describe("the phone menu", () => {
     await expect(page.locator("[data-section-pages-trigger]")).toHaveCount(0);
   });
 
+  test("never shows a section's pages bar where the sidebar shows, on pages with or without On this page", async ({ browser }) => {
+    for (const width of [800, 1024, 1440]) {
+      const context = await browser.newContext({ viewport: { width, height: 900 } });
+      const page = await context.newPage();
+      for (const path of ["/docs/", "/drivers/", "/library/", SPEC]) {
+        await page.goto(path);
+        await expect(page.locator("[data-section-pages]"), `${path} at ${width} px`).toBeHidden();
+        await expect(page.locator("[data-section-pages-trigger]"), `${path} at ${width} px`).toBeHidden();
+      }
+      await context.close();
+    }
+  });
+
   test("keeps every page's link reachable in the menu without JavaScript", async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
     const page = await context.newPage();

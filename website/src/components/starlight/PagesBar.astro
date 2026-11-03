@@ -21,20 +21,24 @@ const section = Astro.props.links.find((link) => link.current);
 
 <style>
   .oh-pages {
-    position: fixed;
-    z-index: var(--sl-z-index-toc);
-    top: calc(var(--sl-nav-height) - 1px);
-    inset-inline: 0;
-    display: flex;
-    align-items: center;
-    height: calc(var(--sl-mobile-toc-height) + 1px);
-    padding-inline: var(--sl-nav-pad-x);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    background: var(--bg);
+    display: none;
   }
 
   @media (max-width: 49.99rem) {
+    .oh-pages {
+      position: fixed;
+      z-index: var(--sl-z-index-toc);
+      top: calc(var(--sl-nav-height) - 1px);
+      inset-inline: 0;
+      display: flex;
+      align-items: center;
+      height: calc(var(--sl-mobile-toc-height) + 1px);
+      padding-inline: var(--sl-nav-pad-x);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+
     :global(html:not([data-has-toc]):has(.oh-pages)) {
       --sl-mobile-toc-height: 3rem;
     }
