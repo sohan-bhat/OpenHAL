@@ -94,7 +94,7 @@ With `openapi: /openapi.json`, `describe()` fetches the document and returns
 - write channels for the scalar properties of each PUT, POST or PATCH JSON body, only when numbers carry `minimum` and `maximum`,
 - actions for POST operations without a body.
 
-Units come from an `x-unit` property where the document has one, otherwise `dimensionless`, and the notes list the channels that need a real unit. Every write channel and action is marked `suggested: true`, so the file stays read-only until a human confirms the limits. Paths with parameters, remote `$ref` pointers and YAML documents are skipped.
+Units come from an `x-unit` property where the document has one, otherwise `dimensionless`, and the notes list the channels that need a real unit. Every write channel and action is marked `suggested: true`, so high risk entries stay read-only until a human confirms the limits, and low and medium ones take commands within the ranges the document gives. Paths with parameters, remote `$ref` pointers and YAML documents are skipped.
 
 ## Errors
 

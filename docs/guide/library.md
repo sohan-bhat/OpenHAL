@@ -29,7 +29,7 @@ A library file's control channels and actions are marked `suggested: true`, and 
 
 ## Confirmation
 
-A library file loads read-only, and the hub blocks every change to the device until you do two things.
+A library file's low and medium entries take commands within the file's range once the connection is set. Its high risk entries, such as a heater or a mains relay, stay read-only until you do two things.
 
 1. Set the connection, such as the host name, the serial port or the entity ids.
 2. Run `openhal file confirm` on the file. The command shows each limit in turn as a question, where Enter keeps the suggestion and a typed value replaces the suggestion, then you type `confirm`. The command records your name, the date and a hash of the limits, and a running OpenHAL loads the file at once.

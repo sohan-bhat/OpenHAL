@@ -27,7 +27,7 @@ The `serial` driver connects to any device with a line-based text protocol over 
 2. Find the port with `openhal discover` or `python -m serial.tools.list_ports -v`.
 3. Write a device file, where each read channel needs a `map` with `query` or `listen` and each write channel and action needs a `map` with `command`.
 4. Validate the file with `openhal file validate my-device.hal.yaml`.
-5. Confirm the limits by hand (spec section 12), because until then the device loads read-only.
+5. Confirm the limits by hand (spec section 12), because until then the device's high risk channels and actions stay read-only.
 
 ## Parameters
 

@@ -59,7 +59,7 @@ The starter library ships in the repository under `library/` and inside the whee
 
 - Lookups are off until the person turns them on, because the hub makes no outbound connection by default. A lookup sends only the identifier.
 - Files are signed by the library and checked by the hub.
-- A downloaded file always loads read-only with suggested limits. The person confirms it on their own hub.
+- A downloaded file arrives with suggested limits, and its high risk entries stay read-only until the person confirms them on their own hub.
 - Submissions stay pull requests, and files stay CC0.
 - The `verified-on-hardware` badge links to its public report.
 

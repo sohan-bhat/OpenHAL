@@ -127,7 +127,7 @@ flowchart TD
   E --> ID
   P --> ID
   ID --> MATCH{Library matcher}
-  MATCH -->|match| OFFER[Offer library file,<br/>loads read-only until limits confirmed]
+  MATCH -->|match| OFFER[Offer library file,<br/>high risk entries wait for confirmed limits]
   MATCH -->|protocol known| DESC[driver.describe&#40;&#41; builds a draft file]
   MATCH -->|unknown| UNK[List as unknown device,<br/>offer the driver writer]
 ```

@@ -45,23 +45,21 @@ $ openhal demo --full
 
 ## Run the hub yourself
 
-`init` creates `~/.openhal` with a human token and a [Device File](glossary:device-file) for the simulated plant waterer. The file is read-only until a person confirms its limits, and `file confirm` shows each limit before you type `confirm`.
+`init` creates `~/.openhal` with a human token and a [Device File](glossary:device-file) for the simulated plant waterer. Every channel and action has a risk level, and the plant waterer's are medium, so the file takes commands at once within the board's own range. `openhal risk show plant-waterer` lists each level.
 
 ```sh tested
 $ openhal init
-sample device  ~/.openhal/devices/plant-waterer.hal.yaml created, read-only until you confirm it
-$ openhal file confirm ~/.openhal/devices/plant-waterer.hal.yaml
-action  water
+sample device  ~/.openhal/devices/plant-waterer.hal.yaml created, risk 2 medium, every one takes commands
 $ openhal start &
 $ openhal status
 devices 1 of 1 connected
 ```
 
-The hub listens on `127.0.0.1:7420` only, and a running hub loads each confirmed file at once, so a confirm never needs a restart.
+The hub listens on `127.0.0.1:7420` only. A high risk channel, such as a heater, stays read-only until you answer its limits with `openhal file confirm`, and a running hub loads each confirmed file at once, so a confirm never needs a restart.
 
 ## Your first device
 
-Plug in a board running the OpenHAL firmware, or an ESPHome node, and run `openhal init` again. Init finds the device and shows the limits interview. Each question names one channel, its unit and a suggestion, such as "brightness, in percent. The most an agent may set. Suggested 100 %." Enter keeps the suggestion, a typed value replaces the suggestion, and a value past what the device reports is asked again with the reason. You type `confirm` once at the end, and the device is writable. The Inspector's Review limits action on a read-only device shows the same questions.
+Plug in a board running the OpenHAL firmware, or an ESPHome node, and run `openhal init` again. Init finds the device, and its low and medium channels, such as an LED or a pump, take commands at once within the device's own range. For a high risk channel, such as a heater, init shows the limits interview. Each question names one channel, its unit and a suggestion, such as "brightness, in percent. The most an agent may set. Suggested 100 %." Enter keeps the suggestion, a typed value replaces the suggestion, and a value past what the device reports is asked again with the reason. You type `confirm` once at the end, and the device is writable. The Inspector's Review limits action on a read-only device shows the same questions.
 
 To raise a limit later, run `openhal limits set DEVICE.CHANNEL --max VALUE` and type `confirm`. A narrower limit applies at once, and a wider limit asked for from a script or an agent waits in `openhal confirm list` for you to approve.
 

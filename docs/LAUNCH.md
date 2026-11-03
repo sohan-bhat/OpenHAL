@@ -32,7 +32,7 @@ Drafts only. Nothing on this page has been posted, and the owner posts each draf
 >
 > How OpenHAL works.
 >
-> - Each device has a .hal.yaml file with the device's readings, controls, units and limits. The file loads read-only until a person confirms the limits, and nothing an agent sends counts as a confirmation.
+> - Each device has a .hal.yaml file with the device's readings, controls, units and limits. A high risk channel stays read-only until a person confirms its limits, low and medium ones work within the device's own range, and nothing an agent sends counts as a confirmation.
 > - The kernel checks range, rate of change, interlocks, watchdog budgets and confirmation in a fixed order, with no model in the loop. A stale or unknown reading blocks the command.
 > - One stop puts every device in its safe state and blocks every command until a person runs openhal unlock.
 > - Every request goes into a hash-chained audit log with its result.
@@ -59,7 +59,7 @@ Prepared replies.
 |---|---|
 | "I'm sorry Dave, I'm afraid I can't do that." | Fair. A blocked command comes back with the reason, which names the limit, the file and who confirmed the file, and openhal stop always works. |
 | "Why call it HAL?" | HAL stands for hardware abstraction layer, the embedded systems term for one interface over many kinds of hardware, as in STM32 HAL or Android HAL, and OpenHAL brings that layer to AI agents. We knew about the other HAL when we picked the name. |
-| "Open the pod bay doors." | There's no pod bay door driver yet. If there were, the doors would stay read-only until a person confirmed their limits. |
+| "Open the pod bay doors." | There's no pod bay door driver yet. If there were, the doors would get a risk level from what they are, and a high risk door would stay read-only until a person confirmed its limits. |
 | "What could possibly go wrong?" | A lot, which is why the kernel fails closed, unknown readings block commands and an agent can never lift a stop. docs/SAFETY.md also lists what OpenHAL doesn't guarantee. |
 
 ## r/arduino
