@@ -1,187 +1,67 @@
 ---
-import { nb } from "../../lib/story/facts";
-import { CAMERA } from "../../lib/story/camera";
 import { EXAMPLE } from "../../lib/story/example";
-import { COLUMNS, HEADS, TIP, across, howSteps, type Column, type HowStep, type Span } from "../../lib/story/how";
-import "../../styles/how.css";
-import SmoothSwitch from "../islands/SmoothSwitch";
-import { buttonVariants } from "../ui/button";
-import { KEY } from "./smooth-switch";
+import { CHART_SIZES, HOW_CHART, chartLead, pathText } from "../../lib/story/how";
 
-interface Props {
-  /** The id of the section a person reaches with Skip. */
-  after: string;
-}
-
-const { after } = Astro.props;
-const steps = howSteps();
-const count = steps.length;
-
-type Kind = "line" | "dash" | "show" | "hide";
-const draw = (index: number, kind: Kind, span: Span) => {
-  const [at, length] = across(index, count, span);
-  return { "data-draw": `${kind} ${at.toFixed(4)} ${length.toFixed(4)}` };
-};
-const pass = (index: number, shows: Span, hides: Span) => {
-  const [first, firstLength] = across(index, count, shows);
-  const [last, lastLength] = across(index, count, hides);
-  return { "data-draw": `pass ${first.toFixed(4)} ${firstLength.toFixed(4)} ${last.toFixed(4)} ${lastLength.toFixed(4)}` };
-};
-const tip = ([at, length]: Span): Span => [at + length - TIP / 2, TIP / 2];
-const answered = ([at]: Span): Span => [at, 0.04];
-const at = (column: Column) => `grid-column: ${column} / span 1`;
-const span = (from: Column, to: Column) => (COLUMNS.indexOf(from) < COLUMNS.indexOf(to) ? `grid-column: ${from} / ${to}` : `grid-column: ${to} / ${from}`);
-
-/** The rows of one step's diagram, the heads, the panel row, a little room above, two rows per arrow, a label at least one line tall and the arrow, with one gap between, and a little room below. The gaps shrink evenly on a screen too short for them. */
-const layout = (step: HowStep) => ({
-  rows: `auto auto minmax(var(--s-1), var(--above)) ${step.rows.map(() => "minmax(var(--label), auto) var(--arrow)").join(" minmax(var(--s-2), var(--gap)) ")} minmax(var(--s-1), var(--below))`,
-  text: (row: number) => 4 + row * 3,
-  arrow: (row: number) => 5 + row * 3,
-});
-
-const mode = `(() => {
-  const how = document.currentScript.previousElementSibling;
-  const toggle = how.querySelector("[data-smooth]");
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (toggle) {
-    let stored = null;
-    try {
-      stored = localStorage.getItem(${JSON.stringify(KEY)});
-    } catch {}
-    const on = !reduce && stored !== "off";
-    const button = toggle.querySelector("[role=switch]");
-    if (button) {
-      button.setAttribute("aria-checked", String(on));
-      button.disabled = reduce;
-      if (reduce) button.setAttribute("data-disabled", "");
-      for (const part of [button, ...button.children]) part.setAttribute("data-state", on ? "checked" : "unchecked");
-    }
-    toggle.removeAttribute("data-wait");
-  }
-  if (!matchMedia(${JSON.stringify(CAMERA)}).matches) return;
-  const header = document.querySelector("header.header");
-  if (header) how.style.setProperty("--how-pin", header.offsetHeight + "px");
-  how.setAttribute("data-motion", "");
-  how.setAttribute("data-step", "1");
-  const stage = how.querySelector(".how-stage");
-  if (stage.scrollHeight > stage.clientHeight + 1) {
-    how.removeAttribute("data-motion");
-    how.removeAttribute("data-step");
-  }
-})();`;
+const WIDE = "(min-width: 50rem)";
+const themes = (["light", "dark"] as const).map((theme) => ({
+  theme,
+  wide: { src: `/charts/how-it-works-wide-${theme}.png`, ...CHART_SIZES.wide },
+  narrow: { src: `/charts/how-it-works-narrow-${theme}.png`, ...CHART_SIZES.narrow },
+}));
 ---
 
-<section id="how" class="home-width how" aria-labelledby="how-title" data-how data-count={count}>
-  <div class="how-track">
-    <span class="how-run" aria-hidden="true"></span>
-    <div class="how-stage">
-      <div class="how-top">
-        <h2 id="how-title">How it works</h2>
-        <div class="how-meta">
-          <p class="how-count" aria-hidden="true" data-pagefind-ignore="all">
-            {steps.map((_, index) => <span>{index + 1} / {count}</span>)}
-          </p>
-          <a class={buttonVariants({ variant: "link", size: "inline", className: "how-skip" })} data-slot="button" data-variant="link" href={`#${after}`}>Skip<span class="visually-hidden"> the three steps</span></a>
-          <span class="smooth" data-smooth data-wait><SmoothSwitch client:query /></span>
-        </div>
-      </div>
-      <ol class="how-steps" role="list">
-        {
-          steps.map((step, index) => {
-            const grid = layout(step);
-            return (
-              <li class="how-step">
-                <p class="how-number" aria-hidden="true" data-pagefind-ignore="all">
-                  {index + 1} / {count}
-                </p>
-                <p class="how-caption">{nb(step.caption)}</p>
-                <div class="how-figure" style={`grid-template-rows: ${grid.rows}; --rows: ${step.rows.length}`} aria-hidden="true" data-pagefind-ignore="all">
-                  {COLUMNS.map((column) => (
-                    <p class="how-head" style={`${at(column)}; grid-row: 1`}>
-                      {HEADS[column]}
-                    </p>
-                  ))}
-                  <p class="how-rule" style={`${at("hub")}; grid-row: 2`}>
-                    <span {...draw(index, "show", step.rule.shows)}>{nb(step.rule.text)}</span>
-                  </p>
-                  <dl class="how-printer" style={`${at("printer")}; grid-row: 2`}>
-                    {step.readings.map((reading) => (
-                      <div>
-                        <dt>{reading.name}</dt>
-                        <dd>
-                          {reading.changes.length ? (
-                            <Fragment>
-                              <span class="how-was" {...draw(index, "hide", reading.changes[0].at)}>
-                                {nb(reading.value)}
-                              </span>
-                              {reading.changes.map((change, place) => {
-                                const next = reading.changes[place + 1];
-                                return next ? (
-                                  <span class="how-was" {...pass(index, change.at, next.at)}>
-                                    {nb(change.value)}
-                                  </span>
-                                ) : (
-                                  <span {...draw(index, "show", change.at)}>{nb(change.value)}</span>
-                                );
-                              })}
-                            </Fragment>
-                          ) : (
-                            <span>{nb(reading.value)}</span>
-                          )}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                  {COLUMNS.map((column) => (
-                    <span class="how-life" data-line={column} style={`${at(column)}; grid-row: 3 / -1`} />
-                  ))}
-                  {step.rows.map((row, place) =>
-                    row.kind === "mark" ? (
-                      <p class="how-mark" data-row={place} style={`grid-column: agent / printer; grid-row: ${grid.arrow(place)}`}>
-                        <span {...draw(index, "show", row.shows)}>{row.text}</span>
-                      </p>
-                    ) : row.kind === "request" ? (
-                      <Fragment>
-                        <p class="how-label" data-row={place} style={`grid-column: ${row.legs[0].from} / end; grid-row: ${grid.text(place)}`}>
-                          <span {...draw(index, "show", row.shows)}>{nb(row.label)}</span>
-                        </p>
-                        {row.legs.map((leg) => (
-                          <span class="how-leg" data-row={place} data-from={leg.from} data-to={leg.to} style={`${span(leg.from, leg.to)}; grid-row: ${grid.arrow(place)}`}>
-                            <span class:list={["how-ink", { "how-was": row.past }]} {...(row.past ? draw(index, "hide", row.past) : {})}>
-                              <span class="how-line" {...draw(index, "line", leg.draws)} />
-                              <span class="how-tip" {...draw(index, "show", tip(leg.draws))} />
-                            </span>
-                            {row.past && (
-                              <span class="how-ink how-past" {...draw(index, "show", row.past)}>
-                                <span class="how-line" />
-                                <span class="how-tip" />
-                              </span>
-                            )}
-                          </span>
-                        ))}
-                      </Fragment>
-                    ) : (
-                      <Fragment>
-                        <p class="how-answer" data-row={place} style={`${span("agent", row.from)}; grid-row: ${grid.text(place)}`}>
-                          <span class:list={["status", row.tone]} {...draw(index, "show", answered(row.draws))}>
-                            {row.answer}
-                          </span>
-                        </p>
-                        <span class:list={["how-leg", "how-back", row.tone]} data-row={place} data-from={row.from} data-to="agent" style={`${span("agent", row.from)}; grid-row: ${grid.arrow(place)}`}>
-                          <span class="how-dash" {...draw(index, "dash", row.draws)} />
-                          <span class="how-tip" {...draw(index, "show", tip(row.draws))} />
-                        </span>
-                      </Fragment>
-                    ),
-                  )}
-                </div>
-              </li>
-            );
-          })
-        }
-      </ol>
-    </div>
-  </div>
+<section id="how" class="home-width how" aria-labelledby="how-title">
+  <h2 id="how-title">How it works</h2>
+  <figure class="how-chart">
+    {
+      themes.map(({ theme, wide, narrow }) => (
+        <picture class={theme === "light" ? "dark:sl-hidden" : "light:sl-hidden"} data-theme-chart={theme}>
+          <source media={WIDE} srcset={wide.src} width={wide.width} height={wide.height} />
+          <img src={narrow.src} width={narrow.width} height={narrow.height} alt="" loading="lazy" decoding="async" />
+        </picture>
+      ))
+    }
+    <figcaption class="visually-hidden">
+      <p>{chartLead()}</p>
+      <ul>
+        {HOW_CHART.paths.map((path) => <li>{pathText(path)}</li>)}
+      </ul>
+    </figcaption>
+  </figure>
   <p class="how-onward"><a href={EXAMPLE.href}>See the full example: an agent watching a 3D print overnight</a></p>
 </section>
-<script is:inline set:html={mode} />
+
+<style>
+  .how {
+    display: grid;
+    gap: var(--s-5);
+    padding-top: var(--s-8);
+  }
+
+  .how h2 {
+    font-size: var(--t-h1);
+    line-height: 1.15;
+  }
+
+  .how-chart {
+    margin: 0;
+    min-width: 0;
+  }
+
+  .how-chart img {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .how-onward a {
+    font-weight: 700;
+  }
+
+  @media (min-width: 768px) {
+    .how {
+      padding-top: calc(var(--s-8) + var(--s-6));
+    }
+  }
+</style>

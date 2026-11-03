@@ -39,7 +39,7 @@ const more = [
 <DocShell title={PRODUCT_NAME} description={HOME_TITLE} home head={head}>
   <Hero spell={heroSpell} />
 
-  <HowItWorks after={after} />
+  <HowItWorks />
 
   <section id={after} class="home-width part" aria-labelledby="safe-title">
     <h2 id="safe-title">Safety model</h2>
@@ -100,21 +100,6 @@ const more = [
     </ul>
   </section>
 </DocShell>
-
-<script>
-  import { smoothScrolling } from "../components/landing/smooth-switch";
-
-  if (document.querySelector("[data-smooth]")) smoothScrolling();
-  const how = document.querySelector<HTMLElement>("[data-how]");
-  if (how) {
-    import("../components/landing/how-runtime")
-      .then(({ howItWorks }) => howItWorks(how))
-      .catch(() => {
-        how.removeAttribute("data-motion");
-        how.removeAttribute("data-step");
-      });
-  }
-</script>
 
 <style>
   .part {
