@@ -172,6 +172,7 @@ def event_track(mix: Mix, edit: dict, rng: np.random.Generator) -> None:
 
         events = shot["events"]
         has_layer = "layer" in shot["set"]
+        has_devices = "devices" in shot["set"]
         for e in events:
             when = at(e)
             if when < t0 - 0.05 or when > end:
@@ -193,9 +194,9 @@ def event_track(mix: Mix, edit: dict, rng: np.random.Generator) -> None:
                     int(0.25 * RATE), 0.002, 0.06
                 )
                 mix.add(when, thump, db(-15), 0.0)
-            elif e.get("audit") == "register" and e.get("device") in DEVICE_NOTES:
+            elif e.get("audit") == "register" and e.get("device") in DEVICE_NOTES and has_devices:
                 mix.add(when, click(rng, 2000, 0.04), db(-28), 0.2)
-            elif e.get("audit") == "connect" and e.get("device") in DEVICE_NOTES:
+            elif e.get("audit") == "connect" and e.get("device") in DEVICE_NOTES and has_devices:
                 f = DEVICE_NOTES[e["device"]]
                 mix.add(
                     when,
@@ -240,7 +241,7 @@ def beds(mix: Mix, edit: dict, quiet: list[tuple[float, float]], rng: np.random.
     n = int(3.2 * RATE)
     tt = np.arange(n) / RATE
     swell = (np.sin(2 * np.pi * 44 * tt) + 0.35 * np.sin(2 * np.pi * 88 * tt)) * np.sin(np.pi * tt / tt[-1]) ** 1.5
-    mix.add(0.0, swell, db(-14), 0.0)
+    mix.add(0.0, swell, db(-16), 0.0)
     card = next(i for i in edit["items"] if i["kind"] == "card")
     start = card["start"] / fps
     length = card["frames"] / fps
@@ -251,7 +252,7 @@ def beds(mix: Mix, edit: dict, quiet: list[tuple[float, float]], rng: np.random.
         for f, a in ((110.0, 1.0), (164.81, 0.7), (220.0, 0.6), (277.18, 0.35), (329.63, 0.3))
     )
     shape = np.clip(tt / 1.4, 0, 1) ** 2 * np.clip((length - tt) / 1.6, 0, 1)
-    mix.add(start + 0.25, chord * shape, db(-17), 0.0)
+    mix.add(start + 0.25, chord * shape, db(-22), 0.0)
 
 
 def write_wav(path: Path, left: np.ndarray, right: np.ndarray) -> None:
