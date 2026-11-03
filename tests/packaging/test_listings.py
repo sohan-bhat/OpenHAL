@@ -16,7 +16,7 @@ from openhal._brand import CLI_NAME, DISTRIBUTION_NAME
 
 ROOT: Final = Path(__file__).resolve().parents[2]
 VERSION: Final = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
-RUN_FROM_PYPI: Final = {"command": "uvx", "args": ["--from", DISTRIBUTION_NAME, CLI_NAME, "mcp"]}
+RUN_FROM_PYPI: Final = {"command": "uvx", "args": ["--from", f"{DISTRIBUTION_NAME}=={VERSION}", CLI_NAME, "mcp"]}
 
 
 def read(path: Path) -> Any:

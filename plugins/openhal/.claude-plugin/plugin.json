@@ -14,7 +14,7 @@
   "mcpServers": {
     "openhal": {
       "command": "uvx",
-      "args": ["--from", "halkit", "openhal", "mcp"],
+      "args": ["--from", "halkit==0.1.0", "openhal", "mcp"],
       "env": {
         "OPENHAL_TOKEN": "${user_config.openhal_token}"
       }

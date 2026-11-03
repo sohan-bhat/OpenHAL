@@ -36,7 +36,7 @@ TestPyPI is PyPI's practice index. .github/workflows/testpypi.yml runs only by h
 
 ## 4. Publish 0.1.0
 
-The version is 0.1.0 in pyproject.toml, openhal/__init__.py, uv.lock and docs/api/openapi.json. CHANGELOG.md has the entry and docs/releases/v0.1.0.md has the text for the GitHub release. The pending publisher for `halkit` on pypi.org is in place, and the name stays free for anyone until the first upload, so push the tag soon after merging. .github/workflows/release.yml publishes through trusted publishing, so the repository holds no PyPI token.
+The version is 0.1.0 in pyproject.toml, openhal/__init__.py, uv.lock and docs/api/openapi.json. CHANGELOG.md has the entry and docs/releases/v0.1.0.md has the text for the GitHub release. The pending publisher for `halkit` on pypi.org is in place. A pending publisher doesn't reserve the name, so push the tag soon after merging. .github/workflows/release.yml publishes through trusted publishing, so the repository holds no PyPI token.
 
 1. On GitHub, open Settings, then Environments, then New environment. Name the environment `pypi`. Under Deployment branches and tags, choose Selected branches and tags and add a tag rule with the pattern `v*`. Add yourself under Required reviewers and add no secrets.
 2. Make a second environment named `ghcr` the same way. The tag also starts the Container workflow, which pushes the image to GHCR from the `ghcr` environment, so the reviewer rule makes the image a separate approval. Without the environment, GitHub makes one with no rules on the first run, and the image goes out with the tag.
