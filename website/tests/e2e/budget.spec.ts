@@ -37,24 +37,29 @@ interface Weight {
  * home page's HTML 1.6 KB higher when the hero began drawing the built wordmark.
  * The guide page's HTML was set again the same way when the quickstart gained the first device's
  * guided step and openhal limits and the phone's section pages button, about 2 KB gzipped together.
+ * The fonts of the home page, the docs index, the example page, the spec page, the schema reference,
+ * the Playground, the Python reference and the not found page were set again the same way when the
+ * type became IBM Plex. Plex Mono comes as one file per weight, so a page that shows bold or
+ * semibold code loads a second mono subset of 7.9 or 8.6 KB, and the Plex Sans subset is 1.7 KB
+ * larger than the face before it.
  */
 const BUDGETS: Record<string, { path: string } & Weight> = {
-  home: { path: "/", html: 16_600, css: 22_900, js: 14_000, fonts: 28_100 },
-  "docs index": { path: "/docs/", html: 16_400, css: 20_300, js: 1_700, fonts: 17_800 },
+  home: { path: "/", html: 16_600, css: 22_900, js: 14_000, fonts: 36_900 },
+  "docs index": { path: "/docs/", html: 16_400, css: 20_300, js: 1_700, fonts: 19_600 },
   "guide page": { path: "/docs/quickstart/", html: 21_000, css: 20_300, js: 3_200, fonts: 34_500 },
-  "example page": { path: "/docs/examples/3d-print-watch/", html: 24_200, css: 22_400, js: 4_400, fonts: 28_100 },
+  "example page": { path: "/docs/examples/3d-print-watch/", html: 24_200, css: 22_400, js: 4_400, fonts: 36_900 },
   "page with diagrams": { path: "/docs/architecture/", html: 29_600, css: 20_300, js: 3_200, fonts: 28_100 },
-  "spec page": { path: "/spec/v0.1/basic/messages/", html: 28_500, css: 20_300, js: 3_200, fonts: 28_100 },
-  "schema reference": { path: "/spec/v0.1/schema/", html: 25_800, css: 20_300, js: 3_200, fonts: 28_100 },
+  "spec page": { path: "/spec/v0.1/basic/messages/", html: 28_500, css: 20_300, js: 3_200, fonts: 37_700 },
+  "schema reference": { path: "/spec/v0.1/schema/", html: 25_800, css: 20_300, js: 3_200, fonts: 37_700 },
   drivers: { path: "/drivers/", html: 25_500, css: 20_300, js: 2_000, fonts: 28_100 },
   "driver page": { path: "/drivers/moonraker/", html: 21_500, css: 20_300, js: 3_200, fonts: 28_100 },
   library: { path: "/library/", html: 20_800, css: 20_300, js: 2_000, fonts: 28_100 },
   "library device": { path: "/library/scpi-rigol-dp832/", html: 18_900, css: 20_300, js: 1_700, fonts: 28_100 },
-  playground: { path: "/spec/playground/", html: 23_200, css: 22_500, js: 1_700, fonts: 28_100 },
-  "Python reference": { path: "/sdks/python/reference/", html: 24_300, css: 20_300, js: 3_200, fonts: 28_100 },
+  playground: { path: "/spec/playground/", html: 23_200, css: 22_500, js: 1_700, fonts: 36_900 },
+  "Python reference": { path: "/sdks/python/reference/", html: 24_300, css: 20_300, js: 3_200, fonts: 36_900 },
   "Inspector page": { path: "/inspector/", html: 15_900, css: 20_300, js: 1_700, fonts: 28_100 },
   blog: { path: "/blog/", html: 10_900, css: 20_300, js: 1_700, fonts: 28_100 },
-  "not found": { path: "/404.html", html: 11_300, css: 20_300, js: 1_700, fonts: 28_100 },
+  "not found": { path: "/404.html", html: 11_300, css: 20_300, js: 1_700, fonts: 36_900 },
 };
 
 /**
@@ -195,11 +200,12 @@ test.describe("page weight", () => {
         for (const [face, weight] of found) used.set(face, (used.get(face) ?? new Set()).add(weight));
       }
     }
-    for (const face of manifest.faces) {
-      const weights = [...(used.get(`${face.family} ${face.style}`) ?? [])];
+    for (const [key, weights] of used) {
+      const kept = manifest.faces.filter((face) => `${face.family} ${face.style}` === key);
+      if (!kept.length) continue;
       for (const weight of weights) {
-        expect(Math.min(weight, 800), `${face.family} ${face.style} at ${weight}`).toBeGreaterThanOrEqual(face.weights[0]);
-        expect(Math.min(weight, 800), `${face.family} ${face.style} at ${weight}`).toBeLessThanOrEqual(face.weights[1]);
+        const drawn = Math.min(weight, 700);
+        expect(kept.some((face) => drawn >= face.weights[0] && drawn <= face.weights[1]), `${key} at ${weight}`).toBe(true);
       }
     }
   });

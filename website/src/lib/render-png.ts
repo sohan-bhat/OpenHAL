@@ -32,8 +32,9 @@ let faces: string | null = null;
 
 export function fontFaces(): string {
   faces ??= [
-    ["Atkinson Hyperlegible Mono", "atkinson-hyperlegible-mono-latin-wght-normal.woff2", "200 800"],
-    ["Atkinson Hyperlegible Next", "atkinson-hyperlegible-next-latin-wght-normal.woff2", "200 800"],
+    ["IBM Plex Mono", "ibm-plex-mono-latin-400-normal.woff2", "400"],
+    ["IBM Plex Mono", "ibm-plex-mono-latin-700-normal.woff2", "700"],
+    ["IBM Plex Sans", "ibm-plex-sans-latin-wght-normal.woff2", "100 700"],
   ]
     .map(([family, file, weight]) => `@font-face{font-family:"${family}";font-weight:${weight};src:url(data:font/woff2;base64,${font(file)}) format("woff2");}`)
     .join("");

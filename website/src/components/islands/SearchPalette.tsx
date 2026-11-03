@@ -132,7 +132,7 @@ export default function SearchPalette({ sections, suggestions }: Props) {
             aria-keyshortcuts="Control+K Meta+K"
             className={cn(
               "flex font-normal hover:bg-transparent max-[49.99rem]:size-11",
-              "min-[50rem]:w-full min-[50rem]:max-w-[260px] min-[50rem]:justify-start min-[50rem]:border min-[50rem]:border-input min-[50rem]:bg-background min-[50rem]:pr-2 min-[50rem]:pl-3 min-[50rem]:[box-shadow:var(--oh-control-ring)_var(--oh-control-border)]",
+              "min-[50rem]:w-full min-[50rem]:max-w-[260px] min-[50rem]:shrink min-[50rem]:justify-start min-[50rem]:border min-[50rem]:border-input min-[50rem]:bg-background min-[50rem]:pr-2 min-[50rem]:pl-3 min-[50rem]:[box-shadow:var(--oh-control-ring)_var(--oh-control-border)]",
               "min-[50rem]:hover:border-muted-foreground min-[50rem]:hover:text-foreground min-[50rem]:hover:[box-shadow:var(--oh-control-ring)_var(--text-2)]",
               "min-[64rem]:max-[71.24rem]:w-10 min-[64rem]:max-[71.24rem]:justify-center min-[64rem]:max-[71.24rem]:p-0",
             )}

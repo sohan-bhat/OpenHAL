@@ -41,7 +41,7 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
   (printer.hal.yaml, confirmed by owner 2026-10-24)
 ```
 
-- **Direction column.** An arrow pointing right for client to hub, left for hub to client, and a dashed left arrow for notifications, in the text color. Atkinson Hyperlegible Mono has no arrow glyphs, so the arrows are drawn as small inline SVGs in the house diagram style (1.5 px stroke, 6 px filled head), never typed characters. Plain text renditions in a font that has arrows, such as the README code block, use `→` and `←`. CLI output uses `->` and `<-`.
+- **Direction column.** An arrow pointing right for client to hub, left for hub to client, and a dashed left arrow for notifications, in the text color. The Latin cut of IBM Plex Mono the site ships has no arrow glyphs, so the arrows are drawn as small inline SVGs in the house diagram style (1.5 px stroke, 6 px filled head), never typed characters. Plain text renditions in a font that has arrows, such as the README code block, use `→` and `←`. CLI output uses `->` and `<-`.
 - **Method or outcome column.** The method name in the text color at weight 700. `error` plus the numeric code and the registry name in the blocked red. `result` in the granted green. Each is paired with its word, never color alone.
 - **Payload.** JSON in the mono face with the house syntax theme. Reasons as plain mono text on their own line.
 - Method names, codes and names match ADR 0015 and the generated schema exactly, everywhere.
@@ -143,12 +143,12 @@ One theme built from the neutrals, used on the site, in README images, in the so
 
 ## Typography
 
-Two faces from one family.
+Two faces from one family. On 2026-11-02 the owner asked for a more professional font than the previous pair, so every piece of text OpenHAL draws is now set in IBM Plex.
 
-| Role | Face | Why |
+| Role | Face and weights | Why |
 |---|---|---|
-| Text and headings | Atkinson Hyperlegible Next (OFL) | Designed by the Braille Institute for legibility. It tells 0 from O and 1 from l and I, which matters on pages full of identifiers, units and codes. It has character without being decorative, and it is not Inter or a system stack |
-| Code, messages, method names, values | Atkinson Hyperlegible Mono (OFL) | The same family's monospace, with the same distinct letterforms, so prose and protocol read as one voice |
+| Text, headings and the wordmark | IBM Plex Sans (OFL), variable, at 400, 500, 600 and 700 | IBM's corporate typeface, a grotesque that reads as professional and exact. The angled top of the t and the flat cut terminals give Plex Sans more character than Inter or a system stack |
+| Code, messages, method names, values and labels | IBM Plex Mono (OFL), static, at 400, 600 and 700, with 400 italic for comments | The same family's monospace, so prose and protocol read as one voice. With a dotted zero, a tailed l and a serifed I, identifiers, units and codes stay unambiguous |
 
 Scale, mobile then desktop. 13/13 legend, 15/15 secondary, 16/17 body with line height 1.65, 20/22 h3, 26/30 h2, 34/44 h1. Reading column at most 72 characters. Headings and labels are sentence case. Table headers, form labels and captions carry meaning and stay, set in sentence case at the legend size or larger. Decorative eyebrows, corner tags and micro labels are not used.
 
@@ -184,7 +184,7 @@ Pages show the one thing a person needs and keep the depth one tap away. A term 
 
 ## Wordmark
 
-- **Wordmark, no logo.** The brand is the name, OpenHAL, set in Atkinson Hyperlegible Next at weight 800 with tracking at -0.06 em, in `--text`. Every letter is the font's own. The arrow crossbar the H had on 2026-11-01 was removed on 2026-11-02 at the owner's request. Where a square is needed (favicon, app icons) the initials OH are set the same way. tools/readme/build.py draws every letter from the font's own outlines, one path per letter, into docs/assets/wordmark-{light,dark}.svg, mark-{light,dark}.svg and favicon.svg, which the README, the website's header and hero, the Inspector's header, the icons and the social images use. Icon links carry a version that rises when the mark changes.
+- **Wordmark, no logo.** The brand is the name, OpenHAL, set in IBM Plex Sans at weight 700, the heaviest Plex Sans has, with tracking at -0.04 em, in `--text`. At that tracking the closest pair, p and e, keeps a gap of about 0.04 em, which stays visible in the 24 px header. Every letter is the font's own. The arrow crossbar the H had on 2026-11-01 was removed on 2026-11-02 at the owner's request, and IBM Plex Sans became the wordmark's face the same day, also at the owner's request. Where a square is needed (favicon, app icons) the initials OH are set the same way with tracking at -0.08 em, sized so their outlines span 94 percent of the square's width. tools/readme/build.py draws every letter from the font's own outlines, one path per letter, into docs/assets/wordmark-{light,dark}.svg, mark-{light,dark}.svg and favicon.svg, which the README, the website's header and hero, the Inspector's header, the icons and the social images use. Icon links carry a version that rises when the mark changes.
 - **HAL spelled out, on the landing hero only.** Under the letters H, A and L of the large hero wordmark sit three labels, written exactly `[hardware]`, `[abstraction]` and `[layer]` with their square brackets, for Open Hardware Abstraction Layer, in `--text-2` above WCAG AA, up to 17 px and never under 12 px, in one row. From 768 px each label is centered under its letter, and on a phone the labels move apart just enough to keep 8 px between them while each stays under its own letter. They are hidden from screen readers, which read OpenHAL, and the long name Open Hardware Abstraction Layer is in the page's metadata. The header wordmark, icons and the README stay plain.
 - Original. It never imitates MCP's, Anthropic's or any other logo.
 

@@ -1,12 +1,13 @@
 """Subset the website's fonts to the characters the site shows and the weights it uses.
 
-design/fonts holds the two faces as variable WOFF2 files subset to Latin, which the Inspector and the
-image tools use. The website ships smaller copies of the faces it renders: only the characters in
-website/src/fonts/glyphs.json, which scripts/glyphs.mjs lists from a build, and the weight axis cut to
-the weights its styles ask for. Each copy keeps its face's family, style and weight range, so its
-@font-face rule joins the one in design/tokens.css and the browser takes the copy first. A character
-the copy lacks still renders in the full face. Writes the copies and website/src/fonts/fonts.json,
-then website/src/styles/fonts.css with their @font-face rules.
+design/fonts holds IBM Plex Sans as variable WOFF2 files and IBM Plex Mono as one static WOFF2 file
+per weight, all subset to Latin, which the Inspector and the image tools use. The website ships
+smaller copies of the faces it renders: only the characters in website/src/fonts/glyphs.json, which
+scripts/glyphs.mjs lists from a build, with a variable face's weight axis cut to the weights its
+styles ask for. Each copy keeps its face's family, style and weight descriptor, so its @font-face rule
+joins the one in design/tokens.css and the browser takes the copy first. A character the copy lacks
+still renders in the full face. Writes the copies and website/src/fonts/fonts.json, then
+website/src/styles/fonts.css with their @font-face rules.
 
 Run it with uv run --no-project --with fonttools==4.67.0 --with brotli python website/scripts/fonts.py
 """
@@ -33,41 +34,47 @@ NAMES = [0, 1, 2, 3, 4, 5, 6, 13, 14]
 
 @dataclass(frozen=True)
 class Face:
-    """One face the website renders, and the weights it renders it at."""
+    """One face the website renders, the weights it renders it at and the weight its rule declares."""
 
     family: str
     style: str
     source: str
     target: str
     weights: tuple[int, int]
+    declared: str
     features: tuple[str, ...]
+
+
+TEXT_FEATURES = ("kern", "tnum", "ccmp", "locl", "mark", "mkmk")
+MONO_FEATURES = ("ccmp", "locl", "mark", "mkmk")
+
+
+def mono(weight: int, style: str = "normal") -> Face:
+    return Face(
+        "IBM Plex Mono",
+        style,
+        f"ibm-plex-mono-latin-{weight}-{style}.woff2",
+        f"ibm-plex-mono-{weight}-{style}.woff2",
+        (weight, weight),
+        str(weight),
+        MONO_FEATURES,
+    )
 
 
 FACES = [
     Face(
-        "Atkinson Hyperlegible Next",
+        "IBM Plex Sans",
         "normal",
-        "atkinson-hyperlegible-next-latin-wght-normal.woff2",
-        "atkinson-hyperlegible-next-normal.woff2",
-        (400, 800),
-        ("kern", "tnum", "ccmp", "locl", "mark", "mkmk"),
-    ),
-    Face(
-        "Atkinson Hyperlegible Mono",
-        "normal",
-        "atkinson-hyperlegible-mono-latin-wght-normal.woff2",
-        "atkinson-hyperlegible-mono-normal.woff2",
+        "ibm-plex-sans-latin-wght-normal.woff2",
+        "ibm-plex-sans-normal.woff2",
         (400, 700),
-        ("ccmp", "locl", "mark", "mkmk"),
+        "100 700",
+        TEXT_FEATURES,
     ),
-    Face(
-        "Atkinson Hyperlegible Mono",
-        "italic",
-        "atkinson-hyperlegible-mono-latin-wght-italic.woff2",
-        "atkinson-hyperlegible-mono-italic.woff2",
-        (400, 400),
-        ("ccmp", "locl", "mark", "mkmk"),
-    ),
+    mono(400),
+    mono(600),
+    mono(700),
+    mono(400, "italic"),
 ]
 
 
@@ -92,7 +99,8 @@ def build(face: Face, codepoints: set[int]) -> tuple[bytes, list[int], list[int]
     original = sorted(source.getBestCmap())
     low, high = face.weights
     font = with_full_gvar(source)
-    font = instancer.instantiateVariableFont(font, {"wght": low if low == high else (low, high)})
+    if "fvar" in font:
+        font = instancer.instantiateVariableFont(font, {"wght": low if low == high else (low, high)})
     options = subset.Options()
     options.layout_features = list(face.features)
     options.name_IDs = NAMES
@@ -146,7 +154,7 @@ def main() -> None:
                     f'  font-family: "{face.family}";',
                     f"  font-style: {face.style};",
                     "  font-display: swap;",
-                    "  font-weight: 200 800;",
+                    f"  font-weight: {face.declared};",
                     f'  src: url("../fonts/{face.target}") format("{kind}");',
                     f"  unicode-range: {ranges(cmap)};",
                     "}",

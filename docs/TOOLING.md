@@ -24,13 +24,22 @@ Tools used to build, check and document OpenHAL. None of them is a runtime depen
 |---|---|---|---|---|
 | D2 CLI | v0.9.0 | MPL-2.0 | Release binary from github.com/d2lang/d2 in `~/.local/opt`, linked as `~/.local/bin/d2` | Grid layout of every diagram in docs/diagrams |
 | SVGO | 4.1.0 | MIT | `npx --yes svgo@4.1.0`, pinned in scripts/diagrams.py | Optimizing the SVGs, config in scripts/svgo.config.mjs |
-| fonttools | 4.67.0 | MIT | `uv run --with fonttools==4.67.0 --with brotli` | Static TTFs from the variable fonts for D2, and text as paths for the wordmark |
+| fonttools | 4.67.0 | MIT | `uv run --with fonttools==4.67.0 --with brotli` | Static TTFs from IBM Plex Sans and IBM Plex Mono for D2, the website's font subsets, and text as paths for the wordmark |
 | Playwright Chromium headless shell | 1248 | Apache-2.0 | Existing Playwright browser cache | Rendering the README in GitHub's light and dark modes |
 | github-markdown-css | 5.8.1 | MIT | Downloaded for local previews only | The README preview |
 
 `scripts/build-diagrams` builds every diagram in docs/diagrams in light and dark. That is the flow diagram from `flow.d2` with narrow variants for phones, the seven architecture diagrams (`architecture-*.d2`) and the spec's exchange (`spec-exchange.d2`), which share `house.d2`. D2 places the nodes on a grid. The script then applies the house style: our fonts, 1.5 px strokes, labels above their lines, the return line routed with right angles only, a transparent background, title and description, and the flowing dash animation with a `prefers-reduced-motion` rule.
 
 The architecture and spec diagrams redraw Mermaid blocks in docs/ARCHITECTURE.md and the spec. When you edit one of those blocks, update its `.d2` file, run `scripts/build-diagrams`, and let it refresh `docs/diagrams/diagrams.json`, which records the Mermaid text each redraw belongs to. Until then the website shows the plain Mermaid and `website/tests/unit/diagrams.test.ts` fails.
+
+## Fonts
+
+| Package | Version | License | How it is installed | Used for |
+|---|---|---|---|---|
+| @fontsource-variable/ibm-plex-sans | 5.3.0 | OFL-1.1 | `npm pack`, then the Latin `wght` WOFF2 files and the license copied into design/fonts | IBM Plex Sans for text, headings, the wordmark, diagrams and social images |
+| @fontsource/ibm-plex-mono | 5.3.0 | OFL-1.1 | `npm pack`, then the Latin 400, 600 and 700 normal and 400 italic WOFF2 files and the license copied into design/fonts | IBM Plex Mono for code, messages and labels |
+
+`website/scripts/fonts.py` cuts these files to the characters and weights the website shows. Run it with `uv run --no-project --with fonttools==4.67.0 --with brotli python website/scripts/fonts.py` after a font changes, and after `node scripts/glyphs.mjs dist` in website/ when the site shows a new character. A new Plex Mono weight needs its file in design/fonts, a rule in design/tokens.css and an entry in the script's face list.
 
 ## Not used
 

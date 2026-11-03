@@ -95,7 +95,7 @@
   {#if Pair}<Pair onpaired={() => void inspector.boot()} />{/if}
 {:else if inspector.auth === "offline"}
   <header class="bar">
-    <div class="brand"><picture class="wordmark"><source srcset={wordmarkDark} media="(prefers-color-scheme: dark)" /><img src={wordmarkLight} alt="OpenHAL" width="88" height="24" /></picture> <span class="muted">Inspector</span></div>
+    <div class="brand"><picture class="wordmark"><source srcset={wordmarkDark} media="(prefers-color-scheme: dark)" /><img src={wordmarkLight} alt="OpenHAL" width="89" height="24" /></picture> <span class="muted">Inspector</span></div>
     <StopUnavailable why="offline" host={location.host} />
   </header>
   <main class="offline" id="main">
