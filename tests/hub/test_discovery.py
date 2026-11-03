@@ -19,6 +19,7 @@ match:
 connect: { mock: fan }
 write:
   fan_speed: { unit: percent, min: 0, max: 100, suggested: true }
+provenance: { source: library }
 """
 
 PSU_LIBRARY = """

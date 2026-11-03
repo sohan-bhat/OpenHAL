@@ -230,7 +230,8 @@ def show_file(
     file = entry.file
     console.print(f"[bold]{escape(file.device.name)}[/bold]  {escape(entry.name)}")
     status = file.provenance.verification.status
-    console.print(f"driver {escape(file.connect.driver)}, {file.effective_hazard} hazard, {status}, loads read-only")
+    state = "high risk entries read-only" if file.high_risk() else "takes commands within its range"
+    console.print(f"driver {escape(file.connect.driver)}, {file.effective_hazard} hazard, {status}, {state}")
     for line in _match_text(file.match):
         console.print(f"match  {escape(line)}")
 
@@ -274,10 +275,16 @@ def add_file(
     except FileExistsError:
         fail(f"{target} already exists. The library never overwrites a device file. Edit that file instead.")
     console.print(f"[green]added[/green]  {escape(str(target))}")
-    console.print(
-        "The file loads read-only. Set the connection for your device in the file, then answer each limit with "
-        f"{CLI_NAME} file confirm {escape(str(target))}"
-    )
+    if entry.file.high_risk():
+        console.print(
+            "Set the connection for your device in the file. Its high risk entries stay read-only until you "
+            f"answer their limits with {CLI_NAME} file confirm {escape(str(target))}"
+        )
+    else:
+        console.print(
+            "Set the connection for your device in the file. Its channels take commands within the file's range, "
+            f"and {CLI_NAME} limits set narrows a limit."
+        )
 
 
 README_PATH = Path(__file__).resolve().parents[2] / "library" / "README.md"
@@ -290,7 +297,8 @@ def readme(found: list[Entry]) -> str:
         "",
         "Starter device files for real products. The hub offers a library file when discovery finds a device "
         "the file matches.",
-        "Every file is unverified and loads read-only until a person checks and confirms the file's limits.",
+        "Every file is unverified. Its high risk entries stay read-only until a person confirms their limits, "
+        "and its low and medium entries take commands within the file's range.",
         "[How the library works](../docs/guide/library.md).",
         "",
         "```",

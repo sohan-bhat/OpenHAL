@@ -31,6 +31,12 @@ export interface Confirmation {
   sha256: string | null;
 }
 
+export interface RiskOverride {
+  level: Hazard;
+  by: string | null;
+  at: string | null;
+}
+
 export interface ValueSpec {
   type: "number" | "bool" | "string" | "enum";
   unit: string | null;
@@ -49,6 +55,7 @@ export interface WriteChannel extends ValueSpec {
   suggested: boolean;
   every: number | null;
   map: Record<string, Raw> | null;
+  risk: RiskOverride | null;
 }
 
 export type ArgSpec = ValueSpec;
@@ -83,6 +90,7 @@ export interface ActionSpec {
   effects: string[];
   description: string | null;
   map: Record<string, Raw> | null;
+  risk: RiskOverride | null;
 }
 
 export interface SafeStep {
@@ -200,6 +208,24 @@ function confirmation(value: Raw, where: string): Confirmation | null {
   return { by, at, sha256: sha };
 }
 
+function riskOverride(value: Raw, where: string): RiskOverride | null {
+  if (value === undefined || value === null) return null;
+  const data = typeof value === "string" ? { level: value } : value;
+  if (!isMapping(data)) throw new Problem(`${where}: needs low, medium or high, or a mapping with level, by and at.`);
+  checkUnknownKeys(data, ["level", "by", "at"], where);
+  if (data.level === undefined) throw new Problem(`${where}.level: needs low, medium or high.`);
+  const level = oneOf(data.level, ["low", "medium", "high"] as const, `${where}.level`, "high");
+  const by = optStr(data.by, `${where}.by`, 80);
+  if (by === "") throw new Problem(`${where}.by: can't be empty.`);
+  let at: string | null = null;
+  if (data.at !== undefined && data.at !== null) {
+    at = data.at instanceof Date ? data.at.toISOString().slice(0, 10) : String(data.at);
+    if (!/^\d{4}-\d{2}-\d{2}/.test(at)) throw new Problem(`${where}.at: needs a date such as 2026-10-24.`);
+  }
+  if (by !== null && at === null) throw new Problem(`${where}: A risk level a person set needs at, the date it was set.`);
+  return { level, by, at };
+}
+
 function toUnit(value: Raw, unit: string | null, what: string): Raw {
   if (value === undefined || value === null || unit === null || typeof value === "boolean") return value;
   const number = num(value);
@@ -286,7 +312,7 @@ function valueSpec(raw: Raw, where: string, extraKeys: string[]): { spec: ValueS
 }
 
 function writeChannel(raw: Raw, where: string): WriteChannel {
-  const { spec, data } = valueSpec(raw, where, ["max_change_per_s", "confirm", "confirmed", "suggested", "every", "map"]);
+  const { spec, data } = valueSpec(raw, where, ["max_change_per_s", "confirm", "confirmed", "suggested", "every", "map", "risk"]);
   const rate = limit(data.max_change_per_s, `${where}.max_change_per_s`);
   if (rate !== null) {
     if (spec.type !== "number") throw new Problem(`${where}: max_change_per_s only applies to number channels.`);
@@ -300,6 +326,7 @@ function writeChannel(raw: Raw, where: string): WriteChannel {
     suggested: bool(data.suggested, `${where}.suggested`),
     every: data.every === undefined || data.every === null ? null : seconds(data.every, `${where}.every`),
     map: data.map === undefined || data.map === null ? null : (data.map as Record<string, Raw>),
+    risk: riskOverride(data.risk, `${where}.risk`),
   };
 }
 
@@ -368,7 +395,7 @@ function maxRuns(value: Raw, where: string): MaxRuns | null {
 
 function actionSpec(raw: Raw, where: string): ActionSpec {
   if (!isMapping(raw)) throw new Problem(`${where}: needs a mapping.`);
-  checkUnknownKeys(raw, ["args", "require", "max_runs", "confirm", "confirmed", "suggested", "effects", "description", "map"], where);
+  checkUnknownKeys(raw, ["args", "require", "max_runs", "confirm", "confirmed", "suggested", "effects", "description", "map", "risk"], where);
   const args: Record<string, ArgSpec> = {};
   if (raw.args !== undefined) {
     if (!isMapping(raw.args)) throw new Problem(`${where}.args: needs a mapping.`);
@@ -387,6 +414,7 @@ function actionSpec(raw: Raw, where: string): ActionSpec {
     effects: strList(raw.effects, `${where}.effects`),
     description: optStr(raw.description, `${where}.description`, 500),
     map: raw.map === undefined || raw.map === null ? null : (raw.map as Record<string, Raw>),
+    risk: riskOverride(raw.risk, `${where}.risk`),
   };
 }
 
@@ -719,11 +747,16 @@ export function channelNames(file: DeviceFile): Set<string> {
   return channels(file);
 }
 
-function hasFileLevelLimits(file: DeviceFile): boolean {
+/** Interlocks, watchdog rules, a safe state or a hazard class need a file-level confirmation. */
+export function hasFileLevelLimits(file: DeviceFile): boolean {
   return Boolean(file.interlocks.length || file.watchdog.max_duration.length || file.safe_state.length || file.hazard !== null);
 }
 
-export function unconfirmed(file: DeviceFile): string[] {
+/**
+ * Every limit no person has confirmed yet, whatever its risk level, for showing whether a person
+ * checked a file. Which targets take commands follows risk.unconfirmed (ADR 0023).
+ */
+export function unconfirmedLimits(file: DeviceFile): string[] {
   const bound = file.confirmed?.sha256 ?? null;
   if (bound !== null && bound !== limitsSha256(file)) return ["file (limits changed after they were confirmed)"];
   const missing: string[] = [];
@@ -738,10 +771,6 @@ export function unconfirmed(file: DeviceFile): string[] {
     }
   }
   return missing;
-}
-
-export function writable(file: DeviceFile): boolean {
-  return unconfirmed(file).length === 0;
 }
 
 

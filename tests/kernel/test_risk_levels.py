@@ -23,6 +23,7 @@ write:
 actions:
   ignite: { suggested: true }
 safe_state: { brightness: 0, fan_speed: 0, heater: 0 }
+provenance: { source: self-described }
 """
 
 KILN = """

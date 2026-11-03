@@ -20,7 +20,7 @@ const { withoutInstall } = demoCommands();
 const groups = driverGroups();
 const { total, tested } = driverCounts();
 const points = [
-  { title: "Limits a person confirmed", text: "A person sets the limits in the device file, and the kernel checks every command against the limits." },
+  { title: "Risk levels", text: "Each channel and action has a risk level that sets where a person comes in. High risk ones stay read-only until a person confirms their limits, and low and medium ones work within the device's own range." },
   { title: "One STOP", text: "One command puts every device in its safe state, and the devices stay stopped until a person lifts the stop." },
   { title: "Everything logged", text: "Every request with its result, every stop and every confirmation goes into an append-only audit log." },
 ];

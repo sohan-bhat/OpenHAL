@@ -21,7 +21,7 @@ Each device has a [Device File](glossary:device-file) that lists what can be rea
 ```yaml tested include=examples/print-babysitter/printer.hal.yaml
 ```
 
-A file is read-only until a person confirms its limits. A limit that a tool generates stays a suggestion until a person confirms the limit.
+Every channel and action has a risk level, low, medium or high, from what it is. A high risk one is read-only until a person confirms its limits, and a low or medium one takes commands within the device's own range. A limit that a tool generates stays a suggestion until a person confirms the limit.
 
 ## Safety kernel
 

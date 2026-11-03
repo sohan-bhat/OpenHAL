@@ -47,7 +47,7 @@ def test_openhal_library_sketches_describe_themselves_in_code(example: str) -> N
     assert file.connect.driver == "openhal-firmware"
     assert file.write or file.actions
     assert all(entry.suggested for entry in [*file.write.values(), *file.actions.values()])
-    assert file.writable is not bool(file.high_risk()), "only high risk entries wait for a person"
+    assert file.writable is not bool(file.guarded()), "only guarded entries wait for a person"
 
 
 def test_plant_waterer_sketch_offers_actions_and_hides_the_pump() -> None:

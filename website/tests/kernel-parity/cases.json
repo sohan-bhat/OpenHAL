@@ -24,7 +24,13 @@
     "stale-hash": "device: Hash fan\nid: hash-fan\nconnect: { mock: fan }\nwrite:\n  speed: { unit: percent, min: 0, max: 100 }\nsafe_state: { speed: 0 }\nhazard: low\nconfirmed: { by: owner, at: 2026-10-24, sha256: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef }\n",
     "bound-hash": "device: Hash fan\nid: hash-fan\nconnect: { mock: fan }\nwrite:\n  speed: { unit: percent, min: 0, max: 100 }\nsafe_state: { speed: 0 }\nhazard: low\nconfirmed: { by: owner, at: 2026-10-24, sha256: 67ed889d3f453287147d968aa893e8615203b8aad7b356b88d36e20ffe8a2448 }\n",
     "hot-fan": "device: Hot fan\nid: hot-fan\nconnect: { mock: fan }\nread:\n  temperature: { unit: degC, every: 1 s }\nwrite:\n  fan_speed: { unit: percent, min: 0, max: 100 }\nsafe_state: { fan_speed: 0 }\ninterlocks:\n  - if: \"fan_speed > 50 %\"\n    require: \"temperature < 35 degC\"\nhazard: low\nconfirmed: { by: owner, at: 2026-10-24 }\n",
-    "waterer": "device: Parity plant waterer\nid: parity-waterer\nconnect: { mock: waterer }\nread:\n  soil_moisture: { unit: percent, every: 1 s, range: [0, 100] }\n  tank: { type: enum, values: [empty, ok], every: 1 s }\nwrite:\n  pump: { type: bool }\nactions:\n  water:\n    args:\n      duration: { unit: s, min: 1, max: 30 }\n    require:\n      - { condition: \"tank == ok\", message: \"pump can't run while tank is empty\" }\n    max_runs: { count: 3, per: 1 h }\n    effects: [pump]\nsafe_state: { pump: false }\nwatchdog:\n  heartbeat: 2 s\n  on_loss: safe_state\nhazard: low\nconfirmed: { by: owner, at: 2026-10-24 }\n"
+    "waterer": "device: Parity plant waterer\nid: parity-waterer\nconnect: { mock: waterer }\nread:\n  soil_moisture: { unit: percent, every: 1 s, range: [0, 100] }\n  tank: { type: enum, values: [empty, ok], every: 1 s }\nwrite:\n  pump: { type: bool }\nactions:\n  water:\n    args:\n      duration: { unit: s, min: 1, max: 30 }\n    require:\n      - { condition: \"tank == ok\", message: \"pump can't run while tank is empty\" }\n    max_runs: { count: 3, per: 1 h }\n    effects: [pump]\nsafe_state: { pump: false }\nwatchdog:\n  heartbeat: 2 s\n  on_loss: safe_state\nhazard: low\nconfirmed: { by: owner, at: 2026-10-24 }\n",
+    "risk-lamp": "device: Desk light\nid: risk-lamp\nconnect: { mock: lamp }\nwrite:\n  brightness: { unit: percent, min: 0, max: 100, max_change_per_s: 10, suggested: true }\n  pump: { unit: percent, min: 0, max: 100, max_change_per_s: 10, suggested: true }\nprovenance: { source: library }\n",
+    "risk-heater": "device: Bench heater\nid: risk-heater\nconnect: { mock: heater }\nwrite:\n  power: { unit: percent, min: 0, max: 100, risk: { level: medium, by: owner, at: 2026-11-01 } }\n  element: { unit: percent, min: 0, max: 100, risk: low }\n",
+    "risk-press": "device: Shop press\nid: risk-press\nconnect: { mock: press }\nwrite:\n  indicator: { type: bool }\nactions:\n  pause: {}\n  resume: {}\n  stamp: { description: Press the die once }\n  start: {}\nconfirmed: { by: owner, at: 2026-11-01 }\n",
+    "risk-kiln": "device: Kiln\nid: risk-kiln\nconnect: { mock: kiln }\nwrite:\n  light: { type: bool, risk: { level: low, by: owner, at: 2026-11-01 } }\n  door_lock: { type: bool, risk: { level: medium, by: owner, at: 2026-11-01 } }\nhazard: high\nconfirmed: { by: owner, at: 2026-11-01 }\n",
+    "risk-board": "device: Bare board\nid: risk-board\nconnect: { mock: board }\nwrite:\n  pin5: { type: bool, map: { pin: 5 } }\n  heater_pin: { type: bool, map: { pin: 5 } }\n  out7: { type: bool, map: { pin: 7 } }\nprovenance: { source: self-described }\n",
+    "risk-units": "device: Bench supply\nid: risk-units\nconnect: { mock: supply }\nwrite:\n  low_volts: { unit: V, min: 0, max: 30 }\n  high_volts: { unit: V, min: -60, max: 0 }\n  amps: { unit: mA, min: 0, max: 5000 }\n  big_amps: { unit: A, min: 0, max: 20 }\n  watts: { unit: kW, min: 0, max: 0.05 }\n  angle: { unit: deg, min: 0, max: 180 }\n  spin: { unit: rpm, min: 0, max: 100 }\n  glow: { unit: lx, min: 0, max: 500 }\n  count: { unit: dimensionless, min: 0, max: 10 }\n  resist: { unit: ohm, min: 0, max: 10 }\n  flow: { unit: l/min, min: 0, max: 2 }\n  timer: { unit: s, min: 0, max: 60 }\n  mode: { type: enum, values: [idle, heat] }\nactions:\n  move_to:\n    args:\n      x: { unit: mm, min: 0, max: 200 }\n      y: { unit: mm, min: 0, max: 200 }\n      z: { unit: mm, min: 0, max: 50 }\n  dose:\n    args:\n      amount: { unit: ml, min: 0, max: 10 }\n    effects: [flow]\n"
   },
   "principals": {
     "agent": { "kind": "agent", "name": "claude", "scope": "control_medium" },
@@ -243,7 +249,20 @@
     {"id": "printer-pause-twice", "devices": ["printer"], "steps": [{"reading": {"device": "printer", "channel": "state", "value": "paused"}}, {"advance": 1}], "command": {"device": "printer", "action": "pause", "args": {}}},
     {"id": "printer-nozzle-at-limit", "devices": ["printer"], "initial": {"printer": {"bed_target": 60, "extruder_target": 240}}, "steps": [{"reading": {"device": "printer", "channel": "state", "value": "printing"}}, {"reading": {"device": "printer", "channel": "bed_temp", "value": 60}}, {"advance": 1}, {"advance": 10}], "command": {"device": "printer", "channel": "extruder_target", "value": "260 degC"}},
     {"id": "printer-bed-too-fast", "devices": ["printer"], "principal": "human", "steps": [{"reading": {"device": "printer", "channel": "state", "value": "printing"}}, {"execute": {"device": "printer", "channel": "bed_target", "value": "60 degC"}}], "command": {"device": "printer", "channel": "bed_target", "value": "110 degC"}},
-    {"id": "printer-cam-read-only", "devices": ["printer-cam"], "command": {"device": "printer-cam", "channel": "frame", "value": "on"}}
+    {"id": "printer-cam-read-only", "devices": ["printer-cam"], "command": {"device": "printer-cam", "channel": "frame", "value": "on"}},
+    {"id": "risk-low-suggested-rate-ignored", "devices": ["risk-lamp"], "steps": [{"advance": 1}], "command": {"device": "risk-lamp", "channel": "brightness", "value": "100 %"}},
+    {"id": "risk-medium-suggested-rate-kept", "devices": ["risk-lamp"], "steps": [{"advance": 1}], "command": {"device": "risk-lamp", "channel": "pump", "value": "100 %"}},
+    {"id": "risk-lowered-by-a-person", "devices": ["risk-heater"], "command": {"device": "risk-heater", "channel": "power", "value": "50 %"}},
+    {"id": "risk-override-only-raises", "devices": ["risk-heater"], "command": {"device": "risk-heater", "channel": "element", "value": "50 %"}},
+    {"id": "risk-high-action-undone-by-resume", "devices": ["risk-press"], "command": {"device": "risk-press", "action": "pause", "args": {}}},
+    {"id": "risk-high-action-held", "devices": ["risk-press"], "command": {"device": "risk-press", "action": "stamp", "args": {}}},
+    {"id": "risk-high-action-start-held", "devices": ["risk-press"], "command": {"device": "risk-press", "action": "start", "args": {}}},
+    {"id": "risk-high-action-window", "devices": ["risk-press"], "steps": [{"execute": {"device": "risk-press", "action": "stamp", "args": {}}}, {"approve": "last"}, {"advance": 1}], "command": {"device": "risk-press", "action": "stamp", "args": {}}},
+    {"id": "risk-high-action-routine", "devices": ["risk-press"], "principal": "routine", "command": {"device": "risk-press", "action": "stamp", "args": {}}},
+    {"id": "risk-scope-medium-target", "devices": ["risk-kiln"], "principal": "agent-low", "command": {"device": "risk-kiln", "channel": "door_lock", "value": true}},
+    {"id": "risk-scope-low-target", "devices": ["risk-kiln"], "principal": "agent-low", "command": {"device": "risk-kiln", "channel": "light", "value": true}},
+    {"id": "risk-shared-pin-high", "devices": ["risk-board"], "command": {"device": "risk-board", "channel": "pin5", "value": true}},
+    {"id": "risk-bare-pin-medium", "devices": ["risk-board"], "command": {"device": "risk-board", "channel": "out7", "value": true}}
   ],
   "hashes": [
     "examples/plant-waterer/mock/plant-waterer.hal.yaml",
@@ -264,5 +283,6 @@
     "spec/examples/rpi-relay.hal.yaml",
     "spec/examples/usb-webcam.hal.yaml",
     "spec/examples/workbench-heater.hal.yaml"
-  ]
+  ],
+  "risk": ["library", "spec/examples"]
 }

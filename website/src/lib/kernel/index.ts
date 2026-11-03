@@ -10,9 +10,21 @@ export {
   deviceId,
   effectiveHazard,
   channelUnit,
-  unconfirmed,
-  writable,
+  unconfirmedLimits,
   limitsSha256,
 } from "./model";
+export {
+  type Assessment,
+  type Level,
+  appliedRate,
+  assess,
+  guarded,
+  level,
+  readOnly,
+  scopeLevel,
+  tier,
+  unconfirmed,
+  writable,
+} from "./risk";
 export { UnitError, formatQuantity, parseQuantity, convert } from "./units";
 export { formatG, pyFloatRepr } from "./pyformat";

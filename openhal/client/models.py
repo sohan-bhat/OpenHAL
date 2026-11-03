@@ -82,7 +82,9 @@ class ReadChannel(Model):
 
 
 RISK_HELP = "low, medium or high (ADR 0023). Only a person changes a level, with openhal risk set."
-READ_ONLY_HELP = "True while a high risk target waits for a person to confirm its limits."
+READ_ONLY_HELP = (
+    "True until a person confirms the limits of a high risk target, or of one whose limits are only suggested."
+)
 
 
 class WriteChannel(Model):

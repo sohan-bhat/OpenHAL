@@ -86,7 +86,7 @@ def test_show_an_unknown_name_suggests_close_ones() -> None:
     assert "Did you mean rigol-dp832" in out
 
 
-def test_add_copies_the_file_read_only_and_never_overwrites(home: Path) -> None:
+def test_add_copies_the_file_unconfirmed_and_never_overwrites(home: Path) -> None:
     source = LIBRARY / "scpi" / "rigol-dp832.hal.yaml"
     code, out = run("library", "add", "rigol-dp832")
     assert code == 0, out
@@ -94,8 +94,9 @@ def test_add_copies_the_file_read_only_and_never_overwrites(home: Path) -> None:
     assert target.read_bytes() == source.read_bytes()
     added = load(target)
     assert added.confirmed is None
-    assert not added.writable
-    assert "openhal file confirm" in out
+    assert added.high_risk() == [], "a bench supply up to 30 V and 3 A is medium risk"
+    assert added.writable, "medium entries take commands within the library's range"
+    assert "take commands within the file's range" in out
     target.write_text(target.read_text() + "\n")
     edited = target.read_bytes()
     code, out = run("library", "add", "rigol-dp832")

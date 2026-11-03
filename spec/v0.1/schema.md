@@ -97,7 +97,7 @@ The JSON Schema is [schema.json](schema.json). Field names are as they travel on
 | `suggested` | boolean | yes |  |
 | `confirmed` | [Confirmed](#confirmed) or null | no |  |
 | `risk` | `"low"` or `"medium"` or `"high"` | no | low, medium or high, decided from what the target is. Only a person changes it. |
-| `readOnly` | boolean | no | True while a high risk target waits for a person to confirm its limits. |
+| `readOnly` | boolean | no | True until a person confirms the limits of a high risk target, or of one whose limits are only suggested. |
 
 ### ActionOutcome
 
@@ -249,7 +249,7 @@ A DeviceSummary plus channels, actions, safe state, interlocks, watchdog rules a
 | `manufacturer` | string or null | no |  |
 | `driver` | string | yes |  |
 | `hazard` | `"low"` or `"medium"` or `"high"` | yes |  |
-| `writable` | boolean | yes | False while a high risk target waits for a person to confirm its limits. |
+| `writable` | boolean | yes | False while any target is read-only until a person confirms its limits. |
 | `connected` | boolean | yes |  |
 | `conformance` | `"core"` or `"control"` or `"full"` | yes | The driver's declared conformance level. |
 | `verification` | string | yes | unverified, verified-on-simulator or verified-on-hardware. |
@@ -281,7 +281,7 @@ A DeviceSummary plus channels, actions, safe state, interlocks, watchdog rules a
 | `manufacturer` | string or null | no |  |
 | `driver` | string | yes |  |
 | `hazard` | `"low"` or `"medium"` or `"high"` | yes |  |
-| `writable` | boolean | yes | False while a high risk target waits for a person to confirm its limits. |
+| `writable` | boolean | yes | False while any target is read-only until a person confirms its limits. |
 | `connected` | boolean | yes |  |
 | `conformance` | `"core"` or `"control"` or `"full"` | yes | The driver's declared conformance level. |
 | `verification` | string | yes | unverified, verified-on-simulator or verified-on-hardware. |
@@ -652,7 +652,7 @@ A JSON-RPC request, which has an id and gets a response.
 | `suggested` | boolean | yes | True while the limits are a suggestion no person has confirmed. |
 | `confirmed` | [Confirmed](#confirmed) or null | no | Who confirmed this channel's limits. |
 | `risk` | `"low"` or `"medium"` or `"high"` | no | low, medium or high, decided from what the target is. Only a person changes it. |
-| `readOnly` | boolean | no | True while a high risk target waits for a person to confirm its limits. |
+| `readOnly` | boolean | no | True until a person confirms the limits of a high risk target, or of one whose limits are only suggested. |
 
 ### WriteDone
 

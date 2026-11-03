@@ -205,7 +205,7 @@ class DeviceSummary(Message):
     manufacturer: str | None = None
     driver: str
     hazard: Hazard
-    writable: bool = Field(description="False while a high risk target waits for a person to confirm its limits.")
+    writable: bool = Field(description="False while any target is read-only until a person confirms its limits.")
     connected: bool
     conformance: Conformance = Field(description="The driver's declared conformance level.")
     verification: str = Field(description="unverified, verified-on-simulator or verified-on-hardware.")
@@ -240,7 +240,9 @@ class ReadChannelInfo(Message):
 
 
 RISK_HELP = "low, medium or high, decided from what the target is. Only a person changes it."
-READ_ONLY_HELP = "True while a high risk target waits for a person to confirm its limits."
+READ_ONLY_HELP = (
+    "True until a person confirms the limits of a high risk target, or of one whose limits are only suggested."
+)
 
 
 class WriteChannelInfo(Message):

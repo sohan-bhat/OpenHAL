@@ -639,18 +639,40 @@ class DeviceFile(_Strict):
         found = [f"write.{name}" for name in self.write if levels[f"write:{name}"].level == "high"]
         return found + [f"actions.{name}" for name in self.actions if levels[f"action:{name}"].level == "high"]
 
-    def unconfirmed(self) -> list[str]:
-        """High risk limits that no human has confirmed yet, or that changed after they were confirmed.
+    def guarded(self) -> list[str]:
+        """The write channels and actions that wait for a person's confirmation (ADR 0023).
 
-        Low and medium channels and actions take commands without a confirmation (ADR 0023), so only
-        high ones and the file-level limits that guard them are listed.
+        Every high risk one, and a low or medium one still marked suggested when the file's ranges came
+        from neither the device itself nor the library, because then no range in it is the device's own.
+        """
+        from openhal.spec.risk import memo
+
+        return list(memo(self, "guarded", self._guarded))
+
+    def _guarded(self) -> list[str]:
+        from openhal.spec.risk import RANGE_SOURCES, assess
+
+        levels = assess(self)
+        trusted = self.provenance.source in RANGE_SOURCES
+        found: list[str] = []
+        for kind, label, entries in (("write", "write", self.write), ("action", "actions", self.actions)):
+            for name, entry in entries.items():
+                if levels[f"{kind}:{name}"].level == "high" or (entry.suggested and not trusted):
+                    found.append(f"{label}.{name}")
+        return found
+
+    def unconfirmed(self) -> list[str]:
+        """Guarded limits that no human has confirmed yet, or that changed after they were confirmed.
+
+        Low and medium channels and actions within the device's own range take commands without a
+        confirmation (ADR 0023), so only guarded ones and the file-level limits that guard them are listed.
         """
         from openhal.spec.risk import memo
 
         return list(memo(self, "unconfirmed", self._unconfirmed))
 
     def _unconfirmed(self) -> list[str]:
-        high = self.high_risk()
+        high = self.guarded()
         if not high:
             return []
         missing: list[str] = []
@@ -671,13 +693,13 @@ class DeviceFile(_Strict):
         kind, _, name = target.partition(":")
         entry = f"write.{name}" if kind == "write" else f"actions.{name}"
         missing = self.unconfirmed()
-        if entry not in self.high_risk():
+        if entry not in self.guarded():
             return []
         return [item for item in missing if item == entry or item.startswith("file ")]
 
     @property
     def writable(self) -> bool:
-        """True when every high risk limit is confirmed by a human (spec section 12, ADR 0023)."""
+        """True when every guarded limit is confirmed by a human (spec section 12, ADR 0023)."""
         return not self.unconfirmed()
 
     def channel_unit(self, name: str) -> str | None:

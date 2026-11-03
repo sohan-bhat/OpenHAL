@@ -36,6 +36,7 @@ write:
 actions:
   ignite: { suggested: true }
 safe_state: { brightness: 0, fan_speed: 0, heater: 0 }
+provenance: { source: self-described }
 """
 
 
@@ -81,6 +82,32 @@ async def test_level_high_is_read_only_until_a_human_confirms(kernel: Kernel, ad
     await other.connect("board")
     held = await other.execute(Action(device="board", action="ignite"), AGENT)
     assert held.status == "pending", "a high action that can't be undone waits for a person at least once"
+
+
+@pytest.mark.parametrize("source", ["manual", "sketch", "bridge", "hand-written"])
+async def test_a_suggested_range_from_a_file_the_device_did_not_supply_waits_for_a_human(
+    kernel: Kernel, add: AddDevice, source: str
+) -> None:
+    await add(BOARD.replace("source: self-described", f"source: {source}"), settle=0)
+    blocked = await run(kernel, put("brightness", "10 %"))
+    assert blocked.code == "read_only_file"
+    assert "brightness on board has only suggested limits" in blocked.message
+    assert (await run(kernel, put("fan_speed", "10 %"))).code == "read_only_file"
+
+
+@pytest.mark.parametrize("source", ["self-described", "driver-describe", "library"])
+async def test_a_suggested_range_from_the_device_or_the_library_takes_commands(
+    kernel: Kernel, add: AddDevice, source: str
+) -> None:
+    await add(BOARD.replace("source: self-described", f"source: {source}"), settle=0)
+    assert (await run(kernel, put("brightness", "10 %"))).status == "done"
+
+
+def test_the_device_files_example_takes_commands_at_once() -> None:
+    text = Path("spec/v0.1/device-files.md").read_text(encoding="utf-8")
+    example = loads(text.split("```yaml\n", 1)[1].split("```", 1)[0])
+    assert example.writable
+    assert {item.level for item in risk.assess(example).values() if item.kind == "action"} == {"medium"}
 
 
 async def test_every_level_keeps_stop_and_the_safe_state(kernel: Kernel, add: AddDevice) -> None:

@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { Kernel, type Command, type Decision, type Principal, deviceId, human, label, limitsSha256, loadDeviceFile } from "../../src/lib/kernel";
+import { Kernel, type Command, type Decision, type DeviceFile, type Principal, deviceId, human, label, limitsSha256, loadDeviceFile } from "../../src/lib/kernel";
+import { assess, guarded, ownRate, readOnly, scopeLevel, tier, unconfirmed, undoable } from "../../src/lib/kernel/risk";
 import { decisionWire } from "../../src/lib/playground/rpc";
 import { splitQuantity } from "../../src/lib/kernel/units";
 import { parseDeviceYaml } from "../../src/lib/kernel/yaml";
@@ -110,6 +111,33 @@ describe("kernel parity with the Python kernel", () => {
   for (const item of spec.cases) {
     it(item.id, () => {
       expect(withoutHubErrors(runCase(item), wanted.get(item.id))).toEqual(wanted.get(item.id));
+    });
+  }
+});
+
+function riskView(file: DeviceFile) {
+  const targets: Record<string, Record<string, unknown>> = {};
+  for (const [target, item] of assess(file)) {
+    const [kind, name] = target.split(":");
+    const entry: Record<string, unknown> = { level: item.level, classified: item.classified, reasons: item.reasons, shared_with: item.sharedWith };
+    if (kind !== "read") {
+      const written = kind === "write" ? file.write[name].confirm : file.actions[name].confirm;
+      entry.tier = tier(file, target, written);
+      entry.scope = scopeLevel(file, target);
+      entry.read_only = readOnly(file, target);
+    }
+    if (kind === "write") entry.own_rate = ownRate(file, name);
+    if (kind === "action") entry.undoable = undoable(file, name);
+    targets[target] = entry;
+  }
+  return { targets, guarded: guarded(file), unconfirmed: unconfirmed(file) };
+}
+
+describe("risk level parity", () => {
+  for (const [path, want] of Object.entries(expected.risk as Record<string, unknown>)) {
+    it(path, () => {
+      const text = path.startsWith("inline:") ? spec.inline[path.slice(7)] : readFileSync(`${root}${path}`, "utf8");
+      expect(riskView(loadDeviceFile(parseDeviceYaml(text)))).toEqual(want);
     });
   }
 });

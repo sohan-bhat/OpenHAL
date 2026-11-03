@@ -1,7 +1,7 @@
 # Device library
 
 Starter device files for real products. The hub offers a library file when discovery finds a device the file matches.
-Every file is unverified and loads read-only until a person checks and confirms the file's limits.
+Every file is unverified. Its high risk entries stay read-only until a person confirms their limits, and its low and medium entries take commands within the file's range.
 [How the library works](../docs/guide/library.md).
 
 ```

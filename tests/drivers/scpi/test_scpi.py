@@ -330,7 +330,7 @@ def test_proposals_load_as_device_files() -> None:
         data = {**proposal, "connect": {"scpi": "auto"}}
         file = from_data(data)
         ScpiDriver(file)
-        assert file.writable is not bool(file.high_risk()), "only high risk entries wait for a person (ADR 0023)"
+        assert file.writable is not bool(file.guarded()), "only guarded entries wait for a person (ADR 0023)"
 
 
 def test_usb_ids_from_resource_names() -> None:

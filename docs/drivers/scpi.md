@@ -45,7 +45,7 @@ The draft always has `device` and `match.scpi_idn`, and the rest of the draft de
 | Generators | Rigol DG, Siglent SDG, Keysight 33500 and 33600 | channel 1 frequency read and output switch |
 | Scopes | Rigol DS, MSO and DHO, Siglent SDS | trigger status |
 
-Every drafted write and action is `suggested: true` and carries rated limits at most, so the file loads read-only until a human lowers and confirms the limits.
+Every drafted write and action is `suggested: true` and carries rated limits at most. High risk entries stay read-only until a human lowers and confirms the limits, and low and medium ones take commands within the rated limits.
 
 ## Setup
 

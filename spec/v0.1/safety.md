@@ -6,7 +6,7 @@ This section states what a Safety Kernel MUST do. A Hub at Conformance Level `co
 
 1. **One path.** Every command, from any source, MUST be evaluated by the Safety Kernel. Sources include every Client, routines, the dashboard, the driver writer, bridges and the stop command itself. A Driver MUST accept a change only with a single-use Grant the Safety Kernel issued for that exact Device, target and value.
 2. **Deterministic.** The Safety Kernel MUST NOT use a model, network calls or randomness in its checks. The same state and the same command MUST produce the same result and the same message.
-3. **Risk decides where a human comes in.** Every write channel and action has a Risk Level ([Risk levels](#risk-levels)). A high risk target MUST stay read-only until a human confirmed its limits. A low or medium target MAY take commands without a confirmation, within the Device File's range. Agents MAY tighten limits for their own session. Nothing MAY loosen a limit or lower a Risk Level except a human, and the Device File records who and when.
+3. **Risk decides where a human comes in.** Every write channel and action has a Risk Level ([Risk levels](#risk-levels)). A high risk target MUST stay read-only until a human confirmed its limits. So MUST a low or medium target still marked `suggested: true` in a Device File whose `provenance.source` is none of `self-described`, `driver-describe` and `library`, because no range in that file came from the Device or the library. Any other low or medium target MAY take commands without a confirmation, within the Device File's range. Agents MAY tighten limits for their own session. Nothing MAY loosen a limit or lower a Risk Level except a human, and the Device File records who and when.
 4. **Stop works.** One stop command MUST put every Device in its safe state and block every other command until a human unlocks.
 5. **Fail closed.** Any unexpected exception inside the Safety Kernel MUST block the command and be logged. Nothing fails open.
 6. **Everything is recorded.** Every read request, command, block, confirmation, stop and unlock MUST be appended to an audit log with a hash chain.
@@ -19,7 +19,7 @@ The Safety Kernel evaluates a command against the current state in this fixed or
 |---|---|---|---|---|
 | 1 | Command shape | Unknown Device, channel or action, wrong argument names, malformed payload | `unknown_target`, `bad_request` | UNKNOWN_TARGET, INVALID_PARAMS |
 | 2 | Stop lock | The global stop lock is set | `stopped` | STOPPED |
-| 3 | File state | The target is high risk and its limits, or the file-level limits that guard it, aren't confirmed (read-only) | `read_only_file` | UNVERIFIED_LIMITS |
+| 3 | File state | The target is high risk, or has only `suggested` limits from a file that neither the Device nor the library supplied, and its limits, or the file-level limits that guard it, aren't confirmed (read-only) | `read_only_file` | UNVERIFIED_LIMITS |
 | 4 | Device state | The Driver is not connected, is in a fault state, or is applying its safe state. Also, any registered Device whose expressions name a Device that isn't registered blocks every command on the Hub, because a misspelled id protects nothing | `device_unavailable`, `misconfigured` | DEVICE_UNAVAILABLE, MISCONFIGURED |
 | 5 | Principal scope | The Principal's kind or scope does not cover this operation, or the lower of the target's Risk Level and the Device's hazard class | `not_permitted` | SCOPE_DENIED |
 | 6 | Units | The value has no unit, the unit can't be converted to the channel unit, or the result is not finite | `bad_unit` | UNIT_INVALID |
@@ -74,6 +74,8 @@ Every readable channel, write channel and action has a Risk Level, `low`, `mediu
 | `low` | Takes commands at once within the Device File's range, which a self-described file takes from the Device. A `suggested` rate doesn't apply. No confirmation unless a human sets one |
 | `medium` | Takes commands at once within the Device File's range and rate. No confirmation unless a human sets one |
 | `high` | Read-only until a human confirms its limits ([Limits provenance](#limits-provenance)). An action that can't be undone needs a human's approval at least once |
+
+A low or medium target still marked `suggested: true` in a file from a manual, a sketch, an agent, a bridge or a hand-written file is read-only until a human confirms its limits, as a high one is, because no range in that file came from the Device or the library.
 
 An action can be undone when every effect it lists is a write channel, when the safe state runs it, or when the Device has the action that undoes it, such as `resume` for `pause`. Stop, the safe state, the watchdogs, the audit log and every limit a human set apply at every level.
 
@@ -130,8 +132,8 @@ A Device File with no `hazard` counts as `medium` for scope, so its low risk tar
 
 ## Limits provenance
 
-1. A high risk target takes commands only when a human confirmed its limits in the Device File ([Device files](device-files.md#12-limits-provenance)). Low and medium targets don't need a confirmation ([Risk levels](#risk-levels)).
-2. A confirmation that carries `sha256` is bound to the file's limits, so any later change makes its high risk targets read-only again.
+1. A high risk target, and a low or medium target whose limits are still `suggested` in a file that neither the Device nor the library supplied, take commands only when a human confirmed their limits in the Device File ([Device files](device-files.md#12-limits-provenance)). Other low and medium targets don't need a confirmation ([Risk levels](#risk-levels)).
+2. A confirmation that carries `sha256` is bound to the file's limits, so any later change makes those targets read-only again.
 3. A LIMIT_EXCEEDED reason MUST name the Device File and the human confirmation behind the limit. `data.confirmedBy` and `data.confirmedAt` come from the channel's own `confirmed`, or else the file's.
 
 ## Error registry

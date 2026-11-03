@@ -19,7 +19,7 @@ The kernel evaluates a command against the current state in this fixed order and
 |---|---|---|---|
 | 1 | Command shape | Unknown device, channel or action, wrong argument names, malformed payload | `unknown_target`, `bad_request` |
 | 2 | Stop lock | The global stop lock is set | `stopped` |
-| 3 | File state | The target is high risk and its limits, or the file-level limits that guard it, aren't confirmed (read-only) | `read_only_file` |
+| 3 | File state | The target is high risk, or has only suggested limits from a file that neither the device nor the library supplied, and its limits, or the file-level limits that guard it, aren't confirmed (read-only) | `read_only_file` |
 | 4 | Device state | Driver not connected, in a fault state, or currently applying its safe state. Also, any registered device whose interlock or condition names a device that isn't registered blocks every write on the hub, because a misspelled id protects nothing | `device_unavailable`, `misconfigured` |
 | 5 | Principal scope | The token's kind or scope doesn't cover this operation, or the lower of the target's risk level and the device's hazard class | `not_permitted` |
 | 6 | Units | Value has no unit, the unit can't be converted to the channel unit, or the result is not finite | `bad_unit` |
@@ -83,6 +83,8 @@ Words in a channel's own name can set any level. Words from descriptions and enu
 | medium | Takes commands at once within the device's own reported range and rate. No interview and no approval unless a person adds one |
 | high | Read-only until a person confirms its limits. An action that can't be undone is held for a person at least once |
 
+A low or medium channel or action whose limits are still suggested in a file from a manual, a sketch, an agent, a bridge or a hand-written file stays read-only until a person confirms its limits, as a high one does, because none of its ranges came from the device or the library.
+
 Stop, the safe state, the watchdogs and the audit log apply at every level, and a limit a person set always applies on top of the defaults. An action can be undone when every effect it lists is a write channel, when the safe state runs it, or when the device has the action that undoes it, such as resume for pause.
 
 `openhal risk set DEVICE.NAME LEVEL` changes a level. Raising applies at once. Lowering takes a person's typed phrase `confirm`, under the same rules as widening a limit, or is held as a pending change until a person approves it. Agents see every level and change none, and each change is saved in the device file and the audit log.
@@ -103,7 +105,7 @@ High hazard devices can be driven by a routine only when the device file holds a
 
 ## Limits provenance
 
-A high risk target takes commands only when a human confirmed its limits (spec section 12). Interlocks, watchdog rules, the safe state and the hazard class need a file-level confirmation for it. A confirmation that carries `sha256` is bound to the file's limits, so any later change to them makes high risk targets read-only again. Low and medium targets need no confirmation, and a file confirmed before keeps its limits.
+A high risk target, and a low or medium target whose suggested limits came from neither the device nor the library, take commands only when a human confirmed their limits (spec section 12). Interlocks, watchdog rules, the safe state and the hazard class need a file-level confirmation for them. A confirmation that carries `sha256` is bound to the file's limits, so any later change to them makes those targets read-only again. Other low and medium targets need no confirmation, and a file confirmed before keeps its limits.
 
 ## Who confirms
 

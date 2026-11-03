@@ -6,7 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MotionRoot, useTimings } from "@/components/ui/motion";
-import { deviceId, effectiveHazard, unconfirmed } from "@/lib/kernel";
+import { deviceId, effectiveHazard, readOnly, unconfirmed, unconfirmedLimits } from "@/lib/kernel";
 import {
   CLIENTS,
   LOG_SIZE,
@@ -85,6 +85,12 @@ export default function Playground({ examples, initial, suggestion = null, quick
   const file = checked.file;
   const id = file ? deviceId(file) : "";
   const missing = file ? unconfirmed(file) : [];
+  const unchecked = file ? unconfirmedLimits(file) : [];
+  const blocked = file
+    ? [...Object.keys(file.write).map((name) => [name, `write:${name}`]), ...Object.keys(file.actions).map((name) => [name, `action:${name}`])]
+        .filter(([, item]) => readOnly(file, item).length)
+        .map(([name]) => name)
+    : [];
   const ready = quick.filter((item) => kernel?.devices.has(item.command.device));
   const story = ready.length > 0;
   const pending = kernel?.pending() ?? [];
@@ -219,7 +225,7 @@ export default function Playground({ examples, initial, suggestion = null, quick
                           Limits
                           <InfoMark topic="confirmed limits" text="A person read this device file and confirmed the file's limits. The kernel checks every command against the confirmed limits." href="/docs/concepts/" />
                         </dt>
-                        <dd>{missing.length ? <span className="status unverified">unconfirmed</span> : <span className="status ok">confirmed</span>}</dd>
+                        <dd>{unchecked.length ? <span className="status unverified">unconfirmed</span> : <span className="status ok">confirmed</span>}</dd>
                       </div>
                     </>
                   ) : null}
@@ -302,7 +308,7 @@ export default function Playground({ examples, initial, suggestion = null, quick
                         ) : missing.length ? (
                           <>
                             <p className="status unverified">valid, limits unconfirmed</p>
-                            <p className="muted">Changes are blocked with UNVERIFIED_LIMITS until a person confirms {missing.join(", ")}.</p>
+                            <p className="muted">Commands to {blocked.join(", ")} are blocked with UNVERIFIED_LIMITS until a person confirms {missing.join(", ")}.</p>
                           </>
                         ) : (
                           <p className="status ok">valid</p>
@@ -396,7 +402,7 @@ export default function Playground({ examples, initial, suggestion = null, quick
                           file={file}
                           kernel={kernel}
                           id={id}
-                          missing={missing}
+                          missing={unchecked}
                           story={story}
                           companions={companions}
                           drafts={drafts}

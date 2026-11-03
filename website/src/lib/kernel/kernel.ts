@@ -10,10 +10,9 @@ import {
   channelUnit,
   deviceId,
   effectiveHazard,
-  unconfirmed,
-  writable,
 } from "./model";
 import { formatG, pyStrRepr } from "./pyformat";
+import { level as riskLevel, ownRate, readOnly, scopeLevel, tier as riskTier } from "./risk";
 import { UnitError, convert, formatQuantity, parseQuantity, parseRate } from "./units";
 
 export type Kind = "human" | "agent" | "routine" | "system";
@@ -503,10 +502,13 @@ export class Kernel {
       }
     }
     if (this.stopped) throw new Block("stopped", "Blocked. The hub is stopped. A human must unlock it before anything can move.");
-    if (!writable(file)) {
+    const targetName = command.kind === "write" ? command.channel : command.action;
+    const waiting = readOnly(file, target(command));
+    if (waiting.length) {
+      const why = riskLevel(file, target(command)) === "high" ? "is high risk" : "has only suggested limits";
       throw new Block(
         "read_only_file",
-        `Blocked. ${command.device} is read-only until a human confirms limits for ${unconfirmed(file).join(", ")}. Run the limits interview.`,
+        `Blocked. ${targetName} on ${command.device} ${why}, so it is read-only until a person confirms limits for ${waiting.join(", ")}. Run the limits interview.`,
       );
     }
     const dangling = [...this.devices.entries()]
@@ -526,8 +528,10 @@ export class Kernel {
     if (principal.kind === "agent" && principal.scope === "read") {
       throw new Block("not_permitted", "Blocked. This client has a read-only token. Ask the owner for a control token.");
     }
-    if (!covers(principal, hazard)) {
-      throw new Block("not_permitted", `Blocked. ${command.device} is ${hazard} hazard, which this client's ${principal.scope} scope doesn't cover.`);
+    const needed = scopeLevel(file, target(command));
+    if (!covers(principal, needed)) {
+      const what = needed === hazard ? `${command.device} is ${hazard} hazard` : `${targetName} is ${needed} risk`;
+      throw new Block("not_permitted", `Blocked. ${what}, which this client's ${principal.scope} scope doesn't cover.`);
     }
     let value: unknown;
     let changes: Map<string, unknown>;
@@ -543,7 +547,7 @@ export class Kernel {
       this.checkRuns(runtime, command.action, actionSpec!, now, shadow);
     }
     if (command.kind === "write" && spec!.type === "number") {
-      const limits = effectiveLimits(spec!, this.sessionLimits.get(key(label(principal), command.device, command.channel)));
+      const limits = effectiveLimits(spec!, this.sessionLimits.get(key(label(principal), command.device, command.channel)), ownRate(file, command.channel));
       if (limits.rate !== null) {
         const [reference, elapsed] = this.rateReference(runtime, command.channel, spec!, now, shadow);
         if (reference === null) {
@@ -580,8 +584,7 @@ export class Kernel {
       }
     }
     const fields = { value, unit: spec !== null ? spec.unit : null };
-    let tier = spec !== null ? spec.confirm : actionSpec!.confirm;
-    if (hazard === "high") tier = "confirm-each-time";
+    const tier = riskTier(file, target(command), spec !== null ? spec.confirm : actionSpec!.confirm);
     if (this.confirmationSatisfied(command, principal, runtime, tier, value, approved, now)) {
       return this.decision("allowed", command, { ...fields, message: "Allowed." });
     }
@@ -813,8 +816,8 @@ export class Kernel {
     if (decision.status === "done" && !stoppedBefore && !this.stopped) {
       const runtime = this.devices.get(request.command.device)!;
       const command = request.command;
-      const tier = command.kind === "write" ? runtime.file.write[command.channel].confirm : runtime.file.actions[command.action].confirm;
-      if (tier === "confirm" && effectiveHazard(runtime.file) !== "high") {
+      const written = command.kind === "write" ? runtime.file.write[command.channel].confirm : runtime.file.actions[command.action].confirm;
+      if (riskTier(runtime.file, target(command), written) === "confirm") {
         this.approvalWindows.set(
           key(label(request.principal), command.device, target(command), JSON.stringify(decision.value)),
           this.clock() + APPROVAL_WINDOW_S,
@@ -842,7 +845,7 @@ export class Kernel {
       throw new KernelError("lookup", `Blocked. ${id} has no numeric write channel ${pyStrRepr(channel)}.`);
     }
     const k = key(label(principal), id, channel);
-    const current = effectiveLimits(spec, this.sessionLimits.get(k));
+    const current = effectiveLimits(spec, this.sessionLimits.get(k), ownRate(runtime.file, channel));
     const updated: Tightened = { ...(this.sessionLimits.get(k) ?? {}) };
     try {
       if (limits.min !== undefined && limits.min !== null) {

@@ -14,6 +14,7 @@ from openhal.drivers.base import Discovered, Driver, DriverInfo, Reading
 from openhal.hub.discovery import discover, load_library, score
 from openhal.spec import validate_path
 from openhal.spec.models import DeviceFile
+from openhal.spec.risk import assess
 from tests.library.samples import KIND_KEYS, identifiers, specific_keys
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -89,17 +90,22 @@ def test_each_file_lives_under_its_driver_package_and_is_named_by_its_id(path: P
 
 
 @pytest.mark.parametrize("path", FILES, ids=name)
-def test_each_file_loads_read_only_with_every_write_suggested(path: Path) -> None:
+def test_each_entry_is_suggested_and_only_high_risk_ones_wait_for_a_person(path: Path) -> None:
+    """Every library limit is a suggestion no person confirmed. A high risk entry stays read-only until
+    a person confirms it, and a low or medium one takes commands within the library's range (ADR 0023)."""
     file = load(path)
     assert "confirmed" not in keys(raw(path))
     unconfirmed = set(file.unconfirmed())
-    for kind, entries in (("write", file.write), ("actions", file.actions)):
+    levels = assess(file)
+    for kind, target_kind, entries in (("write", "write", file.write), ("actions", "action", file.actions)):
         for entry_name, entry in entries.items():
+            target = f"{target_kind}:{entry_name}"
+            high = levels[target].level == "high"
             assert entry.suggested, f"{kind}.{entry_name} is not suggested"
             assert entry.confirmed is None
-            assert f"{kind}.{entry_name}" in unconfirmed
-    if file.write or file.actions:
-        assert not file.writable
+            assert (f"{kind}.{entry_name}" in unconfirmed) is high, f"{kind}.{entry_name} is {levels[target].level}"
+            assert bool(file.read_only(target)) is high
+    assert file.writable is not bool(file.high_risk())
 
 
 @pytest.mark.parametrize("path", FILES, ids=name)
