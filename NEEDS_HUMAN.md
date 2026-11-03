@@ -19,20 +19,31 @@ Every WebKit page load stalls on this Mac, so the website and Inspector Playwrig
 1. On a machine where WebKit works, run `pnpm --dir website exec playwright test --project=webkit` and `pnpm --dir dashboard exec playwright test --project=webkit`.
 2. Send the output back, or fix what fails.
 
-## 3. Decide the PyPI distribution name
+## 3. Publish the first release to PyPI
 
-The PyPI name `openhal` belongs to an unrelated project (HAL, Harmful Action Limiter, v0.1.0, March 2026). The import name and CLI stay `openhal`. The distribution is built as `openhal-hub` until you decide (ADR 0002). The name lives in one place, `openhal/_brand.py` plus `pyproject.toml`. Until something is published, every install command uses the git repository.
+The distribution is `ohal` (ADR 0002). The import package and the CLI stay `openhal`. Nothing is on PyPI yet, so every install command uses the git repository until the first release. .github/workflows/release.yml publishes through PyPI trusted publishing, so the repository holds no PyPI token.
 
-Options if you want a different public name, all checked free on PyPI and npm as of 2026-10-24 unless noted.
-1. `openhal-hub` (current default)
-2. `openhal-core`
-3. Ask the PyPI owner of `openhal` about transferring the name (https://pypi.org/project/openhal/, repository https://github.com/otherland/hal)
-4. Rename the whole project. Five alternatives that searched clean on 2026-10-24, said as words where possible.
-   - OpenHAIL (Open Hardware Agent Interface Layer, "open hail")
-   - OpenHARI (Open Hardware Agent Runtime Interface, "open harry")
-   - OpenAHI (Open Agent Hardware Interface)
-   - OpenMDI (Open Model Device Interface)
-   - OpenDLI (Open Device Layer Interface, not yet searched)
+1. Sign in at https://pypi.org and open Your account, then Publishing (https://pypi.org/manage/account/publishing/).
+2. Under Add a new pending publisher, pick GitHub and fill in the form exactly as below. Then click Add.
+   - PyPI Project Name `ohal`
+   - Owner `sohan-bhat`
+   - Repository name `OpenHAL`
+   - Workflow name `release.yml`
+   - Environment name `pypi`
+3. A pending publisher doesn't reserve the name `ohal` until the first upload, so do the remaining steps soon after.
+4. On GitHub, open the OpenHAL repository's Settings, then Environments, then New environment. Name the environment `pypi` and click Configure environment. Add no secrets.
+5. Under Deployment branches and tags, choose Selected branches and tags and add a tag rule with the pattern `v*`, so only a release tag can deploy to `pypi`. To approve every upload yourself, also add yourself under Required reviewers.
+6. Set the version to 0.1.0. pyproject.toml says `version = "0.1.0.dev0"` and openhal/__init__.py says `__version__ = "0.1.0.dev0"`. Change both to `"0.1.0"`, then run `uv lock` and `uv run python -m openhal.hub.openapi`, so uv.lock and docs/api/openapi.json carry 0.1.0 too. SECURITY.md lists `main` (0.1.0.dev0) and says OpenHAL has no release yet, so update SECURITY.md in the same commit.
+7. Commit, push to main and check that CI passes.
+8. Tag that commit and push the tag.
+
+   ```text
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+
+   The tag starts the Release workflow. The workflow stops before building anything if the tag isn't `v` plus the version in pyproject.toml. Otherwise the workflow runs the tests, builds `ohal-0.1.0.tar.gz` and `ohal-0.1.0-py3-none-any.whl`, installs the wheel in a fresh venv, checks that `openhal --version` prints `openhal 0.1.0` and uploads both files to PyPI.
+9. Check https://pypi.org/project/ohal/ for version 0.1.0. After that the install pages can switch from the git commands to `uv tool install ohal` and `pipx install ohal`.
 
 ## 4. Domain
 

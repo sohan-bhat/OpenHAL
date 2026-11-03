@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  tag:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check that the tag is v plus the version in pyproject.toml
+        id: version
+        run: |
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::The tag $GITHUB_REF_NAME is not v$version, the version in pyproject.toml."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: tag
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install headers for the MIDI and HID extras
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libjack-jackd2-dev libudev-dev libusb-1.0-0-dev
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.5"
+          python-version: "3.12"
+          enable-cache: false
+      - run: uv sync --locked --all-extras
+      - run: uv run ruff check openhal tests
+      - run: uv run ruff format --check openhal tests
+      - run: uv run mypy openhal
+      - run: uv run pytest -q
+
+  build:
+    needs: tag
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      VERSION: ${{ needs.tag.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.5"
+          python-version: "3.12"
+          enable-cache: false
+      - name: Build the sdist and the wheel
+        run: uv build
+      - name: Check the file names
+        run: |
+          ls dist
+          test -f "dist/ohal-$VERSION.tar.gz"
+          test -f "dist/ohal-$VERSION-py3-none-any.whl"
+      - name: Install the wheel in a fresh venv and run openhal --version
+        run: |
+          uv venv "$RUNNER_TEMP/wheel-check"
+          uv pip install --python "$RUNNER_TEMP/wheel-check/bin/python" "dist/ohal-$VERSION-py3-none-any.whl"
+          printed=$("$RUNNER_TEMP/wheel-check/bin/openhal" --version)
+          echo "$printed"
+          if [ "$printed" != "openhal $VERSION" ]; then
+            echo "::error::openhal --version printed \"$printed\". Set __version__ in openhal/__init__.py to $VERSION."
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    needs: [test, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/ohal/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@v1.14.3
