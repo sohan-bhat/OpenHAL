@@ -71,10 +71,12 @@ async def test_check_2_stop_lock(kernel: Kernel, add: AddDevice, clock: FakeCloc
 
 
 async def test_check_3_read_only_file(kernel: Kernel, add: AddDevice) -> None:
-    await add(FAN.replace("confirmed: { by: tester, at: 2026-10-24 }", ""))
+    unconfirmed = FAN.replace("confirmed: { by: tester, at: 2026-10-24 }", "")
+    await add(unconfirmed.replace("max_change_per_s: 20 }", "max_change_per_s: 20, risk: high }"))
     decision = await run(kernel, fan("10 %"))
     assert decision.code == "read_only_file"
     assert "write.fan_speed" in decision.message
+    assert "high risk" in decision.message
 
 
 async def test_check_4_device_unavailable(kernel: Kernel, add: AddDevice) -> None:

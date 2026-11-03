@@ -14,3 +14,4 @@ The normative definitions are in [spec/v0.1/index.md](v0.1/index.md#terminology)
 | Principal | The identity behind a request, of kind `human`, `agent`, `routine` or `system`, with a scope |
 | Conformance Level | `core`, `control` or `full`, naming what a Hub implements or a Driver supports |
 | Confirmation Request | A command the Hub holds in its queue until a human Principal approves or rejects the command |
+| Risk Level | `low`, `medium` or `high`, set for each channel and action from what it is. It decides whether a human confirms the limits first |

@@ -68,9 +68,10 @@ A mistyped command gets the closest command, and a mistyped device, routine, req
 | `writer finish` | `save` |
 | `file confirm` | `confirm` |
 | `limits set`, to widen a limit | `confirm` |
+| `risk set`, to lower a level | `confirm` |
 | `runs caps`, to raise a cap | `confirm` |
 
-`file confirm` on a file with suggested limits and `writer interview` read every answer from the terminal, where Enter keeps a suggestion. Where no phrase can be typed, `limits set` doesn't fail. A wider limit becomes a pending limit change that `confirm approve` takes with the phrase `approve`.
+`file confirm` on a file with suggested limits and `writer interview` read every answer from the terminal, where Enter keeps a suggestion. Where no phrase can be typed, `limits set` and `risk set` don't fail. A wider limit or a lower level becomes a pending change that `confirm approve` takes with the phrase `approve`.
 
 
 ## Setup
@@ -81,7 +82,7 @@ A mistyped command gets the closest command, and a mistyped device, routine, req
 openhal init [--new-token] [--no-sample]
 ```
 
-`openhal init` creates the config folder (mode 0700), `config.yaml` with the defaults, the human token in `human.token` (mode 0600) and `devices/plant-waterer.hal.yaml`, the simulated plant waterer from `examples/plant-waterer/mock/`. Because confirming limits takes a person, the sample loads read-only until you confirm its limits with `openhal file confirm`. Running `init` again keeps a working token, and `--new-token` creates a new token. In a terminal, init also walks the limits interview for each device the init adds, so the first device takes one step.
+`openhal init` creates the config folder (mode 0700), `config.yaml` with the defaults, the human token in `human.token` (mode 0600) and `devices/plant-waterer.hal.yaml`, the simulated plant waterer from `examples/plant-waterer/mock/`. Every channel and action gets a risk level ([Risk](#risk)). The sample's channels are medium, so the sample takes commands at once within its own range. Running `init` again keeps a working token, and `--new-token` creates a new token. In a terminal, init also walks the limits interview for each device it adds that has high risk channels or actions.
 
 ### openhal doctor
 
@@ -308,7 +309,7 @@ openhal file schema
 openhal file confirm [PATH] [--by NAME] [--phrase confirm]
 ```
 
-`validate` checks files against the spec, the devices folder when no path is given, and `schema` prints the JSON Schema. At a terminal, `confirm` without a path shows a picker of the files in the devices folder, read-only files first. `confirm` on a file with suggested limits walks the limits interview, one plain question per limit with the suggestion as the default, and a value past what the device reports is asked again. `confirm` then prints every limit and adds a top-level `confirmed` with your name, the date and the hash of the limits, so any later change to a limit makes the file read-only again. A running OpenHAL that serves this config folder loads the file at once, and the command says the device is now writable.
+`validate` checks files against the spec, the devices folder when no path is given, and `schema` prints the JSON Schema. At a terminal, `confirm` without a path shows a picker of the files in the devices folder, read-only files first. `confirm` on a file with suggested limits walks the limits interview for its high risk channels and actions, one plain question per limit with the suggestion as the default, and a value past what the device reports is asked again. `confirm` then prints every limit and adds a top-level `confirmed` with your name, the date and the hash of the limits, so any later change to a limit makes its high risk entries read-only again. A file with no high risk entry has nothing to confirm. A running OpenHAL that serves this config folder loads the file at once, and the command says the device is now writable.
 
 ## Limits
 
@@ -319,6 +320,20 @@ openhal limits set [DEVICE[.CHANNEL]] [--min VALUE] [--max VALUE] [--rate VALUE|
 ```
 
 A bare `openhal limits` prints every device's limits in one table and one narrower limit to copy. `show` prints each number channel's min, max and max change with the range the device itself reports. At a terminal, `set` with nothing else walks through the device, the channel with its limits and the range the device reports, and then the new value, and prints the same change as one command at the end. `set` takes values with units, such as `--max "80 %"` or `--rate "5 %/s"`, and never goes past the device's own range. A narrower limit applies at once and is written into the device file, with the confirmation bound again to the hash of the limits. In a terminal, a wider limit shows the change before and after and takes the typed phrase `confirm`. From a script, an agent's shell or an agent token, a wider limit waits as a pending limit change in `openhal confirm list` and in the Inspector until a person approves the change. An agent's narrower limit applies to that agent's session, as `tighten_limits` does.
+
+A file that an earlier version's interview confirmed keeps its limits, such as a 60 % maximum on an LED. To give the LED its full range and no rate cap, run `openhal limits set DEVICE.CHANNEL --max "100 %" --rate none` and type `confirm`.
+
+## Risk
+
+```
+openhal risk [--json]
+openhal risk show [DEVICE[.NAME]] [--why] [--json]
+openhal risk set [DEVICE.NAME] [low|medium|high] [--phrase confirm]
+```
+
+Every channel and action has a risk level, set from what it is ([Safety](../SAFETY.md#risk-levels)). Reading is always low. A low or medium channel takes commands at once within the device's own range, and a high one stays read-only until a person answers its limits with `openhal file confirm`.
+
+A bare `openhal risk` shows how many channels and actions of each device sit at each level and one change to copy. `show` lists each channel and action with its level, who set the level and whether it takes commands, and `--why` adds the reasons. At a terminal, a left-out device, name or level opens a picker, and without one the error lists the valid values and one command to copy. `set` raises a level at once. Lowering a level gives an agent more, so in a terminal the command takes the typed phrase `confirm`, and from a script or an agent's shell the change is held in `openhal confirm list` until a person approves it. Agent tokens change no level. Each change is saved in the device file with your name and the date and recorded in the audit log.
 
 ## Runs
 
@@ -361,11 +376,11 @@ In an interactive terminal, `init` sets up the config folder, the human token an
 | Add each device found | yes, default yes | yes |
 | Agent token in `agent.token` | scope, default `read` | `read`, or `--agent-scope` |
 | Print the MCP client setup | always, once there is an agent token | always |
-| Answer each limit of a device it adds | yes or no, default yes | never |
+| Answer the high risk limits of a device it adds | yes or no, default yes, only when it has some | never |
 | Add OpenHAL to each MCP client found | yes or no for each, default yes | every client found |
 | Install the background service | yes or no, default no | only `--service` |
 
-Found devices are saved as device files, where a library match is copied with the address discovery found and an `openhal-firmware` board or an ESPHome node returns its own description in reply to read-only commands. Every limit is marked `suggested: true` and every confirmation is dropped, so the file stays read-only until a person answers the limits interview, in init or later with `openhal file confirm`. A device that already has a file is left out, `--driver` limits discovery to some drivers, and `--device` adds a self-describing device at a known address, such as `openhal-firmware=/dev/ttyACM0`.
+Found devices are saved as device files, where a library match is copied with the address discovery found and an `openhal-firmware` board or an ESPHome node returns its own description in reply to read-only commands. Every limit is marked `suggested: true` and every confirmation is dropped. Low and medium risk channels and actions take commands at once within the device's own range, and init prints how many entries sit at each level. High risk ones stay read-only until a person answers the limits interview, in init or later with `openhal file confirm`. A device that already has a file is left out, `--driver` limits discovery to some drivers, and `--device` adds a self-describing device at a known address, such as `openhal-firmware=/dev/ttyACM0`.
 
 `init` keeps the agent token while the token works and has the requested scope. The client setup for Claude Desktop, Claude Code and Cursor starts `openhal mcp --token-file ~/.openhal/agent.token` with the full path to `openhal`. Init finds Claude Code by the `claude` program on your PATH and Claude Desktop and Cursor by their app or config folder. Claude Code gets `claude mcp add openhal --scope user`, so every session has the server, after a backup of `~/.claude.json`. `--client claude-desktop`, `claude-code` or `cursor` adds that client even when init doesn't find the client. An existing file is copied to `NAME.openhal-backup-DATE` first and keeps every other entry and its mode. A file that isn't valid JSON is left as it is, and `init` exits 1 if a step you asked for failed.
 

@@ -17,7 +17,7 @@ def test_validate_examples_folder() -> None:
     result = runner.invoke(app, ["file", "validate", str(ROOT / "spec" / "examples")])
     assert result.exit_code == 0, result.output
     assert "0 invalid" in result.output
-    assert "read-only" in result.output
+    assert "writable" in result.output
 
 
 def test_validate_reports_problems(tmp_path: Path) -> None:

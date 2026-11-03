@@ -105,7 +105,7 @@ def _row(name: str, spec: dict[str, Any]) -> list[str]:
 def _read_only(data: dict[str, Any]) -> None:
     if not data.get("writable"):
         console.print(
-            f"{escape(str(data['device']))} is read-only. Answer each limit first with "
+            f"{escape(str(data['device']))} has high risk entries that stay read-only. Answer their limits with "
             f"openhal file confirm {escape(str(data.get('path')))}"
         )
 

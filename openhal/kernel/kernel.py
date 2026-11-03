@@ -31,7 +31,7 @@ from openhal.kernel.confirmations import ConfirmationQueue, QueueFull, Request
 from openhal.kernel.grants import GrantBook, GrantError, value_digest
 from openhal.kernel.principals import SYSTEM, Principal
 from openhal.kernel.runtime import DeviceRuntime, RuleState, Sample
-from openhal.spec import expressions
+from openhal.spec import expressions, risk
 from openhal.spec.models import Action as ActionSpec
 from openhal.spec.models import Approval, DeviceFile, WriteChannel
 from openhal.spec.units import UnitError, convert, format_quantity, parse_quantity, parse_rate
@@ -449,11 +449,13 @@ class Kernel:
                 raise Block("bad_request", f"Blocked. {command.action} has {' and '.join(parts)}.")
         if self.stopped:
             raise Block("stopped", "Blocked. The hub is stopped. A human must unlock it before anything can move.")
-        if not file.writable:
+        target_name = command.channel if isinstance(command, Write) else command.action
+        read_only = file.read_only(command.target)
+        if read_only:
             raise Block(
                 "read_only_file",
-                f"Blocked. {command.device} is read-only until a human confirms limits for "
-                f"{', '.join(file.unconfirmed())}. Run the limits interview.",
+                f"Blocked. {target_name} on {command.device} is high risk, so it is read-only until a person "
+                f"confirms limits for {', '.join(read_only)}. Run the limits interview.",
             )
         dangling = [
             f"{item.device_id} ({item.reference_problem})" for item in self.devices.values() if item.reference_problem
@@ -466,19 +468,17 @@ class Kernel:
             )
         if runtime.available:
             raise Block("device_unavailable", f"Blocked. {command.device} is {runtime.available}.")
-        hazard = file.effective_hazard
         if principal.kind == "system":
             raise Block("not_permitted", "Blocked. The system principal is internal to the kernel.")
         if principal.kind == "agent" and principal.scope == "read":
             raise Block(
                 "not_permitted", "Blocked. This client has a read-only token. Ask the owner for a control token."
             )
-        if not principal.covers(hazard):
-            raise Block(
-                "not_permitted",
-                f"Blocked. {command.device} is {hazard} hazard, which this client's {principal.scope} scope "
-                "doesn't cover.",
-            )
+        hazard = file.effective_hazard
+        needed = risk.scope_level(file, command.target)
+        if not principal.covers(needed):
+            what = f"{command.device} is {hazard} hazard" if needed == hazard else f"{target_name} is {needed} risk"
+            raise Block("not_permitted", f"Blocked. {what}, which this client's {principal.scope} scope doesn't cover.")
         if isinstance(command, Write):
             assert spec is not None
             tightened = self._session_limits.get((principal.label, command.device, command.channel))
@@ -500,7 +500,9 @@ class Kernel:
         if isinstance(command, Write) and spec is not None and spec.type == "number":
             assert spec.unit is not None
             limits = effective_limits(
-                spec, self._session_limits.get((principal.label, command.device, command.channel))
+                spec,
+                self._session_limits.get((principal.label, command.device, command.channel)),
+                own_rate=risk.own_rate(file, command.channel),
             )
             if limits.rate is not None:
                 reference, elapsed = self._rate_reference(runtime, command.channel, spec, now, shadow)
@@ -541,13 +543,7 @@ class Kernel:
             "value": _jsonable(value),
             "unit": spec.unit if spec is not None else None,
         }
-        if spec is not None:
-            tier = spec.confirm
-        else:
-            assert action_spec is not None
-            tier = action_spec.confirm
-        if hazard == "high":
-            tier = "confirm-each-time"
+        tier = self._tier(file, command)
         if self._confirmation_satisfied(command, principal, runtime, tier, digest_value, approved, now):
             return Decision(status="allowed", message="Allowed.", **decision_kwargs)
         if principal.kind == "routine":
@@ -561,6 +557,14 @@ class Kernel:
             message=f"Held until a human approves {command.target} on {command.device}.",
             **decision_kwargs,
         )
+
+    @staticmethod
+    def _tier(file: DeviceFile, command: Write | Action) -> str:
+        """The tier a command uses, from the file and its risk level (risk.tier)."""
+        written = (
+            file.write[command.channel].confirm if isinstance(command, Write) else file.actions[command.action].confirm
+        )
+        return risk.tier(file, command.target, written)
 
     def _confirmation_satisfied(
         self,
@@ -1009,12 +1013,7 @@ class Kernel:
         )
         if decision.status == "done" and generation == self._stop_generation and not self.stopped:
             runtime = self.devices[request.command.device]
-            tier = (
-                runtime.file.write[request.command.channel].confirm
-                if isinstance(request.command, Write)
-                else runtime.file.actions[request.command.action].confirm
-            )
-            if tier == "confirm" and runtime.file.effective_hazard != "high":
+            if self._tier(runtime.file, request.command) == "confirm":
                 digest_value = (
                     decision.value
                     if isinstance(request.command, Write)
@@ -1065,7 +1064,9 @@ class Kernel:
             if spec is None or spec.type != "number" or spec.unit is None:
                 raise Block("unknown_target", f"Blocked. {device_id} has no numeric write channel {channel!r}.")
             key = (principal.label, device_id, channel)
-            current = effective_limits(spec, self._session_limits.get(key))
+            current = effective_limits(
+                spec, self._session_limits.get(key), own_rate=risk.own_rate(runtime.file, channel)
+            )
             updated = dict(self._session_limits.get(key, {}))
             try:
                 if min is not None:

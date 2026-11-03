@@ -96,6 +96,8 @@ The JSON Schema is [schema.json](schema.json). Field names are as they travel on
 | `confirm` | string | yes |  |
 | `suggested` | boolean | yes |  |
 | `confirmed` | [Confirmed](#confirmed) or null | no |  |
+| `risk` | `"low"` or `"medium"` or `"high"` | no | low, medium or high, decided from what the target is. Only a person changes it. |
+| `readOnly` | boolean | no | True while a high risk target waits for a person to confirm its limits. |
 
 ### ActionOutcome
 
@@ -247,7 +249,7 @@ A DeviceSummary plus channels, actions, safe state, interlocks, watchdog rules a
 | `manufacturer` | string or null | no |  |
 | `driver` | string | yes |  |
 | `hazard` | `"low"` or `"medium"` or `"high"` | yes |  |
-| `writable` | boolean | yes | False until a person confirms every limit. |
+| `writable` | boolean | yes | False while a high risk target waits for a person to confirm its limits. |
 | `connected` | boolean | yes |  |
 | `conformance` | `"core"` or `"control"` or `"full"` | yes | The driver's declared conformance level. |
 | `verification` | string | yes | unverified, verified-on-simulator or verified-on-hardware. |
@@ -279,7 +281,7 @@ A DeviceSummary plus channels, actions, safe state, interlocks, watchdog rules a
 | `manufacturer` | string or null | no |  |
 | `driver` | string | yes |  |
 | `hazard` | `"low"` or `"medium"` or `"high"` | yes |  |
-| `writable` | boolean | yes | False until a person confirms every limit. |
+| `writable` | boolean | yes | False while a high risk target waits for a person to confirm its limits. |
 | `connected` | boolean | yes |  |
 | `conformance` | `"core"` or `"control"` or `"full"` | yes | The driver's declared conformance level. |
 | `verification` | string | yes | unverified, verified-on-simulator or verified-on-hardware. |
@@ -470,6 +472,7 @@ A number and its unit (ADR 0016), for example `{"value": 20, "unit": "s"}`.
 | `stream` | boolean | no |  |
 | `range` | list of number or null | no |  |
 | `values` | list of string or null | no |  |
+| `risk` | `"low"` or `"medium"` or `"high"` | no | Always low. Reading never changes hardware. |
 
 ### ReadFailure
 
@@ -648,6 +651,8 @@ A JSON-RPC request, which has an id and gets a response.
 | `confirm` | string | yes | none, confirm or confirm-each-time. |
 | `suggested` | boolean | yes | True while the limits are a suggestion no person has confirmed. |
 | `confirmed` | [Confirmed](#confirmed) or null | no | Who confirmed this channel's limits. |
+| `risk` | `"low"` or `"medium"` or `"high"` | no | low, medium or high, decided from what the target is. Only a person changes it. |
+| `readOnly` | boolean | no | True while a high risk target waits for a person to confirm its limits. |
 
 ### WriteDone
 

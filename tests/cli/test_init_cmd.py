@@ -91,11 +91,11 @@ def fake_discovery(monkeypatch: pytest.MonkeyPatch, library_file: Path) -> list[
     return seen
 
 
-def read_only(path: Path) -> None:
+def never_confirmed(path: Path) -> None:
     text = path.read_text()
     assert "confirmed" not in text, "init must never confirm limits for the person"
     file = load(path)
-    assert not file.writable
+    assert file.writable is not bool(file.high_risk()), "only high risk entries wait for a person"
     assert all(entry.suggested for entry in [*file.write.values(), *file.actions.values()])
 
 
@@ -110,17 +110,17 @@ def test_a_script_run_does_only_the_first_steps(machine: Machine) -> None:
     assert machine.runner.commands == []
 
 
-def test_yes_adds_found_devices_read_only(machine: Machine, fake_discovery: list[set[str]]) -> None:
+def test_yes_adds_found_devices_unconfirmed(machine: Machine, fake_discovery: list[set[str]]) -> None:
     code, out = run("init", "--yes")
     assert code == 0, out
     assert fake_discovery == [{"plant-waterer"}], "discovery leaves out devices that have a file"
     folder = machine.config / "devices"
     fan = folder / "desk-fan.hal.yaml"
-    read_only(fan)
+    never_confirmed(fan)
     assert load(fan).provenance.source == "self-described"
     assert load(fan).connect.params["port"] == "sim:desk-fan"
     waterer = folder / "plant-waterer-2.hal.yaml"
-    read_only(waterer)
+    never_confirmed(waterer)
     library = load(waterer)
     assert library.device_id == "plant-waterer-2"
     assert library.connect.params["port"] == "/dev/ttyACM0"
@@ -165,7 +165,7 @@ def test_named_devices_and_id_collisions(machine: Machine) -> None:
     ids = sorted(load(path).device_id for path in folder.iterdir())
     assert ids == ["desk-fan", "desk-fan-2"]
     for path in folder.iterdir():
-        read_only(path)
+        never_confirmed(path)
     assert "only self-describing devices can be added by address" in out
     code, out = run("init", "--device", "no-equals-sign")
     assert code == 2
@@ -183,7 +183,7 @@ def test_a_device_that_does_not_answer_is_skipped(machine: Machine) -> None:
 def test_the_wizard_asks(machine: Machine, fake_discovery: list[set[str]], monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(_tty, "interactive", lambda: True)
     (machine.home / ".cursor").mkdir()
-    answers = "\n".join(["", "n", "y", "n", "control_low", "", "n"]) + "\n"
+    answers = "\n".join(["", "n", "y", "control_low", "", "n"]) + "\n"
     code, out = run("init", input=answers)
     assert code == 0, out
     folder = machine.config / "devices"
@@ -256,7 +256,7 @@ def test_service_flag_installs_through_the_runner(machine: Machine) -> None:
     assert plist.exists()
     assert machine.runner.commands[-1].startswith("launchctl bootstrap")
     assert "Check the hub with openhal status" in out
-    code, out = run("init", "--yes", "--no-discover", "--device", "openhal-firmware=sim:desk-fan")
+    code, out = run("init", "--yes", "--no-discover", "--device", "openhal-firmware=sim:bench-heater")
     assert code == 0, out
     assert "restart" not in out
-    assert "Answer each limit of desk-fan with openhal file confirm" in out
+    assert "Answer the high risk limits of bench-heater with openhal file confirm" in out

@@ -94,6 +94,17 @@
           "title": "Require",
           "type": "array"
         },
+        "risk": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RiskOverride"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "suggested": {
           "default": false,
           "title": "Suggested",
@@ -847,6 +858,57 @@
       "title": "Requirement",
       "type": "object"
     },
+    "RiskOverride": {
+      "additionalProperties": false,
+      "description": "A level for one write channel or action, over the one the hub's table gives (ADR 0023).\n\nWith `by`, a person set the level, so it may lower the table's level as well as raise it. With\nno `by`, the level only ever raises. `risk: high` is short for `risk: { level: high }`.",
+      "properties": {
+        "at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "At"
+        },
+        "by": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "By"
+        },
+        "level": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "title": "Level",
+          "type": "string"
+        }
+      },
+      "required": [
+        "level"
+      ],
+      "title": "RiskOverride",
+      "type": "object"
+    },
     "SafeStep": {
       "additionalProperties": false,
       "description": "One step of a safe state, either channel values or an action.",
@@ -1081,6 +1143,17 @@
           ],
           "default": null,
           "title": "Pattern"
+        },
+        "risk": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RiskOverride"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "step": {
           "anyOf": [

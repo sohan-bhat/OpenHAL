@@ -46,8 +46,11 @@ def test_research_fan_is_valid_and_read_only() -> None:
     assert fan.connect.params == {"port": "auto", "board": "arduino-uno"}
     assert fan.write["fan_speed"].max_change_per_s == 20
     assert fan.effective_hazard == "medium"
-    assert not fan.writable
-    assert fan.unconfirmed() == ["file (interlocks, watchdog, safe state and hazard)", "write.fan_speed"]
+    assert fan.writable, "a medium fan takes commands without a confirmation (ADR 0023)"
+    assert fan.unconfirmed() == []
+    high = loads(FAN.replace("max_change_per_s: 20 }", "max_change_per_s: 20, risk: high }"))
+    assert not high.writable
+    assert high.unconfirmed() == ["file (interlocks, watchdog, safe state and hazard)", "write.fan_speed"]
 
 
 def test_confirmation_makes_it_writable() -> None:
@@ -55,8 +58,15 @@ def test_confirmation_makes_it_writable() -> None:
     assert fan.writable
 
 
+def high(**extra: Any) -> dict[str, Any]:
+    """The base file with its channel raised to high risk, so its limits need a person."""
+    data = base(**extra)
+    data["write"]["level"]["risk"] = "high"
+    return data
+
+
 def test_suggested_overrides_file_confirmation() -> None:
-    data = base()
+    data = high()
     data["write"]["level"]["suggested"] = True
     device = from_data(data)
     assert not device.writable
@@ -72,7 +82,7 @@ def test_per_channel_confirmation() -> None:
 
 def test_file_level_limits_need_a_file_confirmation() -> None:
     """Review finding F15. Per-channel confirmations don't cover interlocks, safe state or hazard."""
-    data = base()
+    data = high()
     del data["confirmed"]
     data["write"]["level"]["confirmed"] = {"by": "tester", "at": "2026-10-24"}
     device = from_data(data)
@@ -81,7 +91,7 @@ def test_file_level_limits_need_a_file_confirmation() -> None:
 
 
 def test_confirmation_bound_to_content() -> None:
-    data = base()
+    data = high()
     device = from_data(data)
     data["confirmed"] = {"by": "tester", "at": "2026-10-24", "sha256": device.limits_sha256()}
     bound = from_data(data)

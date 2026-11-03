@@ -75,9 +75,14 @@ class ReadChannel(Model):
     stream: bool | None = None
     range: list[float] | None = None
     values: list[str] | None = None
+    risk: str | None = Field(default=None, description="Always low. Reading never changes hardware.")
     value: Any = None
     known: bool = False
     age_s: float | None = None
+
+
+RISK_HELP = "low, medium or high (ADR 0023). Only a person changes a level, with openhal risk set."
+READ_ONLY_HELP = "True while a high risk target waits for a person to confirm its limits."
 
 
 class WriteChannel(Model):
@@ -90,6 +95,8 @@ class WriteChannel(Model):
     values: list[str] | None = None
     confirm: str | None = None
     suggested: bool | None = None
+    risk: str | None = Field(default=None, description=RISK_HELP)
+    read_only: bool | None = Field(default=None, description=READ_ONLY_HELP)
     value: Any = None
     known: bool = False
     age_s: float | None = None
@@ -103,6 +110,8 @@ class ActionInfo(Model):
     max_runs: dict[str, Any] | None = Field(default=None, description="At most count runs per per_s seconds.")
     effects: list[str] = []
     confirm: str | None = None
+    risk: str | None = Field(default=None, description=RISK_HELP)
+    read_only: bool | None = Field(default=None, description=READ_ONLY_HELP)
 
 
 class Interlock(Model):
@@ -181,6 +190,44 @@ class Decision(Model):
     @property
     def pending(self) -> bool:
         return self.status in ("pending", "needs_confirmation")
+
+
+class RiskLevel(Model):
+    """One target's risk level, the level the table gives, and why."""
+
+    level: str = Field(description=RISK_HELP)
+    classified: str = Field(description="The level the hub's table gives, before any level a person set.")
+    reasons: list[str] = []
+    override: str | None = Field(default=None, description="The level the device file sets, if any.")
+    override_by: str | None = Field(default=None, description="The person who set it. Without one it only raises.")
+    override_applied: bool = False
+    shared_with: list[str] = Field(default=[], description="Targets on the same pin, which share the highest level.")
+    read_only: bool = Field(default=False, description=READ_ONLY_HELP)
+
+
+class DeviceRisk(Model):
+    """Every channel's and action's level on one device, by `read:`, `write:` or `action:` target."""
+
+    device: str
+    hazard: str
+    path: str | None = None
+    targets: dict[str, RiskLevel] = {}
+    pending: list[dict[str, Any]] = []
+
+
+class RiskResult(Model):
+    """A risk change. done, pending for a person, allowed in a dry run, or blocked."""
+
+    status: str
+    message: str = ""
+    code: str | None = None
+    device: str | None = None
+    target: str | None = None
+    name: str | None = None
+    before: str | None = None
+    after: str | None = None
+    lowers: bool | None = None
+    request_id: str | None = None
 
 
 class TightenResult(Model):
@@ -421,7 +468,8 @@ class FindMatch(Model):
     hazard: str | None = None
     connected: bool | None = None
     takes_commands: bool | None = Field(
-        default=None, description="False while the device is read-only, unavailable or the hub is stopped."
+        default=None,
+        description="False while the target is read-only, the device is unavailable or the hub is stopped.",
     )
     type: str | None = Field(default=None, description="number, bool, enum, string or image, for a channel.")
     unit: str | None = None
@@ -431,6 +479,8 @@ class FindMatch(Model):
     step: float | None = None
     max_change_per_s: float | None = None
     confirm: str | None = None
+    risk: str | None = Field(default=None, description=RISK_HELP)
+    read_only: bool | None = Field(default=None, description=READ_ONLY_HELP)
     description: str | None = None
     args: dict[str, dict[str, Any]] | None = None
     require: list[str] | None = None

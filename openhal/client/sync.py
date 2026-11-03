@@ -121,6 +121,14 @@ class Client:
         """Narrow limits for this token's session. Widening is blocked with `cannot_loosen`."""
         return self.call(calls.tighten(device, channel, min=min, max=max, rate=rate))
 
+    def risk(self, device: str) -> m.DeviceRisk:
+        """Every channel's and action's risk level on a device, with the reasons."""
+        return self.call(calls.risk(device))
+
+    def set_risk(self, device: str, name: str, level: str, *, phrase: str | None = None) -> m.RiskResult:
+        """Change a level. Needs a human token. Lowering takes the phrase confirm, or waits for a person."""
+        return self.call(calls.set_risk(device, name, level, phrase=phrase))
+
     def stop(self, reason: str = "stop requested") -> m.StopReport:
         """Put every device in its safe state and lock writes until a human unlocks."""
         return self.call(calls.stop(reason))

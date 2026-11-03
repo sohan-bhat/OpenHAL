@@ -134,6 +134,40 @@ class Confirmation(_Strict):
     """Hash of the file's limits when they were confirmed. If present, any later change unconfirms them."""
 
 
+class RiskOverride(_Strict):
+    """A level for one write channel or action, over the one the hub's table gives (ADR 0023).
+
+    With `by`, a person set the level, so it may lower the table's level as well as raise it. With
+    no `by`, the level only ever raises. `risk: high` is short for `risk: { level: high }`.
+    """
+
+    level: Hazard
+    by: str | None = Field(default=None, min_length=1, max_length=80)
+    at: When | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _shorthand(cls, data: Any) -> Any:
+        return {"level": data} if isinstance(data, str) else data
+
+    @model_validator(mode="after")
+    def _dated(self) -> RiskOverride:
+        if self.by is not None and self.at is None:
+            raise ValueError("A risk level a person set needs at, the date it was set.")
+        return self
+
+    @model_serializer(mode="plain")
+    def _compact(self) -> Any:
+        if self.by is None and self.at is None:
+            return self.level
+        shown: dict[str, Any] = {"level": self.level}
+        if self.by is not None:
+            shown["by"] = self.by
+        if self.at is not None:
+            shown["at"] = self.at.isoformat()
+        return shown
+
+
 class Verification(_Strict):
     status: VerificationStatus = "unverified"
     report: str | None = Field(default=None, max_length=300)
@@ -368,6 +402,7 @@ class WriteChannel(_ValueSpec):
     confirm: ConfirmTier = "none"
     confirmed: Confirmation | None = None
     suggested: bool = False
+    risk: RiskOverride | None = None
     every: Seconds | None = None
     map: dict[str, Any] | None = None
 
@@ -412,6 +447,7 @@ class Action(_Strict):
     confirm: ConfirmTier = "none"
     confirmed: Confirmation | None = None
     suggested: bool = False
+    risk: RiskOverride | None = None
     effects: list[str] = []
     description: str | None = Field(default=None, max_length=500)
     map: dict[str, Any] | None = None
@@ -568,7 +604,8 @@ class DeviceFile(_Strict):
 
         It covers identity, connection, channels, actions, safe state, interlocks, watchdog rules and
         hazard. It leaves out confirmations themselves, approvals, notes and provenance, which can
-        change without changing what the device is allowed to do.
+        change without changing what the device is allowed to do. It also leaves out `risk`, which
+        carries its own record of the person who set it.
         """
         import hashlib
         import json
@@ -581,6 +618,7 @@ class DeviceFile(_Strict):
         for section in ("write", "actions"):
             for entry in data.get(section, {}).values():
                 entry.pop("confirmed", None)
+                entry.pop("risk", None)
         canonical = json.dumps(data, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
@@ -588,23 +626,58 @@ class DeviceFile(_Strict):
         """Interlocks, watchdog rules, a safe state or a hazard class need a file-level confirmation."""
         return bool(self.interlocks or self.watchdog.max_duration or self.safe_state or self.hazard is not None)
 
+    def high_risk(self) -> list[str]:
+        """Every write channel and action at the high risk level, as `write.<name>` or `actions.<name>`."""
+        from openhal.spec.risk import memo
+
+        return list(memo(self, "high_risk", self._high_risk))
+
+    def _high_risk(self) -> list[str]:
+        from openhal.spec.risk import assess
+
+        levels = assess(self)
+        found = [f"write.{name}" for name in self.write if levels[f"write:{name}"].level == "high"]
+        return found + [f"actions.{name}" for name in self.actions if levels[f"action:{name}"].level == "high"]
+
     def unconfirmed(self) -> list[str]:
-        """Limits that no human has confirmed yet, or that changed after they were confirmed."""
+        """High risk limits that no human has confirmed yet, or that changed after they were confirmed.
+
+        Low and medium channels and actions take commands without a confirmation (ADR 0023), so only
+        high ones and the file-level limits that guard them are listed.
+        """
+        from openhal.spec.risk import memo
+
+        return list(memo(self, "unconfirmed", self._unconfirmed))
+
+    def _unconfirmed(self) -> list[str]:
+        high = self.high_risk()
+        if not high:
+            return []
         missing: list[str] = []
         bound = self.confirmed.sha256 if self.confirmed is not None else None
         if bound is not None and bound != self.limits_sha256():
             return ["file (limits changed after they were confirmed)"]
-        if (self.write or self.actions) and self.has_file_level_limits() and self.confirmed is None:
+        if self.has_file_level_limits() and self.confirmed is None:
             missing.append("file (interlocks, watchdog, safe state and hazard)")
-        for kind, entries in (("write", self.write), ("actions", self.actions)):
-            for name, entry in entries.items():
-                if entry.suggested or (entry.confirmed is None and self.confirmed is None):
-                    missing.append(f"{kind}.{name}")
+        for item in high:
+            kind, _, name = item.partition(".")
+            entry: WriteChannel | Action = self.write[name] if kind == "write" else self.actions[name]
+            if entry.suggested or (entry.confirmed is None and self.confirmed is None):
+                missing.append(item)
         return missing
+
+    def read_only(self, target: str) -> list[str]:
+        """What a person must confirm before `write:<name>` or `action:<name>` takes commands, if anything."""
+        kind, _, name = target.partition(":")
+        entry = f"write.{name}" if kind == "write" else f"actions.{name}"
+        missing = self.unconfirmed()
+        if entry not in self.high_risk():
+            return []
+        return [item for item in missing if item == entry or item.startswith("file ")]
 
     @property
     def writable(self) -> bool:
-        """True when every limit is confirmed by a human (spec section 12)."""
+        """True when every high risk limit is confirmed by a human (spec section 12, ADR 0023)."""
         return not self.unconfirmed()
 
     def channel_unit(self, name: str) -> str | None:

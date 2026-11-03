@@ -66,7 +66,7 @@ async def test_new_scaffolds_a_driver_that_passes_conformance(checkout: Path) ->
 
     example = load(package / "examples" / "acme-pump.hal.yaml")
     assert example.connect.driver == "x-acme-pump"
-    assert not example.writable
+    assert example.confirmed is None
 
     conformance = importlib.import_module("openhal.drivers.x_acme_pump.conformance")
     report = await run(conformance.case())

@@ -1,7 +1,10 @@
 """Simulated boards running the OpenHAL Arduino library's examples.
 
 They implement the real protocol over an in-memory line transport, enforce their own limits and apply
-their safe state when heartbeats stop. The desk fan cools a warm room. The plant waterer
+their safe state when heartbeats stop. A board with `pins` lists them and answers `PIN` as the
+library does, and a stop or a lost heartbeat returns every pin the hub set to input. The desk fan
+cools a warm room. The bare board has an LED, a button and free pins, like an ESP8266 running the
+BareBoard example. The plant waterer
 (examples/plant-waterer/) wets the soil while its pump runs and blocks pumping from an empty tank.
 Tests, the conformance case and `openhal demo` use them.
 """
@@ -40,6 +43,7 @@ class SimChannel:
     hi: float | None = None
     states: tuple[str, ...] = ()
     internal: bool = False
+    pin: int | None = None
 
 
 @dataclass
@@ -69,6 +73,12 @@ class FirmwareSimulator:
     received: list[str] = field(default_factory=list)
     open_links: int = 0
     """How many simulated ports to this board are open. Discovery leaves a busy board alone."""
+    pins: dict[int, str] = field(default_factory=dict)
+    """Free pins and their mode letters, as the library's DESC `io` lists them."""
+    pin_state: dict[int, str] = field(default_factory=dict)
+    pin_value: dict[int, float] = field(default_factory=dict)
+    pin_inputs: dict[int, float] = field(default_factory=dict)
+    """What each pin reads from outside, 0 or 1 for digital and percent for analog."""
 
     def __post_init__(self) -> None:
         if not self.channels:
@@ -98,6 +108,8 @@ class FirmwareSimulator:
                 }
                 if channel.rate:
                     entry["rate"] = channel.rate
+                if channel.pin is not None:
+                    entry["g"] = channel.pin
                 write.append(entry)
             else:
                 item: dict[str, Any] = {"n": channel.name, "u": channel.unit, "e": channel.every_ms}
@@ -105,14 +117,29 @@ class FirmwareSimulator:
                     item["lo"], item["hi"] = channel.lo, channel.hi
                 if channel.states:
                     item["u"], item["s"] = "enum", list(channel.states)
+                if channel.pin is not None:
+                    item["g"] = channel.pin
                 read.append(item)
-        described = {"p": self.product, "v": self.version, "hb": self.heartbeat_ms, "r": read, "w": write}
+        described: dict[str, Any] = {
+            "p": self.product,
+            "v": self.version,
+            "hb": self.heartbeat_ms,
+            "r": read,
+            "w": write,
+        }
+        if self.pins:
+            described |= {"pb": 8, "ab": 10, "io": [[pin, modes] for pin, modes in sorted(self.free_pins().items())]}
         if self.actions:
             described["a"] = [
                 {"n": action.name, "g": [{"n": n, "u": u, "min": lo, "max": hi} for n, u, lo, hi in action.args]}
                 for action in self.actions.values()
             ]
         return described
+
+    def free_pins(self) -> dict[int, str]:
+        """The pins the hub may use, every listed pin but those a reading or output names, as the library keeps them."""
+        claimed = {channel.pin for channel in self.channels.values() if channel.pin is not None}
+        return {pin: modes for pin, modes in self.pins.items() if pin not in claimed}
 
     def _step(self) -> None:
         now = time.monotonic()
@@ -134,6 +161,10 @@ class FirmwareSimulator:
         for channel in self.channels.values():
             if channel.writable and channel.value != channel.safe:
                 channel.value = channel.safe
+                changed = True
+        for pin, state in list(self.pin_state.items()):
+            if state != "in":
+                self.pin_state[pin], self.pin_value[pin] = "in", 0.0
                 changed = True
         self.safe_events += 1
         if changed:
@@ -173,6 +204,8 @@ class FirmwareSimulator:
             self._set_output(seq, args[0], args[1])
         elif verb == "ACT" and args and args[0] in self.actions:
             self._run_action(seq, self.actions[args[0]], args[1:])
+        elif verb == "PIN" and len(args) >= 2:
+            self._pin(seq, args)
         else:
             self._send(encode(seq, "ERR", "unknown", verb))
 
@@ -207,6 +240,56 @@ class FirmwareSimulator:
             self._send(encode(seq, "ERR", "interlock", refused))
             return
         self._send(encode(seq, "OK", action.name))
+
+    def _pin(self, seq: int, args: tuple[str, ...]) -> None:
+        """One `PIN <n> <op> [value]` request, checked as the library checks it."""
+        number, op, rest = args[0], args[1], args[2:]
+        modes = self.free_pins().get(int(number), "") if number.isdigit() else ""
+        if not modes:
+            self._send(encode(seq, "ERR", "unknown", "pin"))
+            return
+        state = self.pin_state.get(int(number), "in")
+        pin = int(number)
+        takes = op in ("out", "pwm")
+        try:
+            value = parse_number(rest[0]) if rest else 0.0
+        except ProtocolError:
+            takes = not takes
+        if takes != bool(rest) or len(rest) > 1:
+            self._send(encode(seq, "ERR", "format", "pin"))
+            return
+        if op == "adc" or (op == "get" and "i" not in modes):
+            if "a" not in modes:
+                self._send(encode(seq, "ERR", "unknown", "pin_mode"))
+            elif state in ("out", "pwm"):
+                self._send(encode(seq, "ERR", "busy", "pin_driven"))
+            else:
+                self._send(encode(seq, "PIN", number, "adc", format_number(self.pin_inputs.get(pin, 50.0))))
+            return
+        if op == "get":
+            shown = self.pin_value.get(pin, 0.0) if state in ("out", "pwm") else self.pin_inputs.get(pin, 0.0)
+            self._send(encode(seq, "PIN", number, state, format_number(round(shown, 4))))
+            return
+        need = {"in": "i", "pullup": "u", "out": "o", "pwm": "p"}.get(op)
+        if need is None or need not in modes:
+            self._send(
+                encode(seq, "ERR", "format" if need is None else "unknown", "pin" if need is None else "pin_mode")
+            )
+            return
+        if op == "out" and value not in (0, 1):
+            self._send(encode(seq, "ERR", "format", "pin"))
+            return
+        if not 0 <= value <= 100:
+            self._send(
+                encode(seq, "ERR", "limit", "pin", "max" if value > 100 else "min", "100" if value > 100 else "0")
+            )
+            return
+        if op == "pwm":
+            value = round(value / 100 * 255) * 100 / 255
+        self.pin_state[pin] = op
+        self.pin_value[pin] = value
+        shown = value if op in ("out", "pwm") else self.pin_inputs.get(pin, 1.0 if op == "pullup" else 0.0)
+        self._send(encode(seq, "PIN", number, op, format_number(round(shown, 4))))
 
     def _set_output(self, seq: int, name: str, text: str) -> None:
         channel = self.channels[name]
@@ -345,9 +428,66 @@ class PlantWatererSimulator(FirmwareSimulator):
         self.channels["soil_moisture"].value = self.moisture
 
 
+@dataclass
+class BenchHeaterSimulator(FirmwareSimulator):
+    """A heater board, a heater output and a temperature. Its heater is high risk, so it stays read-only."""
+
+    product: str = "bench-heater"
+    heartbeat_ms: int = 3000
+    ambient_c: float = 22.0
+
+    def __post_init__(self) -> None:
+        if not self.channels:
+            self.channels = {
+                "temperature": SimChannel("temperature", "degC", self.ambient_c, lo=-20, hi=150),
+                "heater": SimChannel("heater", "percent", 0.0, writable=True, maximum=100, safe=0, rate=10),
+            }
+        super().__post_init__()
+
+    def _step(self) -> None:
+        super()._step()
+        heater = self.channels["heater"]
+        temperature = self.channels["temperature"]
+        target = self.ambient_c + 0.8 * heater.value
+        temperature.value += (target - temperature.value) * 0.05
+
+
+ESP8266_FREE_PINS: dict[int, str] = {4: "iuopx", 5: "iuopx", 12: "iuopx", 13: "iuopx", 14: "iuopx", 15: "iuopx"}
+"""The pins an ESP8266 running BareBoard lists, after flash, serial, the LED and the button."""
+
+
+@dataclass
+class BareBoardSimulator(FirmwareSimulator):
+    """An ESP8266 running the BareBoard example. Defaults match firmware/arduino/OpenHAL/examples/BareBoard."""
+
+    product: str = "bare-board"
+    version: str = "1.1.0"
+    heartbeat_ms: int = 5000
+
+    def __post_init__(self) -> None:
+        if not self.channels:
+            self.channels = {
+                "button": SimChannel("button", "enum", 0.0, every_ms=500, states=("released", "pressed"), pin=0),
+                "uptime": SimChannel("uptime", "s", 0.0, every_ms=5000),
+                "supply_voltage": SimChannel("supply_voltage", "V", 3.3, every_ms=2000, lo=2.5, hi=3.6),
+                "brightness": SimChannel(
+                    "brightness", "percent", 0.0, writable=True, maximum=100, safe=0, rate=50, pin=2
+                ),
+            }
+        if not self.pins:
+            self.pins = {**ESP8266_FREE_PINS, 16: "iop", 17: "a"}
+        super().__post_init__()
+
+    def _step(self) -> None:
+        super()._step()
+        self.channels["uptime"].value = round(time.monotonic() - self._last_step + self.channels["uptime"].value, 3)
+
+
 PROFILES: dict[str, Callable[[], FirmwareSimulator]] = {
     "desk-fan": FirmwareSimulator,
     "plant-waterer": PlantWatererSimulator,
+    "bench-heater": BenchHeaterSimulator,
+    "bare-board": BareBoardSimulator,
 }
 
 SIMULATORS: dict[str, FirmwareSimulator] = {}

@@ -14,7 +14,7 @@ def lamp(source: str = "self-described", **extra: Any) -> dict[str, Any]:
     return {
         "device": "Bare board",
         "connect": {"openhal-firmware": "sim:bare"},
-        "write": {"brightness": {"unit": "percent", "min": 0, "max": 100, "suggested": True}},
+        "write": {"brightness": {"unit": "percent", "min": 0, "max": 100, "suggested": True, "risk": "high"}},
         "provenance": {"source": source},
         **extra,
     }
@@ -105,3 +105,53 @@ def test_interlocks_keep_their_reason_and_none_clears_them() -> None:
         by="me",
     )
     assert typed["interlocks"] == [{"if": "brightness > 10 %", "require": "brightness < 60 %", "message": "hot"}]
+
+
+def test_a_low_or_medium_draft_has_nothing_to_ask() -> None:
+    draft = lamp()
+    draft["write"]["brightness"].pop("risk")
+    assert interview.questions(draft) == []
+    assert interview.apply(draft, {}, by="owner") == draft
+    with pytest.raises(interview.AnswerError, match="no questions"):
+        interview.apply(draft, {"device.hazard": "low"}, by="owner")
+
+
+def test_only_high_risk_entries_are_asked_and_the_rest_stay_as_they_were() -> None:
+    draft = lamp(safe_state={"brightness": 0, "heater": 0})
+    draft["write"]["brightness"].pop("risk")
+    draft["write"]["heater"] = {"unit": "percent", "min": 0, "max": 100, "suggested": True}
+    questions = asked(draft)
+    assert "heater.max" in questions
+    assert not [name for name in questions if name.startswith("brightness.")]
+    given = suggested(draft, **{"heater.max": "40 %", "device.hazard": "medium"})
+    confirmed = interview.apply(draft, given, by="owner")
+    assert confirmed["write"]["brightness"] == draft["write"]["brightness"]
+    assert confirmed["write"]["heater"]["max"] == 40
+    assert confirmed["safe_state"] == {"brightness": 0, "heater": 0}
+    file = from_data(confirmed)
+    assert file.writable
+    assert file.write["brightness"].suggested
+
+
+@pytest.mark.parametrize("source", ["manual", "sketch", "hand-written"])
+def test_a_draft_with_no_range_from_the_device_gets_every_question(source: str) -> None:
+    draft = lamp(source)
+    draft["write"]["brightness"].pop("risk")
+    assert "brightness.max" in asked(draft), "a range a manual or an agent wrote needs a person's check"
+    library = lamp("library")
+    library["write"]["brightness"].pop("risk")
+    assert interview.questions(library) == []
+
+
+def test_a_draft_that_doesnt_load_yet_gets_every_question() -> None:
+    draft = lamp()
+    draft["write"]["brightness"] = {"unit": "percent", "suggested": True}
+    assert "brightness.max" in asked(draft)
+
+
+def test_a_draft_cant_carry_a_person_lowering_a_level() -> None:
+    from openhal.writer.engine import force_suggested
+
+    draft = lamp()
+    draft["write"]["brightness"]["risk"] = {"level": "low", "by": "owner", "at": "2026-11-03"}
+    assert force_suggested(draft)["write"]["brightness"]["risk"] == "low"

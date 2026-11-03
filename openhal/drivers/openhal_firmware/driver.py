@@ -1,8 +1,11 @@
 """Driver for boards running the OpenHAL Arduino library (spec/FIRMWARE-PROTOCOL.md).
 
 The board describes itself (`DESC`), checks its own limits, and falls to its safe state when the
-hub's heartbeats stop. The driver keeps a heartbeat task running while connected, matches replies to
-requests by sequence number, and keeps streamed `EVT` values as the latest readings.
+hub's heartbeats stop. A board that lists its free pins gets channels for each one, `pin<N>` for
+digital in and out, `pin<N>_pwm`, `pin<N>_analog` and `pin<N>_mode`, which the driver reads and sets
+with `PIN`, changing the pin's mode as each command needs. The driver keeps a heartbeat task running
+while connected, matches replies to requests by sequence number, and keeps streamed `EVT` values as
+the latest readings.
 
 Ports. `port: auto` picks the first serial port whose USB id belongs to a common Arduino or ESP32
 board and replies to `HELLO`. `port: sim:<name>` connects to the built-in simulator (tests and the
@@ -34,6 +37,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from openhal._brand import DISTRIBUTION_NAME
 from openhal.drivers.base import Discovered, Driver, DriverError, DriverInfo, Health, Reading
 from openhal.drivers.openhal_firmware.protocol import (
+    MODE_VALUES,
     PROTOCOL_VERSION,
     Message,
     ProtocolError,
@@ -342,7 +346,57 @@ class OpenHalFirmwareDriver(Driver):
             raise DriverError(f"The board sent an unreadable value for {channel}.") from exc
         return value != 0 if spec is not None and spec.type == "bool" else value
 
+    def _pin(self, channel: str) -> tuple[int, str] | None:
+        """The pin and the kind of a pin channel, from the device file's map, or None for a named channel."""
+        spec = self.device.read.get(channel) or self.device.write.get(channel)
+        mapping = spec.map if spec is not None else None
+        if not mapping or "mode" not in mapping or not isinstance(mapping.get("pin"), int):
+            return None
+        return int(mapping["pin"]), str(mapping["mode"])
+
+    async def _pin_request(self, pin: int, *words: str) -> tuple[str, float]:
+        reply = await self._require_link().request("PIN", str(pin), *words)
+        if reply.verb != "PIN" or len(reply.args) != 3 or reply.args[0] != str(pin):
+            raise DriverError(f"The board returned {' '.join(reply.args)} for PIN {pin}.")
+        try:
+            return reply.args[1], parse_number(reply.args[2])
+        except ProtocolError as exc:
+            raise DriverError(f"The board sent an unreadable value for pin {pin}.") from exc
+
+    def _pin_reading(self, channel: str, kind: str, state: str, value: float) -> Reading:
+        """A pin channel's value from the board's `PIN <n> <state> <value>` reply."""
+        unit = self.device.channel_unit(channel)
+        if kind == "mode":
+            return Reading(channel, MODE_VALUES.get(state, "input"), unit)
+        if kind == "pwm":
+            shown = value if state == "pwm" else (100.0 * value if state == "out" else 0.0)
+            return Reading(channel, shown, unit)
+        if kind == "adc":
+            return Reading(channel, value, unit)
+        return Reading(channel, value != 0, unit)
+
+    async def _pin_read(self, channel: str, pin: int, kind: str) -> Reading:
+        state, value = await self._pin_request(pin, "adc" if kind == "adc" else "get")
+        return self._pin_reading(channel, kind, state, value)
+
+    async def _pin_write(self, channel: str, pin: int, kind: str, value: float | bool | str) -> Reading:
+        if kind == "mode":
+            words = {"input": ("in",), "input_pullup": ("pullup",), "output": ("out", "0"), "pwm": ("pwm", "0")}
+            if value not in words:
+                raise DriverError(f"{channel} takes input, input_pullup, output or pwm.")
+            state, shown = await self._pin_request(pin, *words[str(value)])
+        elif kind == "pwm" and not isinstance(value, str):
+            state, shown = await self._pin_request(pin, "pwm", format_number(float(value)))
+        elif kind == "out" and isinstance(value, bool):
+            state, shown = await self._pin_request(pin, "out", "1" if value else "0")
+        else:
+            raise DriverError(f"{channel} doesn't take {value!r}.")
+        return self._pin_reading(channel, kind, state, shown)
+
     async def read(self, channel: str) -> Reading:
+        pin = self._pin(channel)
+        if pin is not None:
+            return await self._pin_read(channel, *pin)
         link = self._require_link()
         unit = self.device.channel_unit(channel)
         streamed = link.events.get(channel)
@@ -354,6 +408,9 @@ class OpenHalFirmwareDriver(Driver):
         return Reading(channel, self._typed(channel, reply.args[1]), unit)
 
     async def _write(self, channel: str, value: float | bool | str) -> Reading | None:
+        pin = self._pin(channel)
+        if pin is not None:
+            return await self._pin_write(channel, pin[0], pin[1], value)
         if isinstance(value, str):
             raise DriverError("OpenHAL boards take numbers and booleans only.")
         reply = await self._require_link().request("WRITE", channel, format_number(float(value)))

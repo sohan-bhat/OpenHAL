@@ -321,6 +321,6 @@ def test_bad_params_are_rejected(params: str, message: str) -> None:
 
 def test_example_file_loads_read_only() -> None:
     file = load(Path(__file__).parents[3] / "openhal/drivers/opcua/examples/dosing-pump.hal.yaml")
-    assert not file.writable
+    assert file.writable is not bool(file.high_risk()), "only high risk entries wait for a person (ADR 0023)"
     driver = OpcuaDriver(file)
     assert "start" in driver.actions

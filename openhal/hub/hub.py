@@ -71,6 +71,8 @@ class Hub:
         )
         self.in_memory = in_memory
         self.info: dict[str, DeviceInfo] = {}
+        self.file_lock = asyncio.Lock()
+        """Held while a limit or risk change reads, changes and writes a device file, so no change is lost."""
         from openhal.routines.engine import RoutineEngine
 
         self.routines = RoutineEngine(self)
@@ -80,6 +82,9 @@ class Hub:
         from openhal.hub.limits import LimitChanges
 
         self.limits = LimitChanges(self)
+        from openhal.hub.risk import RiskChanges
+
+        self.risk = RiskChanges(self)
         from openhal.hub.runs import RunEngine
 
         self.runs = RunEngine(self)
@@ -380,6 +385,10 @@ class Hub:
         self.audit.append(
             "approval_saved", SYSTEM.label, device=device_id, target=f"routine:{approval.routine}", status="done"
         )
+
+    def notify_state(self, device_id: str) -> None:
+        """Tell live views that a device's state or file changed."""
+        self._emit({"type": "state", "device": device_id})
 
     def subscribe(self, listener: Listener) -> Callable[[], None]:
         """Receive live events (readings, state, audit). Returns an unsubscribe function."""

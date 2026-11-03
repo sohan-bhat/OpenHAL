@@ -54,7 +54,7 @@ def test_init_sets_up_the_config_folder(isolated_env: Path) -> None:
     report = validate_path(sample)
     assert report.ok, report.problems
     assert report.file is not None
-    assert not report.file.writable, "init must not confirm limits on the person's behalf"
+    assert report.file.confirmed is None, "init must not confirm limits on the person's behalf"
     assert "openhal token create --agent" in out
     first = token_file.read_text()
     code, out = run("init")
@@ -78,7 +78,11 @@ def test_file_confirm_binds_the_limits(isolated_env: Path, terminal: list[str]) 
     run("file", "confirm", str(sample))
     assert sample.read_text().count("confirmed:") == 1
     sample.write_text(sample.read_text().replace("max: 30", "max: 25"))
-    assert not load(sample).writable, "a changed limit unconfirms the file"
+    changed = load(sample)
+    assert changed.confirmed is not None
+    assert changed.confirmed.sha256 != changed.limits_sha256(), "a changed limit unconfirms the file"
+    sample.write_text(sample.read_text().replace("hazard: low", "hazard: high"))
+    assert not load(sample).writable, "a changed file with high risk entries loads read-only"
 
 
 def test_human_commands_need_a_terminal(isolated_env: Path, cli_hub: SyncHub) -> None:

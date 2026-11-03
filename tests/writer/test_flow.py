@@ -77,6 +77,7 @@ async def test_unknown_board_to_confirmed_file(client: httpx.AsyncClient, hub: H
     assert all(source.startswith("<device-data ") for source in session["sources"])
 
     draft["write"]["fan_speed"]["max"] = 1000
+    draft["write"]["fan_speed"]["risk"] = "high"
     draft["confirmed"] = {"by": "claude", "at": "2026-10-24"}
     draft["write"]["fan_speed"]["confirmed"] = {"by": "claude", "at": "2026-10-24"}
     import yaml
@@ -192,7 +193,7 @@ def test_interview_rejects_bad_answers() -> None:
     draft = {
         "device": "Fan",
         "connect": {"mock": "x"},
-        "write": {"speed": {"unit": "percent", "min": 0, "max": 100, "suggested": True}},
+        "write": {"speed": {"unit": "percent", "min": 0, "max": 100, "suggested": True, "risk": "high"}},
     }
     answers = {
         "device.hazard": "low",
@@ -260,6 +261,7 @@ async def test_python_client_matches_the_real_writer_routes(hub: Hub) -> None:
         session = await ai.start_writer(driver="openhal-firmware", params={"port": "sim:writer", "timeout_s": 0.5})
         assert session.status == "interview"
         questions = (await ai.interview(session.id)).questions
+        assert questions, "the driver writer asks every question, since a person started it to review"
         answers = suggested_answers([question.model_dump() for question in questions])
         answers["device.hazard"] = "low"
         with pytest.raises(Refused):

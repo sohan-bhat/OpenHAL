@@ -138,6 +138,20 @@ def dry_run(commands: Iterable[Command]) -> Call[list[m.Decision]]:
     return Call("POST", "/v1/dry_run", _list_of(m.Decision), body)
 
 
+def risk(device_id: str) -> Call[m.DeviceRisk]:
+    return Call("GET", f"/v1/devices/{quote(device_id, safe='')}/risk", _as(m.DeviceRisk))
+
+
+def set_risk(
+    device_id: str, name: str, level: str, *, phrase: str | None = None, dry_run: bool = False
+) -> Call[m.RiskResult]:
+    """A person's new level for a write channel or action. Lowering takes the phrase or a person's approval."""
+    body: dict[str, Any] = {"device": device_id, "name": name, "level": level, "dry_run": dry_run}
+    if phrase is not None:
+        body["phrase"] = phrase
+    return Call("POST", "/v1/risk", _as(m.RiskResult), body)
+
+
 def tighten(
     device_id: str,
     channel: str,

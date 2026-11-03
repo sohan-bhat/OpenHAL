@@ -21,14 +21,16 @@ import math
 import secrets
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal
 
 import yaml
 
 from openhal.drivers.base import DriverError
 from openhal.kernel.checks import Block
 from openhal.kernel.principals import Principal
+from openhal.spec import risk
 from openhal.spec.loader import DeviceFileError, from_data, parse_yaml
+from openhal.spec.models import DeviceFile
 from openhal.spec.units import Quantity, UnitError, convert, convert_rate, format_quantity, parse_quantity
 from openhal.writer import interview
 from openhal.writer.engine import force_suggested
@@ -114,19 +116,137 @@ def _num(value: float | None) -> float:
 
 
 @dataclass
-class LimitRequest:
-    """A change that widens a limit, held until a person approves the change."""
+class HeldRequest:
+    """A change held until a person approves it."""
 
     request_id: str
-    change: Change
+    change: Any
     principal: Principal
     created_at: float
     expires_at: float
-    limits_sha256: str
     status: Status = "pending"
     decided_by: str | None = None
     result: str | None = None
     history: list[str] = field(default_factory=list)
+
+
+@dataclass
+class LimitRequest(HeldRequest):
+    """A change that widens a limit, held until a person approves the change."""
+
+    change: Change
+    limits_sha256: str = ""
+
+
+def device_file(hub: Hub, device_id: str) -> tuple[Path, dict[str, Any], DeviceFile]:
+    """A device's file as data and as loaded, checked to be the same file the hub runs."""
+    runtime = hub.kernel.devices.get(device_id)
+    info = hub.info.get(device_id)
+    if runtime is None:
+        raise KeyError(f"There is no device {device_id!r}.")
+    if info is None or not info.path:
+        raise LimitError("misconfigured", f"Blocked. {device_id} has no device file in the devices folder.")
+    path = Path(info.path)
+    try:
+        data = parse_yaml(path.read_text(encoding="utf-8"))
+        on_disk = from_data(data)
+    except (OSError, DeviceFileError) as exc:
+        raise LimitError("misconfigured", f"Blocked. {path.name} doesn't load. {exc}") from exc
+    if on_disk.limits_sha256() != runtime.file.limits_sha256() or _levels(on_disk) != _levels(runtime.file):
+        raise LimitError(
+            "misconfigured",
+            f"Blocked. {path.name} changed on disk after the hub loaded the file. Load the file first.",
+        )
+    return path, data, on_disk
+
+
+def _levels(file: DeviceFile) -> dict[str, Any]:
+    """Every `risk` entry of a file, which the limits hash leaves out."""
+    entries: list[tuple[str, Any]] = [*file.write.items(), *file.actions.items()]
+    return {name: spec.risk for name, spec in entries if spec.risk is not None}
+
+
+class HeldChanges[R: HeldRequest]:
+    """Changes held for a person to approve, with the bookkeeping limit and risk changes share.
+
+    A stop cancels every pending change, an unanswered one expires after the confirmation time, and
+    each status change is in the audit log under `EVENT`.
+    """
+
+    EVENT: ClassVar[str]
+    NOUN: ClassVar[str]
+
+    def __init__(self, hub: Hub) -> None:
+        self.hub = hub
+        self.requests: dict[str, R] = {}
+        hub.kernel.on_stop(self._on_stop)
+
+    def _target(self, change: Any) -> str:
+        raise NotImplementedError
+
+    def _on_stop(self, reason: str) -> None:
+        for request in self.requests.values():
+            if request.status == "pending":
+                self._close(request, "cancelled", "system", f"cancelled by the stop, {reason}")
+
+    def _make_room(self, who: Principal) -> None:
+        self.expire()
+        pending = [item for item in self.requests.values() if item.status == "pending"]
+        if len([item for item in pending if item.principal == who]) >= PER_PRINCIPAL or len(pending) >= MAX_PENDING:
+            raise LimitError("queue_full", f"Blocked. Too many {self.NOUN}s are waiting for a person already.")
+
+    def _filed(self, request: R, **details: Any) -> R:
+        self.requests[request.request_id] = request
+        self.hub.audit.append(
+            self.EVENT,
+            request.principal.label,
+            device=request.change.device,
+            target=self._target(request.change),
+            status="pending",
+            request=request.request_id,
+            **details,
+        )
+        return request
+
+    def get(self, request_id: str) -> R | None:
+        return self.requests.get(request_id)
+
+    def expire(self) -> None:
+        now = self.hub.kernel.clock()
+        for request in self.requests.values():
+            if request.status == "pending" and now > request.expires_at:
+                self._close(request, "expired", "system", "expired")
+
+    def _close(self, request: R, status: Status, by: str, note: str) -> None:
+        request.status = status
+        request.decided_by = by if status in ("done", "rejected") else request.decided_by
+        request.result = note
+        request.history.append(note)
+        self.hub.audit.append(
+            self.EVENT,
+            by,
+            device=request.change.device,
+            target=self._target(request.change),
+            status=status,
+            request=request.request_id,
+            message=note,
+        )
+
+    def pending(self) -> list[R]:
+        self.expire()
+        return sorted((item for item in self.requests.values() if item.status == "pending"), key=_created)
+
+    def recent(self, limit: int = 100) -> list[R]:
+        self.expire()
+        return sorted(self.requests.values(), key=_created, reverse=True)[:limit]
+
+    def reject(self, request_id: str, who: Principal, reason: str = "") -> R:
+        request = self.requests[request_id]
+        self.expire()
+        if request.status != "pending":
+            raise LookupError(f"The {self.NOUN} {request_id} is {request.status}, so there is nothing to reject.")
+        self._close(request, "rejected", who.label, f"Rejected. {reason}".strip())
+        return request
 
 
 def _value(text: Any, unit: str, name: str) -> float:
@@ -168,43 +288,26 @@ def _safe_value(data: dict[str, Any], channel: str, unit: str) -> float | None:
     return None
 
 
-class LimitChanges:
+class LimitChanges(HeldChanges[LimitRequest]):
     """Limit changes for one hub, with the pending ones a person approves."""
 
-    def __init__(self, hub: Hub) -> None:
-        self.hub = hub
-        self.requests: dict[str, LimitRequest] = {}
-        hub.kernel.on_stop(self._on_stop)
+    EVENT = "limit_change"
+    NOUN = "limit change"
 
-    def _on_stop(self, reason: str) -> None:
-        for request in self.requests.values():
-            if request.status == "pending":
-                self._close(request, "cancelled", "system", f"cancelled by the stop, {reason}")
+    def _target(self, change: Change) -> str:
+        return f"write:{change.channel}"
 
-    def _read(self, device_id: str) -> tuple[Path, dict[str, Any]]:
-        """The device's file as data, checked to be confirmed and the same as the file the hub runs."""
-        runtime = self.hub.kernel.devices.get(device_id)
-        info = self.hub.info.get(device_id)
-        if runtime is None:
-            raise KeyError(f"There is no device {device_id!r}.")
-        if info is None or not info.path:
-            raise LimitError("misconfigured", f"Blocked. {device_id} has no device file in the devices folder.")
-        path = Path(info.path)
-        try:
-            data = parse_yaml(path.read_text(encoding="utf-8"))
-            on_disk = from_data(data)
-        except (OSError, DeviceFileError) as exc:
-            raise LimitError("misconfigured", f"Blocked. {path.name} doesn't load. {exc}") from exc
-        if not on_disk.writable or not runtime.file.writable:
+    def _read(self, device_id: str, channel: str | None = None) -> tuple[Path, dict[str, Any]]:
+        """The device's file as data, checked to be the file the hub runs, with `channel` not read-only."""
+        path, data, on_disk = device_file(self.hub, device_id)
+        target = f"write:{channel}"
+        if channel is not None and (
+            on_disk.read_only(target) or self.hub.kernel.devices[device_id].file.read_only(target)
+        ):
             raise LimitError(
                 "read_only_file",
-                f"Blocked. {device_id}'s limits aren't confirmed yet. Answer each limit first with "
-                f"openhal file confirm {path}, or Review limits in the Inspector.",
-            )
-        if on_disk.limits_sha256() != runtime.file.limits_sha256():
-            raise LimitError(
-                "misconfigured",
-                f"Blocked. {path.name} changed on disk after the hub loaded the file. Load the file first.",
+                f"Blocked. {device_id}.{channel} is high risk and its limits aren't confirmed yet. Answer each "
+                f"limit first with openhal file confirm {path}, or Review limits in the Inspector.",
             )
         return path, data
 
@@ -234,7 +337,7 @@ class LimitChanges:
         self, device_id: str, channel: str, *, min: Any = None, max: Any = None, rate: Any = None
     ) -> Change:
         """The change a request asks for, checked against the file and the range the device reports."""
-        _, data = self._read(device_id)
+        _, data = self._read(device_id, channel)
         reported = await self.reported(device_id, data)
         return self.plan(device_id, channel, min=min, max=max, rate=rate, reported=reported)
 
@@ -248,16 +351,20 @@ class LimitChanges:
         rate: Any = None,
         reported: dict[str, tuple[float, float]] | None = None,
     ) -> Change:
-        """The change a request asks for, checked against the file and the device's own range."""
-        _, data = self._read(device_id)
+        """The change a request asks for, checked against the file and the device's own range.
+
+        A low risk channel's rate that was only suggested doesn't apply (ADR 0023), so it counts as no rate.
+        """
+        _, data = self._read(device_id, channel)
         spec = (data.get("write") or {}).get(channel)
         if not isinstance(spec, dict) or spec.get("type", "number") != "number" or not spec.get("unit"):
             raise KeyError(f"{device_id} has no number channel {channel!r} with limits.")
         unit = str(spec["unit"])
+        applies = risk.own_rate(self.hub.kernel.devices[device_id].file, channel)
         before: dict[str, float | None] = {
             "min": float(spec["min"]),
             "max": float(spec["max"]),
-            "rate": float(spec["max_change_per_s"]) if spec.get("max_change_per_s") is not None else None,
+            "rate": float(spec["max_change_per_s"]) if spec.get("max_change_per_s") is not None and applies else None,
         }
         after = dict(before)
         if min is not None:
@@ -298,7 +405,18 @@ class LimitChanges:
 
     async def apply(self, change: Change, who: Principal) -> Path:
         """Write the change into the file, confirmed by `who`, and load the file. `who` is a human principal."""
-        path, data = self._read(change.device)
+        async with self.hub.file_lock:
+            return await self._apply(change, who)
+
+    async def _apply(self, change: Change, who: Principal) -> Path:
+        path, data = self._read(change.device, change.channel)
+        bound = data.get("confirmed") if isinstance(data.get("confirmed"), dict) else None
+        if bound is not None and bound.get("sha256") and bound["sha256"] != from_data(data).limits_sha256():
+            raise LimitError(
+                "read_only_file",
+                f"Blocked. The confirmation in {path.name} no longer matches its limits, so a change here would "
+                f"confirm limits nobody checked. Answer them again with openhal file confirm {path}.",
+            )
         updated = copy.deepcopy(data)
         spec = updated["write"][change.channel]
         spec["min"], spec["max"] = _tidy(change.after["min"]), _tidy(change.after["max"])
@@ -306,11 +424,14 @@ class LimitChanges:
             spec.pop("max_change_per_s", None)
         else:
             spec["max_change_per_s"] = _tidy(change.after["rate"])
-        updated.pop("confirmed", None)
+        spec.pop("suggested", None)
+        today = dt.date.today().isoformat()
         try:
-            limits = from_data(updated).limits_sha256()
-            updated["confirmed"] = {"by": who.name[:80], "at": dt.date.today().isoformat(), "sha256": limits}
-            if not from_data(updated).writable:
+            if updated.pop("confirmed", None) is None:
+                spec["confirmed"] = {"by": who.name[:80], "at": today}
+            else:
+                updated["confirmed"] = {"by": who.name[:80], "at": today, "sha256": from_data(updated).limits_sha256()}
+            if from_data(updated).read_only(f"write:{change.channel}"):
                 raise LimitError("misconfigured", "Blocked. The changed file would load read-only.")
         except DeviceFileError as exc:
             raise LimitError("bad_request", "Blocked. " + " ".join(exc.problems)) from exc
@@ -327,15 +448,9 @@ class LimitChanges:
         )
         return path
 
-    def _pending_of(self, principal: Principal) -> list[LimitRequest]:
-        return [item for item in self.requests.values() if item.status == "pending" and item.principal == principal]
-
     def hold(self, change: Change, who: Principal) -> LimitRequest:
         """File a pending change for a person to approve."""
-        self.expire()
-        pending = [item for item in self.requests.values() if item.status == "pending"]
-        if len(self._pending_of(who)) >= PER_PRINCIPAL or len(pending) >= MAX_PENDING:
-            raise LimitError("queue_full", "Blocked. Too many limit changes are waiting for a person already.")
+        self._make_room(who)
         now = self.hub.kernel.clock()
         _, data = self._read(change.device)
         request = LimitRequest(
@@ -346,17 +461,7 @@ class LimitChanges:
             expires_at=now + self.hub.config.confirm.ttl_s,
             limits_sha256=from_data(data).limits_sha256(),
         )
-        self.requests[request.request_id] = request
-        self.hub.audit.append(
-            "limit_change",
-            who.label,
-            device=change.device,
-            target=f"write:{change.channel}",
-            status="pending",
-            request=request.request_id,
-            changes=change.view()["changes"],
-        )
-        return request
+        return self._filed(request, changes=change.view()["changes"])
 
     async def request(
         self,
@@ -416,38 +521,6 @@ class LimitChanges:
     def _result(status: str, change: Change, message: str, *, scope: str) -> dict[str, Any]:
         return {"status": status, "message": message, "scope": scope, "device": change.device, **change.view()}
 
-    def get(self, request_id: str) -> LimitRequest | None:
-        return self.requests.get(request_id)
-
-    def expire(self) -> None:
-        now = self.hub.kernel.clock()
-        for request in self.requests.values():
-            if request.status == "pending" and now > request.expires_at:
-                self._close(request, "expired", "system", "expired")
-
-    def _close(self, request: LimitRequest, status: Status, by: str, note: str) -> None:
-        request.status = status
-        request.decided_by = by if status in ("done", "rejected") else request.decided_by
-        request.result = note
-        request.history.append(note)
-        self.hub.audit.append(
-            "limit_change",
-            by,
-            device=request.change.device,
-            target=f"write:{request.change.channel}",
-            status=status,
-            request=request.request_id,
-            message=note,
-        )
-
-    def pending(self) -> list[LimitRequest]:
-        self.expire()
-        return sorted((item for item in self.requests.values() if item.status == "pending"), key=_created)
-
-    def recent(self, limit: int = 100) -> list[LimitRequest]:
-        self.expire()
-        return sorted(self.requests.values(), key=_created, reverse=True)[:limit]
-
     async def approve(self, request_id: str, who: Principal, phrase: str | None) -> LimitRequest:
         """A person approves a pending change. The file must be as it was when the change was asked for."""
         request = self.requests[request_id]
@@ -472,14 +545,6 @@ class LimitChanges:
             self._close(request, "blocked", who.label, str(getattr(error, "message", error)))
             return request
         self._close(request, "done", who.label, f"Done. {self._said(change)}")
-        return request
-
-    def reject(self, request_id: str, who: Principal, reason: str = "") -> LimitRequest:
-        request = self.requests[request_id]
-        self.expire()
-        if request.status != "pending":
-            raise LookupError(f"The limit change {request_id} is {request.status}, so there is nothing to reject.")
-        self._close(request, "rejected", who.label, f"Rejected. {reason}".strip())
         return request
 
     def view(self, request: LimitRequest) -> dict[str, Any]:
@@ -515,7 +580,7 @@ class LimitChanges:
         }
 
 
-def _created(request: LimitRequest) -> float:
+def _created(request: HeldRequest) -> float:
     return request.created_at
 
 

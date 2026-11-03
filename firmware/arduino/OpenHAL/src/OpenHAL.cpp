@@ -15,6 +15,106 @@ int hexDigit(char c) {
   return -1;
 }
 
+#if OPENHAL_PINS
+const uint8_t kIn = 1;
+const uint8_t kPullup = 2;
+const uint8_t kOut = 4;
+const uint8_t kPwm = 8;
+const uint8_t kAdc = 16;
+const uint8_t kIrq = 32;
+const uint8_t kLed = 64;
+
+const uint8_t kUntouched = 0;
+const uint8_t kStateIn = 1;
+const uint8_t kStatePullup = 2;
+const uint8_t kStateOut = 3;
+const uint8_t kStatePwm = 4;
+const uint8_t kStateAdc = 5;
+
+float pwmTop() { return static_cast<float>((1UL << OPENHAL_PWM_BITS) - 1UL); }
+
+float adcTop() { return static_cast<float>((1UL << OPENHAL_ADC_BITS) - 1UL); }
+
+bool boardKeeps(uint8_t pin) {
+  (void)pin;
+#if defined(PIN_SERIAL_RX) && defined(PIN_SERIAL_TX)
+  if (pin == PIN_SERIAL_RX || pin == PIN_SERIAL_TX) return true;
+#endif
+#if defined(ESP8266)
+  if (pin < NUM_DIGITAL_PINS && isFlashInterfacePin(pin)) return true;
+  if (pin == 1 || pin == 3) return true;
+#endif
+#if defined(ARDUINO_ARCH_ESP32) && defined(SOC_RX0) && defined(SOC_TX0)
+  if (pin == SOC_RX0 || pin == SOC_TX0) return true;
+#endif
+#if defined(ARDUINO_ARCH_ESP32) && defined(CONFIG_IDF_TARGET_ESP32)
+  if (pin >= 6 && pin <= 11) return true;
+#endif
+#if defined(__AVR__) && defined(UBRR0H) && !defined(USBCON)
+  if (pin == 0 || pin == 1) return true;
+#endif
+  return false;
+}
+
+bool analogCapable(uint8_t pin) {
+#if defined(ESP8266)
+  return pin == PIN_A0;
+#elif defined(ARDUINO_ARCH_ESP32)
+  return digitalPinToAnalogChannel(pin) >= 0;
+#elif defined(NUM_ANALOG_INPUTS) && defined(analogInputToDigitalPin)
+  for (uint8_t i = 0; i < NUM_ANALOG_INPUTS; ++i) {
+    if (static_cast<int>(analogInputToDigitalPin(i)) == pin) return true;
+  }
+  return false;
+#else
+  (void)pin;
+  return false;
+#endif
+}
+
+uint8_t boardModes(uint8_t pin) {
+  if (pin >= OPENHAL_PIN_COUNT || boardKeeps(pin)) return 0;
+  uint8_t modes = analogCapable(pin) ? kAdc : 0;
+  bool digital = pin < NUM_DIGITAL_PINS;
+#if defined(digitalPinIsValid)
+  digital = digital && digitalPinIsValid(pin);
+#endif
+  if (!digital) return modes;
+  modes |= kIn;
+  bool output = true;
+#if defined(digitalPinCanOutput)
+  output = digitalPinCanOutput(pin);
+#endif
+  bool pullup = output;
+#if defined(ESP8266)
+  pullup = pullup && pin != 16;
+#endif
+  if (pullup) modes |= kPullup;
+  if (output) modes |= kOut;
+#if defined(digitalPinHasPWM)
+  if (output && digitalPinHasPWM(pin)) modes |= kPwm;
+#endif
+#if defined(digitalPinToInterrupt) && defined(NOT_AN_INTERRUPT)
+  if (static_cast<int>(digitalPinToInterrupt(pin)) != NOT_AN_INTERRUPT) modes |= kIrq;
+#endif
+#if defined(LED_BUILTIN)
+  if (pin == LED_BUILTIN) modes |= kLed;
+#endif
+  return modes;
+}
+
+bool setByTheSketch(uint8_t pin) {
+#if defined(portModeRegister) && defined(digitalPinToPort) && defined(digitalPinToBitMask) && defined(NOT_A_PIN)
+  if (pin >= NUM_DIGITAL_PINS) return false;
+  if (static_cast<int>(digitalPinToPort(pin)) == NOT_A_PIN) return false;
+  return (*portModeRegister(digitalPinToPort(pin)) & digitalPinToBitMask(pin)) != 0;
+#else
+  (void)pin;
+  return false;
+#endif
+}
+#endif
+
 bool parseSeq(const char* text, unsigned int* out) {
   if (*text == '\0') return false;
   unsigned long value = 0;
@@ -111,6 +211,16 @@ OpenHalReading& OpenHalReading::range(float lo, float hi) {
   hasRange_ = lo <= hi;
   lo_ = lo;
   hi_ = hi;
+  return *this;
+}
+
+OpenHalReading& OpenHalReading::pin(uint8_t number) {
+  pin_ = number;
+  return *this;
+}
+
+OpenHalOutput& OpenHalOutput::pin(uint8_t number) {
+  pin_ = number;
   return *this;
 }
 
@@ -213,6 +323,54 @@ OpenHalAction& OpenHAL::action(const char* name, OpenHalActionFn run) {
 
 void OpenHAL::heartbeat(unsigned long ms) { heartbeat_ = ms; }
 
+void OpenHAL::pins() { pinsOn_ = OPENHAL_PINS != 0; }
+
+void OpenHAL::reserve(uint8_t pin) { claim(pin); }
+
+void OpenHAL::claim(int pin) {
+#if OPENHAL_PINS
+  if (pin >= 0 && pin < OPENHAL_PIN_COUNT && pin != OPENHAL_NO_PIN) claimed_[pin / 8] |= static_cast<uint8_t>(1 << (pin % 8));
+#else
+  (void)pin;
+#endif
+}
+
+bool OpenHAL::claimed(uint8_t pin) const {
+#if OPENHAL_PINS
+  return pin < OPENHAL_PIN_COUNT && (claimed_[pin / 8] & (1 << (pin % 8))) != 0;
+#else
+  (void)pin;
+  return true;
+#endif
+}
+
+uint8_t OpenHAL::pinModes(uint8_t pin) const {
+#if OPENHAL_PINS
+  if (!pinsOn_ || claimed(pin)) return 0;
+  return boardModes(pin);
+#else
+  (void)pin;
+  return 0;
+#endif
+}
+
+bool OpenHAL::releasePins() {
+  bool changed = false;
+#if OPENHAL_PINS
+  for (uint8_t pin = 0; pin < OPENHAL_PIN_COUNT; ++pin) {
+    uint8_t state = pinState_[pin];
+    if (state == kUntouched || state == kStateIn) continue;
+    if (state == kStatePwm) analogWrite(pin, 0);
+    if (state == kStatePwm || state == kStateOut) digitalWrite(pin, LOW);
+    pinMode(pin, INPUT);
+    pinState_[pin] = kStateIn;
+    pinDuty_[pin] = 0;
+    changed = true;
+  }
+#endif
+  return changed;
+}
+
 void OpenHAL::drive(OpenHalOutput& output, float value, unsigned long forMs) {
   setOutput(output, value);
   output.runFor_ = forMs;
@@ -225,6 +383,13 @@ void OpenHAL::begin(Stream& port) {
   }
   for (uint8_t i = 0; i < readCount_; ++i) misconfigured_ |= reads_[i].bad_;
   for (uint8_t i = 0; i < actionCount_; ++i) misconfigured_ |= actions_[i].bad_;
+  for (uint8_t i = 0; i < readCount_; ++i) claim(reads_[i].pin_);
+  for (uint8_t i = 0; i < outputCount_; ++i) claim(outputs_[i].pin_);
+#if OPENHAL_PINS
+  for (uint8_t pin = 0; pin < OPENHAL_PIN_COUNT; ++pin) {
+    if (setByTheSketch(pin)) claim(pin);
+  }
+#endif
   for (uint8_t i = 0; i < outputCount_; ++i) {
     outputs_[i].value_ = outputs_[i].safe_;
     outputs_[i].write_(outputs_[i].safe_);
@@ -262,6 +427,9 @@ void OpenHAL::poll() {
   if (heartbeat_ && now - lastHeartbeat_ > heartbeat_) {
     bool changed = false;
     for (uint8_t i = 0; i < outputCount_; ++i) changed |= outputs_[i].value_ != outputs_[i].safe_;
+#if OPENHAL_PINS
+    for (uint8_t pin = 0; pin < OPENHAL_PIN_COUNT; ++pin) changed |= pinState_[pin] > kStateIn;
+#endif
     if (changed) applySafeState("heartbeat_lost");
     lastHeartbeat_ = now;
   }
@@ -296,6 +464,7 @@ void OpenHAL::poll() {
 
 void OpenHAL::applySafeState(const char* reason) {
   for (uint8_t i = 0; i < outputCount_; ++i) setOutput(outputs_[i], outputs_[i].safe_);
+  releasePins();
   if (port_ == nullptr) return;
   startLine(0, "SAFE");
   putChar(' ');
@@ -354,6 +523,7 @@ void OpenHAL::handleLine(char* line) {
     endLine();
   } else if (strcmp(verb, "SAFE") == 0) {
     for (uint8_t i = 0; i < outputCount_; ++i) setOutput(outputs_[i], outputs_[i].safe_);
+    releasePins();
     startLine(seq, "OK");
     endLine();
   } else if (strcmp(verb, "READ") == 0 && count == 3) {
@@ -362,6 +532,8 @@ void OpenHAL::handleLine(char* line) {
     handleWrite(seq, parts[2], parts[3]);
   } else if (strcmp(verb, "ACT") == 0 && count >= 3) {
     handleAction(seq, parts + 2, count - 2);
+  } else if (strcmp(verb, "PIN") == 0 && count >= 4) {
+    handlePin(seq, parts + 2, count - 2);
   } else {
     startLine(seq, "ERR");
     put(" unknown ");
@@ -471,6 +643,164 @@ void OpenHAL::handleAction(unsigned int seq, char** parts, uint8_t count) {
   endLine();
 }
 
+void OpenHAL::putPin(unsigned int seq, uint8_t pin, uint8_t state, float value) {
+  startLine(seq, "PIN");
+  putChar(' ');
+  putNumber(pin);
+  putChar(' ');
+  if (state == 2) {
+    put(F("pullup"));
+  } else if (state == 3) {
+    put(F("out"));
+  } else if (state == 4) {
+    put(F("pwm"));
+  } else if (state == 5) {
+    put(F("adc"));
+  } else {
+    put(F("in"));
+  }
+  putChar(' ');
+  putNumber(value);
+  endLine();
+}
+
+void OpenHAL::handlePin(unsigned int seq, char** parts, uint8_t count) {
+#if OPENHAL_PINS
+  float number = 0;
+  bool whole = openhalParseNumber(parts[0], &number) && number >= 0 && number < 256 &&
+               number == static_cast<float>(static_cast<int>(number));
+  uint8_t pin = whole ? static_cast<uint8_t>(number) : 0;
+  uint8_t modes = whole ? pinModes(pin) : 0;
+  const char* op = parts[1];
+  if (modes == 0) {
+    startLine(seq, "ERR");
+    put(F(" unknown pin"));
+    endLine();
+    return;
+  }
+  if (misconfigured_) {
+    startLine(seq, "ERR");
+    put(" busy misconfigured");
+    endLine();
+    return;
+  }
+  uint8_t state = pin < NUM_DIGITAL_PINS ? pinState_[pin] : kUntouched;
+  float value = 0;
+  bool hasValue = count == 3 && openhalParseNumber(parts[2], &value);
+  bool takesValue = strcmp(op, "out") == 0 || strcmp(op, "pwm") == 0;
+  if (takesValue != hasValue || count > 3) {
+    startLine(seq, "ERR");
+    put(F(" format pin"));
+    endLine();
+    return;
+  }
+  if (strcmp(op, "adc") == 0 || (strcmp(op, "get") == 0 && !(modes & kIn))) {
+    if (!(modes & kAdc) || state == kStateOut || state == kStatePwm) {
+      startLine(seq, "ERR");
+      put(modes & kAdc ? F(" busy pin_driven") : F(" unknown pin_mode"));
+      endLine();
+      return;
+    }
+    putPin(seq, pin, kStateAdc, analogRead(pin) * 100.0f / adcTop());
+    return;
+  }
+  if (strcmp(op, "get") == 0) {
+    if (state == kStatePwm) {
+      putPin(seq, pin, state, pinDuty_[pin] * 100.0f / pwmTop());
+    } else {
+      putPin(seq, pin, state, digitalRead(pin) == HIGH ? 1 : 0);
+    }
+    return;
+  }
+  uint8_t wanted = kUntouched;
+  uint8_t need = 0;
+  if (strcmp(op, "in") == 0) {
+    wanted = kStateIn;
+    need = kIn;
+  } else if (strcmp(op, "pullup") == 0) {
+    wanted = kStatePullup;
+    need = kPullup;
+  } else if (strcmp(op, "out") == 0) {
+    wanted = kStateOut;
+    need = kOut;
+  } else if (strcmp(op, "pwm") == 0) {
+    wanted = kStatePwm;
+    need = kPwm;
+  }
+  if (need == 0 || !(modes & need)) {
+    startLine(seq, "ERR");
+    put(need == 0 ? F(" format pin") : F(" unknown pin_mode"));
+    endLine();
+    return;
+  }
+  if (wanted == kStateOut && value != 0 && value != 1) {
+    startLine(seq, "ERR");
+    put(F(" format pin"));
+    endLine();
+    return;
+  }
+  if (value < 0 || value > 100) {
+    startLine(seq, "ERR");
+    put(value > 100 ? F(" limit pin max 100") : F(" limit pin min 0"));
+    endLine();
+    return;
+  }
+  if (state == kStatePwm && wanted != kStatePwm) analogWrite(pin, 0);
+  if (wanted == kStateIn) {
+    pinMode(pin, INPUT);
+  } else if (wanted == kStatePullup) {
+    pinMode(pin, INPUT_PULLUP);
+  } else if (wanted == kStateOut) {
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, value > 0.5f ? HIGH : LOW);
+  } else {
+    pinMode(pin, OUTPUT);
+    pinDuty_[pin] = static_cast<uint16_t>(value / 100.0f * pwmTop() + 0.5f);
+    analogWrite(pin, pinDuty_[pin]);
+  }
+  pinState_[pin] = wanted;
+  float shown = digitalRead(pin) == HIGH ? 1 : 0;
+  if (wanted == kStatePwm) shown = pinDuty_[pin] * 100.0f / pwmTop();
+  if (wanted == kStateOut) shown = value > 0.5f ? 1 : 0;
+  putPin(seq, pin, wanted, shown);
+#else
+  (void)parts;
+  (void)count;
+  startLine(seq, "ERR");
+  put(" unknown PIN");
+  endLine();
+#endif
+}
+
+void OpenHAL::putPins() {
+#if OPENHAL_PINS
+  put(F(",\"pb\":"));
+  putNumber(OPENHAL_PWM_BITS);
+  put(F(",\"ab\":"));
+  putNumber(OPENHAL_ADC_BITS);
+  put(F(",\"io\":["));
+  bool first = true;
+  for (uint8_t pin = 0; pin < OPENHAL_PIN_COUNT; ++pin) {
+    uint8_t modes = pinModes(pin);
+    if (modes == 0) continue;
+    if (!first) putChar(',');
+    first = false;
+    putChar('[');
+    putNumber(pin);
+    put(",\"");
+    if (modes & kIn) putChar('i');
+    if (modes & kPullup) putChar('u');
+    if (modes & kOut) putChar('o');
+    if (modes & kPwm) putChar('p');
+    if (modes & kAdc) putChar('a');
+    if (modes & kIrq) putChar('x');
+    if (modes & kLed) putChar('l');
+    put("\"]");
+  }
+  putChar(']');
+#endif
+}
+
 void OpenHAL::handleWrite(unsigned int seq, char* name, char* text) {
   OpenHalOutput* output = findOutput(name);
   float value = 0;
@@ -544,6 +874,10 @@ void OpenHAL::sendDescription(unsigned int seq) {
       put(",\"hi\":");
       putNumber(reading.hi_);
     }
+    if (reading.pin_ != OPENHAL_NO_PIN) {
+      put(",\"g\":");
+      putNumber(reading.pin_);
+    }
     if (reading.labelCount_) {
       put(",\"s\":[");
       for (uint8_t j = 0; j < reading.labelCount_; ++j) {
@@ -581,6 +915,10 @@ void OpenHAL::sendDescription(unsigned int seq) {
       put(",\"t\":");
       putNumber(static_cast<float>(output.timeout_));
     }
+    if (output.pin_ != OPENHAL_NO_PIN) {
+      put(",\"g\":");
+      putNumber(output.pin_);
+    }
     putChar('}');
   }
   putChar(']');
@@ -608,6 +946,7 @@ void OpenHAL::sendDescription(unsigned int seq) {
     }
     putChar(']');
   }
+  if (pinsOn_) putPins();
   putChar('}');
   endLine();
 }
@@ -627,6 +966,11 @@ void OpenHAL::startLine(unsigned int seq, const char* verb) {
 
 void OpenHAL::put(const char* text) {
   for (const char* c = text; *c; ++c) putChar(*c);
+}
+
+void OpenHAL::put(const __FlashStringHelper* text) {
+  const char* c = reinterpret_cast<const char*>(text);
+  for (char next = pgm_read_byte(c); next; next = pgm_read_byte(++c)) putChar(next);
 }
 
 void OpenHAL::putText(const char* text) {

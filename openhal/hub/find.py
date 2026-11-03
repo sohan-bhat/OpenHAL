@@ -85,9 +85,12 @@ def _channel(runtime: DeviceRuntime, name: str, kind: Kind, now: float) -> dict[
             "min": write.min,
             "max": write.max,
             "step": write.step,
-            "max_change_per_s": write.max_change_per_s,
-            "confirm": views.confirm_tier(file, write.confirm),
+            "max_change_per_s": views.applied_rate(file, name),
+            "confirm": views.confirm_tier(file, f"write:{name}", write.confirm),
+            **views.target_risk(file, f"write:{name}"),
         }
+    else:
+        entry["risk"] = "low"
     return entry | views.latest_value(runtime, name, now)
 
 
@@ -104,12 +107,13 @@ def _entries(hub: Hub) -> list[dict[str, Any]]:
     found: list[dict[str, Any]] = []
     for device_id, runtime in hub.kernel.devices.items():
         file = runtime.file
+        ready = runtime.available is None and not hub.kernel.stopped
         device = {
             "device": device_id,
             "device_name": file.device.name,
             "hazard": file.effective_hazard,
             "connected": runtime.connected,
-            "takes_commands": file.writable and runtime.available is None and not hub.kernel.stopped,
+            "takes_commands": ready and file.writable,
         }
         about = [device_id, file.device.name, file.device.model or "", file.device.manufacturer or ""]
         channels: list[tuple[str, Kind, ReadChannel | WriteChannel]] = [
@@ -119,6 +123,8 @@ def _entries(hub: Hub) -> list[dict[str, Any]]:
         for name, kind, spec in channels:
             entry = {"target": f"{device_id}.{name}", "name": name, "kind": kind, **device}
             entry |= _channel(runtime, name, kind, now)
+            if kind == "writable":
+                entry["takes_commands"] = ready and not entry["read_only"]
             words = [*about, name, kind, spec.type, *spec.values, *_unit_words(spec.unit)]
             found.append({**entry, "_words": words, "_units": [spec.unit]})
         for name, action in file.actions.items():
@@ -132,8 +138,10 @@ def _entries(hub: Hub) -> list[dict[str, Any]]:
                 "description": action.description,
                 "args": args,
                 "require": [condition for condition, _message in action.conditions] or None,
-                "confirm": views.confirm_tier(file, action.confirm),
+                "confirm": views.confirm_tier(file, f"action:{name}", action.confirm),
+                **views.target_risk(file, f"action:{name}"),
             }
+            entry["takes_commands"] = ready and not entry["read_only"]
             words = [*about, name, "action", action.description or "", *args]
             words += [word for unit in units for word in _unit_words(unit)]
             found.append({**entry, "_words": words, "_units": units})

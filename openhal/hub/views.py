@@ -13,6 +13,7 @@ from openhal._brand import DATA_BLOCK_TAG
 from openhal.kernel.commands import Action, Decision, Write
 from openhal.kernel.confirmations import Request
 from openhal.kernel.kernel import StopReport
+from openhal.spec import risk
 from openhal.spec.models import DeviceFile
 from openhal.spec.units import wire_unit
 
@@ -85,9 +86,20 @@ def audit_details(device_id: str | None, details: dict[str, Any]) -> dict[str, A
     return shown
 
 
-def confirm_tier(file: DeviceFile, tier: str | None) -> str | None:
-    """The confirmation tier shown to clients. A high hazard device holds every command for a person."""
-    return "confirm-each-time" if file.effective_hazard == "high" else tier
+def confirm_tier(file: DeviceFile, target: str, tier: str) -> str:
+    """The confirmation tier a target uses, as the kernel applies it (risk.tier)."""
+    return risk.tier(file, target, tier)
+
+
+def target_risk(file: DeviceFile, target: str) -> dict[str, Any]:
+    """A target's risk level, and whether it is read-only until a person confirms its limits."""
+    return {"risk": risk.level(file, target), "read_only": bool(file.read_only(target))}
+
+
+def applied_rate(file: DeviceFile, channel: str) -> float | None:
+    """The rate limit the kernel applies to a write channel. A low channel ignores a suggested rate."""
+    spec = file.write[channel]
+    return spec.max_change_per_s if risk.own_rate(file, channel) else None
 
 
 def latest_value(runtime: Any, channel: str, now: float) -> dict[str, Any]:
@@ -140,6 +152,7 @@ def device_view(hub: Hub, device_id: str) -> dict[str, Any]:
                     "stream": spec.stream,
                     "range": list(spec.range) if spec.range else None,
                     "values": spec.values or None,
+                    "risk": "low",
                     **latest_value(runtime, name, now),
                 }
                 for name, spec in file.read.items()
@@ -151,10 +164,11 @@ def device_view(hub: Hub, device_id: str) -> dict[str, Any]:
                     "min": spec.min,
                     "max": spec.max,
                     "step": spec.step,
-                    "max_change_per_s": spec.max_change_per_s,
+                    "max_change_per_s": applied_rate(file, name),
                     "values": spec.values or None,
-                    "confirm": confirm_tier(file, spec.confirm),
+                    "confirm": confirm_tier(file, f"write:{name}", spec.confirm),
                     "suggested": spec.suggested,
+                    **target_risk(file, f"write:{name}"),
                     **latest_value(runtime, name, now),
                 }
                 for name, spec in file.write.items()
@@ -169,7 +183,8 @@ def device_view(hub: Hub, device_id: str) -> dict[str, Any]:
                     ],
                     "max_runs": {"count": spec.max_runs.count, "per_s": spec.max_runs.per} if spec.max_runs else None,
                     "effects": spec.effects,
-                    "confirm": confirm_tier(file, spec.confirm),
+                    "confirm": confirm_tier(file, f"action:{name}", spec.confirm),
+                    **target_risk(file, f"action:{name}"),
                 }
                 for name, spec in file.actions.items()
             },

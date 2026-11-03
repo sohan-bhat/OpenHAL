@@ -378,5 +378,7 @@ def test_examples_validate_and_load_read_only(path: Path) -> None:
     report = validate_path(path)
     assert report.ok, report.problems
     assert report.file is not None
-    assert not report.file.writable or not (report.file.write or report.file.actions)
+    assert report.file.writable is not bool(report.file.high_risk()), (
+        "only high risk entries wait for a person (ADR 0023)"
+    )
     PiBusDriver(report.file)

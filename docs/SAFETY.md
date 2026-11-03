@@ -6,7 +6,7 @@ Because AI agents move real things through OpenHAL, this document states exactly
 
 1. **One path.** Every write and every action, from any source (MCP, CLI, Python library, routines, runs of steps, dashboard, driver writer, bridges, the stop command itself), is evaluated by the safety kernel. Drivers accept writes only with a single-use grant the kernel issued for that exact device, channel or action, and value (ADR 0004).
 2. **Deterministic.** The kernel is plain Python with no model, no network calls and no randomness in the checks, so the same state and the same command always produce the same result and the same message.
-3. **Limits come from humans.** A person sets the limits in the device file, which records who confirmed the limits and when, and every command is checked against the limits. Agents may tighten limits for their own session. A device file with unconfirmed limits loads read-only.
+3. **Risk decides where a person comes in.** Every channel and action has a risk level ([Risk levels](#risk-levels)). A high risk one stays read-only until a person confirms its limits, and the device file records who and when. Low and medium ones take commands within the device's own range. Every command is checked against the limits, agents may tighten limits for their own session, and only a person loosens a limit or lowers a level.
 4. **Stop works.** One stop command puts every device in its safe state and locks writes until a human unlocks.
 5. **Fail closed.** Any unexpected exception inside the kernel blocks the command and is logged, so the kernel never passes a command after an internal failure.
 6. **Everything is recorded.** Every read request, write attempt, block, confirmation, stop and unlock is in an append-only audit log with a hash chain.
@@ -19,17 +19,17 @@ The kernel evaluates a command against the current state in this fixed order and
 |---|---|---|---|
 | 1 | Command shape | Unknown device, channel or action, wrong argument names, malformed payload | `unknown_target`, `bad_request` |
 | 2 | Stop lock | The global stop lock is set | `stopped` |
-| 3 | File state | The device file has unconfirmed limits (read-only mode), or failed validation | `read_only_file` |
+| 3 | File state | The target is high risk and its limits, or the file-level limits that guard it, aren't confirmed (read-only) | `read_only_file` |
 | 4 | Device state | Driver not connected, in a fault state, or currently applying its safe state. Also, any registered device whose interlock or condition names a device that isn't registered blocks every write on the hub, because a misspelled id protects nothing | `device_unavailable`, `misconfigured` |
-| 5 | Principal scope | The token's kind or scope does not cover this device's hazard class or this operation | `not_permitted` |
+| 5 | Principal scope | The token's kind or scope doesn't cover this operation, or the lower of the target's risk level and the device's hazard class | `not_permitted` |
 | 6 | Units | Value has no unit, the unit can't be converted to the channel unit, or the result is not finite | `bad_unit` |
 | 7 | Type and enum | Value is the wrong type, or not one of the allowed values | `bad_value` |
 | 8 | Range | Below `min` or above `max` (including session limits tightened by an agent) | `below_min`, `above_max` |
 | 9 | Step | Not a multiple of `step` from `min` (tolerance 1e-9 relative) | `bad_step` |
-| 10 | Rate of change | The change from the last known value exceeds `max_change_per_s` times the elapsed time, or the current value is unknown | `rate_limited` |
+| 10 | Rate of change | The change from the last known value exceeds `max_change_per_s` times the elapsed time, or the current value is unknown. A low risk channel's rate that is only suggested doesn't apply | `rate_limited` |
 | 11 | Interlocks | Any interlock whose condition applies is not satisfied by current or commanded state | `interlock` |
 | 12 | Watchdog budget | The value would start or continue a state whose max duration is already used up | `duration_exceeded` |
-| 14 | Confirmation | The channel or action needs confirmation, or the device is high hazard, and there is no valid approval | `needs_confirmation` (queued, not a failure), `queue_full` |
+| 14 | Confirmation | The channel or action needs confirmation, the device is high hazard, or a high risk action can't be undone, and there is no valid approval | `needs_confirmation` (queued, not a failure), `queue_full` |
 
 Check 13, serialization, happens before the others, so commands to one device run one at a time. The kernel holds a command for up to 5 s while the device is in use and blocks the command with `busy` when the device is still in use after 5 s, and a command that gets the device is evaluated against the state the previous command left.
 
@@ -49,21 +49,61 @@ A channel's value is unknown when nothing has been read since the hub connected,
 - **Interlocks** are written in a small expression language (spec section 7) and parsed by the hub's own parser, with no `eval`. An interlock that refers to a value the hub can't currently read counts as not satisfied.
 - **Session limits.** With `tighten_limits` (MCP tool and API), a client can narrow `min`, `max` or `max_change_per_s` for the client's own session, and the kernel blocks a request that would widen a limit with `cannot_loosen`.
 
+## Risk levels
+
+The hub gives every channel and action a level from what it is, using only the device file and the device's own description, with no list of device names. The rules live in `openhal/spec/risk.py` ([ADR 0023](adr/0023-risk-levels.md)).
+
+| Rule | Level |
+|---|---|
+| Reading a channel | low |
+| The device file's own `hazard` | at least that level |
+| A temperature, length, speed, acceleration, force, torque or pressure unit | high |
+| A power above 100 W, a voltage above 50 V or a current above 10 A, either sign | high, below that medium |
+| An angle, angular speed, volume, flow or mass unit | medium |
+| A light unit such as lux or candela | low |
+| Words for heat, mains switching, machine motion or force in the name, such as heater, relay, joint or spindle | high |
+| Words for pumps, valves, flow, motors, fans and servos in the name | medium |
+| Words for light, sound or a display in the name, such as brightness, buzzer or text | low |
+| No such words in the name | the words of the device's own name |
+| Low words in the name of a device whose name names something high, such as a heat lamp | high |
+| A channel mapped to a bare pin, with no such words | at least medium |
+| Three or more angle or length channels on one device, such as an arm's joints | each of them high |
+| A missing unit (dimensionless) or a unit the table doesn't list | one level up |
+| An action | the highest of its name, its arguments' units and the channels it changes |
+| No rule applies | medium |
+| Channels and actions mapped to the same pin | the highest level among them |
+| A `risk` a person set, with `by` and `at` | that level, up or down |
+| A `risk` with no `by` | only ever raises |
+
+Words in a channel's own name can set any level. Words from descriptions and enum values only raise, so text from a device can't lower anything.
+
+| Level | Default |
+|---|---|
+| low | Takes commands at once within the device's full reported range. No read-only start, no interview, no rate cap and no approval unless a person adds one |
+| medium | Takes commands at once within the device's own reported range and rate. No interview and no approval unless a person adds one |
+| high | Read-only until a person confirms its limits. An action that can't be undone is held for a person at least once |
+
+Stop, the safe state, the watchdogs and the audit log apply at every level, and a limit a person set always applies on top of the defaults. An action can be undone when every effect it lists is a write channel, when the safe state runs it, or when the device has the action that undoes it, such as resume for pause.
+
+`openhal risk set DEVICE.NAME LEVEL` changes a level. Raising applies at once. Lowering takes a person's typed phrase `confirm`, under the same rules as widening a limit, or is held as a pending change until a person approves it. Agents see every level and change none, and each change is saved in the device file and the audit log.
+
+A plain pin of an OpenHAL board is medium, because the file has no word for what is wired to it. A pin that shares its number with a high risk channel, such as a heater the device file maps to that pin, is high too, and the board itself blocks pin commands to a pin its sketch claims.
+
 ## Hazard classes
 
 | Class | Examples | Agent scope needed | Confirmation |
 |---|---|---|---|
 | low | sensors, LEDs, small fans, displays | `control_low` | as set in the device file |
-| medium | motors, pumps, printers, heaters under the file's threshold | `control_medium` | as set in the device file |
+| medium | motors, pumps, printers, heaters under the file's threshold | `control_medium`, or `control_low` for a low risk target | as set in the device file |
 | high | lasers, CNC spindles, high voltage, high-power heaters, robots that can injure | `control_medium` to request, never to execute | every write and action is held for a human's approval, every time |
 
-A device file with write channels or actions and no `hazard` is treated as medium.
+A device file with write channels or actions and no `hazard` is treated as medium, so its low risk targets need only `control_low`.
 
 High hazard devices can be driven by a routine only when the device file holds a human-signed approval for that routine's content hash (spec section 9), so changing the routine invalidates the approval.
 
 ## Limits provenance
 
-A file is writable only when a human confirmed its limits (spec section 12). Interlocks, watchdog rules, the safe state and the hazard class need a file-level confirmation. A confirmation that carries `sha256` is bound to the file's limits, so any later change to them makes the file read-only again.
+A high risk target takes commands only when a human confirmed its limits (spec section 12). Interlocks, watchdog rules, the safe state and the hazard class need a file-level confirmation for it. A confirmation that carries `sha256` is bound to the file's limits, so any later change to them makes high risk targets read-only again. Low and medium targets need no confirmation, and a file confirmed before keeps its limits.
 
 ## Who confirms
 
@@ -132,6 +172,7 @@ The hub builds principals from authenticated tokens, and agents reach the kernel
 ## What OpenHAL does not guarantee
 
 - Limits are only as good as the person who confirmed the limits, so OpenHAL can't guarantee that a human set sensible limits.
+- Low and medium targets of a fresh device run within the range the device or a library suggested. The risk table errs high, but it reads names and units, so a person checks the levels with `openhal risk show` and corrects one with `openhal risk set`.
 - When firmware doesn't carry out a command or a sensor reports a wrong value, the kernel still uses the values the device reported, so OpenHAL can't guarantee that a device carries out each command.
 - Bundled drivers pass the conformance suite and review, but a malicious in-process third-party driver could send commands to the driver's own hardware directly, so OpenHAL can't guarantee what such a driver sends. Out-of-process drivers are on the roadmap.
 - OpenHAL doesn't protect against someone with full control of the user's account, as docs/THREAT_MODEL.md describes.

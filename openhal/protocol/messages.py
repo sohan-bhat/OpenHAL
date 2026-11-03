@@ -205,7 +205,7 @@ class DeviceSummary(Message):
     manufacturer: str | None = None
     driver: str
     hazard: Hazard
-    writable: bool = Field(description="False until a person confirms every limit.")
+    writable: bool = Field(description="False while a high risk target waits for a person to confirm its limits.")
     connected: bool
     conformance: Conformance = Field(description="The driver's declared conformance level.")
     verification: str = Field(description="unverified, verified-on-simulator or verified-on-hardware.")
@@ -236,6 +236,11 @@ class ReadChannelInfo(Message):
     stream: bool = False
     range: list[float] | None = None
     values: list[str] | None = None
+    risk: Hazard = Field(default="low", description="Always low. Reading never changes hardware.")
+
+
+RISK_HELP = "low, medium or high, decided from what the target is. Only a person changes it."
+READ_ONLY_HELP = "True while a high risk target waits for a person to confirm its limits."
 
 
 class WriteChannelInfo(Message):
@@ -251,6 +256,8 @@ class WriteChannelInfo(Message):
     confirm: str = Field(description="none, confirm or confirm-each-time.")
     suggested: bool = Field(description="True while the limits are a suggestion no person has confirmed.")
     confirmed: Confirmed | None = Field(default=None, description="Who confirmed this channel's limits.")
+    risk: Hazard = Field(default="high", description=RISK_HELP)
+    read_only: bool = Field(default=False, description=READ_ONLY_HELP)
 
 
 class ActionInfo(Message):
@@ -261,6 +268,8 @@ class ActionInfo(Message):
     confirm: str
     suggested: bool
     confirmed: Confirmed | None = None
+    risk: Hazard = Field(default="high", description=RISK_HELP)
+    read_only: bool = Field(default=False, description=READ_ONLY_HELP)
 
 
 class InterlockInfo(Message):

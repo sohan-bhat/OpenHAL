@@ -552,6 +552,23 @@
             }
           ],
           "default": null
+        },
+        "risk": {
+          "default": "high",
+          "description": "low, medium or high, decided from what the target is. Only a person changes it.",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "title": "Risk",
+          "type": "string"
+        },
+        "readOnly": {
+          "default": false,
+          "description": "True while a high risk target waits for a person to confirm its limits.",
+          "title": "Readonly",
+          "type": "boolean"
         }
       },
       "required": [
@@ -1194,7 +1211,7 @@
           "type": "string"
         },
         "writable": {
-          "description": "False until a person confirms every limit.",
+          "description": "False while a high risk target waits for a person to confirm its limits.",
           "title": "Writable",
           "type": "boolean"
         },
@@ -1399,7 +1416,7 @@
           "type": "string"
         },
         "writable": {
-          "description": "False until a person confirms every limit.",
+          "description": "False while a high risk target waits for a person to confirm its limits.",
           "title": "Writable",
           "type": "boolean"
         },
@@ -2304,6 +2321,17 @@
           ],
           "default": null,
           "title": "Values"
+        },
+        "risk": {
+          "default": "low",
+          "description": "Always low. Reading never changes hardware.",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "title": "Risk",
+          "type": "string"
         }
       },
       "required": [
@@ -3042,6 +3070,23 @@
           ],
           "default": null,
           "description": "Who confirmed this channel's limits."
+        },
+        "risk": {
+          "default": "high",
+          "description": "low, medium or high, decided from what the target is. Only a person changes it.",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "title": "Risk",
+          "type": "string"
+        },
+        "readOnly": {
+          "default": false,
+          "description": "True while a high risk target waits for a person to confirm its limits.",
+          "title": "Readonly",
+          "type": "boolean"
         }
       },
       "required": [

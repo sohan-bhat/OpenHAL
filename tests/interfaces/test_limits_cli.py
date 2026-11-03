@@ -35,7 +35,7 @@ device: Desk lamp
 id: desk-lamp
 connect: { mock: desk-lamp }
 write:
-  brightness: { unit: percent, min: 0, max: 100, suggested: true }
+  brightness: { unit: percent, min: 0, max: 100, suggested: true, risk: high }
 provenance: { source: self-described }
 """
 

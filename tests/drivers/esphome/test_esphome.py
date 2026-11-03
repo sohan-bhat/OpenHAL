@@ -256,7 +256,7 @@ async def test_describe_proposes_every_entity(sim: EspHomeSim) -> None:
     assert proposal["write"]["grow_light_brightness"]["unit"] == "percent"
     assert "calibrate" in proposal["actions"]
     file = from_data({**proposal, "connect": {"esphome": "127.0.0.1", "port": sim.port}})
-    assert not file.writable
+    assert file.writable is not bool(file.high_risk()), "only high risk entries wait for a person (ADR 0023)"
     fresh = EspHomeDriver(file)
     await fresh.connect()
     await fresh.close()

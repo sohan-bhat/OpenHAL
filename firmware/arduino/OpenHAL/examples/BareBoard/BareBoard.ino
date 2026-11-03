@@ -21,7 +21,7 @@ const int BUTTON_PIN = 0;
 
 const char* const BUTTON_STATES[] = {"released", "pressed"};
 
-OpenHAL hal("bare-board", "1.0.0");
+OpenHAL hal("bare-board", "1.1.0");
 
 float readButton() { return digitalRead(BUTTON_PIN) == LOW ? 1 : 0; }
 
@@ -48,7 +48,7 @@ void setup() {
 #endif
   setBrightness(0);
   Serial.begin(115200);
-  hal.reading("button", "enum", readButton).states(BUTTON_STATES, 2).every(500);
+  hal.reading("button", "enum", readButton).states(BUTTON_STATES, 2).every(500).pin(BUTTON_PIN);
   hal.reading("uptime", "s", readUptime).every(5000);
 #if defined(ESP8266)
   hal.reading("supply_voltage", "V", readSupply).every(2000).range(2.5, 3.6);
@@ -56,7 +56,8 @@ void setup() {
 #if defined(SOC_TEMP_SENSOR_SUPPORTED) && SOC_TEMP_SENSOR_SUPPORTED
   hal.reading("chip_temperature", "degC", readChip).every(5000).range(-10, 80);
 #endif
-  hal.write("brightness", "percent", 0, 100, setBrightness).rate(50);
+  hal.write("brightness", "percent", 0, 100, setBrightness).rate(50).pin(LED_PIN);
+  hal.pins();
   hal.heartbeat(5000);
   hal.begin(Serial);
 }

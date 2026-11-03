@@ -131,7 +131,7 @@ def test_bare_file_library_and_driver(isolated_env: Path, monkeypatch: pytest.Mo
     run("init")
     code, out = run("file")
     assert "plant-waterer.hal.yaml" in out
-    assert "Answer each limit of a read-only file with openhal file confirm" in out
+    assert "Every valid file is writable. Change a limit with openhal limits set" in out, "the sample is medium risk"
     code, out = run("file", "validate")
     assert "1 valid, 0 invalid." in out
     code, out = run("file", "confirm")
@@ -168,7 +168,7 @@ def test_file_confirm_picks_a_file_and_takes_the_phrase(isolated_env: Path, monk
     run("init")
     with person_at_terminal(monkeypatch, [Keys("Pick a device file", ENTER), "confirm"]) as person:
         code, out = run("file", "confirm", "--by", "owner")
-    assert "plant-waterer.hal.yaml  read-only" in person.text
+    assert "plant-waterer.hal.yaml  writable" in person.text
     assert code == 0, out
     assert "confirmed" in out
 

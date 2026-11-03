@@ -86,18 +86,21 @@ def _dump(data: dict[str, Any]) -> str:
 
 
 def force_suggested(data: dict[str, Any]) -> dict[str, Any]:
-    """Nothing in a draft can confirm a limit. Mark every limit suggested and drop confirmations."""
+    """Nothing in a draft can confirm a limit. Mark every limit suggested and drop confirmations.
+
+    A draft can't lower a risk level either, so a `risk` keeps its level and loses the person who set
+    it, and then only ever raises (ADR 0023).
+    """
     cleaned = copy.deepcopy(data)
     for key in ("confirmed", "approvals"):
         cleaned.pop(key, None)
-    for spec in (cleaned.get("write") or {}).values():
-        if isinstance(spec, dict):
-            spec.pop("confirmed", None)
-            spec["suggested"] = True
-    for spec in (cleaned.get("actions") or {}).values():
-        if isinstance(spec, dict):
-            spec.pop("confirmed", None)
-            spec["suggested"] = True
+    for section in ("write", "actions"):
+        for spec in (cleaned.get(section) or {}).values():
+            if isinstance(spec, dict):
+                spec.pop("confirmed", None)
+                spec["suggested"] = True
+                if isinstance(spec.get("risk"), dict):
+                    spec["risk"] = spec["risk"].get("level")
     provenance = cleaned.get("provenance")
     if isinstance(provenance, dict):
         provenance.pop("verification", None)
@@ -134,7 +137,7 @@ class WriterEngine:
         draft = session.confirmed or session.draft
         unconfirmed: list[str] = []
         if session.draft is not None and session.confirmed is None:
-            unconfirmed = [q.id for q in interview.questions(session.draft) if q.id not in session.answers]
+            unconfirmed = [q.id for q in interview.questions(session.draft, every=True) if q.id not in session.answers]
         return {
             "id": session.id,
             "status": session.status,
@@ -374,7 +377,11 @@ class WriterEngine:
         session = self.get(session_id)
         if session.draft is None or session.confirmed is not None:
             return []
-        return [question for question in interview.questions(session.draft) if question.id not in session.answers]
+        return [
+            question
+            for question in interview.questions(session.draft, every=True)
+            if question.id not in session.answers
+        ]
 
     def answer(self, who: Principal, session_id: str, answers: dict[str, Any]) -> Session:
         if who.kind != "human":
@@ -388,7 +395,7 @@ class WriterEngine:
             raise WriterError("There is no valid draft to interview yet. Propose one first.")
         if session.status not in ("interview", "ready"):
             raise WriterError(f"The session is {session.status}, so the session can't take answers.")
-        asked = interview.questions(session.draft)
+        asked = interview.questions(session.draft, every=True)
         known = {question.id for question in asked}
         unknown = sorted(set(answers) - known)
         if unknown:
@@ -406,7 +413,7 @@ class WriterEngine:
         session.problems = [problem for problem in session.problems if not problem.startswith("Interview. ")]
         if known <= set(session.answers):
             try:
-                session.confirmed = interview.apply(session.draft, session.answers, by=who.name)
+                session.confirmed = interview.apply(session.draft, session.answers, by=who.name, every=True)
             except interview.AnswerError as exc:
                 session.problems.append(f"Interview. {exc}")
                 session.confirmed = None

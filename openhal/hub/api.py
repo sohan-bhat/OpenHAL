@@ -132,6 +132,17 @@ class LimitsBody(BaseModel):
     dry_run: bool = Field(default=False, description="Check the change and report what it widens, without it.")
 
 
+class RiskBody(BaseModel):
+    """A new risk level for one write channel or action. Lowering takes a person's phrase or approval."""
+
+    model_config = ConfigDict(extra="forbid")
+    device: str = Field(max_length=64)
+    name: str = Field(max_length=64, description="The write channel or action.")
+    level: Literal["low", "medium", "high"]
+    phrase: str | None = Field(default=None, max_length=40, description="confirm, typed by a person to lower.")
+    dry_run: bool = Field(default=False, description="Check the change and report whether it lowers, without it.")
+
+
 class ApproveBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
     phrase: str | None = Field(default=None, max_length=40)
@@ -402,6 +413,27 @@ def create_app(hub: Hub) -> FastAPI:
         except KeyError as exc:
             raise HTTPException(404, str(exc.args[0])) from exc
 
+    @app.get("/v1/devices/{device_id}/risk")
+    async def device_risk(device_id: str, who: Who) -> dict[str, Any]:
+        """Every channel's and action's risk level, with the reasons. Any token may look."""
+        device_or_404(device_id)
+        return hub.risk.show(device_id)
+
+    @app.post("/v1/risk")
+    async def change_risk(body: RiskBody, who: Who) -> dict[str, Any]:
+        """A person changes a risk level. Raising applies at once, and lowering needs the phrase or an approval."""
+        device_or_404(body.device)
+        try:
+            if body.dry_run:
+                try:
+                    change = hub.risk.plan(body.device, body.name, body.level)
+                except LimitError as exc:
+                    return {"status": "blocked", "code": exc.code, "message": exc.message, "device": body.device}
+                return {"status": "allowed", "message": "", **change.view()}
+            return await hub.risk.request(who, body.device, body.name, body.level, phrase=body.phrase)
+        except KeyError as exc:
+            raise HTTPException(404, str(exc.args[0])) from exc
+
     @app.post("/v1/wait_until")
     async def wait_until(body: WaitBody, who: Who, request: Request) -> dict[str, Any]:
         """Wait until a condition over live readings holds, or the timeout passes."""
@@ -463,15 +495,23 @@ def create_app(hub: Hub) -> FastAPI:
     @app.get("/v1/confirmations")
     async def confirmations(who: Who, include_done: bool = False) -> list[dict[str, Any]]:
         requests = hub.kernel.queue.recent(100) if include_done else hub.kernel.pending()
-        changes = hub.limits.recent(100) if include_done else hub.limits.pending()
         if who.kind != "human":
             requests = [request for request in requests if request.principal.label == who.label]
-            changes = [change for change in changes if change.principal.label == who.label]
         held = [views.request_view(request, hub.kernel.clock()) for request in requests]
-        return held + [hub.limits.view(change) for change in changes]
+        for store in (hub.limits, hub.risk):
+            changes: list[Any] = store.recent(100) if include_done else store.pending()
+            if who.kind != "human":
+                changes = [change for change in changes if change.principal.label == who.label]
+            held += [store.view(change) for change in changes]
+        return held
+
+    def change_store(request_id: str) -> Any:
+        """The store that holds a pending limit or risk change by this id, or None for a held command."""
+        return next((store for store in (hub.limits, hub.risk) if store.get(request_id) is not None), None)
 
     def limit_change_or_none(request_id: str, who: Principal) -> Any:
-        change = hub.limits.get(request_id)
+        store = change_store(request_id)
+        change = store.get(request_id) if store is not None else None
         if change is not None and who.kind != "human" and change.principal.label != who.label:
             raise HTTPException(404, f"There is no request {request_id}.")
         return change
@@ -480,8 +520,9 @@ def create_app(hub: Hub) -> FastAPI:
     async def confirmation(request_id: str, who: Who) -> dict[str, Any]:
         change = limit_change_or_none(request_id, who)
         if change is not None:
-            hub.limits.expire()
-            return hub.limits.view(change)
+            store = change_store(request_id)
+            store.expire()
+            return dict(store.view(change))
         request = hub.kernel.queue.get(request_id)
         if request is None or (who.kind != "human" and request.principal.label != who.label):
             raise HTTPException(404, f"There is no request {request_id}.")
@@ -491,14 +532,15 @@ def create_app(hub: Hub) -> FastAPI:
     @app.post("/v1/confirmations/{request_id}/approve")
     async def approve(request_id: str, who: Who, body: ApproveBody | None = None) -> dict[str, Any]:
         human_only(who)
-        if hub.limits.get(request_id) is not None:
+        store = change_store(request_id)
+        if store is not None:
             try:
-                change = await hub.limits.approve(request_id, who, body.phrase if body else None)
+                change = await store.approve(request_id, who, body.phrase if body else None)
             except LookupError as exc:
                 raise HTTPException(409, str(exc)) from exc
             except LimitError as exc:
                 raise HTTPException(400, exc.message) from exc
-            decided = hub.limits.view(change)["result"]
+            decided = store.view(change)["result"]
             return dict(decided) if decided else {}
         try:
             return views.decision_view(await hub.kernel.confirm(request_id, who))
@@ -508,9 +550,10 @@ def create_app(hub: Hub) -> FastAPI:
     @app.post("/v1/confirmations/{request_id}/reject")
     async def reject(request_id: str, body: RejectBody, who: Who) -> dict[str, Any]:
         human_only(who)
-        if hub.limits.get(request_id) is not None:
+        store = change_store(request_id)
+        if store is not None:
             try:
-                return hub.limits.view(hub.limits.reject(request_id, who, body.reason))
+                return dict(store.view(store.reject(request_id, who, body.reason)))
             except LookupError as exc:
                 raise HTTPException(409, str(exc)) from exc
         try:

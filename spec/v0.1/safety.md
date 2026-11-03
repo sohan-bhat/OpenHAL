@@ -6,7 +6,7 @@ This section states what a Safety Kernel MUST do. A Hub at Conformance Level `co
 
 1. **One path.** Every command, from any source, MUST be evaluated by the Safety Kernel. Sources include every Client, routines, the dashboard, the driver writer, bridges and the stop command itself. A Driver MUST accept a change only with a single-use Grant the Safety Kernel issued for that exact Device, target and value.
 2. **Deterministic.** The Safety Kernel MUST NOT use a model, network calls or randomness in its checks. The same state and the same command MUST produce the same result and the same message.
-3. **Limits come from humans.** Agents MAY tighten limits for their own session. Nothing MAY loosen a limit except a human editing the Device File, which records who and when. A Device File with unconfirmed limits loads read-only.
+3. **Risk decides where a human comes in.** Every write channel and action has a Risk Level ([Risk levels](#risk-levels)). A high risk target MUST stay read-only until a human confirmed its limits. A low or medium target MAY take commands without a confirmation, within the Device File's range. Agents MAY tighten limits for their own session. Nothing MAY loosen a limit or lower a Risk Level except a human, and the Device File records who and when.
 4. **Stop works.** One stop command MUST put every Device in its safe state and block every other command until a human unlocks.
 5. **Fail closed.** Any unexpected exception inside the Safety Kernel MUST block the command and be logged. Nothing fails open.
 6. **Everything is recorded.** Every read request, command, block, confirmation, stop and unlock MUST be appended to an audit log with a hash chain.
@@ -19,18 +19,18 @@ The Safety Kernel evaluates a command against the current state in this fixed or
 |---|---|---|---|---|
 | 1 | Command shape | Unknown Device, channel or action, wrong argument names, malformed payload | `unknown_target`, `bad_request` | UNKNOWN_TARGET, INVALID_PARAMS |
 | 2 | Stop lock | The global stop lock is set | `stopped` | STOPPED |
-| 3 | File state | The Device File has unconfirmed limits (read-only mode) | `read_only_file` | UNVERIFIED_LIMITS |
+| 3 | File state | The target is high risk and its limits, or the file-level limits that guard it, aren't confirmed (read-only) | `read_only_file` | UNVERIFIED_LIMITS |
 | 4 | Device state | The Driver is not connected, is in a fault state, or is applying its safe state. Also, any registered Device whose expressions name a Device that isn't registered blocks every command on the Hub, because a misspelled id protects nothing | `device_unavailable`, `misconfigured` | DEVICE_UNAVAILABLE, MISCONFIGURED |
-| 5 | Principal scope | The Principal's kind or scope does not cover this Device's hazard class or this operation | `not_permitted` | SCOPE_DENIED |
+| 5 | Principal scope | The Principal's kind or scope does not cover this operation, or the lower of the target's Risk Level and the Device's hazard class | `not_permitted` | SCOPE_DENIED |
 | 6 | Units | The value has no unit, the unit can't be converted to the channel unit, or the result is not finite | `bad_unit` | UNIT_INVALID |
 | 7 | Type and enum | The value is the wrong type, not one of the allowed values, too long, or doesn't match the pattern | `bad_value` | INVALID_VALUE |
 | 8 | Range | Below `min` or above `max`, including session limits | `below_min`, `above_max` | LIMIT_EXCEEDED |
 | 9 | Step | Not a multiple of `step` from `min` | `bad_step` | INVALID_VALUE |
-| 10 | Rate | The change from the last known value exceeds `max_change_per_s` times the elapsed time, the current value is unknown, or an action already ran `max_runs` times in its window | `rate_limited` | RATE_LIMITED |
+| 10 | Rate | The change from the last known value exceeds `max_change_per_s` times the elapsed time, the current value is unknown, or an action already ran `max_runs` times in its window. A low risk channel's `max_change_per_s` that is still `suggested` doesn't apply | `rate_limited` | RATE_LIMITED |
 | 11 | Interlocks | An action's `require` doesn't hold, or an interlock that applies is not satisfied by the current and commanded state | `interlock` | INTERLOCK_BLOCKED |
 | 12 | Watchdog budget | The value would start or continue a state whose max duration is already used up | `duration_exceeded` | WATCHDOG_TRIPPED |
 | 13 | Serialization | Another command holds the Device for longer than 5 s | `busy` | BUSY |
-| 14 | Confirmation | The channel or action needs confirmation, or the Device is high hazard, and there is no valid approval | `needs_confirmation`, `queue_full` | CONFIRMATION_REQUIRED, QUEUE_FULL |
+| 14 | Confirmation | The channel or action needs confirmation, the Device is high hazard, or the target is a high risk action that can't be undone, and there is no valid approval | `needs_confirmation`, `queue_full` | CONFIRMATION_REQUIRED, QUEUE_FULL |
 
 Check 13 runs before the others. Commands to one Device MUST run one at a time. The Safety Kernel holds a command for up to 5 s until the Device is free, and then evaluates the command against the state the previous command left.
 
@@ -54,6 +54,29 @@ A command that passes every check gets a Grant and runs. A command that reaches 
 - **Interlocks** use the expression language of [Device files](device-files.md#7-interlocks-and-expressions) and are parsed by the Hub's own parser. Expressions MUST NOT be evaluated as code.
 - **Session limits.** A Client MAY narrow `min`, `max` or `max_change_per_s` for its own session. A request that would widen a limit MUST be blocked with `cannot_loosen` (MISCONFIGURED). This version exposes session limits through MCP and REST only.
 
+## Risk levels
+
+Every readable channel, write channel and action has a Risk Level, `low`, `medium` or `high`. A Hub sets the level from the Device File and the Device's own description.
+
+1. Reading a channel MUST be `low`.
+2. A write channel or action MUST get the highest level any rule below gives it, and `medium` when no rule applies.
+3. The rules MUST NOT name a Device, a product or an id. They read the file's `hazard`, the unit's physical quantity and the maximum it allows, the words of the target's own name, the Device's name when the target's name has none of the words, the channels an action changes, the motion axes on the Device and the pin each target drives.
+4. A target MUST be at least the file's `hazard`.
+5. A missing unit (`dimensionless`) or a unit the rules don't list MUST raise the level by one and MUST NOT lower it. Words from a description or an enum value MUST only raise a level.
+6. Targets whose `map.pin` is the same MUST share the highest level among them. A target mapped to a bare pin, whose name has none of the words, MUST be at least `medium`.
+7. Three or more write channels with an angle or length unit on one Device MUST each be `high`.
+8. A `risk` entry with `by` and `at` MUST set the level, up or down. A `risk` entry without `by` MUST only raise. Tools that draft a Device File MUST drop `by` and `at` from any `risk` they copy.
+9. Raising a level takes effect at once. Lowering MUST need a human Principal and the typed phrase `confirm`, or a human's approval of a pending change with the phrase `approve`. Agents MUST NOT change a level, and a Hub SHOULD show every level to them.
+10. Every level change MUST be recorded in the audit log and the Device File, so it survives a restart.
+
+| Level | Defaults |
+|---|---|
+| `low` | Takes commands at once within the Device File's range, which a self-described file takes from the Device. A `suggested` rate doesn't apply. No confirmation unless a human sets one |
+| `medium` | Takes commands at once within the Device File's range and rate. No confirmation unless a human sets one |
+| `high` | Read-only until a human confirms its limits ([Limits provenance](#limits-provenance)). An action that can't be undone needs a human's approval at least once |
+
+An action can be undone when every effect it lists is a write channel, when the safe state runs it, or when the Device has the action that undoes it, such as `resume` for `pause`. Stop, the safe state, the watchdogs, the audit log and every limit a human set apply at every level.
+
 ## Grants
 
 1. A Grant names one Device, one target (`write:<channel>`, `action:<name>` or `safe_state`) and one exact value in the channel's unit.
@@ -67,8 +90,10 @@ A command that passes every check gets a Grant and runs. A command that reaches 
 | Hazard | Examples | Agent scope needed | Confirmation |
 |---|---|---|---|
 | `low` | sensors, LEDs, small fans, displays | `control_low` | as set in the Device File |
-| `medium` | motors, pumps, printers, heaters | `control_medium` | as set in the Device File |
+| `medium` | motors, pumps, printers, heaters | `control_medium`, or `control_low` for a low risk target | as set in the Device File |
 | `high` | lasers, CNC spindles, high voltage, high-power heaters, robots that can injure | `control_medium` to request, never to execute | every command is held for a human's approval, every time |
+
+A Device File with no `hazard` counts as `medium` for scope, so its low risk targets need only `control_low`.
 
 1. An agent with scope `read` MUST NOT change write channels or run actions.
 2. A human Principal's own command counts as confirmed. Every other check still applies to it.
@@ -105,8 +130,8 @@ A command that passes every check gets a Grant and runs. A command that reaches 
 
 ## Limits provenance
 
-1. A Device takes commands only when a human confirmed the limits in its Device File ([Device files](device-files.md#12-limits-provenance)).
-2. A confirmation that carries `sha256` is bound to the file's limits, so any later change makes the file read-only again.
+1. A high risk target takes commands only when a human confirmed its limits in the Device File ([Device files](device-files.md#12-limits-provenance)). Low and medium targets don't need a confirmation ([Risk levels](#risk-levels)).
+2. A confirmation that carries `sha256` is bound to the file's limits, so any later change makes its high risk targets read-only again.
 3. A LIMIT_EXCEEDED reason MUST name the Device File and the human confirmation behind the limit. `data.confirmedBy` and `data.confirmedAt` come from the channel's own `confirmed`, or else the file's.
 
 ## Error registry

@@ -122,6 +122,8 @@ Every method exists on `Client` and, as a coroutine, on `AsyncClient`.
 | `action(device, action, args=None, **kwargs)`, numbers as `{"value": 2, "unit": "s"}` | `POST /v1/action` |
 | `dry_run([Write(...), Action(...), {...}])` | `POST /v1/dry_run` |
 | `tighten(device, channel, min=None, max=None, rate=None)`, each a Quantity mapping | `POST /v1/tighten` |
+| `risk(device)`, every channel's and action's level with the reasons | `GET /v1/devices/{id}/risk` |
+| `set_risk(device, name, level, phrase=None)`, raising at once and lowering with the phrase or a person's approval | `POST /v1/risk` (human) |
 | `stop(reason)` | `POST /v1/stop` |
 | `unlock(phrase)` | `POST /v1/unlock` (human) |
 | `ramp_to(device, channel, target, unit, interval_s=1.0, margin=0.9)` | several `POST /v1/write` |
