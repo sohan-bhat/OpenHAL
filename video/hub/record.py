@@ -151,7 +151,7 @@ class Frames:
         for moment, joints, gpos, gquat, tpos, tmat, cpos, cquat, lag in self.raw:
             tquat = numpy.zeros(4)
             mujoco.mju_mat2Quat(tquat, tmat)
-            angles = [round(float(value) * 180.0 / 3.141592653589793, 3) for value in joints]
+            angles = [round(float(value), 3) for value in numpy.degrees(joints)]
             percent = (float(joints[-1]) - self.low) / (self.high - self.low) * 100.0
             rows.append(
                 [
@@ -321,6 +321,9 @@ async def approval(session: Session) -> None:
     )
     expect(approved["status"] == "done", f"the approved drop ended {approved['status']}: {approved['message']}")
     status = await session.tool("get_confirmation_status", {"request_id": request})
+    expect(
+        status["requests"][0]["status"] == "done", f"the request is {status['requests'][0]['status']} after approval"
+    )
     await asyncio.sleep(1.5)
     x, y, z = await session.cube()
     expect(75 < x < 165 and -215 < y < -125 and z < 30, f"the cube ended at {x:.0f}, {y:.0f}, {z:.0f} mm")
