@@ -85,6 +85,11 @@ def audit_details(device_id: str | None, details: dict[str, Any]) -> dict[str, A
     return shown
 
 
+def confirm_tier(file: DeviceFile, tier: str | None) -> str | None:
+    """The confirmation tier a client sees. A high hazard device holds every command for a person."""
+    return "confirm-each-time" if file.effective_hazard == "high" else tier
+
+
 def latest_value(runtime: Any, channel: str, now: float) -> dict[str, Any]:
     """A channel's newest known value with its age, or known false when the hub has none."""
     sample = runtime.latest(channel, now)
@@ -148,7 +153,7 @@ def device_view(hub: Hub, device_id: str) -> dict[str, Any]:
                     "step": spec.step,
                     "max_change_per_s": spec.max_change_per_s,
                     "values": spec.values or None,
-                    "confirm": "confirm-each-time" if file.effective_hazard == "high" else spec.confirm,
+                    "confirm": confirm_tier(file, spec.confirm),
                     "suggested": spec.suggested,
                     **latest_value(runtime, name, now),
                 }
@@ -164,7 +169,7 @@ def device_view(hub: Hub, device_id: str) -> dict[str, Any]:
                     ],
                     "max_runs": {"count": spec.max_runs.count, "per_s": spec.max_runs.per} if spec.max_runs else None,
                     "effects": spec.effects,
-                    "confirm": "confirm-each-time" if file.effective_hazard == "high" else spec.confirm,
+                    "confirm": confirm_tier(file, spec.confirm),
                 }
                 for name, spec in file.actions.items()
             },

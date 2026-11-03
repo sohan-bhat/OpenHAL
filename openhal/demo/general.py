@@ -14,19 +14,16 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import contextlib
 import json
 import tempfile
-from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any, Final
 
 import yaml
 
 from openhal.client import AsyncClient
-from openhal.demo import rig, scenario
+from openhal.demo import rig
 from openhal.drivers.mock import MockDriver
-from openhal.hub.config import HubConfig
 from openhal.hub.hub import Hub
 
 RECORDED_WITH: Final = "uv run python -m openhal.demo.general --record docs/demo/general-tools.yaml"
@@ -158,17 +155,6 @@ async def _session(agent: rig.Agent, hub: Hub) -> list[dict[str, Any]]:
     return steps
 
 
-@contextlib.asynccontextmanager
-async def _served(home: Path) -> AsyncIterator[tuple[Hub, str]]:
-    hub = Hub(HubConfig(home=home))
-    try:
-        await hub.start()
-        async with scenario.served(hub) as socket_url:
-            yield hub, "http" + socket_url.removeprefix("ws").removesuffix("/rpc")
-    finally:
-        await hub.close()
-
-
 async def run() -> dict[str, Any]:
     """Run the whole session once and return the transcript."""
     with tempfile.TemporaryDirectory(prefix="openhal-general-") as folder:
@@ -176,7 +162,7 @@ async def run() -> dict[str, Any]:
         person = rig.set_up_home(home, "owner")
         for name, text in DEVICES.items():
             (home / "devices" / f"{name}.hal.yaml").write_text(text, encoding="utf-8")
-        async with _served(home) as (hub, url):
+        async with rig.serving(home) as (hub, url):
             async with AsyncClient(url, person, use_human_token_file=False) as owner:
                 token = (await owner.create_token("ai-client", kind="agent", scope="control_low")).token
             async with rig.mcp_session(url, token, home) as agent:

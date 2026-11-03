@@ -56,12 +56,14 @@ def measures(unit: str | None) -> tuple[str, ...]:
     return _dimension_names().get(parsed.dimensionality, ())
 
 
-def _unit_words(unit: str | None) -> list[str]:
+@functools.cache
+def _unit_words(unit: str | None) -> tuple[str, ...]:
     if not unit:
-        return []
-    return [unit, normalize_unit(unit), str(parse_unit(unit)).replace("_", " "), *measures(unit)]
+        return ()
+    return (unit, normalize_unit(unit), str(parse_unit(unit)).replace("_", " "), *measures(unit))
 
 
+@functools.cache
 def converts(query: str, unit: str | None) -> bool:
     """True when a value in `query` converts to `unit`, exactly as a command would."""
     if not unit:
@@ -79,13 +81,12 @@ def _channel(runtime: DeviceRuntime, name: str, kind: Kind, now: float) -> dict[
     entry: dict[str, Any] = {"type": spec.type, "unit": wire_unit(spec.unit), "values": spec.values or None}
     if kind == "writable":
         write = file.write[name]
-        hazard = file.effective_hazard
         entry |= {
             "min": write.min,
             "max": write.max,
             "step": write.step,
             "max_change_per_s": write.max_change_per_s,
-            "confirm": "confirm-each-time" if hazard == "high" else write.confirm,
+            "confirm": views.confirm_tier(file, write.confirm),
         }
     return entry | views.latest_value(runtime, name, now)
 
@@ -131,7 +132,7 @@ def _entries(hub: Hub) -> list[dict[str, Any]]:
                 "description": action.description,
                 "args": args,
                 "require": [condition for condition, _message in action.conditions] or None,
-                "confirm": "confirm-each-time" if file.effective_hazard == "high" else action.confirm,
+                "confirm": views.confirm_tier(file, action.confirm),
             }
             words = [*about, name, "action", action.description or "", *args]
             words += [word for unit in units for word in _unit_words(unit)]

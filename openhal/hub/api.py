@@ -243,6 +243,14 @@ def create_app(hub: Hub) -> FastAPI:
         response.headers["X-Frame-Options"] = "DENY"
         return response
 
+    @app.exception_handler(RunError)
+    async def run_refused(request: Request, exc: RunError) -> JSONResponse:
+        return JSONResponse({"detail": exc.message}, status_code=exc.status)
+
+    @app.exception_handler(FindError)
+    async def find_refused(request: Request, exc: FindError) -> JSONResponse:
+        return JSONResponse({"detail": str(exc)}, status_code=400)
+
     def human_only(principal: Principal) -> None:
         if principal.kind != "human":
             raise HTTPException(403, "This request takes a human principal.")
@@ -291,10 +299,7 @@ def create_app(hub: Hub) -> FastAPI:
         limit: Annotated[int, Query(ge=1, le=500)] = 50,
     ) -> dict[str, Any]:
         """Channels and actions on every device that match the filters, as device.channel targets."""
-        try:
-            return find(hub, text=text, unit=unit, kind=kind, hazard=hazard, connected=connected, limit=limit)
-        except FindError as exc:
-            raise HTTPException(400, str(exc)) from exc
+        return find(hub, text=text, unit=unit, kind=kind, hazard=hazard, connected=connected, limit=limit)
 
     @app.post("/v1/read")
     async def read(body: ReadBody, who: Who) -> dict[str, Any]:
@@ -400,18 +405,12 @@ def create_app(hub: Hub) -> FastAPI:
     @app.post("/v1/wait_until")
     async def wait_until(body: WaitBody, who: Who, request: Request) -> dict[str, Any]:
         """Wait until a condition over live readings holds, or the timeout passes."""
-        try:
-            return await while_connected(request, hub.runs.wait_until(who, body))
-        except RunError as exc:
-            raise HTTPException(exc.status, exc.message) from exc
+        return await while_connected(request, hub.runs.wait_until(who, body))
 
     @app.post("/v1/sample")
     async def sample(body: SampleBody, who: Who, request: Request) -> dict[str, Any]:
         """Read channels at an interval over a duration, with min, max and mean for numbers."""
-        try:
-            return await while_connected(request, hub.runs.sample(who, body))
-        except RunError as exc:
-            raise HTTPException(exc.status, exc.message) from exc
+        return await while_connected(request, hub.runs.sample(who, body))
 
     @app.get("/v1/runs/caps")
     async def run_caps(who: Who) -> dict[str, Any]:
@@ -421,18 +420,12 @@ def create_app(hub: Hub) -> FastAPI:
     @app.post("/v1/runs/caps")
     async def set_run_caps(body: CapsBody, who: Who) -> dict[str, Any]:
         """A person changes the caps. Raising a cap takes the phrase confirm."""
-        try:
-            return hub.runs.set_caps(who, body)
-        except RunError as exc:
-            raise HTTPException(exc.status, exc.message) from exc
+        return hub.runs.set_caps(who, body)
 
     @app.post("/v1/runs")
     async def start_run(body: RunBody, who: Who) -> dict[str, Any]:
         """Check a list of steps as a plan, then run the steps in order through the kernel."""
-        try:
-            return await hub.runs.start(who, body)
-        except RunError as exc:
-            raise HTTPException(exc.status, exc.message) from exc
+        return await hub.runs.start(who, body)
 
     @app.get("/v1/runs")
     async def list_runs(who: Who) -> list[dict[str, Any]]:
@@ -447,18 +440,12 @@ def create_app(hub: Hub) -> FastAPI:
         last: Annotated[int, Query(ge=0, le=10_000)] = 50,
     ) -> dict[str, Any]:
         """One run with its last step results, after waiting up to wait_s for the run to end."""
-        try:
-            return await hub.runs.wait_for(who, run_id, wait_s, last)
-        except RunError as exc:
-            raise HTTPException(exc.status, exc.message) from exc
+        return await hub.runs.wait_for(who, run_id, wait_s, last)
 
     @app.post("/v1/runs/{run_id}/cancel")
     async def cancel_run(run_id: str, who: Who) -> dict[str, Any]:
         """End a run before its next step. Only the token that started the run, or a person."""
-        try:
-            return await hub.runs.cancel(who, run_id)
-        except RunError as exc:
-            raise HTTPException(exc.status, exc.message) from exc
+        return await hub.runs.cancel(who, run_id)
 
     @app.post("/v1/stop")
     async def stop(body: StopBody, who: Who) -> dict[str, Any]:
