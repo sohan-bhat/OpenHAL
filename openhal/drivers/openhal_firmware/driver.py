@@ -31,6 +31,7 @@ from typing import Any, ClassVar, Final
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from openhal._brand import DISTRIBUTION_NAME
 from openhal.drivers.base import Discovered, Driver, DriverError, DriverInfo, Health, Reading
 from openhal.drivers.openhal_firmware.protocol import (
     PROTOCOL_VERSION,
@@ -82,7 +83,7 @@ class SerialLineTransport:
             import serial  # type: ignore[import-untyped,unused-ignore]
         except ImportError as exc:
             raise DriverError(
-                "The openhal-firmware driver needs pyserial. Install openhal-hub[openhal-firmware]."
+                f"The openhal-firmware driver needs pyserial. Install {DISTRIBUTION_NAME}[openhal-firmware]."
             ) from exc
         self._loop = asyncio.get_running_loop()
         try:

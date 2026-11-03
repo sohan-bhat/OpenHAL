@@ -12,7 +12,7 @@ The uvc driver captures frames from USB webcams and other cameras the operating 
 ## Setup
 
 ```sh
-uv tool install --compile-bytecode "openhal-hub[uvc] @ git+https://github.com/sohan-bhat/OpenHAL"
+uv tool install --compile-bytecode "ohal[uvc] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 The wheel is about 35 MB and bundles OpenCV and its codecs. On Linux, your user needs to be in the `video` group to open `/dev/video*`. On macOS, macOS prompts for camera permission the first time the terminal or app running the hub opens a camera.

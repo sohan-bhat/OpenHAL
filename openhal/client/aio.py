@@ -12,6 +12,7 @@ from urllib.parse import urlencode
 
 import httpx
 
+from openhal._brand import DISTRIBUTION_NAME
 from openhal.client import calls
 from openhal.client import models as m
 from openhal.client.calls import Call, Command, Value, split_target
@@ -309,7 +310,7 @@ class AsyncClient:
             from websockets.asyncio.client import connect as ws_connect
             from websockets.exceptions import WebSocketException
         except ImportError as exc:  # pragma: no cover (installed with the hub extra)
-            raise HubError("Live events need the websockets package. Install openhal-hub[hub].") from exc
+            raise HubError(f"Live events need the websockets package. Install {DISTRIBUTION_NAME}[hub].") from exc
         if not self.token_source.token:
             raise Unauthorized(f"Live events need a token ({self.token_source.describe()}).")
         base = "ws" + self.url.removeprefix("http")

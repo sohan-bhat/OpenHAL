@@ -10,6 +10,9 @@ from pathlib import Path
 
 import pytest
 
+from openhal import __version__
+from openhal._brand import DISTRIBUTION_NAME
+
 ROOT = Path(__file__).resolve().parents[2]
 TIMING = ROOT / "scripts" / "time-first-read"
 
@@ -29,6 +32,12 @@ def wheel(tmp_path_factory: pytest.TempPathFactory) -> zipfile.ZipFile:
     )
     assert done.returncode == 0, done.stderr
     return zipfile.ZipFile(next(out.glob("*.whl")))
+
+
+def test_the_wheel_is_the_brand_distribution(wheel: zipfile.ZipFile) -> None:
+    assert Path(str(wheel.filename)).name == f"{DISTRIBUTION_NAME}-{__version__}-py3-none-any.whl"
+    metadata = wheel.read(next(item for item in wheel.namelist() if item.endswith(".dist-info/METADATA"))).decode()
+    assert f"\nName: {DISTRIBUTION_NAME}\n" in metadata
 
 
 def test_the_wheel_has_both_commands(wheel: zipfile.ZipFile) -> None:

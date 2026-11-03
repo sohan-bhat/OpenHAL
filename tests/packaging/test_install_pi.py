@@ -14,6 +14,8 @@ from pathlib import Path
 
 import pytest
 
+from openhal._brand import DISTRIBUTION_NAME
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "install-pi.sh"
 STUBBED = ("uv", "curl", "sudo", "apt-get", "usermod", "loginctl", "systemctl", "openhal", "ln", "mkdir", "sh")
@@ -63,9 +65,9 @@ def test_dry_run_prints_every_step_and_runs_none(tmp_path: Path) -> None:
     home = tmp_path / "home"
     venv = home / ".local" / "share" / "openhal" / "venv"
     assert "venv --allow-existing --system-site-packages --python" in out
-    assert "rpi-gpio,rpi-camera,pi-i2c-spi,serial,openhal-firmware" in out
+    extras = "rpi-gpio,rpi-camera,pi-i2c-spi,serial,openhal-firmware"
     assert f"pip install --python {venv}/bin/python --compile-bytecode" in out
-    assert "git+https://github.com/sohan-bhat/OpenHAL" in out
+    assert f"'{DISTRIBUTION_NAME}[{extras}] @ git+https://github.com/sohan-bhat/OpenHAL'" in out
     assert "sudo apt-get install -y --no-install-recommends build-essential" in out
     assert "sudo usermod -aG" in out
     assert "sudo loginctl enable-linger pi" in out
@@ -82,8 +84,9 @@ def test_dry_run_installs_uv_when_missing(tmp_path: Path) -> None:
 
 
 def test_a_local_source_takes_the_extras(tmp_path: Path) -> None:
-    out, _ = dry_run(tmp_path, "--source", "/home/pi/openhal_hub-0.1.0-py3-none-any.whl")
-    assert "'/home/pi/openhal_hub-0.1.0-py3-none-any.whl[rpi-gpio," in out
+    wheel = f"/home/pi/{DISTRIBUTION_NAME}-0.1.0-py3-none-any.whl"
+    out, _ = dry_run(tmp_path, "--source", wheel)
+    assert f"'{wheel}[rpi-gpio," in out
 
 
 def test_every_pi_extra_exists() -> None:

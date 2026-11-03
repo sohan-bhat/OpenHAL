@@ -13,6 +13,7 @@ import typer
 from rich.markup import escape
 from rich.table import Table
 
+from openhal._brand import DISTRIBUTION_NAME
 from openhal.cli import _common
 from openhal.cli._common import EXIT_FAILED, OPTIONS, console, home
 from openhal.client.settings import TOKEN_ENV, human_token_path
@@ -107,7 +108,7 @@ def _software() -> list[Check]:
         ("websockets", "live events"),
     ):
         if importlib.util.find_spec(module) is None:
-            checks.append(Check(module, "fail", f"missing, needed by {purpose}. Install openhal-hub[hub]"))
+            checks.append(Check(module, "fail", f"missing, needed by {purpose}. Install {DISTRIBUTION_NAME}[hub]"))
     for name in registry.names():
         try:
             registry.load(name)

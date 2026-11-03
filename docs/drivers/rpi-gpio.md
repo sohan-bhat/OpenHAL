@@ -18,7 +18,7 @@ Write channels read back the state gpiozero holds (on or off, the duty cycle, th
 On Raspberry Pi OS Bookworm or later, gpiozero uses lgpio, which comes with the OS.
 
 ```sh
-uv tool install --compile-bytecode "openhal-hub[rpi-gpio] @ git+https://github.com/sohan-bhat/OpenHAL"
+uv tool install --compile-bytecode "ohal[rpi-gpio] @ git+https://github.com/sohan-bhat/OpenHAL"
 sudo apt install -y python3-lgpio    # if the hub's virtual environment can't see it
 ```
 

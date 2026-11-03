@@ -14,7 +14,7 @@ The upnp driver reads and controls UPnP devices through their SOAP actions, usin
 ## Setup
 
 ```sh
-uv tool install --compile-bytecode "openhal-hub[upnp] @ git+https://github.com/sohan-bhat/OpenHAL"
+uv tool install --compile-bytecode "ohal[upnp] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 Find the device's description URL with `discover()` or the device's documentation. Sonos speakers serve the description at `http://<speaker>:1400/xml/device_description.xml`.

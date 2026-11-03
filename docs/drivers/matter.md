@@ -20,7 +20,7 @@ This status was checked on 2026-10-24. python-matter-server was archived in June
 ## Setup
 
 ```sh
-uv tool install --compile-bytecode "openhal-hub[matter] @ git+https://github.com/sohan-bhat/OpenHAL"
+uv tool install --compile-bytecode "ohal[matter] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 Commission the device into the Matter Server first, with the server's frontend or Home Assistant, and note the node id the device gets. The server listens on `ws://<host>:5580/ws`.

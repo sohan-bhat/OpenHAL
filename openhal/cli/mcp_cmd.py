@@ -6,6 +6,7 @@ from pathlib import Path
 
 import typer
 
+from openhal._brand import DISTRIBUTION_NAME
 from openhal.cli._common import EXIT_TOKEN, OPTIONS, fail
 
 
@@ -19,7 +20,7 @@ def register(app: typer.Typer) -> None:
         try:
             from openhal.mcp.server import SetupError, run
         except ImportError as exc:
-            fail(f"openhal mcp needs the MCP SDK ({exc.name}). Install openhal-hub[hub].")
+            fail(f"openhal mcp needs the MCP SDK ({exc.name}). Install {DISTRIBUTION_NAME}[hub].")
         try:
             run(token_file=token_file or OPTIONS.token_file, url=OPTIONS.url, start=start)
         except SetupError as exc:

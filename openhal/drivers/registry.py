@@ -18,6 +18,7 @@ import pkgutil
 from functools import cache
 from typing import Any, Final
 
+from openhal._brand import DISTRIBUTION_NAME
 from openhal.drivers.base import Driver
 
 _EXTRA: dict[str, str] = {}
@@ -77,8 +78,8 @@ def load(name: str) -> type[Driver]:
         raise UnknownDriver(
             f"The {name} driver needs an optional dependency that isn't installed ({exc.name}). "
             f"Install it with uv sync --extra {name} in a checkout, or reinstall the hub with "
-            f'uv tool install --compile-bytecode "openhal-hub[{name}] @ git+https://github.com/sohan-bhat/OpenHAL", '
-            "listing every extra you use."
+            f'uv tool install --compile-bytecode "{DISTRIBUTION_NAME}[{name}] @ '
+            'git+https://github.com/sohan-bhat/OpenHAL", listing every extra you use.'
         ) from exc
     driver = getattr(module, class_name)
     if not (isinstance(driver, type) and issubclass(driver, Driver)):

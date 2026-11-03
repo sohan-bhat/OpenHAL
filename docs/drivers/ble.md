@@ -15,7 +15,7 @@ The ble driver reads and writes GATT characteristics of Bluetooth Low Energy per
 ## Setup
 
 ```sh
-uv tool install --compile-bytecode "openhal-hub[ble] @ git+https://github.com/sohan-bhat/OpenHAL"
+uv tool install --compile-bytecode "ohal[ble] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 On Linux, BlueZ 5.55 or newer must be running and your user needs access to BlueZ (usually the `bluetooth` group). On macOS, the terminal or app running the hub needs Bluetooth permission in System Settings, and peripherals are addressed by the UUID CoreBluetooth assigns, not by MAC address. Run `discover()` (or the hardware test plan's step 1) to find the UUID.

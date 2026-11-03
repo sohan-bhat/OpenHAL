@@ -7,6 +7,7 @@ from typing import Any
 import httpx
 from pydantic import ValidationError
 
+from openhal._brand import DISTRIBUTION_NAME
 from openhal.client.calls import Call
 from openhal.client.errors import (
     BadRequest,
@@ -76,7 +77,7 @@ def error_for(call: Call[Any], response: httpx.Response, source: TokenSource) ->
     if code in (404, 405) and text in _ROUTE_MISSING:
         return NotSupported(
             f"This hub has no {call.method} {call.path.split('?')[0]}. It is older than this client. "
-            "Update openhal-hub and restart the hub.",
+            f"Update {DISTRIBUTION_NAME} and restart the hub.",
             status_code=code,
             detail=detail,
         )

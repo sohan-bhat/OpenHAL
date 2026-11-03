@@ -14,7 +14,7 @@ The http driver connects to devices that expose a local HTTP API, and every requ
 ## Setup
 
 ```sh
-uv tool install --compile-bytecode "openhal-hub[http] @ git+https://github.com/sohan-bhat/OpenHAL"
+uv tool install --compile-bytecode "ohal[http] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 httpx is also part of the hub extra, so a hub install already has it.
