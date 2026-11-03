@@ -222,6 +222,19 @@ test.describe("the install box", () => {
     }
   });
 
+  test("a tab pressed with the mouse shows no focus ring, and a tab reached by keyboard shows one", async ({ page }) => {
+    await page.goto("/");
+    const ring = (name: string) => page.getByRole("tab", { name }).evaluate((tab) => getComputedStyle(tab).outlineStyle);
+    for (const channel of [...CHANNELS.slice(1), CHANNELS[0]]) {
+      await page.getByRole("tab", { name: channel.label }).click();
+      await expect(page.getByRole("tab", { name: channel.label })).toHaveAttribute("aria-selected", "true");
+      expect(await ring(channel.label)).toBe("none");
+    }
+    await page.keyboard.press("ArrowRight");
+    await expect(page.getByRole("tab", { name: CHANNELS[1].label })).toBeFocused();
+    expect(await ring(CHANNELS[1].label)).toBe("solid");
+  });
+
   test("works by keyboard, from Tab to the arrow keys to Copy", async ({ page, context, browserName }) => {
     await page.goto("/");
     await page.locator(".hero-mark").click();

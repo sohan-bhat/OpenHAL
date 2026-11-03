@@ -97,6 +97,10 @@ body {
   outline-offset: 2px;
 }
 
+[data-pointer-focus]:focus-visible {
+  outline: none;
+}
+
 ::selection {
   background-color: var(--accent-fill);
   color: var(--on-accent);
