@@ -94,6 +94,17 @@ dev = [
 requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.sdist]
+only-include = [
+  "openhal",
+  "examples/plant-waterer",
+  "examples/print-babysitter",
+  "library",
+  "README.md",
+  "LICENSE",
+  "CHANGELOG.md",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["openhal"]
 
