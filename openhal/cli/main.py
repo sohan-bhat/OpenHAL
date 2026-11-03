@@ -1,4 +1,8 @@
-"""The `openhal` command line. Each command group lives in its own module."""
+"""The `openhal` command line. Each command group lives in its own module.
+
+A bare `openhal` shows where the person stands and the next steps, and `openhal --help` lists every
+command (ADR 0020).
+"""
 
 from __future__ import annotations
 
@@ -10,6 +14,7 @@ from openhal import __version__
 from openhal._brand import CLI_NAME, PRODUCT_NAME
 from openhal.cli import (
     _common,
+    _overview,
     confirm_cmd,
     control_cmd,
     demo_cmd,
@@ -35,7 +40,6 @@ from openhal.cli import (
 app = typer.Typer(
     name=CLI_NAME,
     help=f"{PRODUCT_NAME}. An open-source protocol for AI agents to control hardware.",
-    no_args_is_help=True,
     add_completion=False,
 )
 
@@ -68,8 +72,9 @@ def _version(value: bool) -> None:
         raise typer.Exit()
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
+    ctx: typer.Context,
     version: bool = typer.Option(False, "--version", callback=_version, is_eager=True, help="Show the version."),
     url: str = typer.Option(None, "--url", envvar="OPENHAL_URL", help="Hub address. Default from config.yaml."),
     token_file: Path = typer.Option(None, "--token-file", help="Read the token from this file."),  # noqa: B008
@@ -77,6 +82,8 @@ def main(
     """OpenHAL command line."""
     _common.OPTIONS.url = url
     _common.OPTIONS.token_file = token_file
+    if ctx.invoked_subcommand is None:
+        _overview.show()
 
 
 if __name__ == "__main__":
