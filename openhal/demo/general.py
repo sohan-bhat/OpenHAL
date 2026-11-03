@@ -116,8 +116,10 @@ async def _session(agent: rig.Agent, hub: Hub) -> list[dict[str, Any]]:
     _expect(blink["status"] == "done" and blink["done_steps"] == 20, f"the blink run ended {blink['message']}")
     _expect(steps[-1]["lamp_received"] == [True, False] * 5, "the lamp did not blink five times")
 
-    warm_steps = [{"kind": "wait", "seconds": 1}, {"kind": "write", "device": "warmer", "channel": "power"}]
-    warm_steps[1] |= {"value": 10, "unit": "W"}
+    warm_steps: list[dict[str, Any]] = [
+        {"kind": "wait", "seconds": 1},
+        {"kind": "write", "device": "warmer", "channel": "power", "value": 10, "unit": "W"},
+    ]
     warm = await call("warm-the-plate", "run_steps", {"steps": warm_steps})
     steps[-1]["run"] = _run(warm)
     _expect(warm["status"] == "done", f"the warming run ended {warm['message']}")

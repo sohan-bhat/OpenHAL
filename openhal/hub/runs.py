@@ -487,7 +487,12 @@ class RunEngine:
             repeat=body.repeat,
             total=len(flat),
         )
-        blocked = self._plan(run, flat)
+        try:
+            blocked = self._plan(run, flat)
+        except Exception as exc:  # noqa: BLE001 (fail closed, a bug in the plan check runs nothing)
+            message = f"Nothing ran. The plan check hit an unexpected error ({type(exc).__name__})."
+            self._finish(run, "failed", {"kind": "run", "code": "internal_error", "message": message})
+            return self.view(run)
         if blocked is not None:
             self._finish(run, "blocked", blocked)
             return self.view(run)

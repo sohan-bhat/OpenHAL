@@ -391,6 +391,18 @@ async def test_closing_the_hub_cancels_a_command_that_never_returns(
     }
 
 
+async def test_a_bug_in_the_plan_check_runs_nothing(hub: Hub, monkeypatch: pytest.MonkeyPatch) -> None:
+    def broken(*args: Any, **kwargs: Any) -> Any:
+        raise RuntimeError("bug")
+
+    monkeypatch.setattr(hub.kernel, "evaluate", broken)
+    hub.config.runs = hub.config.runs.model_copy(update={"per_agent": 1})
+    run = await hub.runs.start(CLAUDE, body(blink()))
+    assert (run["status"], run["stop"]["code"]) == ("failed", "internal_error")
+    assert mock(hub, "lamp").hardware_writes() == []
+    assert (await hub.runs.start(CLAUDE, body([{"kind": "wait", "seconds": 1}])))["status"] == "done", "freed"
+
+
 async def test_a_bug_in_a_step_fails_the_run_closed(hub: Hub, monkeypatch: pytest.MonkeyPatch) -> None:
     async def broken(*args: Any, **kwargs: Any) -> Any:
         raise RuntimeError("bug")
