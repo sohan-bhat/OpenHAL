@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { effectiveHazard, type DeviceFile, type Kernel } from "@/lib/kernel";
+import { appliedRate, effectiveHazard, tier, type DeviceFile, type Kernel } from "@/lib/kernel";
 import { formatG } from "@/lib/kernel/pyformat";
 import { displayUnit } from "@/lib/playground/rpc";
 import { show, tierWord, withUnit } from "@/lib/playground/session";
@@ -88,9 +88,9 @@ export function SimulatedDevice({ file, kernel, id, missing, story, companions, 
                     {spec.max === null ? "" : formatG(spec.max)}
                   </TableCell>
                   <TableCell data-label="Rate per s" className="mono">
-                    {spec.max_change_per_s === null ? "" : formatG(spec.max_change_per_s)}
+                    {appliedRate(file, name) === null ? "" : formatG(appliedRate(file, name) as number)}
                   </TableCell>
-                  <TableCell data-label="Confirm">{tierWord(spec.confirm, high)}</TableCell>
+                  <TableCell data-label="Confirm">{tierWord(tier(file, `write:${name}`, spec.confirm), high)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

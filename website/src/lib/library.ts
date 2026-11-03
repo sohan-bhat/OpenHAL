@@ -1,4 +1,4 @@
-import { DeviceFileError, UnitError, deviceId, effectiveHazard, loadDeviceFile, unconfirmed, type DeviceFile } from "./kernel";
+import { DeviceFileError, UnitError, deviceId, effectiveHazard, loadDeviceFile, unconfirmedLimits, type DeviceFile } from "./kernel";
 import { YamlError, parseDeviceYaml } from "./kernel/yaml";
 
 export type Verification = "unverified" | "tested-reads" | "verified-on-hardware";
@@ -52,7 +52,7 @@ function suggestedEntries(file: DeviceFile): string[] {
 }
 
 function isConfirmed(file: DeviceFile): boolean {
-  if (unconfirmed(file).length > 0) return false;
+  if (unconfirmedLimits(file).length > 0) return false;
   return file.confirmed !== null || Object.keys(file.write).length + Object.keys(file.actions).length > 0;
 }
 
@@ -92,7 +92,7 @@ export function parseLibrary(files: Record<string, string>): LibraryEntry[] {
       source: provenance.source ?? "hand-written",
       confirmed: isConfirmed(file),
       suggested: suggestedEntries(file),
-      unconfirmed: unconfirmed(file),
+      unconfirmed: unconfirmedLimits(file),
       reads: Object.keys(file.read).length,
       writes: Object.keys(file.write).length,
       actions: Object.keys(file.actions).length,
