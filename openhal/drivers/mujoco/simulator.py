@@ -95,11 +95,11 @@ class Phase:
 
 
 class Motion:
-    """One move, a list of phases run one after another. `held` is true when a hold ended it early."""
+    """One move, a list of phases run one after another. `ended` says why it stopped early, if it did."""
 
     def __init__(self, phases: list[Phase]) -> None:
         self.phases = [phase for phase in phases if phase.goals]
-        self.held = False
+        self.ended: str | None = None
 
     @property
     def over(self) -> bool:
@@ -110,6 +110,8 @@ class Motion:
 
     def release(self, actuators: set[int]) -> None:
         """Hand these actuators to a newer move. Phases left with nothing to move are dropped."""
+        if actuators & self.actuators():
+            self.ended = "taken over"
         for phase in self.phases:
             for actuator in actuators & set(phase.goals):
                 phase.goals.pop(actuator)
@@ -286,7 +288,7 @@ class World:
         """End every move now and keep every setpoint where it is."""
         with self._lock:
             for motion in self.motions:
-                motion.held = True
+                motion.ended = "held"
                 motion.phases.clear()
             self.motions.clear()
             self.goals[:] = self.data.ctrl

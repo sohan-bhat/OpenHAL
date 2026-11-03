@@ -284,7 +284,9 @@ async def test_describe_proposes_channels_from_the_model() -> None:
         'joint="lift" ctrlrange="-1.5 1.5"', 'joint="lift"'
     )
     xml = xml.replace("</actuator>", '<motor name="spin" site="tip" gear="0 0 0 1 0 0"/></actuator>')
+    xml = xml.replace('<position name="elbow"', '<position name="Elbow.Act"')
     text = edit("  finger: { unit: percent }\n", "").replace("wrist_goal", "spare_goal")
+    text = text.replace("  elbow_goal: { unit: deg,", "  elbow_goal: { map: { actuator: Elbow.Act }, unit: deg,")
     text = text.replace("spare_goal: { unit: deg", 'spare_goal: { map: { actuator: spin, unit: "N*m" }, unit: "N*m"')
     text = text.replace("min: -110, max: 110, max_change_per_s: 90 }", "min: -1, max: 1 }")
     text = text.replace("finger_goal: { unit: percent", "finger_goal: { unit: mm").replace("max: 100,", "max: 30,")
@@ -296,7 +298,9 @@ async def test_describe_proposes_channels_from_the_model() -> None:
     assert described is not None
     assert set(described["read"]) == {"pan", "lift", "elbow", "wrist_2", "finger"}
     assert described["read"]["finger"] == {"unit": "mm"}
-    assert set(described["write"]) == {"pan_goal", "lift_goal", "elbow_goal", "finger_goal"}
+    assert set(described["write"]) == {"pan_goal", "lift_goal", "elbow_act_goal", "finger_goal"}
+    assert described["write"]["elbow_act_goal"]["map"] == {"actuator": "Elbow.Act"}
+    assert described["read"]["wrist_2"] == {"unit": "deg", "map": {"joint": "Wrist-2"}}
     assert described["write"]["pan_goal"] == {"unit": "deg", "suggested": True, "min": -114.6, "max": 114.6}
     assert described["write"]["finger_goal"] == {"unit": "mm", "suggested": True}
     assert described["write"]["lift_goal"] == {"unit": "deg", "suggested": True, "min": -85.9, "max": 85.9}
@@ -315,6 +319,8 @@ def test_scales_convert_units_and_percent() -> None:
     assert percent.native(50) == pytest.approx(0.015)
     with pytest.raises(DriverError, match="here is in percent, which needs a limited range in the model"):
         scale("percent", "rad", None, "here")
+    with pytest.raises(DriverError, match="needs a range wider than zero"):
+        scale("%", "m", (0.01, 0.01), "here")
     with pytest.raises(DriverError, match="here is in rad in the model, which doesn't convert to mm"):
         scale("mm", "rad", None, "here")
 
@@ -397,6 +403,7 @@ def test_a_write_channel_must_be_a_number() -> None:
         ("  lift: { unit: rad }", "  lift: { unit: mm }", "read.lift is in rad in the model"),
         ("  pan_goal: { unit: deg,", "  pan_goal: { map: { actuator: yaw }, unit: deg,", "has no actuator named 'yaw'"),
         ("keyframe: rest", "keyframe: dance", "The model has no keyframe named 'dance'"),
+        ("pan_goal: { unit: deg, min: -90, max: 90,", "pan_goal: { unit: deg, min: 120, max: 150,", "don't overlap"),
         (
             "      site: tip\n",
             "      site: tip\n      joints: [pan, finger]\n",
@@ -421,8 +428,25 @@ async def test_bindings_need_joints_that_move_the_site_and_a_unit_for_other_actu
     await bench.close()
     xml = BENCH_ARM.replace("</actuator>", '<motor name="spin" site="tip" gear="0 0 0 1 0 0"/></actuator>')
     driver, bench = make(edit("  pan_goal: { unit: deg,", "  pan_goal: { map: { actuator: spin }, unit: deg,"), xml)
-    with pytest.raises(DriverError, match=r"spin doesn't drive a joint, so give its unit in map\.unit"):
+    with pytest.raises(DriverError, match=r"spin isn't a position servo on a joint, so give its unit in map\.unit"):
         await driver.connect()
+    await bench.close()
+
+
+async def test_a_move_turns_only_position_servos_inside_their_control_range() -> None:
+    xml = BENCH_ARM.replace(
+        '<position name="pan" joint="pan" ctrlrange="-2 2"/>', '<position name="pan" joint="pan" ctrlrange="-0.5 0.5"/>'
+    )
+    xml = xml.replace("</actuator>", '<motor name="push" joint="lift" ctrlrange="-1 1"/></actuator>')
+    text = edit("  hold: {}\n", "  hold: {}\n").replace(
+        "  finger_goal:",
+        '  push_goal: { map: { actuator: push, unit: "N*m" }, unit: "N*m", min: -1, max: 1 }\n  finger_goal:',
+    )
+    driver, bench = make(text, xml)
+    await bench.connect()
+    turns = driver.plans["move_to"].joints
+    assert [turn.channel for turn in turns.values()] == ["pan_goal", "lift_goal", "elbow_goal", "wrist_goal"]
+    assert (turns[0].low, turns[0].high) == pytest.approx((-0.5, 0.5))
     await bench.close()
 
 

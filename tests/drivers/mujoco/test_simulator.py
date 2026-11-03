@@ -59,7 +59,7 @@ def test_a_move_never_passes_its_speed_and_arrives() -> None:
     assert sim.data.ctrl[0] == pytest.approx(0.5)
     assert fastest <= speed * 1.001
     assert fastest > speed * 0.95
-    assert not motion.held
+    assert motion.ended is None
     assert sim.motions == []
 
 
@@ -92,6 +92,8 @@ def test_a_newer_move_takes_over_only_the_actuators_it_names() -> None:
     second = sim.move([({1: -1.0}, {1: 1.0})])
     assert first.actuators() == {0}
     assert not first.over
+    assert first.ended == "taken over"
+    assert second.ended is None
     sim.move([({0: 0.0}, {0: 1.0})])
     assert first.over
     assert first not in sim.motions
@@ -104,7 +106,7 @@ def test_hold_ends_every_move_and_keeps_the_setpoints() -> None:
     sim.advance(100)
     where = float(sim.data.ctrl[0])
     sim.hold()
-    assert motion.held
+    assert motion.ended == "held"
     assert motion.over
     assert sim.motions == []
     assert sim.goal(0) == pytest.approx(where)

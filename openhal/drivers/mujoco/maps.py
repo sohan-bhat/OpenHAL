@@ -186,6 +186,8 @@ def scale(unit: str | None, native: str, span: tuple[float, float] | None, where
         if span is None:
             raise DriverError(f"{where} is in percent, which needs a limited range in the model.")
         low, high = span
+        if high == low:
+            raise DriverError(f"{where} is in percent, which needs a range wider than zero in the model.")
         return Scale((high - low) / 100.0, low)
     try:
         offset = convert(Quantity(0.0, parse_unit(unit)), native)
@@ -213,6 +215,18 @@ class Writer:
 
 
 @dataclass(frozen=True)
+class Turn:
+    """One joint a move_to may turn, with its limits and speed in the joint's own unit."""
+
+    channel: str
+    actuator: int
+    gear: float
+    low: float
+    high: float
+    speed: float | None
+
+
+@dataclass(frozen=True)
 class Plan:
     """A move_to resolved against the model."""
 
@@ -220,7 +234,7 @@ class Plan:
     axes: dict[str, int]
     at: dict[int, float]
     aim: Aim | None
-    chain: dict[int, str]
+    joints: dict[int, Turn]
     then: dict[str, float]
 
 

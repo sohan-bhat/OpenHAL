@@ -44,6 +44,7 @@ from openhal.drivers.mujoco.maps import (
     Plan,
     Reader,
     ReadMap,
+    Turn,
     WriteMap,
     Writer,
     axes_of,
@@ -189,10 +190,12 @@ class MujocoDriver(Driver):
             span = float(model.actuator_ctrlrange[actuator][0]), float(model.actuator_ctrlrange[actuator][1])
         if item.unit is not None:
             native = item.unit
-        elif model.actuator_trntype[actuator] == mujoco.mjtTrn.mjTRN_JOINT:
+        elif _servo(model, actuator):
             native = _joint_unit(model, int(model.actuator_trnid[actuator][0]), where)[0]
         else:
-            raise DriverError(f"{where}: {item.actuator} doesn't drive a joint, so give its unit in map.unit.")
+            raise DriverError(
+                f"{where}: {item.actuator} isn't a position servo on a joint, so give its unit in map.unit."
+            )
         units = scale(self.device.channel_unit(name), native, span, where)
         spec = self.device.write[name]
         assert spec.min is not None
@@ -220,12 +223,28 @@ class MujocoDriver(Driver):
         missing = sorted(channel for channel in chain.values() if channel not in effects)
         if missing:
             raise DriverError(f"{where} moves {', '.join(missing)}, so list them in effects.")
+        turns = {joint: self._turn(model, joint, channel, where) for joint, channel in chain.items()}
         spec = self.device.actions[name]
         axes = axes_of(item, spec)
         aim = Aim(item.aim.axis, item.aim.toward) if item.aim else None
         at = {AXES.index(axis): value for axis, value in item.at.items()}
         arguments = {arg: AXES.index(axis) for arg, axis in axes.items()}
-        return Plan(site, arguments, at, aim, chain, dict(item.then))
+        return Plan(site, arguments, at, aim, turns, dict(item.then))
+
+    def _turn(self, model: Any, joint: int, channel: str, where: str) -> Turn:
+        """Where a move may put a joint, inside the model's ranges and the file's goal limits, and how fast."""
+        writer = self.writers[channel]
+        gear = float(model.actuator_gear[writer.actuator][0])
+        spans = [sorted((writer.low / gear, writer.high / gear))]
+        if model.jnt_limited[joint]:
+            spans.append([float(model.jnt_range[joint][0]), float(model.jnt_range[joint][1])])
+        if model.actuator_ctrllimited[writer.actuator]:
+            spans.append(sorted(float(value) / gear for value in model.actuator_ctrlrange[writer.actuator]))
+        low, high = max(span[0] for span in spans), min(span[1] for span in spans)
+        if low > high:
+            raise DriverError(f"{where}: {channel}'s limits don't overlap the joint's range in the model.")
+        speed = writer.speed / abs(gear) if writer.speed else None
+        return Turn(channel, writer.actuator, gear, low, high, speed)
 
     def _chain(self, model: Any, body: int) -> dict[int, str]:
         """Joints that move `body`, driven by one of the file's write channels, by joint id."""
@@ -235,7 +254,7 @@ class MujocoDriver(Driver):
             above.add(body)
         chain: dict[int, str] = {}
         for channel, writer in self.writers.items():
-            if model.actuator_trntype[writer.actuator] != mujoco.mjtTrn.mjTRN_JOINT:
+            if not _servo(model, writer.actuator):
                 continue
             joint = int(model.actuator_trnid[writer.actuator][0])
             if int(model.jnt_bodyid[joint]) in above:
@@ -300,21 +319,14 @@ class MujocoDriver(Driver):
             unit = specs[arg].unit
             assert unit is not None
             point[axis] = convert(Quantity(float(args[arg]), parse_unit(unit)), "m")
-        writers = {joint: self.writers[channel] for joint, channel in plan.chain.items()}
-        model = world.model
-        gears = {joint: float(model.actuator_gear[writer.actuator][0]) for joint, writer in writers.items()}
-        limits = {joint: _joint_limits(model, joint, writer, gears[joint]) for joint, writer in writers.items()}
-        speeds = {
-            joint: (writer.speed / abs(gears[joint]) if writer.speed else None) for joint, writer in writers.items()
-        }
         x, y, z = point
         solution = await asyncio.to_thread(
             world.solve,
             plan.site,
             (x, y, z),
-            limits,
+            {joint: (turn.low, turn.high) for joint, turn in plan.joints.items()},
             aim=plan.aim,
-            speeds=speeds,
+            speeds={joint: turn.speed for joint, turn in plan.joints.items()},
             tolerance=self.settings.tolerance,
             aim_tolerance=self.settings.aim_tolerance,
         )
@@ -325,8 +337,9 @@ class MujocoDriver(Driver):
                 f"The closest pose ends {solution.error_m * 1000:.1f} mm and "
                 f"{math.degrees(solution.aim_error_rad):.1f} deg away, so pick a point inside the reach."
             )
-        reach = {writers[joint].actuator: gears[joint] * value for joint, value in solution.joints.items()}
-        reach_speeds = {writer.actuator: writer.speed for writer in writers.values()}
+        turns = plan.joints
+        reach = {turns[joint].actuator: turns[joint].gear * value for joint, value in solution.joints.items()}
+        reach_speeds = {turn.actuator: self.writers[turn.channel].speed for turn in turns.values()}
         phases = [(reach, reach_speeds)]
         if plan.then:
             then = {
@@ -339,7 +352,7 @@ class MujocoDriver(Driver):
         motion = world.move(phases)
         status = await self._wait(motion)
         goals = {
-            plan.chain[joint]: round(writers[joint].scale.channel(gears[joint] * value), 3)
+            turns[joint].channel: round(self.writers[turns[joint].channel].scale.channel(turns[joint].gear * value), 3)
             for joint, value in solution.joints.items()
         }
         return {"status": status, "to_mm": shown, "goals": goals, "error_mm": round(solution.error_m * 1000, 3)}
@@ -351,7 +364,7 @@ class MujocoDriver(Driver):
             if loop.time() >= deadline:
                 return "started"
             await asyncio.sleep(POLL_S)
-        return "held" if motion.held else "done"
+        return motion.ended or "done"
 
     async def _safe_state(self) -> None:
         if self.world is not None:
@@ -367,16 +380,22 @@ class MujocoDriver(Driver):
             name = _slug(_name(model, mujoco.mjtObj.mjOBJ_JOINT, joint))
             if name and _scalar(model, joint):
                 read[name] = {"unit": "deg" if model.jnt_type[joint] == mujoco.mjtJoint.mjJNT_HINGE else "mm"}
+                real = _name(model, mujoco.mjtObj.mjOBJ_JOINT, joint)
+                if real != name:
+                    read[name]["map"] = {"joint": real}
         for actuator in range(model.nu):
             name = _slug(_name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, actuator))
             joint = int(model.actuator_trnid[actuator][0])
-            if not name or model.actuator_trntype[actuator] != mujoco.mjtTrn.mjTRN_JOINT or not _scalar(model, joint):
+            if not name or not _servo(model, actuator) or not _scalar(model, joint):
                 continue
             unit, factor = ("deg", math.degrees(1.0)) if _native_unit(model, joint) == "rad" else ("mm", 1000.0)
             entry: dict[str, Any] = {"unit": unit, "suggested": True}
             span = _span(model, actuator, joint)
             if span is not None:
                 entry |= {"min": round(span[0] * factor, 1), "max": round(span[1] * factor, 1)}
+            real = _name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, actuator)
+            if real != name[:42]:
+                entry["map"] = {"actuator": real}
             write[f"{name[:42]}_goal"] = entry
         return {
             "device": {"name": f"{_model_name(model) or 'MuJoCo model'} (simulated)"},
@@ -434,13 +453,13 @@ def _span(model: Any, actuator: int, joint: int) -> tuple[float, float] | None:
     return None
 
 
-def _joint_limits(model: Any, joint: int, writer: Writer, gear: float) -> tuple[float, float]:
-    """Where inverse kinematics may put a joint, inside the model's range and the file's goal limits."""
-    low, high = sorted((writer.low / gear, writer.high / gear))
-    if model.jnt_limited[joint]:
-        low = max(low, float(model.jnt_range[joint][0]))
-        high = min(high, float(model.jnt_range[joint][1]))
-    return low, high
+def _servo(model: Any, actuator: int) -> bool:
+    """Whether an actuator is a position servo on a joint, so its control is where the joint goes."""
+    return bool(
+        model.actuator_trntype[actuator] == mujoco.mjtTrn.mjTRN_JOINT
+        and model.actuator_biastype[actuator] == mujoco.mjtBias.mjBIAS_AFFINE
+        and model.actuator_biasprm[actuator][1] < 0
+    )
 
 
 def _name(model: Any, kind: Any, index: int) -> str:

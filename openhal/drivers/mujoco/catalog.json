@@ -10,6 +10,7 @@
     "simulated arms with move_to by inverse kinematics"
   ],
   "hazard_default": "medium",
+  "conformance": "full",
   "tests": "unit tests on a small built-in arm and the conformance suite, skipped when the mujoco extra isn't installed",
   "estimate": {
     "devices": "none (simulation only)",
