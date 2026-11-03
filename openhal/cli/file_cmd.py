@@ -18,7 +18,7 @@ from openhal.spec.loader import Report, validate_path
 from openhal.spec.schema import device_file_schema
 
 app = typer.Typer(help="Validate and confirm device files, and print the schema.")
-console = Console(highlight=False)
+console = Console(highlight=False, soft_wrap=True)
 
 
 def _expand(paths: list[Path]) -> list[Path]:

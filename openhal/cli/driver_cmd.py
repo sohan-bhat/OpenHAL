@@ -28,7 +28,7 @@ from openhal.cli._pick import Option
 from openhal.drivers import registry
 
 app = typer.Typer(help="List drivers, run the conformance suite and scaffold new drivers.")
-console = Console(highlight=False)
+console = Console(highlight=False, soft_wrap=True)
 
 TEMPLATES = Path(__file__).parent / "templates" / "driver"
 NAME = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
