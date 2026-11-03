@@ -4,7 +4,7 @@ Every visual element on the website and in the Inspector, and the part of the sy
 
 Sources are named by where they live.
 
-- **Tokens.** design/tokens.css (colors, status colors, spacing, radius, type scale, the Atkinson faces).
+- **Tokens.** design/tokens.css (colors, status colors, spacing, radius, type scale, the IBM Plex faces).
 - **Mapping.** The theme mapping table in docs/DESIGN.md.
 - **Signature.** The two signature elements in docs/DESIGN.md, the flow diagram and the message trace.
 - **Scenario.** docs/demo/scenario.yaml.

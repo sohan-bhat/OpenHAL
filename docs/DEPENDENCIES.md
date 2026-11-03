@@ -40,6 +40,8 @@ The website's packages are pinned in website/package.json and website/pnpm-lock.
 | motion | 14.2.0 | MIT | The nav highlight's slide between sections |
 | lucide-react | 1.57.0 | ISC | The Sheet's close icon and its button's chevron |
 | fonttools | 4.67.0 | MIT | Draws the wordmark, the mark and the favicon from the brand face, run through uv by tools/readme/build.py |
+| @fontsource-variable/ibm-plex-sans | 5.3.0 | OFL-1.1 | IBM Plex Sans, the text and wordmark face. The package's Latin WOFF2 files are copied into design/fonts, so the package is not installed |
+| @fontsource/ibm-plex-mono | 5.3.0 | OFL-1.1 | IBM Plex Mono, the code face, copied into design/fonts the same way at the weights in use |
 
 ## Development
 
