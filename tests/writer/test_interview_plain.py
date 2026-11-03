@@ -133,6 +133,16 @@ def test_only_high_risk_entries_are_asked_and_the_rest_stay_as_they_were() -> No
     assert file.write["brightness"].suggested
 
 
+@pytest.mark.parametrize("source", ["manual", "sketch", "hand-written"])
+def test_a_draft_with_no_range_from_the_device_gets_every_question(source: str) -> None:
+    draft = lamp(source)
+    draft["write"]["brightness"].pop("risk")
+    assert "brightness.max" in asked(draft), "a range a manual or an agent wrote needs a person's check"
+    library = lamp("library")
+    library["write"]["brightness"].pop("risk")
+    assert interview.questions(library) == []
+
+
 def test_a_draft_that_doesnt_load_yet_gets_every_question() -> None:
     draft = lamp()
     draft["write"]["brightness"] = {"unit": "percent", "suggested": True}

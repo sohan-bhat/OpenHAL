@@ -48,7 +48,7 @@ provenance: { source: self-described }
 
 KILN = """\
 openhal: "0.1"
-device: Kiln controller
+device: Shop controller
 id: kiln
 connect: { mock: kiln }
 write:

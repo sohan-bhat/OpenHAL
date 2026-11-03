@@ -3,7 +3,8 @@
 `openhal init`, `openhal file confirm`, the driver writer and the Inspector all ask these
 questions and check each answer with `problem`, so a value outside what the device reports is
 refused the same way everywhere. Questions cover every high risk write channel and action (ADR 0023),
-because low and medium ones take commands within the device's own range with no interview. For a
+because low and medium ones take commands within the device's own range with no interview. A draft
+from a manual, a sketch or an agent has no range the device reported, so it gets every question. For a
 channel they ask the unit, min, max, rate, safe value and confirmation tier, and for an action its
 argument limits, requirements, a run limit and the tier. Then they ask the device's hazard class,
 the action that makes the device safe and its interlocks. A draft that doesn't load as a device file
@@ -39,6 +40,8 @@ HAZARDS: Final = ("low", "medium", "high")
 DEVICE_LIMITS: Final = "x-device-limits"
 """Where a device file keeps the range each channel and argument has on the device itself."""
 REPORTING_SOURCES: Final = ("self-described", "driver-describe")
+RANGE_SOURCES: Final = (*REPORTING_SOURCES, "library")
+"""Drafts whose ranges came from the device itself or the curated library. Only these skip low and medium questions."""
 _DEFAULT_TIER: Final = {"low": "none", "medium": "confirm", "high": "confirm-each-time"}
 _INTERLOCK: Final = re.compile(
     r"^\s*if\s+(?P<condition>.+?)\s+require\s+(?P<require>.+?)(?:\s+because\s+(?P<message>.+?))?\s*$", re.I
@@ -388,8 +391,12 @@ def _action_questions(name: str, spec: dict[str, Any], source: str, bounds: dict
 def targets(draft: dict[str, Any]) -> set[str] | None:
     """The `write:<name>` and `action:<name>` targets the interview asks about, the high risk ones.
 
-    None means every target, for a draft that doesn't load yet, whose levels can't be told.
+    None means every target. A draft gets every question when it doesn't load yet, so its levels
+    can't be told, or when its ranges came from a manual, a sketch, an agent or a hand-written file
+    rather than from the device or the library, so no range in it stands for the device's own.
     """
+    if _source(draft) not in RANGE_SOURCES:
+        return None
     try:
         file = from_data(draft)
     except DeviceFileError:

@@ -57,7 +57,7 @@ Typical low targets are LED brightness, a display, a buzzer and a status light. 
 
 ### The interview and existing files
 
-- `openhal init`, `openhal file confirm`, the writer and the Inspector ask only about high risk targets. A draft that doesn't load yet still gets every question.
+- `openhal init`, `openhal file confirm`, the writer and the Inspector ask only about high risk targets of a draft the device described or the library supplied. A draft from a manual, a sketch, an agent or a hand-written file has no range the device reported, so it gets every question, as does a draft that doesn't load yet.
 - A file a person already confirmed keeps its limits. A person who wants the old interview's limits wider runs `openhal limits set DEVICE.CHANNEL --max 100 % --rate none` and types confirm.
 - A limit change on an entry that had no person's limits confirms that one entry, by the person who made it.
 
