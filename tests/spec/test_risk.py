@@ -326,3 +326,16 @@ def test_a_pin_must_be_a_number_or_a_name_to_share() -> None:
     assert risk.assess(odd)["write:a"].shared_with == ()
     found = risk.assess(device(write=write("brightness")))["write:brightness"]
     assert (found.kind, found.name) == ("write", "brightness")
+
+
+def test_an_action_with_its_opposite_can_be_undone() -> None:
+    printer = device(
+        "Printer",
+        actions={"pause_print": {}, "resume_print": {}, "cancel": {}, "start": {}, "stop": {}},
+    )
+    assert risk.undoable(printer, "pause_print")
+    assert risk.undoable(printer, "resume_print")
+    assert not risk.undoable(printer, "cancel")
+    assert not risk.undoable(printer, "start"), "a stop doesn't undo a start"
+    assert risk.tier(printer, "action:pause_print", "none") == "none"
+    assert risk.tier(printer, "action:cancel", "none") == "confirm"

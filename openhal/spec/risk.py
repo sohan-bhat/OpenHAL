@@ -31,8 +31,9 @@ Words in a channel's own name can set any level. Words from descriptions and enu
 raise, so text that came from a device can't lower anything. Low words match whole words only,
 while medium and high stems also match inside a word, so a compound such as heatbed counts as heat.
 
-An action can be undone when every effect it lists is a write channel the hub can set back, or
-when the safe state runs it. A high action that can't be undone is always held for a person.
+An action can be undone when every effect it lists is a write channel the hub can set back, when
+the safe state runs it, or when the device has the action that undoes it, such as resume for pause.
+A high action that can't be undone is always held for a person.
 """
 
 from __future__ import annotations
@@ -499,9 +500,39 @@ def level(file: DeviceFile, target: str) -> Level:
     return found.level if found is not None else "high"
 
 
+OPPOSITES: Final = {
+    "pause": "resume",
+    "open": "close",
+    "lock": "unlock",
+    "enable": "disable",
+    "on": "off",
+    "extend": "retract",
+    "raise": "lower",
+    "up": "down",
+    "attach": "detach",
+    "arm": "disarm",
+}
+"""Action words and the word that undoes them, both ways. Start and stop aren't here, since a start can't be undone."""
+_UNDO: Final = {**OPPOSITES, **{undo: word for word, undo in OPPOSITES.items()}}
+
+
+def _opposite(file: DeviceFile, action: str) -> str | None:
+    """The device's action that undoes `action`, such as resume for pause, if it has one."""
+    words = action.split("_")
+    for index, word in enumerate(words):
+        if word in _UNDO:
+            other = "_".join([*words[:index], _UNDO[word], *words[index + 1 :]])
+            if other in file.actions:
+                return other
+    return None
+
+
 def undoable(file: DeviceFile, action: str) -> bool:
-    """True when the hub can undo the action. It lists effects, always write channels, or the safe state runs it."""
-    return bool(file.actions[action].effects) or any(step.action == action for step in file.safe_state)
+    """True when the hub can undo the action. It lists effects, always write channels, the safe state runs it,
+    or the device has the action that undoes it, such as resume for pause."""
+    if file.actions[action].effects or any(step.action == action for step in file.safe_state):
+        return True
+    return _opposite(file, action) is not None
 
 
 def tier(file: DeviceFile, target: str, written: str) -> str:

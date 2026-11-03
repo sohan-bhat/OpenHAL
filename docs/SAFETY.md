@@ -83,7 +83,7 @@ Words in a channel's own name can set any level. Words from descriptions and enu
 | medium | Takes commands at once within the device's own reported range and rate. No interview and no approval unless a person adds one |
 | high | Read-only until a person confirms its limits. An action that can't be undone is held for a person at least once |
 
-Stop, the safe state, the watchdogs and the audit log apply at every level, and a limit a person set always applies on top of the defaults. An action can be undone when every effect it lists is a write channel, or when the safe state runs it.
+Stop, the safe state, the watchdogs and the audit log apply at every level, and a limit a person set always applies on top of the defaults. An action can be undone when every effect it lists is a write channel, when the safe state runs it, or when the device has the action that undoes it, such as resume for pause.
 
 `openhal risk set DEVICE.NAME LEVEL` changes a level. Raising applies at once. Lowering takes a person's typed phrase `confirm`, under the same rules as widening a limit, or is held as a pending change until a person approves it. Agents see every level and change none, and each change is saved in the device file and the audit log.
 

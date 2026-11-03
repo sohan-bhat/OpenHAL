@@ -75,7 +75,7 @@ Every readable channel, write channel and action has a Risk Level, `low`, `mediu
 | `medium` | Takes commands at once within the Device File's range and rate. No confirmation unless a human sets one |
 | `high` | Read-only until a human confirms its limits ([Limits provenance](#limits-provenance)). An action that can't be undone needs a human's approval at least once |
 
-An action can be undone when every effect it lists is a write channel, or when the safe state runs it. Stop, the safe state, the watchdogs, the audit log and every limit a human set apply at every level.
+An action can be undone when every effect it lists is a write channel, when the safe state runs it, or when the Device has the action that undoes it, such as `resume` for `pause`. Stop, the safe state, the watchdogs, the audit log and every limit a human set apply at every level.
 
 ## Grants
 
