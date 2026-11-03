@@ -103,11 +103,20 @@ def _row(name: str, spec: dict[str, Any]) -> list[str]:
 
 
 def _read_only(data: dict[str, Any]) -> None:
-    if not data.get("writable"):
+    if data.get("writable"):
+        return
+    device = escape(str(data["device"]))
+    path = data.get("path")
+    if path:
         console.print(
-            f"{escape(str(data['device']))} has high risk entries that stay read-only. Answer their limits with "
-            f"openhal file confirm {escape(str(data.get('path')))}"
+            f"{device} has high risk entries that stay read-only. Answer their limits with "
+            f"openhal file confirm {escape(str(path))}"
         )
+        return
+    console.print(
+        f"{device} has high risk entries that stay read-only, and {device} has no device file. Save a device file "
+        f"for {device} in {escape(str(config().devices_dir))}, then answer the limits with openhal file confirm"
+    )
 
 
 @app.callback(invoke_without_command=True)
