@@ -2,14 +2,28 @@
 
 This guide runs the demo, an agent keeping an eye on a simulated 3D print, then a [Hub](glossary:hub) you control with the simulated Arduino plant waterer. Nothing in this guide touches real hardware.
 
-You need Python 3.12 or newer and [uv](https://docs.astral.sh/uv/).
+## Install
+
+<!-- install:start -->
+On macOS and Linux, run this command in a terminal.
+
+```text
+curl -LsSf https://sohan-bhat.github.io/OpenHAL/install.sh | sh
+```
+
+On Windows, run this command in PowerShell.
+
+```text
+irm https://sohan-bhat.github.io/OpenHAL/install.ps1 | iex
+```
+<!-- install:end -->
+
+The installer puts uv, Python and OpenHAL in place, so you need nothing installed first. [Install](install.md) also covers uv, pipx and a clone of the repository.
 
 ## Run the demo
 
 ```sh tested
-$ git clone https://github.com/sohan-bhat/OpenHAL
-$ cd OpenHAL
-$ uv run openhal demo
+$ openhal demo
 ```
 
 The demo starts a hub with a simulated Klipper printer and its camera, and connects an agent to watch a print. The agent reads camera frames and warms the bed, the hub blocks the agent's request for a nozzle temperature above the limit, and the agent pauses the print and sends a request to cancel the print. Because a cancel can't be undone, the hub holds the cancel until the owner approves the cancel over the same protocol. The demo prints these messages, one step at a time.
@@ -22,7 +36,7 @@ The demo starts a hub with a simulated Klipper printer and its camera, and conne
 ## Run the whole system
 
 ```sh tested
-$ uv run openhal demo --full
+$ openhal demo --full
   soil_moisture rises from 31 % to 46 %
 <- error -32010 LIMIT_EXCEEDED
 ```
@@ -34,12 +48,12 @@ $ uv run openhal demo --full
 `init` creates `~/.openhal` with a human token and a [Device File](glossary:device-file) for the simulated plant waterer. The file is read-only until a person confirms its limits, and `file confirm` shows each limit before you type `confirm`.
 
 ```sh tested
-$ uv run openhal init
+$ openhal init
 sample device  ~/.openhal/devices/plant-waterer.hal.yaml created, read-only until you confirm it
-$ uv run openhal file confirm ~/.openhal/devices/plant-waterer.hal.yaml
+$ openhal file confirm ~/.openhal/devices/plant-waterer.hal.yaml
 action  water
-$ uv run openhal start &
-$ uv run openhal status
+$ openhal start &
+$ openhal status
 devices 1 of 1 connected
 ```
 
@@ -47,16 +61,16 @@ The hub listens on `127.0.0.1:7420` only, and a running hub loads each confirmed
 
 ## Your first device
 
-Plug in a board running the OpenHAL firmware, or an ESPHome node, and run `uv run openhal init` again. Init finds the device and shows the limits interview. Each question names one channel, its unit and a suggestion, such as "brightness, in percent. The most an agent may set. Suggested 100 %." Enter keeps the suggestion, a typed value replaces the suggestion, and a value past what the device reports is asked again with the reason. You type `confirm` once at the end, and the device is writable. The Inspector's Review limits action on a read-only device shows the same questions.
+Plug in a board running the OpenHAL firmware, or an ESPHome node, and run `openhal init` again. Init finds the device and shows the limits interview. Each question names one channel, its unit and a suggestion, such as "brightness, in percent. The most an agent may set. Suggested 100 %." Enter keeps the suggestion, a typed value replaces the suggestion, and a value past what the device reports is asked again with the reason. You type `confirm` once at the end, and the device is writable. The Inspector's Review limits action on a read-only device shows the same questions.
 
-To raise a limit later, run `uv run openhal limits set DEVICE.CHANNEL --max VALUE` and type `confirm`. A narrower limit applies at once, and a wider limit asked for from a script or an agent waits in `openhal confirm list` for you to approve.
+To raise a limit later, run `openhal limits set DEVICE.CHANNEL --max VALUE` and type `confirm`. A narrower limit applies at once, and a wider limit asked for from a script or an agent waits in `openhal confirm list` for you to approve.
 
 ## Send two commands
 
 ```sh tested
-$ uv run openhal action plant-waterer.water duration=120s
+$ openhal action plant-waterer.water duration=120s
 blocked above_max  Blocked. The duration limit is 30 s (max). Requested 120 s.
-$ uv run openhal action plant-waterer.water duration=20s
+$ openhal action plant-waterer.water duration=20s
 done  Done. water ran.
 ```
 
@@ -67,9 +81,9 @@ Because the duration in the first command is above the limit, the [Safety Kernel
 Any client may stop every device, but lifting the stop takes the human token and the typed phrase `unlock`.
 
 ```sh tested
-$ uv run openhal stop
+$ openhal stop
 plant-waterer  safe
-$ uv run openhal unlock
+$ openhal unlock
 ```
 
 ## Next

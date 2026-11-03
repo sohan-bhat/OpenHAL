@@ -222,8 +222,9 @@ def commands(text: str) -> list[str]:
     return [line.strip() for line in block.group(1).splitlines() if line.strip()]
 
 
-def test_home_quickstart_matches_the_readme() -> None:
+def test_home_demo_matches_the_readme() -> None:
+    """The home page runs the demo with the openhal its install box puts on PATH, and the README from a clone."""
     readme = commands((ROOT / "README.md").read_text(encoding="utf-8"))
     home = snippets(ROOT / "website" / "src" / "content" / "snippets" / "quickstart.md")[0]
     ours = [line[2:] for line in home.body.splitlines() if line.startswith("$ ")]
-    assert ours == readme
+    assert ours == [readme[-1].removeprefix("uv run ")]
