@@ -8,6 +8,7 @@ as a pending change for a person to approve with openhal confirm approve.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import typer
@@ -40,6 +41,13 @@ def _post(body: dict[str, Any]) -> dict[str, Any]:
         return client.call(Call("POST", "/v1/risk", dict, json=body))
 
 
+def _order(pair: tuple[str, Any]) -> tuple[bool, list[Any]]:
+    """Reads first, then names in natural order, so pin4 comes before pin12."""
+    kind, _, name = pair[0].partition(":")
+    parts = [int(part) if part.isdigit() else part for part in re.split(r"(\d+)", name)]
+    return kind != "read", parts
+
+
 @app.command("show")
 @handled
 def show_risk(
@@ -60,7 +68,7 @@ def show_risk(
         print_json({**data.model_dump(), "targets": {key: value.model_dump() for key, value in targets.items()}})
         return
     table = Table("name", "kind", "risk", "set by", "state", box=None, pad_edge=False)
-    for key, item in sorted(targets.items(), key=lambda pair: (pair[0].partition(":")[0] != "read", pair[0])):
+    for key, item in sorted(targets.items(), key=_order):
         kind, _, shown = key.partition(":")
         by = item.override_by if item.override_applied and item.override_by else "table"
         state = "read-only" if item.read_only else ("reads only" if kind == "read" else "takes commands")

@@ -150,10 +150,11 @@ def _levels(path: Path) -> str:
     from openhal.spec.risk import assess
 
     file = load(path)
-    found = [item.level for target, item in assess(file).items() if not target.startswith("read:")]
+    targets = [target for target in assess(file) if not target.startswith("read:")]
+    found = [assess(file)[target].level for target in targets]
     counts = ", ".join(f"{found.count(level)} {level}" for level in ("low", "medium", "high") if level in found)
-    waiting = len(file.unconfirmed())
-    tail = f", {waiting} read-only until you confirm their limits" if waiting else ", every one takes commands"
+    waiting = sum(1 for target in targets if file.read_only(target))
+    tail = f", {waiting} read-only until you confirm the limits" if waiting else ", every one takes commands"
     return f"risk {counts or 'nothing to control'}{tail if found else ''}"
 
 
