@@ -1,23 +1,23 @@
 # Credits
 
-Everything in the launch film is drawn from code. These are the outside files the code reads. None of them are stored in this repository. `video/scenes/fetch_assets.py` downloads each one at a pinned version into `video/assets/` and checks its SHA-256 against `video/assets.json`.
+## SO-101 render model for the stack test
 
-## SO-101 robot arm
-
-The arm is the SO-101 by TheRobotStudio, the arm Hugging Face LeRobot uses.
+The render stack test (ADR 0022) draws the arm from The Robot Studio's own URDF export and STL parts, used as published. None of the files are stored in this repository.
 
 | | |
 |---|---|
-| Source | https://github.com/TheRobotStudio/SO-ARM100, folder `Simulation/SO101`, at commit `5f6d2b876a53a4872e405b991dd925556c9e38a4` (2026-09-23) |
-| License | Apache License 2.0, read from the repository's `LICENSE` file at that commit and from the GitHub license field. The fetch script keeps a copy at `video/assets/so101/LICENSE`. |
-| Origin | TheRobotStudio generated the URDF from its Onshape CAD with onshape-to-robot. |
-| Changes | None to the files. The film scenes import the parts as they are. `video/scenes/export_glb.py` derives smoothed GLB copies of the same parts for the Remotion project, kept only in `video/assets/so101/glb/`. |
+| Model | `so101_new_calib.urdf` and its STL parts in The Robot Studio's SO-ARM100 repository, folder `Simulation/SO101` |
+| Source | https://github.com/TheRobotStudio/SO-ARM100/tree/5f6d2b876a53a4872e405b991dd925556c9e38a4/Simulation/SO101 |
+| Commit | `5f6d2b876a53a4872e405b991dd925556c9e38a4`, 2026-09-23 |
+| License | Apache License 2.0, in the repository's `LICENSE` file at that commit |
+| Derived from | The Robot Studio's Onshape CAD, exported with onshape-to-robot |
+| Fetched by | `video/scenes/fetch_assets.py`, which checks each file against a pinned SHA-256 in `video/assets.json` and keeps a copy of the license at `video/assets/so101/LICENSE` |
 
-The film uses these files.
+`video/scenes/export_glb.py` derives smoothed GLB copies of the same parts for the Remotion project, kept only in `video/assets/so101/glb/`. The servo cables are not part of the CAD. `video/scenes/so101_cables.py` adds them as curves between servo housings.
 
 | File | Role |
 |---|---|
-| `so101_new_calib.urdf` | Links, joints, limits and part placement. Joint zero sits mid-range ("new calibration"). |
+| `so101_new_calib.urdf` | Links, joints, limits and part placement, with joint zero mid-range (the new calibration) |
 | `assets/base_so101_v2.stl` | Base |
 | `assets/base_motor_holder_so101_v1.stl` | Base motor holder |
 | `assets/waveshare_mounting_plate_so101_v2.stl` | Driver board plate |
@@ -32,17 +32,16 @@ The film uses these files.
 | `assets/sts3215_03a_v1.stl` | STS3215 servo, five instances |
 | `assets/sts3215_03a_no_horn_v1.stl` | STS3215 servo without horn, wrist roll |
 
-This export has the most faithful geometry. The MuJoCo Menagerie model `robotstudio_so101` (Apache-2.0) is derived from it, according to the Menagerie README, and uses the same STL parts. The Menagerie copy adds collision primitives and a camera mount for simulation, which a film doesn't need.
-
-The servo cables are not part of the CAD. `video/scenes/so101_cables.py` adds them as curves between servo housings.
+The MuJoCo Menagerie model `robotstudio_so101` is derived from this export, according to the Menagerie README, and uses the same STL parts and joint names. The Menagerie copy adds collision primitives and a camera mount for simulation.
 
 ## Studio HDRI
 
 | | |
 |---|---|
-| Asset | Studio Small 09 by Sergej Majboroda, Poly Haven, 2K Radiance HDR (`studio_small_09_2k.hdr`) |
+| Model | Studio Small 09 by Sergej Majboroda, 2K Radiance HDR, `studio_small_09_2k.hdr` |
 | Source | https://polyhaven.com/a/studio_small_09 |
 | License | CC0 1.0. Poly Haven publishes every asset under CC0. |
+| Fetched by | `video/scenes/fetch_assets.py`, against a pinned SHA-256 in `video/assets.json` |
 | Use | Reflections and soft ambient light only. Camera rays skip it, so it never shows in frame. |
 
 ## Fonts
