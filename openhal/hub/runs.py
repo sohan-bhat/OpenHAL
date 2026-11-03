@@ -441,3 +441,297 @@ class RunEngine:
             "started_at": started_at,
             "series": [series(target, points[target]) for target in body.targets],
         }
+
+    def _check_body(self, body: RunBody) -> Flat:
+        total = len(body.steps) * body.repeat
+        if total > self.caps.max_steps:
+            raise RunError(
+                400,
+                f"This run has {total} steps with its repeats, and a run may have {self.caps.max_steps}. "
+                "Use fewer steps or repeats. A person raises the cap with openhal runs caps --max-steps.",
+            )
+        waits = sum(step.seconds for step in body.steps if isinstance(step, WaitStep)) * body.repeat
+        if waits > self.caps.max_seconds:
+            raise RunError(400, self._too_long("A run that waits", waits))
+        for step in body.steps:
+            if isinstance(step, ReadStep):
+                for target in step.targets:
+                    self._target(target)
+            elif isinstance(step, WaitUntilStep):
+                if step.timeout_s > self.caps.max_seconds:
+                    raise RunError(400, self._too_long("A wait_until step", step.timeout_s))
+                self._condition(step.condition)
+        return [(iteration, index, step) for iteration in range(body.repeat) for index, step in enumerate(body.steps)]
+
+    async def start(self, who: Principal, body: RunBody) -> dict[str, Any]:
+        """Check the run as a plan, start it, and reply when it ends or after `wait_s`."""
+        flat = self._check_body(body)
+        run = Run(
+            who,
+            run_id=f"run-{secrets.token_hex(8)}",
+            steps=list(body.steps),
+            repeat=body.repeat,
+            started_at=time.time(),
+            clock_start=self.kernel.clock(),
+        )
+        self._admit(run)
+        self._keep(run)
+        self.hub.audit.append(
+            "run",
+            who.label,
+            target=f"run:{run.run_id}",
+            status="running",
+            run_id=run.run_id,
+            steps=len(body.steps),
+            repeat=body.repeat,
+            total=len(flat),
+        )
+        blocked = self._plan(run, flat)
+        if blocked is not None:
+            self._finish(run, "blocked", blocked)
+            return self.view(run)
+        run.task = asyncio.create_task(self._execute(run, flat), name=f"openhal-{run.run_id}")
+        with contextlib.suppress(TimeoutError):
+            await asyncio.wait_for(run.done.wait(), body.wait_s)
+        return self.view(run)
+
+    def _keep(self, run: Run) -> None:
+        self.runs[run.run_id] = run
+        finished = [item for item in self.runs.values() if item.status != "running"]
+        for old in finished[: max(0, len(self.runs) - KEPT_RUNS)]:
+            del self.runs[old.run_id]
+
+    def _plan(self, run: Run, flat: Flat) -> dict[str, Any] | None:
+        """Evaluate every command in order as if the earlier ones ran, with waits moving the clock."""
+        if self.kernel.stopped:
+            return {"index": 0, "step": 0, "iteration": 0, "kind": "run", "code": "stopped", "message": STOPPED_MESSAGE}
+        shadow = Shadow()
+        held: list[int] = []
+        commands = 0
+        for position, (iteration, index, step) in enumerate(flat):
+            if isinstance(step, WaitStep):
+                shadow.now += step.seconds
+                continue
+            if not isinstance(step, WriteStep | ActionStep):
+                continue
+            command = step.command(iteration)
+            decision = self.kernel.evaluate(command, run.principal, shadow=shadow, wire=True)
+            commands += 1
+            if decision.status == "blocked":
+                run.plan = {"commands_checked": commands, "needs_confirmation": held}
+                return {
+                    "index": position,
+                    "step": index,
+                    "iteration": iteration,
+                    "kind": step.kind,
+                    "code": decision.code,
+                    "message": f"Nothing ran. {decision.message}",
+                    "decision": self._decision(decision),
+                }
+            if decision.status == "needs_confirmation":
+                held.append(position)
+            if isinstance(command, Write):
+                shadow.record(command.device, command.channel, decision.value)
+            else:
+                shadow.record_run(command.device, command.action)
+        run.plan = {"commands_checked": commands, "needs_confirmation": held}
+        return None
+
+    def _decision(self, decision: Decision) -> dict[str, Any]:
+        runtime = self.kernel.devices.get(decision.device)
+        return views.decision_view(decision, runtime.file if runtime is not None else None)
+
+    async def _execute(self, run: Run, flat: Flat) -> None:
+        deadline = run.clock_start + self.caps.max_seconds
+        try:
+            for position, (iteration, index, step) in enumerate(flat):
+                base = {"index": position, "step": index, "iteration": iteration, "kind": step.kind}
+                if run.ended.is_set():
+                    self._finish(run, "cancelled", {**base, "code": run.reason, "message": run.ending()})
+                    return
+                if self.kernel.clock() >= deadline:
+                    self._finish(run, "cancelled", {**base, **self._time_cap()})
+                    return
+                run.current = base
+                result, stop = await self._step(run, base, step, iteration, deadline)
+                run.results.append(result)
+                self.hub.audit.append(
+                    "run_step",
+                    run.principal.label,
+                    device=result.get("device"),
+                    target=result.get("target") or f"run:{run.run_id}",
+                    status=result.get("status"),
+                    code=result.get("code"),
+                    run_id=run.run_id,
+                    **{key: base[key] for key in ("index", "step", "iteration", "kind")},
+                )
+                if stop is not None:
+                    status = stop.pop("status")
+                    self._finish(run, status, {**base, **stop})
+                    return
+            self._finish(run, "done", None)
+        except asyncio.CancelledError:
+            self._finish(run, "cancelled", {"kind": "run", "code": "hub_closed", "message": ENDINGS["hub_closed"]})
+            raise
+        except Exception as exc:  # noqa: BLE001 (fail closed, a bug ends the run and nothing else runs)
+            message = f"The run hit an unexpected error ({type(exc).__name__}). The steps after this one did not run."
+            self._finish(run, "failed", {"kind": "run", "code": "internal_error", "message": message})
+
+    def _time_cap(self) -> dict[str, Any]:
+        return {
+            "code": "time_cap",
+            "message": f"Ended at the run time cap of {self.caps.max_seconds:g} s. The steps after this one did "
+            "not run. A person raises the cap with openhal runs caps --max-seconds.",
+        }
+
+    def _ended(self, run: Run) -> dict[str, Any]:
+        return {"status": "cancelled", "code": run.reason, "message": run.ending()}
+
+    async def _step(
+        self, run: Run, base: dict[str, Any], step: Any, iteration: int, deadline: float
+    ) -> tuple[dict[str, Any], dict[str, Any] | None]:
+        """Run one step. Returns its result and, when the run ends here, why."""
+        if isinstance(step, WaitStep):
+            seconds = min(step.seconds, deadline - self.kernel.clock())
+            whole = await self._pause(run, seconds)
+            done = whole and seconds == step.seconds
+            result = {**base, "status": "done" if done else "cancelled", "seconds": seconds}
+            if not whole:
+                return result, self._ended(run)
+            if not done:
+                return result, {"status": "cancelled", **self._time_cap()}
+            return result, None
+        if isinstance(step, ReadStep):
+            readings = [(await self._read(run, *self._target(target)))[1] for target in step.targets]
+            return {**base, "status": "done", "readings": readings}, None
+        if isinstance(step, WaitUntilStep):
+            tree, refs = self._condition(step.condition)
+            limit = min(step.timeout_s, deadline - self.kernel.clock())
+            outcome = await self._wait(run, tree, refs, limit, step.interval_s)
+            result = {**base, "condition": step.condition, **outcome}
+            if outcome["status"] == "held":
+                return result, None
+            if outcome["status"] != "timeout":
+                return result, self._ended(run)
+            if limit < step.timeout_s:
+                return result, {"status": "cancelled", **self._time_cap()}
+            message = (
+                f"{step.condition} did not hold within {step.timeout_s:g} s. The steps after this one did not run."
+            )
+            return result, {"status": "failed", "code": "condition_timeout", "message": message}
+        decision = await self.kernel.execute(step.command(iteration), run.principal, wire=True)
+        result = {**base, **self._decision(decision)}
+        if run.ended.is_set():
+            return result, self._ended(run)
+        if decision.status == "done":
+            return result, None
+        if decision.status == "pending":
+            message = (
+                f"{decision.message} The run ended here, and the steps after this one did not run. A person "
+                f"approves the request with openhal confirm approve {decision.request_id}."
+            )
+            stop = {"status": "pending", "code": "needs_confirmation", "request_id": decision.request_id}
+            return result, {**stop, "message": message}
+        stop = {"status": "blocked" if decision.status == "blocked" else "failed", "code": decision.code}
+        return result, {**stop, "message": f"{decision.message} The steps after this one did not run."}
+
+    def _finish(self, run: Run, status: str, stop: dict[str, Any] | None) -> None:
+        run.status, run.stop, run.current = status, stop, None
+        run.finished_at, run.clock_end = time.time(), self.kernel.clock()
+        run.message = stop["message"] if stop is not None else f"Done. All {len(run.results)} steps ran."
+        self._active.discard(run)
+        run.done.set()
+        self.hub.audit.append(
+            "run",
+            run.principal.label,
+            target=f"run:{run.run_id}",
+            status=status,
+            code=stop.get("code") if stop is not None else None,
+            run_id=run.run_id,
+            message=run.message,
+            stopped_at=None if stop is None else {key: stop.get(key) for key in ("index", "step", "iteration")},
+        )
+
+    def view(self, run: Run, last: int = 50) -> dict[str, Any]:
+        """A run as clients receive it, with its `last` step results."""
+        end = run.clock_end if run.clock_end is not None else self.kernel.clock()
+        return {
+            "run_id": run.run_id,
+            "owner": run.principal.label,
+            "status": run.status,
+            "message": run.message,
+            "steps": len(run.steps),
+            "repeat": run.repeat,
+            "total_steps": len(run.steps) * run.repeat,
+            "done_steps": len(run.results),
+            "current": run.current,
+            "started_at": run.started_at,
+            "finished_at": run.finished_at,
+            "elapsed_s": round(end - run.clock_start, 3),
+            "stop": run.stop,
+            "request_id": (run.stop or {}).get("request_id"),
+            "plan": run.plan,
+            "results": run.results[-last:] if last else [],
+        }
+
+    def get(self, who: Principal, run_id: str) -> Run:
+        """The run, when `who` started it or is a person. Any other caller gets no run by that id."""
+        run = self.runs.get(run_id)
+        if run is None or (who.kind != "human" and run.principal.label != who.label):
+            raise RunError(404, f"There is no run {run_id}.")
+        return run
+
+    async def wait_for(self, who: Principal, run_id: str, wait_s: float, last: int) -> dict[str, Any]:
+        """The run's view, after waiting up to `wait_s` for the run to end."""
+        run = self.get(who, run_id)
+        if wait_s > 0:
+            with contextlib.suppress(TimeoutError):
+                await asyncio.wait_for(run.done.wait(), wait_s)
+        return self.view(run, last)
+
+    def listed(self, who: Principal) -> list[dict[str, Any]]:
+        """Every run `who` may see, newest first, without step results."""
+        mine = [run for run in self.runs.values() if who.kind == "human" or run.principal.label == who.label]
+        return [self.view(run, 0) for run in sorted(mine, key=lambda run: run.started_at, reverse=True)]
+
+    async def cancel(self, who: Principal, run_id: str) -> dict[str, Any]:
+        """End a run before its next step. Only the principal that started it, or a person, may."""
+        try:
+            run = self.get(who, run_id)
+        except RunError:
+            self.hub.audit.append(
+                "run_cancel", who.label, target=f"run:{run_id}", status="blocked", code="unknown_target", run_id=run_id
+            )
+            raise
+        if run.status == "running":
+            run.end("cancelled", who.label)
+            self.hub.audit.append("run_cancel", who.label, target=f"run:{run_id}", status="done", run_id=run_id)
+            with contextlib.suppress(TimeoutError):
+                await asyncio.wait_for(run.done.wait(), 15)
+        return self.view(run)
+
+    def caps_view(self) -> dict[str, Any]:
+        return {**self.caps.model_dump(), "max_points": MAX_POINTS}
+
+    def set_caps(self, who: Principal, body: CapsBody) -> dict[str, Any]:
+        """A person changes the caps. Lowering applies at once, and raising takes the typed phrase confirm."""
+        if who.kind != "human":
+            self.hub.audit.append("run_caps", who.label, status="blocked", code="not_permitted")
+            raise RunError(403, "Changing run caps takes a human principal.")
+        current = self.caps
+        changes = body.model_dump(exclude={"phrase"}, exclude_none=True)
+        raised = sorted(name for name, value in changes.items() if value > getattr(current, name))
+        if raised and (body.phrase or "").strip().lower() != CAPS_PHRASE:
+            self.hub.audit.append("run_caps", who.label, status="blocked", code="bad_request", raised=raised)
+            raise RunError(400, f"Raising {', '.join(raised)} takes the typed phrase {CAPS_PHRASE}.")
+        updated = RunSettings.model_validate({**current.model_dump(), **changes})
+        if not self.hub.in_memory:
+            save_section(self.hub.config.home, "runs", updated.model_dump())
+        self.hub.config.runs = updated
+        changed = {
+            name: {"from": getattr(current, name), "to": value}
+            for name, value in changes.items()
+            if value != getattr(current, name)
+        }
+        self.hub.audit.append("run_caps", who.label, status="done", changed=changed)
+        return {**self.caps_view(), "changed": changed}

@@ -33,7 +33,7 @@ from openhal.hub.find import FindError, find
 from openhal.hub.hub import Hub
 from openhal.hub.limits import LimitError
 from openhal.hub.locks import DeviceLocked
-from openhal.hub.runs import RunError, SampleBody, WaitBody
+from openhal.hub.runs import CapsBody, RunBody, RunError, SampleBody, WaitBody
 from openhal.kernel.checks import Block
 from openhal.kernel.commands import Action, Write
 from openhal.kernel.principals import Principal
@@ -398,6 +398,53 @@ def create_app(hub: Hub) -> FastAPI:
         except RunError as exc:
             raise HTTPException(exc.status, exc.message) from exc
 
+    @app.get("/v1/runs/caps")
+    async def run_caps(who: Who) -> dict[str, Any]:
+        """The caps on steps per run, seconds per run and runs per token."""
+        return hub.runs.caps_view()
+
+    @app.post("/v1/runs/caps")
+    async def set_run_caps(body: CapsBody, who: Who) -> dict[str, Any]:
+        """A person changes the caps. Raising a cap takes the phrase confirm."""
+        try:
+            return hub.runs.set_caps(who, body)
+        except RunError as exc:
+            raise HTTPException(exc.status, exc.message) from exc
+
+    @app.post("/v1/runs")
+    async def start_run(body: RunBody, who: Who) -> dict[str, Any]:
+        """Check a list of steps as a plan, then run the steps in order through the kernel."""
+        try:
+            return await hub.runs.start(who, body)
+        except RunError as exc:
+            raise HTTPException(exc.status, exc.message) from exc
+
+    @app.get("/v1/runs")
+    async def list_runs(who: Who) -> list[dict[str, Any]]:
+        """The runs this token started, newest first. A person sees every run."""
+        return hub.runs.listed(who)
+
+    @app.get("/v1/runs/{run_id}")
+    async def get_run(
+        run_id: str,
+        who: Who,
+        wait_s: Annotated[float, Query(ge=0, le=30)] = 0,
+        last: Annotated[int, Query(ge=0, le=10_000)] = 50,
+    ) -> dict[str, Any]:
+        """One run with its last step results, after waiting up to wait_s for the run to end."""
+        try:
+            return await hub.runs.wait_for(who, run_id, wait_s, last)
+        except RunError as exc:
+            raise HTTPException(exc.status, exc.message) from exc
+
+    @app.post("/v1/runs/{run_id}/cancel")
+    async def cancel_run(run_id: str, who: Who) -> dict[str, Any]:
+        """End a run before its next step. Only the token that started the run, or a person."""
+        try:
+            return await hub.runs.cancel(who, run_id)
+        except RunError as exc:
+            raise HTTPException(exc.status, exc.message) from exc
+
     @app.post("/v1/stop")
     async def stop(body: StopBody, who: Who) -> dict[str, Any]:
         return views.stop_view(await hub.kernel.stop_all(who, body.reason))
@@ -709,9 +756,11 @@ def create_app(hub: Hub) -> FastAPI:
     @app.delete("/v1/tokens/{token_id}")
     async def revoke_token(token_id: str, who: Who) -> dict[str, Any]:
         human_only(who)
-        if not hub.tokens.revoke(token_id):
+        info = next((item for item in hub.tokens.list() if item.token_id == token_id), None)
+        if info is None or not hub.tokens.revoke(token_id):
             raise HTTPException(404, f"There is no active token {token_id!r}.")
-        hub.audit.append("token_revoked", who.label, target=token_id)
+        ended = hub.runs.end_for(f"{info.kind}:{info.name}", "token_revoked")
+        hub.audit.append("token_revoked", who.label, target=token_id, runs_ended=ended)
         return {"ok": True}
 
     @app.get("/v1/whoami")
