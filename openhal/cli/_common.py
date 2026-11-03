@@ -81,8 +81,8 @@ def fail(message: str, code: int = EXIT_FAILED) -> NoReturn:
 
 @contextmanager
 def errors() -> Iterator[None]:
-    """Turn client exceptions into one clear line and an exit code."""
-    from openhal.client import HubNotRunning, NotSupported, OpenHALError, Unauthorized
+    """Turn client exceptions into one clear line and an exit code. An unknown id gets the nearest real ids."""
+    from openhal.client import HubNotRunning, NotFound, NotSupported, OpenHALError, Unauthorized
 
     try:
         yield
@@ -92,6 +92,10 @@ def errors() -> Iterator[None]:
         fail(str(exc), EXIT_TOKEN)
     except NotSupported as exc:
         fail(str(exc))
+    except NotFound as exc:
+        from openhal.cli._choices import closest
+
+        fail(closest(str(exc)))
     except OpenHALError as exc:
         fail(str(exc))
     except ValueError as exc:
