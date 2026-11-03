@@ -3,6 +3,7 @@ import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import { cn } from "@/lib/utils";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
+import { useKeysInOrder } from "./keys-in-order";
 import { useTimings } from "./motion";
 
 interface MenuState {
@@ -61,19 +62,22 @@ function DropdownMenuTrigger({ ...props }: React.ComponentProps<typeof DropdownM
 /**
  * The list, 4 px from its button on the page background in a 1 px border box with no shadow. It
  * grows from the button in 200 ms and shrinks back in 150 ms, and Tab closes it and moves on the
- * way a menu button's list should.
+ * way a menu button's list should. Keys run in the order they were pressed, so Enter right after
+ * an arrow key chooses the item the arrow reached.
  */
 function DropdownMenuContent({
   className,
   sideOffset = 4,
   children,
   onKeyDown,
+  onKeyDownCapture,
   onCloseAutoFocus,
   container,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content> & { container?: HTMLElement }) {
   const state = React.useContext(MenuContext);
   const { open: enter, close } = useTimings();
+  const keys = useKeysInOrder();
 
   return (
     <AnimatePresence>
@@ -85,8 +89,13 @@ function DropdownMenuContent({
             loop
             forceMount
             asChild
+            onKeyDownCapture={(event) => {
+              onKeyDownCapture?.(event);
+              keys.onKeyDownCapture(event);
+            }}
             onKeyDown={(event) => {
               onKeyDown?.(event);
+              keys.onKeyDown(event);
               if (event.key !== "Tab" || !state) return;
               event.preventDefault();
               state.leaving.current = event.shiftKey ? "backward" : "forward";
