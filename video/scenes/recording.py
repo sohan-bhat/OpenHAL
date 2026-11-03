@@ -106,7 +106,11 @@ class Recording:
         raise KeyError(name)
 
     def at(self, t: float) -> Beat:
-        """The beat whose rows hold time t."""
+        """The beat whose rows hold time t, or the nearest one. A time past either end reads that end's row."""
+        if t <= self.beats[0].times[0]:
+            return self.beats[0]
+        if t >= self.beats[-1].times[-1]:
+            return self.beats[-1]
         for beat in self.beats:
             if beat.contains(t):
                 return beat

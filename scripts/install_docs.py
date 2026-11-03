@@ -4,9 +4,11 @@
 
 install.json holds every install command once, and the home page's install box reads the same
 file. This rewrites the text between `<!-- install:start -->` and `<!-- install:end -->`, the
-one-line installers, and between `<!-- tools:start -->` and `<!-- tools:end -->`, the uv and pipx
-commands, in every page listed in PAGES. A page leaves out the blocks it has no markers for.
-Until install.json says the distribution is on PyPI, uv and pipx install from the repository.
+one-line installers, between `<!-- tools:start -->` and `<!-- tools:end -->`, the uv and pipx
+commands, and between `<!-- demo:start -->` and `<!-- demo:end -->`, the demo command, in every
+page listed in PAGES. A page leaves out the blocks it has no markers for. Until install.json says
+the distribution is on PyPI, uv and pipx install from the repository and the demo block shows only
+the installed command, and from then on the demo block adds the uvx command.
 tests/docs/test_install_docs.py fails when a page differs from what this would write.
 """
 
@@ -23,7 +25,11 @@ from openhal._brand import DISTRIBUTION_NAME
 ROOT: Final = Path(__file__).resolve().parents[1]
 CONFIG: Final = ROOT / "website" / "src" / "config" / "install.json"
 REPO_CONFIG: Final = ROOT / "website" / "src" / "config" / "repo.mjs"
-PAGES: Final = (ROOT / "docs" / "guide" / "install.md", ROOT / "docs" / "guide" / "quickstart.md")
+PAGES: Final = (
+    ROOT / "README.md",
+    ROOT / "docs" / "guide" / "install.md",
+    ROOT / "docs" / "guide" / "quickstart.md",
+)
 
 
 def read() -> dict[str, Any]:
@@ -67,9 +73,23 @@ def tools(config: dict[str, Any]) -> str:
     return lead + "\n\n```text\n" + "\n".join(commands) + "\n```"
 
 
+def demo(config: dict[str, Any]) -> str:
+    steps = config["demo"]
+    text = (
+        "Then run the demo. The demo uses simulated devices, so nothing touches real hardware.\n\n"
+        f"```text\n{fill(steps['command'], config)}\n```"
+    )
+    if config["onPyPI"]:
+        text += (
+            "\n\nWith uv installed, you can also run the demo without installing OpenHAL.\n\n"
+            f"```text\n{fill(steps['fromPyPI'], config)}\n```"
+        )
+    return text
+
+
 def blocks(config: dict[str, Any]) -> dict[str, str]:
     """The generated text for each marker name."""
-    return {"install": installers(config), "tools": tools(config)}
+    return {"install": installers(config), "tools": tools(config), "demo": demo(config)}
 
 
 def synced(text: str, config: dict[str, Any]) -> str:

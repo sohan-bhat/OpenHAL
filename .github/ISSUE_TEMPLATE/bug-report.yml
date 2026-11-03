@@ -1,0 +1,74 @@
+name: Bug report
+description: Something in OpenHAL works differently from what the docs describe.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report a security or safety problem privately, as [SECURITY.md](https://github.com/sohan-bhat/OpenHAL/blob/main/SECURITY.md) describes, and never in a public issue. A command that got past a limit, a stop or a confirmation is a safety problem.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what OpenHAL did instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The exact commands or requests, in order. A run against a simulator or a failing test is the most useful.
+      placeholder: |
+        1. openhal init
+        2. openhal start
+        3. openhal read printer.state
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: The command output, the error the hub returned or the audit log lines from `openhal log`. Remove every token first.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: OpenHAL version
+      description: The output of `openhal --version`, plus the commit from `git rev-parse --short HEAD` when you run a clone.
+      placeholder: openhal 0.1.0.dev0
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Install method
+      options:
+        - One-line installer
+        - uv or pipx
+        - A clone of the repository
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 15, Ubuntu 24.04, Windows 11 or Raspberry Pi OS
+    validations:
+      required: true
+  - type: input
+    id: driver
+    attributes:
+      label: Driver and device
+      description: The driver from `openhal driver list` and the device model, when a device is involved.
+      placeholder: moonraker with a Voron 2.4
+  - type: dropdown
+    id: hardware
+    attributes:
+      label: Real hardware
+      description: Whether real hardware was connected when the problem happened.
+      options:
+        - Simulators or mocks only
+        - Real hardware was connected
+    validations:
+      required: true

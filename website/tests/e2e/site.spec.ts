@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
+import { PITCH } from "../../src/config/brand";
+import { demoCommands } from "../../src/lib/install";
 import { SCENARIO_PATH, scenarioFrom } from "../../src/lib/scenario-data.mjs";
 
 const scenarioFile = process.env.OPENHAL_SCENARIO ?? fileURLToPath(new URL(`../../../${SCENARIO_PATH}`, import.meta.url));
@@ -43,6 +45,19 @@ test.describe("overview", () => {
     await expect(page.locator("#try")).not.toContainText("uv run");
     await expect(page.locator("#try .lede")).toHaveText("The demo uses simulated devices, so nothing touches real hardware. Install OpenHAL from the top of the page, then run the demo.");
     await expect(page.locator("#try")).toContainText("The demo plays the same story in your terminal.");
+  });
+
+  test("the demo runs through uvx with the PyPI name only once install.json says the distribution is on PyPI", async ({ page }) => {
+    await page.goto("/");
+    const { withoutInstall } = demoCommands();
+    const blocks = page.locator("#try figure.code-block pre");
+    if (withoutInstall) {
+      await expect(blocks).toHaveText(["$ openhal demo", `$ ${withoutInstall}`]);
+      await expect(page.locator("#try")).toContainText("With uv installed, you can also run the demo without installing OpenHAL.");
+    } else {
+      await expect(blocks).toHaveText(["$ openhal demo"]);
+      await expect(page.locator("#try")).not.toContainText("uvx");
+    }
   });
 
   test("the demo's command sits on one line, and Copy copies the command without its prompt", async ({ page, browserName, context }) => {
@@ -303,19 +318,28 @@ test.describe("site", () => {
     expect(copied).toBe("openhal init\nopenhal file confirm ~/.openhal/devices/plant-waterer.hal.yaml\nopenhal start &\nopenhal status");
   });
 
-  test("every page in the sitemap has its Open Graph image", async ({ request, browserName }) => {
+  test("every page in the sitemap has an Open Graph title, description and image of its own", async ({ request, browserName }) => {
     test.skip(browserName !== "chromium", "one pass is enough");
     const sitemap = await (await request.get("/sitemap-0.xml")).text();
     const pages = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => new URL(match[1]).pathname);
     expect(pages.length).toBeGreaterThan(30);
+    const meta = (html: string, key: string) => new RegExp(`<meta (?:property|name)="${key}" content="([^"]*)"`).exec(html)?.[1]?.trim();
+    const shared: string[] = [];
     for (const path of [...pages, "/404.html"]) {
       const html = await (await request.get(path)).text();
-      const image = /<meta property="og:image" content="([^"]+)"/.exec(html)?.[1];
+      for (const key of ["og:title", "og:description", "description", "og:image:alt"]) expect(meta(html, key), `${path} ${key}`).toBeTruthy();
+      expect(meta(html, "twitter:card"), path).toBe("summary_large_image");
+      const [subject, rest] = meta(html, "og:image:alt")!.split(/\.\s/, 2);
+      expect(rest?.replace(/\.$/, ""), `${path} og:image:alt repeats itself`).not.toBe(subject);
+      if (pages.includes(path) && path !== "/" && meta(html, "og:description") === PITCH) shared.push(path);
+      const image = meta(html, "og:image");
       expect(image, path).toBeTruthy();
+      expect([meta(html, "og:image:width"), meta(html, "og:image:height")], path).toEqual(["1200", "630"]);
       const response = await request.get(new URL(image!).pathname);
       expect(response.status(), `${path} -> ${image}`).toBe(200);
       expect(response.headers()["content-type"]).toContain("image/png");
     }
+    expect(shared, "these pages show the site's description instead of their own").toEqual([]);
   });
 
   test("an unknown address answers UNKNOWN_TARGET", async ({ page }) => {

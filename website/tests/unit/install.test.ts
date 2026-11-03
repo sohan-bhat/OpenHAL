@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { DISTRIBUTION_NAME } from "../../src/config/brand";
-import { INSTALL_SITE, ON_PYPI, commandPieces, installChannels } from "../../src/lib/install";
+import { INSTALL_SITE, ON_PYPI, commandPieces, demoCommands, installChannels } from "../../src/lib/install";
 
 const publicFile = (name: string) => fileURLToPath(new URL(`../../public/${name}`, import.meta.url));
 
@@ -23,6 +23,13 @@ describe("the install commands", () => {
     expect(INSTALL_SITE).toBe("https://sohan-bhat.github.io/OpenHAL");
     for (const name of ["install.sh", "install.ps1"]) expect(existsSync(publicFile(name)), name).toBe(true);
     expect(readFileSync(publicFile("install.sh"), "utf8")).toContain(`SITE="${INSTALL_SITE}"`);
+  });
+
+  it("run the demo with uvx and the distribution's name only once the distribution is on PyPI", () => {
+    expect(demoCommands(false)).toEqual({ installed: "openhal demo" });
+    expect(demoCommands(true)).toEqual({ installed: "openhal demo", withoutInstall: `uvx ${DISTRIBUTION_NAME} demo` });
+    expect(demoCommands()).toEqual(demoCommands(ON_PYPI));
+    expect(JSON.stringify(demoCommands(true))).not.toContain("uvx openhal");
   });
 
   it("mark the Windows channel with its own prompt", () => {

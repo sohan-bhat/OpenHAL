@@ -60,6 +60,11 @@ MOCK = load(plant.example_file())
 def test_pages_match_the_recorded_scenario(page: Path) -> None:
     text = page.read_text(encoding="utf-8")
     assert readme.synced(text, RECORD) == text, "Run uv run python -m openhal.demo.readme"
+    assert "<!-- outcome:start -->" in text or "<!-- trace:start -->" in text
+
+
+def test_the_docs_quickstart_shows_every_exchange() -> None:
+    text = (ROOT / "docs" / "QUICKSTART.md").read_text(encoding="utf-8")
     trace = text[text.index("<!-- trace:start -->") : text.index("<!-- trace:end -->")]
     assert "\n# " not in trace, "the page shows each step as a sentence and a code block, with no comment lines"
     for entry in RECORD["exchanges"]:
@@ -74,24 +79,42 @@ def test_the_docs_quickstart_ends_with_the_audit_log() -> None:
     assert "`TIME` stands in for the time of each entry." in text
 
 
+README_SECTIONS = (
+    "## Install",
+    "## Why OpenHAL",
+    "## How it works",
+    "## Safety model",
+    "## Supported devices",
+    "## Connect Claude or another MCP client",
+    "## Docs and specification",
+    "## Contributing",
+    "## License",
+)
+GIF_START, GIF_END = "<!-- demo-gif:start -->", "<!-- demo-gif:end -->"
+
+
 def test_the_readme_runs_in_order() -> None:
     text = README.read_text(encoding="utf-8")
-    marks = [
-        "docs/assets/wordmark-light.svg",
-        f"\n{DESCRIPTION}\n",
-        "[![License]",
-        "[![CI]",
-        "docs/diagrams/flow-light.svg",
-        "## Quickstart",
-        "## Message trace",
-    ]
+    head = ["docs/assets/wordmark-light.svg", f"\n{DESCRIPTION}\n", "[![License]", "[![CI]", GIF_START]
+    marks = [*head, *README_SECTIONS]
     places = [text.index(mark) for mark in marks]
     assert places == sorted(places)
-    between = text[text.index("[![CI]") : text.index("<picture>", text.index("[![CI]"))]
-    assert between.count("\n") == 2, "the diagram comes directly under the badges"
-    quickstart = text[text.index("## Quickstart") : text.index("## Message trace")]
-    commands = quickstart.split("```")[1].strip().splitlines()
-    assert len(commands) == 3
+    assert re.findall(r"^## .+$", text, re.M) == list(README_SECTIONS)
+    assert text[text.index("[![CI]") : text.index(GIF_START)].count("\n") == 2, "the demo GIF comes under the badges"
+
+
+def test_the_flow_diagram_heads_the_readme_until_the_demo_gif_does() -> None:
+    """The launch film's GIF goes between the demo-gif markers, and the flow diagram then moves under How it works."""
+    text = README.read_text(encoding="utf-8")
+    gif = text[text.index(GIF_START) + len(GIF_START) : text.index(GIF_END)].strip()
+    diagram = text.index("docs/diagrams/flow-light.svg")
+    if gif:
+        assert re.search(r'src="docs/assets/[\w-]+\.gif"', gif), "the GIF lives in docs/assets"
+        assert re.search(r'alt="[^"]{40,}"', gif), "the GIF has alt text that says what happens"
+        assert text.index("## How it works") < diagram < text.index("## Safety model")
+    else:
+        assert text.index(GIF_END) < diagram < text.index("## Install")
+        assert text[text.index(GIF_END) : text.index("<picture>", text.index(GIF_END))].count("\n") == 2
 
 
 def test_the_one_line_description_is_the_same_everywhere() -> None:

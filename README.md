@@ -7,6 +7,9 @@ An open-source protocol for AI agents to control hardware.
 
 [![License](https://img.shields.io/github/license/sohan-bhat/OpenHAL?color=555)](LICENSE) [![CI](https://img.shields.io/github/actions/workflow/status/sohan-bhat/OpenHAL/ci.yml?branch=main&label=CI)](https://github.com/sohan-bhat/OpenHAL/actions/workflows/ci.yml)
 
+<!-- demo-gif:start -->
+<!-- demo-gif:end -->
+
 <picture>
   <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="docs/diagrams/flow-narrow-dark.svg">
   <source media="(max-width: 600px)" srcset="docs/diagrams/flow-narrow-light.svg">
@@ -14,100 +17,65 @@ An open-source protocol for AI agents to control hardware.
   <img src="docs/diagrams/flow-light.svg" width="900" alt="OpenHAL flow. An agent sends hal/write to the hub. The safety kernel checks the command against the device file's limits. An allowed command gets a grant and goes through the driver to the 3D printer, and the reading comes back to the agent. Because the nozzle limit is 260 °C, a request for a nozzle temperature of 300 °C is blocked with LIMIT_EXCEEDED.">
 </picture>
 
-## Quickstart
+## Install
 
-You need [uv](https://docs.astral.sh/uv/) and git, and nothing in the demo touches hardware.
+<!-- install:start -->
+On macOS and Linux, run this command in a terminal.
 
+```text
+curl -LsSf https://sohan-bhat.github.io/OpenHAL/install.sh | sh
 ```
-git clone https://github.com/sohan-bhat/OpenHAL
-cd OpenHAL
-uv run openhal demo
+
+On Windows, run this command in PowerShell.
+
+```text
+irm https://sohan-bhat.github.io/OpenHAL/install.ps1 | iex
 ```
+<!-- install:end -->
+
+<!-- demo:start -->
+Then run the demo. The demo uses simulated devices, so nothing touches real hardware.
+
+```text
+openhal demo
+```
+<!-- demo:end -->
 
 <!-- outcome:start -->
 You'll see the agent raise the bed target from 60 °C to 70 °C, have a request for a nozzle temperature of 300 °C blocked at the nozzle limit of 260 °C and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.
 <!-- outcome:end -->
 
-## Message trace
+OpenHAL runs on Python 3.12 or newer. The installer needs nothing installed first, because the installer puts uv in place and uv installs a matching Python when the machine has none. [The install guide](docs/guide/install.md) covers uv, pipx, a clone of the repository, the background service and Raspberry Pi.
 
-<!-- trace:start -->
-The agent reads a frame from the printer's camera to check how the print is starting.
+## Why OpenHAL
 
-```
-→ hal/read    { "device": "printer-cam", "channel": "frame" }
-← result      { "value": { "mimeType": "image/jpeg", "bytes": 19409,
-                "width": 640, "height": 480, "data": "…" } }
-```
+An AI agent that controls a 3D printer or a lab instrument usually goes through a script or an MCP server made for that one device. Each server describes the device in a different way, and whatever limits exist sit in that one server's code. OpenHAL describes every device in one file format and puts one hub between the agents and the devices, so every command goes through the same checks.
 
-A corner of the print is lifting off the bed, so the agent sends a request to raise the bed target. The new target is inside the bed limit, so the hub passes the request to the printer.
+## How it works
 
-```
-→ hal/write   { "device": "printer", "channel": "bed_target",
-                "value": 70, "unit": "degC" }
-← result      { "status": "done" }
-```
+The flow diagram follows one command. An agent sends `hal/write` to the hub, and the safety kernel checks the command against the limits in the device file. A command inside the limits gets a grant and goes through the driver to the device, and a command outside the limits is blocked with an error such as `LIMIT_EXCEEDED`.
 
-A hotter nozzle might help the corner stick, so the agent sends a request for a higher nozzle temperature. The request is above the nozzle limit, so the hub blocks the request.
+- A `.hal.yaml` device file describes what a device can read and do, with units and limits a person confirmed.
+- The safety kernel checks every command for range, rate, interlocks and confirmation before any driver can act.
+- One driver covers a whole device family, so one SCPI driver covers bench instruments and one Moonraker driver covers Klipper printers.
+- The hub's protocol is JSON-RPC 2.0 over WebSocket and stdio, and agents reach the hub through MCP, the CLI or the Python client.
 
-```
-→ hal/write   { "device": "printer", "channel": "extruder_target",
-                "value": 300, "unit": "degC" }
-← error -32010 LIMIT_EXCEEDED
-  extruder_target 300 degC exceeds the limit of 260 degC
-  (printer.hal.yaml, confirmed by owner 2026-10-24)
-```
+## Safety model
 
-Later the agent reads another frame to check the print again.
+- A device file stays read-only until a person confirms its limits, and nothing an agent proposes counts as a confirmation.
+- Every hardware change needs a single-use grant the kernel issues for that exact command.
+- Unknown values never pass a check, so a stale or missing reading blocks the command.
+- One stop puts every device in its safe state, and the hub blocks every command until a person lifts the stop.
+- Every decision goes into a hash-chained audit log.
 
-```
-→ hal/read    { "device": "printer-cam", "channel": "frame" }
-← result      { "value": { "mimeType": "image/jpeg", "bytes": 23567,
-                "width": 640, "height": 480, "data": "…" } }
-```
-
-The print has come loose, so the agent pauses the print.
-
-```
-→ hal/action  { "device": "printer", "action": "pause" }
-← result      { "status": "done" }
-```
-
-The agent sends a request to cancel the print. A cancel can't be undone, so the hub holds the request until the owner approves the request.
-
-```
-→ hal/action  { "device": "printer", "action": "cancel" }
-← result      { "status": "pending", "requestId": "REQUEST_ID",
-                "expiresInS": 300 }
-```
-
-The owner approves the cancel with the human token over the same protocol, and the cancel runs.
-
-```
-→ hal/confirmations/approve { "requestId": "REQUEST_ID" }
-← result      { "status": "done" }
-```
-<!-- trace:end -->
-
-In this trace an agent keeps an eye on a long 3D print, and the agent watches the camera, judges what is going wrong and acts while the safety kernel checks every command against the limits a person confirmed. The owner approves the cancel, the kernel checks the cancel again, and the printer's state becomes cancelled. The trace is a real run of the hub against a simulated [printer and camera](examples/print-babysitter/), recorded in [docs/demo/scenario.yaml](docs/demo/scenario.yaml). The camera frames are line drawings, and `REQUEST_ID` stands in for the hub's random request id.
-
-## Install
-
-```
-uv tool install --compile-bytecode git+https://github.com/sohan-bhat/OpenHAL
-openhal init
-```
-
-`openhal init` sets up the hub, adds every device the hub finds as a read-only file and prints the setup for Claude Desktop, Claude Code or Cursor. [The install guide](docs/guide/install.md) covers pipx, the background service and Raspberry Pi.
-
-## What OpenHAL does
-
-- **One device file format.** A `.hal.yaml` file describes what a device can read and do, with units and limits a person confirmed.
-- **One safety kernel.** Every command is checked for range, rate, interlocks and confirmation before any driver can act.
-- **Drivers for whole device families.** One SCPI driver covers bench instruments and one Moonraker driver covers Klipper printers.
+[docs/SAFETY.md](docs/SAFETY.md) has the details.
 
 ## Supported devices
 
-v0.1, in development. Every driver passes the conformance suite on a simulator.
+OpenHAL has 34 drivers for microcontrollers, 3D printers and CNC machines, lab instruments, home automation, industrial buses, robots, telescopes, cameras and input devices. Every driver passes the conformance suite on a simulator, and no driver is verified on real hardware yet. [The hardware test plans](docs/hardware-tests/README.md) say how to run a plan on a device you own, and [the device library](library/README.md) lists the device files that come with OpenHAL.
+
+<details>
+<summary>All 34 drivers</summary>
 
 <!-- devices:start -->
 | Driver | Devices covered | Status | Hazard default |
@@ -148,24 +116,30 @@ v0.1, in development. Every driver passes the conformance suite on a simulator.
 | `zigbee-zwave` | Zigbee lights, plugs and sensors, Z-Wave switches, dimmers and plugs, Z-Wave multisensors | tested on simulator | low |
 <!-- devices:end -->
 
-## Safety model
+</details>
 
-- A device file stays read-only until a person confirms its limits, and nothing an agent proposes counts as a confirmation.
-- Every hardware change needs a single-use grant the kernel issues for that exact command.
-- Unknown values never pass a check, so a stale or missing reading blocks the command.
-- One stop puts every device in its safe state, and the hub blocks every command until a person lifts the stop.
-- Every decision goes into a hash-chained audit log.
+## Connect Claude or another MCP client
 
-[docs/SAFETY.md](docs/SAFETY.md) has the details.
+`openhal init` sets up the hub and makes a token for your AI client. When init finds Claude Desktop, Claude Code or Cursor, init adds OpenHAL to that client after you say yes, and the setup for every client is printed either way. Then start OpenHAL.
 
-## Relationship to Anthropic's MHS
+```text
+openhal init
+openhal start
+```
 
-Anthropic's Model Hardware Standard is a limited research preview for invited labs, and OpenHAL is not affiliated with MHS or with Anthropic. OpenHAL is an open protocol you can use today, and we plan to stay compatible with MHS as MHS opens up ([mapping](spec/MHS-MAPPING.md)).
+Any other MCP client can start `openhal mcp` over stdio with a separate agent token, as [the MCP guide](docs/interfaces/MCP.md) shows. [Connect Claude](docs/guide/tutorials/connect-claude.md) walks through the setup by hand.
+
+## Docs and specification
+
+- [Documentation](https://sohan-bhat.github.io/OpenHAL/docs/) with the quickstart, guides and tutorials
+- [Specification](https://sohan-bhat.github.io/OpenHAL/spec/), with every message, error and conformance level, also in [spec/](spec/SPEC.md)
+- [The demo step by step](docs/QUICKSTART.md), a real run of the hub against a simulated [printer and camera](examples/print-babysitter/) with every message and the audit log
+- [Mapping to Anthropic's MHS](spec/MHS-MAPPING.md). OpenHAL is not affiliated with Anthropic or with the Model Hardware Standard.
 
 ## Contributing
 
-Build a driver with [the driver guide](docs/drivers/WRITING-A-DRIVER.md) and run the conformance suite with `uv run pytest tests/conformance`. Device files follow [spec/SPEC.md](spec/SPEC.md).
+You can add a driver, a device file, a hardware test report or a docs fix. [CONTRIBUTING.md](CONTRIBUTING.md) covers the setup and the checks, and [the driver guide](docs/drivers/WRITING-A-DRIVER.md) covers drivers. Issues labeled [good first issue](https://github.com/sohan-bhat/OpenHAL/labels/good%20first%20issue) are small and self-contained. Report a security or safety problem privately, as [SECURITY.md](SECURITY.md) describes.
 
 ## License
 
-OpenHAL is licensed under Apache-2.0, and the full text is in [LICENSE](LICENSE).
+OpenHAL is licensed under Apache-2.0, and the full text is in [LICENSE](LICENSE). Device files in `library/` are released under CC0.
