@@ -363,17 +363,16 @@
         "cube",
         "bin",
         "agent",
-        "layer",
-        "phone"
+        "layer"
       ],
       "camera": {
         "landscape": [
-          {"at": 0, "position": [0.52, -0.86, 0.34], "target": [0.19, -0.17, 0.07], "focus": [0.16, 0.02, 0.1], "lens_mm": 32, "fstop": 4.5},
-          {"at": 1, "position": [0.505, -0.84, 0.335], "target": [0.19, -0.17, 0.07], "focus": [0.16, 0.02, 0.1], "lens_mm": 32, "fstop": 4.5}
+          {"at": 0, "position": [0.74, -0.32, 0.29], "target": [0.14, -0.05, 0.11], "focus": [0.15, -0.06, 0.11], "lens_mm": 40, "fstop": 5.0},
+          {"at": 1, "position": [0.7, -0.3, 0.28], "target": [0.14, -0.05, 0.11], "focus": [0.15, -0.06, 0.11], "lens_mm": 40, "fstop": 5.0}
         ],
         "vertical": [
-          {"at": 0, "position": [0.5385, -0.8755, 0.5175], "target": [0.19, -0.17, 0.05], "focus": [0.16, 0.02, 0.1], "lens_mm": 36.8, "fstop": 4.5},
-          {"at": 1, "position": [0.5257, -0.8585, 0.5132], "target": [0.19, -0.17, 0.05], "focus": [0.16, 0.02, 0.1], "lens_mm": 36.8, "fstop": 4.5}
+          {"at": 0, "position": [0.8, -0.34, 0.33], "target": [0.14, -0.05, 0.12], "focus": [0.15, -0.06, 0.11], "lens_mm": 34, "fstop": 5.0},
+          {"at": 1, "position": [0.76, -0.32, 0.32], "target": [0.14, -0.05, 0.12], "focus": [0.15, -0.06, 0.11], "lens_mm": 34, "fstop": 5.0}
         ]
       },
       "freeze_camera_at": {
@@ -385,7 +384,7 @@
           "style": "stop",
           "when": {"source": "person", "kind": "request", "path": "/v1/stop"},
           "until": "shot_end",
-          "place": {"landscape": [0.5, 0.5], "vertical": [0.5, 0.5]}
+          "place": {"landscape": [0.76, 0.42], "vertical": [0.5, 0.15]}
         }
       ],
       "after_black_s": 0.6
