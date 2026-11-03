@@ -1,6 +1,6 @@
 # Launch film
 
-The OpenHAL launch film is drawn entirely from code. There is no stock footage, AI video or screen recording. This folder holds the scenes, the shared shot and look files, and the stack test that picked the graphics tools (ADR 0020).
+The OpenHAL launch film is drawn entirely from code. There is no stock footage, AI video or screen recording. This folder holds the scenes, the shared shot and look files, and the stack test that picked the graphics tools (ADR 0022).
 
 ## Layout
 
@@ -49,7 +49,7 @@ Blender 4.5 is the newest release with an Intel macOS build. The 5.0, 5.1 and 5.
 
 Cycles can't use the Radeon Pro 555X. With the compute device set to Metal, Blender 4.5 lists only the CPU, and according to the Blender 4.5 manual, Metal rendering is supported on Apple Silicon only. Cycles runs on the six CPU cores. EEVEE and the Remotion WebGL renderer use the GPU, through Metal and through ANGLE on Metal.
 
-During the test, `pmset -g therm` reported a CPU speed limit of 26 to 29 percent, so the CPU ran well below its rated speed, and other agents' builds shared the machine. The times in ADR 0020 are what the machine gave under those conditions.
+During the test, `pmset -g therm` reported a CPU speed limit of 26 to 29 percent, so the CPU ran well below its rated speed, and other agents' builds shared the machine. The times in ADR 0022 are what the machine gave under those conditions.
 
 ## Rebuild the test shot
 
