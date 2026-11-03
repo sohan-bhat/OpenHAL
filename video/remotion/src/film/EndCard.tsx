@@ -16,7 +16,7 @@ export const SceneWordmark: React.FC<{aspect: Aspect; still?: boolean}> = ({aspe
   const frame = useCurrentFrame();
   const {width, height} = useVideoConfig();
   const t = still ? 1 : easeOut(frame / 14);
-  const h = aspect === 'landscape' ? 74 : 84;
+  const h = aspect === 'landscape' ? 96 : 100;
   const style: React.CSSProperties =
     aspect === 'landscape'
       ? {position: 'absolute', left: 0.07 * width, top: 0.83 * height - h / 2}
