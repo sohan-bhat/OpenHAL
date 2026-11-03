@@ -157,9 +157,9 @@
       "id": "s2-sides",
       "storyboard": 2,
       "beat": "devices",
-      "t_start": 8.3,
-      "seconds": 5.3,
-      "speed": 0.5,
+      "t_start": 8.2,
+      "seconds": 6.0,
+      "speed": 0.46,
       "set": [
         "arm",
         "cube",
@@ -168,17 +168,17 @@
         "layer",
         "phone"
       ],
-      "layer_draw": {"at": 0.9, "seconds": 1.3},
-      "wordmark": {"at": 2.3},
+      "layer_draw": {"at": 2.1, "seconds": 0.9},
+      "wordmark": {"at": 3.4},
       "camera": {
         "landscape": [
           {"at": 0, "position": [0.288, -0.192, 0.156], "target": [0.18, 0.0, 0.108], "focus": [0.18, -0.01, 0.11], "lens_mm": 60, "fstop": 8},
-          {"at": 0.62, "position": [0.9, -0.36, 0.29], "target": [0.04, -0.24, 0.085], "focus": [0.08, -0.27, 0.07], "lens_mm": 36, "fstop": 5.6},
+          {"at": 0.5, "position": [0.9, -0.36, 0.29], "target": [0.04, -0.24, 0.085], "focus": [0.08, -0.27, 0.07], "lens_mm": 36, "fstop": 5.6},
           {"at": 1, "position": [0.94, -0.36, 0.3], "target": [0.04, -0.24, 0.085], "focus": [0.08, -0.27, 0.07], "lens_mm": 36, "fstop": 5.6}
         ],
         "vertical": [
           {"at": 0, "position": [0.308, -0.212, 0.162], "target": [0.18, 0.0, 0.108], "focus": [0.18, -0.01, 0.11], "lens_mm": 45, "fstop": 8},
-          {"at": 0.62, "position": [0.9426, -0.3146, 0.5548], "target": [0.03, -0.26, 0.04], "focus": [0.07, -0.28, 0.05], "lens_mm": 46.8, "fstop": 5.6},
+          {"at": 0.5, "position": [0.9426, -0.3146, 0.5548], "target": [0.03, -0.26, 0.04], "focus": [0.07, -0.28, 0.05], "lens_mm": 46.8, "fstop": 5.6},
           {"at": 1, "position": [0.9738, -0.3146, 0.5704], "target": [0.03, -0.26, 0.04], "focus": [0.07, -0.28, 0.05], "lens_mm": 46.8, "fstop": 5.6}
         ]
       }

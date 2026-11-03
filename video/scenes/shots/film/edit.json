@@ -237,21 +237,21 @@
    "id": "s2-sides",
    "storyboard": 2,
    "start": 216,
-   "frames": 159,
+   "frames": 180,
    "source": {
     "beat": "devices",
     "file": "beat-1-devices.json",
-    "t_start": 8.3,
-    "t_end": 10.93333,
-    "speed": 0.5
+    "t_start": 8.2,
+    "t_end": 10.94467,
+    "speed": 0.46
    },
-   "wordmark": 69
+   "wordmark": 102
   },
   {
    "kind": "shot",
    "id": "s3-request",
    "storyboard": 3,
-   "start": 375,
+   "start": 396,
    "frames": 48,
    "source": {
     "beat": "pick-and-place",
@@ -265,7 +265,7 @@
    "kind": "shot",
    "id": "s3-pick",
    "storyboard": 3,
-   "start": 423,
+   "start": 444,
    "frames": 156,
    "source": {
     "beat": "pick-and-place",
@@ -279,7 +279,7 @@
    "kind": "shot",
    "id": "s4-limit",
    "storyboard": 4,
-   "start": 579,
+   "start": 600,
    "frames": 106,
    "source": {
     "beat": "limit",
@@ -293,7 +293,7 @@
    "kind": "shot",
    "id": "s5-hold",
    "storyboard": 5,
-   "start": 685,
+   "start": 706,
    "frames": 96,
    "source": {
     "beat": "approval",
@@ -307,7 +307,7 @@
    "kind": "shot",
    "id": "s5-drop",
    "storyboard": 5,
-   "start": 781,
+   "start": 802,
    "frames": 90,
    "source": {
     "beat": "approval",
@@ -321,7 +321,7 @@
    "kind": "shot",
    "id": "s6-stop",
    "storyboard": 6,
-   "start": 871,
+   "start": 892,
    "frames": 90,
    "source": {
     "beat": "stop",
@@ -334,14 +334,14 @@
   {
    "kind": "black",
    "id": "s6-stop-black",
-   "start": 961,
+   "start": 982,
    "frames": 18
   },
   {
    "kind": "shot",
    "id": "s7-devices",
    "storyboard": 7,
-   "start": 979,
+   "start": 1000,
    "frames": 192,
    "source": {
     "beat": "devices",
@@ -355,7 +355,7 @@
    "kind": "card",
    "id": "s8-end",
    "storyboard": 8,
-   "start": 1171,
+   "start": 1192,
    "frames": 195,
    "seconds": 6.5,
    "tagline": "An open-source protocol for AI agents to control hardware.",
@@ -368,8 +368,8 @@
   {
    "text": "hal/action move_to",
    "style": "call",
-   "from": 378,
-   "to": 450,
+   "from": 399,
+   "to": 471,
    "t": 11.0504,
    "place": {
     "landscape": [
@@ -386,8 +386,8 @@
   {
    "text": "LIMIT_EXCEEDED",
    "style": "blocked",
-   "from": 597,
-   "to": 685,
+   "from": 618,
+   "to": 706,
    "t": 18.5103,
    "place": {
     "landscape": [
@@ -404,8 +404,8 @@
   {
    "text": "pending",
    "style": "pending",
-   "from": 700,
-   "to": 766,
+   "from": 721,
+   "to": 787,
    "t": 23.6543,
    "place": {
     "landscape": [
@@ -422,8 +422,8 @@
   {
    "text": "approved",
    "style": "approved",
-   "from": 766,
-   "to": 832,
+   "from": 787,
+   "to": 853,
    "t": 25.8583,
    "place": {
     "landscape": [
@@ -440,8 +440,8 @@
   {
    "text": "STOP",
    "style": "stop",
-   "from": 905,
-   "to": 961,
+   "from": 926,
+   "to": 982,
    "t": 32.1198,
    "place": {
     "landscape": [
@@ -456,5 +456,5 @@
    "shot": "s6-stop"
   }
  ],
- "frames": 1366
+ "frames": 1387
 }
