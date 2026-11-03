@@ -626,23 +626,53 @@ class DeviceFile(_Strict):
         """Interlocks, watchdog rules, a safe state or a hazard class need a file-level confirmation."""
         return bool(self.interlocks or self.watchdog.max_duration or self.safe_state or self.hazard is not None)
 
+    def high_risk(self) -> list[str]:
+        """Every write channel and action at the high risk level, as `write.<name>` or `actions.<name>`."""
+        from openhal.spec.risk import assess
+
+        levels = assess(self)
+        found = [f"write.{name}" for name in self.write if levels[f"write:{name}"].level == "high"]
+        return found + [f"actions.{name}" for name in self.actions if levels[f"action:{name}"].level == "high"]
+
     def unconfirmed(self) -> list[str]:
-        """Limits that no human has confirmed yet, or that changed after they were confirmed."""
+        """High risk limits that no human has confirmed yet, or that changed after they were confirmed.
+
+        Low and medium channels and actions take commands without a confirmation (ADR 0020), so only
+        high ones and the file-level limits that guard them are listed.
+        """
+        from openhal.spec.risk import memo
+
+        return list(memo(self, "unconfirmed", self._unconfirmed))
+
+    def _unconfirmed(self) -> list[str]:
+        high = self.high_risk()
+        if not high:
+            return []
         missing: list[str] = []
         bound = self.confirmed.sha256 if self.confirmed is not None else None
         if bound is not None and bound != self.limits_sha256():
             return ["file (limits changed after they were confirmed)"]
-        if (self.write or self.actions) and self.has_file_level_limits() and self.confirmed is None:
+        if self.has_file_level_limits() and self.confirmed is None:
             missing.append("file (interlocks, watchdog, safe state and hazard)")
-        for kind, entries in (("write", self.write), ("actions", self.actions)):
-            for name, entry in entries.items():
-                if entry.suggested or (entry.confirmed is None and self.confirmed is None):
-                    missing.append(f"{kind}.{name}")
+        for item in high:
+            kind, _, name = item.partition(".")
+            entry: WriteChannel | Action = self.write[name] if kind == "write" else self.actions[name]
+            if entry.suggested or (entry.confirmed is None and self.confirmed is None):
+                missing.append(item)
         return missing
+
+    def read_only(self, target: str) -> list[str]:
+        """What a person must confirm before `write:<name>` or `action:<name>` takes commands, if anything."""
+        kind, _, name = target.partition(":")
+        entry = f"write.{name}" if kind == "write" else f"actions.{name}"
+        missing = self.unconfirmed()
+        if entry not in self.high_risk():
+            return []
+        return [item for item in missing if item == entry or item.startswith("file ")]
 
     @property
     def writable(self) -> bool:
-        """True when every limit is confirmed by a human (spec section 12)."""
+        """True when every high risk limit is confirmed by a human (spec section 12, ADR 0020)."""
         return not self.unconfirmed()
 
     def channel_unit(self, name: str) -> str | None:

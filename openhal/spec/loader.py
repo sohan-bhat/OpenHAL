@@ -136,7 +136,17 @@ def warnings_for(device: DeviceFile) -> list[str]:
             )
     unconfirmed = device.unconfirmed()
     if unconfirmed:
-        found.append("Loads read-only until a human confirms limits for " + ", ".join(unconfirmed) + ".")
+        found.append(
+            "High risk entries stay read-only until a person confirms limits for " + ", ".join(unconfirmed) + "."
+        )
+    from openhal.spec.risk import assess
+
+    for target, found_level in assess(device).items():
+        if found_level.override is not None and not found_level.override_applied:
+            found.append(
+                f"{target.partition(':')[2]} sets risk {found_level.override} with no by and at, so it stays "
+                f"{found_level.level}. A level only goes down when a person sets it with openhal risk set."
+            )
     if device.confirmed is not None and device.confirmed.sha256 is None and (device.write or device.actions):
         found.append("The confirmation isn't bound to the file content. Run openhal file confirm to bind it.")
     if device.hazard is None and (device.write or device.actions):

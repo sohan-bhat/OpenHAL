@@ -498,3 +498,36 @@ def level(file: DeviceFile, target: str) -> Level:
     """The level of `read:<name>`, `write:<name>` or `action:<name>`. An unknown target is high."""
     found = assess(file).get(target)
     return found.level if found is not None else "high"
+
+
+def undoable(file: DeviceFile, action: str) -> bool:
+    """True when the hub can undo the action, because its effects are write channels or the safe state runs it."""
+    spec = file.actions[action]
+    if any(step.action == action for step in file.safe_state):
+        return True
+    return bool(spec.effects) and all(effect in file.write for effect in spec.effects)
+
+
+def tier(file: DeviceFile, target: str, written: str) -> str:
+    """The confirmation tier a target uses. `written` is the tier the device file sets.
+
+    A high hazard device holds every command for a person each time. A high action that can't be
+    undone waits for a person at least once, whatever the file sets.
+    """
+    if file.effective_hazard == "high":
+        return "confirm-each-time"
+    kind, _, name = target.partition(":")
+    if kind == "action" and written == "none" and level(file, target) == "high" and not undoable(file, name):
+        return "confirm"
+    return written
+
+
+def own_rate(file: DeviceFile, channel: str) -> bool:
+    """Whether a write channel's `max_change_per_s` applies. A low channel ignores a rate that was only suggested."""
+    spec = file.write[channel]
+    return not (spec.suggested and level(file, f"write:{channel}") == "low")
+
+
+def scope_level(file: DeviceFile, target: str) -> Level:
+    """The level a principal's scope must cover. The device's hazard class, or lower for a lower target."""
+    return lowest(level(file, target), file.effective_hazard)
