@@ -21,16 +21,16 @@ Every WebKit page load stalls on this Mac, so the website and Inspector Playwrig
 
 ## 3. Publish the first release to PyPI
 
-The distribution is `ohal` (ADR 0002). The import package and the CLI stay `openhal`. Nothing is on PyPI yet, so every install command uses the git repository until the first release. .github/workflows/release.yml publishes through PyPI trusted publishing, so the repository holds no PyPI token.
+The distribution is `halkit` (ADR 0002). The import package and the CLI stay `openhal`. Nothing is on PyPI yet, so every install command uses the git repository until the first release. .github/workflows/release.yml publishes through PyPI trusted publishing, so the repository holds no PyPI token.
 
 1. Sign in at https://pypi.org and open Your account, then Publishing (https://pypi.org/manage/account/publishing/).
 2. Under Add a new pending publisher, pick GitHub and fill in the form exactly as below. Then click Add.
-   - PyPI Project Name `ohal`
+   - PyPI Project Name `halkit`
    - Owner `sohan-bhat`
    - Repository name `OpenHAL`
    - Workflow name `release.yml`
    - Environment name `pypi`
-3. A pending publisher doesn't reserve the name `ohal` until the first upload, so do the remaining steps soon after.
+3. A pending publisher doesn't reserve the name `halkit` until the first upload, so do the remaining steps soon after.
 4. On GitHub, open the OpenHAL repository's Settings, then Environments, then New environment. Name the environment `pypi` and click Configure environment. Add no secrets.
 5. Under Deployment branches and tags, choose Selected branches and tags and add a tag rule with the pattern `v*`, so only a release tag can deploy to `pypi`. To approve every upload yourself, also add yourself under Required reviewers.
 6. Set the version to 0.1.0. pyproject.toml says `version = "0.1.0.dev0"` and openhal/__init__.py says `__version__ = "0.1.0.dev0"`. Change both to `"0.1.0"`, then run `uv lock` and `uv run python -m openhal.hub.openapi`, so uv.lock and docs/api/openapi.json carry 0.1.0 too. SECURITY.md lists `main` (0.1.0.dev0) and says OpenHAL has no release yet, so update SECURITY.md in the same commit.
@@ -42,8 +42,8 @@ The distribution is `ohal` (ADR 0002). The import package and the CLI stay `open
    git push origin v0.1.0
    ```
 
-   The tag starts the Release workflow. The workflow stops before building anything if the tag isn't `v` plus the version in pyproject.toml. Otherwise the workflow runs the tests, builds `ohal-0.1.0.tar.gz` and `ohal-0.1.0-py3-none-any.whl`, installs the wheel in a fresh venv, checks that `openhal --version` prints `openhal 0.1.0` and uploads both files to PyPI.
-9. Check https://pypi.org/project/ohal/ for version 0.1.0. After that the install pages can switch from the git commands to `uv tool install ohal` and `pipx install ohal`.
+   The tag starts the Release workflow. The workflow stops before building anything if the tag isn't `v` plus the version in pyproject.toml. Otherwise the workflow runs the tests, builds `halkit-0.1.0.tar.gz` and `halkit-0.1.0-py3-none-any.whl`, installs the wheel in a fresh venv, checks that `openhal --version` prints `openhal 0.1.0` and uploads both files to PyPI.
+9. Check https://pypi.org/project/halkit/ for version 0.1.0. After that the install pages can switch from the git commands to `uv tool install halkit` and `pipx install halkit`.
 
 ## 4. Domain
 

@@ -79,7 +79,7 @@ Some devices have an interface but no description, and only the vendor's app con
 - Exporting the audit chain head outside the hub, so a deleted database is detectable (ADR 0010).
 - Notification filters in the hub protocol (ADR 0015).
 - The driver proposals in PROGRESS.md, including a reconnect hook, a push path for drivers that receive values and per-driver install hints.
-- The first PyPI release as `ohal`, and a domain (NEEDS_HUMAN.md, items 3 and 4).
+- The first PyPI release as `halkit`, and a domain (NEEDS_HUMAN.md, items 3 and 4).
 
 ## 8. Business model sketch
 
