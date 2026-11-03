@@ -101,6 +101,7 @@ The Arduino plant waterer (examples/plant-waterer/) stays as the Arduino example
 | Loading | The layout at its final size with values shown as an em space until they arrive, no spinners on loaded content |
 | CLI output and errors | Plain text with `->` and `<-`, error name and code first, then the reason |
 | Social images | The message trace on the page's title, in the house style |
+| Repository social preview | The wordmark and the one-line description over the flow diagram, 1280 by 640, in docs/assets/social-preview.png from website/scripts/social-preview.mjs |
 | Favicon | The mark at 16 px |
 
 Anything that doesn't map gets plain, neutral treatment, never a second metaphor.
