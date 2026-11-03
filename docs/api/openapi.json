@@ -499,6 +499,58 @@
         "title": "RejectBody",
         "type": "object"
       },
+      "RiskBody": {
+        "additionalProperties": false,
+        "description": "A new risk level for one write channel or action. Lowering takes a person's phrase or approval.",
+        "properties": {
+          "device": {
+            "maxLength": 64,
+            "title": "Device",
+            "type": "string"
+          },
+          "dry_run": {
+            "default": false,
+            "description": "Check the change and report whether it lowers, without it.",
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "level": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "name": {
+            "description": "The write channel or action.",
+            "maxLength": 64,
+            "title": "Name",
+            "type": "string"
+          },
+          "phrase": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "confirm, typed by a person to lower.",
+            "title": "Phrase"
+          }
+        },
+        "required": [
+          "device",
+          "name",
+          "level"
+        ],
+        "title": "RiskBody",
+        "type": "object"
+      },
       "RoutineBody": {
         "additionalProperties": false,
         "properties": {
@@ -1600,6 +1652,48 @@
         "summary": "Device Limits"
       }
     },
+    "/v1/devices/{device_id}/risk": {
+      "get": {
+        "description": "Every channel's and action's risk level, with the reasons. Any token may look.",
+        "operationId": "device_risk_v1_devices__device_id__risk_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "device_id",
+            "required": true,
+            "schema": {
+              "title": "Device Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Device Risk V1 Devices  Device Id  Risk Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Device Risk"
+      }
+    },
     "/v1/discover": {
       "post": {
         "operationId": "run_discovery_v1_discover_post",
@@ -2048,6 +2142,47 @@
           }
         },
         "summary": "Read Many"
+      }
+    },
+    "/v1/risk": {
+      "post": {
+        "description": "A person changes a risk level. Raising applies at once, and lowering needs the phrase or an approval.",
+        "operationId": "change_risk_v1_risk_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Change Risk V1 Risk Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Risk"
       }
     },
     "/v1/routines": {

@@ -28,6 +28,7 @@ from openhal.cli import (
     limits_cmd,
     log_cmd,
     mcp_cmd,
+    risk_cmd,
     routine_cmd,
     rpc_cmd,
     runs_cmd,
@@ -49,6 +50,7 @@ app.add_typer(confirm_cmd.app, name="confirm")
 app.add_typer(routine_cmd.app, name="routine")
 app.add_typer(writer_cmd.app, name="writer")
 app.add_typer(limits_cmd.app, name="limits")
+app.add_typer(risk_cmd.app, name="risk")
 app.add_typer(runs_cmd.app, name="runs")
 app.add_typer(token_cmd.app, name="token")
 app.add_typer(driver_cmd.app, name="driver")

@@ -33,6 +33,8 @@ def _describe(command: dict[str, object]) -> str:
         steps = changes.items() if isinstance(changes, dict) else []
         shown = ", ".join(f"{name} {step['from']} to {step['to']}" for name, step in steps)
         return f"limits {device}.{command.get('channel')} {shown}".strip()
+    if command.get("kind") == "risk":
+        return f"risk {device}.{command.get('name')} {command.get('before')} to {command.get('after')}"
     if command.get("kind") == "action":
         args = command.get("args") or {}
         shown = " ".join(f"{key}={value}" for key, value in dict(args).items()) if isinstance(args, dict) else ""
@@ -142,8 +144,10 @@ def approve(
         if request.status != "pending":
             console.print(f"This request is {escape(request.status)}, so there is nothing to approve.")
             raise typer.Exit(1)
-        if request.command.get("kind") == "limits":
-            typed = _tty.require_phrase("approve", "widen these limits", given=phrase)
+        kind = request.command.get("kind")
+        if kind in ("limits", "risk"):
+            what = "widen these limits" if kind == "limits" else "lower this risk level"
+            typed = _tty.require_phrase("approve", what, given=phrase)
             decision = client.call(
                 Call(
                     "POST",
