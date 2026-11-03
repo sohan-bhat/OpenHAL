@@ -7,7 +7,7 @@ Drafts only. Nothing on this page has been posted, and the owner posts each draf
 1. CI passes on `main`, so the README badge is green (DESIGN.md bans a failing badge).
 2. The README quickstart works on a fresh machine, from `git clone` to `uv run openhal demo`.
 3. The plant waterer plan (examples/plant-waterer/TEST-PLAN.md) has run on a real board.
-4. NEEDS_HUMAN.md items 1 and 2, the PyPI name and the domain, are decided.
+4. NEEDS_HUMAN.md item 4, the domain, is decided. The PyPI name is `ohal` (ADR 0002).
 5. `uv run openhal driver list` still shows 34 drivers. Fix the counts below if it doesn't.
 6. Each community's rules on self-promotion, flair and posting days are read and followed. One community at a time, a few days apart.
 7. Someone is there for the first hours to answer. Hardware reports go to issues. Safety reports go through SECURITY.md.
