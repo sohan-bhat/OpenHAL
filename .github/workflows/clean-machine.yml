@@ -1,0 +1,179 @@
+name: Clean machine
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/clean-machine.yml
+
+permissions:
+  contents: read
+
+jobs:
+  stranger:
+    name: a stranger on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    env:
+      REPO: https://github.com/${{ github.repository }}
+      SHA: ${{ github.sha }}
+      SITE: https://sohan-bhat.github.io/OpenHAL
+    steps:
+      - name: Write the timing helper
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/timed.sh" <<'HELPER'
+          timed() {
+            local label="$1"; shift
+            local start=$SECONDS code=0
+            "$@" || code=$?
+            echo "| $label | $((SECONDS - start)) s | $code |" >> "$GITHUB_STEP_SUMMARY"
+            return $code
+          }
+          HELPER
+          printf '| Step on %s | Time | Exit |\n|---|---|---|\n' "$RUNNER_OS" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install uv the way the uv docs say
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          source "$RUNNER_TEMP/timed.sh"
+          timed "install uv" sh -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: README quickstart, clone and run the demo
+        if: runner.os != 'Windows'
+        shell: bash
+        working-directory: ${{ runner.temp }}
+        run: |
+          source "$RUNNER_TEMP/timed.sh"
+          timed "git clone" git clone --quiet "$REPO"
+          cd OpenHAL
+          git fetch --quiet origin "$SHA" && git checkout --quiet "$SHA"
+          timed "uv run openhal demo" uv run openhal demo | tee "$RUNNER_TEMP/demo.txt"
+          grep -q "6 requests, 1 blocked, 1 confirmed by a person." "$RUNNER_TEMP/demo.txt"
+          timed "uv run openhal demo, second run" uv run openhal demo > /dev/null
+
+      - name: README install, then init, start and status
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          source "$RUNNER_TEMP/timed.sh"
+          timed "uv tool install" uv tool install --compile-bytecode "git+$REPO@$SHA"
+          version=$(sed -n 's/^version = "\(.*\)"$/\1/p' "$RUNNER_TEMP/OpenHAL/pyproject.toml" | head -n 1)
+          test "$(openhal --version)" = "openhal $version"
+          timed "openhal init" openhal init
+          openhal start > "$RUNNER_TEMP/hub.log" 2>&1 &
+          hub=$!
+          for attempt in $(seq 1 60); do openhal status > /dev/null 2>&1 && break; sleep 1; done
+          timed "openhal status" openhal status
+          kill "$hub"
+
+      - name: Install guide, the one-line installer from the live site
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          source "$RUNNER_TEMP/timed.sh"
+          clean="$RUNNER_TEMP/installer-home"
+          mkdir -p "$clean"
+          timed "curl install.sh, sh" env -i HOME="$clean" PATH="/usr/bin:/bin:/usr/sbin:/sbin" sh -c "curl -LsSf $SITE/install.sh | sh"
+          "$clean/.local/bin/openhal" --version
+
+      - name: Install guide, pipx and a built wheel
+        if: runner.os != 'Windows'
+        shell: bash
+        working-directory: ${{ runner.temp }}/OpenHAL
+        env:
+          PIPX_HOME: ${{ runner.temp }}/pipx
+          PIPX_BIN_DIR: ${{ runner.temp }}/pipx/bin
+        run: |
+          source "$RUNNER_TEMP/timed.sh"
+          timed "pipx install from GitHub" pipx install "git+$REPO@$SHA"
+          "$PIPX_BIN_DIR/openhal" --version
+          timed "uv build --wheel" uv build --wheel
+          timed "uv tool install the wheel" uv tool install --force --compile-bytecode dist/halkit-*.whl
+          timed "pipx install the wheel" pipx install --force dist/halkit-*.whl
+          openhal --version
+
+      - name: No clone, uvx and pipx run from PyPI
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          source "$RUNNER_TEMP/timed.sh"
+          if ! curl -fsS -o /dev/null https://pypi.org/pypi/halkit/json; then
+            echo "::notice::halkit is not on PyPI yet, so the uvx halkit demo and pipx run halkit demo steps run after the first release."
+            exit 0
+          fi
+          timed "uvx halkit demo" uvx halkit demo > /dev/null
+          timed "pipx run halkit demo" pipx run halkit demo > /dev/null
+
+      - name: Windows, install uv and follow the README
+        if: runner.os == 'Windows'
+        shell: pwsh
+        working-directory: ${{ runner.temp }}
+        run: |
+          function Timed([string]$Label, [scriptblock]$Block) {
+            $watch = [Diagnostics.Stopwatch]::StartNew()
+            & $Block
+            $code = $LASTEXITCODE
+            "| $Label | $([int]$watch.Elapsed.TotalSeconds) s | $code |" | Add-Content $env:GITHUB_STEP_SUMMARY
+            if ($code -ne 0) { throw "$Label stopped with exit code $code." }
+          }
+          "| Step on Windows | Time | Exit |`n|---|---|---|" | Add-Content $env:GITHUB_STEP_SUMMARY
+          Timed 'install uv' { powershell -ExecutionPolicy ByPass -c 'irm https://astral.sh/uv/install.ps1 | iex' }
+          $env:Path = "$HOME\.local\bin;$env:Path"
+          Timed 'git clone' { git clone --quiet $env:REPO }
+          Set-Location OpenHAL
+          git fetch --quiet origin $env:SHA
+          git checkout --quiet $env:SHA
+          Timed 'uv run openhal demo' { uv run openhal demo | Tee-Object -FilePath "$env:RUNNER_TEMP\demo.txt" }
+          if (-not (Select-String -Path "$env:RUNNER_TEMP\demo.txt" -SimpleMatch '6 requests, 1 blocked, 1 confirmed by a person.')) { throw 'The demo did not finish.' }
+          Timed 'uv tool install' { uv tool install --compile-bytecode "git+$env:REPO@$env:SHA" }
+          $version = (Select-String -Path pyproject.toml -Pattern '^version = "(.+)"$').Matches[0].Groups[1].Value
+          $printed = (openhal --version | Out-String).Trim()
+          if ($printed -ne "openhal $version") { throw "openhal --version printed $printed." }
+          Timed 'openhal init' { openhal init }
+          $hub = Start-Process -PassThru -WindowStyle Hidden -FilePath (Get-Command openhal).Source -ArgumentList 'start' -RedirectStandardOutput "$env:RUNNER_TEMP\hub.log" -RedirectStandardError "$env:RUNNER_TEMP\hub.err"
+          foreach ($attempt in 1..60) { openhal status *> $null; if ($LASTEXITCODE -eq 0) { break }; Start-Sleep 1 }
+          Timed 'openhal status' { openhal status }
+          Stop-Process -Id $hub.Id
+          Timed 'pipx install from GitHub' { pipx install "git+$env:REPO@$env:SHA" }
+
+      - name: Windows, the one-line installer from the live site
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $clean = Join-Path $env:RUNNER_TEMP 'installer-home'
+          New-Item -ItemType Directory -Force $clean | Out-Null
+          $env:USERPROFILE = $clean
+          $env:HOME = $clean
+          $env:LOCALAPPDATA = Join-Path $clean 'AppData\Local'
+          $env:APPDATA = Join-Path $clean 'AppData\Roaming'
+          $env:UV_INSTALL_DIR = Join-Path $clean '.local\bin'
+          $env:UV_TOOL_BIN_DIR = $env:UV_INSTALL_DIR
+          $env:UV_TOOL_DIR = Join-Path $clean '.local\share\uv\tools'
+          $env:UV_PYTHON_INSTALL_DIR = Join-Path $clean '.local\share\uv\python'
+          $env:UV_CACHE_DIR = Join-Path $clean '.cache\uv'
+          $watch = [Diagnostics.Stopwatch]::StartNew()
+          irm "$env:SITE/install.ps1" | iex
+          "| irm install.ps1, iex | $([int]$watch.Elapsed.TotalSeconds) s | $LASTEXITCODE |" | Add-Content $env:GITHUB_STEP_SUMMARY
+          & (Join-Path $env:UV_TOOL_BIN_DIR 'openhal.exe') --version
+
+      - name: Windows, no clone, uvx and pipx run from PyPI
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:Path = "$HOME\.local\bin;$env:Path"
+          try { Invoke-WebRequest -UseBasicParsing https://pypi.org/pypi/halkit/json | Out-Null } catch {
+            Write-Output '::notice::halkit is not on PyPI yet, so the uvx halkit demo and pipx run halkit demo steps run after the first release.'
+            exit 0
+          }
+          uvx halkit demo | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw 'uvx halkit demo failed.' }
+          pipx run halkit demo | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw 'pipx run halkit demo failed.' }
