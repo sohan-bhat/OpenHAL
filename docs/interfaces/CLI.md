@@ -14,13 +14,43 @@ The CLI reads the token from `--token-file`, then `OPENHAL_TOKEN`, then `$OPENHA
 
 Most commands take `--json` and then print JSON on stdout instead of tables.
 
+## The next step
+
+A bare `openhal` shows whether the config folder is set up, whether OpenHAL runs, which devices are connected and how many requests are held for a person, and then the next steps for that state. `openhal --help` lists every command. A bare group shows its most useful view and ends with one command to copy, built from your own devices and ids ([ADR 0020](../adr/0020-command-line-interaction-rules.md)).
+
+| Command | Shows |
+|---|---|
+| `openhal limits` | Every device's limits and one change to copy |
+| `openhal confirm` | The pending requests |
+| `openhal routine` | The routines |
+| `openhal runs` | The runs this token can see |
+| `openhal token` | The active tokens |
+| `openhal driver` | The drivers |
+| `openhal library` | The library's device files |
+| `openhal file` | Every device file in the devices folder and the next step |
+| `openhal writer` | The unknown devices that discovery found |
+| `openhal service` | The state of the background service, with exit code 0 |
+
+In an interactive terminal, a command that leaves out a device, a channel, a request id, a routine, a run, a token, a library name, a driver or a device file shows a picker of the real values. The arrow keys move, typing filters the list, Enter picks and Control and C cancels. A left-out value for `write` or `dry-run` and each argument of an action are typed with the limits in view, and an answer that doesn't fit is typed again. `openhal limits set` alone walks through the device, the channel and the new value. A person-only step shows a picker only with the human token and still takes its typed phrase.
+
+Without a terminal, or with `--json`, no command prompts. The error names what is missing, lists up to 10 valid values and shows one command to copy, and the command exits 2.
+
+```
+$ openhal limits show
+error  openhal limits show needs a device.
+  devices  plant-waterer
+  run      openhal limits show plant-waterer
+```
+
+A mistyped command gets the closest command, and a mistyped device, routine, request, run or token id gets the closest real ids.
+
 ## Exit codes
 
 | Code | Meaning |
 |---|---|
 | 0 | Success |
 | 1 | Blocked or failed. The message names the rule and what to do |
-| 2 | Usage error, for example a target that is not `device.channel` |
+| 2 | Usage error, for example a missing argument without a terminal, or a target that is not `device.channel` |
 | 3 | The hub is not running |
 | 4 | Token problem, missing or not accepted |
 
@@ -82,7 +112,7 @@ openhal pair
 ```
 openhal token create --name NAME [--agent | --human] [--scope read|control_low|control_medium]
 openhal token list [--all]
-openhal token revoke TOKEN_ID
+openhal token revoke [TOKEN_ID]
 ```
 
 `create` prints the token once, on the last line, so `| tail -1` captures the token, and the hub keeps only a hash of the token. Agent tokens default to the `read` scope, but human tokens always have full scope. `list` shows ids, names, kinds and scopes and never the tokens, and `revoke` takes effect on the next request.
@@ -126,15 +156,15 @@ openhal discover [--driver NAME ...] [--json]
 ### openhal read
 
 ```
-openhal read DEVICE.CHANNEL [DEVICE.CHANNEL ...] [--json]
+openhal read [DEVICE.CHANNEL ...] [--json]
 ```
 
-`openhal read` reads the channels now and exits 1 if any read failed.
+`openhal read` reads the channels now and exits 1 if any read failed. At a terminal, a device id with no channel shows a picker of the device's channels.
 
 ### openhal write
 
 ```
-openhal write DEVICE.CHANNEL VALUE... [--json]
+openhal write [DEVICE.CHANNEL] [VALUE...] [--json]
 ```
 
 `openhal write` sends a request to set a channel, and the kernel checks the request. The value words are joined, so `60 %` and `"60 %"` are the same. The CLI splits the number from its unit before sending, so the hub receives `"value": 60, "unit": "%"` ([ADR 0016](../adr/0016-one-value-format.md)), and `--json` prints values the same way. Numbers need a unit, and the hub converts compatible units (`85 degF` against a degC channel). Bool channels take true, false, on, off, yes, no, 1 or 0. The command prints the result, and a blocked command prints its code and message and exits 1. Because the plant waterer's pump runs only through `water`, the plant waterer has no write channels.
@@ -147,7 +177,7 @@ blocked unknown_target  Blocked. plant-waterer has no write channel 'pump'. Writ
 ### openhal action
 
 ```
-openhal action DEVICE.ACTION [KEY=VALUE ...] [--json]
+openhal action [DEVICE.ACTION] [KEY=VALUE ...] [--json]
 ```
 
 `openhal action` runs an action, and arguments with units are typed as `duration=20s` or `"duration=20 s"`.
@@ -202,9 +232,10 @@ openhal unlock [--phrase unlock]
 
 ```
 openhal confirm list [--all] [--json]
-openhal confirm show REQUEST_ID [--json]
-openhal confirm approve REQUEST_ID [--phrase approve]
-openhal confirm reject REQUEST_ID [--reason TEXT]
+openhal confirm [--json]
+openhal confirm show [REQUEST_ID] [--json]
+openhal confirm approve [REQUEST_ID] [--phrase approve]
+openhal confirm reject [REQUEST_ID] [--reason TEXT]
 ```
 
 The hub holds commands that need a person in the confirmation queue, and a pending limit change from `openhal limits set` shows in the same list. `show` and `approve` print the command, who sent the request and the dry run at the time of the request. Approval makes the kernel check the command again against the current state, so a request that the current state would block is blocked instead of run. Rejecting needs the human token and no phrase.
@@ -222,14 +253,14 @@ openhal log --verify
 
 ```
 openhal routine list [--json]
-openhal routine show ID [--json]
+openhal routine show [ID] [--json]
 openhal routine new ID --file PATH [--kind yaml|python]
-openhal routine dry-run ID [--json]
-openhal routine enable ID [--phrase enable]
-openhal routine disable ID
-openhal routine run ID [--phrase run]
-openhal routine delete ID [--yes]
-openhal routine approve ID --device DEVICE [--phrase approve]
+openhal routine dry-run [ID] [--json]
+openhal routine enable [ID] [--phrase enable]
+openhal routine disable [ID]
+openhal routine run [ID] [--phrase run]
+openhal routine delete [ID] [--yes]
+openhal routine approve [ID] [--device DEVICE] [--phrase approve]
 ```
 
 `new` stores a routine, always disabled, and the kind comes from the file suffix unless `--kind` sets the kind. `enable` prints the routine and its dry run first, and exits 1 without enabling the routine if the dry run does not pass. `run` runs the routine once now. `approve` signs an approval for this exact routine content to drive a high hazard device, so any change to the routine voids the approval.
@@ -263,7 +294,7 @@ openhal writer plan SESSION_ID [--json]
 
 ```
 openhal driver list [--json]
-openhal driver test NAME
+openhal driver test [NAME]
 openhal driver new NAME [--title TEXT] [--root PATH]
 ```
 
@@ -272,28 +303,29 @@ openhal driver new NAME [--title TEXT] [--root PATH]
 ## Device files
 
 ```
-openhal file validate PATH ... [--json]
+openhal file validate [PATH ...] [--json]
 openhal file schema
-openhal file confirm PATH [--by NAME] [--phrase confirm]
+openhal file confirm [PATH] [--by NAME] [--phrase confirm]
 ```
 
-`validate` checks files against the spec, and `schema` prints the JSON Schema. `confirm` on a file with suggested limits walks the limits interview, one plain question per limit with the suggestion as the default, and a value past what the device reports is asked again. `confirm` then prints every limit and adds a top-level `confirmed` with your name, the date and the hash of the limits, so any later change to a limit makes the file read-only again. A running OpenHAL that serves this config folder loads the file at once, and the command says the device is now writable.
+`validate` checks files against the spec, the devices folder when no path is given, and `schema` prints the JSON Schema. At a terminal, `confirm` without a path shows a picker of the files in the devices folder, read-only files first. `confirm` on a file with suggested limits walks the limits interview, one plain question per limit with the suggestion as the default, and a value past what the device reports is asked again. `confirm` then prints every limit and adds a top-level `confirmed` with your name, the date and the hash of the limits, so any later change to a limit makes the file read-only again. A running OpenHAL that serves this config folder loads the file at once, and the command says the device is now writable.
 
 ## Limits
 
 ```
-openhal limits show DEVICE[.CHANNEL] [--json]
-openhal limits set DEVICE.CHANNEL [--min VALUE] [--max VALUE] [--rate VALUE|none] [--phrase confirm]
+openhal limits [--json]
+openhal limits show [DEVICE[.CHANNEL]] [--json]
+openhal limits set [DEVICE[.CHANNEL]] [--min VALUE] [--max VALUE] [--rate VALUE|none] [--phrase confirm]
 ```
 
-`show` prints each number channel's min, max and max change with the range the device itself reports. `set` takes values with units, such as `--max "80 %"` or `--rate "5 %/s"`, and never goes past the device's own range. A narrower limit applies at once and is written into the device file, with the confirmation bound again to the hash of the limits. In a terminal, a wider limit shows the change before and after and takes the typed phrase `confirm`. From a script, an agent's shell or an agent token, a wider limit waits as a pending limit change in `openhal confirm list` and in the Inspector until a person approves the change. An agent's narrower limit applies to that agent's session, as `tighten_limits` does.
+A bare `openhal limits` prints every device's limits in one table and one narrower limit to copy. `show` prints each number channel's min, max and max change with the range the device itself reports. At a terminal, `set` with nothing else walks through the device, the channel with its limits and the range the device reports, and then the new value, and prints the same change as one command at the end. `set` takes values with units, such as `--max "80 %"` or `--rate "5 %/s"`, and never goes past the device's own range. A narrower limit applies at once and is written into the device file, with the confirmation bound again to the hash of the limits. In a terminal, a wider limit shows the change before and after and takes the typed phrase `confirm`. From a script, an agent's shell or an agent token, a wider limit waits as a pending limit change in `openhal confirm list` and in the Inspector until a person approves the change. An agent's narrower limit applies to that agent's session, as `tighten_limits` does.
 
 ## Runs
 
 ```
 openhal runs list [--json]
-openhal runs show RUN_ID [--json]
-openhal runs cancel RUN_ID
+openhal runs show [RUN_ID] [--json]
+openhal runs cancel [RUN_ID]
 openhal runs caps [--max-steps N] [--max-seconds SECONDS] [--per-agent N] [--phrase confirm] [--json]
 ```
 
@@ -305,8 +337,8 @@ A run is a list of steps an agent or a script sends with `run_steps`, which the 
 
 ```
 openhal library list [--driver NAME] [--json]
-openhal library show NAME [--json]
-openhal library add NAME
+openhal library show [NAME] [--json]
+openhal library add [NAME]
 ```
 
 `list` shows every starter device file in the library with its driver, hazard class and what it can change. `show` prints what a file matches, every suggested limit in the file and the file itself, and `--json` gives the limits in the shape `hal/devices/describe` uses. `add` copies a file into the devices folder unchanged, never adds a confirmation, and never overwrites a file or adds a second file for a device id the folder already has. A name is the file name without `.hal.yaml`, such as `rigol-dp832`. When `discover` matches a library file, `discover` prints the `add` command to run. docs/guide/library.md explains how matching and confirmation work.
