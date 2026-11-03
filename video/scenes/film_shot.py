@@ -8,7 +8,7 @@ The arm, the gripper and the cube follow the shot's recorded keys. Everything el
 follows the shot's hub events. A command leaves the agent's display as a pulse of light along
 its cable at the frame the agent sent it. A command the hub passes runs on along the layer
 and down the arm's cable. One the hub blocks stops at the layer, and one held for a person
-waits there until the hub confirms the approval. STOP flashes the layer and runs to every
+stays there until the hub confirms the approval. STOP flashes the layer and runs to every
 device. The phone wakes when the hub holds an action, fills when the person approves and
 shows STOP when the person presses it. Each device lights when the hub's connect event comes.
 """
@@ -396,10 +396,10 @@ def build(shot: dict[str, Any], edit: dict[str, Any], aspect: str, engine: str, 
     reveal = shot["cues"].get("lights", {}).get("reveal", False)
     light_tracks = {}
     if reveal:
-        plan = {"rim": (6, 30), "key": (26, 52), "fill": (38, 40), "wash": (30, 50)}
-        for name, (a, n) in plan.items():
-            light_tracks[name] = Track(frames, 0.0)
-            light_tracks[name].add(lambda f, a=a, n=n: ramp(f, a, n))
+        plan = {"rim": (2, 30, 0.14), "key": (26, 52, 0.0), "fill": (38, 40, 0.0), "wash": (30, 50, 0.0)}
+        for name, (a, n, floor) in plan.items():
+            light_tracks[name] = Track(frames, floor)
+            light_tracks[name].add(lambda f, a=a, n=n, floor=floor: (1.0 - floor) * ramp(f, a, n))
 
     calls = [
         e for e in events if e["source"] == "agent" and e["kind"] == "request" and e.get("tool") in COMMANDS | QUERIES
