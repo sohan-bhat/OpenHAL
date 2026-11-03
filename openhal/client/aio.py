@@ -18,7 +18,7 @@ from openhal.client.calls import Call, Command, Value, split_target
 from openhal.client.errors import HubError, HubNotRunning, Unauthorized
 from openhal.client.ramp import plan_ramp
 from openhal.client.settings import TokenSource, resolve_token, resolve_url
-from openhal.client.transport import START_HINT, finish, headers_for, transport_error
+from openhal.client.transport import START_HINT, finish, headers_for, timeout_for, transport_error
 
 
 class AsyncClient:
@@ -63,7 +63,9 @@ class AsyncClient:
     async def call[T](self, call: Call[T]) -> T:
         """Send one call and parse the response. Raises a subclass of `OpenHALError` on failure."""
         try:
-            response = await self._http.request(call.method, call.path, json=call.json, params=call.params)
+            response = await self._http.request(
+                call.method, call.path, json=call.json, params=call.params, timeout=timeout_for(call)
+            )
         except httpx.TransportError as exc:
             raise transport_error(self.url, exc) from exc
         return finish(call, response, self.token_source)
@@ -199,6 +201,74 @@ class AsyncClient:
             if not decision.ok:
                 break
         return decisions
+
+    async def find(
+        self,
+        text: str | None = None,
+        *,
+        unit: str | None = None,
+        kind: str | None = None,
+        hazard: str | None = None,
+        connected: bool | None = None,
+        limit: int = 50,
+    ) -> m.FindResult:
+        """Channels and actions on every device that match, as `device.channel` targets.
+
+        `text` matches names, descriptions, units and what a unit measures, so `find("temperature")` finds a
+        degC channel named temp. `unit` matches every channel a value in that unit converts to. `kind` is
+        readable, writable or action, and readable includes write channels.
+        """
+        return await self.call(
+            calls.find(text=text, unit=unit, kind=kind, hazard=hazard, connected=connected, limit=limit)
+        )
+
+    async def wait_until(self, condition: str, *, timeout_s: float = 30.0, interval_s: float = 1.0) -> m.WaitResult:
+        """Read the channels `condition` names until it holds or `timeout_s` passes.
+
+        The condition is in the routine expression language, with each channel as `device.channel`.
+        """
+        return await self.call(calls.wait_until(condition, timeout_s, interval_s))
+
+    async def sample(self, targets: Iterable[str], *, duration_s: float, interval_s: float = 1.0) -> m.SampleResult:
+        """Read `device.channel` targets every `interval_s` for `duration_s`, with min, max and mean for numbers."""
+        return await self.call(calls.sample(targets, duration_s, interval_s))
+
+    async def run_steps(self, steps: Iterable[calls.Step], *, repeat: int = 1, wait_s: float = 5.0) -> m.StepRun:
+        """Check the steps as a plan, then run them in order through the kernel.
+
+        A step is a `Write`, an `Action` or a dict with `kind` read, write, action, wait or wait_until.
+        The reply comes when the run ends or after `wait_s`, with `run_id` for `run()` and `cancel_run()`.
+        """
+        return await self.call(calls.start_run(steps, repeat, wait_s))
+
+    async def run(self, run_id: str, *, wait_s: float = 0.0, last: int = 50) -> m.StepRun:
+        """One run with its `last` step results, after waiting up to `wait_s` for the run to end."""
+        return await self.call(calls.run(run_id, wait_s, last))
+
+    async def runs(self) -> list[m.StepRun]:
+        """The runs this token started, newest first. A human token sees every run."""
+        return await self.call(calls.runs())
+
+    async def cancel_run(self, run_id: str) -> m.StepRun:
+        """End a run before its next step. Only the token that started the run, or a human token."""
+        return await self.call(calls.cancel_run(run_id))
+
+    async def run_caps(self) -> m.RunCaps:
+        """The caps on steps per run, seconds per run, wait or sample, and runs per token."""
+        return await self.call(calls.run_caps())
+
+    async def set_run_caps(
+        self,
+        *,
+        max_steps: int | None = None,
+        max_seconds: float | None = None,
+        per_agent: int | None = None,
+        phrase: str | None = None,
+    ) -> m.RunCaps:
+        """Change the caps. Needs a human token, and raising a cap needs the phrase `confirm`."""
+        return await self.call(
+            calls.set_run_caps(max_steps=max_steps, max_seconds=max_seconds, per_agent=per_agent, phrase=phrase)
+        )
 
     async def discover(self, drivers: Iterable[str] | None = None) -> m.DiscoveryResult:
         """Search for devices with every driver, or only the named ones. Devices no file matches come back unknown."""

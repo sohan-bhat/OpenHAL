@@ -24,6 +24,11 @@ START_HINT = "Start OpenHAL with openhal start, or run openhal doctor to see wha
 _ROUTE_MISSING = {"Not Found", "Method Not Allowed"}
 
 
+def timeout_for(call: Call[Any]) -> float | Any:
+    """The call's own timeout when it waits on the hub, or the client's default."""
+    return call.timeout if call.timeout is not None else httpx.USE_CLIENT_DEFAULT
+
+
 def headers_for(source: TokenSource) -> dict[str, str]:
     headers = {"User-Agent": "openhal-client", "Accept": "application/json"}
     if source.token:
@@ -82,7 +87,7 @@ def error_for(call: Call[Any], response: httpx.Response, source: TokenSource) ->
         )
     if code == 404:
         return NotFound(text, status_code=code, detail=detail)
-    if code in (403, 409):
+    if code in (403, 409, 429):
         return Refused(text, status_code=code, detail=detail)
     if code in (400, 422):
         return BadRequest(_validation_text(detail), status_code=code, detail=detail)
