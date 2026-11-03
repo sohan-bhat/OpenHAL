@@ -59,7 +59,7 @@ test.describe("the full example page", () => {
 
   test("is linked from How it works on the home page and from the quickstart", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("link", { name: "See the full example: an agent watching a 3D print overnight" })).toHaveAttribute("href", EXAMPLE.href);
+    await expect(page.getByRole("link", { name: "See a full example with a 3D printer" })).toHaveAttribute("href", EXAMPLE.href);
     await page.goto("/docs/quickstart/");
     await expect(page.locator("main").getByRole("link", { name: "The full example" })).toHaveAttribute("href", EXAMPLE.href);
   });

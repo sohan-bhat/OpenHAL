@@ -68,7 +68,7 @@ test.describe("How it works", () => {
 
   test("ends with a link to the full example", async ({ page }) => {
     await page.goto("/");
-    const link = page.getByRole("link", { name: "See the full example: an agent watching a 3D print overnight" });
+    const link = page.getByRole("link", { name: "See a full example with a 3D printer" });
     await expect(link).toHaveAttribute("href", "/docs/examples/3d-print-watch/");
     await link.click();
     await expect(page.locator("h1")).toHaveText("Example: an agent watching a 3D print");
