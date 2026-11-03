@@ -31,8 +31,12 @@ every write and action. The kernel enforces units, limits, rate of change, inter
 and the device hazard class.
 
 How to work with the hub.
-- Start with list_devices, then describe_device before any write. Numbers always need a unit, as in '60 %'.
+- Every hub has its own devices. Use find to search channels and actions by words, unit or kind, or
+  list_devices, then describe_device before any write.
+- A number goes in with its unit apart, as value 60 and unit %.
 - Use dry_run or plan_check when unsure. Neither tool touches a device.
+- For timing and repetition, use wait_until, sample and run_steps. A run goes through the same checks as a
+  single write and stops at the first step that isn't done.
 - A blocked decision has a stable code and a message naming the limit. Do not retry with small changes to get
   around a limit. Tell the person what was blocked and why.
 - A pending decision means the hub holds the request for a person. Tell the person the request_id, then poll

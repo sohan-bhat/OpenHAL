@@ -29,16 +29,18 @@ Never write to the device during setup unless a test plan step includes that wri
 WRITE_ROUTINE: Final = """\
 Help me write an OpenHAL routine. The goal is {goal}
 
-1. Call list_devices and describe_device for every device the routine would touch. Note each channel's
-   unit, limits, max_change_per_s, interlocks and the device hazard class.
-2. Draft the routine as YAML in this shape. Every number needs a unit. Keep every value inside the limits,
-   with margin, and inside max_change_per_s between steps. Use plan_check on the commands first.
+1. Call find with the words of the goal to see which channels and actions this hub has, then call
+   describe_device for every device the routine would touch. Note each channel's unit, limits,
+   max_change_per_s, interlocks and the device hazard class.
+2. Draft the routine as YAML in the shape below. Each name in angle brackets is a placeholder for a real
+   device id, channel, action, number or unit from step 1. Every number needs a unit. Keep every value inside
+   the limits, with margin, and inside max_change_per_s between steps. Use plan_check on the commands first.
 
-   id: pause-when-bed-cools
+   id: <routine-id>
    triggers:
-     - when: "printer.bed_temp < 50 degC"
+     - when: "<device>.<channel> < <number> <unit>"
    steps:
-     - action: { device: printer, action: pause }
+     - action: { device: <device>, action: <action> }
 
    Triggers can also be every (an interval such as 1 h), at (a time such as 07:00) or manual. Steps can also
    be write (device, channel, value), if (a condition with then), wait (a duration) and log (text).
