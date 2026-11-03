@@ -51,7 +51,7 @@ A channel's value is unknown when nothing has been read since the hub connected,
 
 ## Risk levels
 
-The hub gives every channel and action a level from what it is, using only the device file and the device's own description, never a list of device names. The rules live in `openhal/spec/risk.py` ([ADR 0023](adr/0023-risk-levels.md)).
+The hub gives every channel and action a level from what it is, using only the device file and the device's own description, with no list of device names. The rules live in `openhal/spec/risk.py` ([ADR 0023](adr/0023-risk-levels.md)).
 
 | Rule | Level |
 |---|---|
@@ -85,7 +85,7 @@ Words in a channel's own name can set any level. Words from descriptions and enu
 
 Stop, the safe state, the watchdogs and the audit log apply at every level, and a limit a person set always applies on top of the defaults. An action can be undone when every effect it lists is a write channel, or when the safe state runs it.
 
-`openhal risk set DEVICE.NAME LEVEL` changes a level. Raising applies at once. Lowering takes a person's typed phrase `confirm`, under the same rules as widening a limit, or waits as a pending change for a person to approve. Agents see every level and change none, and each change is saved in the device file and the audit log.
+`openhal risk set DEVICE.NAME LEVEL` changes a level. Raising applies at once. Lowering takes a person's typed phrase `confirm`, under the same rules as widening a limit, or is held as a pending change until a person approves it. Agents see every level and change none, and each change is saved in the device file and the audit log.
 
 A plain pin of an OpenHAL board is medium, because the file has no word for what is wired to it. A pin that shares its number with a high risk channel, such as a heater the device file maps to that pin, is high too, and the board itself blocks pin commands to a pin its sketch claims.
 

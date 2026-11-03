@@ -71,7 +71,7 @@ An output the hub may set directly works the same way without `.internal()`. The
 
 ## Every pin
 
-`hal.pins()` lists every pin the board can give the hub, with the modes the Arduino core reports for it. The modes are digital in, input pull-up, digital out, PWM out and analog in, and the list also marks interrupt pins and the built-in LED. The library reads them from the core's own macros, such as `NUM_DIGITAL_PINS`, `digitalPinHasPWM`, `analogInputToDigitalPin`, `digitalPinToInterrupt` and `LED_BUILTIN`, so the list fits whichever board the sketch is built for.
+`hal.pins()` lists every pin the board can give the hub, with the modes the Arduino core reports for it. The modes are digital in, input pull-up, digital out, PWM out and analog in, and the list also marks interrupt pins and the built-in LED. The library reads the modes from the core's own macros, such as `NUM_DIGITAL_PINS`, `digitalPinHasPWM`, `analogInputToDigitalPin`, `digitalPinToInterrupt` and `LED_BUILTIN`, so the list fits whichever board the sketch is built for.
 
 The board keeps these pins to itself.
 
@@ -80,7 +80,7 @@ The board keeps these pins to itself.
 - Pins the sketch reserves with `reserve()`
 - Pins the sketch set to output before `begin()`
 
-The hub turns each free pin into channels. `pin<N>` reads the pin and sets it as a digital output, `pin<N>_pwm` sets a PWM duty in percent, `pin<N>_analog` reads an analog input in percent of full scale and `pin<N>_mode` sets input, input_pullup, output or pwm. A command changes the pin's mode as it needs, and an analog read leaves a driven pin alone. A stop, a lost heartbeat and `applySafeState()` return every pin the hub set to input. The hub treats a plain pin as medium risk, because the file has no word for what is wired to it, and a person can change that with `openhal risk set`.
+The hub turns each free pin into channels. `pin<N>` reads the pin and sets it as a digital output, `pin<N>_pwm` sets a PWM duty in percent, `pin<N>_analog` reads an analog input in percent of full scale and `pin<N>_mode` sets input, input_pullup, output or pwm. Each command changes the pin's mode as the command needs, and an analog read leaves a driven pin alone. A stop, a lost heartbeat and `applySafeState()` return every pin the hub set to input. The hub treats a plain pin as medium risk, because the file has no word for what is wired to the pin, and a person can change the level with `openhal risk set`.
 
 PWM uses 8 bits and analog inputs 10 bits, or 12 on an ESP32. A sketch that changes the PWM range defines `OPENHAL_PWM_BITS` before the include, and `#define OPENHAL_PINS 0` leaves the pin code out to save memory.
 
