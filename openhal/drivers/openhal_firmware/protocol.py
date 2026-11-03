@@ -9,7 +9,11 @@ from typing import Any, Final
 
 PROTOCOL_VERSION: Final = 1
 MAX_LINE: Final = 250
-MAX_DESC_LINE: Final = 1500
+MAX_DESC_LINE: Final = 4000
+PIN_MODES: Final = "iuopaxl"
+"""Pin mode letters in DESC `io`. Digital in, pull-up, digital out, PWM out, analog in, interrupt, built-in LED."""
+MODE_VALUES: Final = {"in": "input", "pullup": "input_pullup", "out": "output", "pwm": "pwm"}
+"""What a board's pin state is called on the hub's `pin<N>_mode` channel."""
 MAX_ACTION_ARGS: Final = 3
 MAX_STATES: Final = 8
 NAME: Final = re.compile(r"^[a-z][a-z0-9_]{0,23}$")
@@ -101,6 +105,7 @@ def parse_description(text: str) -> dict[str, Any]:
         if key == "r":
             for item in items:
                 _check_states(item)
+    _check_pins(data)
     actions = data.get("a", [])
     if not isinstance(actions, list):
         raise ProtocolError("DESC a must be a list.")
@@ -117,6 +122,67 @@ def parse_description(text: str) -> dict[str, Any]:
             if not all(isinstance(arg.get(field), int | float) for field in ("min", "max")):
                 raise ProtocolError(f"DESC action {action['n']} argument {arg['n']} needs a numeric min and max.")
     return data
+
+
+def _whole(value: Any, low: int, high: int) -> bool:
+    return (
+        isinstance(value, int | float) and not isinstance(value, bool) and value == int(value) and low <= value <= high
+    )
+
+
+def _check_pins(data: dict[str, Any]) -> None:
+    for key in ("r", "w"):
+        for item in data.get(key, []):
+            if "g" in item and not _whole(item["g"], 0, 255):
+                raise ProtocolError(f"DESC {key} entry {item['n']} has a bad pin.")
+    for key in ("pb", "ab"):
+        if key in data and not _whole(data[key], 1, 16):
+            raise ProtocolError(f"DESC {key} must be a whole number of bits from 1 to 16.")
+    pins = data.get("io", [])
+    if not isinstance(pins, list):
+        raise ProtocolError("DESC io must be a list.")
+    seen: set[int] = set()
+    for entry in pins:
+        valid = isinstance(entry, list) and len(entry) == 2 and _whole(entry[0], 0, 255)
+        if not valid or not isinstance(entry[1], str) or not entry[1] or set(entry[1]) - set(PIN_MODES):
+            raise ProtocolError("DESC io has an entry that isn't [pin, modes].")
+        if int(entry[0]) in seen:
+            raise ProtocolError(f"DESC io lists pin {int(entry[0])} twice.")
+        seen.add(int(entry[0]))
+
+
+def pin_channels(data: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
+    """Read and write channels for every pin the board lists, with notes. Each one maps to its pin."""
+    read: dict[str, Any] = {}
+    write: dict[str, Any] = {}
+    leds: list[str] = []
+    for number, modes in data.get("io", []):
+        pin = int(number)
+        base = f"pin{pin}"
+        if "o" in modes:
+            write[base] = {"type": "bool", "map": {"pin": pin, "mode": "out"}}
+        elif "i" in modes:
+            read[base] = {"type": "bool", "map": {"pin": pin, "mode": "in"}}
+        if "p" in modes:
+            write[f"{base}_pwm"] = {"unit": "percent", "min": 0, "max": 100, "map": {"pin": pin, "mode": "pwm"}}
+        if "a" in modes:
+            read[f"{base}_analog"] = {"unit": "percent", "range": [0, 100], "map": {"pin": pin, "mode": "adc"}}
+        if "i" in modes or "o" in modes:
+            letters = {"u": "input_pullup", "o": "output", "p": "pwm"}
+            values = ["input", *(value for letter, value in letters.items() if letter in modes)]
+            write[f"{base}_mode"] = {"type": "enum", "values": values, "map": {"pin": pin, "mode": "mode"}}
+        if "l" in modes:
+            leds.append(base)
+    notes = []
+    if data.get("io"):
+        bits = data.get("pb", 8)
+        notes.append(
+            f"The board lists {len(data['io'])} free pins. PWM has {bits} bits, analog inputs read in percent of "
+            "full scale, and a stop or a lost heartbeat returns every pin the hub set to input."
+        )
+    if leds:
+        notes.append(f"{', '.join(leds)} drives the board's own LED.")
+    return read, write, notes
 
 
 def _check_states(item: dict[str, Any]) -> None:
@@ -136,6 +202,8 @@ def description_to_sections(data: dict[str, Any]) -> dict[str, Any]:
         if item.get("e"):
             channel["stream"] = True
             channel["every"] = f"{max(item['e'], 50) / 1000:g} s"
+        if "g" in item:
+            channel["map"] = {"pin": int(item["g"])}
         if isinstance(item.get("lo"), int | float) and isinstance(item.get("hi"), int | float):
             channel["range"] = [item["lo"], item["hi"]]
         read[item["n"]] = channel
@@ -153,8 +221,14 @@ def description_to_sections(data: dict[str, Any]) -> dict[str, Any]:
                 channel["max_change_per_s"] = item["rate"]
             write[name] = channel
             safe[name] = item["safe"]
+        if "g" in item:
+            write[name]["map"] = {"pin": int(item["g"])}
         if isinstance(item.get("t"), int | float) and item["t"] > 0:
             notes.append(f"The board returns {name} to its safe value after {item['t'] / 1000:g} s without a write.")
+    pin_read, pin_write, pin_notes = pin_channels(data)
+    read.update({name: spec for name, spec in pin_read.items() if name not in read})
+    write.update({name: {**spec, "suggested": True} for name, spec in pin_write.items() if name not in write})
+    notes += pin_notes
     actions: dict[str, Any] = {}
     for action in data.get("a", []):
         args = {arg["n"]: {"unit": arg["u"], "min": arg["min"], "max": arg["max"]} for arg in action.get("g", [])}

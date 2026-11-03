@@ -19,7 +19,7 @@ from openhal.conformance import ConformanceCase, run
 from openhal.drivers.base import Driver, DriverError
 from openhal.drivers.openhal_firmware import protocol
 from openhal.drivers.openhal_firmware.driver import OpenHalFirmwareDriver
-from openhal.kernel import Action, Kernel, Write, human
+from openhal.kernel import Action, Kernel, Write, agent, human
 from openhal.spec import DeviceFile, loads
 from openhal.spec.loader import from_data
 
@@ -210,8 +210,14 @@ async def test_every_example_describes_itself_into_a_valid_read_only_file(
     assert described is not None
     draft = from_data({"device": described.pop("device")["name"], "connect": {"openhal-firmware": "auto"}, **described})
     assert draft.write or draft.actions, f"{example} has no outputs or actions"
-    assert not draft.writable, "a self-described file stays read-only until a person confirms it"
+    assert draft.writable is not bool(draft.high_risk()), "only high risk entries wait for a person"
     assert all(entry.suggested for entry in [*draft.write.values(), *draft.actions.values()])
+    if example == "BareBoard":
+        assert draft.write["brightness"].map == {"pin": 13}
+        assert "pin13" not in draft.write, "the LED's pin belongs to brightness"
+        assert draft.write["pin5_pwm"].map == {"pin": 5, "mode": "pwm"}
+        assert "pin14_analog" in draft.read
+        assert draft.read["button"].map == {"pin": 0}
     if example == "PlantWaterer":
         assert draft.read["tank"].values == ["empty", "ok"]
         duration = draft.actions["water"].args["duration"]
@@ -362,3 +368,29 @@ async def test_the_board_refuses_to_pump_from_an_empty_tank(binaries: dict[str, 
         await driver._require_link().request("ACT", "water", "duration", "5")
     assert "pin 7 = 1" not in pins.read_text()
     await driver.close()
+
+
+async def test_the_bare_board_drives_a_free_pin_and_keeps_its_own(binaries: dict[str, Path], tmp_path: Path) -> None:
+    """The real library code, built on the host, sets a PWM pin and refuses the LED's pin."""
+    pins = tmp_path / "pins.log"
+    probe = driver_for(loads(DESK_FAN), binaries["BareBoard"])
+    await probe.connect()
+    sections = await probe.describe()
+    await probe.close()
+    assert sections is not None
+    sections.pop("device")
+    file = from_data({"device": "Bare board", "id": "bare", "connect": {"openhal-firmware": "/dev/null"}, **sections})
+    kernel = Kernel()
+    driver = driver_for(file, binaries["BareBoard"], pins=pins)
+    kernel.register(file, driver)
+    await kernel.connect("bare")
+    claude = agent("claude", "control_medium")
+    done = await kernel.execute(Write(device="bare", channel="pin5_pwm", value=50, unit="%"), claude, wire=True)
+    assert done.status == "done", done.message
+    with pytest.raises(DriverError, match="unknown pin"):
+        await driver._require_link().request("PIN", "13", "out", "1")
+    await kernel.stop_all(claude, "test")
+    await driver.close()
+    log = pins.read_text()
+    assert "pin 5 = 128" in log
+    assert "mode 5 = 0" in log, "the stop returns the pin to input"
