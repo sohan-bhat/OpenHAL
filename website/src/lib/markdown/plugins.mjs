@@ -32,6 +32,54 @@ export function remarkTitle() {
   };
 }
 
+/**
+ * A description for search results and link previews: the first sentences of a paragraph, at
+ * least `enough` characters when the paragraph has them.
+ */
+export function summarize(text, enough = 80) {
+  const sentences = text.replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+(?=[A-Z0-9`"(])/);
+  let summary = "";
+  for (const sentence of sentences) {
+    summary = summary ? `${summary} ${sentence}` : sentence;
+    if (summary.length >= enough) break;
+  }
+  return summary;
+}
+
+/**
+ * Top-level paragraphs that read as prose, in order, each with whether a section heading comes
+ * before it. Generated blocks between `<!-- name:start -->` and `<!-- name:end -->` and short lines
+ * such as "Version v0.1. Status draft." are left out.
+ */
+function proseParagraphs(tree, shortest = 40) {
+  const found = [];
+  let generated = null;
+  let sectioned = false;
+  for (const node of tree.children) {
+    const marker = node.type === "html" ? /^<!-- ([\w-]+):(start|end) -->$/.exec(node.value.trim()) : null;
+    if (marker) generated = marker[2] === "start" ? marker[1] : null;
+    else if (node.type === "heading" && node.depth > 1) sectioned = true;
+    else if (node.type === "paragraph" && !generated && textOf(node).trim().length >= shortest) found.push({ node, sectioned });
+  }
+  return found;
+}
+
+/**
+ * The page's own description, from the lede before the first section heading or, on a page that
+ * opens with a section, from the first paragraph of prose. A description in the front matter wins.
+ */
+export function remarkDescription() {
+  return (tree, file) => {
+    const paragraphs = proseParagraphs(tree);
+    const lede = (paragraphs.find((paragraph) => !paragraph.sectioned) ?? paragraphs[0])?.node;
+    const text = lede ? summarize(textOf(lede)) : "";
+    if (!text) return;
+    file.data.astro ??= {};
+    file.data.astro.frontmatter ??= {};
+    file.data.astro.frontmatter.description ??= text;
+  };
+}
+
 export function remarkRepoLinks() {
   return (tree, file) => {
     const source = file.path ? resolve(file.path) : null;

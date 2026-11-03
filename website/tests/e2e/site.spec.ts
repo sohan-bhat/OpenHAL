@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
+import { PITCH } from "../../src/config/brand";
 import { demoCommands } from "../../src/lib/install";
 import { SCENARIO_PATH, scenarioFrom } from "../../src/lib/scenario-data.mjs";
 
@@ -317,19 +318,28 @@ test.describe("site", () => {
     expect(copied).toBe("openhal init\nopenhal file confirm ~/.openhal/devices/plant-waterer.hal.yaml\nopenhal start &\nopenhal status");
   });
 
-  test("every page in the sitemap has its Open Graph image", async ({ request, browserName }) => {
+  test("every page in the sitemap has an Open Graph title, description and image of its own", async ({ request, browserName }) => {
     test.skip(browserName !== "chromium", "one pass is enough");
     const sitemap = await (await request.get("/sitemap-0.xml")).text();
     const pages = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => new URL(match[1]).pathname);
     expect(pages.length).toBeGreaterThan(30);
+    const meta = (html: string, key: string) => new RegExp(`<meta (?:property|name)="${key}" content="([^"]*)"`).exec(html)?.[1]?.trim();
+    const shared: string[] = [];
     for (const path of [...pages, "/404.html"]) {
       const html = await (await request.get(path)).text();
-      const image = /<meta property="og:image" content="([^"]+)"/.exec(html)?.[1];
+      for (const key of ["og:title", "og:description", "description", "og:image:alt"]) expect(meta(html, key), `${path} ${key}`).toBeTruthy();
+      expect(meta(html, "twitter:card"), path).toBe("summary_large_image");
+      const [subject, rest] = meta(html, "og:image:alt")!.split(/\.\s/, 2);
+      expect(rest?.replace(/\.$/, ""), `${path} og:image:alt repeats itself`).not.toBe(subject);
+      if (pages.includes(path) && path !== "/" && meta(html, "og:description") === PITCH) shared.push(path);
+      const image = meta(html, "og:image");
       expect(image, path).toBeTruthy();
+      expect([meta(html, "og:image:width"), meta(html, "og:image:height")], path).toEqual(["1200", "630"]);
       const response = await request.get(new URL(image!).pathname);
       expect(response.status(), `${path} -> ${image}`).toBe(200);
       expect(response.headers()["content-type"]).toContain("image/png");
     }
+    expect(shared, "these pages show the site's description instead of their own").toEqual([]);
   });
 
   test("an unknown address answers UNKNOWN_TARGET", async ({ page }) => {
