@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Annotated, Any, Literal
 from urllib.parse import urlparse
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.gzip import GZipMiddleware
@@ -29,6 +29,7 @@ from openhal._brand import PRODUCT_NAME, SPEC_VERSION
 from openhal.drivers import registry
 from openhal.drivers.base import DriverError
 from openhal.hub import discovery, views
+from openhal.hub.find import FindError, find
 from openhal.hub.hub import Hub
 from openhal.hub.limits import LimitError
 from openhal.hub.locks import DeviceLocked
@@ -263,6 +264,22 @@ def create_app(hub: Hub) -> FastAPI:
     async def device(device_id: str, who: Who) -> dict[str, Any]:
         device_or_404(device_id)
         return views.device_view(hub, device_id)
+
+    @app.get("/v1/find")
+    async def find_targets(
+        who: Who,
+        text: Annotated[str | None, Query(max_length=200)] = None,
+        unit: Annotated[str | None, Query(max_length=40)] = None,
+        kind: Literal["readable", "writable", "action"] | None = None,
+        hazard: Literal["low", "medium", "high"] | None = None,
+        connected: bool | None = None,
+        limit: Annotated[int, Query(ge=1, le=500)] = 50,
+    ) -> dict[str, Any]:
+        """Channels and actions on every device that match the filters, as device.channel targets."""
+        try:
+            return find(hub, text=text, unit=unit, kind=kind, hazard=hazard, connected=connected, limit=limit)
+        except FindError as exc:
+            raise HTTPException(400, str(exc)) from exc
 
     @app.post("/v1/read")
     async def read(body: ReadBody, who: Who) -> dict[str, Any]:

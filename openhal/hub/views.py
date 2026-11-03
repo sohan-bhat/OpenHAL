@@ -62,7 +62,8 @@ def audit_details(device_id: str | None, details: dict[str, Any]) -> dict[str, A
     return shown
 
 
-def _value(runtime: Any, channel: str, now: float) -> dict[str, Any]:
+def latest_value(runtime: Any, channel: str, now: float) -> dict[str, Any]:
+    """A channel's newest known value with its age, or known false when the hub has none."""
     sample = runtime.latest(channel, now)
     if sample is None:
         return {"value": None, "known": False}
@@ -111,7 +112,7 @@ def device_view(hub: Hub, device_id: str) -> dict[str, Any]:
                     "stream": spec.stream,
                     "range": list(spec.range) if spec.range else None,
                     "values": spec.values or None,
-                    **_value(runtime, name, now),
+                    **latest_value(runtime, name, now),
                 }
                 for name, spec in file.read.items()
             },
@@ -126,7 +127,7 @@ def device_view(hub: Hub, device_id: str) -> dict[str, Any]:
                     "values": spec.values or None,
                     "confirm": "confirm-each-time" if file.effective_hazard == "high" else spec.confirm,
                     "suggested": spec.suggested,
-                    **_value(runtime, name, now),
+                    **latest_value(runtime, name, now),
                 }
                 for name, spec in file.write.items()
             },
