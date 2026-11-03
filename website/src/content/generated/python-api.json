@@ -54,6 +54,11 @@
               "doc": "Send one call and parse the response. Raises a subclass of `OpenHALError` on failure."
             },
             {
+              "name": "cancel_run",
+              "signature": "cancel_run(run_id: str) -> StepRun",
+              "doc": "End a run before its next step. Only the token that started the run, or a human token."
+            },
+            {
               "name": "close",
               "signature": "close() -> None",
               "doc": "Close the connection to the hub."
@@ -117,6 +122,11 @@
               "name": "enable_routine",
               "signature": "enable_routine(routine_id: str) -> Routine",
               "doc": "Turn a routine on. Needs a human token, or an agent under ADR 0007's opt in."
+            },
+            {
+              "name": "find",
+              "signature": "find(text: str | None = None, *, unit: str | None = None, kind: str | None = None, hazard: str | None = None, connected: bool | None = None, limit: int = 50) -> FindResult",
+              "doc": "Channels and actions on every device that match, as `device.channel` targets.\n\n`text` matches names, descriptions, units and what a unit measures, so `find(\"temperature\")` finds a\ndegC channel named temp. `unit` matches every channel a value in that unit converts to. `kind` is\nreadable, writable or action, and readable includes write channels."
             },
             {
               "name": "finish",
@@ -184,9 +194,39 @@
               "doc": "Every stored routine with its devices, its triggers and whether the routine is enabled."
             },
             {
+              "name": "run",
+              "signature": "run(run_id: str, *, wait_s: float = 0.0, last: int = 50) -> StepRun",
+              "doc": "One run with its `last` step results, after waiting up to `wait_s` for the run to end."
+            },
+            {
+              "name": "run_caps",
+              "signature": "run_caps() -> RunCaps",
+              "doc": "The caps on steps per run, seconds per run, wait or sample, and runs per token."
+            },
+            {
               "name": "run_routine",
               "signature": "run_routine(routine_id: str) -> Run",
               "doc": "Run a routine once now. Needs a human token."
+            },
+            {
+              "name": "run_steps",
+              "signature": "run_steps(steps: Iterable[calls.Step], *, repeat: int = 1, wait_s: float = 5.0) -> StepRun",
+              "doc": "Check the steps as a plan, then run them in order through the kernel.\n\nA step is a `Write`, an `Action` or a dict with `kind` read, write, action, wait or wait_until.\nThe reply comes when the run ends or after `wait_s`, with `run_id` for `run()` and `cancel_run()`."
+            },
+            {
+              "name": "runs",
+              "signature": "runs() -> list[StepRun]",
+              "doc": "The runs this token started, newest first. A human token sees every run."
+            },
+            {
+              "name": "sample",
+              "signature": "sample(targets: Iterable[str], *, duration_s: float, interval_s: float = 1.0) -> SampleResult",
+              "doc": "Read `device.channel` targets every `interval_s` for `duration_s`, with min, max and mean for numbers."
+            },
+            {
+              "name": "set_run_caps",
+              "signature": "set_run_caps(*, max_steps: int | None = None, max_seconds: float | None = None, per_agent: int | None = None, phrase: str | None = None) -> RunCaps",
+              "doc": "Change the caps. Needs a human token, and raising a cap needs the phrase `confirm`."
             },
             {
               "name": "start_writer",
@@ -232,6 +272,11 @@
               "name": "verify_audit",
               "signature": "verify_audit() -> AuditVerify",
               "doc": "Check the audit log's hash chain. `broken_at` names the first entry that does not match."
+            },
+            {
+              "name": "wait_until",
+              "signature": "wait_until(condition: str, *, timeout_s: float = 30.0, interval_s: float = 1.0) -> WaitResult",
+              "doc": "Read the channels `condition` names until it holds or `timeout_s` passes.\n\nThe condition is in the routine expression language, with each channel as `device.channel`."
             },
             {
               "name": "whoami",
@@ -290,6 +335,11 @@
               "name": "call",
               "signature": "async call(call: Call[T]) -> T",
               "doc": "Send one call and parse the response. Raises a subclass of `OpenHALError` on failure."
+            },
+            {
+              "name": "cancel_run",
+              "signature": "async cancel_run(run_id: str) -> StepRun",
+              "doc": "End a run before its next step. Only the token that started the run, or a human token."
             },
             {
               "name": "confirmation",
@@ -357,6 +407,11 @@
               "doc": "Yield live events (`hello`, `reading`, `state`, `audit`, `watchdog`) from `/v1/live`.\n\nNeeds the `websockets` package, which the `hub` extra installs."
             },
             {
+              "name": "find",
+              "signature": "async find(text: str | None = None, *, unit: str | None = None, kind: str | None = None, hazard: str | None = None, connected: bool | None = None, limit: int = 50) -> FindResult",
+              "doc": "Channels and actions on every device that match, as `device.channel` targets.\n\n`text` matches names, descriptions, units and what a unit measures, so `find(\"temperature\")` finds a\ndegC channel named temp. `unit` matches every channel a value in that unit converts to. `kind` is\nreadable, writable or action, and readable includes write channels."
+            },
+            {
               "name": "finish",
               "signature": "async finish(session_id: str, save_as: str | None = None) -> FinishResult",
               "doc": "Save the confirmed device file, named `save_as` if given. Needs a human token."
@@ -422,9 +477,39 @@
               "doc": "Every stored routine with its devices, its triggers and whether the routine is enabled."
             },
             {
+              "name": "run",
+              "signature": "async run(run_id: str, *, wait_s: float = 0.0, last: int = 50) -> StepRun",
+              "doc": "One run with its `last` step results, after waiting up to `wait_s` for the run to end."
+            },
+            {
+              "name": "run_caps",
+              "signature": "async run_caps() -> RunCaps",
+              "doc": "The caps on steps per run, seconds per run, wait or sample, and runs per token."
+            },
+            {
               "name": "run_routine",
               "signature": "async run_routine(routine_id: str) -> Run",
               "doc": "Run a routine once now. Needs a human token."
+            },
+            {
+              "name": "run_steps",
+              "signature": "async run_steps(steps: Iterable[calls.Step], *, repeat: int = 1, wait_s: float = 5.0) -> StepRun",
+              "doc": "Check the steps as a plan, then run them in order through the kernel.\n\nA step is a `Write`, an `Action` or a dict with `kind` read, write, action, wait or wait_until.\nThe reply comes when the run ends or after `wait_s`, with `run_id` for `run()` and `cancel_run()`."
+            },
+            {
+              "name": "runs",
+              "signature": "async runs() -> list[StepRun]",
+              "doc": "The runs this token started, newest first. A human token sees every run."
+            },
+            {
+              "name": "sample",
+              "signature": "async sample(targets: Iterable[str], *, duration_s: float, interval_s: float = 1.0) -> SampleResult",
+              "doc": "Read `device.channel` targets every `interval_s` for `duration_s`, with min, max and mean for numbers."
+            },
+            {
+              "name": "set_run_caps",
+              "signature": "async set_run_caps(*, max_steps: int | None = None, max_seconds: float | None = None, per_agent: int | None = None, phrase: str | None = None) -> RunCaps",
+              "doc": "Change the caps. Needs a human token, and raising a cap needs the phrase `confirm`."
             },
             {
               "name": "start_writer",
@@ -470,6 +555,11 @@
               "name": "verify_audit",
               "signature": "async verify_audit() -> AuditVerify",
               "doc": "Check the audit log's hash chain. `broken_at` names the first entry that does not match."
+            },
+            {
+              "name": "wait_until",
+              "signature": "async wait_until(condition: str, *, timeout_s: float = 30.0, interval_s: float = 1.0) -> WaitResult",
+              "doc": "Read the channels `condition` names until it holds or `timeout_s` passes.\n\nThe condition is in the routine expression language, with each channel as `device.channel`."
             },
             {
               "name": "whoami",
@@ -1049,6 +1139,226 @@
             {
               "name": "result",
               "type": "Decision | None",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Find, wait, sample and runs",
+      "items": [
+        {
+          "name": "FindResult",
+          "kind": "class",
+          "doc": "",
+          "fields": [
+            {
+              "name": "count",
+              "type": "int",
+              "doc": "Every match, including any past the limit."
+            },
+            {
+              "name": "matches",
+              "type": "list",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "name": "WaitResult",
+          "kind": "class",
+          "doc": "How a wait on a condition ended, with the readings of its last check.",
+          "fields": [
+            {
+              "name": "condition",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "status",
+              "type": "str",
+              "doc": "held, timeout, time_cap, stopped or token_revoked."
+            },
+            {
+              "name": "held",
+              "type": "bool",
+              "doc": ""
+            },
+            {
+              "name": "result",
+              "type": "bool | None",
+              "doc": "The condition at the last check. None means unknown."
+            },
+            {
+              "name": "waited_s",
+              "type": "float",
+              "doc": ""
+            },
+            {
+              "name": "checks",
+              "type": "int",
+              "doc": ""
+            },
+            {
+              "name": "interval_s",
+              "type": "float",
+              "doc": ""
+            },
+            {
+              "name": "readings",
+              "type": "list",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "name": "SampleResult",
+          "kind": "class",
+          "doc": "",
+          "fields": [
+            {
+              "name": "status",
+              "type": "str",
+              "doc": "done, or why the sample ended early, stopped or time_cap."
+            },
+            {
+              "name": "interval_s",
+              "type": "float",
+              "doc": ""
+            },
+            {
+              "name": "duration_s",
+              "type": "float",
+              "doc": ""
+            },
+            {
+              "name": "started_at",
+              "type": "float | None",
+              "doc": ""
+            },
+            {
+              "name": "series",
+              "type": "list",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "name": "StepRun",
+          "kind": "class",
+          "doc": "A run of steps. `status` is running, done, blocked, pending, failed or cancelled.",
+          "fields": [
+            {
+              "name": "run_id",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "owner",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "status",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "message",
+              "type": "str",
+              "doc": ""
+            },
+            {
+              "name": "steps",
+              "type": "int",
+              "doc": ""
+            },
+            {
+              "name": "repeat",
+              "type": "int",
+              "doc": ""
+            },
+            {
+              "name": "total_steps",
+              "type": "int",
+              "doc": ""
+            },
+            {
+              "name": "done_steps",
+              "type": "int",
+              "doc": ""
+            },
+            {
+              "name": "current",
+              "type": "dict[str, Any] | None",
+              "doc": ""
+            },
+            {
+              "name": "started_at",
+              "type": "float | None",
+              "doc": ""
+            },
+            {
+              "name": "finished_at",
+              "type": "float | None",
+              "doc": ""
+            },
+            {
+              "name": "elapsed_s",
+              "type": "float | None",
+              "doc": ""
+            },
+            {
+              "name": "stop",
+              "type": "RunStop | None",
+              "doc": ""
+            },
+            {
+              "name": "request_id",
+              "type": "str | None",
+              "doc": "Set when the run ended at a step held for a person."
+            },
+            {
+              "name": "plan",
+              "type": "dict",
+              "doc": ""
+            },
+            {
+              "name": "results",
+              "type": "list",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "name": "RunCaps",
+          "kind": "class",
+          "doc": "",
+          "fields": [
+            {
+              "name": "max_steps",
+              "type": "int",
+              "doc": "Steps in one run, counting every repeat."
+            },
+            {
+              "name": "max_seconds",
+              "type": "float",
+              "doc": "The longest run, wait or sample."
+            },
+            {
+              "name": "per_agent",
+              "type": "int",
+              "doc": "Runs, waits and samples one token may have going at once."
+            },
+            {
+              "name": "max_points",
+              "type": "int | None",
+              "doc": "The most readings a sample takes of each target."
+            },
+            {
+              "name": "changed",
+              "type": "dict",
               "doc": ""
             }
           ]
