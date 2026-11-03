@@ -41,7 +41,7 @@ jobs:
           enable-cache: false
       - run: uv build
       - id: version
-        run: echo "version=$(sed -n 's/^version = "\(.*\)"$/\1/p' pyproject.toml | head -n 1)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v7.0.2
         with:
           name: dist
@@ -76,18 +76,18 @@ jobs:
           if [ "${{ matrix.package }}" = wheel ]; then file="dist/halkit-$VERSION-py3-none-any.whl"; else file="dist/halkit-$VERSION.tar.gz"; fi
           venv="$RUNNER_TEMP/venv"
           uv venv --python "${{ matrix.python }}" "$venv"
-          bin="$venv/bin"; exe=""
-          if [ "$RUNNER_OS" = Windows ]; then bin="$venv/Scripts"; exe=".exe"; fi
-          uv pip install --python "$bin/python$exe" "$file"
-          printed=$("$bin/openhal$exe" --version)
-          echo "$printed"
-          if [ "$printed" != "openhal $VERSION" ]; then
-            echo "::error::openhal --version printed \"$printed\", not \"openhal $VERSION\"."
-            exit 1
-          fi
-          "$bin/openhal$exe" demo | tee demo.txt
+          uv pip install --python "$venv" "$file"
+          bin="$venv/bin"
+          if [ "$RUNNER_OS" = Windows ]; then bin="$venv/Scripts"; fi
+          for command in openhal halkit; do
+            printed=$("$bin/$command" --version)
+            if [ "$printed" != "openhal $VERSION" ]; then
+              echo "::error::$command --version printed \"$printed\", not \"openhal $VERSION\"."
+              exit 1
+            fi
+          done
+          "$bin/openhal" demo | tee demo.txt
           grep -q "6 requests, 1 blocked, 1 confirmed by a person." demo.txt
-          test "$("$bin/halkit$exe" --version)" = "openhal $VERSION"
 
   installers:
     name: installers on ${{ matrix.os }}
