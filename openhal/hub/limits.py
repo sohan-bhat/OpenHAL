@@ -28,6 +28,7 @@ import yaml
 from openhal.drivers.base import DriverError
 from openhal.kernel.checks import Block
 from openhal.kernel.principals import Principal
+from openhal.spec import risk
 from openhal.spec.loader import DeviceFileError, from_data, parse_yaml
 from openhal.spec.units import Quantity, UnitError, convert, convert_rate, format_quantity, parse_quantity
 from openhal.writer import interview
@@ -181,8 +182,8 @@ class LimitChanges:
             if request.status == "pending":
                 self._close(request, "cancelled", "system", f"cancelled by the stop, {reason}")
 
-    def _read(self, device_id: str) -> tuple[Path, dict[str, Any]]:
-        """The device's file as data, checked to be confirmed and the same as the file the hub runs."""
+    def _read(self, device_id: str, channel: str | None = None) -> tuple[Path, dict[str, Any]]:
+        """The device's file as data, checked to be the file the hub runs, with `channel` not read-only."""
         runtime = self.hub.kernel.devices.get(device_id)
         info = self.hub.info.get(device_id)
         if runtime is None:
@@ -195,10 +196,12 @@ class LimitChanges:
             on_disk = from_data(data)
         except (OSError, DeviceFileError) as exc:
             raise LimitError("misconfigured", f"Blocked. {path.name} doesn't load. {exc}") from exc
-        if not on_disk.writable or not runtime.file.writable:
+        target = f"write:{channel}" if channel is not None else None
+        if target is not None and (on_disk.read_only(target) or runtime.file.read_only(target)):
             raise LimitError(
                 "read_only_file",
-                f"Blocked. {device_id}'s limits aren't confirmed yet. Answer each limit first with "
+                f"Blocked. {device_id}.{channel} is high risk and its limits aren't confirmed yet. Answer each "
+                f"limit first with "
                 f"openhal file confirm {path}, or Review limits in the Inspector.",
             )
         if on_disk.limits_sha256() != runtime.file.limits_sha256():
@@ -234,7 +237,7 @@ class LimitChanges:
         self, device_id: str, channel: str, *, min: Any = None, max: Any = None, rate: Any = None
     ) -> Change:
         """The change a request asks for, checked against the file and the range the device reports."""
-        _, data = self._read(device_id)
+        _, data = self._read(device_id, channel)
         reported = await self.reported(device_id, data)
         return self.plan(device_id, channel, min=min, max=max, rate=rate, reported=reported)
 
@@ -248,16 +251,20 @@ class LimitChanges:
         rate: Any = None,
         reported: dict[str, tuple[float, float]] | None = None,
     ) -> Change:
-        """The change a request asks for, checked against the file and the device's own range."""
-        _, data = self._read(device_id)
+        """The change a request asks for, checked against the file and the device's own range.
+
+        A low risk channel's rate that was only suggested doesn't apply (ADR 0020), so it counts as no rate.
+        """
+        _, data = self._read(device_id, channel)
         spec = (data.get("write") or {}).get(channel)
         if not isinstance(spec, dict) or spec.get("type", "number") != "number" or not spec.get("unit"):
             raise KeyError(f"{device_id} has no number channel {channel!r} with limits.")
         unit = str(spec["unit"])
+        applies = risk.own_rate(self.hub.kernel.devices[device_id].file, channel)
         before: dict[str, float | None] = {
             "min": float(spec["min"]),
             "max": float(spec["max"]),
-            "rate": float(spec["max_change_per_s"]) if spec.get("max_change_per_s") is not None else None,
+            "rate": float(spec["max_change_per_s"]) if spec.get("max_change_per_s") is not None and applies else None,
         }
         after = dict(before)
         if min is not None:
@@ -298,7 +305,7 @@ class LimitChanges:
 
     async def apply(self, change: Change, who: Principal) -> Path:
         """Write the change into the file, confirmed by `who`, and load the file. `who` is a human principal."""
-        path, data = self._read(change.device)
+        path, data = self._read(change.device, change.channel)
         updated = copy.deepcopy(data)
         spec = updated["write"][change.channel]
         spec["min"], spec["max"] = _tidy(change.after["min"]), _tidy(change.after["max"])
@@ -306,11 +313,14 @@ class LimitChanges:
             spec.pop("max_change_per_s", None)
         else:
             spec["max_change_per_s"] = _tidy(change.after["rate"])
-        updated.pop("confirmed", None)
+        spec.pop("suggested", None)
+        today = dt.date.today().isoformat()
         try:
-            limits = from_data(updated).limits_sha256()
-            updated["confirmed"] = {"by": who.name[:80], "at": dt.date.today().isoformat(), "sha256": limits}
-            if not from_data(updated).writable:
+            if updated.pop("confirmed", None) is None:
+                spec["confirmed"] = {"by": who.name[:80], "at": today}
+            else:
+                updated["confirmed"] = {"by": who.name[:80], "at": today, "sha256": from_data(updated).limits_sha256()}
+            if from_data(updated).read_only(f"write:{change.channel}"):
                 raise LimitError("misconfigured", "Blocked. The changed file would load read-only.")
         except DeviceFileError as exc:
             raise LimitError("bad_request", "Blocked. " + " ".join(exc.problems)) from exc

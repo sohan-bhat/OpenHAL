@@ -16,7 +16,7 @@ MOCK = Path(__file__).resolve().parents[2] / "examples" / "plant-waterer" / "moc
 
 def waterer() -> dict[str, Any]:
     draft = sketch.draft(sketch.parse(SKETCH.read_text(encoding="utf-8")))
-    return {**draft, "device": "Plant waterer", "id": "plant-waterer", "connect": {"mock": "waterer"}}
+    return {**draft, "device": "Plant waterer", "id": "plant-waterer", "connect": {"mock": "waterer"}, "hazard": "high"}
 
 
 def answers(**changes: str) -> dict[str, str]:

@@ -1,8 +1,9 @@
 """`openhal init`, which sets up the config folder, tokens, devices, AI clients and the service.
 
-On a terminal the command shows a few short questions, and for each device it adds it offers the
-limits interview, so the person answers each limit once and the file is saved writable. `--yes`
-takes the safe defaults without prompting and adds devices read-only. A run that can't prompt and
+On a terminal the command shows a few short questions, and for each device with high risk entries it
+offers the limits interview, so the person answers each of those limits once. Low and medium risk
+channels and actions take commands at once within the device's own range (ADR 0020). `--yes` takes
+the safe defaults without prompting and leaves high risk entries read-only. A run that can't prompt and
 has no `--yes`, such as a script, does only the config folder, the human token and the sample. In
 every mode only the person's own answers at the terminal confirm a limit, and the service is
 installed only when the person asks.
@@ -143,12 +144,28 @@ def _parse_known(values: list[str] | None) -> list[tuple[str, str]]:
     return known
 
 
+def _levels(path: Path) -> str:
+    """How many entries of a saved file are at each risk level, and what stays read-only."""
+    from openhal.spec.loader import load
+    from openhal.spec.risk import assess
+
+    file = load(path)
+    found = [item.level for target, item in assess(file).items() if not target.startswith("read:")]
+    counts = ", ".join(f"{found.count(level)} {level}" for level in ("low", "medium", "high") if level in found)
+    waiting = len(file.unconfirmed())
+    tail = f", {waiting} read-only until you confirm their limits" if waiting else ", every one takes commands"
+    return f"risk {counts or 'nothing to control'}{tail if found else ''}"
+
+
 def _set_limits(path: Path, label: str) -> bool:
     """Walk the limits interview for a file init just saved. Returns True when the file is now writable."""
     from openhal.spec.loader import load, parse_yaml
+    from openhal.writer import interview
 
+    if not interview.questions(parse_yaml(path.read_text(encoding="utf-8"))):
+        return load(path).writable
     if not typer.confirm(
-        f"Answer each limit of {label} now? The device stays read-only until a person does.", default=True
+        f"Answer the high risk limits of {label} now? Those stay read-only until a person does.", default=True
     ):
         return False
     require_tty = _interview.require_person(None)
@@ -162,6 +179,12 @@ def _set_limits(path: Path, label: str) -> bool:
     writable = load(path).writable
     console.print(f"confirmed      {escape(str(path))} by {escape(who)}, {'writable' if writable else 'read-only'}")
     return writable
+
+
+def _writable(path: Path) -> bool:
+    from openhal.spec.loader import load
+
+    return load(path).writable
 
 
 def _devices(
@@ -190,10 +213,9 @@ def _devices(
         if not _choose(mode, explicit, "Add the device as a read-only device file?", True):
             continue
         path = devices.save(offer, devices_dir, existing)
-        console.print(f"device         {escape(str(path))} added, read-only until you confirm its limits")
+        console.print(f"device         {escape(str(path))} added, {escape(_levels(path))}")
         entry = Added(path, path.name.removesuffix(DEVICE_FILE_SUFFIX))
-        if mode == "ask":
-            entry.writable = _set_limits(path, offer.label)
+        entry.writable = _set_limits(path, offer.label) if mode == "ask" else _writable(path)
         added.append(entry)
     for offer in found.unknown:
         console.print(
@@ -345,7 +367,7 @@ def _base(config: HubConfig, new_token: bool, sample: bool) -> Path | None:
     report = validate_path(sample_path)
     if not report.ok:  # pragma: no cover (the sample is tested)
         raise typer.Exit(1)
-    console.print(f"sample device  {escape(str(sample_path))} created, read-only until you confirm it")
+    console.print(f"sample device  {escape(str(sample_path))} created, {escape(_levels(sample_path))}")
     return sample_path
 
 
@@ -375,11 +397,15 @@ def _next_steps(
         ]
     steps = [
         *[
-            f"Answer each limit of {entry.device_id} with openhal file confirm {entry.path}"
+            f"Answer the high risk limits of {entry.device_id} with openhal file confirm {entry.path}"
             for entry in added
             if not entry.writable
         ],
-        *([f"Confirm the sample's limits with openhal file confirm {sample_path}"] if sample_path else []),
+        *(
+            [f"Confirm the sample's high risk limits with openhal file confirm {sample_path}"]
+            if sample_path and not _writable(sample_path)
+            else []
+        ),
         hub,
         *clients,
         *(["Look for devices with openhal init --yes, or openhal discover"] if looked else []),

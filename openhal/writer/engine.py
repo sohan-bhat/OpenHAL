@@ -86,18 +86,21 @@ def _dump(data: dict[str, Any]) -> str:
 
 
 def force_suggested(data: dict[str, Any]) -> dict[str, Any]:
-    """Nothing in a draft can confirm a limit. Mark every limit suggested and drop confirmations."""
+    """Nothing in a draft can confirm a limit. Mark every limit suggested and drop confirmations.
+
+    A draft can't lower a risk level either, so a `risk` keeps its level and loses the person who set
+    it, and then only ever raises (ADR 0020).
+    """
     cleaned = copy.deepcopy(data)
     for key in ("confirmed", "approvals"):
         cleaned.pop(key, None)
-    for spec in (cleaned.get("write") or {}).values():
-        if isinstance(spec, dict):
-            spec.pop("confirmed", None)
-            spec["suggested"] = True
-    for spec in (cleaned.get("actions") or {}).values():
-        if isinstance(spec, dict):
-            spec.pop("confirmed", None)
-            spec["suggested"] = True
+    for section in ("write", "actions"):
+        for spec in (cleaned.get(section) or {}).values():
+            if isinstance(spec, dict):
+                spec.pop("confirmed", None)
+                spec["suggested"] = True
+                if isinstance(spec.get("risk"), dict):
+                    spec["risk"] = spec["risk"].get("level")
     provenance = cleaned.get("provenance")
     if isinstance(provenance, dict):
         provenance.pop("verification", None)

@@ -1,8 +1,9 @@
 """The limits interview at a terminal, for `openhal init` and `openhal file confirm`.
 
 The questions and the check of each answer come from openhal/writer/interview.py, the same ones
-the hub and the Inspector use. With `confirm.require_tty: true` every answer and the typed phrase
-come from the terminal itself, so a script or an agent can't answer for the person.
+the hub and the Inspector use. Only high risk channels and actions get questions (ADR 0020). With
+`confirm.require_tty: true` every answer and the typed phrase come from the terminal itself, so a
+script or an agent can't answer for the person.
 """
 
 from __future__ import annotations
@@ -95,6 +96,12 @@ def confirm(draft: dict[str, Any], *, by: str, require_tty: bool, phrase: str | 
     """
     from openhal.spec.loader import from_data
 
+    if not interview.questions(draft):
+        console.print(
+            "Every channel and action here is low or medium risk, so it takes commands within the device's own "
+            "range and there is nothing to confirm. openhal risk show lists each level."
+        )
+        return draft
     answers = ask(draft, require_tty)
     try:
         confirmed = interview.apply(draft, answers, by=by)

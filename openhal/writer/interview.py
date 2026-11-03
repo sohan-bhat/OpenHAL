@@ -2,13 +2,15 @@
 
 `openhal init`, `openhal file confirm`, the driver writer and the Inspector all ask these
 questions and check each answer with `problem`, so a value outside what the device reports is
-refused the same way everywhere. Questions cover every write channel and action: unit, min, max,
-rate, safe value and confirmation tier for channels, argument limits, requirements, a run limit and
-the tier for actions, plus the device's hazard class, the action that makes the device safe and its
-interlocks. Each question carries a suggestion and the reason for the suggestion. The callers check
-that a human principal gave the answers, and the file gets a `confirmed` entry bound to the hash of
-its limits once every question is answered. A draft an agent proposes still goes through every
-question.
+refused the same way everywhere. Questions cover every high risk write channel and action (ADR 0020),
+because low and medium ones take commands within the device's own range with no interview. For a
+channel they ask the unit, min, max, rate, safe value and confirmation tier, and for an action its
+argument limits, requirements, a run limit and the tier. Then they ask the device's hazard class,
+the action that makes the device safe and its interlocks. A draft that doesn't load as a device file
+yet gets every question, since its levels can't be told. Each question carries a suggestion and the
+reason for the suggestion. The callers check that a human principal gave the answers, and the file
+gets a `confirmed` entry bound to the hash of its limits once every question is answered. A draft an
+agent proposes still goes through every question.
 """
 
 from __future__ import annotations
@@ -20,6 +22,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, Final
 
+from openhal.spec import risk
 from openhal.spec.loader import DeviceFileError, from_data
 from openhal.spec.units import (
     Quantity,
@@ -382,8 +385,23 @@ def _action_questions(name: str, spec: dict[str, Any], source: str, bounds: dict
     return asked
 
 
+def targets(draft: dict[str, Any]) -> set[str] | None:
+    """The `write:<name>` and `action:<name>` targets the interview asks about, the high risk ones.
+
+    None means every target, for a draft that doesn't load yet, whose levels can't be told.
+    """
+    try:
+        file = from_data(draft)
+    except DeviceFileError:
+        return None
+    return {target for target, found in risk.assess(file).items() if found.level == "high"}
+
+
 def questions(draft: dict[str, Any]) -> list[Question]:
-    """Every question the draft needs answered, in a stable order."""
+    """Every question the draft needs answered, in a stable order. None when nothing is high risk."""
+    high = targets(draft)
+    if high is not None and not high:
+        return []
     hazard = hazard_of(draft)
     source = _source_reason(draft)
     bounds = device_limits(draft)
@@ -401,9 +419,11 @@ def questions(draft: dict[str, Any]) -> list[Question]:
     ]
     safe = _safe_values(draft)
     for name, spec in (draft.get("write") or {}).items():
-        asked.extend(_channel_questions(name, spec, safe, hazard, source, bounds))
+        if high is None or f"write:{name}" in high:
+            asked.extend(_channel_questions(name, spec, safe, hazard, source, bounds))
     for name, spec in (draft.get("actions") or {}).items():
-        asked.extend(_action_questions(name, spec, source, bounds))
+        if high is None or f"action:{name}" in high:
+            asked.extend(_action_questions(name, spec, source, bounds))
     if draft.get("actions"):
         asked.append(
             Question(
@@ -618,9 +638,11 @@ def _check_number(question: Question, text: str, answers: dict[str, Any]) -> Non
         )
 
 
-def _apply_channels(data: dict[str, Any], answers: dict[str, Any]) -> dict[str, Any]:
+def _apply_channels(data: dict[str, Any], answers: dict[str, Any], asked: set[str]) -> dict[str, Any]:
     safe: dict[str, Any] = {}
     for name, spec in (data.get("write") or {}).items():
+        if f"{name}.confirm" not in asked:
+            continue
         spec.pop("suggested", None)
         spec.pop("confirmed", None)
         kind = spec.get("type", "number")
@@ -645,8 +667,10 @@ def _apply_channels(data: dict[str, Any], answers: dict[str, Any]) -> dict[str, 
     return safe
 
 
-def _apply_actions(data: dict[str, Any], answers: dict[str, Any]) -> None:
+def _apply_actions(data: dict[str, Any], answers: dict[str, Any], asked: set[str]) -> None:
     for name, spec in (data.get("actions") or {}).items():
+        if f"{name}.confirm" not in asked:
+            continue
         spec.pop("suggested", None)
         spec.pop("confirmed", None)
         for arg, arg_spec in (spec.get("args") or {}).items():
@@ -677,6 +701,7 @@ def _apply_actions(data: dict[str, Any], answers: dict[str, Any]) -> None:
 
 
 def _apply_safe_state(data: dict[str, Any], safe: dict[str, Any], answers: dict[str, Any], asked: set[str]) -> None:
+    safe = {**_safe_values(data), **safe}
     existing = data.get("safe_state")
     action_steps = [step for step in existing or [] if isinstance(step, dict) and "action" in step]
     if "device.safe_action" in asked:
@@ -696,8 +721,13 @@ def _apply_safe_state(data: dict[str, Any], safe: dict[str, Any], answers: dict[
 
 
 def apply(draft: dict[str, Any], answers: dict[str, Any], *, by: str, today: dt.date | None = None) -> dict[str, Any]:
-    """Apply a complete set of answers to a copy of the draft and confirm it. Raises AnswerError."""
+    """Apply a complete set of answers to a copy of the draft and confirm it. Raises AnswerError.
+
+    A draft with no high risk target has no questions, so it comes back as it was, unconfirmed.
+    """
     ordered = questions(draft)
+    if not ordered and not answers:
+        return copy.deepcopy(draft)
     asked = {question.id: question for question in ordered}
     missing = [question_id for question_id in asked if str(answers.get(question_id, "")).strip() == ""]
     if missing:
@@ -712,8 +742,8 @@ def apply(draft: dict[str, Any], answers: dict[str, Any], *, by: str, today: dt.
     data = copy.deepcopy(draft)
     data.pop("confirmed", None)
     data["hazard"] = str(answers["device.hazard"]).strip().lower()
-    safe = _apply_channels(data, answers)
-    _apply_actions(data, answers)
+    safe = _apply_channels(data, answers, set(asked))
+    _apply_actions(data, answers, set(asked))
     _apply_safe_state(data, safe, answers, set(asked))
 
     interlocks_text = str(answers["device.interlocks"]).strip()
@@ -739,7 +769,9 @@ def apply(draft: dict[str, Any], answers: dict[str, Any], *, by: str, today: dt.
         confirmed = from_data(data)
     except DeviceFileError as exc:
         raise AnswerError("The confirmed file is invalid. " + " ".join(exc.problems)) from exc
-    remaining = confirmed.unconfirmed()
+    answered = {f"write.{name}" for name in data.get("write") or {} if f"{name}.confirm" in asked}
+    answered |= {f"actions.{name}" for name in data.get("actions") or {} if f"{name}.confirm" in asked}
+    remaining = [item for item in confirmed.unconfirmed() if item in answered or item.startswith("file ")]
     if remaining:
         raise AnswerError(f"Still unconfirmed after the interview. {', '.join(remaining)}")
     return data

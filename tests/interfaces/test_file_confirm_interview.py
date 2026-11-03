@@ -29,7 +29,7 @@ device: Desk lamp
 id: desk-lamp
 connect: { mock: desk-lamp }
 write:
-  brightness: { unit: percent, min: 0, max: 100, suggested: true }
+  brightness: { unit: percent, min: 0, max: 100, suggested: true, risk: high }
 provenance: { source: self-described, tool: openhal init }
 """
 
@@ -150,6 +150,7 @@ def test_init_loads_a_new_device_into_the_running_hub(
     finally:
         SIMULATORS.clear()
     assert code == 0, out
-    assert "loaded         plant-waterer is loaded read-only." in out, out
-    assert not cli_hub.hub.kernel.devices["plant-waterer"].file.writable
+    assert "loaded         plant-waterer is now writable." in out, out
+    assert "risk 2 medium, every one takes commands" in out, out
+    assert cli_hub.hub.kernel.devices["plant-waterer"].file.writable, "a medium waterer takes commands at once"
     assert "restart" not in out
