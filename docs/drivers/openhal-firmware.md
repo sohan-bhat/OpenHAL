@@ -46,7 +46,8 @@ Install the optional dependency with `uv tool install --compile-bytecode "halkit
 - Reads use a streamed `EVT` value when the value is less than 5 s old, and send `READ` otherwise.
 - Channel changes send `WRITE` and return the value the board applied, and actions send `ACT` with every argument in the board's unit. A board error reply (`ERR limit`, `ERR interlock`) becomes a DriverError, and the kernel marks what the command touched unknown until a readback.
 - `safe_state_support` is native, so a stop sends `SAFE` and the kernel also applies the device file's safe state.
-- `describe()` turns `DESC` into device file sections with every limit marked suggested, so the file stays read-only until a person confirms the file.
+- `describe()` turns `DESC` into device file sections with every limit marked suggested. Low and medium risk channels take commands within the board's own range, and high risk ones stay read-only until a person confirms their limits ([Safety](../SAFETY.md#risk-levels)).
+- A board whose sketch calls `pins()` lists its free pins in `DESC`. The driver gives each pin `pin<N>` for digital in and out, `pin<N>_pwm` in percent, `pin<N>_analog` in percent of full scale and `pin<N>_mode`, each with `map: { pin: N, mode: ... }`, and sends `PIN` for them, changing the pin's mode as each command needs. A named output's own pin lands in its `map`, so a pin channel on the same pin shares that output's risk level. A plain pin is medium.
 - Discovery only probes ports whose USB vendor id is Arduino, WCH CH340, Silicon Labs CP210x, Espressif, Adafruit or FTDI, and only sends `HELLO`.
 
 ## Quirks
@@ -57,4 +58,4 @@ Install the optional dependency with `uv tool install --compile-bytecode "halkit
 
 ## Tests
 
-`tests/drivers/test_openhal_firmware.py` covers the codec, the simulator and the driver through the kernel. `tests/firmware/test_arduino_host.py` builds the real library and every example for the host computer and runs the conformance suite against it. Hardware steps are in `docs/hardware-tests/openhal-firmware.md`.
+`tests/drivers/test_openhal_firmware.py` covers the codec, the simulator and the driver through the kernel, and `tests/drivers/test_openhal_firmware_pins.py` covers every pin on the simulated bare board. `tests/firmware/test_arduino_host.py` builds the real library and every example for the host computer and runs the conformance suite against it. Hardware steps are in `docs/hardware-tests/openhal-firmware.md`.
