@@ -179,6 +179,11 @@
               "doc": "Revoke a token so the hub no longer accepts the token. Revoking needs a human token."
             },
             {
+              "name": "risk",
+              "signature": "risk(device: str) -> DeviceRisk",
+              "doc": "Every channel's and action's risk level on a device, with the reasons."
+            },
+            {
               "name": "routine",
               "signature": "routine(routine_id: str) -> Routine",
               "doc": "One routine with its source and who drafted and enabled the routine."
@@ -222,6 +227,11 @@
               "name": "sample",
               "signature": "sample(targets: Iterable[str], *, duration_s: float, interval_s: float = 1.0) -> SampleResult",
               "doc": "Read `device.channel` targets every `interval_s` for `duration_s`, with min, max and mean for numbers."
+            },
+            {
+              "name": "set_risk",
+              "signature": "set_risk(device: str, name: str, level: str, *, phrase: str | None = None) -> RiskResult",
+              "doc": "Change a level. Needs a human token. Lowering takes the phrase confirm, or waits for a person."
             },
             {
               "name": "set_run_caps",
@@ -462,6 +472,11 @@
               "doc": "Revoke a token so the hub no longer accepts the token. Revoking needs a human token."
             },
             {
+              "name": "risk",
+              "signature": "async risk(device: str) -> DeviceRisk",
+              "doc": "Every channel's and action's risk level on a device, with the reasons."
+            },
+            {
               "name": "routine",
               "signature": "async routine(routine_id: str) -> Routine",
               "doc": "One routine with its source and who drafted and enabled the routine."
@@ -505,6 +520,11 @@
               "name": "sample",
               "signature": "async sample(targets: Iterable[str], *, duration_s: float, interval_s: float = 1.0) -> SampleResult",
               "doc": "Read `device.channel` targets every `interval_s` for `duration_s`, with min, max and mean for numbers."
+            },
+            {
+              "name": "set_risk",
+              "signature": "async set_risk(device: str, name: str, level: str, *, phrase: str | None = None) -> RiskResult",
+              "doc": "Change a level. Needs a human token. Lowering takes the phrase confirm, or waits for a person."
             },
             {
               "name": "set_run_caps",
