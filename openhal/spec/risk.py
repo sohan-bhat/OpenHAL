@@ -2,7 +2,7 @@
 
 The hub gives every readable channel, writable channel and action one of three levels. Reading is
 always low. A write channel or an action gets the highest level any rule below gives it, and when no
-rule tells, it gets medium. The rules read only the device file and the device's own description,
+rule applies, it gets medium. The rules read only the device file and the device's own description,
 so no device name or id appears anywhere in them.
 
 | Rule | Level |
@@ -16,12 +16,12 @@ so no device name or id appears anywhere in them.
 | Words for heat, mains switching, machine motion or force in the name | high |
 | Words for pumps, valves, flow, motors, fans and servos in the name | medium |
 | Words for light, sound or a display in the name | low |
-| No words in the name, the device's own name decides | as its words give |
+| No such words in the name | the words of the device's own name |
 | A channel mapped to a bare pin, with no words in its name | at least medium |
 | Three or more angle or length channels on one device, such as an arm's joints | each of them high |
 | A missing unit (dimensionless) or a unit the table doesn't list | one level up |
 | An action, from the channels it changes and the units of its arguments | the highest of them |
-| Nothing above tells | medium |
+| No rule above applies | medium |
 | Channels and actions mapped to the same pin | the highest level among them |
 | A `risk` override that a person set, with `by` | that level, up or down |
 | A `risk` override with no `by` | only ever raises |
@@ -31,7 +31,7 @@ raise, so text that came from a device can't lower anything. Low words match who
 while medium and high stems also match inside a word, so a compound such as heatbed counts as heat.
 
 An action can be undone when every effect it lists is a write channel the hub can set back, or
-when the safe state runs it. A high action that can't be undone always waits for a person.
+when the safe state runs it. A high action that can't be undone is always held for a person.
 """
 
 from __future__ import annotations
@@ -122,7 +122,7 @@ WORDS: Final[tuple[Words, ...]] = (
         "pneumat hydraul compress piston",
     ),
 )
-"""The quantity each word names. A word in no row says nothing, such as power, level or mode."""
+"""The quantity each word names. A word in no row counts for nothing, such as power, level or mode."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,12 +161,12 @@ UNITS: Final[tuple[Dimension, ...]] = (
     Dimension("frequency", (("[time]", -1),), 0, None),
     Dimension("ratio", (), 0, None),
 )
-"""What each kind of unit says about a write channel or an argument. None means nothing."""
+"""The level each kind of unit gives a write channel or an argument. None gives none."""
 
 MOTION_UNITS: Final = frozenset({"angle", "length"})
 AXES_FOR_MACHINE: Final = 3
 DEVICE_WORD_MIN: Final = 3
-"""Words from the device's name and model count from three letters, so a model number's X or Z says nothing."""
+"""Words from the device's name and model count from three letters, so a model number's X or Z counts for nothing."""
 _SPLIT: Final = re.compile(r"[^a-z]+")
 _MIN_STEM_WORD: Final = 4
 
@@ -276,7 +276,7 @@ def _dimension(unit: str) -> Dimension | None:
 
 
 def unit_signal(unit: str | None, maximum: float | None) -> UnitSignal:
-    """What a write channel's or argument's unit says, given its maximum in that unit."""
+    """The level a write channel's or argument's unit gives, with its maximum in that unit."""
     if unit is None:
         return UnitSignal(None, None)
     if normalize_unit(unit) == "dimensionless":
@@ -327,12 +327,12 @@ def _base(
         draft = _Draft(highest(*(level for level, _ in own)), [reason for _, reason in own])
     elif device_words:
         draft = _Draft(
-            highest(*(level for level, _ in device_words)), [f"the device name says {r}" for _, r in device_words]
+            highest(*(level for level, _ in device_words)), [f"from the device name, {r}" for _, r in device_words]
         )
     else:
-        draft = _Draft(DEFAULT, ["nothing in the name tells, so medium"])
+        draft = _Draft(DEFAULT, ["no rule applies, so medium"])
     if bare_pin and not own:
-        draft.raise_to("medium", "a bare pin, and the hub can't know what is wired to it")
+        draft.raise_to("medium", "a bare pin, with no word for what is wired to it")
     for level, reason in word_levels(extra_words):
         if RANK[level] > RANK["low"]:
             draft.raise_to(level, reason)
@@ -512,7 +512,7 @@ def tier(file: DeviceFile, target: str, written: str) -> str:
     """The confirmation tier a target uses. `written` is the tier the device file sets.
 
     A high hazard device holds every command for a person each time. A high action that can't be
-    undone waits for a person at least once, whatever the file sets.
+    undone is held for a person at least once, whatever the file sets.
     """
     if file.effective_hazard == "high":
         return "confirm-each-time"

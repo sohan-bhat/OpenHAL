@@ -59,5 +59,6 @@ Defined terms are capitalized wherever they appear.
 | Principal | The identity behind a request. Its kind is `human`, `agent`, `routine` or `system`, and it carries a scope. |
 | Conformance Level | One of `core`, `control` or `full`. It names the methods a Hub implements, or the capabilities a Driver supports. |
 | Confirmation Request | A command that passed every check except confirmation and that the Hub holds in its queue until a human Principal approves or rejects the command, or until the request expires. |
+| Risk Level | One of `low`, `medium` or `high`, set for each channel and action from the Device File ([Safety](safety.md#risk-levels)). A high risk target waits for a human to confirm its limits, and reading is always `low`. |
 
 Other terms are used in their plain sense. A channel is a named value on a Device. A read channel can be read. A write channel can be read and changed. An action is a named operation with typed arguments. A command is one change to a write channel or one run of an action. A safe state is the set of steps that leaves a Device safe to leave unattended. A routine is an automation that runs on the Hub without a model.

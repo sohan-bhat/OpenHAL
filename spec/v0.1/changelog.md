@@ -31,7 +31,18 @@ The first draft of the OpenHAL specification, dated 2026-10-24.
 - Watchdog heartbeat, loss behavior and max duration rules.
 - Hazard classes and human-signed approvals for routines on high hazard Devices.
 - Notes as data, provenance and verification status.
-- Limits provenance. Files load read-only until a human confirms every limit.
+- Limits provenance. High risk targets stay read-only until a human confirms their limits.
+
+### Risk levels
+
+On 2026-11-03, at the owner's decision of 2026-11-02 ([ADR 0020](../../docs/adr/0020-risk-levels.md)).
+
+- Every channel and action has a Risk Level, `low`, `medium` or `high`, which a Hub sets from the Device File. Reading is always `low`.
+- Only high risk targets wait for a human to confirm their limits. Low and medium targets take commands within the Device File's range, and a low channel ignores a rate that is only `suggested`.
+- A high risk action that can't be undone needs a human's approval at least once.
+- Scope follows the lower of a target's Risk Level and the Device's hazard class.
+- Device Files gain `risk` on write channels and actions, and `map.pin` ties targets on one pin to one level.
+- The firmware protocol gains `PIN` and the `io`, `pb` and `ab` keys of `DESC`, and `DESC` may be up to 4,000 bytes.
 
 ### Safety, routines and security
 
