@@ -31,5 +31,9 @@
       "command": "pipx install {distribution}",
       "beforePyPI": "pipx install git+{repository}"
     }
-  ]
+  ],
+  "demo": {
+    "command": "openhal demo",
+    "fromPyPI": "uvx {distribution} demo"
+  }
 }

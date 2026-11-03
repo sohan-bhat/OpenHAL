@@ -6,7 +6,9 @@ import HowItWorks from "../components/landing/HowItWorks.astro";
 import { PRODUCT_LONG_NAME, PRODUCT_NAME } from "../config/brand";
 import DocShell from "../layouts/DocShell.astro";
 import { driverCounts, driverGroups, statusWord } from "../lib/catalog";
+import { codeHtml } from "../lib/code";
 import { inlineScript } from "../lib/inline-script";
+import { demoCommands } from "../lib/install";
 import { HOME_TITLE } from "../lib/pages";
 import { latestSpecHref } from "../lib/spec";
 import "../styles/prose.css";
@@ -14,6 +16,7 @@ import "../styles/prose.css";
 const heroSpell = await inlineScript(heroSpellSource, "hero-spell.js");
 const quickstart = await getEntry("snippets", "quickstart");
 const { Content: Quickstart } = await render(quickstart!);
+const { withoutInstall } = demoCommands();
 const groups = driverGroups();
 const { total, tested } = driverCounts();
 const points = [
@@ -82,6 +85,14 @@ const more = [
     <p class="lede">The demo uses simulated devices, so nothing touches real hardware. Install OpenHAL from the top of the page, then run the demo.</p>
     <div class="prose quickstart">
       <Quickstart />
+      {
+        withoutInstall && (
+          <>
+            <p>With uv installed, you can also run the demo without installing OpenHAL.</p>
+            <Fragment set:html={codeHtml(`$ ${withoutInstall}`, "sh")} />
+          </>
+        )
+      }
     </div>
     <p class="onward">The demo plays the same story in your terminal. <a href="/spec/playground/">Send the requests in your browser</a></p>
   </section>

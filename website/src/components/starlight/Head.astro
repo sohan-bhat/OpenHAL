@@ -6,12 +6,13 @@ import pageTurnSource from "../../layouts/page-turn.js?raw";
 import { PRODUCT_NAME } from "../../config/brand";
 import { iconHref } from "../../config/icons.mjs";
 import { inlineScript } from "../../lib/inline-script";
-import { ogPath } from "../../lib/pages";
+import { HOME_TITLE, ogPath } from "../../lib/pages";
 import { palette } from "../../lib/palette.mjs";
 
 const { entry } = Astro.locals.starlightRoute;
 const data = entry.data as { title: string; mono?: boolean };
 const image = new URL(ogPath(Astro.url.pathname), Astro.site);
+const imageAlt = data.title === PRODUCT_NAME ? `${PRODUCT_NAME}. ${HOME_TITLE}` : `${data.title}. ${PRODUCT_NAME}`;
 const away = "[download], [target='_blank'], [rel~='external'], a[href^='#'], a[href*='/pagefind/'], a[href*='/captures/'], a[href*='/og/']";
 const pageTurn = await inlineScript(pageTurnSource, "page-turn.js");
 const speculation = JSON.stringify({
@@ -33,7 +34,7 @@ const speculation = JSON.stringify({
 <meta property="og:image" content={image} />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content={`${data.title}. ${PRODUCT_NAME}`} />
+<meta property="og:image:alt" content={imageAlt} />
 <script>
   import { prefetchOnIntent } from "../../lib/prefetch-intent";
 

@@ -5,7 +5,7 @@ Drafts only. Nothing on this page has been posted, and the owner posts each draf
 ## Before any post
 
 1. CI passes on `main`, so the README badge is green (DESIGN.md bans a failing badge).
-2. The README quickstart works on a fresh machine, from `git clone` to `uv run openhal demo`.
+2. The README's one-line installer and `openhal demo` work on a fresh machine.
 3. The plant waterer plan (examples/plant-waterer/TEST-PLAN.md) has run on a real board.
 4. NEEDS_HUMAN.md item 4, the domain, is decided. The PyPI name is `halkit` (ADR 0002).
 5. `uv run openhal driver list` still shows 34 drivers. Fix the counts below if it doesn't.

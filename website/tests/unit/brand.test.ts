@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { faviconSvg, markLightSvg, wordmarkLightSvg, wordmarkWidth } from "../../src/lib/brand-mark";
+import { SOCIAL_PREVIEW_SIZE } from "../../src/lib/social-preview";
 
 const assets = fileURLToPath(new URL("../../../docs/assets/", import.meta.url));
 const asset = (name: string) => readFileSync(`${assets}${name}`, "utf8");
@@ -78,5 +79,21 @@ describe("status words", () => {
       rule.body.split(";").some((line) => /^\s*(border[a-z-]*|background[a-z-]*|box-shadow|outline)\s*:/.test(line) && TONE.test(line)),
     );
     expect(boxed.map((rule) => `${rule.file} ${rule.selector}`)).toEqual([]);
+  });
+});
+
+describe("the repository's social preview", () => {
+  const png = readFileSync(`${assets}social-preview.png`);
+
+  it("is a 1280 by 640 PNG under GitHub's 1 MB limit", () => {
+    expect(png.subarray(1, 4).toString("latin1")).toBe("PNG");
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([SOCIAL_PREVIEW_SIZE.width, SOCIAL_PREVIEW_SIZE.height]);
+    expect(png.length).toBeLessThan(1024 * 1024);
+  });
+
+  it("is drawn from the wordmark, the one-line description and the flow diagram, with no gradient or glow", () => {
+    const source = readFileSync(fileURLToPath(new URL("../../src/lib/social-preview.ts", import.meta.url)), "utf8");
+    for (const part of ["wordmarkLightSvg(", "${PITCH}", '"flow-light.svg"']) expect(source).toContain(part);
+    expect(source).not.toMatch(/(?:linear|radial|conic)-gradient|box-shadow|text-shadow|blur\(/);
   });
 });

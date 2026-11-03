@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { iconHref } from "./src/config/icons.mjs";
 import { REPOSITORY_URL } from "./src/config/repo.mjs";
 import { rehypeDiagrams } from "./src/lib/markdown/mermaid.mjs";
-import { rehypeCodeBlocks, rehypeGlossaryLinks, rehypeHeadingLinks, rehypeSpecSections, rehypeTables, rehypeTypography, remarkRepoLinks, remarkTitle } from "./src/lib/markdown/plugins.mjs";
+import { rehypeCodeBlocks, rehypeGlossaryLinks, rehypeHeadingLinks, rehypeSpecSections, rehypeTables, rehypeTypography, remarkDescription, remarkRepoLinks, remarkTitle } from "./src/lib/markdown/plugins.mjs";
 import { deviceSchemaValidator } from "./src/lib/schema-validator-plugin.mjs";
 import { DATED_NAMES } from "./src/lib/spec-meta.mjs";
 
@@ -81,7 +81,7 @@ export default defineConfig({
     syntaxHighlight: false,
     processor: unified({
       smartypants: false,
-      remarkPlugins: [remarkTitle, remarkRepoLinks],
+      remarkPlugins: [remarkTitle, remarkDescription, remarkRepoLinks],
       rehypePlugins: [rehypeDiagrams, rehypeCodeBlocks, rehypeTables, rehypeHeadingLinks, rehypeSpecSections, rehypeTypography, rehypeGlossaryLinks],
     }),
   },

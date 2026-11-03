@@ -41,8 +41,8 @@ export function fontFaces(): string {
   return faces;
 }
 
-export async function renderPng(html: string, width: number, height: number, transparent = false): Promise<Uint8Array> {
-  const page = await (await launch()).newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+export async function renderPng(html: string, width: number, height: number, transparent = false, still = false): Promise<Uint8Array> {
+  const page = await (await launch()).newPage({ viewport: { width, height }, deviceScaleFactor: 1, reducedMotion: still ? "reduce" : "no-preference" });
   try {
     await page.setContent(html, { waitUntil: "load" });
     await page.evaluate(() => document.fonts.ready);

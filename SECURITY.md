@@ -2,7 +2,7 @@
 
 OpenHAL lets AI agents control hardware, so a security bug can be a physical safety bug. This page says which versions get fixes, how to report a problem privately, what counts as a safety issue and what happens after a report.
 
-If something is moving, heating or switching right now and should not be, run `uv run openhal stop` or cut its power first. Report after.
+If something is moving, heating or switching right now and should not be, run `openhal stop` (`uv run openhal stop` in a clone) or cut the device's power first. Report after.
 
 ## Supported versions
 
@@ -21,7 +21,7 @@ Use GitHub private vulnerability reporting. Never open a public issue, discussio
 
 1. Open https://github.com/sohan-bhat/OpenHAL/security/advisories/new, or choose **Security**, then **Report a vulnerability** on the repository page.
 2. Describe the problem and the exact steps, or attach a test that shows it.
-3. Give the version from `uv run openhal --version`, the commit from `git rev-parse --short HEAD`, the operating system, and the driver and device file involved.
+3. Give the version from `openhal --version`, the commit from `git rev-parse --short HEAD` when you run a clone, the operating system, and the driver and device file involved.
 4. Say whether real hardware was involved and whether anything moved, heated or switched.
 
 Only the maintainers can read the report. If the form is missing, open an issue titled "Security contact request" with no details, and a maintainer will open a private advisory and invite you to it.
@@ -39,7 +39,7 @@ Anything that lets a command past the safety kernel is a safety issue. These are
 - A stop leaves a device out of its safe state without reporting it, or a command lands after a stop.
 - Text from a device, a manual, a sketch or a bridge changes a limit, approves a request or starts a command.
 - An entry in the audit log changes and `openhal log --verify` doesn't report it.
-- The kernel fails open, stalls, or decides differently for the same state and command.
+- The kernel fails open, stalls, or returns a different decision for the same state and command.
 
 Other security problems are in scope too. Examples are reaching the hub from another machine while `api.allow_lan` is false, stealing or reusing a token, opening a path named in a device file, and a crash or hang that a client or a device can trigger.
 
@@ -65,4 +65,4 @@ These are target times.
 4. **Release** the fix on `main`, and in a release once there are releases. Publish the advisory with a CVE through GitHub and credit the reporter, unless they ask not to be named.
 5. **Disclose** when the fix is out, or 90 days after the report, whichever comes first, unless the reporter and the maintainers agree on another date.
 
-While a fix is pending, the advisory says how to stay safe, for example by keeping a device file read-only or running `uv run openhal stop`.
+While a fix is pending, the advisory says how to stay safe, for example by keeping a device file read-only or running `openhal stop`.

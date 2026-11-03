@@ -60,6 +60,9 @@ def test_the_readme_counts_device_drivers_only() -> None:
     listed = {entry["name"] for entry in DEVICE_DRIVERS if entry["status"] != "planned"}
     assert set(rows) == listed
     assert "mock" not in rows
+    counts = re.findall(r"\b(\d+) drivers\b", readme)
+    assert counts, "the README says how many drivers there are"
+    assert set(counts) == {str(len(listed))}
 
 
 STATUS_WORDS = {"implemented": "tested on simulator", "verified": "verified on hardware", "planned": "planned"}
