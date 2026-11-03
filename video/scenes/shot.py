@@ -8,10 +8,14 @@ Between two keys every value follows a minimum-jerk curve, which starts and ends
 at rest the way a servo move does. A key with "ease": "linear" ends a straight
 segment instead, for paths sampled densely along their own easing. Frames count
 from 1.
+
+A shot converted from the hub recording carries the cube's recorded poses as
+cube.keys, one per frame, in place of the attach and release rule of a hand-keyed shot.
 """
 
 from __future__ import annotations
 
+import bisect
 import itertools
 import json
 import math
@@ -94,9 +98,36 @@ def tool_at(shot: dict[str, Any], robot: urdf.Robot, frame: float) -> urdf.Mat4:
     return urdf.link_poses(robot, joints_at(shot, frame), base_matrix(shot))[urdf.TOOL_LINK]
 
 
+def quaternion_matrix(position: list[float], q: list[float]) -> urdf.Mat4:
+    """A rigid transform from a position and a unit quaternion w, x, y, z."""
+    w, x, y, z = q
+    return [
+        [1 - 2 * (y * y + z * z), 2 * (x * y - w * z), 2 * (x * z + w * y), position[0]],
+        [2 * (x * y + w * z), 1 - 2 * (x * x + z * z), 2 * (y * z - w * x), position[1]],
+        [2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x * x + y * y), position[2]],
+        [0.0, 0.0, 0.0, 1.0],
+    ]
+
+
+def _recorded_cube(keys: list[dict[str, Any]], frame: float) -> urdf.Mat4:
+    frames = [key["frame"] for key in keys]
+    k = min(max(bisect.bisect_right(frames, frame), 1), len(keys) - 1)
+    a, b = keys[k - 1], keys[k]
+    t = min(max((frame - a["frame"]) / ((b["frame"] - a["frame"]) or 1), 0.0), 1.0)
+    qa, qb = a["quaternion"], b["quaternion"]
+    if sum(x * y for x, y in zip(qa, qb, strict=True)) < 0:
+        qb = [-v for v in qb]
+    q = [_mix(x, y, t) for x, y in zip(qa, qb, strict=True)]
+    n = math.sqrt(sum(v * v for v in q)) or 1.0
+    position = [_mix(x, y, t) for x, y in zip(a["position"], b["position"], strict=True)]
+    return quaternion_matrix(position, [v / n for v in q])
+
+
 def cube_at(shot: dict[str, Any], robot: urdf.Robot, frame: float) -> urdf.Mat4:
-    """World transform of the cube. It rides with the gripper from attach until release."""
+    """World transform of the cube, recorded, or riding with the gripper from attach until release."""
     cube = shot["cube"]
+    if "keys" in cube:
+        return _recorded_cube(cube["keys"], frame)
     start = urdf.matmul(_translate(*cube["position"]), urdf.axis_angle((0.0, 0.0, 1.0), math.radians(cube["yaw_deg"])))
     attach = cube.get("attach")
     release = cube.get("release")
