@@ -1,6 +1,8 @@
 import {Composition, Still} from 'remotion';
 import shotData from '../../scenes/shots/test_pick.json';
 import {Compare, CompareProps} from './Compare';
+import {Film, FilmProps, Storyboard, StoryboardProps} from './film/Film';
+import {film} from './film/edit';
 import {TestPick} from './TestPick';
 
 const compareDefaults: CompareProps = {
@@ -13,6 +15,9 @@ const compareDefaults: CompareProps = {
   caption: 'Shot frame 94 at 3840 by 2160. Lower row at 100 percent.',
 };
 
+const [landscapeWidth, landscapeHeight] = film.resolution.landscape;
+const [verticalWidth, verticalHeight] = film.resolution.vertical;
+
 export const RemotionRoot: React.FC = () => (
   <>
     <Composition
@@ -24,5 +29,30 @@ export const RemotionRoot: React.FC = () => (
       height={shotData.resolution[1]}
     />
     <Still id="Compare" component={Compare} width={3840} height={2160} defaultProps={compareDefaults} />
+    <Composition
+      id="Film"
+      component={Film}
+      durationInFrames={film.frames}
+      fps={film.fps}
+      width={landscapeWidth}
+      height={landscapeHeight}
+      defaultProps={{aspect: 'landscape'} satisfies FilmProps}
+    />
+    <Composition
+      id="FilmVertical"
+      component={Film}
+      durationInFrames={film.frames}
+      fps={film.fps}
+      width={verticalWidth}
+      height={verticalHeight}
+      defaultProps={{aspect: 'vertical'} satisfies FilmProps}
+    />
+    <Still
+      id="Storyboard"
+      component={Storyboard}
+      width={landscapeWidth}
+      height={landscapeHeight}
+      defaultProps={{aspect: 'landscape', beat: 1} satisfies StoryboardProps}
+    />
   </>
 );
