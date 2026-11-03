@@ -1,0 +1,17 @@
+{
+  "name": "openhal",
+  "description": "OpenHAL for Claude Code, so Claude can read and control hardware through the OpenHAL hub.",
+  "owner": {
+    "name": "OpenHAL contributors",
+    "url": "https://github.com/sohan-bhat/OpenHAL"
+  },
+  "plugins": [
+    {
+      "name": "openhal",
+      "source": "./plugins/openhal",
+      "description": "The OpenHAL MCP server, which reads and controls hardware through the hub and its safety kernel.",
+      "category": "hardware",
+      "tags": ["hardware", "mcp", "robotics", "3d-printing", "lab"]
+    }
+  ]
+}

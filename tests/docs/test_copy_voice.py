@@ -40,7 +40,8 @@ QUOTED = re.compile(r"\"((?:[^\"\\\n]|\\.){8,})\"|'((?:[^'\\\n]|\\.){8,})'|`([^`
 
 
 def published() -> list[Path]:
-    found = [ROOT / "README.md", ROOT / "firmware" / "arduino" / "OpenHAL" / "README.md"]
+    found = [ROOT / name for name in ("README.md", "CHANGELOG.md", "llms-install.md")]
+    found.append(ROOT / "firmware" / "arduino" / "OpenHAL" / "README.md")
     for folder in ("docs", "spec", "examples", "website/src/content"):
         found.extend(sorted((ROOT / folder).rglob("*.md")))
     return [path for path in found if path.is_file() and not str(path.relative_to(ROOT)).startswith(HISTORY)]

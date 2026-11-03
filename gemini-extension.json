@@ -1,0 +1,22 @@
+{
+  "name": "openhal",
+  "version": "0.1.0",
+  "description": "Read and control hardware through the OpenHAL hub and its safety kernel.",
+  "mcpServers": {
+    "openhal": {
+      "command": "uvx",
+      "args": ["--from", "halkit", "openhal", "mcp"],
+      "env": {
+        "OPENHAL_TOKEN": "${OPENHAL_TOKEN}"
+      }
+    }
+  },
+  "settings": [
+    {
+      "name": "OpenHAL agent token",
+      "description": "An agent token from openhal token create --name gemini. Leave empty to see the setup steps in each tool's answer.",
+      "envVar": "OPENHAL_TOKEN",
+      "sensitive": true
+    }
+  ]
+}
