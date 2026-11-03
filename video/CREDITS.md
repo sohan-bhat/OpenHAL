@@ -68,3 +68,25 @@ The MuJoCo Menagerie model `robotstudio_so101` is derived from this export, acco
 ## Fonts
 
 IBM Plex Sans and IBM Plex Mono, under the SIL Open Font License 1.1, from `design/fonts/` in this repository. See `design/README.md`.
+
+## Sound
+
+Every sound in the film is synthesized by `video/scenes/sound.py` from the edit and the hub recording. No sample, recording or library sound is used.
+
+## Music slot
+
+The film has one marked slot for an optional royalty-free music track. `video/scenes/assemble.py --music <file>` passes the file to `sound.py`, which mixes it 16 dB under the effects and mutes it with everything else from STOP to the end of the black after it. The file must be a 48 kHz PCM WAV. The slot is empty in the preview.
+
+Fill in this table before a cut with music ships.
+
+| | |
+|---|---|
+| Track | none yet |
+| Composer | |
+| Source | |
+| License | |
+| Attribution required | |
+
+## Model check
+
+`video/scenes/check_model.py` fetches the Menagerie files above into a cache folder with `video/hub/menagerie.py`, checks each one against its pinned SHA-256, and compares that model with the render model. Nothing it fetches is stored in this repository.
