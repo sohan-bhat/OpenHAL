@@ -203,6 +203,17 @@ def build_shot(spec: dict[str, Any], plan: dict[str, Any], rec: recording.Record
     poses = urdf.link_poses(robot, first_joints)
     messages = rec.messages(time_of(-1), time_of(frames + 1))
     events = [e for m in messages if (e := event(m, frame_of(m["t"]))) is not None]
+    for mark in beat.marks:
+        if time_of(-1) <= mark["t"] <= time_of(frames + 1):
+            events.append(
+                {"frame": round(frame_of(mark["t"]), 3), "t": mark["t"], "source": "mark", "text": mark["text"]}
+            )
+    events.sort(key=lambda e: e["t"])
+    calls_before = sum(
+        1
+        for m in rec.messages(0.0, t0 - 1e-9)
+        if m["source"] == "agent" and m["kind"] == "request" and m.get("tool") in TOOLS
+    )
     freeze = None
     if "freeze_camera_at" in spec:
         hit = first(messages, spec["freeze_camera_at"]["when"])
@@ -244,6 +255,7 @@ def build_shot(spec: dict[str, Any], plan: dict[str, Any], rec: recording.Record
         "camera_vertical": {"sensor_mm": 36.0, "keys": camera_keys(spec["camera"]["vertical"], frames, poses, freeze)},
         "set": spec["set"],
         "cues": {k: spec[k] for k in ("lights", "layer_draw", "workspace", "connect", "wordmark") if k in spec},
+        "calls_before": calls_before,
         "events": events,
         "labels": labels,
     }
