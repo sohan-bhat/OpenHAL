@@ -379,7 +379,15 @@ async def test_the_bare_board_drives_a_free_pin_and_keeps_its_own(binaries: dict
     await probe.close()
     assert sections is not None
     sections.pop("device")
-    file = from_data({"device": "Bare board", "id": "bare", "connect": {"openhal-firmware": "/dev/null"}, **sections})
+    file = from_data(
+        {
+            "device": "Bare board",
+            "id": "bare",
+            "connect": {"openhal-firmware": "/dev/null"},
+            **sections,
+            "provenance": {"source": "self-described"},
+        }
+    )
     kernel = Kernel()
     driver = driver_for(file, binaries["BareBoard"], pins=pins)
     kernel.register(file, driver)
