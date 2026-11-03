@@ -128,13 +128,18 @@ class FirmwareSimulator:
             "w": write,
         }
         if self.pins:
-            described |= {"pb": 8, "ab": 10, "io": [[pin, modes] for pin, modes in sorted(self.pins.items())]}
+            described |= {"pb": 8, "ab": 10, "io": [[pin, modes] for pin, modes in sorted(self.free_pins().items())]}
         if self.actions:
             described["a"] = [
                 {"n": action.name, "g": [{"n": n, "u": u, "min": lo, "max": hi} for n, u, lo, hi in action.args]}
                 for action in self.actions.values()
             ]
         return described
+
+    def free_pins(self) -> dict[int, str]:
+        """The pins the hub may use, every listed pin but those a reading or output names, as the library keeps them."""
+        claimed = {channel.pin for channel in self.channels.values() if channel.pin is not None}
+        return {pin: modes for pin, modes in self.pins.items() if pin not in claimed}
 
     def _step(self) -> None:
         now = time.monotonic()
@@ -239,7 +244,7 @@ class FirmwareSimulator:
     def _pin(self, seq: int, args: tuple[str, ...]) -> None:
         """One `PIN <n> <op> [value]` request, checked as the library checks it."""
         number, op, rest = args[0], args[1], args[2:]
-        modes = self.pins.get(int(number), "") if number.isdigit() else ""
+        modes = self.free_pins().get(int(number), "") if number.isdigit() else ""
         if not modes:
             self._send(encode(seq, "ERR", "unknown", "pin"))
             return
