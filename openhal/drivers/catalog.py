@@ -67,7 +67,7 @@ STATUS = {
 
 def readme_table() -> str:
     """The supported devices table for README.md. Real drivers only, planned ones on one line."""
-    rows = ["| Driver | Devices covered | Status | Hazard default |", "|---|---|---|---|"]
+    rows = ["| Driver | Devices covered | Status | Usual hazard |", "|---|---|---|---|"]
     planned = []
     for entry in entries():
         if entry["tier"] == 0:

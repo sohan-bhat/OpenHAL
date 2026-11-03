@@ -55,14 +55,16 @@ An AI agent that controls a 3D printer or a lab instrument usually goes through 
 
 The flow diagram follows one command. An agent sends `hal/write` to the hub, and the safety kernel checks the command against the limits in the device file. A command inside the limits gets a grant and goes through the driver to the device, and a command outside the limits is blocked with an error such as `LIMIT_EXCEEDED`.
 
-- A `.hal.yaml` device file describes what a device can read and do, with units and limits a person confirmed.
+- A `.hal.yaml` device file describes what a device can read and do, with units and limits.
 - The safety kernel checks every command for range, rate, interlocks and confirmation before any driver can act.
 - One driver covers a whole device family, so one SCPI driver covers bench instruments and one Moonraker driver covers Klipper printers.
 - The hub's protocol is JSON-RPC 2.0 over WebSocket and stdio, and agents reach the hub through MCP, the CLI or the Python client.
 
 ## Safety model
 
-- A device file stays read-only until a person confirms its limits, and nothing an agent proposes counts as a confirmation.
+- Every channel and action has a risk level, low, medium or high, from what it is, and the level sets where a person comes in.
+- High risk channels and actions stay read-only until a person confirms their limits, and nothing an agent proposes counts as a confirmation.
+- Low and medium ones take commands at once within the device's own range, and only a person lowers a level with `openhal risk set`.
 - Every hardware change needs a single-use grant the kernel issues for that exact command.
 - Unknown values never pass a check, so a stale or missing reading blocks the command.
 - One stop puts every device in its safe state, and the hub blocks every command until a person lifts the stop.
@@ -72,13 +74,13 @@ The flow diagram follows one command. An agent sends `hal/write` to the hub, and
 
 ## Supported devices
 
-OpenHAL has 34 drivers for microcontrollers, 3D printers and CNC machines, lab instruments, home automation, industrial buses, robots, telescopes, cameras and input devices. Every driver passes the conformance suite on a simulator, and no driver is verified on real hardware yet. [The hardware test plans](docs/hardware-tests/README.md) say how to run a plan on a device you own, and [the device library](library/README.md) lists the device files that come with OpenHAL.
+OpenHAL has 34 drivers for microcontrollers, 3D printers and CNC machines, lab instruments, home automation, industrial buses, robots, telescopes, cameras and input devices. Every driver passes the conformance suite on a simulator, and no driver is verified on real hardware yet. [The hardware test plans](docs/hardware-tests/README.md) say how to run a plan on a device you own, and [the device library](library/README.md) lists the device files that come with OpenHAL. The hub gives each channel and action its own risk level, and the table's usual hazard is the hazard class of a typical device in that family. A device file's `hazard` raises every channel and action on the device to at least that level.
 
 <details>
 <summary>All 34 drivers</summary>
 
 <!-- devices:start -->
-| Driver | Devices covered | Status | Hazard default |
+| Driver | Devices covered | Status | Usual hazard |
 |---|---|---|---|
 | `ble` | environmental sensors, battery powered sensors, BLE LED and relay boards | tested on simulator | low |
 | `esphome` | ESP32, ESP8266, RP2040 and BK72xx boards running ESPHome, sensors, switches, lights, fans, numbers, selects and buttons defined in ESPHome YAML | tested on simulator | low |
