@@ -860,7 +860,7 @@
     },
     "RiskOverride": {
       "additionalProperties": false,
-      "description": "A level for one write channel or action, over the one the hub's table gives (ADR 0020).\n\nWith `by`, a person set the level, so it may lower the table's level as well as raise it. With\nno `by`, the level only ever raises. `risk: high` is short for `risk: { level: high }`.",
+      "description": "A level for one write channel or action, over the one the hub's table gives (ADR 0023).\n\nWith `by`, a person set the level, so it may lower the table's level as well as raise it. With\nno `by`, the level only ever raises. `risk: high` is short for `risk: { level: high }`.",
       "properties": {
         "at": {
           "anyOf": [

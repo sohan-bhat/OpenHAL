@@ -2,7 +2,7 @@
 
 `openhal init`, `openhal file confirm`, the driver writer and the Inspector all ask these
 questions and check each answer with `problem`, so a value outside what the device reports is
-refused the same way everywhere. Questions cover every high risk write channel and action (ADR 0020),
+refused the same way everywhere. Questions cover every high risk write channel and action (ADR 0023),
 because low and medium ones take commands within the device's own range with no interview. For a
 channel they ask the unit, min, max, rate, safe value and confirmation tier, and for an action its
 argument limits, requirements, a run limit and the tier. Then they ask the device's hazard class,

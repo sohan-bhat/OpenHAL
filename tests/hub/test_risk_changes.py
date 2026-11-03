@@ -1,4 +1,4 @@
-"""A person changes a risk level through the hub, never by editing the device file (ADR 0020).
+"""A person changes a risk level through the hub, never by editing the device file (ADR 0023).
 
 Raising applies at once. Lowering needs a person: the typed phrase confirm applies it, and any other
 request is held until a person approves it with the phrase approve. Agents see every level and change

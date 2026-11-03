@@ -1,4 +1,4 @@
-"""Changing a channel's or action's risk level, by a person, with no device file to edit (ADR 0020).
+"""Changing a channel's or action's risk level, by a person, with no device file to edit (ADR 0023).
 
 Raising a level gives an agent less, so a person's raise applies at once. Lowering gives an agent
 more, so it needs a person who typed the phrase confirm, under the same terminal and human token

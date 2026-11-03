@@ -1,4 +1,4 @@
-"""The kernel's checks by risk level (docs/SAFETY.md, ADR 0020). Low, medium and high, and what stays at every level."""
+"""The kernel's checks by risk level (docs/SAFETY.md, ADR 0023). Low, medium and high, and what stays at every level."""
 
 from __future__ import annotations
 

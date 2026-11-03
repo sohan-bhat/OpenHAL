@@ -1,4 +1,4 @@
-"""Risk levels for every channel and action, decided from what each one is (ADR 0020).
+"""Risk levels for every channel and action, decided from what each one is (ADR 0023).
 
 The hub gives every readable channel, writable channel and action one of three levels. Reading is
 always low. A write channel or an action gets the highest level any rule below gives it, and when no

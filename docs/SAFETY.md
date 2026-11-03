@@ -51,7 +51,7 @@ A channel's value is unknown when nothing has been read since the hub connected,
 
 ## Risk levels
 
-The hub gives every channel and action a level from what it is, using only the device file and the device's own description, never a list of device names. The rules live in `openhal/spec/risk.py` ([ADR 0020](adr/0020-risk-levels.md)).
+The hub gives every channel and action a level from what it is, using only the device file and the device's own description, never a list of device names. The rules live in `openhal/spec/risk.py` ([ADR 0023](adr/0023-risk-levels.md)).
 
 | Rule | Level |
 |---|---|

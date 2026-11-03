@@ -1,7 +1,7 @@
 """`openhal init` offers the limits interview for each device it adds, at a real pseudo-terminal.
 
 The board is the firmware simulator behind `sim:bench-heater`, which reports heater from 0 to 100 %.
-A heater is high risk, so init offers the interview for it (ADR 0020).
+A heater is high risk, so init offers the interview for it (ADR 0023).
 Yes or no questions come from standard input and every limit answer and the phrase from the
 terminal, as for a person at a real terminal. Nothing here runs discovery or touches a real config.
 """

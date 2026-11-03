@@ -1,4 +1,4 @@
-"""The risk table (openhal/spec/risk.py, ADR 0020). Every rule, and the ways it must never go down."""
+"""The risk table (openhal/spec/risk.py, ADR 0023). Every rule, and the ways it must never go down."""
 
 from __future__ import annotations
 

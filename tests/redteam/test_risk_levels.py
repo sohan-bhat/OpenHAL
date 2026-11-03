@@ -1,4 +1,4 @@
-"""Red team. Every way an agent could try to slip past the risk levels (ADR 0020).
+"""Red team. Every way an agent could try to slip past the risk levels (ADR 0023).
 
 The hub runs a simulated OpenHAL board whose device file maps a heater to pin 5, the same pin the
 board lists as free, plus a kiln with odd units. Each test is one way in. Every attempt must end

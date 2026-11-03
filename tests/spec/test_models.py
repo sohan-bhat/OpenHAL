@@ -46,7 +46,7 @@ def test_research_fan_is_valid_and_read_only() -> None:
     assert fan.connect.params == {"port": "auto", "board": "arduino-uno"}
     assert fan.write["fan_speed"].max_change_per_s == 20
     assert fan.effective_hazard == "medium"
-    assert fan.writable, "a medium fan takes commands without a confirmation (ADR 0020)"
+    assert fan.writable, "a medium fan takes commands without a confirmation (ADR 0023)"
     assert fan.unconfirmed() == []
     high = loads(FAN.replace("max_change_per_s: 20 }", "max_change_per_s: 20, risk: high }"))
     assert not high.writable

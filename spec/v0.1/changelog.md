@@ -35,7 +35,7 @@ The first draft of the OpenHAL specification, dated 2026-10-24.
 
 ### Risk levels
 
-On 2026-11-03, at the owner's decision of 2026-11-02 ([ADR 0020](../../docs/adr/0020-risk-levels.md)).
+On 2026-11-03, at the owner's decision of 2026-11-02 ([ADR 0023](../../docs/adr/0023-risk-levels.md)).
 
 - Every channel and action has a Risk Level, `low`, `medium` or `high`, which a Hub sets from the Device File. Reading is always `low`.
 - Only high risk targets wait for a human to confirm their limits. Low and medium targets take commands within the Device File's range, and a low channel ignores a rate that is only `suggested`.

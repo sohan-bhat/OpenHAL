@@ -2,7 +2,7 @@
 
 On a terminal the command shows a few short questions, and for each device with high risk entries it
 offers the limits interview, so the person answers each of those limits once. Low and medium risk
-channels and actions take commands at once within the device's own range (ADR 0020). `--yes` takes
+channels and actions take commands at once within the device's own range (ADR 0023). `--yes` takes
 the safe defaults without prompting and leaves high risk entries read-only. A run that can't prompt and
 has no `--yes`, such as a script, does only the config folder, the human token and the sample. In
 every mode only the person's own answers at the terminal confirm a limit, and the service is

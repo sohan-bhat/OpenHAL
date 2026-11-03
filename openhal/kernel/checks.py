@@ -47,7 +47,7 @@ def effective_limits(
     """Combine a channel's file limits with session limits, which can only narrow them.
 
     Without `own_rate`, the file's `max_change_per_s` doesn't apply, as for a low risk channel whose
-    rate was only suggested (ADR 0020). A session rate still does.
+    rate was only suggested (ADR 0023). A session rate still does.
     """
     assert spec.min is not None
     assert spec.max is not None

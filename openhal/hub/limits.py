@@ -347,7 +347,7 @@ class LimitChanges(HeldChanges[LimitRequest]):
     ) -> Change:
         """The change a request asks for, checked against the file and the device's own range.
 
-        A low risk channel's rate that was only suggested doesn't apply (ADR 0020), so it counts as no rate.
+        A low risk channel's rate that was only suggested doesn't apply (ADR 0023), so it counts as no rate.
         """
         _, data = self._read(device_id, channel)
         spec = (data.get("write") or {}).get(channel)

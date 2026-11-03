@@ -1,7 +1,7 @@
 """The limits interview at a terminal, for `openhal init` and `openhal file confirm`.
 
 The questions and the check of each answer come from openhal/writer/interview.py, the same ones
-the hub and the Inspector use. Only high risk channels and actions get questions (ADR 0020). With
+the hub and the Inspector use. Only high risk channels and actions get questions (ADR 0023). With
 `confirm.require_tty: true` every answer and the typed phrase come from the terminal itself, so a
 script or an agent can't answer for the person.
 """

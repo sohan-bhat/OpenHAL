@@ -135,7 +135,7 @@ class Confirmation(_Strict):
 
 
 class RiskOverride(_Strict):
-    """A level for one write channel or action, over the one the hub's table gives (ADR 0020).
+    """A level for one write channel or action, over the one the hub's table gives (ADR 0023).
 
     With `by`, a person set the level, so it may lower the table's level as well as raise it. With
     no `by`, the level only ever raises. `risk: high` is short for `risk: { level: high }`.
@@ -642,7 +642,7 @@ class DeviceFile(_Strict):
     def unconfirmed(self) -> list[str]:
         """High risk limits that no human has confirmed yet, or that changed after they were confirmed.
 
-        Low and medium channels and actions take commands without a confirmation (ADR 0020), so only
+        Low and medium channels and actions take commands without a confirmation (ADR 0023), so only
         high ones and the file-level limits that guard them are listed.
         """
         from openhal.spec.risk import memo
@@ -677,7 +677,7 @@ class DeviceFile(_Strict):
 
     @property
     def writable(self) -> bool:
-        """True when every high risk limit is confirmed by a human (spec section 12, ADR 0020)."""
+        """True when every high risk limit is confirmed by a human (spec section 12, ADR 0023)."""
         return not self.unconfirmed()
 
     def channel_unit(self, name: str) -> str | None:

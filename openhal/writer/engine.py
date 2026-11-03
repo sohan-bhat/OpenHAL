@@ -89,7 +89,7 @@ def force_suggested(data: dict[str, Any]) -> dict[str, Any]:
     """Nothing in a draft can confirm a limit. Mark every limit suggested and drop confirmations.
 
     A draft can't lower a risk level either, so a `risk` keeps its level and loses the person who set
-    it, and then only ever raises (ADR 0020).
+    it, and then only ever raises (ADR 0023).
     """
     cleaned = copy.deepcopy(data)
     for key in ("confirmed", "approvals"):

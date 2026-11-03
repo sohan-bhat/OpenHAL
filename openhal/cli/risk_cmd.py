@@ -1,4 +1,4 @@
-"""`openhal risk`, showing and changing the risk level of each channel and action (ADR 0020).
+"""`openhal risk`, showing and changing the risk level of each channel and action (ADR 0023).
 
 Raising a level applies at once. Lowering a level gives an agent more, so in an interactive terminal
 the command shows the change and takes the typed phrase confirm, as `openhal limits set` does to

@@ -81,7 +81,7 @@ class ReadChannel(Model):
     age_s: float | None = None
 
 
-RISK_HELP = "low, medium or high (ADR 0020). Only a person changes a level, with openhal risk set."
+RISK_HELP = "low, medium or high (ADR 0023). Only a person changes a level, with openhal risk set."
 READ_ONLY_HELP = "True while a high risk target waits for a person to confirm its limits."
 
 
