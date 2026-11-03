@@ -4,7 +4,7 @@ Because AI agents move real things through OpenHAL, this document states exactly
 
 ## Guarantees
 
-1. **One path.** Every write and every action, from any source (MCP, CLI, Python library, routines, dashboard, driver writer, bridges, the stop command itself), is evaluated by the safety kernel. Drivers accept writes only with a single-use grant the kernel issued for that exact device, channel or action, and value (ADR 0004).
+1. **One path.** Every write and every action, from any source (MCP, CLI, Python library, routines, runs of steps, dashboard, driver writer, bridges, the stop command itself), is evaluated by the safety kernel. Drivers accept writes only with a single-use grant the kernel issued for that exact device, channel or action, and value (ADR 0004).
 2. **Deterministic.** The kernel is plain Python with no model, no network calls and no randomness in the checks, so the same state and the same command always produce the same result and the same message.
 3. **Limits come from humans.** A person sets the limits in the device file, which records who confirmed the limits and when, and every command is checked against the limits. Agents may tighten limits for their own session. A device file with unconfirmed limits loads read-only.
 4. **Stop works.** One stop command puts every device in its safe state and locks writes until a human unlocks.
@@ -86,11 +86,24 @@ A file is writable only when a human confirmed its limits (spec section 12). Int
 - `stop_all` is available from the CLI (`openhal stop`), MCP, the dashboard, the Python library and an optional Raspberry Pi GPIO input.
 - The GPIO input is set in config.yaml as `stop_button: { pin: 27 }`, a BCM number, with the Pi's pull-up on unless `pull_up: false`. A press of the button stops every device. When the hub can't monitor the pin, the hub stops with an error at startup, so no one relies on a stop that isn't there. Because the button only sends a stop request to the hub, keep the hardware e-stop that cuts power.
 - Any principal may stop, including agents, and unlocking takes a human principal.
-- A stop sets the lock, cancels pending confirmations, clears approval windows, disables routines, cancels any command still in flight, applies every device's safe state and reports the result per device, in that order.
+- A stop sets the lock, cancels pending confirmations, clears approval windows, disables routines and ends every run, wait and sample, cancels any command still in flight, applies every device's safe state and reports the result per device, in that order.
 - Every safe-state step runs even if an earlier one fails. The result per device is `safe`, `partial` (some steps failed), `failed`, `no_safe_state`, or `pending` when a command was still running and couldn't be cancelled in time. When a command that was in flight during a stop returns, the hub reapplies the safe state, so the stop takes precedence over the command.
 - The kernel blocks an unlock while a stop is still being applied, and an unlock clears approval windows again.
 - Devices without a safe state are reported as such, and the device file loader reports a warning for write-capable devices with no safe state.
 - `openhal unlock` needs a human token and, by default, an interactive terminal and the typed phrase `unlock`.
+
+## Runs of steps
+
+A run sends many commands with timing between them (ADR 0019), so the hub adds these rules, and the kernel still checks each command on its own.
+
+- The hub checks the whole run as a plan first, with each wait moving the simulated clock and a wait for a condition moving it by nothing. When the plan check blocks a step, nothing runs.
+- Every write and action in a run goes to the kernel as the principal that started the run, exactly as a single command does, so the rate check measures the time that really passed.
+- The first step that isn't done ends the run. A step that needs confirmation ends the run with the request id, approving the request runs only that command, and the steps after it never run.
+- A run's steps only read, change a channel, run an action or wait. No step approves, unlocks, widens a limit or enables a routine, and a step carries no principal or request id.
+- A stop, a cancel by the run's owner or a person, revoking the owner's token and the time cap each end a run before its next step.
+- Another agent can't see or cancel a run. A person sees and cancels every run.
+- `config.yaml` caps the steps per run, the seconds per run, wait or sample, and how many one token has going at once. Only a person changes the caps, and raising one takes the typed phrase `confirm`.
+- The audit log records each run's start and end and every step with the run id, next to the kernel's own entries for each read and command.
 
 ## Watchdogs
 

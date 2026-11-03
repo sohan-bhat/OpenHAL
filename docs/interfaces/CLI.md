@@ -38,6 +38,7 @@ Most commands take `--json` and then print JSON on stdout instead of tables.
 | `writer finish` | `save` |
 | `file confirm` | `confirm` |
 | `limits set`, to widen a limit | `confirm` |
+| `runs caps`, to raise a cap | `confirm` |
 
 `file confirm` on a file with suggested limits and `writer interview` read every answer from the terminal, where Enter keeps a suggestion. Where no phrase can be typed, `limits set` doesn't fail. A wider limit becomes a pending limit change that `confirm approve` takes with the phrase `approve`.
 
@@ -286,6 +287,19 @@ openhal limits set DEVICE.CHANNEL [--min VALUE] [--max VALUE] [--rate VALUE|none
 ```
 
 `show` prints each number channel's min, max and max change with the range the device itself reports. `set` takes values with units, such as `--max "80 %"` or `--rate "5 %/s"`, and never goes past the device's own range. A narrower limit applies at once and is written into the device file, with the confirmation bound again to the hash of the limits. In a terminal, a wider limit shows the change before and after and takes the typed phrase `confirm`. From a script, an agent's shell or an agent token, a wider limit waits as a pending limit change in `openhal confirm list` and in the Inspector until a person approves the change. An agent's narrower limit applies to that agent's session, as `tighten_limits` does.
+
+## Runs
+
+```
+openhal runs list [--json]
+openhal runs show RUN_ID [--json]
+openhal runs cancel RUN_ID
+openhal runs caps [--max-steps N] [--max-seconds SECONDS] [--per-agent N] [--phrase confirm] [--json]
+```
+
+A run is a list of steps an agent or a script sends with `run_steps`, which the hub checks as a plan and then runs one command at a time through the kernel. `list` shows the runs this token can see, newest first, and the human token sees every run. `show` prints every step a run ran, and `cancel` ends a run before its next step.
+
+`caps` shows the caps on runs, and with a new value changes them through the hub, which saves them in `config.yaml`. `--max-steps` bounds the steps in one run, counting every repeat, `--max-seconds` bounds a run, a wait or a sample, and `--per-agent` bounds how many of them one token has going at once. Changing a cap takes the human token. A lower cap applies at once, and a higher cap takes the typed phrase `confirm`, so no script or agent's shell can raise one.
 
 ## Device library
 

@@ -135,6 +135,51 @@ for decision in hub.ramp_to("led-strip", "brightness", 80, "%"):
     print(decision.status, decision.message)
 ```
 
+### Find, wait, sample and runs
+
+| Method | Route |
+|---|---|
+| `find(text=None, unit=None, kind=None, hazard=None, connected=None, limit=50)` | `GET /v1/find` |
+| `wait_until(condition, timeout_s=30.0, interval_s=1.0)` | `POST /v1/wait_until` |
+| `sample(targets, duration_s=, interval_s=1.0)` | `POST /v1/sample` |
+| `run_steps(steps, repeat=1, wait_s=5.0)` | `POST /v1/runs` |
+| `run(run_id, wait_s=0.0, last=50)` | `GET /v1/runs/{id}` |
+| `runs()` | `GET /v1/runs` |
+| `cancel_run(run_id)` | `POST /v1/runs/{id}/cancel` |
+| `run_caps()` | `GET /v1/runs/caps` |
+| `set_run_caps(max_steps=None, max_seconds=None, per_agent=None, phrase=None)` | `POST /v1/runs/caps` (human) |
+
+`find` searches every device at once and returns `device.channel` and `device.action` targets with their units, limits and latest values. Text also matches what a unit measures, so `find("current")` finds a channel in A, and `unit="degC"` finds every channel a temperature converts to.
+
+```python
+for match in hub.find("current", kind="readable").matches:
+    print(match.target, match.value, match.unit)
+```
+
+`wait_until` reads the channels a condition names until the condition holds or the timeout passes, and `sample` reads channels at an interval and returns each series with min, max and mean. Both read through the kernel, so every reading is in the audit log.
+
+```python
+result = hub.wait_until("led-strip.current_draw < 1 A", timeout_s=30)
+print(result.held, result.readings[0].value)
+```
+
+`run_steps` checks a list of steps as a plan, then runs the steps in order. A step is a `Write`, an `Action` or a dict whose `kind` is `read`, `write`, `action`, `wait` or `wait_until`, and `increment` on a number step adds that much on each repeat. The kernel checks every command in the run as it checks a single one, and the run stops at the first step that isn't done. A step that needs a person ends the run with `request_id`. The reply comes when the run ends or after `wait_s`, and `run()` and `cancel_run()` follow a longer run.
+
+```python
+run = hub.run_steps(
+    [
+        {"kind": "write", "device": "led-strip", "channel": "power", "value": True},
+        {"kind": "wait", "seconds": 0.5},
+        {"kind": "write", "device": "led-strip", "channel": "power", "value": False},
+        {"kind": "wait", "seconds": 0.5},
+    ],
+    repeat=3,
+)
+print(run.status, run.message)
+```
+
+The hub caps the steps per run, the seconds per run, wait or sample, and how many one token has at once. `run_caps()` shows the caps, and only a human token changes them, with `phrase="confirm"` to raise one.
+
 ### Confirmations
 
 | Method | Route |
