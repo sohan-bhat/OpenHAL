@@ -268,8 +268,7 @@ async def test_an_image_comes_back_as_an_image_marked_as_device_data(
 def test_agent_token_sources(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, isolated_env: Path) -> None:
     isolated_env.mkdir(parents=True, exist_ok=True)
     (isolated_env / "human.token").write_text("ohal_human\n")
-    with pytest.raises(SetupError, match="agent token"):
-        load_agent_token()
+    assert load_agent_token() is None, "the human token file is never an agent token"
     monkeypatch.setenv("OPENHAL_TOKEN", "ohal_agent")
     assert load_agent_token() == "ohal_agent"
     file = tmp_path / "agent.token"

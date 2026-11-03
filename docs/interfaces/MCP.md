@@ -20,6 +20,8 @@ Give each client its own token, so the audit log shows which client did what and
 
 The server reads its token from the `OPENHAL_TOKEN` environment variable, or from a file given with `--token-file`. Because the hub treats a human's command as already confirmed, the server never reads `~/.openhal/human.token` and exits with an error at start when given a human token, so an agent always needs its own agent token.
 
+With no token the server still starts and lists its tools, and every tool call returns an error that says to run `openhal init` and `openhal start`. With a token and no running hub, every tool call returns an error that says to run `openhal start`.
+
 A token file keeps the token out of client config files that may be synced or shared.
 
 ```sh
