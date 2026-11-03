@@ -80,6 +80,9 @@ class Hub:
         from openhal.hub.limits import LimitChanges
 
         self.limits = LimitChanges(self)
+        from openhal.hub.runs import RunEngine
+
+        self.runs = RunEngine(self)
         self.load_problems: list[LoadProblem] = []
         self.last_discovery: Any = None
         self.started_at: float | None = None
@@ -145,6 +148,7 @@ class Hub:
             with contextlib.suppress(Exception):
                 self._stop_button.close()
             self._stop_button = None
+        await self.runs.close()
         await self.routines.close()
         for task in self._tasks:
             task.cancel()

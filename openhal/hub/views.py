@@ -17,6 +17,7 @@ from openhal.spec.models import DeviceFile
 from openhal.spec.units import wire_unit
 
 if TYPE_CHECKING:
+    from openhal.drivers.base import Reading
     from openhal.hub.hub import Hub
 
 
@@ -51,6 +52,28 @@ def device_value(file: Any, device_id: str, channel: str, value: Any, *, image_d
     if spec is not None and spec.type == "enum" and value in spec.values:
         return value
     return device_text(f"{device_id}.{channel} reading", value)
+
+
+def reading_view(hub: Hub, device_id: str, channel: str, reading: Reading, *, image_data: bool) -> dict[str, Any]:
+    """A reading as `/v1/read` returns it. `image_data` adds an image's pixels."""
+    file = hub.kernel.devices[device_id].file
+    return {
+        "device": device_id,
+        "channel": channel,
+        "ok": True,
+        "value": device_value(file, device_id, channel, reading.value, image_data=image_data),
+        "unit": wire_unit(reading.unit),
+        "at": reading.at,
+        "suspect": reading.suspect,
+        "bytes": len(reading.value) if isinstance(reading.value, bytes) else None,
+    }
+
+
+def failed_reading(device_id: str, channel: str, exc: BaseException) -> dict[str, Any]:
+    """A read the driver could not complete, with the driver's message as device data."""
+    fallback = "timed out" if isinstance(exc, TimeoutError) else type(exc).__name__
+    error = device_text(f"{device_id}.{channel} driver error", str(exc)) or fallback
+    return {"device": device_id, "channel": channel, "ok": False, "error": error}
 
 
 def audit_details(device_id: str | None, details: dict[str, Any]) -> dict[str, Any]:

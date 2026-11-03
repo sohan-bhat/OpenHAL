@@ -33,6 +33,7 @@ from openhal.hub.find import FindError, find
 from openhal.hub.hub import Hub
 from openhal.hub.limits import LimitError
 from openhal.hub.locks import DeviceLocked
+from openhal.hub.runs import RunError, SampleBody, WaitBody
 from openhal.kernel.checks import Block
 from openhal.kernel.commands import Action, Write
 from openhal.kernel.principals import Principal
@@ -42,7 +43,6 @@ from openhal.protocol.version import LATEST
 from openhal.routines.engine import RoutineError
 from openhal.spec.loader import DeviceFileError
 from openhal.spec.models import DeviceFile
-from openhal.spec.units import wire_unit
 from openhal.writer.engine import NotHumanError, WriterError
 
 SESSION_COOKIE = "openhal_session"
@@ -292,20 +292,8 @@ def create_app(hub: Hub) -> FastAPI:
         except LookupError as exc:
             raise HTTPException(404, str(exc)) from exc
         except (DriverError, TimeoutError, OSError) as exc:
-            error = views.device_text(f"{body.device}.{body.channel} driver error", str(exc)) or "timed out"
-            return {"device": body.device, "channel": body.channel, "ok": False, "error": error}
-        file = hub.kernel.devices[body.device].file
-        value = views.device_value(file, body.device, body.channel, reading.value, image_data=True)
-        return {
-            "device": body.device,
-            "channel": body.channel,
-            "ok": True,
-            "value": value,
-            "unit": wire_unit(reading.unit),
-            "at": reading.at,
-            "suspect": reading.suspect,
-            "bytes": len(reading.value) if isinstance(reading.value, bytes) else None,
-        }
+            return views.failed_reading(body.device, body.channel, exc)
+        return views.reading_view(hub, body.device, body.channel, reading, image_data=True)
 
     @app.post("/v1/read_many")
     async def read_many(body: ReadManyBody, who: Who) -> list[dict[str, Any]]:
@@ -393,6 +381,22 @@ def create_app(hub: Hub) -> FastAPI:
             return await hub.limits.request(who, body.device, body.channel, phrase=body.phrase, **values)
         except KeyError as exc:
             raise HTTPException(404, str(exc.args[0])) from exc
+
+    @app.post("/v1/wait_until")
+    async def wait_until(body: WaitBody, who: Who) -> dict[str, Any]:
+        """Wait until a condition over live readings holds, or the timeout passes."""
+        try:
+            return await hub.runs.wait_until(who, body)
+        except RunError as exc:
+            raise HTTPException(exc.status, exc.message) from exc
+
+    @app.post("/v1/sample")
+    async def sample(body: SampleBody, who: Who) -> dict[str, Any]:
+        """Read channels at an interval over a duration, with min, max and mean for numbers."""
+        try:
+            return await hub.runs.sample(who, body)
+        except RunError as exc:
+            raise HTTPException(exc.status, exc.message) from exc
 
     @app.post("/v1/stop")
     async def stop(body: StopBody, who: Who) -> dict[str, Any]:
