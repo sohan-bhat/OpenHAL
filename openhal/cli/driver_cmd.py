@@ -2,12 +2,14 @@
 
 New drivers start with an `x-` name and the status "experimental", and keep the status until the
 driver passes the conformance suite and a hardware test and a maintainer adds the plain name to the
-spec's known drivers.
+spec's known drivers. A bare `openhal driver` lists the drivers, and at a terminal `test` without a
+name shows a picker of the drivers (ADR 0020).
 """
 
 from __future__ import annotations
 
 import asyncio
+import difflib
 import importlib
 import json
 import re
@@ -20,9 +22,12 @@ from rich.console import Console
 from rich.markup import escape
 from rich.table import Table
 
+from openhal.cli import _choices
+from openhal.cli._choices import Need
+from openhal.cli._pick import Option
 from openhal.drivers import registry
 
-app = typer.Typer(help="List drivers, run the conformance suite and scaffold new drivers.", no_args_is_help=True)
+app = typer.Typer(help="List drivers, run the conformance suite and scaffold new drivers.")
 console = Console(highlight=False)
 
 TEMPLATES = Path(__file__).parent / "templates" / "driver"
@@ -34,6 +39,15 @@ def _catalog() -> dict[str, dict[str, Any]]:
     if not CATALOG.exists():
         return {}
     return {entry["name"]: entry for entry in json.loads(CATALOG.read_text())["drivers"]}
+
+
+@app.callback(invoke_without_command=True)
+def overview(ctx: typer.Context, as_json: bool = typer.Option(False, "--json", help="Print JSON.")) -> None:
+    """Every driver, and how to test one."""
+    if ctx.invoked_subcommand is None:
+        list_drivers(as_json)
+        if not as_json:
+            console.print("Run the conformance suite on a driver with openhal driver test mock")
 
 
 @app.command("list")
@@ -75,13 +89,20 @@ def list_drivers(as_json: bool = typer.Option(False, "--json", help="Print JSON.
 
 
 @app.command("test")
-def run_conformance(name: str = typer.Argument(..., help="The driver name, for example scpi.")) -> None:
+def run_conformance(
+    name: str = typer.Argument(None, help="The driver name, for example scpi. A terminal shows a picker."),
+) -> None:
     """Run the conformance suite against a driver at its declared level. Exits 1 on any failure."""
     from openhal.conformance import run
 
+    if not name:
+        spec = Need("openhal driver test", "a driver name", "drivers", placeholder="NAME", every="openhal driver list")
+        name = _choices.need(spec, lambda: [Option(driver) for driver in registry.names()])
     package = registry.package_for(name)
     if package is None:
-        console.print(f"[red]error[/red]  There is no driver {escape(name)!r}. Run openhal driver list.")
+        near = difflib.get_close_matches(name, registry.names(), n=3)
+        hint = f"Did you mean {_choices.joined(near, 'or')}?" if near else "Run openhal driver list."
+        console.print(f"[red]error[/red]  There is no driver {escape(name)!r}. {escape(hint)}")
         raise typer.Exit(2)
     try:
         module = importlib.import_module(f"{package}.conformance")
@@ -108,11 +129,19 @@ def _find_root(start: Path) -> Path | None:
 
 @app.command("new")
 def new_driver(
-    name: str = typer.Argument(..., help="The driver name in lowercase with dashes, for example acme-pump."),
+    name: str = typer.Argument(None, help="The driver name in lowercase with dashes, for example acme-pump."),
     root: Path = typer.Option(None, "--root", help="An OpenHAL checkout. Default is the current directory."),  # noqa: B008
     title: str = typer.Option(None, "--title", help="A human name for the device family, for example Acme pump."),
 ) -> None:
     """Scaffold an experimental driver with a simulator, conformance case, tests and docs."""
+    if not name:
+        spec = Need(
+            "openhal driver new",
+            "a name for the new driver",
+            "drivers",
+            example=lambda _: "openhal driver new acme-pump",
+        )
+        _choices.missing(spec, [])
     base = name.removeprefix("x-")
     if not NAME.match(base):
         console.print("[red]error[/red]  Use lowercase letters, digits and single dashes, for example acme-pump.")

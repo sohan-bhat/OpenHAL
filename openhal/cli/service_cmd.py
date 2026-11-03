@@ -2,7 +2,8 @@
 
 macOS gets a launchd agent in ~/Library/LaunchAgents, loaded with launchctl. Linux gets a systemd
 user unit in ~/.config/systemd/user, enabled with systemctl --user. `--dry-run` prints every file
-and command and changes nothing.
+and command and changes nothing. A bare `openhal service` shows the state of the service and the
+next step, like `status` but with exit code 0 (ADR 0020).
 """
 
 from __future__ import annotations
@@ -17,10 +18,7 @@ from openhal.cli._common import EXIT_FAILED, console, fail, home
 from openhal.service.background import PLATFORMS, Platform, Service, ServiceError, this_platform
 from openhal.service.runner import RunError, Runner
 
-app = typer.Typer(
-    help="Run the hub in the background. A launchd agent on macOS, a systemd user unit on Linux.",
-    no_args_is_help=True,
-)
+app = typer.Typer(help="Run the hub in the background. A launchd agent on macOS, a systemd user unit on Linux.")
 
 DRY_RUN = typer.Option(False, "--dry-run", help="Print every file and command, and change nothing.")
 
@@ -85,9 +83,8 @@ def restart(dry_run: bool = DRY_RUN) -> None:
         console.print("[green]restarted[/green]  OpenHAL")
 
 
-@app.command()
-def status() -> None:
-    """Show whether the service is installed and running. Exits 1 if the service isn't running."""
+def _state() -> bool:
+    """Print whether the service is installed and running, with the next step. Returns whether the service runs."""
     service = _service()
     state = service.status()
     console.print(f"service  {escape(str(service.path))} {'installed' if state.installed else 'not installed'}")
@@ -97,6 +94,20 @@ def status() -> None:
     if not state.running:
         hint = "openhal service install" if not state.installed else f"openhal service restart, or {START_COMMAND}"
         console.print(f"Start {PRODUCT_NAME} with {hint}.")
+    return state.running
+
+
+@app.callback(invoke_without_command=True)
+def overview(ctx: typer.Context) -> None:
+    """The state of the service and the next step."""
+    if ctx.invoked_subcommand is None:
+        _state()
+
+
+@app.command()
+def status() -> None:
+    """Show whether the service is installed and running. Exits 1 if the service isn't running."""
+    if not _state():
         raise typer.Exit(EXIT_FAILED)
 
 

@@ -3,7 +3,9 @@
 The files live where discovery searches for them (openhal/hub/discovery.py), in `library/` of a source
 checkout or `openhal/library_data` of an installed wheel. A file is named by its file name without
 the suffix, such as `rigol-dp832`. `add` copies the file into the hub's devices folder byte for byte,
-so it never adds a confirmation, and it never overwrites a file that is already there.
+so it never adds a confirmation, and it never overwrites a file that is already there. A bare
+`openhal library` lists the files, and at a terminal `show` and `add` without a name show a picker
+that filters as the person types (ADR 0020).
 
 Run this module to regenerate library/README.md, `uv run python -m openhal.cli.library_cmd`.
 """
@@ -20,11 +22,14 @@ from rich.markup import escape
 from rich.table import Table
 
 from openhal._brand import CLI_NAME, DEVICE_FILE_SUFFIX
+from openhal.cli import _choices
+from openhal.cli._choices import Need
 from openhal.cli._common import EXIT_USAGE, config, console, fail, print_json, show
+from openhal.cli._pick import Option
 from openhal.spec.loader import DeviceFileError, load
 from openhal.spec.models import DeviceFile, Match
 
-app = typer.Typer(help="Browse the device library and copy its files into the hub.", no_args_is_help=True)
+app = typer.Typer(help="Browse the device library and copy its files into the hub.")
 
 FAMILIES: dict[str, str] = {
     "openhal-firmware": "Arduino and ESP32 boards running the OpenHAL firmware",
@@ -159,12 +164,31 @@ def _controls(file: DeviceFile) -> str:
     return ", ".join(parts) or "reads only"
 
 
+@app.callback(invoke_without_command=True)
+def overview(ctx: typer.Context, as_json: bool = typer.Option(False, "--json", help="Print JSON.")) -> None:
+    """Every library file, and how to add one."""
+    if ctx.invoked_subcommand is None:
+        _list(None, as_json)
+
+
+def _named(command: str) -> str:
+    spec = Need(command, "a library name", "names", placeholder="NAME", every=f"{CLI_NAME} library list")
+    return _choices.need(
+        spec,
+        lambda: [Option(entry.name, f"{entry.file.device.name}, {entry.file.connect.driver}") for entry in entries()],
+    )
+
+
 @app.command("list")
 def list_files(
     driver: str = typer.Option(None, "--driver", "-d", help="Only files for this driver, such as scpi."),
     as_json: bool = typer.Option(False, "--json", help="Print JSON."),
 ) -> None:
     """List the library's device files."""
+    _list(driver, as_json)
+
+
+def _list(driver: str | None, as_json: bool) -> None:
     found = [entry for entry in entries() if driver is None or entry.file.connect.driver == driver]
     if as_json:
         print_json([view(entry) for entry in found])
@@ -190,16 +214,16 @@ def list_files(
             escape(_controls(file)),
         )
     console.print(table)
-    console.print(f"{len(found)} files, all unverified. Add one with {CLI_NAME} library add NAME.")
+    console.print(f"{len(found)} files, all unverified. Add one with {CLI_NAME} library add {escape(found[0].name)}")
 
 
 @app.command("show")
 def show_file(
-    name: str = typer.Argument(..., help="A library name, such as rigol-dp832."),
+    name: str = typer.Argument(None, help="A library name, such as rigol-dp832. A terminal shows a picker."),
     as_json: bool = typer.Option(False, "--json", help="Print JSON."),
 ) -> None:
     """Show one library file, what it matches and every limit it suggests."""
-    entry = find(name)
+    entry = find(name or _named(f"{CLI_NAME} library show"))
     if as_json:
         print_json(view(entry, detail=True))
         return
@@ -225,9 +249,11 @@ def show_file(
 
 
 @app.command("add")
-def add_file(name: str = typer.Argument(..., help="A library name, such as rigol-dp832.")) -> None:
+def add_file(
+    name: str = typer.Argument(None, help="A library name, such as rigol-dp832. A terminal shows a picker."),
+) -> None:
     """Copy a library file into the hub's devices folder. The copy stays read-only until you confirm its limits."""
-    entry = find(name)
+    entry = find(name or _named(f"{CLI_NAME} library add"))
     if _confirmed(entry.file):
         fail(f"{entry.path} carries a confirmation, and a library file never carries one, so the file was not added.")
     folder = config().devices_dir
