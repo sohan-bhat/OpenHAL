@@ -77,7 +77,7 @@ function DropdownMenuContent({
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content> & { container?: HTMLElement }) {
   const state = React.useContext(MenuContext);
   const { open: enter, close } = useTimings();
-  const keys = useKeysInOrder();
+  const keys = useKeysInOrder({ onKeyDown, onKeyDownCapture });
 
   return (
     <AnimatePresence>
@@ -89,12 +89,8 @@ function DropdownMenuContent({
             loop
             forceMount
             asChild
-            onKeyDownCapture={(event) => {
-              onKeyDownCapture?.(event);
-              keys.onKeyDownCapture(event);
-            }}
+            onKeyDownCapture={keys.onKeyDownCapture}
             onKeyDown={(event) => {
-              onKeyDown?.(event);
               keys.onKeyDown(event);
               if (event.key !== "Tab" || !state) return;
               event.preventDefault();

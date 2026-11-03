@@ -70,19 +70,25 @@ function copyKey(event: KeyboardEvent): KeyboardEvent {
   return new KeyboardEvent("keydown", { key, code, location, shiftKey, ctrlKey, altKey, metaKey, bubbles: true, cancelable: true, composed: true });
 }
 
-/** The two handlers a Radix list's content needs so its keys keep their order. */
-export function useKeysInOrder(): { onKeyDownCapture: React.KeyboardEventHandler; onKeyDown: React.KeyboardEventHandler } {
+interface KeyHandlers {
+  onKeyDownCapture?: React.KeyboardEventHandler;
+  onKeyDown?: React.KeyboardEventHandler;
+}
+
+/** A Radix list content's key handlers, the caller's own first, with the queue that keeps the keys in order. */
+export function useKeysInOrder({ onKeyDownCapture, onKeyDown }: KeyHandlers = {}): Required<KeyHandlers> {
   const queue = React.useMemo(() => new KeyQueue<KeyboardEvent>((event) => (document.activeElement ?? document.body).dispatchEvent(event), copyKey), []);
   React.useEffect(() => () => queue.cancel(), [queue]);
-  return React.useMemo(
-    () => ({
-      onKeyDownCapture: (event: React.KeyboardEvent) => {
-        if (!queue.hold(event.nativeEvent)) return;
-        event.preventDefault();
-        event.stopPropagation();
-      },
-      onKeyDown: (event: React.KeyboardEvent) => queue.handled(event.nativeEvent),
-    }),
-    [queue],
-  );
+  return {
+    onKeyDownCapture: (event) => {
+      onKeyDownCapture?.(event);
+      if (!queue.hold(event.nativeEvent)) return;
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    onKeyDown: (event) => {
+      onKeyDown?.(event);
+      queue.handled(event.nativeEvent);
+    },
+  };
 }

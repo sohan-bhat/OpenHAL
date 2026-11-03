@@ -135,21 +135,14 @@ function SelectContent({
   onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
-  const keys = useKeysInOrder();
+  const keys = useKeysInOrder({ onKeyDown, onKeyDownCapture });
   const stop = React.useRef<(() => void) | null>(null);
   React.useEffect(() => () => stopRedirect(stop), []);
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         data-slot="select-content"
-        onKeyDownCapture={(event) => {
-          onKeyDownCapture?.(event);
-          keys.onKeyDownCapture(event);
-        }}
-        onKeyDown={(event) => {
-          onKeyDown?.(event);
-          keys.onKeyDown(event);
-        }}
+        {...keys}
         onCloseAutoFocus={(event) => {
           onCloseAutoFocus?.(event);
           stopRedirect(stop);
