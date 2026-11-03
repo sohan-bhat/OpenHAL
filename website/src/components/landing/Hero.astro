@@ -29,7 +29,7 @@ const installDefault = await inlineScript(installDefaultSource, "install-default
     <InstallTabs client:intent channels={installChannels()} label={`Install ${PRODUCT_NAME}`} />
   </div>
   <script is:inline set:html={installDefault} />
-  <p class="hero-next">Then set up your first device with <code>{CLI_NAME} init</code>, and start {PRODUCT_NAME} with <code>{START_COMMAND}</code>.</p>
+  <p class="hero-next">Then set up your first device with <code translate="no">{CLI_NAME} init</code>, and start {PRODUCT_NAME} with <code translate="no">{START_COMMAND}</code>.</p>
   <p class="hero-actions">
     <a class={buttonVariants({ size: "lg", className: "hero-go" })} data-slot="button" data-variant="default" href="/docs/quickstart/">Get started</a>
     <a class={buttonVariants({ variant: "outline", size: "lg", className: "hero-spec" })} data-slot="button" data-variant="outline" href={latestSpecHref()}>Read the specification</a>
@@ -171,6 +171,7 @@ const installDefault = await inlineScript(installDefaultSource, "install-default
     color: var(--text);
     font-family: var(--font-mono);
     font-size: 0.93em;
+    white-space: nowrap;
   }
 
   .hero-actions {
@@ -220,6 +221,12 @@ const installDefault = await inlineScript(installDefaultSource, "install-default
   @media (min-width: 768px) {
     .hero {
       padding-top: var(--s-8);
+    }
+  }
+
+  @media (max-width: 479.98px) {
+    .hero-install :global([data-slot="tabs-trigger"]) {
+      padding-inline: var(--s-2);
     }
   }
 

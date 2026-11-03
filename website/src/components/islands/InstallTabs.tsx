@@ -43,7 +43,7 @@ export default function InstallTabs({ channels, label }: Props) {
       {channels.map((channel) => (
         <TabsContent key={channel.id} value={channel.id} forceMount data-channel={channel.id}>
           <p className="install-name">{channel.label}</p>
-          <p className="install-line">
+          <p className="install-line" translate="no">
             <span className="install-prompt" aria-hidden="true">
               {channel.prompt}
             </span>

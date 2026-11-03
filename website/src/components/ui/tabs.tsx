@@ -20,7 +20,7 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "inline-flex h-8 shrink-0 cursor-pointer items-center justify-center rounded-sm px-3 text-sm font-medium whitespace-nowrap text-muted-foreground transition-[background-color,color] duration-(--motion-status) hover:text-foreground disabled:pointer-events-none disabled:opacity-55 data-[state=active]:bg-highlight data-[state=active]:text-foreground data-[state=inactive]:hover:bg-muted",
+        "inline-flex h-8 shrink-0 cursor-pointer items-center justify-center rounded-sm border-0 bg-transparent px-3 text-sm font-medium whitespace-nowrap text-muted-foreground transition-[background-color,color] duration-(--motion-status) hover:text-foreground disabled:pointer-events-none disabled:opacity-55 data-[state=active]:bg-highlight data-[state=active]:text-foreground data-[state=inactive]:hover:bg-muted",
         className,
       )}
       {...props}

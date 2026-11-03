@@ -329,7 +329,7 @@ test.describe("the install box", () => {
           box: { background: getComputedStyle(box).backgroundColor, border: getComputedStyle(box).borderTopColor, width: getComputedStyle(box).borderTopWidth },
           list: style("[role=tablist]").backgroundColor,
           chosen: { background: style("[role=tab][aria-selected=true]").backgroundColor, color: style("[role=tab][aria-selected=true]").color },
-          other: style("[role=tab][aria-selected=false]").color,
+          other: { background: style("[role=tab][aria-selected=false]").backgroundColor, color: style("[role=tab][aria-selected=false]").color },
           prompt: style("[role=tabpanel][data-state=active] .install-prompt").color,
           command: { color: style("[role=tabpanel][data-state=active] code").color, font: style("[role=tabpanel][data-state=active] code").fontFamily },
           shadows: all.filter((item) => item.boxShadow !== "none" && !item.boxShadow.includes("inset")).length,
@@ -338,7 +338,7 @@ test.describe("the install box", () => {
       expect(look.box).toEqual({ background: look.tokens.surface, border: look.tokens.border, width: "1px" });
       expect(look.list).toBe(look.tokens.bg);
       expect(look.chosen).toEqual({ background: look.tokens.highlight, color: look.tokens.text });
-      expect(look.other).toBe(look.tokens.text2);
+      expect(look.other).toEqual({ background: "rgba(0, 0, 0, 0)", color: look.tokens.text2 });
       expect(look.prompt).toBe(look.tokens.text2);
       expect(look.command.color).toBe(look.tokens.text);
       expect(look.command.font).toContain("IBM Plex Mono");
