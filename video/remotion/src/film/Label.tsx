@@ -1,7 +1,7 @@
 import {useCurrentFrame, useVideoConfig} from 'remotion';
 import {Aspect, COLORS, Label as LabelData, MONO, easeOut} from './edit';
 
-const SIZE: Record<Aspect, number> = {landscape: 104, vertical: 96};
+const SIZE: Record<Aspect, number> = {landscape: 124, vertical: 100};
 const STOP_SIZE: Record<Aspect, number> = {landscape: 280, vertical: 250};
 
 const color = (style: LabelData['style']): string =>
