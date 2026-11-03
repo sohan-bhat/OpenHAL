@@ -5,7 +5,7 @@ attempt is a test in tests/redteam/. A test that an attack is blocked passes. An
 through is a strict xfail carrying its finding id, and the finding is written up below with a
 proposed fix. Every attempt used mocks and simulators. No code under openhal/ was changed.
 
-The suite is 100 tests. 94 pass and 6 are strict xfails, for four findings (RT-01 has two proofs).
+At the time of the review the suite was 100 tests. 94 passed and 6 were strict xfails, for four findings (RT-01 has two proofs). Today tests/redteam has 109 tests, and none is an expected failure.
 
 All four findings are fixed on main, and their proofs now run as ordinary tests that pass. RT-01 caps unit names at 40 characters and quantity text at 80 before pint parses them, on every path including routines. RT-02 wraps every string the driver writer detected as data, except the fields OpenHAL sets itself. RT-03 returns PARSE_ERROR for frames nested deeper than 32 levels and for any JSON the parser can't finish. RT-04 scrubs tokens from the client and principal fields of the message log.
 

@@ -8,7 +8,7 @@ Drafts only. Nothing on this page has been posted, and the owner posts each draf
 2. The README quickstart works on a fresh machine, from `git clone` to `uv run openhal demo`.
 3. The plant waterer plan (examples/plant-waterer/TEST-PLAN.md) has run on a real board.
 4. NEEDS_HUMAN.md item 4, the domain, is decided. The PyPI name is `halkit` (ADR 0002).
-5. `uv run openhal driver list` still shows 34 drivers. Fix the counts below if it doesn't.
+5. `uv run openhal driver list` still shows 35 drivers. Fix the counts below if it doesn't.
 6. Each community's rules on self-promotion, flair and posting days are read and followed. One community at a time, a few days apart.
 7. Someone is there for the first hours to answer. Hardware reports go to issues. Safety reports go through SECURITY.md.
 
@@ -38,7 +38,7 @@ Drafts only. Nothing on this page has been posted, and the owner posts each draf
 > - Every request goes into a hash-chained audit log with its result.
 > - The hub's protocol is JSON-RPC 2.0 over WebSocket and stdio, with a versioned specification (v0.1), an error registry and three conformance levels. An MCP server, a CLI and a Python client sit on top.
 >
-> Where it stands. 34 drivers pass a conformance suite against simulators, including Klipper through Moonraker, Marlin, OctoPrint, SCPI instruments, Home Assistant, ESPHome, MQTT, Modbus, BLE, MIDI, Raspberry Pi GPIO and camera, ROS 2, OPC UA, SiLA 2, ASCOM Alpaca and INDI. Each has a step-by-step hardware test plan, and the plant waterer's comes first. This is v0.1, in development.
+> Where it stands. 35 drivers pass a conformance suite against simulators, including Klipper through Moonraker, Marlin, OctoPrint, SCPI instruments, Home Assistant, ESPHome, MQTT, Modbus, BLE, MIDI, Raspberry Pi GPIO and camera, ROS 2, OPC UA, SiLA 2, ASCOM Alpaca and INDI. Each has a step-by-step hardware test plan, and the plant waterer's comes first. This is v0.1, in development.
 >
 > OpenHAL isn't affiliated with Anthropic. Anthropic's Model Hardware Standard is an invite-only research preview. OpenHAL is open now, and the project plans to stay compatible once MHS has a public spec.
 >
