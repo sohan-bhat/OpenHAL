@@ -120,7 +120,18 @@ async def test_a_stopped_hub_and_the_run_cap_reach_the_agent(
     ended = await tools.get_run(long.run_id, wait_s=5)
     assert (ended.status, ended.stop.code if ended.stop else None) == ("cancelled", "stopped")
     blocked = await tools.run_steps(MODES)
-    assert (blocked.status, blocked.error) == ("blocked", None)
+    assert (blocked.status, blocked.error.name if blocked.error else None) == ("blocked", "STOPPED")
+
+
+async def test_a_run_that_failed_inside_the_hub_carries_no_registry_error(
+    async_transport: httpx.ASGITransport, tokens: Tokens, hub: Hub, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def broken(*args: object, **kwargs: object) -> object:
+        raise RuntimeError("bug")
+
+    monkeypatch.setattr(hub.kernel, "evaluate", broken)
+    run = await tools_for(async_transport, tokens.medium).run_steps(MODES)
+    assert (run.status, run.stop.code if run.stop else None, run.error) == ("failed", "internal_error", None)
 
 
 async def test_the_sdk_lists_the_general_tools(async_transport: httpx.ASGITransport, tokens: Tokens) -> None:

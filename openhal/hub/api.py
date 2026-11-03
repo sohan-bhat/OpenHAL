@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import ipaddress
+from collections.abc import Awaitable
 from dataclasses import asdict
 from pathlib import Path
 from typing import Annotated, Any, Literal
@@ -207,6 +208,20 @@ def principal_for(request: Request) -> Principal:
 Who = Annotated[Principal, Depends(principal_for)]
 
 
+async def while_connected(request: Request, work: Awaitable[dict[str, Any]], poll_s: float = 1.0) -> dict[str, Any]:
+    """Run a long read for a client, and cancel it once the client has gone, so nothing reads for no one."""
+    task = asyncio.ensure_future(work)
+    while True:
+        done, _ = await asyncio.wait({task}, timeout=poll_s)
+        if done:
+            return task.result()
+        if await request.is_disconnected():
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+            raise HTTPException(499, "The client closed the connection, so the hub ended the request.")
+
+
 def create_app(hub: Hub) -> FastAPI:
     """Build the API for one hub."""
     app = FastAPI(title=f"{PRODUCT_NAME} hub", version=__version__, docs_url=None, redoc_url=None)
@@ -383,18 +398,18 @@ def create_app(hub: Hub) -> FastAPI:
             raise HTTPException(404, str(exc.args[0])) from exc
 
     @app.post("/v1/wait_until")
-    async def wait_until(body: WaitBody, who: Who) -> dict[str, Any]:
+    async def wait_until(body: WaitBody, who: Who, request: Request) -> dict[str, Any]:
         """Wait until a condition over live readings holds, or the timeout passes."""
         try:
-            return await hub.runs.wait_until(who, body)
+            return await while_connected(request, hub.runs.wait_until(who, body))
         except RunError as exc:
             raise HTTPException(exc.status, exc.message) from exc
 
     @app.post("/v1/sample")
-    async def sample(body: SampleBody, who: Who) -> dict[str, Any]:
+    async def sample(body: SampleBody, who: Who, request: Request) -> dict[str, Any]:
         """Read channels at an interval over a duration, with min, max and mean for numbers."""
         try:
-            return await hub.runs.sample(who, body)
+            return await while_connected(request, hub.runs.sample(who, body))
         except RunError as exc:
             raise HTTPException(exc.status, exc.message) from exc
 

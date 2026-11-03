@@ -449,7 +449,7 @@ class WaitResult(Model):
     """How a wait on a condition ended, with the readings of its last check."""
 
     condition: str
-    status: str = Field(description="held, timeout, stopped or cancelled.")
+    status: str = Field(description="held, timeout, time_cap, stopped or token_revoked.")
     held: bool
     result: bool | None = Field(default=None, description="The condition at the last check. None means unknown.")
     waited_s: float
@@ -481,7 +481,7 @@ class SampleSeries(Model):
 
 
 class SampleResult(Model):
-    status: str = Field(description="done, or stopped when a stop ended the sample early.")
+    status: str = Field(description="done, or why the sample ended early, stopped or time_cap.")
     interval_s: float
     duration_s: float
     started_at: float | None = None

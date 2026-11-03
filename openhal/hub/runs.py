@@ -7,7 +7,9 @@ grants, the stop lock and confirmations apply to every step. Every read goes thr
 
 Rules the engine adds on top of the kernel.
 - A run is checked as a whole plan first, with waits moving the simulated clock. When the plan
-  check blocks a step, nothing runs.
+  check blocks a step, nothing runs. After a wait_until step, a block that depends on live readings
+  doesn't stop the plan, because the condition can change those readings, and the kernel checks
+  that command again when it runs.
 - A run stops at the first step that isn't done. A step held for a person ends the run with the
   request id, so a run never holds for an approval.
 - Steps only read, write, run an action or wait. No step approves, unlocks, widens a limit or
@@ -16,7 +18,8 @@ Rules the engine adds on top of the kernel.
 - A run belongs to the principal that started it. Another agent gets no run by that id, and a
   person sees and cancels every run.
 - The caps in config.yaml bound the steps in a run, the seconds a run, wait or sample lasts, and
-  how many of them one token has going at once. Only a person changes the caps.
+  how many of them one token has going at once. Only a person changes the caps, and a lower time
+  cap ends running jobs within one pause slice.
 """
 
 from __future__ import annotations
@@ -51,11 +54,16 @@ MAX_POINTS: Final = 1000
 KEPT_RUNS: Final = 200
 """Finished runs the hub keeps for get_run. The audit log keeps every run."""
 CAPS_PHRASE: Final = "confirm"
-CLOSE_WAIT_S: Final = 15.0
-"""Seconds a run gets to finish its current command when the hub closes, before the run is cancelled."""
-STOPPED_MESSAGE: Final = "Blocked. The hub is stopped. A human must unlock it before anything can move."
+END_WAIT_S: Final = 15.0
+"""Seconds a cancel or the hub closing gives a run to finish its current command."""
+PAUSE_SLICE_S: Final = 1.0
+"""The longest single sleep, so a lower time cap reaches a pause that already started."""
+LIVE_CODES: Final = frozenset({"interlock", "rate_limited", "duration_exceeded", "device_unavailable"})
+"""Block codes that depend on live readings, which a wait_until step earlier in the run can change."""
 ENDINGS: Final = {
     "stopped": "Ended by a stop. The hub stays stopped until a person unlocks the hub.",
+    "time_cap": "Ended at the time cap for runs, runs.max_seconds in config.yaml. The steps after this one did "
+    "not run. A person raises the cap with openhal runs caps --max-seconds.",
     "token_revoked": "Ended because the token that started the run was revoked.",
     "hub_closed": "Ended because the hub shut down.",
 }
@@ -171,6 +179,7 @@ class Job:
     """Something the hub does over time for one principal. `ended` is set by a cancel or a stop."""
 
     principal: Principal
+    clock_start: float = 0.0
     ended: asyncio.Event = field(default_factory=asyncio.Event)
     reason: str | None = None
     by: str | None = None
@@ -190,13 +199,12 @@ class Job:
 @dataclass(eq=False)
 class Run(Job):
     run_id: str = ""
-    steps: list[Any] = field(default_factory=list)
+    step_count: int = 0
     repeat: int = 1
     status: str = "running"
     message: str = "Running."
     started_at: float = 0.0
     finished_at: float | None = None
-    clock_start: float = 0.0
     clock_end: float | None = None
     results: list[dict[str, Any]] = field(default_factory=list)
     stop: dict[str, Any] | None = None
@@ -285,17 +293,33 @@ class RunEngine:
             job.end("hub_closed")
         tasks = [run.task for run in self.runs.values() if run.task is not None and not run.task.done()]
         if tasks:
-            _done, pending = await asyncio.wait(tasks, timeout=CLOSE_WAIT_S)
+            _done, pending = await asyncio.wait(tasks, timeout=END_WAIT_S)
             for task in pending:
                 task.cancel()
             await asyncio.gather(*pending, return_exceptions=True)
 
+    def _left(self, job: Job) -> float:
+        """Seconds until the job reaches the time cap now in force."""
+        return job.clock_start + self.caps.max_seconds - self.kernel.clock()
+
     async def _pause(self, job: Job, seconds: float) -> bool:
-        """Sleep for `seconds`, or less when the job ends. True when the whole time passed."""
-        if job.ended.is_set():
-            return False
-        if seconds <= 0:
-            return True
+        """Sleep for `seconds` in slices, ending early on a cancel, a stop or the time cap.
+
+        True when the whole time passed. Reaching the time cap ends the job with reason time_cap.
+        """
+        remaining = seconds
+        while not job.ended.is_set():
+            if remaining <= 0:
+                return True
+            if self._left(job) <= 0:
+                job.end("time_cap")
+                break
+            piece = min(remaining, PAUSE_SLICE_S, self._left(job))
+            await self._slice(job, piece)
+            remaining -= piece
+        return False
+
+    async def _slice(self, job: Job, seconds: float) -> None:
         sleeper = asyncio.ensure_future(self._sleep(seconds))
         ender = asyncio.ensure_future(job.ended.wait())
         try:
@@ -304,7 +328,6 @@ class RunEngine:
             for task in (sleeper, ender):
                 task.cancel()
             await asyncio.gather(sleeper, ender, return_exceptions=True)
-        return not job.ended.is_set()
 
     def _target(self, target: str) -> tuple[str, str]:
         device, _, channel = target.partition(".")
@@ -316,7 +339,8 @@ class RunEngine:
             raise RunError(404, f"{device} has no channel {channel!r}. Its channels are {known}.")
         return device, channel
 
-    def _condition(self, text: str) -> tuple[expressions.Node, list[expressions.Ref]]:
+    def _condition(self, text: str, *, check: bool = True) -> tuple[expressions.Node, list[expressions.Ref]]:
+        """The condition's tree and the channels it names. `check` makes each channel one the hub has."""
         try:
             tree = expressions.parse(text, frozenset())
         except expressions.ExpressionError as exc:
@@ -324,13 +348,15 @@ class RunEngine:
         refs = sorted(expressions.references(tree), key=str)
         if not refs:
             raise RunError(400, "The condition names no channel. Name each channel as device.channel.")
-        for ref in refs:
+        for ref in refs if check else []:
             self._target(str(ref))
         return tree, refs
 
     async def _read(self, job: Job, device: str, channel: str) -> tuple[Reading | None, dict[str, Any]]:
         try:
             reading = await self.kernel.read(device, channel, job.principal)
+        except LookupError as exc:
+            return None, {"device": device, "channel": channel, "ok": False, "error": str(exc)}
         except Exception as exc:  # noqa: BLE001 (a failed read is a result, the channel counts as unknown)
             return None, views.failed_reading(device, channel, exc)
         return reading, views.reading_view(self.hub, device, channel, reading, image_data=False)
@@ -359,9 +385,7 @@ class RunEngine:
             waited = self.kernel.clock() - start
             if result is True:
                 status = "held"
-            elif job.ended.is_set():
-                status = str(job.reason)
-            elif waited >= timeout_s:
+            elif waited >= timeout_s and not job.ended.is_set():
                 status = "timeout"
             elif await self._pause(job, min(interval, timeout_s - waited)):
                 continue
@@ -382,7 +406,7 @@ class RunEngine:
         if body.timeout_s > self.caps.max_seconds:
             raise RunError(400, self._too_long("A wait", body.timeout_s))
         tree, refs = self._condition(body.condition)
-        job = Job(who)
+        job = Job(who, self.kernel.clock())
         self._admit(job)
         try:
             outcome = await self._wait(job, tree, refs, body.timeout_s, body.interval_s)
@@ -417,7 +441,7 @@ class RunEngine:
                 "Use a longer interval_s.",
             )
         pairs = [self._target(target) for target in body.targets]
-        job = Job(who)
+        job = Job(who, self.kernel.clock())
         self._admit(job)
         points: dict[str, list[dict[str, Any]]] = {target: [] for target in body.targets}
         start, started_at, status = self.kernel.clock(), time.time(), "done"
@@ -469,11 +493,11 @@ class RunEngine:
         flat = self._check_body(body)
         run = Run(
             who,
+            self.kernel.clock(),
             run_id=f"run-{secrets.token_hex(8)}",
-            steps=list(body.steps),
+            step_count=len(body.steps),
             repeat=body.repeat,
             started_at=time.time(),
-            clock_start=self.kernel.clock(),
         )
         self._admit(run)
         self._keep(run)
@@ -508,23 +532,33 @@ class RunEngine:
             del self.runs[old.run_id]
 
     def _plan(self, run: Run, flat: Flat) -> dict[str, Any] | None:
-        """Evaluate every command in order as if the earlier ones ran, with waits moving the clock."""
-        if self.kernel.stopped:
-            return {"index": 0, "step": 0, "iteration": 0, "kind": "run", "code": "stopped", "message": STOPPED_MESSAGE}
+        """Evaluate every command in order as if the earlier ones ran, with waits moving the clock.
+
+        After a wait_until step the readings can differ from now, so a block whose code depends on live
+        readings is left to the kernel's check when the command runs, and listed as checked_when_run.
+        """
         shadow = Shadow()
         held: list[int] = []
+        later: list[int] = []
         commands = 0
+        gated = False
         for position, (iteration, index, step) in enumerate(flat):
             if isinstance(step, WaitStep):
                 shadow.now += step.seconds
+                continue
+            if isinstance(step, WaitUntilStep):
+                gated = True
                 continue
             if not isinstance(step, WriteStep | ActionStep):
                 continue
             command = step.command(iteration)
             decision = self.kernel.evaluate(command, run.principal, shadow=shadow, wire=True)
             commands += 1
+            if decision.status == "blocked" and gated and decision.code in LIVE_CODES:
+                later.append(position)
+                continue
             if decision.status == "blocked":
-                run.plan = {"commands_checked": commands, "needs_confirmation": held}
+                run.plan = {"commands_checked": commands, "needs_confirmation": held, "checked_when_run": later}
                 return {
                     "index": position,
                     "step": index,
@@ -540,7 +574,7 @@ class RunEngine:
                 shadow.record(command.device, command.channel, decision.value)
             else:
                 shadow.record_run(command.device, command.action)
-        run.plan = {"commands_checked": commands, "needs_confirmation": held}
+        run.plan = {"commands_checked": commands, "needs_confirmation": held, "checked_when_run": later}
         return None
 
     def _decision(self, decision: Decision) -> dict[str, Any]:
@@ -548,18 +582,16 @@ class RunEngine:
         return views.decision_view(decision, runtime.file if runtime is not None else None)
 
     async def _execute(self, run: Run, flat: Flat) -> None:
-        deadline = run.clock_start + self.caps.max_seconds
         try:
             for position, (iteration, index, step) in enumerate(flat):
                 base = {"index": position, "step": index, "iteration": iteration, "kind": step.kind}
+                if not run.ended.is_set() and self._left(run) <= 0:
+                    run.end("time_cap")
                 if run.ended.is_set():
                     self._finish(run, "cancelled", {**base, "code": run.reason, "message": run.ending()})
                     return
-                if self.kernel.clock() >= deadline:
-                    self._finish(run, "cancelled", {**base, **self._time_cap()})
-                    return
                 run.current = base
-                result, stop = await self._step(run, base, step, iteration, deadline)
+                result, stop = await self._step(run, base, step, iteration)
                 run.results.append(result)
                 self.hub.audit.append(
                     "run_step",
@@ -583,44 +615,28 @@ class RunEngine:
             message = f"The run hit an unexpected error ({type(exc).__name__}). The steps after this one did not run."
             self._finish(run, "failed", {"kind": "run", "code": "internal_error", "message": message})
 
-    def _time_cap(self) -> dict[str, Any]:
-        return {
-            "code": "time_cap",
-            "message": f"Ended at the run time cap of {self.caps.max_seconds:g} s. The steps after this one did "
-            "not run. A person raises the cap with openhal runs caps --max-seconds.",
-        }
-
     def _ended(self, run: Run) -> dict[str, Any]:
         return {"status": "cancelled", "code": run.reason, "message": run.ending()}
 
     async def _step(
-        self, run: Run, base: dict[str, Any], step: Any, iteration: int, deadline: float
+        self, run: Run, base: dict[str, Any], step: Any, iteration: int
     ) -> tuple[dict[str, Any], dict[str, Any] | None]:
         """Run one step. Returns its result and, when the run ends here, why."""
         if isinstance(step, WaitStep):
-            seconds = min(step.seconds, deadline - self.kernel.clock())
-            whole = await self._pause(run, seconds)
-            done = whole and seconds == step.seconds
-            result = {**base, "status": "done" if done else "cancelled", "seconds": seconds}
-            if not whole:
-                return result, self._ended(run)
-            if not done:
-                return result, {"status": "cancelled", **self._time_cap()}
-            return result, None
+            whole = await self._pause(run, step.seconds)
+            result = {**base, "status": "done" if whole else "cancelled", "seconds": step.seconds}
+            return result, None if whole else self._ended(run)
         if isinstance(step, ReadStep):
-            readings = [(await self._read(run, *self._target(target)))[1] for target in step.targets]
+            readings = [(await self._read(run, *target.split(".", 1)))[1] for target in step.targets]
             return {**base, "status": "done", "readings": readings}, None
         if isinstance(step, WaitUntilStep):
-            tree, refs = self._condition(step.condition)
-            limit = min(step.timeout_s, deadline - self.kernel.clock())
-            outcome = await self._wait(run, tree, refs, limit, step.interval_s)
+            tree, refs = self._condition(step.condition, check=False)
+            outcome = await self._wait(run, tree, refs, step.timeout_s, step.interval_s)
             result = {**base, "condition": step.condition, **outcome}
             if outcome["status"] == "held":
                 return result, None
             if outcome["status"] != "timeout":
                 return result, self._ended(run)
-            if limit < step.timeout_s:
-                return result, {"status": "cancelled", **self._time_cap()}
             message = (
                 f"{step.condition} did not hold within {step.timeout_s:g} s. The steps after this one did not run."
             )
@@ -666,9 +682,9 @@ class RunEngine:
             "owner": run.principal.label,
             "status": run.status,
             "message": run.message,
-            "steps": len(run.steps),
+            "steps": run.step_count,
             "repeat": run.repeat,
-            "total_steps": len(run.steps) * run.repeat,
+            "total_steps": run.step_count * run.repeat,
             "done_steps": len(run.results),
             "current": run.current,
             "started_at": run.started_at,
@@ -713,7 +729,7 @@ class RunEngine:
             run.end("cancelled", who.label)
             self.hub.audit.append("run_cancel", who.label, target=f"run:{run_id}", status="done", run_id=run_id)
             with contextlib.suppress(TimeoutError):
-                await asyncio.wait_for(run.done.wait(), 15)
+                await asyncio.wait_for(run.done.wait(), END_WAIT_S)
         return self.view(run)
 
     def caps_view(self) -> dict[str, Any]:

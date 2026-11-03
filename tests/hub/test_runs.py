@@ -13,10 +13,11 @@ from typing import Any
 
 import httpx
 import pytest
+from fastapi import HTTPException
 from pydantic import ValidationError
 
 from openhal.drivers.mock import MockDriver
-from openhal.hub.api import create_app
+from openhal.hub.api import create_app, while_connected
 from openhal.hub.config import HubConfig, load_config
 from openhal.hub.hub import Hub
 from openhal.hub.runs import (
@@ -142,7 +143,7 @@ async def test_a_run_blinks_a_lamp_through_the_kernel(hub: Hub) -> None:
     assert len(hub.audit.entries(event="run_step", limit=100)) == 20
     assert [entry.status for entry in hub.audit.entries(event="run")] == ["done", "running"]
     assert run["message"] == "Done. All 20 steps ran."
-    assert run["plan"] == {"commands_checked": 10, "needs_confirmation": []}
+    assert run["plan"] == {"commands_checked": 10, "needs_confirmation": [], "checked_when_run": []}
 
 
 async def test_increment_steps_a_value_on_each_repeat(hub: Hub) -> None:
@@ -261,8 +262,10 @@ async def test_a_stop_ends_runs_waits_and_samples_and_blocks_new_runs(hub: Hub, 
     assert ended["message"].startswith("Ended by a stop.")
     assert (await wait)["status"] == "stopped"
     assert (await sample)["status"] == "stopped"
-    after = await hub.runs.start(CLAUDE, body([{"kind": "wait", "seconds": 1}]))
+    after = await hub.runs.start(CLAUDE, body(blink()[:1]))
     assert (after["status"], after["stop"]["code"]) == ("blocked", "stopped")
+    watch = await hub.runs.start(CLAUDE, body([{"kind": "read", "targets": ["lamp.on"]}]))
+    assert watch["status"] == "done", "a run that only reads still runs while the hub is stopped"
     by_claude = [entry for entry in hub.audit.entries(event="write", limit=100) if entry.principal == "agent:claude"]
     assert [entry.status for entry in by_claude] == ["done"]
     assert [value for *_rest, value in mock(hub, "lamp").hardware_writes()] == [True, False], "then the safe state"
@@ -381,7 +384,7 @@ async def test_closing_the_hub_cancels_a_command_that_never_returns(
         await asyncio.Event().wait()
 
     monkeypatch.setattr(hub.kernel, "execute", hangs)
-    monkeypatch.setattr("openhal.hub.runs.CLOSE_WAIT_S", 0.01)
+    monkeypatch.setattr("openhal.hub.runs.END_WAIT_S", 0.01)
     run = await hub.runs.start(CLAUDE, body(blink(), wait_s=0))
     await hub.close()
     assert hub.runs.runs[run["run_id"]].stop == {
@@ -389,6 +392,70 @@ async def test_closing_the_hub_cancels_a_command_that_never_returns(
         "code": "hub_closed",
         "message": "Ended because the hub shut down.",
     }
+
+
+async def test_after_a_wait_until_a_live_block_is_left_to_the_kernel(hub: Hub) -> None:
+    gate = {"kind": "wait_until", "condition": "desk-fan.fan_speed >= 30 %", "timeout_s": 3}
+    heat = {"kind": "write", "device": "heater", "channel": "power", "value": 10, "unit": "W"}
+    ungated = await hub.runs.start(CLAUDE, body([heat]))
+    assert (ungated["status"], ungated["stop"]["code"]) == ("blocked", "interlock")
+    never = await hub.runs.start(CLAUDE, body([gate, heat]))
+    assert (never["status"], never["stop"]["code"]) == ("failed", "condition_timeout")
+    assert never["plan"]["checked_when_run"] == [1]
+    assert mock(hub, "heater").hardware_writes() == []
+    mock(hub, "desk-fan").values["fan_speed"] = 40
+    held = await hub.runs.start(CLAUDE, body([gate, heat]))
+    assert held["status"] == "done", held["message"]
+    assert mock(hub, "heater").hardware_writes() == [("write", "power", 10.0)]
+    too_hot = await hub.runs.start(CLAUDE, body([gate, {**heat, "value": 100}]))
+    assert (too_hot["status"], too_hot["stop"]["code"]) == ("blocked", "above_max")
+
+
+async def test_a_lower_time_cap_ends_a_run_that_already_started(hub: Hub, clock: FakeClock) -> None:
+    async def sleep(seconds: float) -> None:
+        clock.advance(seconds)
+        await asyncio.sleep(0.01)
+
+    hub.runs._sleep = sleep
+    run = await hub.runs.start(CLAUDE, body([{"kind": "wait", "seconds": 500}, *blink()[:1]], wait_s=0))
+    await asyncio.sleep(0.05)
+    hub.runs.set_caps(OWNER, CapsBody(max_seconds=10))
+    ended = await until_done(hub, run["run_id"])
+    assert (ended["status"], ended["stop"]["code"]) == ("cancelled", "time_cap")
+    assert ended["elapsed_s"] < 500
+    assert mock(hub, "lamp").hardware_writes() == []
+
+
+async def test_a_device_removed_during_a_run_reads_as_a_failed_reading(hub: Hub, clock: FakeClock) -> None:
+    release = gated(hub, clock)
+    read = {"kind": "read", "targets": ["warmer.temp"]}
+    run = await hub.runs.start(CLAUDE, body([read, {"kind": "wait", "seconds": 1}, read], wait_s=0))
+    await hub._remove_device("warmer")
+    release.set()
+    ended = await until_done(hub, run["run_id"])
+    assert ended["status"] == "done"
+    last = ended["results"][-1]["readings"][0]
+    assert (last["ok"], last["error"]) == (False, "There is no device 'warmer'.")
+
+
+async def test_a_long_read_ends_when_its_client_goes_away() -> None:
+    finished: list[bool] = []
+
+    async def work() -> dict[str, Any]:
+        try:
+            await asyncio.sleep(10)
+        finally:
+            finished.append(True)
+        return {}
+
+    class Gone:
+        async def is_disconnected(self) -> bool:
+            return True
+
+    with pytest.raises(HTTPException) as gone:
+        await while_connected(Gone(), work(), poll_s=0.01)  # type: ignore[arg-type]
+    assert gone.value.status_code == 499
+    assert finished == [True]
 
 
 async def test_a_bug_in_the_plan_check_runs_nothing(hub: Hub, monkeypatch: pytest.MonkeyPatch) -> None:

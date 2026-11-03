@@ -17,10 +17,10 @@ from rich.table import Table
 from openhal.cli import _tty
 from openhal.cli._common import console, handled, hub, print_json, styled
 from openhal.cli.limits_cmd import _person_can_type
+from openhal.hub.runs import CAPS_PHRASE
 
 app = typer.Typer(help="See and cancel runs of steps, and set the caps on them.", no_args_is_help=True)
 
-PHRASE = "confirm"
 WHAT = "raise these run caps"
 CAPS = ("max_steps", "max_seconds", "per_agent")
 
@@ -103,7 +103,7 @@ def caps(
         if changes:
             raised = [name for name, value in changes.items() if value > getattr(current, name)]
             if raised and client.whoami().kind == "human" and _person_can_type(phrase):
-                phrase = _tty.require_phrase(PHRASE, WHAT, given=phrase)
+                phrase = _tty.require_phrase(CAPS_PHRASE, WHAT, given=phrase)
             current = client.set_run_caps(
                 max_steps=max_steps, max_seconds=max_seconds, per_agent=per_agent, phrase=phrase
             )
