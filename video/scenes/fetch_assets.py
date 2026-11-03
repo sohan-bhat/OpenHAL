@@ -2,7 +2,8 @@
 
 Every file in video/assets.json is fetched from its pinned URL into video/assets/
 and checked against its SHA-256. Files already present with the right hash are
-kept. Run it with any Python 3.11 or newer, for example
+kept. The IBM Plex fonts from design/fonts are copied next to them, so the Remotion
+project finds everything in one public folder. Run it with any Python 3.11 or newer, for example
 
     python3 -I video/scenes/fetch_assets.py
 """
@@ -21,6 +22,7 @@ VIDEO = Path(__file__).resolve().parent.parent
 MANIFEST = VIDEO / "assets.json"
 ASSETS = VIDEO / "assets"
 STRIP = {"so101": "Simulation/SO101/"}
+DESIGN_FONTS = VIDEO.parent / "design" / "fonts"
 
 
 def sha256(path: Path) -> str:
@@ -69,6 +71,10 @@ def main() -> int:
             url = f"{spec['base']}/{name}"
             print(f"fetch {url}")
             fetch(url, dest, expected)
+    fonts = ASSETS / "fonts"
+    fonts.mkdir(parents=True, exist_ok=True)
+    for font in sorted(DESIGN_FONTS.glob("*.woff2")):
+        shutil.copy2(font, fonts / font.name)
     print(f"assets ready in {ASSETS}")
     return 0
 
