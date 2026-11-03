@@ -1,4 +1,9 @@
-"""`openhal read`, `write`, `action`, `dry-run`, `stop` and `unlock`."""
+"""`openhal read`, `write`, `action`, `dry-run`, `stop` and `unlock`.
+
+At a terminal, `read`, `write`, `action` and `dry-run` without a target show a picker of the devices
+and then of the channels or actions, and `write` without a value takes the value as a typed answer
+(ADR 0020). Anywhere else the error lists what fits and one exact command to copy.
+"""
 
 from __future__ import annotations
 
@@ -10,7 +15,7 @@ import yaml
 from rich.markup import escape
 from rich.table import Table
 
-from openhal.cli import _tty
+from openhal.cli import _targets, _tty
 from openhal.cli._common import (
     EXIT_FAILED,
     console,
@@ -72,14 +77,29 @@ def _command(client: Client, target: str, rest: list[str]) -> dict[str, Any]:
     )
 
 
+def _rest(client: Client, target: str, as_json: bool) -> list[str]:
+    """At a terminal, the value or the action arguments a dry run of `target` needs."""
+    device, name = split_target(target)
+    view = client.device(device)
+    if name in view.write:
+        return _targets.value("openhal dry-run", view, name, as_json=as_json)
+    if name in view.actions and not as_json:
+        return _targets.arguments(view, name)
+    return []
+
+
 def register(app: typer.Typer) -> None:
     @app.command()
     @handled
     def read(
-        targets: list[str] = typer.Argument(..., help="One or more device.channel, such as printer.bed_temp."),  # noqa: B008
+        targets: list[str] = typer.Argument(  # noqa: B008
+            None, help="One or more device.channel, such as printer.bed_temp. A terminal shows a picker."
+        ),
         as_json: bool = typer.Option(False, "--json", help="Print JSON."),
     ) -> None:
         """Read channels now."""
+        if not targets or (len(targets) == 1 and "." not in targets[0]):
+            targets = [_targets.target("openhal read", "read", targets[0] if targets else None, as_json=as_json)]
         with hub() as client:
             readings = client.read_many(targets) if len(targets) > 1 else [client.read(targets[0])]
         if as_json:
@@ -98,33 +118,42 @@ def register(app: typer.Typer) -> None:
     @app.command()
     @handled
     def write(
-        target: str = typer.Argument(..., help="device.channel, for example led-strip.brightness."),
-        value: list[str] = typer.Argument(..., help="The value with a unit, for example 60 % or 25 degC."),  # noqa: B008
+        target: str = typer.Argument(
+            None, help="device.channel, for example led-strip.brightness. A terminal shows a picker."
+        ),
+        value: list[str] = typer.Argument(  # noqa: B008
+            None, help="The value with a unit, for example 60 % or 25 degC. A terminal takes the value typed."
+        ),
         as_json: bool = typer.Option(False, "--json", help="Print the decision as JSON."),
     ) -> None:
         """Set a control channel. The hub's safety kernel checks the command first."""
+        if not target or "." not in target:
+            target = _targets.target("openhal write", "write", target, as_json=as_json)
         device, channel = split_target(target)
         with hub() as client:
             view = client.device(device)
-            decision = client.write(device, channel, _write_value(view, channel, value))
+            words = value or _targets.value("openhal write", view, channel, as_json=as_json)
+            decision = client.write(device, channel, _write_value(view, channel, words))
         print_json(decision) if as_json else print_decision(decision)
         exit_for(decision)
 
     @app.command()
     @handled
     def action(
-        target: str = typer.Argument(..., help="device.action, for example printer.home."),
+        target: str = typer.Argument(None, help="device.action, for example printer.home. A terminal shows a picker."),
         args: list[str] = typer.Argument(None, help="Arguments as key=value, for example seconds=2s."),  # noqa: B008
         as_json: bool = typer.Option(False, "--json", help="Print the decision as JSON."),
     ) -> None:
         """Run a device action. The hub's safety kernel checks the action first."""
+        if not target or "." not in target:
+            target = _targets.target("openhal action", "action", target, as_json=as_json)
         device, name = split_target(target)
         with hub() as client:
             view = client.device(device)
             if name not in view.actions:
-                raise ValueError(
-                    f"{device} has no action {name!r}. {device} offers {', '.join(view.actions) or 'none'}."
-                )
+                raise _targets.unknown(view, name, "action")
+            if not args and not as_json:
+                args = _targets.arguments(view, name)
             types = {arg: str(spec.get("type", "number")) for arg, spec in view.actions[name].args.items()}
             decision = client.action(device, name, parse_pairs(args or [], types))
         print_json(decision) if as_json else print_decision(decision)
@@ -133,7 +162,7 @@ def register(app: typer.Typer) -> None:
     @app.command("dry-run")
     @handled
     def dry_run(
-        target: str = typer.Argument(None, help="device.channel or device.action."),
+        target: str = typer.Argument(None, help="device.channel or device.action. A terminal shows a picker."),
         rest: list[str] = typer.Argument(None, help="The value, or key=value action arguments."),  # noqa: B008
         plan: Path = typer.Option(  # noqa: B008
             None, "--file", "-f", exists=True, dir_okay=False, help="A YAML or JSON list of commands to check in order."
@@ -150,10 +179,11 @@ def register(app: typer.Typer) -> None:
                 if not isinstance(loaded, list) or not all(isinstance(item, dict) for item in loaded):
                     raise ValueError(f"{plan} must hold a list of commands.")
                 commands = [_shaped(client, item) for item in loaded]
-            elif target:
-                commands = [_command(client, target, rest or [])]
             else:
-                raise ValueError("Give a target such as printer.pause, or --file with a list of commands.")
+                if not target or "." not in target:
+                    what = "a device, or --file with a list of commands"
+                    target = _targets.target("openhal dry-run", "control", target, as_json=as_json, what=what)
+                commands = [_command(client, target, rest or _rest(client, target, as_json))]
             decisions = client.dry_run(commands)
         if as_json:
             print_json(decisions)

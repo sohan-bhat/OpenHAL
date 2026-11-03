@@ -138,7 +138,7 @@ def test_status_devices_read_write(cli_hub: SyncHub) -> None:
     assert json.loads(out)["status"] == "done"
     code, out = run("write", "desk-fan", "1 %")
     assert code == 2
-    assert "device.channel" in out
+    assert "openhal write needs a write channel of desk-fan." in out
 
 
 def test_actions_dry_run_and_stop(cli_hub: SyncHub, tmp_path: Path) -> None:
