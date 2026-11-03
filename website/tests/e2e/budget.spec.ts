@@ -42,6 +42,8 @@ interface Weight {
  * type became IBM Plex. Plex Mono comes as one file per weight, so a page that shows bold or
  * semibold code loads a second mono subset of 7.9 or 8.6 KB, and the Plex Sans subset is 1.7 KB
  * larger than the face before it.
+ * The Python reference's HTML was set again the same way when the reference gained find, sample,
+ * wait_until and runs, which took the page to 24.64 KB gzipped.
  * The home page was set again the same way when How it works became a static chart, because the
  * scroll story, its Motion runtime, the smooth scrolling and its switch left the page, which took
  * the page to 14.97 KB of HTML, 19.17 KB of CSS, 1.66 KB of JavaScript and 25.6 KB of fonts.
@@ -59,7 +61,7 @@ const BUDGETS: Record<string, { path: string } & Weight> = {
   library: { path: "/library/", html: 20_800, css: 20_300, js: 2_000, fonts: 28_100 },
   "library device": { path: "/library/scpi-rigol-dp832/", html: 18_900, css: 20_300, js: 1_700, fonts: 28_100 },
   playground: { path: "/spec/playground/", html: 23_200, css: 22_500, js: 1_700, fonts: 36_900 },
-  "Python reference": { path: "/sdks/python/reference/", html: 24_300, css: 20_300, js: 3_200, fonts: 36_900 },
+  "Python reference": { path: "/sdks/python/reference/", html: 27_100, css: 20_300, js: 3_200, fonts: 36_900 },
   "Inspector page": { path: "/inspector/", html: 15_900, css: 20_300, js: 1_700, fonts: 28_100 },
   blog: { path: "/blog/", html: 10_900, css: 20_300, js: 1_700, fonts: 28_100 },
   "not found": { path: "/404.html", html: 11_300, css: 20_300, js: 1_700, fonts: 36_900 },
