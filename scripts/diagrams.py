@@ -36,14 +36,14 @@ D2_VERSION = "v0.9.0"
 SVGO = "svgo@4.1.0"
 
 STATIC_FONTS = {
-    "regular": ("atkinson-hyperlegible-next-latin-wght-normal.woff2", 400),
-    "italic": ("atkinson-hyperlegible-next-latin-wght-normal.woff2", 400),
-    "semibold": ("atkinson-hyperlegible-next-latin-wght-normal.woff2", 600),
-    "bold": ("atkinson-hyperlegible-next-latin-wght-normal.woff2", 700),
-    "mono": ("atkinson-hyperlegible-mono-latin-wght-normal.woff2", 400),
-    "mono-italic": ("atkinson-hyperlegible-mono-latin-wght-normal.woff2", 400),
-    "mono-semibold": ("atkinson-hyperlegible-mono-latin-wght-normal.woff2", 600),
-    "mono-bold": ("atkinson-hyperlegible-mono-latin-wght-normal.woff2", 700),
+    "regular": ("ibm-plex-sans-latin-wght-normal.woff2", 400),
+    "italic": ("ibm-plex-sans-latin-wght-normal.woff2", 400),
+    "semibold": ("ibm-plex-sans-latin-wght-normal.woff2", 600),
+    "bold": ("ibm-plex-sans-latin-wght-normal.woff2", 700),
+    "mono": ("ibm-plex-mono-latin-400-normal.woff2", 400),
+    "mono-italic": ("ibm-plex-mono-latin-400-normal.woff2", 400),
+    "mono-semibold": ("ibm-plex-mono-latin-600-normal.woff2", 600),
+    "mono-bold": ("ibm-plex-mono-latin-700-normal.woff2", 700),
 }
 
 THEMES = {
@@ -164,12 +164,16 @@ class Box:
 
 
 def static_fonts() -> dict[str, Path]:
+    """One TTF for each D2 role. IBM Plex Sans is set at the role's weight, and IBM Plex Mono is already
+    one static file per weight, so only its WOFF2 wrapping comes off."""
     CACHE.mkdir(parents=True, exist_ok=True)
     made = {}
     for role, (source, weight) in STATIC_FONTS.items():
         target = CACHE / f"{source.removesuffix('.woff2')}-{weight}.ttf"
         if not target.exists():
-            font = instancer.instantiateVariableFont(TTFont(FONTS / source, recalcTimestamp=False), {"wght": weight})
+            font = TTFont(FONTS / source, recalcTimestamp=False)
+            if "fvar" in font:
+                font = instancer.instantiateVariableFont(font, {"wght": weight})
             font.flavor = None
             font.save(target)
         made[role] = target

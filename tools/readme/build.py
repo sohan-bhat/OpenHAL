@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from svgtext import letters, path, width
+from svgtext import ink, letters, path, width
 
 OUT = Path(__file__).resolve().parents[2] / "docs" / "assets"
 
@@ -81,33 +81,33 @@ class Canvas:
 
 WORD = "OpenHAL"
 INITIALS = "OH"
-WEIGHT = 800
-TRACKING = -0.06
-INITIALS_TRACKING = -0.1
-"""The brand is the name set tight in the text face at its heaviest weight. There is no logo shape."""
+WEIGHT = 700
+TRACKING = -0.04
+INITIALS_TRACKING = -0.08
+FILL = 0.94
+"""The brand is the name set tight in IBM Plex Sans at its heaviest weight. There is no logo shape.
+The initials' outlines span FILL of their square's width, measured on the letters and not their
+advance widths, so OH fills the favicon."""
 
 
-def fitted(text: str, box: float, size: float, tracking: float = TRACKING) -> float:
-    """The largest size up to `size` at which `text` fits in `box` wide."""
-    return min(size, box / width(text, "text", 1, WEIGHT, tracking))
+def initials_path(side: float, fill: str) -> str:
+    """OH centered in a square `side` wide, its outlines across FILL of the width."""
+    left, right = ink(INITIALS, "text", 1, WEIGHT, INITIALS_TRACKING)
+    size = min(side * 0.9, side * FILL / (right - left))
+    return path(
+        INITIALS,
+        side / 2 - (left + right) / 2 * size,
+        side / 2 + size * 0.35,
+        face="text",
+        size=size,
+        weight=WEIGHT,
+        fill=fill,
+        tracking=INITIALS_TRACKING,
+    )
 
 
 def initials(c: Canvas, side: float, color: str) -> None:
-    size = fitted(INITIALS, side * 0.94, side * 0.9, INITIALS_TRACKING)
-    baseline = side / 2 + size * 0.35
-    c.add(
-        path(
-            INITIALS,
-            side / 2,
-            baseline,
-            face="text",
-            size=size,
-            weight=WEIGHT,
-            fill=color,
-            anchor="middle",
-            tracking=INITIALS_TRACKING,
-        )
-    )
+    c.add(initials_path(side, color))
 
 
 def mark_svg(t: dict[str, str]) -> str:
@@ -119,18 +119,7 @@ def mark_svg(t: dict[str, str]) -> str:
 def favicon() -> str:
     """One file for browsers, with the dark variant under prefers-color-scheme."""
     light, dark = THEMES["light"], THEMES["dark"]
-    size = fitted(INITIALS, 16, 15, INITIALS_TRACKING)
-    shape = path(
-        INITIALS,
-        8,
-        8 + size * 0.35,
-        face="text",
-        size=size,
-        weight=WEIGHT,
-        fill="currentColor",
-        anchor="middle",
-        tracking=INITIALS_TRACKING,
-    )
+    shape = initials_path(16, "currentColor")
     style = f"g{{color:{light['text']}}}@media (prefers-color-scheme: dark){{g{{color:{dark['text']}}}}}"
     return (
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">'

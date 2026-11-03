@@ -58,7 +58,7 @@
 
 <header class="top">
   <a class="brand" href={href("devices")} aria-label="OpenHAL Inspector, devices">
-    <picture class="wordmark"><source srcset={wordmarkDark} media="(prefers-color-scheme: dark)" /><img src={wordmarkLight} alt="" width="88" height="24" /></picture>
+    <picture class="wordmark"><source srcset={wordmarkDark} media="(prefers-color-scheme: dark)" /><img src={wordmarkLight} alt="" width="89" height="24" /></picture>
     <span class="product">Inspector</span>
   </a>
   {@render facts("wide")}
