@@ -48,8 +48,9 @@ def text_of(result: object) -> str:
     return " ".join(block.text for block in content if isinstance(block, TextContent))
 
 
-async def test_with_no_token_and_no_hub_the_server_lists_every_tool(tmp_path: Path) -> None:
-    async with server(tmp_path / "home", token=None) as client:
+@pytest.mark.parametrize("token", [None, "${OPENHAL_TOKEN}"], ids=["no token", "unexpanded placeholder"])
+async def test_with_no_token_and_no_hub_the_server_lists_every_tool(tmp_path: Path, token: str | None) -> None:
+    async with server(tmp_path / "home", token=token) as client:
         listed = await client.list_tools()
         assert {tool.name for tool in listed.tools} == set(TOOL_NAMES)
         result = await client.call_tool("list_devices", {})

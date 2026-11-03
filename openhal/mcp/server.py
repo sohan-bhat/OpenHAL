@@ -157,6 +157,7 @@ def run(
     token = load_agent_token(token_file)
     base = resolve_url(url, home=home)
     if token is None:
+        os.environ.pop(TOKEN_ENV, None)
         print(NOT_SET_UP, file=sys.stderr)
     elif not hub_answers(base):
         if start and start_hub(home_dir(home), base):
