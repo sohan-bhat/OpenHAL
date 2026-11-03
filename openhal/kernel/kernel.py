@@ -452,9 +452,10 @@ class Kernel:
         target_name = command.channel if isinstance(command, Write) else command.action
         read_only = file.read_only(command.target)
         if read_only:
+            why = "is high risk" if risk.level(file, command.target) == "high" else "has only suggested limits"
             raise Block(
                 "read_only_file",
-                f"Blocked. {target_name} on {command.device} is high risk, so it is read-only until a person "
+                f"Blocked. {target_name} on {command.device} {why}, so it is read-only until a person "
                 f"confirms limits for {', '.join(read_only)}. Run the limits interview.",
             )
         dangling = [

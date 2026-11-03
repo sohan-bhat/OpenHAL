@@ -38,7 +38,7 @@ The first draft of the OpenHAL specification, dated 2026-10-24.
 On 2026-11-03, at the owner's decision of 2026-11-02 ([ADR 0023](../../docs/adr/0023-risk-levels.md)).
 
 - Every channel and action has a Risk Level, `low`, `medium` or `high`, which a Hub sets from the Device File. Reading is always `low`.
-- Only high risk targets wait for a human to confirm their limits. Low and medium targets take commands within the Device File's range, and a low channel ignores a rate that is only `suggested`.
+- Only high risk targets, and low or medium targets whose `suggested` limits came from neither the Device nor the library, wait for a human to confirm their limits. Other low and medium targets take commands within the Device File's range, and a low channel ignores a rate that is only `suggested`.
 - A high risk action that can't be undone needs a human's approval at least once.
 - Scope follows the lower of a target's Risk Level and the Device's hazard class.
 - Device Files gain `risk` on write channels and actions, and `map.pin` ties targets on one pin to one level.

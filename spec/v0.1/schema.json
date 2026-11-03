@@ -566,7 +566,7 @@
         },
         "readOnly": {
           "default": false,
-          "description": "True while a high risk target waits for a person to confirm its limits.",
+          "description": "True until a person confirms the limits of a high risk target, or of one whose limits are only suggested.",
           "title": "Readonly",
           "type": "boolean"
         }
@@ -1211,7 +1211,7 @@
           "type": "string"
         },
         "writable": {
-          "description": "False while a high risk target waits for a person to confirm its limits.",
+          "description": "False while any target is read-only until a person confirms its limits.",
           "title": "Writable",
           "type": "boolean"
         },
@@ -1416,7 +1416,7 @@
           "type": "string"
         },
         "writable": {
-          "description": "False while a high risk target waits for a person to confirm its limits.",
+          "description": "False while any target is read-only until a person confirms its limits.",
           "title": "Writable",
           "type": "boolean"
         },
@@ -3084,7 +3084,7 @@
         },
         "readOnly": {
           "default": false,
-          "description": "True while a high risk target waits for a person to confirm its limits.",
+          "description": "True until a person confirms the limits of a high risk target, or of one whose limits are only suggested.",
           "title": "Readonly",
           "type": "boolean"
         }

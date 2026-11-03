@@ -41,7 +41,7 @@ HAZARDS: Final = ("low", "medium", "high")
 DEVICE_LIMITS: Final = "x-device-limits"
 """Where a device file keeps the range each channel and argument has on the device itself."""
 REPORTING_SOURCES: Final = ("self-described", "driver-describe")
-RANGE_SOURCES: Final = (*REPORTING_SOURCES, "library")
+RANGE_SOURCES: Final = risk.RANGE_SOURCES
 """Drafts whose ranges came from the device itself or the curated library. Only these skip low and medium questions."""
 _DEFAULT_TIER: Final = {"low": "none", "medium": "confirm", "high": "confirm-each-time"}
 _INTERLOCK: Final = re.compile(

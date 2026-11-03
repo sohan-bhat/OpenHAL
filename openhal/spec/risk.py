@@ -54,6 +54,8 @@ Level = Literal["low", "medium", "high"]
 LEVELS: Final[tuple[Level, ...]] = ("low", "medium", "high")
 RANK: Final = {"low": 0, "medium": 1, "high": 2}
 DEFAULT: Final[Level] = "medium"
+RANGE_SOURCES: Final = ("self-described", "driver-describe", "library")
+"""Provenance sources whose suggested ranges are the device's own or the curated library's."""
 PIN_KEY: Final = "pin"
 """The `map` key that names the pin a channel or action drives."""
 

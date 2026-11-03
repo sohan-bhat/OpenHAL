@@ -24,7 +24,7 @@ hazard: low
 notes: "The board turns the pump off on its own after 30 s."
 ```
 
-It loads read-only, because no human has confirmed its limits yet ([section 12](#12-limits-provenance)). Once `confirmed: { by: owner, at: 2026-10-24 }` is added, the Device takes commands. The full file for the real board is [examples/plant-waterer/plant-waterer.hal.yaml](../../examples/plant-waterer/plant-waterer.hal.yaml).
+Its actions are medium risk, so the Device takes commands within these limits at once ([Safety](safety.md#risk-levels)). A high risk target, such as a heater, would stay read-only until `confirmed: { by: owner, at: 2026-10-24 }` is added ([section 12](#12-limits-provenance)). The full file for the real board is [examples/plant-waterer/plant-waterer.hal.yaml](../../examples/plant-waterer/plant-waterer.hal.yaml).
 
 ## 0. File format
 
@@ -295,12 +295,12 @@ provenance:
 confirmed: { by: owner, at: 2026-10-24 }
 ```
 
-1. Every limit (min, max, step, rate, values, interlocks, watchdog rules, safe state, hazard) of a high risk write channel or action MUST be confirmed by a human before that target takes commands. Low and medium targets take commands without a confirmation, within the file's range ([Safety](safety.md#risk-levels)).
+1. Every limit (min, max, step, rate, values, interlocks, watchdog rules, safe state, hazard) of a high risk write channel or action MUST be confirmed by a human before that target takes commands. So MUST every limit of a low or medium one still marked `suggested: true` when `provenance.source` is none of `self-described`, `driver-describe` and `library`. Other low and medium targets take commands without a confirmation, within the file's range ([Safety](safety.md#risk-levels)).
 2. `confirmed` at the top level confirms every limit in the file. `confirmed` inside a write channel or action confirms that one. `by` is at most 80 characters. `at` is a date or a date and time.
-3. Interlocks, watchdog rules, the safe state and the hazard class are file-level limits. A file that has any of them and a high risk target needs a top-level `confirmed` for that target. Per-channel confirmations alone don't cover them.
+3. Interlocks, watchdog rules, the safe state and the hazard class are file-level limits. A file that has any of them and a target from item 1 needs a top-level `confirmed` for that target. Per-channel confirmations alone don't cover them.
 4. `confirmed.sha256` MAY hold the hash of the file's limits at the moment they were confirmed. `openhal file confirm` adds it. When it is present and the limits have changed since, every confirmation in the file is void again. Tools SHOULD always add it, and the validator reports a warning when it is missing.
 5. The limits hash covers identity, connection, channels, actions, safe state, interlocks, watchdog rules and hazard. It leaves out confirmations, approvals, notes, provenance, `safe_state_note`, `risk` and `x-` keys. `risk` carries its own record of the human who set it.
-6. A high risk target takes commands only if its limits and the file-level limits are covered by a confirmation, the target isn't marked `suggested: true`, and any `confirmed.sha256` still matches. Otherwise the target is read-only, and the Hub reports which entries are unconfirmed.
+6. A target from item 1 takes commands only if its limits and the file-level limits are covered by a confirmation, the target isn't marked `suggested: true`, and any `confirmed.sha256` still matches. Otherwise the target is read-only, and the Hub reports which entries are unconfirmed.
 7. Tools MUST NOT add `confirmed` on their own. Only the human side of the limits interview, or a human editing the file, may add it.
 
 ## Versioning

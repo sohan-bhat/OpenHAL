@@ -15,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def device(name: str = "Board", **sections: Any) -> DeviceFile:
+    """A device file the device described itself, so its suggested ranges are the device's own."""
+    sections.setdefault("provenance", {"source": "self-described"})
     return from_data({"device": name, "connect": {"driver": "mock"}, **sections})
 
 

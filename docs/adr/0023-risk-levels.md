@@ -36,6 +36,7 @@ Typical low targets are LED brightness, a display, a buzzer and a status light. 
 - Stop, the safe state, the watchdog and the audit log apply at every level.
 - A limit a person set always applies on top of these defaults. A low channel ignores a rate only while the rate is still `suggested`, the device's own suggestion.
 - A high hazard device still holds every command for a person each time.
+- The device's own range means a range the device reported or the curated library supplied, from a file whose `provenance.source` is `self-described`, `driver-describe` and `library`. A low or medium target still marked `suggested: true` in any other file, from a manual, a sketch, an agent, a bridge or a hand-written file, stays read-only until a person confirms its limits, as a high one does. Without that rule an agent could write a draft with a wide range for a pump and command the pump at once. The kernel and `openhal init` share one list of these sources, and the parity data checks the Playground's copy against it.
 - The scope a target needs follows the device's hazard class, or the target's own level when that is lower. A low target on a device with no declared hazard needs `control_low`.
 - An action can be undone when every effect it lists is a write channel the hub can set back, when the safe state runs it, or when the device has the action that undoes it, such as resume for pause. A start isn't undone by a stop, so start and stop don't count.
 
@@ -65,18 +66,19 @@ Typical low targets are LED brightness, a display, a buzzer and a status light. 
 
 `spec/v0.1/safety.md` and `spec/v0.1/device-files.md` changed these MUST rules, all at the owner's decision above.
 
-1. Guarantee 3. A high risk target MUST stay read-only until a human confirmed its limits. Low and medium targets take commands within the Device File's range without one.
-2. Check 3 blocks a command to a high risk target whose limits are unconfirmed, instead of every command to a file with any unconfirmed limit.
+1. Guarantee 3. A high risk target MUST stay read-only until a human confirmed its limits, and so MUST a low or medium target whose limits are still `suggested` in a file that neither the device nor the library supplied. Other low and medium targets take commands within the Device File's range without one.
+2. Check 3 blocks a command to such a target whose limits are unconfirmed, instead of every command to a file with any unconfirmed limit.
 3. Check 5 measures scope against the lower of the target's level and the device's hazard class.
 4. Check 10 skips a `max_change_per_s` that is still `suggested` on a low risk channel.
 5. Check 14 holds a high risk action that can't be undone for a person at least once.
 6. A new section, Risk levels, adds the MUST rules for reading, the table, unknown units, shared pins, overrides, who changes a level and the audit.
-7. Device files section 12. Only high risk targets and the file-level limits that guard them need a confirmation.
+7. Device files section 12. Only the targets from rule 1 and the file-level limits that guard them need a confirmation.
 
 ## Consequences
 
 - An agent fades an LED or sets a free pin at once, and a heater on the same hub stays read-only until a person confirms it.
 - Low and medium targets of a fresh device run within limits the device or a library suggested rather than limits a person confirmed. The owner chose that trade for those targets. High targets keep every guard they had.
 - The word lists are a heuristic. Doubtful cases go high, and a person corrects a level with one command.
-- Tests that relied on any unconfirmed file being read-only now use a high risk channel for that check.
-- The website and DESIGN.md still describe every limit as confirmed by a person. The lead updates that wording.
+- Tests that relied on any unconfirmed file being read-only now use a high risk channel, or a suggested one from a hand-written file, for that check.
+- The website's Playground runs the same table and rules in `website/src/lib/kernel/risk.ts`. The kernel parity data records the level, tier and read-only state of every target in the library and the spec examples, and the TypeScript port must give the same results.
+- The docs, DESIGN.md and the Playground follow these rules. README.md and the website's home page still describe every limit as confirmed by a person, and their owner updates that wording.
