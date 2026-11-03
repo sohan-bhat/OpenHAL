@@ -86,7 +86,7 @@ def audit_details(device_id: str | None, details: dict[str, Any]) -> dict[str, A
 
 
 def confirm_tier(file: DeviceFile, tier: str | None) -> str | None:
-    """The confirmation tier a client sees. A high hazard device holds every command for a person."""
+    """The confirmation tier shown to clients. A high hazard device holds every command for a person."""
     return "confirm-each-time" if file.effective_hazard == "high" else tier
 
 
