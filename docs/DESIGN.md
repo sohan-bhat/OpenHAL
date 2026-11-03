@@ -17,7 +17,7 @@ OpenHAL is an open protocol for AI agents to discover, read and control hardware
 
 ## Signature elements
 
-Three elements carry the identity. The flow diagram heads the README, the message trace shows every exchange, and How it works on the home page shows the three outcomes of a request in one flow chart.
+Three elements carry the identity. The flow diagram heads the README until the launch film's GIF does, the message trace shows every exchange, and How it works on the home page shows the three outcomes of a request in one flow chart.
 
 ### The animated flow diagram
 
@@ -31,7 +31,7 @@ A clean flowchart of one command, left to right. Agent, then OpenHAL hub (with t
 
 ### The message trace
 
-A two-column trace of a request and the hub's answer, the way a protocol spec shows an exchange. It appears in the README as a code block, in the Playground, in the spec and docs, in the Inspector's message log and in social images.
+A two-column trace of a request and the hub's answer, the way a protocol spec shows an exchange. It appears in the docs quickstart as code blocks, in the Playground, in the spec and docs, in the Inspector's message log and in social images.
 
 ```
 → hal/write   { "device": "printer", "channel": "extruder_target",
@@ -45,7 +45,7 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
 - **Method or outcome column.** The method name in the text color at weight 700. `error` plus the numeric code and the registry name in the blocked red. `result` in the granted green. Each is paired with its word, never color alone.
 - **Payload.** JSON in the mono face with the house syntax theme. Reasons as plain mono text on their own line.
 - Method names, codes and names match ADR 0015 and the generated schema exactly, everywhere.
-- **A run as steps.** Where a page shows a recorded run, such as the README, the docs quickstart and the blog, each exchange gets a plain sentence that says what the agent did and how the hub handled the request, then the exchange's own trace block, as the owner asked on 2026-10-31. No comment lines sit inside the code. The sentence sits 12 px above its block and 32 px below the block before it, so a reader pairs each sentence with its own messages. Only `openhal demo` in a terminal prints the narration as `#` lines.
+- **A run as steps.** Where a page shows a recorded run, such as the docs quickstart and the blog, each exchange gets a plain sentence that says what the agent did and how the hub handled the request, then the exchange's own trace block, as the owner asked on 2026-10-31. No comment lines sit inside the code. The sentence sits 12 px above its block and 32 px below the block before it, so a reader pairs each sentence with its own messages. Only `openhal demo` in a terminal prints the narration as `#` lines.
 
 ### The home page hero
 
@@ -279,7 +279,7 @@ These rules apply to the website, the docs and the dashboard, and to every diagr
 - Calling anything a standard that isn't one.
 - Inconsistent names. Method names, error codes and terms match the schema exactly everywhere.
 - A failing CI badge. Show the CI badge only while CI passes.
-- Demo GIFs or demo panel images as the README hero.
+- Demo panel images as the README hero, or any GIF there except the one from the launch film.
 
 ### Never, no exceptions
 
@@ -374,26 +374,27 @@ Copy
 
 ## README and diagrams
 
-The repository README follows this structure, in this order, left-aligned.
+The repository README follows this structure, in this order, left-aligned, as the owner's launch brief of 2026-11-03 asked. The first screen holds the one-line description, the demo GIF, the install command and the demo command, and the rest stays short and links out for detail.
 
 1. The wordmark (SVG, light and dark) and one sentence. "An open-source protocol for AI agents to control hardware." No second sentence and no subtitle. The same sentence is the home page's description and social title, the default OG description, the pyproject description and the GitHub repository description.
 2. Two neutral badges, the license and CI.
-3. The animated flow diagram, directly under the badges.
-4. Quickstart. Three commands in one code block, then one line on what you'll see, generated from the scenario.
-5. The message trace, the seven exchanges of the canonical scenario ending with the owner's approval, as a code block generated from the scenario (`uv run python -m openhal.demo.readme`).
-6. "What OpenHAL does", three bullets.
-7. Supported devices. Status as a sentence, "v0.1, in development. Every driver passes the conformance suite on a simulator.", then a table generated from drivers/catalog.json with driver, devices covered, status and hazard default.
-8. Safety model, at most five bullets, linking to docs/SAFETY.md.
-9. Relationship to MHS, two sentences.
-10. Contributing a driver or device file, then the license.
+3. The demo GIF from the launch film, in `docs/assets/`, between `<!-- demo-gif:start -->` and `<!-- demo-gif:end -->`, with alt text that says what happens. Until the GIF exists the markers stay empty and the animated flow diagram sits directly under them.
+4. Install. The one-line installers and the demo command, generated from website/src/config/install.json by `uv run python scripts/install_docs.py`. Once `onPyPI` is true the demo block adds `uvx` with the PyPI name. Then one line on what you'll see, generated from the scenario (`uv run python -m openhal.demo.readme`), and the Python versions from requires-python in pyproject.toml.
+5. Why OpenHAL, one paragraph on the problem.
+6. How it works, one paragraph on the flow and four bullets. The flow diagram moves here once the GIF heads the README.
+7. Safety model, at most five bullets, linking to docs/SAFETY.md.
+8. Supported devices. The driver count and families in one sentence and the simulator status, then the table generated from drivers/catalog.json with driver, devices covered, status and hazard default, in a collapsed `<details>`.
+9. Connect Claude or another MCP client, with `openhal init` and `openhal start` in one code block.
+10. Docs and specification, as links, with the MHS mapping and the note that OpenHAL is not affiliated with Anthropic or MHS.
+11. Contributing, then the license.
 
-No demo GIF, no demo panel images, no emoji in headings, no rules between sections.
+The message trace stays in docs/QUICKSTART.md and on the site. One demo GIF and no demo panel images, no emoji in headings, no rules between sections.
 
-Images ship as SVG in light and dark variants through `<picture>` with a `prefers-color-scheme: dark` source, on transparent backgrounds, at most 900 px wide, with descriptive alt text. Text in SVGs is converted to paths or uses an embedded subset font, since GitHub loads no web fonts. No JavaScript and no external files inside SVGs.
+Images ship as SVG in light and dark variants through `<picture>` with a `prefers-color-scheme: dark` source, on transparent backgrounds, at most 900 px wide, with descriptive alt text. The demo GIF is the one raster image, also at most 900 px wide. Text in SVGs is converted to paths or uses an embedded subset font, since GitHub loads no web fonts. No JavaScript and no external files inside SVGs.
 
 All diagrams (flow, architecture, sequence, discovery, driver writer) use one D2 house style with light and dark variants.
 
-Verify by rendering the README in GitHub's light and dark modes and at phone width. The animation plays, reduced motion shows static lines, nothing looks like a slab, all image text reads at 100 % zoom, and the diagram and quickstart are visible without scrolling at 1440 by 900.
+Verify by rendering the README in GitHub's light and dark modes and at phone width. The animation plays, reduced motion shows static lines, nothing looks like a slab, all image text reads at 100 % zoom, and the first visual, the install commands and the demo command are visible without scrolling at 1440 by 900.
 
 ## Generic-ness tests
 

@@ -217,14 +217,15 @@ def test_there_are_tested_snippets() -> None:
 
 
 def commands(text: str) -> list[str]:
-    block = re.search(r"^## Quickstart\n.*?^```[a-z]*\n(.*?)^```", text, re.M | re.S)
-    assert block, "README.md has no Quickstart code block."
+    block = re.search(r"^<!-- demo:start -->\n.*?^```[a-z]*\n(.*?)^```", text, re.M | re.S)
+    assert block, "README.md has no demo code block."
     return [line.strip() for line in block.group(1).splitlines() if line.strip()]
 
 
 def test_home_demo_matches_the_readme() -> None:
-    """The home page runs the demo with the openhal its install box puts on PATH, and the README from a clone."""
+    """The home page and the README run the demo with the openhal the installer puts on PATH."""
     readme = commands((ROOT / "README.md").read_text(encoding="utf-8"))
     home = snippets(ROOT / "website" / "src" / "content" / "snippets" / "quickstart.md")[0]
     ours = [line[2:] for line in home.body.splitlines() if line.startswith("$ ")]
-    assert ours == [readme[-1].removeprefix("uv run ")]
+    install = json.loads((ROOT / "website" / "src" / "config" / "install.json").read_text(encoding="utf-8"))
+    assert ours == readme == [install["demo"]["command"]]
