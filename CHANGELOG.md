@@ -19,7 +19,7 @@ The first release. Every driver is tested on a simulator, and none is tested on 
 - `openhal demo`, an agent babysitting a 3D print on a simulated Klipper printer and camera, with no hardware and no API key. `openhal demo --full` runs the whole system with a simulated plant waterer.
 - 35 drivers, from serial, Firmata and the OpenHAL Arduino library to Klipper, OctoPrint, SCPI instruments, Home Assistant, ESPHome, MQTT, Modbus, ROS 2, OPC UA and MuJoCo. Each driver passes the conformance suite against a simulator.
 - The OpenHAL Arduino library, which describes a board to the hub and offers each free pin as a channel.
-- A device library of 33 device files. Every file is unverified until a person checks its limits.
+- A device library of 33 device files. Every file is unverified until a person checks the file's limits.
 - The Inspector, a browser dashboard for devices, held requests, limits and the audit log.
 - The driver writer, which drafts a device file for an unknown device, and routines and runs for timed steps.
 - The Python client, `openhal.connect` and `openhal.aconnect`.

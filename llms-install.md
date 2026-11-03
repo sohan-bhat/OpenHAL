@@ -24,7 +24,7 @@ The installer needs nothing installed first and puts the `openhal` command in `~
 openhal init --yes --no-discover
 ```
 
-This creates the config folder `~/.openhal`, the person's own token and a simulated plant waterer to try commands on, and adds OpenHAL to Claude Code, Claude Desktop and Cursor when they are installed. `--no-discover` skips the device search. To search for devices too, ask the person and then run `openhal init --yes`, which sends only read-only identify commands.
+This creates the config folder `~/.openhal`, the person's own token and a simulated plant waterer to try commands on, and adds OpenHAL to Claude Code, Claude Desktop and Cursor when those clients are installed. `--no-discover` skips the device search. To search for devices too, ask the person and then run `openhal init --yes`, which sends only read-only identify commands.
 
 ## 3. Start the hub
 
