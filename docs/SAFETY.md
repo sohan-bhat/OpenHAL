@@ -58,13 +58,14 @@ The hub gives every channel and action a level from what it is, using only the d
 | Reading a channel | low |
 | The device file's own `hazard` | at least that level |
 | A temperature, length, speed, acceleration, force, torque or pressure unit | high |
-| A power above 100 W, a voltage above 50 V or a current above 10 A | high, below that medium |
+| A power above 100 W, a voltage above 50 V or a current above 10 A, either sign | high, below that medium |
 | An angle, angular speed, volume, flow or mass unit | medium |
 | A light unit such as lux or candela | low |
 | Words for heat, mains switching, machine motion or force in the name, such as heater, relay, joint or spindle | high |
 | Words for pumps, valves, flow, motors, fans and servos in the name | medium |
 | Words for light, sound or a display in the name, such as brightness, buzzer or text | low |
 | No such words in the name | the words of the device's own name |
+| Low words in the name of a device whose name names something high, such as a heat lamp | high |
 | A channel mapped to a bare pin, with no such words | at least medium |
 | Three or more angle or length channels on one device, such as an arm's joints | each of them high |
 | A missing unit (dimensionless) or a unit the table doesn't list | one level up |

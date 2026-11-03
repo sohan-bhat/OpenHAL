@@ -125,6 +125,10 @@ class RiskChanges(HeldChanges[RiskRequest]):
 
     async def apply(self, change: RiskChange, who: Principal) -> Path:
         """Write the level into the file and give it to the running hub. `who` is a human principal."""
+        async with self.hub.file_lock:
+            return await self._apply(change, who)
+
+    async def _apply(self, change: RiskChange, who: Principal) -> Path:
         path, data = self._read(change.device)
         updated = copy.deepcopy(data)
         section = KINDS[change.target.partition(":")[0]]
@@ -137,11 +141,13 @@ class RiskChanges(HeldChanges[RiskRequest]):
             file = from_data(updated)
         except DeviceFileError as exc:
             raise LimitError("bad_request", "Blocked. " + " ".join(exc.problems)) from exc
-        if risk.level(file, change.target) != change.after:
+        found = risk.assess(file)[change.target]
+        if found.level != change.after:
+            why = [reason for reason in found.reasons if reason.startswith(("shares its pin", "changes "))]
             raise LimitError(
                 "misconfigured",
-                f"Blocked. {change.device}.{change.name} shares its pin with a higher target, so it stays "
-                f"{risk.level(file, change.target)}. Change that one too.",
+                f"Blocked. {change.device}.{change.name} stays {found.level}, because it "
+                f"{'; '.join(why) or 'has a higher level elsewhere'}. Change that one first.",
             )
         text = yaml.safe_dump(updated, sort_keys=False, allow_unicode=True, width=100)
         await asyncio.to_thread(path.write_text, text, "utf-8")
@@ -149,7 +155,7 @@ class RiskChanges(HeldChanges[RiskRequest]):
         async with runtime.lock:
             runtime.file = file
         self.hub.audit.append(
-            "risk_change",
+            self.EVENT,
             who.label,
             device=change.device,
             target=change.target,
@@ -169,7 +175,6 @@ class RiskChanges(HeldChanges[RiskRequest]):
                 raise LimitError(
                     "not_permitted", "Blocked. Only a person changes a risk level. describe_device shows every level."
                 )
-            self._read(device_id)
             change = self.plan(device_id, name, level)
             if not change.lowers:
                 await self.apply(change, who)
@@ -179,10 +184,11 @@ class RiskChanges(HeldChanges[RiskRequest]):
                     raise LimitError("bad_request", f"Blocked. Type {APPLY_PHRASE} to lower a risk level.")
                 await self.apply(change, who)
                 return self._result("done", change, f"Done. {change.said()}.")
+            self._read(device_id)
             held = self.hold(change, who)
         except LimitError as error:
             self.hub.audit.append(
-                "risk_change",
+                self.EVENT,
                 who.label,
                 device=device_id,
                 target=name,

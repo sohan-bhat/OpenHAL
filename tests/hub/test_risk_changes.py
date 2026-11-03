@@ -7,6 +7,7 @@ none, and each change lands in the device file and the audit log, so it survives
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,8 @@ write:
   brightness: { unit: percent, min: 0, max: 100, suggested: true }
   heater: { unit: percent, min: 0, max: 100, suggested: true, map: { pin: 5 } }
   pin5: { type: bool, suggested: true, map: { pin: 5 } }
+actions:
+  preheat: { effects: [heater], suggested: true }
 provenance: { source: self-described }
 """
 
@@ -78,7 +81,13 @@ def on_disk(hub: Hub) -> Any:
 async def test_every_token_sees_every_level(client: httpx.AsyncClient, tokens: dict[str, str]) -> None:
     shown = (await client.get("/v1/devices/board/risk", headers=bearer(tokens["agent"]))).json()
     levels = {target: item["level"] for target, item in shown["targets"].items()}
-    assert levels == {"read:uptime": "low", "write:brightness": "low", "write:heater": "high", "write:pin5": "high"}
+    assert levels == {
+        "read:uptime": "low",
+        "write:brightness": "low",
+        "write:heater": "high",
+        "write:pin5": "high",
+        "action:preheat": "high",
+    }
     assert shown["targets"]["write:heater"]["read_only"] is True
     assert shown["targets"]["write:pin5"]["shared_with"] == ["write:heater"]
     view = (await client.get("/v1/devices/board", headers=bearer(tokens["agent"]))).json()
@@ -173,3 +182,30 @@ async def test_a_level_survives_a_restart(hub: Hub, client: httpx.AsyncClient, t
         assert again.risk.show("board")["targets"]["write:brightness"]["level"] == "medium"
     finally:
         await again.close()
+
+
+async def test_a_level_held_up_by_another_target_says_which(client: httpx.AsyncClient, tokens: dict[str, str]) -> None:
+    result = await change(client, tokens["person"], "preheat", "low", phrase="confirm")
+    assert (result["status"], result["code"]) == ("blocked", "misconfigured")
+    assert "changes heater, which is high" in result["message"]
+
+
+async def test_two_changes_at_once_both_land(hub: Hub, client: httpx.AsyncClient, tokens: dict[str, str]) -> None:
+    first, second = await asyncio.gather(
+        change(client, tokens["person"], "brightness", "high"),
+        change(client, tokens["person"], "heater", "medium", phrase="confirm"),
+    )
+    assert (first["status"], second["status"]) == ("done", "done")
+    saved = on_disk(hub)
+    assert saved.write["brightness"].risk.level == "high"
+    assert saved.write["heater"].risk.level == "medium"
+
+
+async def test_a_level_edited_on_disk_must_be_loaded_first(
+    hub: Hub, client: httpx.AsyncClient, tokens: dict[str, str]
+) -> None:
+    path = hub.config.devices_dir / "board.hal.yaml"
+    path.write_text(path.read_text().replace("map: { pin: 5 } }\n  pin5", "map: { pin: 5 }, risk: high }\n  pin5", 1))
+    result = await change(client, tokens["person"], "brightness", "medium")
+    assert (result["status"], result["code"]) == ("blocked", "misconfigured")
+    assert "changed on disk" in result["message"]

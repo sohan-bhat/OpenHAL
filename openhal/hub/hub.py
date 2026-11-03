@@ -71,6 +71,8 @@ class Hub:
         )
         self.in_memory = in_memory
         self.info: dict[str, DeviceInfo] = {}
+        self.file_lock = asyncio.Lock()
+        """Held while a limit or risk change reads, changes and writes a device file, so no change is lost."""
         from openhal.routines.engine import RoutineEngine
 
         self.routines = RoutineEngine(self)

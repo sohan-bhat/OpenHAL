@@ -152,12 +152,18 @@ def device_file(hub: Hub, device_id: str) -> tuple[Path, dict[str, Any], DeviceF
         on_disk = from_data(data)
     except (OSError, DeviceFileError) as exc:
         raise LimitError("misconfigured", f"Blocked. {path.name} doesn't load. {exc}") from exc
-    if on_disk.limits_sha256() != runtime.file.limits_sha256():
+    if on_disk.limits_sha256() != runtime.file.limits_sha256() or _levels(on_disk) != _levels(runtime.file):
         raise LimitError(
             "misconfigured",
             f"Blocked. {path.name} changed on disk after the hub loaded the file. Load the file first.",
         )
     return path, data, on_disk
+
+
+def _levels(file: DeviceFile) -> dict[str, Any]:
+    """Every `risk` entry of a file, which the limits hash leaves out."""
+    entries: list[tuple[str, Any]] = [*file.write.items(), *file.actions.items()]
+    return {name: spec.risk for name, spec in entries if spec.risk is not None}
 
 
 class HeldChanges[R: HeldRequest]:
@@ -399,7 +405,18 @@ class LimitChanges(HeldChanges[LimitRequest]):
 
     async def apply(self, change: Change, who: Principal) -> Path:
         """Write the change into the file, confirmed by `who`, and load the file. `who` is a human principal."""
+        async with self.hub.file_lock:
+            return await self._apply(change, who)
+
+    async def _apply(self, change: Change, who: Principal) -> Path:
         path, data = self._read(change.device, change.channel)
+        bound = data.get("confirmed") if isinstance(data.get("confirmed"), dict) else None
+        if bound is not None and bound.get("sha256") and bound["sha256"] != from_data(data).limits_sha256():
+            raise LimitError(
+                "read_only_file",
+                f"Blocked. The confirmation in {path.name} no longer matches its limits, so a change here would "
+                f"confirm limits nobody checked. Answer them again with openhal file confirm {path}.",
+            )
         updated = copy.deepcopy(data)
         spec = updated["write"][change.channel]
         spec["min"], spec["max"] = _tidy(change.after["min"]), _tidy(change.after["max"])

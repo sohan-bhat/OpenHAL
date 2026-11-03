@@ -329,7 +329,7 @@ void OpenHAL::reserve(uint8_t pin) { claim(pin); }
 
 void OpenHAL::claim(int pin) {
 #if OPENHAL_PINS
-  if (pin >= 0 && pin < OPENHAL_PIN_COUNT) claimed_[pin / 8] |= static_cast<uint8_t>(1 << (pin % 8));
+  if (pin >= 0 && pin < OPENHAL_PIN_COUNT && pin != OPENHAL_NO_PIN) claimed_[pin / 8] |= static_cast<uint8_t>(1 << (pin % 8));
 #else
   (void)pin;
 #endif
@@ -874,7 +874,7 @@ void OpenHAL::sendDescription(unsigned int seq) {
       put(",\"hi\":");
       putNumber(reading.hi_);
     }
-    if (reading.pin_ >= 0) {
+    if (reading.pin_ != OPENHAL_NO_PIN) {
       put(",\"g\":");
       putNumber(reading.pin_);
     }
@@ -915,7 +915,7 @@ void OpenHAL::sendDescription(unsigned int seq) {
       put(",\"t\":");
       putNumber(static_cast<float>(output.timeout_));
     }
-    if (output.pin_ >= 0) {
+    if (output.pin_ != OPENHAL_NO_PIN) {
       put(",\"g\":");
       putNumber(output.pin_);
     }

@@ -18,7 +18,7 @@ import yaml
 from openhal.hub.api import create_app
 from openhal.hub.config import HubConfig
 from openhal.hub.hub import Hub
-from openhal.spec.loader import load, parse_yaml
+from openhal.spec.loader import from_data, load, parse_yaml
 from openhal.writer import interview
 
 LAMP = """\
@@ -29,6 +29,16 @@ connect: { mock: desk-lamp }
 write:
   brightness: { unit: percent, min: 0, max: 100, suggested: true, risk: high }
 provenance: { source: self-described }
+"""
+
+BENCH = """\
+openhal: "0.1"
+device: Bench board
+id: bench
+connect: { mock: bench }
+write:
+  brightness: { unit: percent, min: 0, max: 60 }
+  heater: { unit: percent, min: 0, max: 50 }
 """
 
 
@@ -258,3 +268,21 @@ async def test_a_range_that_leaves_out_the_safe_value_is_blocked(
     assert result["status"] == "blocked"
     assert "The safe value 0 % would sit outside 10 % to 80 %" in result["message"]
     assert lamp_file(hub).write["brightness"].min == 0
+
+
+async def test_a_stale_confirmation_is_never_signed_again(
+    hub: Hub, client: httpx.AsyncClient, tokens: dict[str, str]
+) -> None:
+    """A change to a low channel must not confirm a high one someone edited after the confirmation."""
+    data = parse_yaml(BENCH)
+    data["confirmed"] = {"by": "owner", "at": "2026-11-03", "sha256": from_data(data).limits_sha256()}
+    data["write"]["heater"]["max"] = 90
+    path = hub.config.devices_dir / "bench.hal.yaml"
+    path.write_text(yaml.safe_dump(data, sort_keys=False))
+    await hub.load_device_file(path)
+    assert hub.kernel.devices["bench"].file.read_only("write:heater")
+    body = {"device": "bench", "channel": "brightness", "max": {"value": 100, "unit": "%"}, "phrase": "confirm"}
+    result = (await client.post("/v1/limits", json=body, headers=bearer(tokens["person"]))).json()
+    assert (result["status"], result["code"]) == ("blocked", "read_only_file")
+    assert "no longer matches" in result["message"]
+    assert hub.kernel.devices["bench"].file.read_only("write:heater")

@@ -301,3 +301,15 @@ def test_the_table_names_no_maker_or_product() -> None:
         names |= {word for word in risk.tokens(load(path).device.manufacturer) if len(word) >= risk.DEVICE_WORD_MIN}
     words = {word for row in risk.WORDS for word in row.words} | {stem for row in risk.WORDS for stem in row.stems}
     assert not words & names
+
+
+def test_a_low_word_on_a_device_named_for_something_high_is_high() -> None:
+    assert level(device("Reptile heat lamp", write=write("lamp")), "write:lamp") == "high"
+    assert level(device("Desk fan", write=write("status_led")), "write:status_led") == "low"
+
+
+def test_a_bipolar_range_counts_by_its_far_end() -> None:
+    supply = device(write={"output": {"unit": "V", "min": -200, "max": 5}})
+    assert level(supply, "write:output") == "high"
+    sink = device(actions={"sink": {"args": {"current": {"unit": "A", "min": -30, "max": 0}}}})
+    assert level(sink, "action:sink") == "high"

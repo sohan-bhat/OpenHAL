@@ -10,13 +10,14 @@ so no device name or id appears anywhere in them.
 | Reading a channel | low |
 | The device file's own `hazard` | at least that level |
 | A temperature, length, speed, acceleration, force, torque or pressure unit | high |
-| A power above 100 W, a voltage above 50 V or a current above 10 A | high, below that medium |
+| A power above 100 W, a voltage above 50 V or a current above 10 A, either sign | high, below that medium |
 | An angle, angular speed, volume, flow or mass unit | medium |
 | A light unit such as lux or candela | low |
 | Words for heat, mains switching, machine motion or force in the name | high |
 | Words for pumps, valves, flow, motors, fans and servos in the name | medium |
 | Words for light, sound or a display in the name | low |
 | No such words in the name | the words of the device's own name |
+| Low words in the name of a device whose name names something high, such as a heat lamp | high |
 | A channel mapped to a bare pin, with no words in its name | at least medium |
 | Three or more angle or length channels on one device, such as an arm's joints | each of them high |
 | A missing unit (dimensionless) or a unit the table doesn't list | one level up |
@@ -46,7 +47,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 from openhal.spec.units import UnitError, angle_power, convert, normalize_unit, parse_unit, registry
 
 if TYPE_CHECKING:
-    from openhal.spec.models import Action, DeviceFile, WriteChannel
+    from openhal.spec.models import Action, ArgSpec, DeviceFile, WriteChannel
 
 Level = Literal["low", "medium", "high"]
 LEVELS: Final[tuple[Level, ...]] = ("low", "medium", "high")
@@ -268,7 +269,7 @@ def _dimension(unit: str) -> Dimension | None:
 
 
 def unit_signal(unit: str | None, maximum: float | None) -> UnitSignal:
-    """The level a write channel's or argument's unit gives, with its maximum in that unit."""
+    """The level a write channel's or argument's unit gives, with the largest magnitude it reaches in that unit."""
     if unit is None:
         return UnitSignal(None, None)
     if normalize_unit(unit) == "dimensionless":
@@ -315,7 +316,9 @@ def _base(
 ) -> _Draft:
     """The level from words and units, before the device-wide rules."""
     own = word_levels(name_words)
-    if own:
+    if own and highest(*(level for level, _ in own)) == "low" and any(level == "high" for level, _ in device_words):
+        draft = _Draft("high", [f"{own[0][1]}, but the device name names something high, so high"])
+    elif own:
         draft = _Draft(highest(*(level for level, _ in own)), [reason for _, reason in own])
     elif device_words:
         draft = _Draft(
@@ -347,8 +350,14 @@ def _pin(mapping: dict[str, Any] | None) -> str | None:
     return str(value)
 
 
+def _reach(spec: WriteChannel | ArgSpec) -> float | None:
+    """The largest magnitude a number can take, so a bipolar range counts by its far end."""
+    ends = [abs(value) for value in (spec.min, spec.max) if value is not None]
+    return max(ends) if ends else None
+
+
 def _channel_draft(name: str, spec: WriteChannel, device_words: list[tuple[Level, str]]) -> tuple[_Draft, bool]:
-    signal = unit_signal(spec.unit, spec.max) if spec.type == "number" else UnitSignal(None, None)
+    signal = unit_signal(spec.unit, _reach(spec)) if spec.type == "number" else UnitSignal(None, None)
     draft = _base(
         tokens(name),
         tokens(*spec.values),
@@ -361,7 +370,7 @@ def _channel_draft(name: str, spec: WriteChannel, device_words: list[tuple[Level
 
 def _action_draft(name: str, spec: Action, device_words: list[tuple[Level, str]]) -> tuple[_Draft, int]:
     """The action's draft level, and how many of its arguments move an axis."""
-    signals = [unit_signal(arg.unit, arg.max) for arg in spec.args.values() if arg.type == "number"]
+    signals = [unit_signal(arg.unit, _reach(arg)) for arg in spec.args.values() if arg.type == "number"]
     extra = tokens(spec.description, *spec.args, *(value for arg in spec.args.values() for value in arg.values))
     draft = _base(tokens(name), extra, device_words, signals, bare_pin=_pin(spec.map) is not None)
     return draft, sum(1 for signal in signals if signal.motion)

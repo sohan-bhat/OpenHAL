@@ -16,6 +16,7 @@
 #define OPENHAL_MAX_STATES 8
 #define OPENHAL_LINE_MAX 250
 #define OPENHAL_PROTOCOL 1
+#define OPENHAL_NO_PIN 255
 
 #ifndef OPENHAL_PINS
 #if defined(NUM_DIGITAL_PINS)
@@ -68,7 +69,7 @@ class OpenHalReading {
   bool hasRange_ = false;
   float lo_ = 0;
   float hi_ = 0;
-  int8_t pin_ = -1;
+  uint8_t pin_ = OPENHAL_NO_PIN;
 };
 
 class OpenHalOutput {
@@ -96,7 +97,7 @@ class OpenHalOutput {
   unsigned long runFor_ = 0;
   bool onOff_ = false;
   bool internal_ = false;
-  int8_t pin_ = -1;
+  uint8_t pin_ = OPENHAL_NO_PIN;
 };
 
 class OpenHalAction {
