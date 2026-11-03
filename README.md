@@ -127,7 +127,7 @@ openhal init
 openhal start
 ```
 
-Any other MCP client can start `openhal mcp` over stdio with an agent token of its own, as [the MCP guide](docs/interfaces/MCP.md) shows. [Connect Claude](docs/guide/tutorials/connect-claude.md) walks through the setup by hand.
+Any other MCP client can start `openhal mcp` over stdio with a separate agent token, as [the MCP guide](docs/interfaces/MCP.md) shows. [Connect Claude](docs/guide/tutorials/connect-claude.md) walks through the setup by hand.
 
 ## Docs and specification
 

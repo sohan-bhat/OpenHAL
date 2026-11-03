@@ -26,7 +26,7 @@ body:
     id: channels
     attributes:
       label: Readings, controls and actions
-      description: What an agent should read and change, with units and ranges where you know them.
+      description: What an agent should read and change, with the units and ranges you know.
       placeholder: |
         read: hotend temperature in degC, job progress in percent
         control: hotend target from 0 to 280 degC
