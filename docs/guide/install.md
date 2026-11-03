@@ -14,7 +14,7 @@ irm https://sohan-bhat.github.io/OpenHAL/install.ps1 | iex
 ```
 <!-- install:end -->
 
-The installer needs nothing installed first. When uv is missing, the installer puts [uv](https://docs.astral.sh/uv/) 0.13.5 in `~/.local/bin` with Astral's own installer, and uv then installs OpenHAL in an environment of its own with Python 3.12. Every dependency comes as a prebuilt wheel, so nothing needs a compiler. The installer needs no sudo and writes only to uv's own folders, so when `~/.local/bin` isn't on your PATH, the installer prints the line that adds the folder.
+The installer needs nothing installed first. When uv is missing, the installer puts [uv](https://docs.astral.sh/uv/) 0.13.5 in `~/.local/bin` with Astral's own installer, and uv then installs OpenHAL in an environment of its own with Python 3.12. Every dependency comes as a prebuilt wheel, so nothing needs a compiler. The installer needs no sudo and changes nothing outside uv's own folders, so when `~/.local/bin` isn't on your PATH, the installer prints the line that adds the folder.
 
 - Running the installer again upgrades OpenHAL in place.
 - Until the first release on PyPI, the installer installs OpenHAL from the repository's main branch.
