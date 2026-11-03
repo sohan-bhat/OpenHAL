@@ -628,6 +628,11 @@ class DeviceFile(_Strict):
 
     def high_risk(self) -> list[str]:
         """Every write channel and action at the high risk level, as `write.<name>` or `actions.<name>`."""
+        from openhal.spec.risk import memo
+
+        return list(memo(self, "high_risk", self._high_risk))
+
+    def _high_risk(self) -> list[str]:
         from openhal.spec.risk import assess
 
         levels = assess(self)

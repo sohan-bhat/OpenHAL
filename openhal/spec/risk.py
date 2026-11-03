@@ -43,10 +43,10 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Literal
 
-from openhal.spec.units import UnitError, convert, normalize_unit, parse_unit, registry
+from openhal.spec.units import UnitError, angle_power, convert, normalize_unit, parse_unit, registry
 
 if TYPE_CHECKING:
-    from openhal.spec.models import Action, ArgSpec, DeviceFile, WriteChannel
+    from openhal.spec.models import Action, DeviceFile, WriteChannel
 
 Level = Literal["low", "medium", "high"]
 LEVELS: Final[tuple[Level, ...]] = ("low", "medium", "high")
@@ -206,19 +206,12 @@ class Assessment:
 
 def highest(*levels: Level) -> Level:
     """The highest of the given levels, low when none is given."""
-    best: Level = "low"
-    for level in levels:
-        if RANK[level] > RANK[best]:
-            best = level
-    return best
+    return max(levels, key=RANK.__getitem__, default="low")
 
 
 def lowest(*levels: Level) -> Level:
-    best: Level = "high"
-    for level in levels:
-        if RANK[level] < RANK[best]:
-            best = level
-    return best
+    """The lowest of the given levels, high when none is given."""
+    return min(levels, key=RANK.__getitem__, default="high")
 
 
 def up(level: Level) -> Level:
@@ -267,8 +260,7 @@ def _dimension(unit: str) -> Dimension | None:
     dims = tuple(
         sorted((str(key), int(float(str(value)))) for key, value in registry().get_dimensionality(parsed).items())
     )
-    _factor, root = registry().get_root_units(parsed)
-    angle = int(float(str(dict(root._units).get("radian", 0))))  # noqa: SLF001
+    angle = int(angle_power(parsed))
     for row in UNITS:
         if row.dimensions == dims and row.angle == angle:
             return row
@@ -367,14 +359,12 @@ def _channel_draft(name: str, spec: WriteChannel, device_words: list[tuple[Level
     return draft, signal.motion
 
 
-def _action_draft(name: str, spec: Action, device_words: list[tuple[Level, str]]) -> _Draft:
+def _action_draft(name: str, spec: Action, device_words: list[tuple[Level, str]]) -> tuple[_Draft, int]:
+    """The action's draft level, and how many of its arguments move an axis."""
     signals = [unit_signal(arg.unit, arg.max) for arg in spec.args.values() if arg.type == "number"]
     extra = tokens(spec.description, *spec.args, *(value for arg in spec.args.values() for value in arg.values))
-    return _base(tokens(name), extra, device_words, signals, bare_pin=_pin(spec.map) is not None)
-
-
-def _arg_motion(args: dict[str, ArgSpec]) -> int:
-    return sum(1 for arg in args.values() if arg.type == "number" and unit_signal(arg.unit, arg.max).motion)
+    draft = _base(tokens(name), extra, device_words, signals, bare_pin=_pin(spec.map) is not None)
+    return draft, sum(1 for signal in signals if signal.motion)
 
 
 def _entries(file: DeviceFile) -> list[tuple[str, WriteChannel | Action]]:
@@ -397,8 +387,8 @@ def _drafts(file: DeviceFile) -> dict[str, _Draft]:
         for target in motion:
             drafts[target].raise_to("high", f"one of {len(motion)} motion axes on this device")
     for name, action in file.actions.items():
-        draft = _action_draft(name, action, device_words)
-        if _arg_motion(action.args) >= AXES_FOR_MACHINE:
+        draft, axes = _action_draft(name, action, device_words)
+        if axes >= AXES_FOR_MACHINE:
             draft.raise_to("high", "moves three or more axes at once")
         drafts[f"action:{name}"] = draft
     if file.hazard is not None:
@@ -501,11 +491,8 @@ def level(file: DeviceFile, target: str) -> Level:
 
 
 def undoable(file: DeviceFile, action: str) -> bool:
-    """True when the hub can undo the action, because its effects are write channels or the safe state runs it."""
-    spec = file.actions[action]
-    if any(step.action == action for step in file.safe_state):
-        return True
-    return bool(spec.effects) and all(effect in file.write for effect in spec.effects)
+    """True when the hub can undo the action. It lists effects, always write channels, or the safe state runs it."""
+    return bool(file.actions[action].effects) or any(step.action == action for step in file.safe_state)
 
 
 def tier(file: DeviceFile, target: str, written: str) -> str:

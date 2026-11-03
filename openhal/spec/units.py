@@ -116,7 +116,7 @@ def convert(quantity: pint.Quantity, unit: str) -> float:
     return _finite(float(converted.magnitude), "Converted value")
 
 
-def _angle_power(unit: pint.Unit) -> float:
+def angle_power(unit: pint.Unit) -> float:
     """How many angles a unit carries, 1 for degree, rad/s or rpm and 0 for percent or Hz."""
     _factor, root = registry().get_root_units(unit)
     power = dict(root._units).get("radian", 0)  # noqa: SLF001
@@ -129,7 +129,7 @@ def _same_angle(source: pint.Unit, target: pint.Unit, shown: str) -> None:
     pint treats angles as plain numbers, so it would turn 50 % into 28.6 degrees and 1 Hz into
     9.55 rpm. Both sides of a conversion must carry the same angle (drivers batch 3, proposal 1).
     """
-    if _angle_power(source) != _angle_power(target):
+    if angle_power(source) != angle_power(target):
         name = f"{source:~P}" or "A plain number"
         raise UnitError(f"{name} can't be converted to {shown}, because only one of them is an angle.")
 

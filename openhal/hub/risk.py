@@ -16,19 +16,16 @@ import asyncio
 import copy
 import datetime as dt
 import secrets
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final
+from typing import Any, Final
 
 import yaml
 
-from openhal.hub.limits import APPLY_PHRASE, APPROVE_PHRASE, MAX_PENDING, PER_PRINCIPAL, LimitError, Status
+from openhal.hub.limits import APPLY_PHRASE, APPROVE_PHRASE, HeldChanges, HeldRequest, LimitError, device_file
 from openhal.kernel.principals import Principal
 from openhal.spec import risk
-from openhal.spec.loader import DeviceFileError, from_data, parse_yaml
-
-if TYPE_CHECKING:
-    from openhal.hub.hub import Hub
+from openhal.spec.loader import DeviceFileError, from_data
 
 KINDS: Final = {"write": "write", "action": "actions"}
 
@@ -67,51 +64,23 @@ class RiskChange:
 
 
 @dataclass
-class RiskRequest:
+class RiskRequest(HeldRequest):
     """A lowering held until a person approves it."""
 
-    request_id: str
     change: RiskChange
-    principal: Principal
-    created_at: float
-    expires_at: float
-    status: Status = "pending"
-    decided_by: str | None = None
-    result: str | None = None
-    history: list[str] = field(default_factory=list)
 
 
-class RiskChanges:
+class RiskChanges(HeldChanges[RiskRequest]):
     """Risk level changes for one hub, with the pending lowerings a person approves."""
 
-    def __init__(self, hub: Hub) -> None:
-        self.hub = hub
-        self.requests: dict[str, RiskRequest] = {}
-        hub.kernel.on_stop(self._on_stop)
+    EVENT = "risk_change"
+    NOUN = "risk change"
 
-    def _on_stop(self, reason: str) -> None:
-        for request in self.requests.values():
-            if request.status == "pending":
-                self._close(request, "cancelled", "system", f"cancelled by the stop, {reason}")
+    def _target(self, change: RiskChange) -> str:
+        return change.target
 
     def _read(self, device_id: str) -> tuple[Path, dict[str, Any]]:
-        """The device's file as data, checked to be the file the hub runs."""
-        runtime = self.hub.kernel.devices.get(device_id)
-        info = self.hub.info.get(device_id)
-        if runtime is None:
-            raise KeyError(f"There is no device {device_id!r}.")
-        if info is None or not info.path:
-            raise LimitError("misconfigured", f"Blocked. {device_id} has no device file in the devices folder.")
-        path = Path(info.path)
-        try:
-            data = parse_yaml(path.read_text(encoding="utf-8"))
-            on_disk = from_data(data)
-        except (OSError, DeviceFileError) as exc:
-            raise LimitError("misconfigured", f"Blocked. {path.name} doesn't load. {exc}") from exc
-        if on_disk.limits_sha256() != runtime.file.limits_sha256():
-            raise LimitError(
-                "misconfigured", f"Blocked. {path.name} changed on disk after the hub loaded the file. Load it first."
-            )
+        path, data, _file = device_file(self.hub, device_id)
         return path, data
 
     def show(self, device_id: str) -> dict[str, Any]:
@@ -233,57 +202,10 @@ class RiskChanges:
         return {"status": status, "message": message, **change.view()}
 
     def hold(self, change: RiskChange, who: Principal) -> RiskRequest:
-        self.expire()
-        pending = [item for item in self.requests.values() if item.status == "pending"]
-        mine = [item for item in pending if item.principal == who]
-        if len(mine) >= PER_PRINCIPAL or len(pending) >= MAX_PENDING:
-            raise LimitError("queue_full", "Blocked. Too many changes are waiting for a person already.")
+        self._make_room(who)
         now = self.hub.kernel.clock()
         request = RiskRequest(f"risk-{secrets.token_hex(6)}", change, who, now, now + self.hub.config.confirm.ttl_s)
-        self.requests[request.request_id] = request
-        self.hub.audit.append(
-            "risk_change",
-            who.label,
-            device=change.device,
-            target=change.target,
-            status="pending",
-            request=request.request_id,
-            before=change.before,
-            after=change.after,
-        )
-        return request
-
-    def get(self, request_id: str) -> RiskRequest | None:
-        return self.requests.get(request_id)
-
-    def expire(self) -> None:
-        now = self.hub.kernel.clock()
-        for request in self.requests.values():
-            if request.status == "pending" and now > request.expires_at:
-                self._close(request, "expired", "system", "expired")
-
-    def _close(self, request: RiskRequest, status: Status, by: str, note: str) -> None:
-        request.status = status
-        request.decided_by = by if status in ("done", "rejected") else request.decided_by
-        request.result = note
-        request.history.append(note)
-        self.hub.audit.append(
-            "risk_change",
-            by,
-            device=request.change.device,
-            target=request.change.target,
-            status=status,
-            request=request.request_id,
-            message=note,
-        )
-
-    def pending(self) -> list[RiskRequest]:
-        self.expire()
-        return sorted((item for item in self.requests.values() if item.status == "pending"), key=_created)
-
-    def recent(self, limit: int = 100) -> list[RiskRequest]:
-        self.expire()
-        return sorted(self.requests.values(), key=_created, reverse=True)[:limit]
+        return self._filed(request, before=change.before, after=change.after)
 
     async def approve(self, request_id: str, who: Principal, phrase: str | None) -> RiskRequest:
         """A person approves a pending lowering. The level must still be what it was when it was asked for."""
@@ -303,14 +225,6 @@ class RiskChanges:
             self._close(request, "blocked", who.label, str(getattr(error, "message", error)))
             return request
         self._close(request, "done", who.label, f"Done. {change.said()}.")
-        return request
-
-    def reject(self, request_id: str, who: Principal, reason: str = "") -> RiskRequest:
-        request = self.requests[request_id]
-        self.expire()
-        if request.status != "pending":
-            raise LookupError(f"The risk change {request_id} is {request.status}, so there is nothing to reject.")
-        self._close(request, "rejected", who.label, f"Rejected. {reason}".strip())
         return request
 
     def view(self, request: RiskRequest) -> dict[str, Any]:
@@ -343,7 +257,3 @@ class RiskChanges:
             "decided_by": request.decided_by,
             "result": result,
         }
-
-
-def _created(request: RiskRequest) -> float:
-    return request.created_at

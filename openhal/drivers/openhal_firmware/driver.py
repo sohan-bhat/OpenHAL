@@ -363,32 +363,35 @@ class OpenHalFirmwareDriver(Driver):
         except ProtocolError as exc:
             raise DriverError(f"The board sent an unreadable value for pin {pin}.") from exc
 
-    async def _pin_read(self, channel: str, pin: int, kind: str) -> Reading:
+    def _pin_reading(self, channel: str, kind: str, state: str, value: float) -> Reading:
+        """A pin channel's value from the board's `PIN <n> <state> <value>` reply."""
         unit = self.device.channel_unit(channel)
-        if kind == "adc":
-            _state, value = await self._pin_request(pin, "adc")
-            return Reading(channel, value, unit)
-        state, value = await self._pin_request(pin, "get")
         if kind == "mode":
             return Reading(channel, MODE_VALUES.get(state, "input"), unit)
         if kind == "pwm":
             shown = value if state == "pwm" else (100.0 * value if state == "out" else 0.0)
             return Reading(channel, shown, unit)
+        if kind == "adc":
+            return Reading(channel, value, unit)
         return Reading(channel, value != 0, unit)
+
+    async def _pin_read(self, channel: str, pin: int, kind: str) -> Reading:
+        state, value = await self._pin_request(pin, "adc" if kind == "adc" else "get")
+        return self._pin_reading(channel, kind, state, value)
 
     async def _pin_write(self, channel: str, pin: int, kind: str, value: float | bool | str) -> Reading:
         if kind == "mode":
             words = {"input": ("in",), "input_pullup": ("pullup",), "output": ("out", "0"), "pwm": ("pwm", "0")}
             if value not in words:
                 raise DriverError(f"{channel} takes input, input_pullup, output or pwm.")
-            await self._pin_request(pin, *words[str(value)])
+            state, shown = await self._pin_request(pin, *words[str(value)])
         elif kind == "pwm" and not isinstance(value, str):
-            await self._pin_request(pin, "pwm", format_number(float(value)))
+            state, shown = await self._pin_request(pin, "pwm", format_number(float(value)))
         elif kind == "out" and isinstance(value, bool):
-            await self._pin_request(pin, "out", "1" if value else "0")
+            state, shown = await self._pin_request(pin, "out", "1" if value else "0")
         else:
             raise DriverError(f"{channel} doesn't take {value!r}.")
-        return await self._pin_read(channel, pin, kind)
+        return self._pin_reading(channel, kind, state, shown)
 
     async def read(self, channel: str) -> Reading:
         pin = self._pin(channel)
