@@ -79,7 +79,9 @@ async def test_every_driver_discovers_nothing(name: str) -> None:
 
 
 async def test_a_camera_set_to_auto_never_opens() -> None:
-    file = loads("device: Cam\nid: cam\nconnect: { uvc: auto, timeout: 60 }\nread:\n  frame: { type: image }\nhazard: low\n")
+    file = loads(
+        "device: Cam\nid: cam\nconnect: { uvc: auto, timeout: 60 }\nread:\n  frame: { type: image }\nhazard: low\n"
+    )
     with pytest.raises(DriverError, match="Could not open camera 0"):
         await UvcDriver(file).connect()
 
