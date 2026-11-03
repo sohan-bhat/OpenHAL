@@ -20,7 +20,7 @@
 				default: "min-h-9 px-4 text-base",
 				sm: "min-h-[30px] px-3 text-sm",
 				inline: "h-auto p-0 text-sm",
-				stop: "min-h-12 min-w-28 px-4 text-xl font-extrabold tracking-[0.08em] md:min-h-[52px] md:min-w-[148px] md:px-6 md:text-2xl",
+				stop: "min-h-12 min-w-28 px-4 text-xl font-bold tracking-[0.08em] md:min-h-[52px] md:min-w-[148px] md:px-6 md:text-2xl",
 			},
 		},
 		defaultVariants: {
