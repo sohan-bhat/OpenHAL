@@ -95,7 +95,7 @@ def never_confirmed(path: Path) -> None:
     text = path.read_text()
     assert "confirmed" not in text, "init must never confirm limits for the person"
     file = load(path)
-    assert file.writable is not bool(file.high_risk()), "only high risk entries wait for a person"
+    assert file.writable is not bool(file.guarded()), "only guarded entries wait for a person"
     assert all(entry.suggested for entry in [*file.write.values(), *file.actions.values()])
 
 

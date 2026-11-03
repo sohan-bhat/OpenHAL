@@ -210,7 +210,7 @@ async def test_every_example_describes_itself_into_a_valid_read_only_file(
     assert described is not None
     draft = from_data({"device": described.pop("device")["name"], "connect": {"openhal-firmware": "auto"}, **described})
     assert draft.write or draft.actions, f"{example} has no outputs or actions"
-    assert draft.writable is not bool(draft.high_risk()), "only high risk entries wait for a person"
+    assert draft.writable is not bool(draft.guarded()), "only guarded entries wait for a person"
     assert all(entry.suggested for entry in [*draft.write.values(), *draft.actions.values()])
     if example == "BareBoard":
         assert draft.write["brightness"].map == {"pin": 13}
