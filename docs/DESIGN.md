@@ -49,7 +49,7 @@ A two-column trace of a request and the hub's answer, the way a protocol spec sh
 
 ### The home page hero
 
-The hero is centered in the column, which the owner's brief of 2026-10-29 allows, because the hero holds only the wordmark with its [hardware], [abstraction] and [layer] labels and two actions, Get started and Read the specification. The hero has no tagline and no sentence under the wordmark, which the owner removed on 2026-10-30, and the tagline stays the home page's title and description. The hero shows no diagram, and the sections under the hero keep the column's left edge. The full-screen H, A and L sections are gone, and the docs' Concepts page explains the name under "What the name means". The hero draws the built wordmark, one path per letter, so the labels sit under the H, the A and the L, and the heading's own text names OpenHAL for screen readers and search.
+The hero is centered in the column, which the owner's brief of 2026-10-29 allows, because the hero holds only the wordmark with its [hardware], [abstraction] and [layer] labels and two actions, Get started and Read the specification. The hero has no tagline and no sentence under the wordmark, which the owner removed on 2026-10-30, the home page's tab title is just OpenHAL, at the owner's request of 2026-11-02, and the tagline stays the home page's description. The hero shows no diagram, and the sections under the hero keep the column's left edge. The full-screen H, A and L sections are gone, and the docs' Concepts page explains the name under "What the name means". The hero draws the built wordmark, one path per letter, so the labels sit under the H, the A and the L, and the heading's own text names OpenHAL for screen readers and search.
 
 ### How it works
 
@@ -374,7 +374,7 @@ Copy
 
 The repository README follows this structure, in this order, left-aligned.
 
-1. The wordmark (SVG, light and dark) and one sentence. "An open-source protocol for AI agents to control hardware." No second sentence and no subtitle. The same sentence is the home page's title, the default OG description, the pyproject description and the GitHub repository description.
+1. The wordmark (SVG, light and dark) and one sentence. "An open-source protocol for AI agents to control hardware." No second sentence and no subtitle. The same sentence is the home page's description and social title, the default OG description, the pyproject description and the GitHub repository description.
 2. Two neutral badges, the license and CI.
 3. The animated flow diagram, directly under the badges.
 4. Quickstart. Three commands in one code block, then one line on what you'll see, generated from the scenario.

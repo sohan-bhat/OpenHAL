@@ -24,7 +24,7 @@ const points = [
 const after = "safe";
 const site = JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: PRODUCT_NAME, alternateName: PRODUCT_LONG_NAME, url: new URL("/", Astro.site).href });
 const head = [
-  { tag: "title" as const, content: `${PRODUCT_NAME}. ${HOME_TITLE}` },
+  { tag: "title" as const, content: PRODUCT_NAME },
   { tag: "meta" as const, attrs: { property: "og:title", content: `${PRODUCT_NAME}. ${HOME_TITLE}` } },
   { tag: "meta" as const, attrs: { name: "application-name", content: PRODUCT_NAME } },
   { tag: "link" as const, attrs: { rel: "expect", href: `#${after}`, blocking: "render" } },
