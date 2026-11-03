@@ -12,6 +12,8 @@ import tomllib
 from pathlib import Path
 from typing import Final
 
+import yaml
+
 import openhal
 from openhal._brand import CLI_NAME, DAEMON_ALIAS, DISTRIBUTION_NAME, PACKAGE_NAME
 
@@ -61,6 +63,14 @@ def test_the_import_package_and_commands_keep_their_names() -> None:
 def test_the_distribution_name_runs_the_same_cli() -> None:
     """`uvx halkit` and `pipx run halkit` run the command named like the package, so halkit is the openhal CLI."""
     assert PROJECT["scripts"][DISTRIBUTION_NAME] == PROJECT["scripts"][CLI_NAME]
+
+
+def test_the_install_matrix_runs_every_python_the_classifiers_name() -> None:
+    """CI installs the wheel and the sdist on each Python the package says it supports, and on no other."""
+    prefix = "Programming Language :: Python :: "
+    named = {item.removeprefix(prefix) for item in PROJECT["classifiers"] if item.startswith(prefix + "3.")}
+    ci = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8"))
+    assert set(ci["jobs"]["install"]["strategy"]["matrix"]["python"]) == named
 
 
 def test_the_lock_file_follows_pyproject() -> None:
