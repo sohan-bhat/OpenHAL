@@ -95,7 +95,8 @@ GIF_START, GIF_END = "<!-- demo-gif:start -->", "<!-- demo-gif:end -->"
 
 def test_the_readme_runs_in_order() -> None:
     text = README.read_text(encoding="utf-8")
-    marks = ["docs/assets/wordmark-light.svg", f"\n{DESCRIPTION}\n", "[![License]", "[![CI]", GIF_START, *README_SECTIONS]
+    head = ["docs/assets/wordmark-light.svg", f"\n{DESCRIPTION}\n", "[![License]", "[![CI]", GIF_START]
+    marks = [*head, *README_SECTIONS]
     places = [text.index(mark) for mark in marks]
     assert places == sorted(places)
     assert re.findall(r"^## .+$", text, re.M) == list(README_SECTIONS)

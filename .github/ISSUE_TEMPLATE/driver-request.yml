@@ -1,0 +1,65 @@
+name: Driver request
+description: A device protocol that no OpenHAL driver covers yet.
+title: "Driver request: "
+labels: ["enhancement", "driver"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One driver covers a whole protocol family, so check `openhal driver list` and the [drivers page](https://sohan-bhat.github.io/OpenHAL/drivers/) first. A device that uses a protocol an existing driver covers needs a device file instead, and the device file request form is for that.
+  - type: input
+    id: protocol
+    attributes:
+      label: Protocol or interface
+      description: How a program talks to the device.
+      placeholder: Duet RepRapFirmware HTTP API, Dynamixel Protocol 2.0 over serial
+    validations:
+      required: true
+  - type: textarea
+    id: devices
+    attributes:
+      label: Devices the driver would cover
+      description: Makers and models that use this protocol.
+    validations:
+      required: true
+  - type: textarea
+    id: channels
+    attributes:
+      label: Readings, controls and actions
+      description: What an agent should read and change, with units and ranges where you know them.
+      placeholder: |
+        read: hotend temperature in degC, job progress in percent
+        control: hotend target from 0 to 280 degC
+        actions: pause, resume, cancel
+    validations:
+      required: true
+  - type: textarea
+    id: hazards
+    attributes:
+      label: Hazards and the safe state
+      description: Heat, motion, mains power or anything else that can hurt a person or damage the device, and the state the device should go to on a stop.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Protocol documentation
+      description: Links to the protocol reference, a Python library or an existing integration for the protocol.
+    validations:
+      required: true
+  - type: dropdown
+    id: access
+    attributes:
+      label: Access to the device
+      options:
+        - I own a device and can run a hardware test plan
+        - I own a device but can only run read-only tests
+        - I don't have a device
+    validations:
+      required: true
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Help
+      options:
+        - label: I'd like to build the driver with the guide in docs/drivers/WRITING-A-DRIVER.md

@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or idea
+    url: https://github.com/sohan-bhat/OpenHAL/discussions
+    about: Ask a question or share an idea in Discussions.
+  - name: Documentation
+    url: https://sohan-bhat.github.io/OpenHAL/docs/
+    about: The quickstart, the guides and the reference for the CLI, MCP and Python.
+  - name: Security or safety problem
+    url: https://github.com/sohan-bhat/OpenHAL/security/advisories/new
+    about: Report privately and never in a public issue, as SECURITY.md describes.

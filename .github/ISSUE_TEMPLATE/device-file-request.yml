@@ -1,0 +1,59 @@
+name: Device file request
+description: A device file for a device model that an existing driver already covers.
+title: "Device file request: "
+labels: ["enhancement", "device file"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A device file in `library/` describes one device model for an existing driver, and every limit in the file is a suggestion that stays read-only until the device's owner confirms the limit. `openhal library list` shows the files that exist, and library files are released under CC0. A protocol that no driver covers needs a driver request instead.
+  - type: input
+    id: model
+    attributes:
+      label: Maker and model
+      placeholder: Siglent SPD3303X-E
+    validations:
+      required: true
+  - type: input
+    id: driver
+    attributes:
+      label: Driver
+      description: The driver from `openhal driver list` that talks to the device, or "not sure".
+      placeholder: scpi
+    validations:
+      required: true
+  - type: textarea
+    id: identifiers
+    attributes:
+      label: How discovery finds the device
+      description: The USB vendor and product ids, the `*IDN?` reply, the BLE name or the mDNS service type the device reports, with a source for each.
+  - type: textarea
+    id: channels
+    attributes:
+      label: Readings, controls and actions
+      description: Names, units and ranges from the datasheet or the manual.
+      placeholder: |
+        read: output voltage in V, output current in A
+        control: voltage setpoint from 0 to 32 V
+        actions: output on, output off
+    validations:
+      required: true
+  - type: textarea
+    id: limits
+    attributes:
+      label: Suggested limits and the safe state
+      description: The lowest sensible maximum for each control, anything with heat, motion or mains power, and the state the device should go to on a stop.
+  - type: textarea
+    id: sources
+    attributes:
+      label: Datasheet or manual
+      description: Links to the documents the readings, controls and limits come from.
+    validations:
+      required: true
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Help
+      options:
+        - label: I can draft the file with docs/guide/tutorials/add-a-device.md
+        - label: I own the device and can check the file against the device
