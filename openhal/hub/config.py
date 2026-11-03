@@ -5,6 +5,7 @@ Every setting has a safe default, so a missing file is fine. LAN access is off u
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 from typing import Any, Final
@@ -99,14 +100,16 @@ class HubConfig(BaseModel):
         self.home.chmod(0o700)
 
 
-_TOP_KEY: Final = re.compile(r"^[A-Za-z_][\w-]*\s*:")
+_OUTSIDE: Final = re.compile(r"^\S")
+"""A line that starts at column 0 ends a section, a comment as much as the next key."""
 
 
 def save_section(home: Path, name: str, values: dict[str, Any]) -> Path:
     """Write one top-level section of config.yaml and keep every other line, comments included.
 
-    The section's old lines are replaced, or the section is added at the end. The result must
-    still load, so a bad value never reaches the file.
+    The section's old lines, up to the next line at column 0, are replaced, or the section is added
+    at the end. The result must still load, so a bad value never reaches the file, and the new file
+    replaces the old one in one step, so a crash never leaves half a file.
     """
     path = home / "config.yaml"
     lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
@@ -115,13 +118,15 @@ def save_section(home: Path, name: str, values: dict[str, Any]) -> Path:
     if start is None:
         kept = [*lines, *block]
     else:
-        end = next((index for index in range(start + 1, len(lines)) if _TOP_KEY.match(lines[index])), len(lines))
+        end = next((index for index in range(start + 1, len(lines)) if _OUTSIDE.match(lines[index])), len(lines))
         kept = [*lines[:start], *block, *lines[end:]]
     text = "\n".join(kept) + "\n"
     data = yaml.safe_load(text) or {}
     HubConfig.model_validate({**data, "home": home})
-    path.write_text(text, encoding="utf-8")
-    path.chmod(0o600)
+    staged = path.with_name(f".{path.name}.{os.getpid()}.new")
+    staged.write_text(text, encoding="utf-8")
+    staged.chmod(0o600)
+    os.replace(staged, path)
     return path
 
 

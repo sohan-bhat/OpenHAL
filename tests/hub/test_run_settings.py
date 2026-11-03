@@ -45,6 +45,16 @@ def test_a_section_in_the_middle_keeps_the_sections_after_it(tmp_path: Path) -> 
     assert (config.runs.max_steps, config.runs.per_agent, config.confirm.ttl_s) == (20, 2, 60)
 
 
+def test_a_comment_after_the_section_stays_and_no_staged_file_is_left(tmp_path: Path) -> None:
+    path = tmp_path / "config.yaml"
+    path.write_text("runs:\n  max_steps: 10\n# stop_button: tune for the Pi\nstop_button:\n  pull_up: true\n")
+    save_section(tmp_path, "runs", {"max_steps": 20})
+    text = path.read_text(encoding="utf-8")
+    assert "# stop_button: tune for the Pi\nstop_button:" in text
+    assert load_config(tmp_path).runs.max_steps == 20
+    assert list(tmp_path.iterdir()) == [path]
+
+
 def test_a_missing_section_or_file_is_added(tmp_path: Path) -> None:
     save_section(tmp_path, "runs", {"per_agent": 3})
     assert load_config(tmp_path).runs.per_agent == 3
