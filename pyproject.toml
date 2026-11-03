@@ -1,6 +1,6 @@
 [project]
 name = "halkit"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "An open-source protocol for AI agents to control hardware."
 readme = "README.md"
 license = "Apache-2.0"

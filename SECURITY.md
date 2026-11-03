@@ -6,14 +6,12 @@ If something is moving, heating or switching right now and should not be, run `u
 
 ## Supported versions
 
-OpenHAL has no release yet. Fixes land on `main`.
+0.1.0 is the first release. The newest release and `main` get security fixes, and fixes land on `main` first.
 
 | Version | Supported |
 |---|---|
-| `main` (0.1.0.dev0) | yes |
-| anything older | no |
-
-Once releases start, the newest release and `main` get security fixes.
+| 0.1.x | yes |
+| `main` | yes |
 
 ## Report a problem privately
 

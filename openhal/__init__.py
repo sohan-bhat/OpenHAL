@@ -10,7 +10,7 @@ from typing import Any
 
 from openhal._brand import PRODUCT_NAME, SPEC_VERSION
 
-__version__ = "0.1.0.dev0"
+__version__ = "0.1.0"
 
 __all__ = ["PRODUCT_NAME", "SPEC_VERSION", "__version__", "aconnect", "connect"]
 
