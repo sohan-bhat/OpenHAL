@@ -63,6 +63,10 @@ opcua = ["asyncua>=2.1.0"]
 sila2 = ["sila2>=0.14.0"]
 alpaca = ["httpx>=0.28.1"]
 pylabrobot = ["pylabrobot>=0.2.2"]
+mujoco = [
+  "mujoco>=3.3,<3.11; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+  "mujoco>=3.3; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+]
 
 [project.scripts]
 openhal = "openhal.cli.main:app"
@@ -117,7 +121,7 @@ module = ["openhal.kernel.*", "openhal.spec.*", "openhal.audit.*", "openhal.driv
 strict = true
 
 [[tool.mypy.overrides]]
-module = ["regex"]
+module = ["regex", "mujoco"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
