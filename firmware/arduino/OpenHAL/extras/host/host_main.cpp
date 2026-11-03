@@ -20,10 +20,7 @@ unsigned long millis() {
   return static_cast<unsigned long>((now.tv_sec - started.tv_sec) * 1000L + (now.tv_nsec - started.tv_nsec) / 1000000L);
 }
 
-void pinMode(int pin, int mode) {
-  (void)pin;
-  (void)mode;
-}
+void pinMode(int pin, int mode) { fprintf(stderr, "mode %d = %d\n", pin, mode); }
 
 void digitalWrite(int pin, int value) { analogWrite(pin, value); }
 
@@ -42,7 +39,7 @@ void analogWrite(int pin, int value) {
 
 int analogRead(int pin) {
   char name[32];
-  snprintf(name, sizeof name, "OPENHAL_HOST_A%d", pin - A0);
+  snprintf(name, sizeof name, "OPENHAL_HOST_A%d", pin >= A0 ? pin - A0 : pin - PIN_A0);
   const char* value = getenv(name);
   return value ? atoi(value) : 512;
 }

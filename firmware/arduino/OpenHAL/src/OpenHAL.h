@@ -17,6 +17,33 @@
 #define OPENHAL_LINE_MAX 250
 #define OPENHAL_PROTOCOL 1
 
+#ifndef OPENHAL_PINS
+#if defined(NUM_DIGITAL_PINS)
+#define OPENHAL_PINS 1
+#else
+#define OPENHAL_PINS 0
+#endif
+#endif
+#ifndef OPENHAL_PWM_BITS
+#define OPENHAL_PWM_BITS 8
+#endif
+#ifndef OPENHAL_ADC_BITS
+#if defined(ARDUINO_ARCH_ESP32)
+#define OPENHAL_ADC_BITS 12
+#else
+#define OPENHAL_ADC_BITS 10
+#endif
+#endif
+#if OPENHAL_PINS
+#if defined(PIN_A0) && defined(NUM_ANALOG_INPUTS) && (PIN_A0 + NUM_ANALOG_INPUTS > NUM_DIGITAL_PINS)
+#define OPENHAL_PIN_COUNT (PIN_A0 + NUM_ANALOG_INPUTS)
+#else
+#define OPENHAL_PIN_COUNT NUM_DIGITAL_PINS
+#endif
+#else
+#define OPENHAL_PIN_COUNT 0
+#endif
+
 typedef float (*OpenHalReadFn)();
 typedef void (*OpenHalWriteFn)(float value);
 typedef const char* (*OpenHalActionFn)(const float* args);
@@ -26,6 +53,7 @@ class OpenHalReading {
   OpenHalReading& every(unsigned long ms);
   OpenHalReading& range(float lo, float hi);
   OpenHalReading& states(const char* const* labels, uint8_t count);
+  OpenHalReading& pin(uint8_t number);
 
  private:
   friend class OpenHAL;
@@ -40,6 +68,7 @@ class OpenHalReading {
   bool hasRange_ = false;
   float lo_ = 0;
   float hi_ = 0;
+  int8_t pin_ = -1;
 };
 
 class OpenHalOutput {
@@ -50,6 +79,7 @@ class OpenHalOutput {
   OpenHalOutput& timeout(unsigned long ms);
   OpenHalOutput& onOff();
   OpenHalOutput& internal();
+  OpenHalOutput& pin(uint8_t number);
 
  private:
   friend class OpenHAL;
@@ -66,6 +96,7 @@ class OpenHalOutput {
   unsigned long runFor_ = 0;
   bool onOff_ = false;
   bool internal_ = false;
+  int8_t pin_ = -1;
 };
 
 class OpenHalAction {
@@ -96,6 +127,9 @@ class OpenHAL {
     return output(name, unit, fn).limits(min, max).safe(min);
   }
   void heartbeat(unsigned long ms);
+  void pins();
+  void reserve(uint8_t pin);
+  uint8_t pinModes(uint8_t pin) const;
 
   void begin(Stream& port);
   void poll();
@@ -109,10 +143,17 @@ class OpenHAL {
   void handleWrite(unsigned int seq, char* name, char* text);
   void handleAction(unsigned int seq, char** parts, uint8_t count);
   void handleRead(unsigned int seq, char* name);
+  void handlePin(unsigned int seq, char** parts, uint8_t count);
+  void putPin(unsigned int seq, uint8_t pin, uint8_t state, float value);
+  void putPins();
+  bool releasePins();
+  bool claimed(uint8_t pin) const;
+  void claim(int pin);
   void putReading(const OpenHalReading& reading, float value);
   void sendDescription(unsigned int seq);
   void startLine(unsigned int seq, const char* verb);
   void put(const char* text);
+  void put(const __FlashStringHelper* text);
   void putText(const char* text);
   void putChar(char c);
   void putNumber(float value);
@@ -141,6 +182,16 @@ class OpenHAL {
   OpenHalReading spareReading_;
   OpenHalOutput spareOutput_;
   OpenHalAction spareAction_;
+  bool pinsOn_ = false;
+#if OPENHAL_PINS
+  uint8_t pinState_[OPENHAL_PIN_COUNT] = {0};
+#if OPENHAL_PWM_BITS > 8
+  uint16_t pinDuty_[OPENHAL_PIN_COUNT] = {0};
+#else
+  uint8_t pinDuty_[OPENHAL_PIN_COUNT] = {0};
+#endif
+  uint8_t claimed_[(OPENHAL_PIN_COUNT + 7) / 8] = {0};
+#endif
 };
 
 bool openhalParseNumber(const char* text, float* out);

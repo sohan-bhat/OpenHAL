@@ -1,6 +1,6 @@
 # OpenHAL for Arduino
 
-Add OpenHAL to a sketch and your board describes itself to an OpenHAL hub. The hub builds the device file from that description, you confirm the limits once, and then AI agents and routines can read and control the board through the hub's safety kernel.
+Add OpenHAL to a sketch and your board describes itself to an OpenHAL hub. The hub builds the device file from that description and gives each channel a risk level. AI agents and routines then read and control the board through the hub's safety kernel, at once for low and medium risk channels and once you confirm the limits for high risk ones.
 
 The board also blocks output values outside the limits you set in the sketch, and the board returns every output to its safe value when the hub stops sending heartbeats. The hub's kernel is still the authority, and the board's checks back up the kernel's checks.
 
@@ -65,6 +65,24 @@ An output the hub may set directly works the same way without `.internal()`. The
 | `.arg(name, unit, min, max)` | One argument of an action, up to 3. The board blocks values outside the range |
 | `drive(output, value, ms)` | Set an output from the sketch, and return it to safe after `ms` milliseconds when `ms` isn't 0 |
 | `misconfigured()` | True if a name was invalid, a limit was backwards or there were too many channels. The board then blocks all commands |
+| `pins()` | Offer every free pin on the board to the hub, with its modes |
+| `.pin(number)` | The pin a reading or output uses. The board keeps that pin away from the hub's pin commands |
+| `reserve(pin)` | Keep a pin the sketch uses away from the hub's pin commands |
+
+## Every pin
+
+`hal.pins()` lists every pin the board can give the hub, with the modes the Arduino core reports for it. The modes are digital in, input pull-up, digital out, PWM out and analog in, and the list also marks interrupt pins and the built-in LED. The library reads them from the core's own macros, such as `NUM_DIGITAL_PINS`, `digitalPinHasPWM`, `analogInputToDigitalPin`, `digitalPinToInterrupt` and `LED_BUILTIN`, so the list fits whichever board the sketch is built for.
+
+The board keeps these pins to itself.
+
+- Pins the board needs, such as the serial pins and on an ESP8266 or ESP32 the flash pins
+- Pins a reading or output names with `.pin()`
+- Pins the sketch reserves with `reserve()`
+- Pins the sketch set to output before `begin()`
+
+The hub turns each free pin into channels. `pin<N>` reads the pin and sets it as a digital output, `pin<N>_pwm` sets a PWM duty in percent, `pin<N>_analog` reads an analog input in percent of full scale and `pin<N>_mode` sets input, input_pullup, output or pwm. A command changes the pin's mode as it needs, and an analog read leaves a driven pin alone. A stop, a lost heartbeat and `applySafeState()` return every pin the hub set to input. The hub treats a plain pin as medium risk, because the file has no word for what is wired to it, and a person can change that with `openhal risk set`.
+
+PWM uses 8 bits and analog inputs 10 bits, or 12 on an ESP32. A sketch that changes the PWM range defines `OPENHAL_PWM_BITS` before the include, and `#define OPENHAL_PINS 0` leaves the pin code out to save memory.
 
 Names are lowercase letters, digits and underscores, up to 24 characters, and units use the names in the OpenHAL spec (`degC`, `percent`, `deg`, `V`, `A`, `rpm` and so on). A sketch can have up to 8 readings, 8 outputs and 4 actions by default, and defining `OPENHAL_MAX_READS`, `OPENHAL_MAX_OUTPUTS` or `OPENHAL_MAX_ACTIONS` before the include changes those limits.
 
@@ -77,18 +95,19 @@ Names are lowercase letters, digits and underscores, up to 24 characters, and un
 | LedStrip | An ambient light level and the brightness of a 12 V LED strip | MOSFET gate on pin 6 (GPIO 25), photoresistor divider on A1 (GPIO 34) |
 | ServoArm | A servo angle kept between 20 and 160 degrees so the arm can't hit its end stops. The arm parks at 90 degrees on a stop and when the hub's heartbeat stops. Because the Arduino Servo library doesn't support ESP32, the sketch drives the 50 Hz pulse with the LEDC peripheral on ESP32 | Servo signal on pin 3 (GPIO 13), servo powered from its own 5 V supply |
 | SoilPump | Soil moisture and a pump that stops itself after 20 s, with a local stop button. The board also stops the pump when no heartbeat arrives for 3 s | Capacitive soil sensor on A2 (GPIO 35), pump relay on pin 7 (GPIO 26), button from pin 2 to ground (GPIO 27) |
+| BareBoard | A bare board with nothing wired. The built-in LED as brightness, the boot button, the uptime, the supply voltage on an ESP8266 and every free pin | Nothing to wire |
 
 ## Connecting to the hub
 
-Plug the board in and run `openhal discover`. The hub only sends `HELLO`, which never changes anything, to USB serial ports that belong to common Arduino and ESP32 boards. Then `openhal writer start --driver openhal-firmware --param port=<port>` drafts a device file from the board's own description, with every limit marked suggested, and the hub keeps the device read-only until you confirm the limits. For the plant waterer you can also copy `examples/plant-waterer/plant-waterer.hal.yaml` and follow its test plan.
+Plug the board in and run `openhal discover`. The hub only sends `HELLO`, which never changes anything, to USB serial ports that belong to common Arduino and ESP32 boards. Then `openhal writer start --driver openhal-firmware --param port=<port>` drafts a device file from the board's own description, with every limit marked suggested. Low and medium risk channels take commands within the board's own range at once, and the hub keeps high risk ones read-only until you confirm their limits. For the plant waterer you can also copy `examples/plant-waterer/plant-waterer.hal.yaml` and follow its test plan.
 
 The wire protocol is in `spec/FIRMWARE-PROTOCOL.md` in the OpenHAL repository.
 
 ## Memory
 
-Every example compiles with arduino-cli 1.1.1 for `arduino:avr:uno` (core 1.8.8) and `esp32:esp32:esp32` (Espressif core 3.x) with no warnings from the library. Pins differ per board, so the examples pick ESP32 GPIO numbers when `ESP32` is defined, and ServoArm drives the servo pulse with the LEDC peripheral there because the Arduino Servo library doesn't support ESP32.
+Every example compiles for `arduino:avr:uno` (core 1.8.8 with arduino-cli 1.5.1) and `esp32:esp32:esp32` (Espressif core 3.x with arduino-cli 1.1.1) with no warnings from the library. BareBoard, DeskFan, ServoArm and PlantWaterer also compile for `esp8266:esp8266:generic` (core 3.1.2), while LedStrip and SoilPump name analog pins an ESP8266 lacks. Pins differ per board, so the examples pick ESP32 GPIO numbers when `ESP32` is defined, and ServoArm drives the servo pulse with the LEDC peripheral there because the Arduino Servo library doesn't support ESP32.
 
-The library allocates nothing on the heap, and the DeskFan example on an Uno uses 9.5 KB of flash (29 %) and 1,369 bytes of RAM (66 %), including the Arduino serial buffers. Most of the library's share is the line buffer of 250 bytes and the tables for 8 readings and 8 outputs. Lower `OPENHAL_MAX_READS` and `OPENHAL_MAX_OUTPUTS` to save RAM.
+The library allocates nothing on the heap, and the DeskFan example on an Uno uses 1,799 bytes of RAM (87 %), including the Arduino serial buffers. Most of the library's share is the line buffer of 250 bytes and the tables for 8 readings and 8 outputs. The pin code adds about 45 bytes of RAM on an Uno, because its text stays in flash. Lower `OPENHAL_MAX_READS` and `OPENHAL_MAX_OUTPUTS`, or set `OPENHAL_PINS` to 0, to save RAM.
 
 ## Building on a computer
 

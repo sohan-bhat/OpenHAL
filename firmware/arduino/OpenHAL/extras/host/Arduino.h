@@ -14,6 +14,18 @@
 #define A1 101
 #define A2 102
 #define A3 103
+#define NUM_DIGITAL_PINS 20
+#define NUM_ANALOG_INPUTS 6
+#define PIN_A0 14
+#define LED_BUILTIN 13
+#define NOT_AN_INTERRUPT -1
+#define analogInputToDigitalPin(p) (((p) < 6) ? (p) + 14 : -1)
+#define digitalPinHasPWM(p) ((p) == 3 || (p) == 5 || (p) == 6 || (p) == 9 || (p) == 10 || (p) == 11)
+#define digitalPinToInterrupt(p) ((p) == 2 ? 0 : ((p) == 3 ? 1 : NOT_AN_INTERRUPT))
+
+class __FlashStringHelper;
+#define F(text) (reinterpret_cast<const __FlashStringHelper*>(text))
+#define pgm_read_byte(address) (*reinterpret_cast<const uint8_t*>(address))
 
 template <typename T>
 T constrain(T value, T low, T high) {
