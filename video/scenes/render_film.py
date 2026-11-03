@@ -9,7 +9,8 @@ the shot's frames at the measured size per frame, and stops when the free space 
 the floor. Every shot's wall time and every frame's render time go to video/out/times/.
 
 --stills renders one storyboard still per shot listed in film.json's stills, as PNG files in
-video/out/stills/, with no encode.
+video/out/stills/, with no encode. --measure renders only the frames --frames names in each shot,
+records their render time and PNG size and deletes them, for planning a full render.
 """
 
 from __future__ import annotations
@@ -112,6 +113,8 @@ def main() -> int:
     p.add_argument("--shots", default="", help="comma-separated shot ids, all shots when empty")
     p.add_argument("--crf", type=int, default=16)
     p.add_argument("--stills", action="store_true")
+    p.add_argument("--measure", action="store_true")
+    p.add_argument("--frames", default="", help="frames to render in each shot, with --measure")
     p.add_argument("--mb-per-frame", type=float, default=0.0, help="disk per PNG frame, measured when 0")
     opts = p.parse_args()
     plan = json.loads((SCENES / "film.json").read_text())
@@ -124,7 +127,8 @@ def main() -> int:
     (OUT / "logs").mkdir(parents=True, exist_ok=True)
     (OUT / "times").mkdir(parents=True, exist_ok=True)
     label = f"{opts.aspect}-{width}x{height}-{opts.engine}-{opts.samples}"
-    summary_path = OUT / "times" / f"{'stills' if opts.stills else 'shots'}-{label}.csv"
+    kind = "stills" if opts.stills else "measure" if opts.measure else "shots"
+    summary_path = OUT / "times" / f"{kind}-{label}.csv"
     new = not summary_path.exists()
     mb = opts.mb_per_frame or (width * height * 3 / 1e6) * 0.55
     with summary_path.open("a", newline="") as handle:
@@ -146,7 +150,7 @@ def main() -> int:
             )
         for spec in shots:
             shot_file = json.loads((SCENES / "shots" / "film" / f"{spec['id']}.json").read_text())
-            count = 1 if opts.stills else shot_file["frames"]
+            count = 1 if opts.stills else len(opts.frames.split(",")) if opts.measure else shot_file["frames"]
             need = count * mb / 1e3
             free = free_gb()
             if free - need < FLOOR_GB:
@@ -155,12 +159,12 @@ def main() -> int:
                 )
                 return 2
             name = f"{spec['id']}-{opts.aspect}"
-            frames_dir = OUT / ("stills-frames" if opts.stills else "frames") / name
+            frames_dir = OUT / ("frames" if kind == "shots" else f"{kind}-frames") / name
             if frames_dir.exists():
                 shutil.rmtree(frames_dir)
             print(f"{name}: {count} frames at {width}x{height}, {free:.2f} GB free", flush=True)
             start = time.perf_counter()
-            frames = str(stills[spec["id"]]) if opts.stills else ""
+            frames = str(stills[spec["id"]]) if opts.stills else opts.frames if opts.measure else ""
             blender(
                 spec["id"],
                 opts.aspect,
@@ -177,7 +181,9 @@ def main() -> int:
             mb = used / max(len(pngs), 1)
             per_frame = OUT / "times" / f"{name}-{label}-frames.csv"
             shutil.copyfile(frames_dir / "times.csv", per_frame)
-            if opts.stills:
+            if opts.measure:
+                pass
+            elif opts.stills:
                 target = OUT / "stills" / f"{spec['id']}-{width}x{height}.png"
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(pngs[0], target)

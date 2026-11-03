@@ -261,6 +261,30 @@ def build_shot(spec: dict[str, Any], plan: dict[str, Any], rec: recording.Record
     }
 
 
+def verify(shot: dict[str, Any], rec: recording.Recording) -> str:
+    """Re-read a written shot against the recording, and report how far the arm moves in it."""
+    src = shot["source"]
+    fps = shot["fps"]
+    worst = 0.0
+    for key in shot["arm"]["keys"]:
+        t = src["t_start"] + (key["frame"] - 1) / fps * src["speed"]
+        recorded = rec.joints_at(t)
+        worst = max(worst, max(abs(key["joints"][k] - recorded[k]) for k in recorded))
+    if worst > 0.001:
+        raise SystemExit(f"{shot['name']} keys are {worst:.4f} deg from the recording")
+    keys = shot["arm"]["keys"]
+
+    def travel(first: float, last: float) -> float:
+        inside = [k for k in keys if first <= k["frame"] <= last]
+        return max(abs(k["joints"][n] - inside[0]["joints"][n]) for k in inside for n in k["joints"]) if inside else 0.0
+
+    note = f"keys match the recording within {worst:.4f} deg, arm travel {travel(1, shot['frames']):.2f} deg"
+    stop = next((e for e in shot["events"] if e.get("audit") == "safe_state" and e.get("device") == "arm"), None)
+    if stop is not None:
+        note += f", after the arm's safe state {travel(stop['frame'] + 1, shot['frames']):.4f} deg"
+    return note
+
+
 def main() -> int:
     """Write shots/film/<id>.json for every shot and shots/film/edit.json for the whole film."""
     plan = json.loads(PLAN.read_text())
@@ -307,7 +331,8 @@ def main() -> int:
             start += black
         print(
             f"{spec['id']:12s} {shot['frames']:4d} frames  beat {shot['source']['beat']:15s} "
-            f"{shot['source']['t_start']:8.4f} to {shot['source']['t_end']:8.4f} s at {spec['speed']}x"
+            f"{shot['source']['t_start']:8.4f} to {shot['source']['t_end']:8.4f} s at {spec['speed']}x, "
+            f"{verify(shot, rec)}"
         )
     card = plan["end_card"]
     frames = round(card["seconds"] * fps)
