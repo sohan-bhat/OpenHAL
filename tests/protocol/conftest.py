@@ -78,7 +78,7 @@ device: Draft lamp
 id: draft-lamp
 connect: { mock: lamp }
 write:
-  brightness: { unit: percent, min: 0, max: 100 }
+  brightness: { unit: percent, min: 0, max: 100, risk: high }
 """
 
 VERSION = "0.1"

@@ -95,4 +95,6 @@ def test_library_loader_skips_duplicates(tmp_path: Path) -> None:
     (tmp_path / "a" / "fan.hal.yaml").write_text(DESK_FAN_LIBRARY)
     (tmp_path / "b" / "fan.hal.yaml").write_text(DESK_FAN_LIBRARY)
     assert len(load_library([tmp_path / "a", tmp_path / "b"])) == 1
-    assert loads(DESK_FAN_LIBRARY).writable is False
+    fan = loads(DESK_FAN_LIBRARY)
+    assert fan.confirmed is None
+    assert fan.writable, "a medium fan takes commands within its suggested range"

@@ -412,7 +412,6 @@ def description(hub: Hub, device_id: str) -> m.DeviceDescription:
     """Everything a client needs before a write, including who confirmed the limits and when."""
     runtime = hub.kernel.devices[device_id]
     file = runtime.file
-    high = file.effective_hazard == "high"
     read = {
         name: m.ReadChannelInfo(
             type=spec.type,
@@ -431,13 +430,14 @@ def description(hub: Hub, device_id: str) -> m.DeviceDescription:
             min=spec.min,
             max=spec.max,
             step=spec.step,
-            max_change_per_s=spec.max_change_per_s,
+            max_change_per_s=views.applied_rate(file, name),
             values=spec.values or None,
             max_length=spec.max_length,
             pattern=spec.pattern,
-            confirm="confirm-each-time" if high else spec.confirm,
+            confirm=views.confirm_tier(file, f"write:{name}", spec.confirm),
             suggested=spec.suggested,
             confirmed=_confirmed(confirmation(file, channel=name)),
+            **views.target_risk(file, f"write:{name}"),
         )
         for name, spec in file.write.items()
     }
@@ -447,9 +447,10 @@ def description(hub: Hub, device_id: str) -> m.DeviceDescription:
             args={arg: arg_spec.model_dump(exclude_none=True) for arg, arg_spec in spec.args.items()},
             require=[condition for condition, _message in spec.conditions],
             effects=spec.effects,
-            confirm="confirm-each-time" if high else spec.confirm,
+            confirm=views.confirm_tier(file, f"action:{name}", spec.confirm),
             suggested=spec.suggested,
             confirmed=_confirmed(confirmation(file, action=name)),
+            **views.target_risk(file, f"action:{name}"),
         )
         for name, spec in file.actions.items()
     }
