@@ -31,10 +31,10 @@ Frames 1, 94 and 150 agree. Cycles looks best, EEVEE is a close second, and the 
 |---|---|---|---|
 | Cycles, CPU | 16 samples, adaptive, OpenImageDenoise, motion blur, depth of field | 725 | 30 hours |
 | EEVEE, GPU | 32 samples | 78 | 3.2 hours |
-| EEVEE, GPU | 16 samples, used for the full test | 53 (36 at best) | 2.2 hours |
+| EEVEE, GPU | 16 samples, used for the full test | 43 on average (27 at best) | 1.8 hours, measured |
 | Remotion, WebGL | concurrency 1, PNG frames, H.264 | 2.3 | 6 minutes |
 
-Most runs shared the machine with another render. The Cycles figure and the EEVEE 32-sample figure come from runs with no other render going, and the same Cycles frame took 1122 seconds while EEVEE and Remotion also ran. EEVEE's 53 seconds is the median of the full test, with Cycles on the CPU at the same time. Remotion took 2.3 seconds a frame with Cycles on the CPU and 6.8 seconds a frame while EEVEE also held the GPU.
+Most runs shared the machine with another render. The Cycles figure and the EEVEE 32-sample figure come from runs with no other render going, and the same Cycles frame took 1122 seconds while EEVEE and Remotion also ran. EEVEE's 43 seconds is the mean over all 150 frames of the full test. Cycles, and for a while Remotion, ran beside it for the first 65 frames, which averaged 54 seconds, and the other 85 frames, with no other render of this test going, averaged 34. Remotion took 2.3 seconds a frame with Cycles on the CPU and 6.8 seconds a frame while EEVEE also held the GPU.
 
 Cycles can't use the GPU here. Blender 4.5 lists only the CPU for Metal, and according to the Blender 4.5 manual, Metal rendering works on Apple Silicon only. A full Cycles test shot at 4K would take about 30 hours, and a 1080p pass with 6 samples ran at about 105 seconds a frame while EEVEE shared the machine. A moving Cycles version could never serve a 60-second film here, so Cycles rendered three key frames at 4K, the start (frame 1), the grip (frame 94) and the end (frame 150), to show the quality ceiling. EEVEE at 32 samples would pass 3 hours, so EEVEE rendered the whole shot at 4K with 16 samples. Remotion rendered the whole shot at 4K.
 
@@ -69,13 +69,13 @@ The film is about 60 seconds at 30 frames a second, 1800 frames at 3840 by 2160,
 | Pass | Per frame | Frames | Time |
 |---|---|---|---|
 | EEVEE 960 by 540 previews, 16 samples, to lock the edit | 6 s | 1800 | 3 hours |
-| EEVEE 4K finals, 16 samples | 53 s | 1800 | 26.5 hours |
+| EEVEE 4K finals, 16 samples | 43 s | 1800 | 21.5 hours |
 | Cycles 4K stills for holds and the poster frame, 16 samples | 725 s | about 5 | 1 hour |
-| EEVEE vertical 1080 by 1920 reframes, 16 samples | about 15 s, scaled from 4K by pixel count | 1800 | 7.5 hours |
+| EEVEE vertical 1080 by 1920 reframes, 16 samples | about 12 s, scaled from 4K by pixel count | 1800 | 6 hours |
 | Remotion type layer and edit at 4K | 2.3 s | 1800 | 70 minutes |
 | Remotion vertical edit | under 1 s, scaled from 4K | 1800 | 30 minutes |
 
-That is about 40 hours of rendering, five overnight runs of 8 hours, with every pass on a shared machine. Shots where the action sits in the middle of the frame can be cropped from the 4K master to 1215 by 2160 and scaled to 1080 by 1920 with no new render, and cropping every shot brings the total to about 32 hours. Rendering the finals one shot at a time with nothing else running moves EEVEE toward its best case of 36 seconds a frame, about 18 hours for the finals. Rendering the whole film in Cycles would take about 15 days on this machine, so Cycles stays limited to stills.
+That is about 33 hours of rendering, four overnight runs of 8 hours. Shots where the action sits in the middle of the frame can be cropped from the 4K master to 1215 by 2160 and scaled to 1080 by 1920 with no new render, and cropping every shot brings the total to about 27 hours. Rendering the finals one shot at a time with nothing else running brings EEVEE to about 34 seconds a frame, about 17 hours for the finals. Rendering the whole film in Cycles would take about 15 days on this machine, so Cycles stays limited to stills.
 
 Disk. A 4K PNG frame is about 6 MB, so the whole film as frames would need about 11 GB, more than the machine has free. Each shot renders into `video/out/frames/`, encodes to an H.264 intermediate at CRF 12 (about 20 to 60 MB a shot), and its frames are deleted before the next shot starts. The largest shot, about 300 frames, needs about 2 GB while it renders. The intermediates for the whole film take about 0.5 GB, and the masters take about 300 MB for 4K and 60 MB for the vertical cut. With about 6 GB free, the run keeps more than 3 GB free throughout.
 
