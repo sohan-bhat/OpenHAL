@@ -8,14 +8,14 @@ runs `openhal mcp` from the halkit package at the version in pyproject.toml.
 from __future__ import annotations
 
 import json
-import tomllib
 from pathlib import Path
 from typing import Any, Final
 
+from openhal import __version__
 from openhal._brand import CLI_NAME, DISTRIBUTION_NAME
 
 ROOT: Final = Path(__file__).resolve().parents[2]
-VERSION: Final = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+VERSION: Final = __version__
 RUN_FROM_PYPI: Final = {"command": "uvx", "args": ["--from", f"{DISTRIBUTION_NAME}=={VERSION}", CLI_NAME, "mcp"]}
 
 

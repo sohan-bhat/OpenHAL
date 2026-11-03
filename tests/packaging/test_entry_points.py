@@ -14,7 +14,6 @@ from importlib.metadata import distribution
 from pathlib import Path
 
 import pytest
-from typer.testing import CliRunner
 
 from openhal import __version__
 from openhal._brand import CLI_NAME, DISTRIBUTION_NAME
@@ -22,15 +21,13 @@ from openhal._brand import CLI_NAME, DISTRIBUTION_NAME
 COMMANDS = (CLI_NAME, DISTRIBUTION_NAME)
 
 
-@pytest.mark.parametrize("name", COMMANDS)
-def test_the_entry_point_is_the_cli(name: str) -> None:
+def test_both_entry_points_are_the_cli() -> None:
     scripts = {
-        entry.name: entry for entry in distribution(DISTRIBUTION_NAME).entry_points if entry.group == "console_scripts"
+        entry.name: entry.value
+        for entry in distribution(DISTRIBUTION_NAME).entry_points
+        if entry.group == "console_scripts"
     }
-    assert scripts[name].value == "openhal.cli.main:app"
-    result = CliRunner().invoke(scripts[name].load(), ["--version"])
-    assert result.exit_code == 0, result.output
-    assert result.output == f"{CLI_NAME} {__version__}\n"
+    assert {scripts[name] for name in COMMANDS} == {"openhal.cli.main:app"}
 
 
 @pytest.mark.parametrize("name", COMMANDS)

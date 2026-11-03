@@ -19,36 +19,31 @@ TIMING = ROOT / "scripts" / "time-first-read"
 
 
 @pytest.fixture(scope="module")
-def wheel(tmp_path_factory: pytest.TempPathFactory) -> zipfile.ZipFile:
+def dist(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """One `uv build`, which makes the sdist and then the wheel from the sdist, as a release does."""
     uv = shutil.which("uv")
     if uv is None:
         pytest.skip("uv is not installed")
     out = tmp_path_factory.mktemp("dist")
     done = subprocess.run(
-        [uv, "build", "--wheel", "--quiet", "--out-dir", str(out), str(ROOT)],
+        [uv, "build", "--quiet", "--out-dir", str(out), str(ROOT)],
         capture_output=True,
         text=True,
         timeout=300,
         check=False,
     )
     assert done.returncode == 0, done.stderr
-    return zipfile.ZipFile(next(out.glob("*.whl")))
+    return out
 
 
-def test_the_sdist_holds_the_package_and_what_the_wheel_takes_in(tmp_path: Path) -> None:
+@pytest.fixture(scope="module")
+def wheel(dist: Path) -> zipfile.ZipFile:
+    return zipfile.ZipFile(next(dist.glob("*.whl")))
+
+
+def test_the_sdist_holds_the_package_and_what_the_wheel_takes_in(dist: Path) -> None:
     """The sdist leaves out the website, the dashboard, the film and the docs, so PyPI gets a small file fast."""
-    uv = shutil.which("uv")
-    if uv is None:
-        pytest.skip("uv is not installed")
-    done = subprocess.run(
-        [uv, "build", "--sdist", "--quiet", "--out-dir", str(tmp_path), str(ROOT)],
-        capture_output=True,
-        text=True,
-        timeout=300,
-        check=False,
-    )
-    assert done.returncode == 0, done.stderr
-    with tarfile.open(next(tmp_path.glob("*.tar.gz"))) as sdist:
+    with tarfile.open(next(dist.glob("*.tar.gz"))) as sdist:
         names = {Path(name).relative_to(f"{DISTRIBUTION_NAME}-{__version__}").as_posix() for name in sdist.getnames()}
     tops = {name.split("/")[0] for name in names}
     assert tops <= {

@@ -56,13 +56,9 @@ def test_pyproject_names_the_brand_distribution() -> None:
 
 def test_the_import_package_and_commands_keep_their_names() -> None:
     assert PACKAGE_NAME == "openhal"
-    assert set(PROJECT["scripts"]) == {CLI_NAME, DAEMON_ALIAS, DISTRIBUTION_NAME}
+    cli = "openhal.cli.main:app"
+    assert PROJECT["scripts"] == {CLI_NAME: cli, DISTRIBUTION_NAME: cli, DAEMON_ALIAS: "openhal.hub.daemon:main"}
     assert openhal.__name__ == PACKAGE_NAME
-
-
-def test_the_distribution_name_runs_the_same_cli() -> None:
-    """`uvx halkit` and `pipx run halkit` run the command named like the package, so halkit is the openhal CLI."""
-    assert PROJECT["scripts"][DISTRIBUTION_NAME] == PROJECT["scripts"][CLI_NAME]
 
 
 def test_the_install_matrix_runs_every_python_the_classifiers_name() -> None:
