@@ -23,6 +23,7 @@ import functools
 import glob
 import importlib
 import os
+import pkgutil
 import shutil
 import tempfile
 from collections.abc import Callable
@@ -106,14 +107,19 @@ def _no_pi_cameras() -> Callable[[], Any]:
     return picamera2_class
 
 
-def _skip_real_path(function: str, real_path: str, empty: Any) -> Callable[[Path], Any]:
-    """The driver's function, except that the real system path finds nothing. A test's own path still works."""
-    real, path = _real(function), _real(real_path)
+def _skip_real_path(module: str, function: str, constant: str, empty: Any) -> tuple[str, Callable[[], Any]]:
+    """A row for a driver function that reads a system path. The real path finds nothing, a test's own path works."""
 
-    def wrapper(given: Path) -> Any:
-        return empty if Path(given) == path else real(given)
+    def make() -> Callable[[Path], Any]:
+        owner = importlib.import_module(module)
+        real, path = getattr(owner, function), getattr(owner, constant)
 
-    return wrapper
+        def wrapper(given: Path) -> Any:
+            return empty if Path(given) == path else real(given)
+
+        return wrapper
+
+    return f"{module}.{function}", make
 
 
 def _no_hid_devices() -> Any:
@@ -189,17 +195,9 @@ PATCHES: tuple[tuple[str, Callable[[], Any]], ...] = (
     (f"{DRIVERS}.ble.driver._bleak_scanner", lambda: lambda: _NoAdvertisements),
     (f"{DRIVERS}.ble.driver._bleak_client", lambda: _refuse("a Bluetooth device")),
     (f"{DRIVERS}.uvc.driver._cv2", lambda: _cv2_without_cameras),
-    (
-        f"{DRIVERS}.uvc.driver._scan_sysfs",
-        lambda: _skip_real_path(f"{DRIVERS}.uvc.driver._scan_sysfs", f"{DRIVERS}.uvc.driver.SYSFS", []),
-    ),
+    _skip_real_path(f"{DRIVERS}.uvc.driver", "_scan_sysfs", "SYSFS", []),
     (f"{DRIVERS}.rpi_camera.driver._picamera2_class", _no_pi_cameras),
-    (
-        f"{DRIVERS}.rpi_gpio.driver._board_model",
-        lambda: _skip_real_path(
-            f"{DRIVERS}.rpi_gpio.driver._board_model", f"{DRIVERS}.rpi_gpio.driver.MODEL_FILE", None
-        ),
-    ),
+    _skip_real_path(f"{DRIVERS}.rpi_gpio.driver", "_board_model", "MODEL_FILE", None),
     (f"{DRIVERS}.pi_i2c_spi.driver.glob", _no_dev_nodes),
     (f"{DRIVERS}.esphome.driver._browse", lambda: _nothing_async),
     (f"{DRIVERS}.sila2.driver.Sila2Driver._browse", lambda: classmethod(_nothing_async)),
@@ -213,12 +211,13 @@ PATCHES: tuple[tuple[str, Callable[[], Any]], ...] = (
 
 
 @functools.cache
-def _replacements() -> tuple[tuple[str, Any], ...]:
-    """The replacements, made once. A library that isn't installed has no devices to hide."""
+def _replacements() -> tuple[tuple[Any, str, Any], ...]:
+    """Each owner, attribute and replacement, resolved once. A library that isn't installed has no devices to hide."""
     made = []
     for target, make in PATCHES:
+        owner, _, name = target.rpartition(".")
         try:
-            made.append((target, make()))
+            made.append((pkgutil.resolve_name(owner), name, make()))
         except ImportError:
             continue
     return tuple(made)
@@ -226,11 +225,11 @@ def _replacements() -> tuple[tuple[str, Any], ...]:
 
 def guard(monkeypatch: pytest.MonkeyPatch) -> None:
     """Hide every real device for one test."""
-    for target, value in _replacements():
-        monkeypatch.setattr(target, value)
+    for owner, name, value in _replacements():
+        monkeypatch.setattr(owner, name, value)
 
 
-def isolate_environment() -> Path:
+def isolate_environment() -> None:
     """Point the hub's home, token and address away from the developer's own, here and in child processes."""
     folder = Path(tempfile.mkdtemp(prefix="openhal-tests-"))
     atexit.register(shutil.rmtree, folder, ignore_errors=True)
@@ -239,4 +238,3 @@ def isolate_environment() -> Path:
     os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
     for name in ("OPENHAL_TOKEN", "OPENHAL_FIRMWARE_PORTS"):
         os.environ.pop(name, None)
-    return folder

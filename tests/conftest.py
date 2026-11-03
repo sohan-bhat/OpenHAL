@@ -26,7 +26,7 @@ from tests import no_hardware
 for variable in ("GITHUB_ACTIONS", "FORCE_COLOR", "PY_COLORS"):
     os.environ.pop(variable, None)
 
-TEST_FOLDER = no_hardware.isolate_environment()
+no_hardware.isolate_environment()
 
 REAL_HOME = Path(os.path.expanduser("~")).resolve()
 FIND_CLIENTS = clients.installed
