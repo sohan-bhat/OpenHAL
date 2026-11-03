@@ -6,7 +6,7 @@ import {TestPick} from './TestPick';
 const compareDefaults: CompareProps = {
   panels: [
     {image: 'compare/cycles.png', title: 'Blender Cycles', detail: 'CPU path tracing, 16 samples\n725 s per 4K frame'},
-    {image: 'compare/eevee.png', title: 'Blender EEVEE', detail: 'GPU, 16 samples\nabout 55 s per 4K frame'},
+    {image: 'compare/eevee.png', title: 'Blender EEVEE', detail: 'GPU, 16 samples\nabout 53 s per 4K frame'},
     {image: 'compare/remotion.png', title: 'Remotion and three.js', detail: 'WebGL through ANGLE\nabout 2.3 s per 4K frame'},
   ],
   crop: {x: 1580, y: 760},
