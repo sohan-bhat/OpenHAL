@@ -37,7 +37,7 @@ Typical low targets are LED brightness, a display, a buzzer and a status light. 
 - A limit a person set always applies on top of these defaults. A low channel ignores a rate only while the rate is still `suggested`, the device's own suggestion.
 - A high hazard device still holds every command for a person each time.
 - The scope a target needs follows the device's hazard class, or the target's own level when that is lower. A low target on a device with no declared hazard needs `control_low`.
-- An action can be undone when every effect it lists is a write channel the hub can set back, or when the safe state runs it.
+- An action can be undone when every effect it lists is a write channel the hub can set back, when the safe state runs it, or when the device has the action that undoes it, such as resume for pause. A start isn't undone by a stop, so start and stop don't count.
 
 ### A person changes a level
 
@@ -57,7 +57,7 @@ Typical low targets are LED brightness, a display, a buzzer and a status light. 
 
 ### The interview and existing files
 
-- `openhal init`, `openhal file confirm`, the writer and the Inspector ask only about high risk targets of a draft the device described or the library supplied. A draft from a manual, a sketch, an agent or a hand-written file has no range the device reported, so it gets every question, as does a draft that doesn't load yet.
+- `openhal init` and `openhal file confirm` ask only about high risk targets of a draft the device described or the library supplied. A draft from a manual, a sketch, an agent or a hand-written file has no range the device reported, so it gets every question, as does a draft that doesn't load yet. The driver writer and the Inspector's review, which a person starts on purpose to review a draft, ask every question, so a person can still add a requirement or a run limit to a medium action.
 - A file a person already confirmed keeps its limits. A person who wants the old interview's limits wider runs `openhal limits set DEVICE.CHANNEL --max 100 % --rate none` and types confirm.
 - A limit change on an entry that had no person's limits confirms that one entry, by the person who made it.
 

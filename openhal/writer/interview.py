@@ -4,7 +4,8 @@
 questions and check each answer with `problem`, so a value outside what the device reports is
 refused the same way everywhere. Questions cover every high risk write channel and action (ADR 0023),
 because low and medium ones take commands within the device's own range with no interview. A draft
-from a manual, a sketch or an agent has no range the device reported, so it gets every question. For a
+from a manual, a sketch or an agent has no range the device reported, so it gets every question, and
+the driver writer and the Inspector's review, which a person starts on purpose, ask every question. For a
 channel they ask the unit, min, max, rate, safe value and confirmation tier, and for an action its
 argument limits, requirements, a run limit and the tier. Then they ask the device's hazard class,
 the action that makes the device safe and its interlocks. A draft that doesn't load as a device file
@@ -388,14 +389,15 @@ def _action_questions(name: str, spec: dict[str, Any], source: str, bounds: dict
     return asked
 
 
-def targets(draft: dict[str, Any]) -> set[str] | None:
+def targets(draft: dict[str, Any], *, every: bool = False) -> set[str] | None:
     """The `write:<name>` and `action:<name>` targets the interview asks about, the high risk ones.
 
-    None means every target. A draft gets every question when it doesn't load yet, so its levels
-    can't be told, or when its ranges came from a manual, a sketch, an agent or a hand-written file
-    rather than from the device or the library, so no range in it stands for the device's own.
+    None means every target. A draft gets every question when `every` is set, as the driver writer
+    and the Inspector's review do for a person who chose to review a draft, when it doesn't load yet,
+    so its levels can't be told, or when its ranges came from a manual, a sketch, an agent or a
+    hand-written file rather than from the device or the library.
     """
-    if _source(draft) not in RANGE_SOURCES:
+    if every or _source(draft) not in RANGE_SOURCES:
         return None
     try:
         file = from_data(draft)
@@ -404,9 +406,9 @@ def targets(draft: dict[str, Any]) -> set[str] | None:
     return {target for target, found in risk.assess(file).items() if found.level == "high"}
 
 
-def questions(draft: dict[str, Any]) -> list[Question]:
+def questions(draft: dict[str, Any], *, every: bool = False) -> list[Question]:
     """Every question the draft needs answered, in a stable order. None when nothing is high risk."""
-    high = targets(draft)
+    high = targets(draft, every=every)
     if high is not None and not high:
         return []
     hazard = hazard_of(draft)
@@ -727,12 +729,19 @@ def _apply_safe_state(data: dict[str, Any], safe: dict[str, Any], answers: dict[
         data.pop("safe_state", None)
 
 
-def apply(draft: dict[str, Any], answers: dict[str, Any], *, by: str, today: dt.date | None = None) -> dict[str, Any]:
+def apply(
+    draft: dict[str, Any],
+    answers: dict[str, Any],
+    *,
+    by: str,
+    today: dt.date | None = None,
+    every: bool = False,
+) -> dict[str, Any]:
     """Apply a complete set of answers to a copy of the draft and confirm it. Raises AnswerError.
 
     A draft with no high risk target has no questions, so it comes back as it was, unconfirmed.
     """
-    ordered = questions(draft)
+    ordered = questions(draft, every=every)
     if not ordered and not answers:
         return copy.deepcopy(draft)
     asked = {question.id: question for question in ordered}

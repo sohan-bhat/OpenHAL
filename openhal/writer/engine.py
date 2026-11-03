@@ -137,7 +137,7 @@ class WriterEngine:
         draft = session.confirmed or session.draft
         unconfirmed: list[str] = []
         if session.draft is not None and session.confirmed is None:
-            unconfirmed = [q.id for q in interview.questions(session.draft) if q.id not in session.answers]
+            unconfirmed = [q.id for q in interview.questions(session.draft, every=True) if q.id not in session.answers]
         return {
             "id": session.id,
             "status": session.status,
@@ -377,7 +377,11 @@ class WriterEngine:
         session = self.get(session_id)
         if session.draft is None or session.confirmed is not None:
             return []
-        return [question for question in interview.questions(session.draft) if question.id not in session.answers]
+        return [
+            question
+            for question in interview.questions(session.draft, every=True)
+            if question.id not in session.answers
+        ]
 
     def answer(self, who: Principal, session_id: str, answers: dict[str, Any]) -> Session:
         if who.kind != "human":
@@ -391,7 +395,7 @@ class WriterEngine:
             raise WriterError("There is no valid draft to interview yet. Propose one first.")
         if session.status not in ("interview", "ready"):
             raise WriterError(f"The session is {session.status}, so the session can't take answers.")
-        asked = interview.questions(session.draft)
+        asked = interview.questions(session.draft, every=True)
         known = {question.id for question in asked}
         unknown = sorted(set(answers) - known)
         if unknown:
@@ -409,7 +413,7 @@ class WriterEngine:
         session.problems = [problem for problem in session.problems if not problem.startswith("Interview. ")]
         if known <= set(session.answers):
             try:
-                session.confirmed = interview.apply(session.draft, session.answers, by=who.name)
+                session.confirmed = interview.apply(session.draft, session.answers, by=who.name, every=True)
             except interview.AnswerError as exc:
                 session.problems.append(f"Interview. {exc}")
                 session.confirmed = None

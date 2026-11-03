@@ -261,8 +261,9 @@ async def test_python_client_matches_the_real_writer_routes(hub: Hub) -> None:
         session = await ai.start_writer(driver="openhal-firmware", params={"port": "sim:writer", "timeout_s": 0.5})
         assert session.status == "interview"
         questions = (await ai.interview(session.id)).questions
-        assert questions == [], "a medium fan board has nothing for a person to confirm"
-        answers: dict[str, str] = {}
+        assert questions, "the driver writer asks every question, since a person started it to review"
+        answers = suggested_answers([question.model_dump() for question in questions])
+        answers["device.hazard"] = "low"
         with pytest.raises(Refused):
             await ai.answer(session.id, answers)
         ready = await me.answer(session.id, answers)
