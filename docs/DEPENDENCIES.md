@@ -14,6 +14,7 @@ Copyleft code is never copied into this repository. Libraries under weak copylef
 | typer | 0.27.3 | MIT | CLI |
 | rich | 15.0.0 | MIT | CLI output |
 | questionary | 2.1.1 | MIT | The CLI's pickers and typed answers for a left-out argument (ADR 0020) |
+| portalocker | 4.4.2 | BSD-3-Clause | The hub's and each device's lock file on macOS, Linux and Windows, in place of the Unix-only fcntl |
 | prompt_toolkit | 3.0.53 | BSD-3-Clause | The terminal input and output under questionary, pointed at the controlling terminal |
 | wcwidth | 0.9.4 | MIT | Character widths for prompt_toolkit. Installed with prompt_toolkit |
 

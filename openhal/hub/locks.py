@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import fcntl
 import os
 from pathlib import Path
 from typing import IO
+
+import portalocker
 
 
 class DeviceLocked(RuntimeError):  # noqa: N818
@@ -21,8 +22,8 @@ class DeviceLock:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         handle = self.path.open("a+", encoding="utf-8")
         try:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError as exc:
+            portalocker.lock(handle, portalocker.LockFlags.EXCLUSIVE | portalocker.LockFlags.NON_BLOCKING)
+        except (portalocker.LockException, OSError) as exc:
             handle.close()
             raise DeviceLocked(
                 f"Another OpenHAL process has {self.path.stem} open. Stop it, or use the running daemon."
@@ -35,6 +36,6 @@ class DeviceLock:
 
     def release(self) -> None:
         if self._handle is not None:
-            fcntl.flock(self._handle.fileno(), fcntl.LOCK_UN)
+            portalocker.unlock(self._handle)
             self._handle.close()
             self._handle = None

@@ -6,7 +6,7 @@ The `mujoco` driver runs any MuJoCo model in real time as a device. Joints are r
 |---|---|
 | Driver name | `mujoco` |
 | Library | MuJoCo 3.3 or later (Apache-2.0), 3.10 on Intel Macs |
-| Extra | `uv tool install --compile-bytecode "ohal[mujoco] @ git+https://github.com/sohan-bhat/OpenHAL"` |
+| Extra | `uv tool install --compile-bytecode "halkit[mujoco] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | medium |
 | Conformance | full |
 | Safe state | native. Every move ends and every setpoint holds |

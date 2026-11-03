@@ -7,11 +7,12 @@ the machine is left alone.
 
 from __future__ import annotations
 
-import fcntl
 import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+import portalocker
 
 from openhal._brand import PRODUCT_NAME, START_COMMAND
 from openhal.cli import _common
@@ -45,10 +46,10 @@ def hub_runs_here() -> bool:
         return False
     with handle:
         try:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_SH | fcntl.LOCK_NB)
-        except OSError:
+            portalocker.lock(handle, portalocker.LockFlags.SHARED | portalocker.LockFlags.NON_BLOCKING)
+        except (portalocker.LockException, OSError):
             return True
-        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        portalocker.unlock(handle)
     return False
 
 
