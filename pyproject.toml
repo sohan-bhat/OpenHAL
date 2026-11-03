@@ -74,6 +74,7 @@ mujoco = [
 [project.scripts]
 openhal = "openhal.cli.main:app"
 openhald = "openhal.hub.daemon:main"
+halkit = "openhal.cli.main:app"
 
 [dependency-groups]
 dev = [

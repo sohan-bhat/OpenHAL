@@ -40,11 +40,12 @@ def test_the_wheel_is_the_brand_distribution(wheel: zipfile.ZipFile) -> None:
     assert f"\nName: {DISTRIBUTION_NAME}\n" in metadata
 
 
-def test_the_wheel_has_both_commands(wheel: zipfile.ZipFile) -> None:
+def test_the_wheel_has_every_command(wheel: zipfile.ZipFile) -> None:
     name = next(item for item in wheel.namelist() if item.endswith(".dist-info/entry_points.txt"))
     entry_points = wheel.read(name).decode()
     assert "openhal = openhal.cli.main:app" in entry_points
     assert "openhald = openhal.hub.daemon:main" in entry_points
+    assert f"{DISTRIBUTION_NAME} = openhal.cli.main:app" in entry_points, "uvx halkit runs the halkit command"
 
 
 def test_the_wheel_has_the_setup_code_and_the_sample(wheel: zipfile.ZipFile) -> None:
