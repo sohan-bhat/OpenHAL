@@ -1,5 +1,5 @@
 import { DISTRIBUTION_NAME } from "../config/brand";
-import install from "../config/install.json";
+import install from "../config/install.json" with { type: "json" };
 import { REPOSITORY_URL } from "../config/repo.mjs";
 
 /** One way to install OpenHAL, as the hero's install box shows it. */
