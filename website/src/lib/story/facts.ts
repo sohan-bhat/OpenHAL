@@ -135,7 +135,7 @@ export function readDeviceFile(path = join(REPO_ROOT, "examples", "print-babysit
 }
 
 function need<T>(found: T | undefined | null, what: string): T {
-  if (found === undefined || found === null) throw new Error(`docs/demo/scenario.yaml has no ${what}, which the example's story and How it works show.`);
+  if (found === undefined || found === null) throw new Error(`docs/demo/scenario.yaml has no ${what}, which the example's story shows.`);
   return found;
 }
 
@@ -146,7 +146,7 @@ const verb = (exchange: Exchange): string => exchange.request.method.slice(excha
 
 const TONES: Record<string, Tone> = { done: "ok", pending: "confirm", blocked: "blocked", failed: "blocked" };
 
-/** Every word and number the example's story and How it works show, from docs/demo/scenario.yaml and the printer's device file. */
+/** Every word and number the example's story shows, from docs/demo/scenario.yaml and the printer's device file. */
 export function storyFacts(scenario: Scenario = loadScenario(), file: DeviceFile = readDeviceFile()): StoryFacts {
   const record = scenario.record as Scenario["record"] & Record<string, any>;
   const exchanges = record.exchanges;

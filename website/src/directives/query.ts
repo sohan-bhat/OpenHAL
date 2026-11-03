@@ -15,7 +15,7 @@ function copy(event: Event): Event {
 }
 
 /**
- * Hydrates an island of form controls, the catalog filters or the Smooth scrolling switch, at once
+ * Hydrates an island of form controls, such as the catalog filters, at once
  * when the address carries one of the query fields the directive's value names, such as
  * client:query="q tier hazard", so a shared filtered view shows its choices, and otherwise on the
  * first sign that a person means to use a control: the pointer over the island, a label included,

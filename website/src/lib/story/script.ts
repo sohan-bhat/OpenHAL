@@ -12,8 +12,6 @@ export interface Step {
   length: number;
 }
 
-export { CAMERA } from "./camera";
-
 export const STEPS: readonly Step[] = [
   { id: "intro", length: 20 },
   { id: "ask", length: 44 },
