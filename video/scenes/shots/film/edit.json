@@ -1,0 +1,460 @@
+{
+ "fps": 30,
+ "resolution": {
+  "landscape": [
+   3840,
+   2160
+  ],
+  "vertical": [
+   2160,
+   3840
+  ]
+ },
+ "layout": {
+  "layer": {
+   "y": -0.3,
+   "x": [
+    -0.95,
+    0.5
+   ],
+   "line_width": 0.0012,
+   "line_strength": 5.0,
+   "sheet_height": 0.1,
+   "sheet_strength": 0.2
+  },
+  "agent": {
+   "position": [
+    0.07,
+    -0.57
+   ],
+   "yaw_deg": 12,
+   "tilt_deg": 9,
+   "lift": 0.085,
+   "screen": [
+    0.26,
+    0.165
+   ],
+   "bubbles": [
+    {
+     "kind": "user",
+     "width": 0.52,
+     "height": 0.022
+    },
+    {
+     "kind": "agent",
+     "width": 0.62,
+     "height": 0.012
+    },
+    {
+     "kind": "agent",
+     "width": 0.44,
+     "height": 0.012
+    },
+    {
+     "kind": "call",
+     "width": 0.38,
+     "height": 0.012
+    },
+    {
+     "kind": "call",
+     "width": 0.46,
+     "height": 0.012
+    },
+    {
+     "kind": "call",
+     "width": 0.34,
+     "height": 0.012
+    },
+    {
+     "kind": "call",
+     "width": 0.42,
+     "height": 0.012
+    },
+    {
+     "kind": "call",
+     "width": 0.36,
+     "height": 0.012
+    },
+    {
+     "kind": "call",
+     "width": 0.48,
+     "height": 0.012
+    },
+    {
+     "kind": "call",
+     "width": 0.4,
+     "height": 0.012
+    },
+    {
+     "kind": "call",
+     "width": 0.44,
+     "height": 0.012
+    },
+    {
+     "kind": "call",
+     "width": 0.36,
+     "height": 0.012
+    },
+    {
+     "kind": "call",
+     "width": 0.46,
+     "height": 0.012
+    },
+    {
+     "kind": "call",
+     "width": 0.38,
+     "height": 0.012
+    }
+   ],
+   "resting": [
+    0,
+    1,
+    2
+   ]
+  },
+  "phone": {
+   "position": [
+    0.31,
+    -0.45
+   ],
+   "yaw_deg": -14
+  },
+  "printer": {
+   "position": [
+    -0.47,
+    0.13
+   ],
+   "yaw_deg": 0
+  },
+  "board": {
+   "position": [
+    0.38,
+    0.22
+   ],
+   "yaw_deg": -20
+  },
+  "psu": {
+   "position": [
+    -0.8,
+    -0.08
+   ],
+   "yaw_deg": 0
+  },
+  "arm_port": [
+   -0.045,
+   -0.035
+  ],
+  "cable_radius": 0.0021,
+  "pulse_speed_m_s": 4.5,
+  "bin": {
+   "center": [
+    0.12,
+    -0.17
+   ],
+   "inside": 0.082,
+   "wall": 0.004,
+   "height": 0.04,
+   "floor": 0.004
+  },
+  "workspace": {
+   "min": [
+    0.16,
+    -0.1,
+    0.01
+   ],
+   "max": [
+    0.22,
+    0.1,
+    0.07
+   ],
+   "target": [
+    0.32,
+    0.0,
+    0.04
+   ]
+  },
+  "cube_size": 0.025
+ },
+ "items": [
+  {
+   "kind": "shot",
+   "id": "s1-reveal",
+   "storyboard": 1,
+   "start": 0,
+   "frames": 90,
+   "source": {
+    "beat": "devices",
+    "file": "beat-1-devices.json",
+    "t_start": 1.02,
+    "t_end": 3.98667,
+    "speed": 1.0
+   }
+  },
+  {
+   "kind": "shot",
+   "id": "s1-servo",
+   "storyboard": 1,
+   "start": 90,
+   "frames": 39,
+   "source": {
+    "beat": "devices",
+    "file": "beat-1-devices.json",
+    "t_start": 4.02,
+    "t_end": 5.28667,
+    "speed": 1.0
+   }
+  },
+  {
+   "kind": "shot",
+   "id": "s1-cable",
+   "storyboard": 1,
+   "start": 129,
+   "frames": 39,
+   "source": {
+    "beat": "devices",
+    "file": "beat-1-devices.json",
+    "t_start": 5.32,
+    "t_end": 6.58667,
+    "speed": 1.0
+   }
+  },
+  {
+   "kind": "shot",
+   "id": "s1-gripper",
+   "storyboard": 1,
+   "start": 168,
+   "frames": 48,
+   "source": {
+    "beat": "devices",
+    "file": "beat-1-devices.json",
+    "t_start": 6.62,
+    "t_end": 8.18667,
+    "speed": 1.0
+   }
+  },
+  {
+   "kind": "shot",
+   "id": "s2-sides",
+   "storyboard": 2,
+   "start": 216,
+   "frames": 159,
+   "source": {
+    "beat": "devices",
+    "file": "beat-1-devices.json",
+    "t_start": 8.3,
+    "t_end": 10.93333,
+    "speed": 0.5
+   },
+   "wordmark": 69
+  },
+  {
+   "kind": "shot",
+   "id": "s3-request",
+   "storyboard": 3,
+   "start": 375,
+   "frames": 48,
+   "source": {
+    "beat": "pick-and-place",
+    "file": "beat-2-pick-and-place.json",
+    "t_start": 10.95,
+    "t_end": 12.51667,
+    "speed": 1.0
+   }
+  },
+  {
+   "kind": "shot",
+   "id": "s3-pick",
+   "storyboard": 3,
+   "start": 423,
+   "frames": 156,
+   "source": {
+    "beat": "pick-and-place",
+    "file": "beat-2-pick-and-place.json",
+    "t_start": 12.55,
+    "t_end": 17.71667,
+    "speed": 1.0
+   }
+  },
+  {
+   "kind": "shot",
+   "id": "s4-limit",
+   "storyboard": 4,
+   "start": 579,
+   "frames": 106,
+   "source": {
+    "beat": "limit",
+    "file": "beat-3-limit.json",
+    "t_start": 17.9,
+    "t_end": 21.4,
+    "speed": 1.0
+   }
+  },
+  {
+   "kind": "shot",
+   "id": "s5-hold",
+   "storyboard": 5,
+   "start": 685,
+   "frames": 96,
+   "source": {
+    "beat": "approval",
+    "file": "beat-4-approval.json",
+    "t_start": 23.15,
+    "t_end": 26.31667,
+    "speed": 1.0
+   }
+  },
+  {
+   "kind": "shot",
+   "id": "s5-drop",
+   "storyboard": 5,
+   "start": 781,
+   "frames": 90,
+   "source": {
+    "beat": "approval",
+    "file": "beat-4-approval.json",
+    "t_start": 26.35,
+    "t_end": 29.31667,
+    "speed": 1.0
+   }
+  },
+  {
+   "kind": "shot",
+   "id": "s6-stop",
+   "storyboard": 6,
+   "start": 871,
+   "frames": 90,
+   "source": {
+    "beat": "stop",
+    "file": "beat-5-stop.json",
+    "t_start": 31.0,
+    "t_end": 33.96667,
+    "speed": 1.0
+   }
+  },
+  {
+   "kind": "black",
+   "id": "s6-stop-black",
+   "start": 961,
+   "frames": 18
+  },
+  {
+   "kind": "shot",
+   "id": "s7-devices",
+   "storyboard": 7,
+   "start": 979,
+   "frames": 192,
+   "source": {
+    "beat": "devices",
+    "file": "beat-1-devices.json",
+    "t_start": 1.02,
+    "t_end": 8.97833,
+    "speed": 1.25
+   }
+  },
+  {
+   "kind": "card",
+   "id": "s8-end",
+   "storyboard": 8,
+   "start": 1171,
+   "frames": 195,
+   "seconds": 6.5,
+   "tagline": "An open-source protocol for AI agents to control hardware.",
+   "command": "uvx halkit demo",
+   "url": "github.com/sohan-bhat/OpenHAL",
+   "fine_print": "Simulated scene. Motion driven by the OpenHAL hub."
+  }
+ ],
+ "labels": [
+  {
+   "text": "hal/action move_to",
+   "style": "call",
+   "from": 378,
+   "to": 450,
+   "t": 11.0504,
+   "place": {
+    "landscape": [
+     0.07,
+     0.83
+    ],
+    "vertical": [
+     0.5,
+     0.17
+    ]
+   },
+   "shot": "s3-request"
+  },
+  {
+   "text": "LIMIT_EXCEEDED",
+   "style": "blocked",
+   "from": 597,
+   "to": 685,
+   "t": 18.5103,
+   "place": {
+    "landscape": [
+     0.07,
+     0.83
+    ],
+    "vertical": [
+     0.5,
+     0.17
+    ]
+   },
+   "shot": "s4-limit"
+  },
+  {
+   "text": "pending",
+   "style": "pending",
+   "from": 700,
+   "to": 766,
+   "t": 23.6543,
+   "place": {
+    "landscape": [
+     0.07,
+     0.83
+    ],
+    "vertical": [
+     0.5,
+     0.17
+    ]
+   },
+   "shot": "s5-hold"
+  },
+  {
+   "text": "approved",
+   "style": "approved",
+   "from": 766,
+   "to": 832,
+   "t": 25.8583,
+   "place": {
+    "landscape": [
+     0.07,
+     0.83
+    ],
+    "vertical": [
+     0.5,
+     0.17
+    ]
+   },
+   "shot": "s5-hold"
+  },
+  {
+   "text": "STOP",
+   "style": "stop",
+   "from": 905,
+   "to": 961,
+   "t": 32.1198,
+   "place": {
+    "landscape": [
+     0.5,
+     0.5
+    ],
+    "vertical": [
+     0.5,
+     0.5
+    ]
+   },
+   "shot": "s6-stop"
+  }
+ ],
+ "frames": 1366
+}
