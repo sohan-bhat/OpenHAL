@@ -37,7 +37,9 @@ jobs:
           context: .
           load: true
           tags: openhal:check
-      - name: Start openhal mcp in the image with no token and list its tools
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Start openhal mcp in the image and list its tools
         run: |
           uv run --no-project --with "mcp==2.3.0" python - <<'CHECK'
           import asyncio
@@ -80,3 +82,4 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
