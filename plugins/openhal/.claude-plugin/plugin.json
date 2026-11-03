@@ -1,0 +1,31 @@
+{
+  "name": "openhal",
+  "displayName": "OpenHAL",
+  "version": "0.1.0",
+  "description": "Read and control hardware through the OpenHAL hub and its safety kernel.",
+  "author": {
+    "name": "OpenHAL contributors",
+    "url": "https://github.com/sohan-bhat/OpenHAL"
+  },
+  "homepage": "https://sohan-bhat.github.io/OpenHAL/",
+  "repository": "https://github.com/sohan-bhat/OpenHAL",
+  "license": "Apache-2.0",
+  "keywords": ["hardware", "mcp", "robotics", "3d-printing", "lab"],
+  "mcpServers": {
+    "openhal": {
+      "command": "uvx",
+      "args": ["--from", "halkit==0.1.0", "openhal", "mcp"],
+      "env": {
+        "OPENHAL_TOKEN": "${user_config.openhal_token}"
+      }
+    }
+  },
+  "userConfig": {
+    "openhal_token": {
+      "type": "string",
+      "title": "OpenHAL agent token",
+      "description": "An agent token from openhal token create --name claude-code. Leave empty to see the setup steps in each tool's answer.",
+      "sensitive": true
+    }
+  }
+}

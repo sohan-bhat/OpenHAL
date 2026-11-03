@@ -21,7 +21,7 @@ import pytest
 from openhal._brand import DISTRIBUTION_NAME
 
 ROOT: Final = Path(__file__).resolve().parents[2]
-HISTORY: Final = ("docs/agents/", "docs/design-rounds/", "docs/verification/", "docs/adr/")
+HISTORY: Final = ("docs/agents/", "docs/design-rounds/", "docs/verification/", "docs/adr/", "docs/releases/")
 BLOCK: Final = re.compile(r"<!-- (install|tools|demo):start -->.*?<!-- \1:end -->", re.DOTALL)
 README: Final = ROOT / "README.md"
 

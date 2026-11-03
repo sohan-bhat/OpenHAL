@@ -20,7 +20,7 @@ from openhal.cli.main import app
 from openhal.client import AsyncClient
 from openhal.hub.hub import Hub
 from openhal.mcp import Tools
-from openhal.spec.loader import load, parse_yaml
+from openhal.spec.loader import load, loads, parse_yaml
 from openhal.writer import interview
 from tests.interfaces.conftest import BASE_URL, SyncHub, Tokens
 from tests.terminal import person_at_terminal
@@ -73,6 +73,19 @@ def test_show_lists_each_limit_with_the_device_range(lamp: Path) -> None:
     assert "0 % to 80 %" in out
     assert "0 % to 100 %" in out
     assert "confirmed by owner" in out
+
+
+def test_a_device_with_no_file_says_so_in_its_read_only_hint(
+    sync_hub: SyncHub, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(_common, "TRANSPORT", sync_hub.transport)
+    monkeypatch.setenv("OPENHAL_TOKEN", sync_hub.tokens.human)
+    sync_hub.runner.run(sync_hub.hub.add_and_start(loads(LAMP)))
+    for args in (("limits",), ("limits", "show", "desk-lamp")):
+        code, out = run(*args)
+        assert code == 0, out
+        assert "desk-lamp has high risk entries that stay read-only, and desk-lamp has no device file" in out
+        assert "None" not in out
 
 
 def test_narrowing_applies_at_once_with_no_phrase(lamp: Path, monkeypatch: pytest.MonkeyPatch) -> None:

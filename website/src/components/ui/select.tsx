@@ -2,9 +2,27 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Select as SelectPrimitive } from "radix-ui";
+import { useKeysInOrder } from "./keys-in-order";
 
-function Select({ ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />;
+/** Whether the list is open, or null outside this file's Select. */
+const SelectOpen = React.createContext<boolean | null>(null);
+
+/** shadcn/ui's Select. It keeps its own open state so the list knows the moment it closes, before its exit ends. */
+function Select({ open: wanted, defaultOpen, onOpenChange, ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {
+  const [own, setOwn] = React.useState(defaultOpen ?? false);
+  const open = wanted ?? own;
+  const setOpen = React.useCallback(
+    (next: boolean) => {
+      setOwn(next);
+      onOpenChange?.(next);
+    },
+    [onOpenChange],
+  );
+  return (
+    <SelectOpen.Provider value={open}>
+      <SelectPrimitive.Root data-slot="select" open={open} onOpenChange={setOpen} {...props} />
+    </SelectOpen.Provider>
+  );
 }
 
 function SelectGroup({ ...props }: React.ComponentProps<typeof SelectPrimitive.Group>) {
@@ -40,24 +58,59 @@ function SelectTrigger({ className, children, ...props }: React.ComponentProps<t
   );
 }
 
+type Stop = React.RefObject<(() => void) | null>;
+
+/** Ends the key redirect a closed list left in place. */
+function stopRedirect(stop: Stop): void {
+  stop.current?.();
+  stop.current = null;
+}
+
 /**
- * Makes the rest of the page inert while the open list it sits in is on the page, beside the
- * aria-hidden Radix sets, so no hidden part stays focusable. Radix keeps a closed list's items in a
- * detached fragment, where this does nothing. The inert attribute is set directly rather than
- * through aria-hidden's inertOthers, whose shared counter would leave one of the two attributes
- * behind when both undo.
+ * From the moment a list closes until Radix gives focus back, a key pressed with focus in the
+ * leaving list or lost to the page moves focus to the list's button first, and a key aimed at the
+ * leaving list goes no further, so Tab moves on from the button. Radix keeps focus in a closed list
+ * for its 150 ms exit and gives focus back in a timer after that, so Tab right after Enter was lost
+ * to the leaving list or started from the page. Focus can't simply move as the list closes, because
+ * the Enter that closed it would then press the button and open the list again.
  */
-function InertOthers() {
+function redirectKeys(trigger: HTMLElement, content: HTMLElement): () => void {
+  const redirect = (event: KeyboardEvent) => {
+    const focused = document.activeElement;
+    const inList = focused !== null && content.contains(focused);
+    if (!inList && focused !== null && focused !== document.body) return;
+    trigger.focus({ preventScroll: true });
+    if (inList) event.stopPropagation();
+  };
+  document.addEventListener("keydown", redirect, true);
+  return () => document.removeEventListener("keydown", redirect, true);
+}
+
+/**
+ * While the list is open, makes the rest of the page inert as well as hidden by the aria-hidden
+ * Radix sets, so no hidden part stays focusable. The inert attribute is set directly rather than
+ * through aria-hidden's inertOthers, whose shared counter would leave one of the two attributes
+ * behind when both undo. The page comes back the moment the list closes, though the list stays on
+ * screen for its exit, and the closed list's keys go to its button until Radix gives focus back. The
+ * button is found while the list is open, because only then does it name the list in aria-controls.
+ * Radix keeps a closed list's items in a detached fragment, where this does nothing.
+ */
+function WhileOpen({ stop }: { stop: Stop }) {
+  const open = React.useContext(SelectOpen);
   const marker = React.useRef<HTMLSpanElement>(null);
   React.useLayoutEffect(() => {
     const content = marker.current?.closest<HTMLElement>("[data-slot=select-content]");
-    if (!content?.isConnected) return;
+    if (open === false || !content?.isConnected) return;
+    stopRedirect(stop);
+    const trigger = content.id ? document.querySelector<HTMLElement>(`[aria-controls="${CSS.escape(content.id)}"]`) : null;
     const others = [...document.body.children].filter((element) => !element.contains(content) && !element.hasAttribute("inert"));
     for (const element of others) element.setAttribute("inert", "");
     return () => {
       for (const element of others) element.removeAttribute("inert");
+      stopRedirect(stop);
+      if (trigger) stop.current = redirectKeys(trigger, content);
     };
-  }, []);
+  }, [open, stop]);
   return <span ref={marker} hidden />;
 }
 
@@ -65,8 +118,11 @@ function InertOthers() {
  * The list, 4 px under its button or above it where the screen has no room, on the page background
  * in a 1 px border box with no shadow, like the header's pickers. It grows from the button in 200 ms
  * and shrinks back in 150 ms on the site's ease, and with reduced motion it opens and closes at once.
- * While the list is open the rest of the page is inert as well as hidden,
- * because the list holds focus until it closes.
+ * While the list is open the rest of the page is inert as well as hidden, because the list holds
+ * focus until it closes. Keys run in the order they were pressed, so Enter right after an arrow key
+ * chooses the item the arrow reached, and Tab right after Enter moves on from the button. Radix's own
+ * return of focus runs only when focus was lost, so it never pulls focus back from where a person
+ * has moved on to.
  */
 function SelectContent({
   className,
@@ -74,12 +130,25 @@ function SelectContent({
   position = "popper",
   align = "start",
   sideOffset = 4,
+  onKeyDown,
+  onKeyDownCapture,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+  const keys = useKeysInOrder({ onKeyDown, onKeyDownCapture });
+  const stop = React.useRef<(() => void) | null>(null);
+  React.useEffect(() => () => stopRedirect(stop), []);
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         data-slot="select-content"
+        {...keys}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event);
+          stopRedirect(stop);
+          const focused = document.activeElement;
+          if (focused !== null && focused !== document.body) event.preventDefault();
+        }}
         className={cn(
           "relative z-50 max-h-(--radix-select-content-available-height) min-w-(--radix-select-trigger-width) origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground outline-none",
           "ease-out data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-98 data-[state=closed]:duration-150 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-98 data-[state=open]:duration-200 motion-reduce:animate-none!",
@@ -90,7 +159,7 @@ function SelectContent({
         sideOffset={position === "popper" ? sideOffset : undefined}
         {...props}
       >
-        <InertOthers />
+        <WhileOpen stop={stop} />
         <SelectScrollUpButton />
         <SelectPrimitive.Viewport className="p-1">{children}</SelectPrimitive.Viewport>
         <SelectScrollDownButton />

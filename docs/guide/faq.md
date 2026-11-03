@@ -26,7 +26,7 @@ The sensor's value becomes unknown after a short time, and the kernel counts an 
 
 ## Does OpenHAL need firmware on my device?
 
-Devices that already have an interface, such as bench instruments over SCPI, Klipper printers or Home Assistant entities, need no OpenHAL firmware once their drivers land, and [Drivers](/drivers/) shows which drivers run today. For boards you program yourself, the OpenHAL Arduino library adds a self-description to the board and moves the board to its safe state when the hub's heartbeat stops.
+Devices that already have an interface, such as bench instruments over SCPI, Klipper printers or Home Assistant entities, need no OpenHAL firmware, and [Drivers](/drivers/) lists the driver for each one. For boards you program yourself, the OpenHAL Arduino library adds a self-description to the board and moves the board to its safe state when the hub's heartbeat stops.
 
 ## Does anything leave my machine?
 
@@ -42,4 +42,4 @@ No, the playground runs a TypeScript port of the kernel's checks, and a test run
 
 ## What does the device library contain?
 
-The device library contains device files that people have described and tested, one per model, each with a verification badge. The files in the library are CC0, and [Add a device](tutorials/add-a-device.md) shows how to contribute a file.
+The device library holds one device file per model, each with a verification badge. Every file in the library is unverified today, because no file has been tested on its device yet. The files in the library are CC0, and [Add a device](tutorials/add-a-device.md) shows how to contribute a file.

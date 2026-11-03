@@ -23,6 +23,7 @@ from openhal._brand import DATA_BLOCK_TAG
 from openhal.client import AsyncClient, OpenHALError
 from openhal.client import models as m
 from openhal.client.calls import Call
+from openhal.client.errors import Unauthorized
 from openhal.mcp.errors import Decision, ErrorInfo, ErrorMapper, tool_error_text
 from openhal.protocol.errors import BY_KERNEL_CODE
 from openhal.spec.schema import device_file_schema
@@ -199,6 +200,16 @@ READ_ONLY: Final = ToolAnnotations(read_only_hint=True, destructive_hint=False, 
 CONTROL: Final = ToolAnnotations(read_only_hint=False, destructive_hint=True, open_world_hint=True)
 DRAFT: Final = ToolAnnotations(read_only_hint=False, destructive_hint=False, open_world_hint=False)
 
+NOT_SET_UP: Final = tool_error_text(
+    Unauthorized(
+        "OpenHAL isn't set up for this AI client yet, so this MCP server has no agent token. Run openhal init in a "
+        "terminal to set up OpenHAL and add it to your AI clients, then start OpenHAL with openhal start. To use an "
+        "agent token you already have, set OPENHAL_TOKEN in the MCP client config.",
+        status_code=401,
+    )
+)
+"""Every tool's error while the server has no agent token."""
+
 HUMAN_PRINCIPAL_REFUSED: Final = (
     "This MCP server was given a human token. Agents must use an agent token, so the hub can distinguish an "
     "agent from a person. Create an agent token with openhal token create --agent --scope control_low --name <client>, "
@@ -295,6 +306,8 @@ class Tools:
         return f"{self.principal.kind}:{self.principal.name}" if self.principal is not None else None
 
     async def _run[T](self, use: Callable[[AsyncClient], Awaitable[T]]) -> T:
+        if not self.client.token_source.token:
+            raise ToolError(NOT_SET_UP)
         try:
             if self.principal is None:
                 principal = await self.client.whoami()

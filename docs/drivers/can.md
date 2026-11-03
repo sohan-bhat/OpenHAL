@@ -1,6 +1,6 @@
 # can driver
 
-The can driver reads signals out of CAN bus frames and sends frames as commands and actions. The driver uses python-can, so it works with SocketCAN on Linux and with the USB adapters python-can supports (PCAN, Kvaser, slcan, gs_usb and others). Each channel's map names the frame id that carries the value and where the value sits in the data bytes, so motor drives, battery systems, sensors and homemade nodes work without device-specific code.
+The can driver reads signals out of CAN bus frames and sends frames as commands and actions. The driver uses python-can, so it can use SocketCAN on Linux and the USB adapters python-can supports (PCAN, Kvaser, slcan, gs_usb and others). The driver is tested on a simulated bus and not yet on a real adapter. Each channel's map names the frame id that carries the value and where the value sits in the data bytes, so motor drives, battery systems, sensors and homemade nodes work without device-specific code.
 
 ## What it supports
 

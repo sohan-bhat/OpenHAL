@@ -1,0 +1,84 @@
+name: TestPyPI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.5"
+          python-version: "3.12"
+          enable-cache: false
+      - id: version
+        run: echo "version=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')" >> "$GITHUB_OUTPUT"
+      - name: Build the sdist and the wheel
+        run: uv build
+      - name: Check the file names
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          ls dist
+          test -f "dist/halkit-$VERSION.tar.gz"
+          test -f "dist/halkit-$VERSION-py3-none-any.whl"
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/halkit/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@v1.14.3
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  verify:
+    needs: [build, publish]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.5"
+          python-version: "3.12"
+          enable-cache: false
+      - name: Take only halkit from TestPyPI and its dependencies from PyPI, then run the demo
+        run: |
+          for attempt in $(seq 1 20); do
+            python3 -m pip download --quiet --no-deps --only-binary=:all: --index-url https://test.pypi.org/simple/ \
+              --dest testpypi "halkit==$VERSION" && break
+            echo "TestPyPI doesn't list halkit $VERSION yet, attempt $attempt."
+            sleep 15
+          done
+          test -f "testpypi/halkit-$VERSION-py3-none-any.whl"
+          uv venv "$RUNNER_TEMP/testpypi"
+          uv pip install --python "$RUNNER_TEMP/testpypi/bin/python" "testpypi/halkit-$VERSION-py3-none-any.whl"
+          test "$("$RUNNER_TEMP/testpypi/bin/openhal" --version)" = "openhal $VERSION"
+          test "$("$RUNNER_TEMP/testpypi/bin/halkit" --version)" = "openhal $VERSION"
+          "$RUNNER_TEMP/testpypi/bin/openhal" demo

@@ -24,7 +24,7 @@ Then set up your first device and your AI clients with `openhal init`, and start
 
 ## With uv or pipx
 
-`uv tool install` and `pipx install` put `openhal` on your PATH in an environment of its own, and OpenHAL needs Python 3.12 or newer.
+`uv tool install` and `pipx install` put `openhal` on your PATH in an environment of its own. OpenHAL runs on Python 3.12, 3.13, 3.14 and 3.15.
 
 <!-- tools:start -->
 OpenHAL isn't on PyPI yet, so uv and pipx install OpenHAL from GitHub, which needs git.

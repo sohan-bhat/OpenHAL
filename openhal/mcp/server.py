@@ -23,7 +23,7 @@ from openhal._brand import PRODUCT_NAME, START_COMMAND
 from openhal.client import AsyncClient
 from openhal.client.settings import TOKEN_ENV, home_dir, read_token_file, resolve_url
 from openhal.mcp import prompts
-from openhal.mcp.tools import HUMAN_PRINCIPAL_REFUSED, TOOLS, Tools, image_tool
+from openhal.mcp.tools import HUMAN_PRINCIPAL_REFUSED, NOT_SET_UP, TOOLS, Tools, image_tool
 
 INSTRUCTIONS: Final = """\
 OpenHAL connects you to real hardware through a local hub. A deterministic safety kernel in the hub checks
@@ -53,8 +53,13 @@ class SetupError(RuntimeError):
     """The MCP server can't start. The message gives the next step."""
 
 
-def load_agent_token(token_file: Path | None = None) -> str:
-    """The agent token, from `--token-file` or `OPENHAL_TOKEN`. The human token file is never used."""
+def load_agent_token(token_file: Path | None = None) -> str | None:
+    """The agent token, from `--token-file` or `OPENHAL_TOKEN`, or None. The human token file is never used.
+
+    A token file that was named but is missing or empty is a setup mistake and stops the server. A
+    client config with an empty token setting can pass its placeholder through unexpanded, such as
+    `${OPENHAL_TOKEN}`, which counts as no token.
+    """
     if token_file is not None:
         path = token_file.expanduser()
         token = read_token_file(path)
@@ -62,13 +67,9 @@ def load_agent_token(token_file: Path | None = None) -> str:
             raise SetupError(f"The token file {path} is missing or empty.")
         return token
     token = os.environ.get(TOKEN_ENV, "").strip()
-    if token:
-        return token
-    raise SetupError(
-        f"{PRODUCT_NAME} MCP needs an agent token. Create one with "
-        "openhal token create --agent --scope control_low --name <client>, then set "
-        f"{TOKEN_ENV} to it in the MCP client config, or pass --token-file."
-    )
+    if token.startswith("${") and token.endswith("}"):
+        return None
+    return token or None
 
 
 def build_server(client: AsyncClient) -> tuple[MCPServer, Tools]:
@@ -147,10 +148,18 @@ def check_token_kind(url: str, token: str) -> str | None:
 def run(
     *, token_file: Path | None = None, url: str | None = None, start: bool = True, home: Path | None = None
 ) -> None:
-    """Run the stdio MCP server until the client closes it. Errors go to stderr, never stdout."""
+    """Run the stdio MCP server until the client closes it. Errors go to stderr, never stdout.
+
+    With no agent token the server still starts and lists its tools, so an MCP client or directory
+    can see them, and every tool call returns NOT_SET_UP, the steps that set OpenHAL up. The server
+    starts no hub then, because no tool call could use one.
+    """
     token = load_agent_token(token_file)
     base = resolve_url(url, home=home)
-    if not hub_answers(base):
+    if token is None:
+        os.environ.pop(TOKEN_ENV, None)
+        print(NOT_SET_UP, file=sys.stderr)
+    elif not hub_answers(base):
         if start and start_hub(home_dir(home), base):
             print(f"Started {PRODUCT_NAME} at {base}.", file=sys.stderr)
         else:
@@ -159,7 +168,7 @@ def run(
                 "Every tool call returns the same error until the hub is running.",
                 file=sys.stderr,
             )
-    if check_token_kind(base, token) == "human":
+    if token is not None and check_token_kind(base, token) == "human":
         raise SetupError(HUMAN_PRINCIPAL_REFUSED)
     client = AsyncClient(base, token, use_human_token_file=False, timeout=30.0)
     server, _ = build_server(client)

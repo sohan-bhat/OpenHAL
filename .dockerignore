@@ -1,0 +1,12 @@
+*
+!pyproject.toml
+!uv.lock
+!README.md
+!LICENSE
+!CHANGELOG.md
+!openhal
+!examples/plant-waterer
+!examples/print-babysitter
+!library
+!docker
+**/__pycache__

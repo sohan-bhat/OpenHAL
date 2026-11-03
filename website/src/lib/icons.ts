@@ -7,6 +7,7 @@ export const ICON_SIZES: Record<string, number> = {
   "apple-touch-icon": 180,
   "icon-192": 192,
   "icon-512": 512,
+  "logo-400": 400,
 };
 
 export async function iconPng(size: number): Promise<Uint8Array> {

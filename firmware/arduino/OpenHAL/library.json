@@ -1,0 +1,26 @@
+{
+  "$schema": "https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/schema/library.json",
+  "name": "OpenHAL",
+  "version": "0.2.0",
+  "description": "Lets an OpenHAL hub discover, read and safely control your board, every pin included. The board describes its readings and outputs, enforces its own output limits and falls to a safe state when the hub goes quiet.",
+  "keywords": ["openhal", "hardware", "ai agents", "mcp", "safety", "serial"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sohan-bhat/openhal.git"
+  },
+  "authors": [
+    {
+      "name": "OpenHAL contributors",
+      "url": "https://github.com/sohan-bhat/OpenHAL",
+      "maintainer": true
+    }
+  ],
+  "license": "Apache-2.0",
+  "homepage": "https://sohan-bhat.github.io/OpenHAL/",
+  "frameworks": ["arduino"],
+  "platforms": ["*"],
+  "headers": ["OpenHAL.h"],
+  "export": {
+    "exclude": ["extras"]
+  }
+}

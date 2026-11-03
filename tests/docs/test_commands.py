@@ -142,7 +142,7 @@ class Saved:
 
 
 def pages() -> list[Path]:
-    found = [ROOT / "README.md"]
+    found = [ROOT / name for name in ("README.md", "CHANGELOG.md", "llms-install.md")]
     for folder in ("docs", "spec"):
         found.extend(sorted((ROOT / folder).rglob("*.md")))
     return [path for path in found if path.is_file() and "docs/agents/" not in path.as_posix()]
