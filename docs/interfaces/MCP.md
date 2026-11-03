@@ -99,7 +99,7 @@ Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)
 | `hub_status` | Hub state, protocol version, stop lock, connected devices, pending confirmations |
 | `list_devices` | Every device with hazard class, writable and connected |
 | `find` | Search every device's channels and actions by text, unit, kind, hazard and connection, as `device.channel` targets |
-| `describe_device` | Channels with units and limits, actions, interlocks, watchdog, safe state, latest values, notes |
+| `describe_device` | Channels with units and limits, actions, interlocks, watchdog, safe state, latest values, notes, and each channel's and action's risk level and whether it is read-only |
 | `read` | Read one channel now. A camera frame comes back as an image |
 | `read_many` | Read up to 100 channels. Images come without their pixels |
 | `sample` | Read channels at an interval over a duration, with min, max and mean for numbers |
@@ -165,6 +165,7 @@ Only a person with the human token can do the following, in the CLI or the dashb
 - Approve or reject a request held for confirmation (`openhal confirm approve`)
 - Unlock after a stop (`openhal unlock`)
 - Loosen a limit or confirm a device file (`openhal file confirm`, the limits interview)
+- Lower a risk level (`openhal risk set`). An agent sees every level in `describe_device` and `find`, and changes none
 - Enable a routine, unless `routines.agent_enable_low_hazard` is on and every device the routine touches is low hazard
 - Sign a routine approval for a high hazard device
 - Change the run caps (`openhal runs caps`)
