@@ -1,0 +1,159 @@
+# A person who knows nothing about OpenHAL, at a terminal, with simulated devices only.
+$ openhal
+OpenHAL 0.1.0.dev0
+
+setup  ~/.openhal is not set up yet
+hub    not running at http://127.0.0.1:7431
+
+Next
+openhal init  set up the config folder, the human token and a simulated plant waterer
+openhal demo  watch an agent babysit a simulated 3D print, with nothing to set up
+
+openhal --help lists every command.
+[exit 0]
+
+$ openhal init
+[on screen]
+config folder  ~/.openhal (mode 0700)
+settings       ~/.openhal/config.yaml created
+human token    ~/.openhal/human.token created (mode 0600)
+sample device  ~/.openhal/devices/plant-waterer.hal.yaml created, read-only until you confirm it
+Search for devices? Discovery only sends read-only identify commands. [Y/n]:
+[the person presses] n Enter
+[on screen]
+config folder  ~/.openhal (mode 0700)
+settings       ~/.openhal/config.yaml created
+human token    ~/.openhal/human.token created (mode 0600)
+sample device  ~/.openhal/devices/plant-waterer.hal.yaml created, read-only until you confirm it
+Search for devices? Discovery only sends read-only identify commands. [Y/n]: n
+Token for your AI client. Scope read, control_low, control_medium or skip [read]:
+[the person presses] skip Enter
+[on screen]
+config folder  ~/.openhal (mode 0700)
+settings       ~/.openhal/config.yaml created
+human token    ~/.openhal/human.token created (mode 0600)
+sample device  ~/.openhal/devices/plant-waterer.hal.yaml created, read-only until you confirm it
+Search for devices? Discovery only sends read-only identify commands. [Y/n]: n
+Token for your AI client. Scope read, control_low, control_medium or skip [read]: skip
+Run the hub in the background, starting at login? [y/N]:
+[the person presses] Enter
+[on screen when the command ends]
+config folder  ~/.openhal (mode 0700)
+settings       ~/.openhal/config.yaml created
+human token    ~/.openhal/human.token created (mode 0600)
+sample device  ~/.openhal/devices/plant-waterer.hal.yaml created, read-only until you confirm it
+Search for devices? Discovery only sends read-only identify commands. [Y/n]: n
+Token for your AI client. Scope read, control_low, control_medium or skip [read]: skip
+Run the hub in the background, starting at login? [y/N]:
+
+Next steps
+1. Confirm the sample's limits with openhal file confirm ~/.openhal/devices/plant-waterer.hal.yaml
+2. Start OpenHAL with openhal start, then check the hub with openhal status
+3. Create a token for your AI client with openhal token create --agent --scope control_low --name claude
+4. Add openhal mcp to the client. docs/interfaces/MCP.md has the config for each client
+5. Run openhal doctor whenever something looks wrong
+[exit 0]
+
+# A simulated desk lamp joins the plant waterer, with limits a person already confirmed.
+# OpenHAL runs in a second terminal with openhal start.
+$ openhal
+OpenHAL 0.1.0.dev0
+
+setup     ~/.openhal is set up
+hub       running at http://127.0.0.1:7431 as human:owner
+devices   desk-lamp and plant-waterer connected
+requests  none held for a person
+
+Next
+openhal file confirm  answer each limit of plant-waterer, read-only until then
+openhal devices       list the devices and the channels of each
+openhal limits        see and change each device's limits
+
+openhal --help lists every command.
+[exit 0]
+
+$ openhal limits
+device     channel     min to max   max change  device range  confirm
+desk-lamp  brightness  0 % to 80 %  10 %/s      0 % to 100 %  none
+plant-waterer is read-only. Answer each limit first with openhal file confirm ~/.openhal/devices/plant-waterer.hal.yaml
+Change a limit with openhal limits set desk-lamp.brightness --max "60 %", or pick each step with openhal limits set
+[exit 0]
+
+$ openhal limits show
+[on screen]
+? Pick a device (arrow keys move, typing filters the list, Enter picks)
+ » desk-lamp      Desk lamp
+   plant-waterer  Arduino plant waterer, read-only
+[the person presses] lamp Enter
+[on screen when the command ends]
+? Pick a device desk-lamp      Desk lamp
+channel     min to max   max change  device range  confirm
+brightness  0 % to 80 %  10 %/s      0 % to 100 %  none
+confirmed by owner on 2026-11-03
+[exit 0]
+
+$ openhal limits set
+[on screen]
+? Pick a device (arrow keys move, typing filters the list, Enter picks)
+ » desk-lamp  brightness
+[the person presses] Enter
+[on screen]
+? Pick a device desk-lamp  brightness
+? Pick a channel of desk-lamp (arrow keys move, typing filters the list, Enter picks)
+ » brightness  0 % to 80 %, max change 10 %/s, device reports 0 % to 100 %
+[the person presses] Enter
+[on screen]
+? Pick a device desk-lamp  brightness
+? Pick a channel of desk-lamp brightness  0 % to 80 %, max change 10 %/s, device reports 0 % to 100 %
+? Pick the limit to change on desk-lamp.brightness (arrow keys move, typing filters the list, Enter picks)
+ » max   the most an agent may set, now 80 %
+   min   the least an agent may set, now 0 %
+   rate  the largest change per second, now 10 %/s
+[the person presses] Enter
+[on screen]
+? Pick a device desk-lamp  brightness
+? Pick a channel of desk-lamp brightness  0 % to 80 %, max change 10 %/s, device reports 0 % to 100 %
+? Pick the limit to change on desk-lamp.brightness max   the most an agent may set, now 80 %
+? New max for desk-lamp.brightness  (with its unit, such as 80 %. The device reports 0 % to 100 %.) 80 %
+[the person presses] Control U, 60 %, Enter
+[on screen when the command ends]
+? Pick a device desk-lamp  brightness
+? Pick a channel of desk-lamp brightness  0 % to 80 %, max change 10 %/s, device reports 0 % to 100 %
+? Pick the limit to change on desk-lamp.brightness max   the most an agent may set, now 80 %
+? New max for desk-lamp.brightness  (with its unit, such as 80 %. The device reports 0 % to 100 %.) 60 %
+desk-lamp.brightness
+max   80 % to 60 %
+done  Done. desk-lamp.brightness max 80 % to 60 %
+The same change in one line is openhal limits set desk-lamp.brightness --max "60 %"
+[exit 0]
+
+# The same commands with no terminal, as a script or an agent runs them.
+$ openhal limits show < /dev/null
+error  openhal limits show needs a device.
+  devices  plant-waterer, desk-lamp
+  run      openhal limits show plant-waterer
+[exit 2]
+
+$ openhal limits set < /dev/null
+error  openhal limits set needs a device.
+  devices  desk-lamp
+  run      openhal limits set desk-lamp.brightness --max "45 %"
+[exit 2]
+
+$ openhal limits set desk-lamp < /dev/null
+error  openhal limits set needs a channel of desk-lamp.
+  channels  brightness
+  run       openhal limits set desk-lamp.brightness --max "45 %"
+[exit 2]
+
+$ openhal limits set desk-lamp.brightness < /dev/null
+error  openhal limits set needs --min, --max or --rate.
+  now  0 % to 60 %, max change 10 %/s, device reports 0 % to 100 %
+  run  openhal limits set desk-lamp.brightness --max "45 %"
+[exit 2]
+
+$ openhal limits set desk-lamp.brightness --max 50% < /dev/null
+desk-lamp.brightness
+max   60 % to 50 %
+done  Done. desk-lamp.brightness max 60 % to 50 %
+[exit 0]

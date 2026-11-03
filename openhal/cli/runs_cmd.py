@@ -3,7 +3,8 @@
 `list`, `show` and `cancel` work with any token, and an agent token sees only its own runs. `caps`
 shows the caps and, given a new value, changes them, which takes the human token. A lower cap
 applies at once. A higher cap takes the typed phrase confirm, as `openhal limits set` does to widen
-a limit, so no script or agent's shell can raise a cap.
+a limit, so no script or agent's shell can raise a cap. A bare `openhal runs` lists the runs, and at
+a terminal `show` and `cancel` without a run id show a picker (ADR 0020).
 """
 
 from __future__ import annotations
@@ -14,34 +15,73 @@ import typer
 from rich.markup import escape
 from rich.table import Table
 
-from openhal.cli import _tty
+from openhal.cli import _choices, _tty
+from openhal.cli._choices import Need
 from openhal.cli._common import console, handled, hub, print_json, styled
+from openhal.cli._pick import Option
 from openhal.cli.limits_cmd import _person_can_type
+from openhal.client.models import StepRun
 from openhal.hub.runs import CAPS_PHRASE
 
-app = typer.Typer(help="See and cancel runs of steps, and set the caps on them.", no_args_is_help=True)
+app = typer.Typer(help="See and cancel runs of steps, and set the caps on them.")
 
 WHAT = "raise these run caps"
 CAPS = ("max_steps", "max_seconds", "per_agent")
+
+
+def _list(as_json: bool) -> list[StepRun]:
+    with hub() as client:
+        runs = client.runs()
+    if as_json:
+        print_json(runs)
+        return []
+    if not runs:
+        console.print("No runs yet.")
+        return []
+    table = Table("run", "owner", "status", "steps", "message", box=None, pad_edge=False)
+    for run in runs:
+        steps = f"{run.done_steps} of {run.total_steps}"
+        table.add_row(escape(run.run_id), escape(run.owner), styled(run.status), steps, escape(run.message))
+    console.print(table)
+    return runs
+
+
+@app.callback(invoke_without_command=True)
+@handled
+def overview(ctx: typer.Context, as_json: bool = typer.Option(False, "--json", help="Print JSON.")) -> None:
+    """The runs this token can see, and how to look at one."""
+    if ctx.invoked_subcommand is not None:
+        return
+    runs = _list(as_json)
+    if runs:
+        console.print(f"Show every step of one with openhal runs show {escape(runs[0].run_id)}")
 
 
 @app.command("list")
 @handled
 def list_runs(as_json: bool = typer.Option(False, "--json", help="Print JSON.")) -> None:
     """List the runs this token can see, newest first. The human token sees every run."""
-    with hub() as client:
-        runs = client.runs()
-    if as_json:
-        print_json(runs)
-        return
-    if not runs:
-        console.print("No runs yet.")
-        return
-    table = Table("run", "owner", "status", "steps", "message", box=None, pad_edge=False)
-    for run in runs:
-        steps = f"{run.done_steps} of {run.total_steps}"
-        table.add_row(escape(run.run_id), escape(run.owner), styled(run.status), steps, escape(run.message))
-    console.print(table)
+    _list(as_json)
+
+
+def _run(command: str, *, running: bool = False, as_json: bool = False) -> str:
+    def options() -> list[Option]:
+        with hub() as client:
+            runs = client.runs()
+        return [
+            Option(run.run_id, f"{run.status}, {run.owner}, {run.done_steps} of {run.total_steps} steps")
+            for run in runs
+            if not running or run.status == "running"
+        ]
+
+    spec = Need(
+        command,
+        "a running run" if running else "a run",
+        "runs",
+        empty="No run is going now." if running else "No runs yet.",
+        every="openhal runs list",
+    )
+    return _choices.need(spec, options, as_json=as_json)
 
 
 def _what(result: Any) -> str:
@@ -58,10 +98,11 @@ def _what(result: Any) -> str:
 @app.command("show")
 @handled
 def show_run(
-    run_id: str = typer.Argument(..., help="A run id from openhal runs list."),
+    run_id: str = typer.Argument(None, help="A run id from openhal runs list. A terminal shows a picker."),
     as_json: bool = typer.Option(False, "--json", help="Print JSON."),
 ) -> None:
     """Show one run with every step it ran."""
+    run_id = run_id or _run("openhal runs show", as_json=as_json)
     with hub() as client:
         run = client.run(run_id, last=10_000)
     if as_json:
@@ -76,8 +117,11 @@ def show_run(
 
 @app.command("cancel")
 @handled
-def cancel_run(run_id: str = typer.Argument(..., help="A run id from openhal runs list.")) -> None:
+def cancel_run(
+    run_id: str = typer.Argument(None, help="A run id from openhal runs list. A terminal shows a picker."),
+) -> None:
     """End a run before its next step. The human token may end any run."""
+    run_id = run_id or _run("openhal runs cancel", running=True)
     with hub() as client:
         run = client.cancel_run(run_id)
     console.print(f"{styled(run.status)}  {escape(run.message)}")
