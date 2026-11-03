@@ -20,9 +20,9 @@ The OpenHAL launch film is drawn entirely from code. There is no stock footage, 
 | `remotion/` | The same shot in Remotion with React Three Fiber |
 | `out/` | Renders, which git ignores |
 
-The arm keeps the real joint names everywhere: `shoulder_pan`, `shoulder_lift`, `elbow_flex`, `wrist_flex`, `wrist_roll` and `gripper`, in radians in code and degrees in shot files. Joint zero is the middle of each joint's range, the URDF's "new calibration". The test motion in `shots/test_pick.json` is hand-keyed by inverse kinematics. It is not hub data. The film's motion will come from a recording of the OpenHAL hub, written into the same shot format.
+Every file uses the real arm's joint names, `shoulder_pan`, `shoulder_lift`, `elbow_flex`, `wrist_flex`, `wrist_roll` and `gripper`, in radians in code and degrees in shot files. Joint zero is the middle of each joint's range, the URDF's "new calibration". The test motion in `shots/test_pick.json` is hand-keyed by inverse kinematics. It is not hub data. The film's motion will come from a recording of the OpenHAL hub, written into the same shot format.
 
-To pose the arm in another Blender shot:
+This poses the arm in another Blender shot.
 
 ```python
 import so101_urdf, so101_blender, studio_blender
@@ -62,7 +62,7 @@ python3 -I video/scenes/author_test_pick.py
 python3 -I video/scenes/so101_cables.py
 ```
 
-Blender, Cycles on the CPU, three key frames at 4K (about 12 minutes each here):
+Blender, Cycles on the CPU, three key frames at 4K (about 12 minutes each here).
 
 ```sh
 $B -b --factory-startup -noaudio --python video/scenes/test_shot.py -- \
@@ -71,14 +71,14 @@ $B -b --factory-startup -noaudio --python video/scenes/test_shot.py -- \
 
 `--frames` also takes ranges with a step, such as `1-150:15`, and every run appends each frame's render time to `times.csv` in its output folder.
 
-Blender, EEVEE, the whole shot at 4K:
+Blender, EEVEE, the whole shot at 4K.
 
 ```sh
 $B -b --factory-startup -noaudio --python video/scenes/test_shot.py -- \
   --engine eevee --width 3840 --height 2160 --samples 16 --frames 1-150 --out video/out/frames/eevee-4k
 ```
 
-Encode a frame folder and delete the frames:
+Encode a frame folder and delete the frames.
 
 ```sh
 $FF -framerate 30 -i video/out/frames/eevee-4k/frame_%04d.png -c:v libx264 -preset slow -crf 14 \
@@ -86,7 +86,7 @@ $FF -framerate 30 -i video/out/frames/eevee-4k/frame_%04d.png -c:v libx264 -pres
 rm video/out/frames/eevee-4k/frame_*.png
 ```
 
-Remotion, the whole shot at 4K, straight to H.264:
+Remotion, the whole shot at 4K, straight to H.264.
 
 ```sh
 cd video/remotion
@@ -97,7 +97,7 @@ pnpm exec remotion still TestPick ../out/test/remotion-4k-f094.png --frame=93 --
 
 Remotion counts frames from 0 and the shot files count from 1, so Remotion frame 93 is shot frame 94. The longer timeout covers a still started while Blender holds the GPU.
 
-The comparison still reads three PNG files from `video/assets/compare/` and sets the labels in IBM Plex:
+The comparison still reads three PNG files from `video/assets/compare/` and sets the labels in IBM Plex.
 
 ```sh
 mkdir -p video/assets/compare
@@ -119,4 +119,5 @@ cd video/remotion && pnpm exec remotion still Compare ../out/test/compare-f094.p
 | `blender-eevee-4k-f001.png`, `-f094`, `-f150` | EEVEE stills of the same frames |
 | `remotion-4k-f001.png`, `-f094`, `-f150` | Remotion stills of the same frames |
 | `blender-eevee-4k-32spp-f094.png` | EEVEE at 32 samples, to compare with 16 |
+| `remotion-4k-f094-wider-dof-trial.png` | Remotion with a stronger depth of field blur, a trial left out of the shot |
 | `compare-f094.png` | The three stacks side by side, with 100 percent crops |

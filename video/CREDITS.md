@@ -6,12 +6,14 @@ Everything in the launch film is drawn from code. These are the outside files th
 
 The arm is the SO-101 by TheRobotStudio, the arm Hugging Face LeRobot uses.
 
-- Source: https://github.com/TheRobotStudio/SO-ARM100, folder `Simulation/SO101`, at commit `5f6d2b876a53a4872e405b991dd925556c9e38a4` (2026-09-23)
-- License: Apache License 2.0, read from the repository's `LICENSE` file at that commit and from the GitHub license field. The fetch script keeps a copy at `video/assets/so101/LICENSE`.
-- Upstream note: the URDF was generated from TheRobotStudio's Onshape CAD with onshape-to-robot.
-- Changes: none to the files. The film scenes import the parts as they are. `video/scenes/export_glb.py` derives smoothed GLB copies of the same parts for the Remotion project, kept only in `video/assets/so101/glb/`.
+| | |
+|---|---|
+| Source | https://github.com/TheRobotStudio/SO-ARM100, folder `Simulation/SO101`, at commit `5f6d2b876a53a4872e405b991dd925556c9e38a4` (2026-09-23) |
+| License | Apache License 2.0, read from the repository's `LICENSE` file at that commit and from the GitHub license field. The fetch script keeps a copy at `video/assets/so101/LICENSE`. |
+| Origin | TheRobotStudio generated the URDF from its Onshape CAD with onshape-to-robot. |
+| Changes | None to the files. The film scenes import the parts as they are. `video/scenes/export_glb.py` derives smoothed GLB copies of the same parts for the Remotion project, kept only in `video/assets/so101/glb/`. |
 
-Files used:
+The film uses these files.
 
 | File | Role |
 |---|---|
@@ -30,16 +32,18 @@ Files used:
 | `assets/sts3215_03a_v1.stl` | STS3215 servo, five instances |
 | `assets/sts3215_03a_no_horn_v1.stl` | STS3215 servo without horn, wrist roll |
 
-Why this source. The MuJoCo Menagerie model `robotstudio_so101` (Apache-2.0) and the LeRobot documentation both derive from this URDF and use the same STL parts. The Menagerie copy adds collision primitives and a camera mount for simulation, which a film doesn't need, so the original export gives the most faithful geometry with the least change.
+This export has the most faithful geometry. The MuJoCo Menagerie model `robotstudio_so101` (Apache-2.0) is derived from it, according to the Menagerie README, and uses the same STL parts. The Menagerie copy adds collision primitives and a camera mount for simulation, which a film doesn't need.
 
 The servo cables are not part of the CAD. `video/scenes/so101_cables.py` adds them as curves between servo housings.
 
 ## Studio HDRI
 
-- Asset: Studio Small 09 by Sergej Majboroda, Poly Haven, 2K Radiance HDR (`studio_small_09_2k.hdr`)
-- Source: https://polyhaven.com/a/studio_small_09
-- License: CC0 1.0. Poly Haven publishes every asset under CC0.
-- Use: reflections and soft ambient light only. The camera never sees it.
+| | |
+|---|---|
+| Asset | Studio Small 09 by Sergej Majboroda, Poly Haven, 2K Radiance HDR (`studio_small_09_2k.hdr`) |
+| Source | https://polyhaven.com/a/studio_small_09 |
+| License | CC0 1.0. Poly Haven publishes every asset under CC0. |
+| Use | Reflections and soft ambient light only. Camera rays skip it, so it never shows in frame. |
 
 ## Fonts
 
