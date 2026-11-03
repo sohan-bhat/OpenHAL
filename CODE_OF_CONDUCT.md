@@ -40,9 +40,8 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 Report abusive, harassing or otherwise unacceptable behavior privately to the maintainers of github.com/sohan-bhat/OpenHAL, who are the community leaders responsible for enforcement.
 
-1. Open the menu on the comment, issue, pull request or discussion and choose **Report content**.
-2. Choose **Report to repository admins**. Only the maintainers see the report. To reach GitHub's own staff instead, choose **Report abuse**.
-3. If the behavior is not on GitHub, or the report needs more room, open a private report through **Security**, then **Report a vulnerability**, and start its title with "Conduct". Only the maintainers can read it.
+1. Open a private report through **Security**, then **Report a vulnerability**, on the repository page, and start its title with "Conduct". Only the maintainers can read the report, and this route works for behavior on GitHub and elsewhere.
+2. On a comment, issue, pull request or discussion, the menu's **Report content** also offers **Report to repository admins** when GitHub shows that option for this repository, and only the maintainers see that report. **Report abuse** in the same menu reaches GitHub's own staff instead.
 
 All complaints will be reviewed and investigated promptly and fairly.
 
