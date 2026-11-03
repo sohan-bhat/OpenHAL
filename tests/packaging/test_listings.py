@@ -59,6 +59,18 @@ def test_the_install_steps_for_agents_name_the_package_and_the_command() -> None
     assert '"args": ["mcp"]' in text
 
 
+def test_the_arduino_library_manifests_agree() -> None:
+    """The Library Manager reads library.properties and PlatformIO reads library.json, from one library folder."""
+    library = ROOT / "firmware" / "arduino" / "OpenHAL"
+    lines = (library / "library.properties").read_text(encoding="utf-8").splitlines()
+    properties = dict(line.split("=", 1) for line in lines if "=" in line)
+    manifest = read(library / "library.json")
+    assert (manifest["name"], manifest["version"]) == (properties["name"], properties["version"])
+    assert manifest["headers"] == [properties["includes"]]
+    assert all((library / "src" / header).is_file() for header in manifest["headers"])
+    assert (library / "LICENSE").read_bytes() == (ROOT / "LICENSE").read_bytes()
+
+
 def test_the_logo_is_a_400_pixel_square_png() -> None:
     data = (ROOT / "docs" / "assets" / "logo-400.png").read_bytes()
     assert data[:8] == b"\x89PNG\r\n\x1a\n"
