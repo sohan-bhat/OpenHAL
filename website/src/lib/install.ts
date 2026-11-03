@@ -38,6 +38,24 @@ export function installChannels(onPyPI: boolean = ON_PYPI): InstallChannel[] {
     }));
 }
 
+/** The demo's commands, as the home page and the README show them. */
+export interface DemoCommands {
+  installed: string;
+  withoutInstall?: string;
+}
+
+/**
+ * The demo after the install, and the uvx command that runs the demo without an install. uvx
+ * fetches the distribution from PyPI, so the uvx command shows only once onPyPI is true, the way
+ * the hero leaves out its uv and pipx tabs until then.
+ */
+export function demoCommands(onPyPI: boolean = ON_PYPI): DemoCommands {
+  return {
+    installed: fillCommand(install.demo.command),
+    ...(onPyPI ? { withoutInstall: fillCommand(install.demo.fromPyPI) } : {}),
+  };
+}
+
 /**
  * The pieces a command wraps between, so a narrow screen breaks a line only between words or
  * after a slash in an address, and a pipe stays with the command after the pipe.

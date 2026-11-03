@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
+import { demoCommands } from "../../src/lib/install";
 import { SCENARIO_PATH, scenarioFrom } from "../../src/lib/scenario-data.mjs";
 
 const scenarioFile = process.env.OPENHAL_SCENARIO ?? fileURLToPath(new URL(`../../../${SCENARIO_PATH}`, import.meta.url));
@@ -43,6 +44,19 @@ test.describe("overview", () => {
     await expect(page.locator("#try")).not.toContainText("uv run");
     await expect(page.locator("#try .lede")).toHaveText("The demo uses simulated devices, so nothing touches real hardware. Install OpenHAL from the top of the page, then run the demo.");
     await expect(page.locator("#try")).toContainText("The demo plays the same story in your terminal.");
+  });
+
+  test("the demo runs through uvx with the PyPI name only once install.json says the distribution is on PyPI", async ({ page }) => {
+    await page.goto("/");
+    const { withoutInstall } = demoCommands();
+    const blocks = page.locator("#try figure.code-block pre");
+    if (withoutInstall) {
+      await expect(blocks).toHaveText(["$ openhal demo", `$ ${withoutInstall}`]);
+      await expect(page.locator("#try")).toContainText("With uv installed, you can also run the demo without installing OpenHAL.");
+    } else {
+      await expect(blocks).toHaveText(["$ openhal demo"]);
+      await expect(page.locator("#try")).not.toContainText("uvx");
+    }
   });
 
   test("the demo's command sits on one line, and Copy copies the command without its prompt", async ({ page, browserName, context }) => {
