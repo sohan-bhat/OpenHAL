@@ -195,11 +195,12 @@ test.describe("page weight", () => {
         for (const [face, weight] of found) used.set(face, (used.get(face) ?? new Set()).add(weight));
       }
     }
-    for (const face of manifest.faces) {
-      const weights = [...(used.get(`${face.family} ${face.style}`) ?? [])];
+    for (const [key, weights] of used) {
+      const kept = manifest.faces.filter((face) => `${face.family} ${face.style}` === key);
+      if (!kept.length) continue;
       for (const weight of weights) {
-        expect(Math.min(weight, 800), `${face.family} ${face.style} at ${weight}`).toBeGreaterThanOrEqual(face.weights[0]);
-        expect(Math.min(weight, 800), `${face.family} ${face.style} at ${weight}`).toBeLessThanOrEqual(face.weights[1]);
+        const drawn = Math.min(weight, 700);
+        expect(kept.some((face) => drawn >= face.weights[0] && drawn <= face.weights[1]), `${key} at ${weight}`).toBe(true);
       }
     }
   });

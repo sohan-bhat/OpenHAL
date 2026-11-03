@@ -23,11 +23,11 @@ export async function ogImage(title: string, kind: string): Promise<Uint8Array> 
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>
 ${fontFaces()}
 *{box-sizing:border-box;margin:0}
-body{width:1200px;height:630px;background:${p.bg};color:${p.text};font-family:"Atkinson Hyperlegible Next";display:flex;flex-direction:column;padding:56px 64px}
+body{width:1200px;height:630px;background:${p.bg};color:${p.text};font-family:"IBM Plex Sans";display:flex;flex-direction:column;padding:56px 64px}
 .top{display:flex;align-items:center;gap:14px}
 .kind{margin-left:auto;font-size:24px;font-weight:700;color:${p["text-2"]};font-variant-caps:all-small-caps;letter-spacing:.04em}
 h1{margin-top:44px;font-size:${size}px;line-height:1.12;font-weight:700;letter-spacing:-0.01em;max-width:1060px}
-.trace{margin-top:auto;background:${p.surface};border:1px solid ${p.border};border-radius:10px;padding:26px 30px;font-family:"Atkinson Hyperlegible Mono";font-size:22px;line-height:1.6;display:grid;grid-template-columns:30px 1fr;column-gap:14px;row-gap:6px;align-items:baseline}
+.trace{margin-top:auto;background:${p.surface};border:1px solid ${p.border};border-radius:10px;padding:26px 30px;font-family:"IBM Plex Mono";font-size:22px;line-height:1.6;display:grid;grid-template-columns:30px 1fr;column-gap:14px;row-gap:6px;align-items:baseline}
 .trace svg{width:22px;height:12px;color:${p.text};align-self:center}
 .method{color:${p.text};font-weight:700;margin-right:22px}
 .error{color:${p.blocked};font-weight:700}.result{color:${p.ok};font-weight:700}

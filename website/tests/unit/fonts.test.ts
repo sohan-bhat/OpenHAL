@@ -38,11 +38,10 @@ describe("the website's fonts", () => {
   });
 
   it("join the faces in design/tokens.css, so a character a subset lacks falls back to the full face", () => {
-    const full = faces(tokens).filter((face) => face.family.startsWith('"Atkinson Hyperlegible'));
+    const full = faces(tokens).filter((face) => /^"IBM Plex (Sans|Mono)"$/.test(face.family));
     for (const face of subset) {
-      const twin = full.find((item) => item.family === face.family && item.style === face.style);
-      expect(twin, `${face.family} ${face.style}`).toBeDefined();
-      expect(face.weight).toBe(twin!.weight);
+      const twin = full.find((item) => item.family === face.family && item.style === face.style && item.weight === face.weight);
+      expect(twin, `${face.family} ${face.style} ${face.weight}`).toBeDefined();
     }
     expect(global.indexOf('@import "./fonts.css"')).toBeGreaterThan(global.indexOf("design/tokens.css"));
   });
@@ -61,8 +60,8 @@ describe("the website's fonts", () => {
   it("preload the subsets, the mono face only where a page asks for it", () => {
     const preloads = [...head.matchAll(/<link rel="preload"[^>]*as="font"[^>]*>/g)].map((match) => match[0]);
     expect(preloads).toHaveLength(2);
-    expect(head).toContain('from "../../fonts/atkinson-hyperlegible-next-normal.woff2?url"');
-    expect(head).toContain('from "../../fonts/atkinson-hyperlegible-mono-normal.woff2?url"');
-    expect(head).toContain("{data.mono !== false && <link rel=\"preload\" href={atkinsonMono}");
+    expect(head).toContain('from "../../fonts/ibm-plex-sans-normal.woff2?url"');
+    expect(head).toContain('from "../../fonts/ibm-plex-mono-400-normal.woff2?url"');
+    expect(head).toContain("{data.mono !== false && <link rel=\"preload\" href={plexMono}");
   });
 });

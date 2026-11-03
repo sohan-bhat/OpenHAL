@@ -8,15 +8,15 @@ import { palette } from "../palette.mjs";
 import { REPO_ROOT } from "../spec-meta.mjs";
 import { fontless, themedDiagram } from "./diagram-theme.mjs";
 
-const FONT = "Atkinson Hyperlegible Next";
-const MONO = "Atkinson Hyperlegible Mono";
+const FONT = "IBM Plex Sans";
+const MONO = "IBM Plex Mono";
 
 function fontCss() {
-  const face = (family, file) => {
+  const face = (family, file, weight) => {
     const data = readFileSync(join(REPO_ROOT, "design", "fonts", file)).toString("base64");
-    return `@font-face{font-family:"${family}";font-weight:200 800;src:url(data:font/woff2;base64,${data}) format("woff2");}`;
+    return `@font-face{font-family:"${family}";font-weight:${weight};src:url(data:font/woff2;base64,${data}) format("woff2");}`;
   };
-  const css = face(FONT, "atkinson-hyperlegible-next-latin-wght-normal.woff2") + face(MONO, "atkinson-hyperlegible-mono-latin-wght-normal.woff2");
+  const css = face(FONT, "ibm-plex-sans-latin-wght-normal.woff2", "100 700") + face(MONO, "ibm-plex-mono-latin-400-normal.woff2", "400");
   return `data:text/css;base64,${Buffer.from(css).toString("base64")}`;
 }
 
