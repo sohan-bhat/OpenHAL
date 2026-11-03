@@ -32,6 +32,7 @@ actions:
   cycle:
     require:
       - { condition: "guard_closed == true", message: "the press cycles only with the guard closed" }
+    risk: { level: medium, by: owner, at: 2026-11-03 }
 safe_state: []
 hazard: low
 confirmed: { by: owner, at: 2026-10-24 }

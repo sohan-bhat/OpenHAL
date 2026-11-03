@@ -110,6 +110,7 @@ id: draft-lamp
 connect: { mock: lamp }
 write:
   brightness: { unit: "%", min: 0, max: 100 }
+hazard: high
 """
 
 

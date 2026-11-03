@@ -41,12 +41,18 @@ class Limits:
     rate: float | None
 
 
-def effective_limits(spec: WriteChannel | ArgSpec, tightened: dict[str, float] | None = None) -> Limits:
-    """Combine a channel's file limits with session limits, which can only narrow them."""
+def effective_limits(
+    spec: WriteChannel | ArgSpec, tightened: dict[str, float] | None = None, *, own_rate: bool = True
+) -> Limits:
+    """Combine a channel's file limits with session limits, which can only narrow them.
+
+    Without `own_rate`, the file's `max_change_per_s` doesn't apply, as for a low risk channel whose
+    rate was only suggested (ADR 0020). A session rate still does.
+    """
     assert spec.min is not None
     assert spec.max is not None
     low, high = spec.min, spec.max
-    rate = spec.max_change_per_s if isinstance(spec, WriteChannel) else None
+    rate = spec.max_change_per_s if isinstance(spec, WriteChannel) and own_rate else None
     if tightened:
         low = max(low, tightened.get("min", low))
         high = min(high, tightened.get("max", high))
