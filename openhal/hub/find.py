@@ -163,7 +163,7 @@ def find(
         try:
             parse_unit(unit)
         except UnitError as exc:
-            raise FindError(f"{unit!r} is not a unit the hub knows. {exc}") from exc
+            raise FindError(f"{unit!r} is not a unit the hub can convert. {exc}") from exc
     query = [word for word in _WORD.findall((text or "").lower()) if len(word) > 1 or word == "%"]
     ranked: list[tuple[int, dict[str, Any]]] = []
     for entry in _entries(hub):

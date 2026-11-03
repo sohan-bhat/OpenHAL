@@ -52,7 +52,7 @@ KEPT_RUNS: Final = 200
 """Finished runs the hub keeps for get_run. The audit log keeps every run."""
 CAPS_PHRASE: Final = "confirm"
 CLOSE_WAIT_S: Final = 15.0
-"""How long closing the hub lets a run finish its current command before cancelling the run."""
+"""Seconds a run gets to finish its current command when the hub closes, before the run is cancelled."""
 STOPPED_MESSAGE: Final = "Blocked. The hub is stopped. A human must unlock it before anything can move."
 ENDINGS: Final = {
     "stopped": "Ended by a stop. The hub stays stopped until a person unlocks the hub.",
