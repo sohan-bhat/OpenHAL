@@ -172,8 +172,9 @@ class Glow:
         self.socket.keyframe_insert("default_value", frame=frame)
 
 
-def glow(name: str, color: str, strength: float, alpha_ramp: bool = False) -> Glow:
-    """A pure emission material. alpha_ramp fades it out along the object's local +z for light sheets."""
+def glow(name: str, color: str, strength: float, alpha_ramp: bool = False, additive: bool = False) -> Glow:
+    """A pure emission material. alpha_ramp fades it out along the object's local +z for light sheets,
+    and additive lays the light over whatever is behind it, for faint volumes."""
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
@@ -204,6 +205,14 @@ def glow(name: str, color: str, strength: float, alpha_ramp: bool = False) -> Gl
         links.new(transparent.outputs["BSDF"], mix.inputs[1])
         links.new(emit.outputs["Emission"], mix.inputs[2])
         links.new(mix.outputs["Shader"], out.inputs["Surface"])
+    elif additive:
+        mat.surface_render_method = "BLENDED"
+        mat.use_transparency_overlap = False
+        transparent = nodes.new("ShaderNodeBsdfTransparent")
+        add = nodes.new("ShaderNodeAddShader")
+        links.new(transparent.outputs["BSDF"], add.inputs[0])
+        links.new(emit.outputs["Emission"], add.inputs[1])
+        links.new(add.outputs["Shader"], out.inputs["Surface"])
     else:
         links.new(emit.outputs["Emission"], out.inputs["Surface"])
     return Glow(material=mat, socket=emit.inputs["Strength"], base=strength)
@@ -725,9 +734,8 @@ class Workspace:
 def build_workspace(spec: dict[str, Any]) -> Workspace:
     """Twelve hairline edges between spec['min'] and spec['max'], plus the blocked target point."""
     lo, hi = Vector(spec["min"]), Vector(spec["max"])
-    edges = glow("workspace.edges", TEXT, 0.9)
-    fill = glow("workspace.fill", TEXT, 0.05, alpha_ramp=False)
-    fill.material.surface_render_method = "BLENDED"
+    edges = glow("workspace.edges", TEXT, 0.9, additive=True)
+    fill = glow("workspace.fill", TEXT, 0.035, additive=True)
     corners = [Vector((x, y, z)) for x in (lo.x, hi.x) for y in (lo.y, hi.y) for z in (lo.z, hi.z)]
     for i, a in enumerate(corners):
         for b in corners[i + 1 :]:
@@ -742,7 +750,7 @@ def build_workspace(spec: dict[str, Any]) -> Workspace:
     no_shadow(f)
     f.visible_diffuse = False
     f.visible_glossy = False
-    target = glow("workspace.target", BLOCKED, 3.0)
+    target = glow("workspace.target", BLOCKED, 3.0, additive=True)
     t = sphere("workspace.target", 0.0032, target.material)
     t.location = Vector(spec["target"])
     no_shadow(t)

@@ -470,6 +470,8 @@ def build(shot: dict[str, Any], edit: dict[str, Any], aspect: str, engine: str, 
                 p.obj.scale = (1.0, 1.0, 1.0)
             p.obj.keyframe_insert("location", frame=frame)
             p.obj.keyframe_insert("scale", frame=frame)
+            if p.blocked_from is not None and frame >= p.blocked_from + 1:
+                level *= 0.09
             p.glow.key(level, frame)
             if p.blocked_from is not None:
                 color = p.glow.material.node_tree.nodes["Emission"].inputs["Color"]
