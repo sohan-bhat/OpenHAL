@@ -6,10 +6,10 @@ import math
 import os
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 import mujoco
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, ValidationInfo, field_validator, model_validator
 
 from openhal.drivers.base import DriverError
 from openhal.drivers.mujoco.simulator import Aim
@@ -17,8 +17,8 @@ from openhal.drivers.serial import mapping
 from openhal.spec.models import Action, ArgSpec
 from openhal.spec.units import Quantity, UnitError, convert, parse_quantity, parse_unit
 
-AXES = ("x", "y", "z")
 Axis = Literal["x", "y", "z"]
+AXES: tuple[Axis, Axis, Axis] = ("x", "y", "z")
 ModelLoader = Callable[[], Any]
 NAME = r"^[A-Za-z_][A-Za-z0-9_.\-]{0,99}$"
 
@@ -121,18 +121,20 @@ class ActionMap(BaseModel):
     axes: dict[str, Axis] = {}
     at: dict[Axis, float] = {}
     aim: Aiming | None = None
+    joints: list[Annotated[str, Field(pattern=NAME)]] = Field(default=[], max_length=64)
     then: dict[str, float] = {}
 
     @field_validator("at", mode="before")
     @classmethod
-    def _at(cls, value: Any) -> Any:
+    def _lengths(cls, value: Any, info: ValidationInfo) -> Any:
         if not isinstance(value, dict):
             return value
-        return {axis: _length(raw, f"at.{axis}") for axis, raw in value.items()}
+        return {axis: _length(raw, f"{info.field_name}.{axis}") for axis, raw in value.items()}
 
     @model_validator(mode="after")
     def _shape(self) -> ActionMap:
-        if self.command == "hold" and (self.site or self.axes or self.at or self.aim or self.then):
+        moves = (self.site, self.axes, self.at, self.aim, self.joints, self.then)
+        if self.command == "hold" and any(moves):
             raise ValueError("hold takes nothing but the command.")
         if self.command == "move_to" and self.site is None:
             raise ValueError("move_to needs the site to move.")

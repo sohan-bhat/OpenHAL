@@ -16,8 +16,9 @@ The driver never reaches hardware, so it reports itself as simulated.
 - `{ command: move_to, site: tip }` moves a site to a point, with the point's axes from the
   action's length arguments or from `at`. MuJoCo's site Jacobian solves the joint positions, only
   for actuated joints in the site's chain, and only inside both the model's ranges and the file's
-  own goal limits. Every joint moves at most at its channel's `max_change_per_s`, and all of them
-  arrive together. `aim` points one of the site's axes along a world direction, and `then` sets
+  own goal limits. `joints` narrows that to the joints it names, so the others keep their goals.
+  Every joint moves at most at its channel's `max_change_per_s`, and all of them arrive
+  together. `aim` points one of the site's axes along a world direction, and `then` sets
   goal channels once the site has arrived. Every goal channel a move changes must be in the
   action's `effects`, so the kernel reads them back.
 - `{ command: hold }`, or an action named hold, ends every move and holds each actuator where it is.
@@ -207,6 +208,14 @@ class MujocoDriver(Driver):
         chain = self._chain(model, int(model.site_bodyid[site]))
         if not chain:
             raise DriverError(f"{where}: no write channel drives a joint that moves {item.site}.")
+        if item.joints:
+            named = {self._id(model, mujoco.mjtObj.mjOBJ_JOINT, joint, where, "joint") for joint in item.joints}
+            outside = sorted(_name(model, model.name_jntadr[joint]) for joint in named - set(chain))
+            if outside:
+                raise DriverError(
+                    f"{where}: map.joints names {', '.join(outside)}, which no goal moves for {item.site}."
+                )
+            chain = {joint: channel for joint, channel in chain.items() if joint in named}
         effects = set(self.device.actions[name].effects)
         missing = sorted(channel for channel in chain.values() if channel not in effects)
         if missing:
@@ -215,7 +224,8 @@ class MujocoDriver(Driver):
         axes = axes_of(item, spec)
         aim = Aim(item.aim.axis, item.aim.toward) if item.aim else None
         at = {AXES.index(axis): value for axis, value in item.at.items()}
-        return Plan(site, {arg: AXES.index(axis) for arg, axis in axes.items()}, at, aim, chain, dict(item.then))
+        arguments = {arg: AXES.index(axis) for arg, axis in axes.items()}
+        return Plan(site, arguments, at, aim, chain, dict(item.then))
 
     def _chain(self, model: Any, body: int) -> dict[int, str]:
         """Joints that move `body`, driven by one of the file's write channels, by joint id."""

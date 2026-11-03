@@ -170,6 +170,18 @@ async def test_a_fixed_point_then_opens_the_finger() -> None:
     await bench.close()
 
 
+async def test_joints_limit_which_joints_a_move_turns() -> None:
+    driver, bench = make(edit("      site: tip\n", "      site: tip\n      joints: [pan, lift, elbow]\n"))
+    await bench.connect()
+    assert driver.world is not None
+    wrist = float(driver.world.data.ctrl[3])
+    result = await driver._action("drop", {"height": 8.0})
+    assert result["status"] == "done"
+    assert set(result["goals"]) == {"pan_goal", "lift_goal", "elbow_goal"}
+    assert driver.world.data.ctrl[3] == pytest.approx(wrist)
+    await bench.close()
+
+
 async def test_a_long_move_returns_started_and_keeps_going() -> None:
     driver, bench = make(edit("action_wait: 4 s", "action_wait: 100 ms"))
     await bench.connect()
@@ -344,6 +356,7 @@ def test_parameters_take_quantities() -> None:
         ),
         ("  hold: {}\nsafe_state: { action: hold }", "  wave: {}\nsafe_state: { action: wave }", "wave needs a map"),
         ("  hold: {}", "  hold: { map: { command: hold, site: tip } }", "hold takes nothing but the command"),
+        ("  hold: {}", "  hold: { map: { command: hold, joints: [pan] } }", "hold takes nothing but the command"),
         (
             "  hold: {}",
             "  hold: {}\n  park: { args: { x: { unit: mm, min: 0, max: 1 } }, map: { command: hold } }",
@@ -384,6 +397,12 @@ def test_a_write_channel_must_be_a_number() -> None:
         ("  lift: { unit: rad }", "  lift: { unit: mm }", "read.lift is in rad in the model"),
         ("  pan_goal: { unit: deg,", "  pan_goal: { map: { actuator: yaw }, unit: deg,", "has no actuator named 'yaw'"),
         ("keyframe: rest", "keyframe: dance", "The model has no keyframe named 'dance'"),
+        (
+            "      site: tip\n",
+            "      site: tip\n      joints: [pan, finger]\n",
+            "map.joints names finger, which no goal",
+        ),
+        ("      site: tip\n", "      site: tip\n      joints: [pan, knee]\n", "has no joint named 'knee'"),
         ("lift_goal, elbow_goal, wrist_goal]\n  drop", "lift_goal, elbow_goal]\n  drop", "move_to moves wrist_goal"),
     ],
 )
