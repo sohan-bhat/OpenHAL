@@ -30,6 +30,7 @@ GROUPS = {
         "StopReport",
         "ConfirmationRequest",
     ],
+    "Find, wait, sample and runs": ["FindResult", "WaitResult", "SampleResult", "StepRun", "RunCaps"],
     "Routines and audit": ["RoutineSummary", "Routine", "AuditEntry", "WriterSession"],
     "Errors": [
         "OpenHALError",
