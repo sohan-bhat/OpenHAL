@@ -326,13 +326,14 @@ A file that an earlier version's interview confirmed keeps its limits, such as a
 ## Risk
 
 ```
-openhal risk show DEVICE[.NAME] [--why] [--json]
-openhal risk set DEVICE.NAME low|medium|high [--phrase confirm]
+openhal risk [--json]
+openhal risk show [DEVICE[.NAME]] [--why] [--json]
+openhal risk set [DEVICE.NAME] [low|medium|high] [--phrase confirm]
 ```
 
 Every channel and action has a risk level, set from what it is ([Safety](../SAFETY.md#risk-levels)). Reading is always low. A low or medium channel takes commands at once within the device's own range, and a high one stays read-only until a person answers its limits with `openhal file confirm`.
 
-`show` lists each channel and action with its level, who set the level and whether it takes commands, and `--why` adds the reasons. `set` raises a level at once. Lowering a level gives an agent more, so in a terminal it takes the typed phrase `confirm`, and from a script or an agent's shell it waits as a pending change in `openhal confirm list` until a person approves it. Agent tokens change no level. Each change is saved in the device file with your name and the date and recorded in the audit log.
+A bare `openhal risk` shows how many channels and actions of each device sit at each level and one change to copy. `show` lists each channel and action with its level, who set the level and whether it takes commands, and `--why` adds the reasons. At a terminal, a left-out device, name or level opens a picker, and without one the error lists the valid values and one command to copy. `set` raises a level at once. Lowering a level gives an agent more, so in a terminal it takes the typed phrase `confirm`, and from a script or an agent's shell it waits as a pending change in `openhal confirm list` until a person approves it. Agent tokens change no level. Each change is saved in the device file with your name and the date and recorded in the audit log.
 
 ## Runs
 
