@@ -1,0 +1,82 @@
+name: Container
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    environment:
+      name: ghcr
+      url: https://github.com/${{ github.repository }}/pkgs/container/openhal
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/openhal
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.5"
+          python-version: "3.12"
+          enable-cache: false
+      - uses: docker/setup-qemu-action@v4.4.0
+      - uses: docker/setup-buildx-action@v4.4.1
+      - name: Build the image for this runner
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          load: true
+          tags: openhal:check
+      - name: Start openhal mcp in the image with no token and list its tools
+        run: |
+          uv run --no-project --with "mcp==2.3.0" python - <<'CHECK'
+          import asyncio
+
+          from mcp import Client, StdioServerParameters
+          from mcp.client.stdio import stdio_client
+
+
+          async def main() -> None:
+              server = StdioServerParameters(command="docker", args=["run", "-i", "--rm", "openhal:check"])
+              async with Client(stdio_client(server), read_timeout_seconds=180) as client:
+                  tools = await client.list_tools()
+                  names = {tool.name for tool in tools.tools}
+                  assert {"hub_status", "list_devices", "read", "write", "stop_all"} <= names, names
+                  devices = await client.call_tool("list_devices", {})
+                  assert not devices.is_error, devices.content
+                  print(f"{len(names)} tools, and list_devices answered {devices.structured_content}")
+
+
+          asyncio.run(main())
+          CHECK
+      - id: meta
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+      - uses: docker/login-action@v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push the image for amd64 and arm64
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
