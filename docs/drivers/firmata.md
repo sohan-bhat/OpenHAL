@@ -6,7 +6,7 @@ The `firmata` driver connects to Arduino-compatible boards running StandardFirma
 |---|---|
 | Driver name | `firmata` |
 | Library | own Firmata client (`openhal/drivers/firmata/protocol.py`) on pyserial 3.5 (BSD-3-Clause) |
-| Extra | `uv tool install --compile-bytecode "ohal[firmata] @ git+https://github.com/sohan-bhat/OpenHAL"` |
+| Extra | `uv tool install --compile-bytecode "halkit[firmata] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | low |
 | Safe state | from the device file only |
 | Self-describe | yes, from the board's capability report |
@@ -45,7 +45,7 @@ Because setting a pin to output already drives the pin, output pins are not touc
 ## Setup
 
 1. Upload StandardFirmata from the Arduino IDE (File, Examples, Firmata, StandardFirmata).
-2. Install the extra with `uv tool install --compile-bytecode "ohal[firmata] @ git+https://github.com/sohan-bhat/OpenHAL"`.
+2. Install the extra with `uv tool install --compile-bytecode "halkit[firmata] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 3. Start from `openhal/drivers/firmata/examples/uno-desk-kit.hal.yaml` and keep only the pins that are wired.
 4. Validate the file with `openhal file validate`, then confirm the limits by hand.
 

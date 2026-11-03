@@ -14,7 +14,7 @@ The mqtt driver reads devices that publish their state on MQTT topics and contro
 ## Setup
 
 ```sh
-uv tool install --compile-bytecode "ohal[mqtt] @ git+https://github.com/sohan-bhat/OpenHAL"
+uv tool install --compile-bytecode "halkit[mqtt] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 You need a broker the hub can reach, and Mosquitto works well and runs on a Raspberry Pi.

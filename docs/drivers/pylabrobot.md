@@ -6,7 +6,7 @@ The `pylabrobot` driver runs liquid handlers through PyLabRobot. Picking up tips
 |---|---|
 | Driver name | `pylabrobot` |
 | Library | PyLabRobot 0.2.2 (MIT) |
-| Extra | `uv tool install --compile-bytecode "ohal[pylabrobot] @ git+https://github.com/sohan-bhat/OpenHAL"` |
+| Extra | `uv tool install --compile-bytecode "halkit[pylabrobot] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | high |
 | Conformance | full |
 | Safe state | native. Running operations are cancelled after their current firmware command |
@@ -60,7 +60,7 @@ A stop cancels running operations, and the instrument finishes the firmware comm
 
 ## Setup
 
-1. Install the extra with `uv tool install --compile-bytecode "ohal[pylabrobot] @ git+https://github.com/sohan-bhat/OpenHAL"`, plus PyLabRobot's USB or HTTP extras for your instrument.
+1. Install the extra with `uv tool install --compile-bytecode "halkit[pylabrobot] @ git+https://github.com/sohan-bhat/OpenHAL"`, plus PyLabRobot's USB or HTTP extras for your instrument.
 2. Lay out the deck in the file to match the physical deck, or save one from PyLabRobot.
 3. Start from `openhal/drivers/pylabrobot/examples/starlet.hal.yaml`, or call `describe` for a draft.
 4. Run `openhal file validate`, then confirm the limits by hand.

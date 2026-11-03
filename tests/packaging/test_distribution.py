@@ -1,6 +1,6 @@
 """The PyPI distribution is DISTRIBUTION_NAME everywhere, and the package keeps one version number.
 
-ADR 0002 names the distribution `ohal`. The import package, the CLI and the product keep the name
+ADR 0002 names the distribution `halkit`. The import package, the CLI and the product keep the name
 openhal. Release builds publish the tag `v<version>`, and `openhal --version` prints
 `openhal.__version__`, so pyproject.toml, uv.lock and the package carry the same version.
 """

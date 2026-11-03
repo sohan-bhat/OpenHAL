@@ -38,7 +38,7 @@ hazard: low
 | `timeout_s` | 1.0 | How long to wait for each reply |
 | `boot_s` | 0 | Wait after opening the port, for boards that reset when the port opens (set 2 for an Uno) |
 
-Install the optional dependency with `uv tool install --compile-bytecode "ohal[openhal-firmware] @ git+https://github.com/sohan-bhat/OpenHAL"` (pyserial).
+Install the optional dependency with `uv tool install --compile-bytecode "halkit[openhal-firmware] @ git+https://github.com/sohan-bhat/OpenHAL"` (pyserial).
 
 ## Behavior
 

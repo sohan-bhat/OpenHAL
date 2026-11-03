@@ -25,12 +25,12 @@ You can also build a wheel in a clone and install that file.
 
 ```text
 uv build --wheel
-uv tool install --compile-bytecode dist/ohal-*.whl
-pipx install dist/ohal-*.whl
+uv tool install --compile-bytecode dist/halkit-*.whl
+pipx install dist/halkit-*.whl
 ```
 
 - `--compile-bytecode` makes the first run about twice as fast.
-- Driver extras go in brackets, as in `"ohal[esphome,openhal-firmware] @ git+https://github.com/sohan-bhat/OpenHAL"`. Installing again with other extras replaces the ones you had, so list every extra you use. `openhal doctor` lists the drivers whose extras are missing.
+- Driver extras go in brackets, as in `"halkit[esphome,openhal-firmware] @ git+https://github.com/sohan-bhat/OpenHAL"`. Installing again with other extras replaces the ones you had, so list every extra you use. `openhal doctor` lists the drivers whose extras are missing.
 - A few dependencies have no Intel Mac wheels in their newest versions, and building those dependencies needs Rust, so on an Intel Mac add `--no-build` to uv, or `--pip-args=--only-binary=:all:` to pipx.
 
 ## Set up

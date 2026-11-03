@@ -6,7 +6,7 @@ The `marlin` driver connects to printers and other machines running Marlin firmw
 |---|---|
 | Driver name | `marlin` |
 | Library | pyserial 3.5 (BSD-3-Clause), through the shared serial link |
-| Extra | `uv tool install --compile-bytecode "ohal[marlin] @ git+https://github.com/sohan-bhat/OpenHAL"` |
+| Extra | `uv tool install --compile-bytecode "halkit[marlin] @ git+https://github.com/sohan-bhat/OpenHAL"` |
 | Hazard default | medium |
 | Safe state | native. Every heater target goes to 0. M112 only when `m112_on_stop` is true |
 | Self-describe | no |
@@ -50,7 +50,7 @@ Because a raw command would bypass every limit in the device file, the driver de
 
 ## Setup
 
-1. Install the extra with `uv tool install --compile-bytecode "ohal[marlin] @ git+https://github.com/sohan-bhat/OpenHAL"`.
+1. Install the extra with `uv tool install --compile-bytecode "halkit[marlin] @ git+https://github.com/sohan-bhat/OpenHAL"`.
 2. Because the driver opens the port exclusively, close any other program that holds the port (OctoPrint, Pronterface, a slicer).
 3. Start from `openhal/drivers/marlin/examples/ender-3-v2.hal.yaml`, set `match.usb` or the port path, and set limits that fit your printer.
 4. Validate with `openhal file validate`, then confirm the limits by hand.

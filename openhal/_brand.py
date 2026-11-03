@@ -12,7 +12,7 @@ from typing import Final
 PRODUCT_NAME: Final = "OpenHAL"
 PRODUCT_LONG_NAME: Final = "Open Hardware Abstraction Layer"
 PACKAGE_NAME: Final = "openhal"
-DISTRIBUTION_NAME: Final = "ohal"
+DISTRIBUTION_NAME: Final = "halkit"
 CLI_NAME: Final = "openhal"
 START_COMMAND: Final = "openhal start"
 DAEMON_ALIAS: Final = "openhald"

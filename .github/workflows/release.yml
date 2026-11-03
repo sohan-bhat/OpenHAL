@@ -68,12 +68,12 @@ jobs:
       - name: Check the file names
         run: |
           ls dist
-          test -f "dist/ohal-$VERSION.tar.gz"
-          test -f "dist/ohal-$VERSION-py3-none-any.whl"
+          test -f "dist/halkit-$VERSION.tar.gz"
+          test -f "dist/halkit-$VERSION-py3-none-any.whl"
       - name: Install the wheel in a fresh venv and run openhal --version
         run: |
           uv venv "$RUNNER_TEMP/wheel-check"
-          uv pip install --python "$RUNNER_TEMP/wheel-check/bin/python" "dist/ohal-$VERSION-py3-none-any.whl"
+          uv pip install --python "$RUNNER_TEMP/wheel-check/bin/python" "dist/halkit-$VERSION-py3-none-any.whl"
           printed=$("$RUNNER_TEMP/wheel-check/bin/openhal" --version)
           echo "$printed"
           if [ "$printed" != "openhal $VERSION" ]; then
@@ -92,7 +92,7 @@ jobs:
     timeout-minutes: 10
     environment:
       name: pypi
-      url: https://pypi.org/project/ohal/
+      url: https://pypi.org/project/halkit/
     permissions:
       id-token: write
     steps:

@@ -1,7 +1,7 @@
 export const PRODUCT_NAME = "OpenHAL";
 export const PRODUCT_LONG_NAME = "Open Hardware Abstraction Layer";
 export const PACKAGE_NAME = "openhal";
-export const DISTRIBUTION_NAME = "ohal";
+export const DISTRIBUTION_NAME = "halkit";
 export const CLI_NAME = "openhal";
 export const START_COMMAND = "openhal start";
 export const DAEMON_ALIAS = "openhald";

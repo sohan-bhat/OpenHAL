@@ -1,5 +1,5 @@
 [project]
-name = "ohal"
+name = "halkit"
 version = "0.1.0.dev0"
 description = "An open-source protocol for AI agents to control hardware."
 readme = "README.md"

@@ -29,7 +29,7 @@ Given that status, the driver works within these rules.
 ## Setup
 
 ```sh
-uv tool install --compile-bytecode "ohal[bambu] @ git+https://github.com/sohan-bhat/OpenHAL"
+uv tool install --compile-bytecode "halkit[bambu] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
 1. On the printer's screen, open the network settings, turn on LAN-only mode, then turn on Developer Mode. Note the access code and the serial number shown there.

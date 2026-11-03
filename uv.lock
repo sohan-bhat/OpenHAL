@@ -1144,6 +1144,214 @@ wheels = [
 ]
 
 [[package]]
+name = "halkit"
+version = "0.1.0.dev0"
+source = { editable = "." }
+dependencies = [
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "mcp" },
+    { name = "pint" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "regex" },
+    { name = "rich" },
+    { name = "typer" },
+    { name = "uvicorn" },
+    { name = "websockets" },
+    { name = "zeroconf" },
+]
+
+[package.optional-dependencies]
+alpaca = [
+    { name = "httpx" },
+]
+bambu = [
+    { name = "paho-mqtt" },
+]
+ble = [
+    { name = "bleak" },
+]
+can = [
+    { name = "python-can" },
+]
+esphome = [
+    { name = "aioesphomeapi" },
+]
+firmata = [
+    { name = "pyserial" },
+]
+grbl = [
+    { name = "pyserial" },
+]
+hid = [
+    { name = "hidapi" },
+]
+homeassistant = [
+    { name = "httpx" },
+    { name = "websockets" },
+]
+http = [
+    { name = "httpx" },
+]
+knx = [
+    { name = "xknx" },
+]
+marlin = [
+    { name = "pyserial" },
+]
+matter = [
+    { name = "websockets" },
+]
+midi = [
+    { name = "mido" },
+    { name = "python-rtmidi" },
+]
+modbus = [
+    { name = "pymodbus", extra = ["serial"] },
+]
+moonraker = [
+    { name = "httpx" },
+    { name = "websockets" },
+]
+mqtt = [
+    { name = "paho-mqtt" },
+]
+octoprint = [
+    { name = "httpx" },
+]
+onvif = [
+    { name = "defusedxml" },
+    { name = "httpx" },
+]
+opcua = [
+    { name = "asyncua" },
+]
+openhal-firmware = [
+    { name = "pyserial" },
+]
+pi-i2c-spi = [
+    { name = "smbus2" },
+    { name = "spidev", marker = "sys_platform == 'linux'" },
+]
+pylabrobot = [
+    { name = "pylabrobot" },
+]
+ros2 = [
+    { name = "websockets" },
+]
+rpi-gpio = [
+    { name = "gpiozero" },
+]
+scpi = [
+    { name = "pyserial" },
+    { name = "pyusb" },
+    { name = "pyvisa" },
+    { name = "pyvisa-py" },
+]
+serial = [
+    { name = "pyserial" },
+]
+sila2 = [
+    { name = "sila2" },
+]
+upnp = [
+    { name = "async-upnp-client" },
+]
+uvc = [
+    { name = "opencv-python-headless" },
+]
+zigbee-zwave = [
+    { name = "paho-mqtt" },
+    { name = "websockets" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "hypothesis" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pyvisa-sim" },
+    { name = "ruff" },
+    { name = "types-defusedxml" },
+    { name = "types-pyserial" },
+    { name = "types-pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aioesphomeapi", marker = "extra == 'esphome'", specifier = ">=46" },
+    { name = "async-upnp-client", marker = "extra == 'upnp'", specifier = ">=0.49.0" },
+    { name = "asyncua", marker = "extra == 'opcua'", specifier = ">=2.1.0" },
+    { name = "bleak", marker = "extra == 'ble'", specifier = ">=3.0.2" },
+    { name = "defusedxml", marker = "extra == 'onvif'", specifier = ">=0.7.1" },
+    { name = "fastapi", specifier = ">=0.115" },
+    { name = "gpiozero", marker = "extra == 'rpi-gpio'", specifier = ">=2.0.1" },
+    { name = "hidapi", marker = "extra == 'hid'", specifier = ">=0.15.0" },
+    { name = "httpx", specifier = ">=0.28" },
+    { name = "httpx", marker = "extra == 'alpaca'", specifier = ">=0.28.1" },
+    { name = "httpx", marker = "extra == 'homeassistant'", specifier = ">=0.28" },
+    { name = "httpx", marker = "extra == 'http'", specifier = ">=0.28.1" },
+    { name = "httpx", marker = "extra == 'moonraker'", specifier = ">=0.28" },
+    { name = "httpx", marker = "extra == 'octoprint'", specifier = ">=0.28" },
+    { name = "httpx", marker = "extra == 'onvif'", specifier = ">=0.28.1" },
+    { name = "mcp", specifier = ">=2.3" },
+    { name = "mido", marker = "extra == 'midi'", specifier = ">=1.3.3" },
+    { name = "opencv-python-headless", marker = "extra == 'uvc'", specifier = ">=5.0.0.93" },
+    { name = "paho-mqtt", marker = "extra == 'bambu'", specifier = ">=2.1.0" },
+    { name = "paho-mqtt", marker = "extra == 'mqtt'", specifier = ">=2.1.0" },
+    { name = "paho-mqtt", marker = "extra == 'zigbee-zwave'", specifier = ">=2.1.0" },
+    { name = "pint", specifier = ">=0.24" },
+    { name = "pydantic", specifier = ">=2.9" },
+    { name = "pylabrobot", marker = "extra == 'pylabrobot'", specifier = ">=0.2.2" },
+    { name = "pymodbus", extras = ["serial"], marker = "extra == 'modbus'", specifier = ">=3.16.1" },
+    { name = "pyserial", marker = "extra == 'firmata'", specifier = ">=3.5" },
+    { name = "pyserial", marker = "extra == 'grbl'", specifier = ">=3.5" },
+    { name = "pyserial", marker = "extra == 'marlin'", specifier = ">=3.5" },
+    { name = "pyserial", marker = "extra == 'openhal-firmware'", specifier = ">=3.5" },
+    { name = "pyserial", marker = "extra == 'scpi'", specifier = ">=3.5" },
+    { name = "pyserial", marker = "extra == 'serial'", specifier = ">=3.5" },
+    { name = "python-can", marker = "extra == 'can'", specifier = ">=4.6.1" },
+    { name = "python-rtmidi", marker = "extra == 'midi'", specifier = ">=1.5.8" },
+    { name = "pyusb", marker = "extra == 'scpi'", specifier = ">=1.3" },
+    { name = "pyvisa", marker = "extra == 'scpi'", specifier = ">=1.16" },
+    { name = "pyvisa-py", marker = "extra == 'scpi'", specifier = ">=0.8" },
+    { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "regex", specifier = ">=2024.11" },
+    { name = "rich", specifier = ">=13.9" },
+    { name = "sila2", marker = "extra == 'sila2'", specifier = ">=0.14.0" },
+    { name = "smbus2", marker = "extra == 'pi-i2c-spi'", specifier = ">=0.6.1" },
+    { name = "spidev", marker = "sys_platform == 'linux' and extra == 'pi-i2c-spi'", specifier = ">=3.8" },
+    { name = "typer", specifier = ">=0.15" },
+    { name = "uvicorn", specifier = ">=0.32" },
+    { name = "websockets", specifier = ">=13" },
+    { name = "websockets", marker = "extra == 'homeassistant'", specifier = ">=13" },
+    { name = "websockets", marker = "extra == 'matter'", specifier = ">=13" },
+    { name = "websockets", marker = "extra == 'moonraker'", specifier = ">=13" },
+    { name = "websockets", marker = "extra == 'ros2'", specifier = ">=13" },
+    { name = "websockets", marker = "extra == 'zigbee-zwave'", specifier = ">=13" },
+    { name = "xknx", marker = "extra == 'knx'", specifier = ">=4.0.0" },
+    { name = "zeroconf", specifier = ">=0.136" },
+]
+provides-extras = ["hub", "serial", "firmata", "marlin", "scpi", "moonraker", "octoprint", "homeassistant", "esphome", "openhal-firmware", "rpi-gpio", "rpi-camera", "mqtt", "modbus", "ble", "midi", "hid", "uvc", "http", "onvif", "bambu", "can", "knx", "matter", "pi-i2c-spi", "upnp", "zigbee-zwave", "grbl", "ros2", "opcua", "sila2", "alpaca", "pylabrobot"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "hypothesis", specifier = ">=6.120" },
+    { name = "mypy", specifier = ">=1.13" },
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
+    { name = "pytest-cov", specifier = ">=6.0" },
+    { name = "pyvisa-sim", specifier = ">=0.7" },
+    { name = "ruff", specifier = ">=0.8" },
+    { name = "types-defusedxml", specifier = ">=0.7" },
+    { name = "types-pyserial", specifier = ">=3.5" },
+    { name = "types-pyyaml", specifier = ">=6.0" },
+]
+
+[[package]]
 name = "hidapi"
 version = "0.15.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1960,214 +2168,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/b5/4da41c328788f575838f97a098fe8ca691ebc6f6fd73ad4a262ee40b184d/numpy-2.5.4-cp315-cp315t-win32.whl", hash = "sha256:ad62a416ddcf863bf44bba76fbf6b53366ab0692e294f51cae4b5fbe0d246788", size = 6335804, upload-time = "2026-10-10T20:05:19.921Z" },
     { url = "https://files.pythonhosted.org/packages/98/94/6482ddfa3d312490cb9358f375bf2ad56427dbea8769187158e94d653753/numpy-2.5.4-cp315-cp315t-win_amd64.whl", hash = "sha256:38f47be9f74ab870d2633b5456ae519c43758a8d1fd05342f0ce4ecc034396ee", size = 12890095, upload-time = "2026-10-10T20:05:21.875Z" },
     { url = "https://files.pythonhosted.org/packages/48/7f/c2d1b436b6e7cfebac140c2579a298344b85f2991a2ce5c3615cefb29400/numpy-2.5.4-cp315-cp315t-win_arm64.whl", hash = "sha256:7a14a461d9340f1b46b8648578aed9cdb8b3b018a8fac6c1dde2c9192a01a87f", size = 10883718, upload-time = "2026-10-10T20:05:28.547Z" },
-]
-
-[[package]]
-name = "ohal"
-version = "0.1.0.dev0"
-source = { editable = "." }
-dependencies = [
-    { name = "fastapi" },
-    { name = "httpx" },
-    { name = "mcp" },
-    { name = "pint" },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "regex" },
-    { name = "rich" },
-    { name = "typer" },
-    { name = "uvicorn" },
-    { name = "websockets" },
-    { name = "zeroconf" },
-]
-
-[package.optional-dependencies]
-alpaca = [
-    { name = "httpx" },
-]
-bambu = [
-    { name = "paho-mqtt" },
-]
-ble = [
-    { name = "bleak" },
-]
-can = [
-    { name = "python-can" },
-]
-esphome = [
-    { name = "aioesphomeapi" },
-]
-firmata = [
-    { name = "pyserial" },
-]
-grbl = [
-    { name = "pyserial" },
-]
-hid = [
-    { name = "hidapi" },
-]
-homeassistant = [
-    { name = "httpx" },
-    { name = "websockets" },
-]
-http = [
-    { name = "httpx" },
-]
-knx = [
-    { name = "xknx" },
-]
-marlin = [
-    { name = "pyserial" },
-]
-matter = [
-    { name = "websockets" },
-]
-midi = [
-    { name = "mido" },
-    { name = "python-rtmidi" },
-]
-modbus = [
-    { name = "pymodbus", extra = ["serial"] },
-]
-moonraker = [
-    { name = "httpx" },
-    { name = "websockets" },
-]
-mqtt = [
-    { name = "paho-mqtt" },
-]
-octoprint = [
-    { name = "httpx" },
-]
-onvif = [
-    { name = "defusedxml" },
-    { name = "httpx" },
-]
-opcua = [
-    { name = "asyncua" },
-]
-openhal-firmware = [
-    { name = "pyserial" },
-]
-pi-i2c-spi = [
-    { name = "smbus2" },
-    { name = "spidev", marker = "sys_platform == 'linux'" },
-]
-pylabrobot = [
-    { name = "pylabrobot" },
-]
-ros2 = [
-    { name = "websockets" },
-]
-rpi-gpio = [
-    { name = "gpiozero" },
-]
-scpi = [
-    { name = "pyserial" },
-    { name = "pyusb" },
-    { name = "pyvisa" },
-    { name = "pyvisa-py" },
-]
-serial = [
-    { name = "pyserial" },
-]
-sila2 = [
-    { name = "sila2" },
-]
-upnp = [
-    { name = "async-upnp-client" },
-]
-uvc = [
-    { name = "opencv-python-headless" },
-]
-zigbee-zwave = [
-    { name = "paho-mqtt" },
-    { name = "websockets" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "hypothesis" },
-    { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pyvisa-sim" },
-    { name = "ruff" },
-    { name = "types-defusedxml" },
-    { name = "types-pyserial" },
-    { name = "types-pyyaml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aioesphomeapi", marker = "extra == 'esphome'", specifier = ">=46" },
-    { name = "async-upnp-client", marker = "extra == 'upnp'", specifier = ">=0.49.0" },
-    { name = "asyncua", marker = "extra == 'opcua'", specifier = ">=2.1.0" },
-    { name = "bleak", marker = "extra == 'ble'", specifier = ">=3.0.2" },
-    { name = "defusedxml", marker = "extra == 'onvif'", specifier = ">=0.7.1" },
-    { name = "fastapi", specifier = ">=0.115" },
-    { name = "gpiozero", marker = "extra == 'rpi-gpio'", specifier = ">=2.0.1" },
-    { name = "hidapi", marker = "extra == 'hid'", specifier = ">=0.15.0" },
-    { name = "httpx", specifier = ">=0.28" },
-    { name = "httpx", marker = "extra == 'alpaca'", specifier = ">=0.28.1" },
-    { name = "httpx", marker = "extra == 'homeassistant'", specifier = ">=0.28" },
-    { name = "httpx", marker = "extra == 'http'", specifier = ">=0.28.1" },
-    { name = "httpx", marker = "extra == 'moonraker'", specifier = ">=0.28" },
-    { name = "httpx", marker = "extra == 'octoprint'", specifier = ">=0.28" },
-    { name = "httpx", marker = "extra == 'onvif'", specifier = ">=0.28.1" },
-    { name = "mcp", specifier = ">=2.3" },
-    { name = "mido", marker = "extra == 'midi'", specifier = ">=1.3.3" },
-    { name = "opencv-python-headless", marker = "extra == 'uvc'", specifier = ">=5.0.0.93" },
-    { name = "paho-mqtt", marker = "extra == 'bambu'", specifier = ">=2.1.0" },
-    { name = "paho-mqtt", marker = "extra == 'mqtt'", specifier = ">=2.1.0" },
-    { name = "paho-mqtt", marker = "extra == 'zigbee-zwave'", specifier = ">=2.1.0" },
-    { name = "pint", specifier = ">=0.24" },
-    { name = "pydantic", specifier = ">=2.9" },
-    { name = "pylabrobot", marker = "extra == 'pylabrobot'", specifier = ">=0.2.2" },
-    { name = "pymodbus", extras = ["serial"], marker = "extra == 'modbus'", specifier = ">=3.16.1" },
-    { name = "pyserial", marker = "extra == 'firmata'", specifier = ">=3.5" },
-    { name = "pyserial", marker = "extra == 'grbl'", specifier = ">=3.5" },
-    { name = "pyserial", marker = "extra == 'marlin'", specifier = ">=3.5" },
-    { name = "pyserial", marker = "extra == 'openhal-firmware'", specifier = ">=3.5" },
-    { name = "pyserial", marker = "extra == 'scpi'", specifier = ">=3.5" },
-    { name = "pyserial", marker = "extra == 'serial'", specifier = ">=3.5" },
-    { name = "python-can", marker = "extra == 'can'", specifier = ">=4.6.1" },
-    { name = "python-rtmidi", marker = "extra == 'midi'", specifier = ">=1.5.8" },
-    { name = "pyusb", marker = "extra == 'scpi'", specifier = ">=1.3" },
-    { name = "pyvisa", marker = "extra == 'scpi'", specifier = ">=1.16" },
-    { name = "pyvisa-py", marker = "extra == 'scpi'", specifier = ">=0.8" },
-    { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "regex", specifier = ">=2024.11" },
-    { name = "rich", specifier = ">=13.9" },
-    { name = "sila2", marker = "extra == 'sila2'", specifier = ">=0.14.0" },
-    { name = "smbus2", marker = "extra == 'pi-i2c-spi'", specifier = ">=0.6.1" },
-    { name = "spidev", marker = "sys_platform == 'linux' and extra == 'pi-i2c-spi'", specifier = ">=3.8" },
-    { name = "typer", specifier = ">=0.15" },
-    { name = "uvicorn", specifier = ">=0.32" },
-    { name = "websockets", specifier = ">=13" },
-    { name = "websockets", marker = "extra == 'homeassistant'", specifier = ">=13" },
-    { name = "websockets", marker = "extra == 'matter'", specifier = ">=13" },
-    { name = "websockets", marker = "extra == 'moonraker'", specifier = ">=13" },
-    { name = "websockets", marker = "extra == 'ros2'", specifier = ">=13" },
-    { name = "websockets", marker = "extra == 'zigbee-zwave'", specifier = ">=13" },
-    { name = "xknx", marker = "extra == 'knx'", specifier = ">=4.0.0" },
-    { name = "zeroconf", specifier = ">=0.136" },
-]
-provides-extras = ["hub", "serial", "firmata", "marlin", "scpi", "moonraker", "octoprint", "homeassistant", "esphome", "openhal-firmware", "rpi-gpio", "rpi-camera", "mqtt", "modbus", "ble", "midi", "hid", "uvc", "http", "onvif", "bambu", "can", "knx", "matter", "pi-i2c-spi", "upnp", "zigbee-zwave", "grbl", "ros2", "opcua", "sila2", "alpaca", "pylabrobot"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "hypothesis", specifier = ">=6.120" },
-    { name = "mypy", specifier = ">=1.13" },
-    { name = "pytest", specifier = ">=8.3" },
-    { name = "pytest-asyncio", specifier = ">=0.24" },
-    { name = "pytest-cov", specifier = ">=6.0" },
-    { name = "pyvisa-sim", specifier = ">=0.7" },
-    { name = "ruff", specifier = ">=0.8" },
-    { name = "types-defusedxml", specifier = ">=0.7" },
-    { name = "types-pyserial", specifier = ">=3.5" },
-    { name = "types-pyyaml", specifier = ">=6.0" },
 ]
 
 [[package]]

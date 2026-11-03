@@ -99,7 +99,7 @@ if [ "$DRY_RUN" -eq 1 ] || command -v apt-get >/dev/null 2>&1; then
 fi
 
 case "$SOURCE" in
-  git+* | http://* | https://*) SPEC="ohal[$EXTRAS] @ $SOURCE" ;;
+  git+* | http://* | https://*) SPEC="halkit[$EXTRAS] @ $SOURCE" ;;
   *) SPEC="${SOURCE}[$EXTRAS]" ;;
 esac
 
