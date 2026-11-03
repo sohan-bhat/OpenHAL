@@ -61,7 +61,26 @@ describe("keys in order", () => {
 
   it("knows which keys move focus later", () => {
     for (const key of ["ArrowDown", "ArrowUp", "Home", "End", "PageUp", "PageDown", "t"]) expect(movesFocusLater(press(key)), key).toBe(true);
-    for (const key of ["Enter", "Escape", "Tab"]) expect(movesFocusLater(press(key)), key).toBe(false);
+    for (const key of ["Enter", "Escape", "Tab", " "]) expect(movesFocusLater(press(key)), key).toBe(false);
     expect(movesFocusLater(press("k", { metaKey: true }))).toBe(false);
+  });
+
+  it("never holds Escape or Tab, which the list doesn't act on through the focused item", () => {
+    const queue = new KeyQueue<Key>(() => undefined, undefined, () => undefined);
+    queue.handled(press("ArrowDown"));
+    expect(queue.hold(press("Escape"))).toBe(false);
+    expect(queue.hold(press("Tab"))).toBe(false);
+    expect(queue.hold(press("Enter"))).toBe(true);
+  });
+
+  it("drops held keys when the list leaves the page before its move runs", () => {
+    const replayed: string[] = [];
+    const timers: Array<() => void> = [];
+    const queue = new KeyQueue<Key>((event) => replayed.push(event.key), undefined, (run) => timers.push(run));
+    queue.handled(press("ArrowDown"));
+    queue.hold(press("Enter"));
+    queue.cancel();
+    while (timers.length > 0) timers.shift()!();
+    expect(replayed).toEqual([]);
   });
 });

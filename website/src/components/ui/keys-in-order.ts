@@ -4,10 +4,17 @@ type KeyLike = Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey" | "altKey">;
 
 const MOVES = new Set(["ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
 
+/**
+ * Keys a list never acts on through the focused item. Radix closes on Escape from a document
+ * listener before the list sees the key, and a replayed Tab would be synthetic, which a browser
+ * never lets move focus, so both go through at once.
+ */
+const PASSED = new Set(["Escape", "Tab"]);
+
 /** True for a key after which a Radix list moves focus in a timer: an arrow, Home, End, a page key or a typed letter. */
 export function movesFocusLater(event: KeyLike): boolean {
   if (event.ctrlKey || event.metaKey || event.altKey) return false;
-  return MOVES.has(event.key) || event.key.length === 1;
+  return MOVES.has(event.key) || (event.key.length === 1 && event.key !== " ");
 }
 
 /**
@@ -16,7 +23,7 @@ export function movesFocusLater(event: KeyLike): boolean {
  * Radix Select and DropdownMenu move focus for an arrow key, Home, End or a typed letter in a
  * timer. A busy browser runs the next key press before that timer, so Enter right after ArrowDown
  * chose the item the list was leaving. A key that arrives while a move is pending is held and
- * replayed, one at a time, once the move has run.
+ * replayed, one at a time, once the move has run. Escape and Tab are never held.
  */
 export class KeyQueue<E extends KeyLike> {
   private pending = false;
@@ -30,7 +37,7 @@ export class KeyQueue<E extends KeyLike> {
 
   /** Holds a copy of the key when a move is pending. True means the list must ignore the original. */
   hold(event: E): boolean {
-    if (!this.pending) return false;
+    if (!this.pending || PASSED.has(event.key)) return false;
     this.held.push(this.copy(event));
     return true;
   }
@@ -44,6 +51,12 @@ export class KeyQueue<E extends KeyLike> {
     if (!movesFocusLater(event)) return;
     this.pending = true;
     this.later(() => this.later(() => this.release()));
+  }
+
+  /** Drops the held keys, for a list that left the page before its move ran. */
+  cancel(): void {
+    this.pending = false;
+    this.held.length = 0;
   }
 
   private release(): void {
@@ -60,6 +73,7 @@ function copyKey(event: KeyboardEvent): KeyboardEvent {
 /** The two handlers a Radix list's content needs so its keys keep their order. */
 export function useKeysInOrder(): { onKeyDownCapture: React.KeyboardEventHandler; onKeyDown: React.KeyboardEventHandler } {
   const queue = React.useMemo(() => new KeyQueue<KeyboardEvent>((event) => (document.activeElement ?? document.body).dispatchEvent(event), copyKey), []);
+  React.useEffect(() => () => queue.cancel(), [queue]);
   return React.useMemo(
     () => ({
       onKeyDownCapture: (event: React.KeyboardEvent) => {

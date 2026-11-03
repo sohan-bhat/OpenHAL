@@ -101,6 +101,7 @@ function WhileOpen({ stop }: { stop: Stop }) {
   React.useLayoutEffect(() => {
     const content = marker.current?.closest<HTMLElement>("[data-slot=select-content]");
     if (open === false || !content?.isConnected) return;
+    stopRedirect(stop);
     const trigger = content.id ? document.querySelector<HTMLElement>(`[aria-controls="${CSS.escape(content.id)}"]`) : null;
     const others = [...document.body.children].filter((element) => !element.contains(content) && !element.hasAttribute("inert"));
     for (const element of others) element.setAttribute("inert", "");
