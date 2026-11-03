@@ -189,12 +189,13 @@ def test_doctor(isolated_env: Path, split: SyncHub, monkeypatch: pytest.MonkeyPa
     assert "Start OpenHAL with openhal start" in out
 
 
-def test_mcp_needs_an_agent_token(isolated_env: Path) -> None:
+def test_mcp_stops_when_a_named_token_file_is_missing(isolated_env: Path) -> None:
+    """With no token at all the server starts and lists its tools (tests/interfaces/test_mcp_setup.py)."""
     isolated_env.mkdir(parents=True, exist_ok=True)
     (isolated_env / "human.token").write_text("ohal_human\n")
-    code, out = run("mcp", "--no-start")
+    code, out = run("mcp", "--no-start", "--token-file", str(isolated_env / "agent.token"))
     assert code == 4
-    assert "agent token" in out
+    assert "missing or empty" in out
 
 
 def test_discover_command(split: SyncHub) -> None:
