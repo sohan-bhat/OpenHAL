@@ -21,7 +21,7 @@ Every WebKit page load stalls on this Mac, so the website and Inspector Playwrig
 
 ## 3. Publish the first release to PyPI
 
-The distribution is `halkit` (ADR 0002). The import package and the CLI stay `openhal`. Nothing is on PyPI yet, so every install command uses the git repository until the first release. .github/workflows/release.yml publishes through PyPI trusted publishing, so the repository holds no PyPI token.
+The distribution is `halkit` (ADR 0002). The import package and the CLI stay `openhal`. Nothing is on PyPI yet, so until the first release the one-line installers install from the repository's main branch and the uv and pipx commands use the git repository. .github/workflows/release.yml publishes through PyPI trusted publishing, so the repository holds no PyPI token.
 
 1. Sign in at https://pypi.org and open Your account, then Publishing (https://pypi.org/manage/account/publishing/).
 2. Under Add a new pending publisher, pick GitHub and fill in the form exactly as below. Then click Add.
@@ -43,8 +43,12 @@ The distribution is `halkit` (ADR 0002). The import package and the CLI stay `op
    ```
 
    The tag starts the Release workflow. The workflow stops before building anything if the tag isn't `v` plus the version in pyproject.toml. Otherwise the workflow runs the tests, builds `halkit-0.1.0.tar.gz` and `halkit-0.1.0-py3-none-any.whl`, installs the wheel in a fresh venv, checks that `openhal --version` prints `openhal 0.1.0` and uploads both files to PyPI.
-9. Check https://pypi.org/project/halkit/ for version 0.1.0. After that the install pages can switch from the git commands to `uv tool install halkit` and `pipx install halkit`.
+9. Check https://pypi.org/project/halkit/ for version 0.1.0. The one-line installers look PyPI up on every run, so from then on the installers take OpenHAL from PyPI with no change.
+10. Turn on the uv and pipx tabs. In website/src/config/install.json, change `"onPyPI": false` to `"onPyPI": true`. That one value adds the uv and pipx tabs to the home page's install box and moves the install guide's uv and pipx commands from GitHub to PyPI.
+11. Run `uv run python scripts/install_docs.py`, so docs/guide/install.md shows the PyPI commands, then `uv run pytest tests/docs/test_install_docs.py tests/packaging -q`.
+12. Commit, push to main and wait for the Website workflow to finish.
+13. Open https://sohan-bhat.github.io/OpenHAL/ and check that the install box shows macOS and Linux, Windows, uv and pipx. Then run the macOS and Linux command in a terminal. The installer should print `Installing OpenHAL from PyPI` and then `OpenHAL 0.1.0 is now in` followed by the folder.
 
 ## 4. Domain
 
-openhal.com and openhal.org are registered by someone else. openhal.io looked unregistered on 2026-10-24. openhal.dev could not be checked. The website is published at https://sohan-bhat.github.io/OpenHAL/ until then. Buy one of the unregistered domains at a registrar of your choice. Then set that domain as the custom domain in the repository's Pages settings, set `OPENHAL_SITE` in .github/workflows/pages.yml to the domain, and drop the rebase step in that workflow, which only exists to serve the site under /OpenHAL/.
+openhal.com and openhal.org are registered by someone else. openhal.io looked unregistered on 2026-10-24. openhal.dev could not be checked. The website is published at https://sohan-bhat.github.io/OpenHAL/ until then. Buy one of the unregistered domains at a registrar of your choice. Then set that domain as the custom domain in the repository's Pages settings, set `OPENHAL_SITE` in .github/workflows/pages.yml to the domain, and drop the rebase step in that workflow, which only exists to serve the site under /OpenHAL/. The one-line installers carry the site's address too, so set `site` in website/src/config/install.json and `SITE` in website/public/install.sh to the new address and run `uv run python scripts/install_docs.py`. The old address keeps working, because GitHub Pages redirects the old address to the custom domain.

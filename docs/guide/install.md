@@ -1,25 +1,39 @@
 # Install
 
-OpenHAL needs Python 3.12 or newer. [uv](https://docs.astral.sh/uv/) is the quickest way to get both.
-
-## From a clone
-
-This is the README's route, which runs the CLI from the checkout and installs nothing else.
+<!-- install:start -->
+On macOS and Linux, run this command in a terminal.
 
 ```text
-git clone https://github.com/sohan-bhat/OpenHAL
-cd OpenHAL
-uv run openhal demo
+curl -LsSf https://sohan-bhat.github.io/OpenHAL/install.sh | sh
 ```
 
-## As a tool
-
-`uv tool install` and `pipx install` put `openhal` on your PATH in its own environment. OpenHAL isn't on PyPI yet, so install OpenHAL from GitHub.
+On Windows, run this command in PowerShell.
 
 ```text
-uv tool install --compile-bytecode git+https://github.com/sohan-bhat/OpenHAL
+irm https://sohan-bhat.github.io/OpenHAL/install.ps1 | iex
+```
+<!-- install:end -->
+
+The installer needs nothing installed first. When uv is missing, the installer puts [uv](https://docs.astral.sh/uv/) 0.13.5 in `~/.local/bin` with Astral's own installer, and uv then installs OpenHAL in an environment of its own with Python 3.12. Every dependency comes as a prebuilt wheel, so nothing needs a compiler. The installer needs no sudo and changes nothing outside uv's own folders, so when `~/.local/bin` isn't on your PATH, the installer prints the line that adds the folder.
+
+- Running the installer again upgrades OpenHAL in place.
+- Until the first release on PyPI, the installer installs OpenHAL from the repository's main branch.
+- To install one version, set `OPENHAL_VERSION`. Put `OPENHAL_VERSION=0.1.0` right before `sh` in the macOS and Linux command, or run `$env:OPENHAL_VERSION = '0.1.0'` in PowerShell first. The installer takes that version from PyPI, or from the tag `v0.1.0` while PyPI lacks the version.
+
+Then set up your first device and your AI clients with `openhal init`, and start OpenHAL with `openhal start`. [Set up](#set-up) describes each step.
+
+## With uv or pipx
+
+`uv tool install` and `pipx install` put `openhal` on your PATH in an environment of its own, and OpenHAL needs Python 3.12 or newer.
+
+<!-- tools:start -->
+OpenHAL isn't on PyPI yet, so uv and pipx install OpenHAL from GitHub, which needs git.
+
+```text
+uv tool install git+https://github.com/sohan-bhat/OpenHAL
 pipx install git+https://github.com/sohan-bhat/OpenHAL
 ```
+<!-- tools:end -->
 
 You can also build a wheel in a clone and install that file.
 
@@ -29,9 +43,20 @@ uv tool install --compile-bytecode dist/halkit-*.whl
 pipx install dist/halkit-*.whl
 ```
 
-- `--compile-bytecode` makes the first run about twice as fast.
+- `--compile-bytecode` after `uv tool install` makes the first run about twice as fast.
 - Driver extras go in brackets, as in `"halkit[esphome,openhal-firmware] @ git+https://github.com/sohan-bhat/OpenHAL"`. Installing again with other extras replaces the ones you had, so list every extra you use. `openhal doctor` lists the drivers whose extras are missing.
-- A few dependencies have no Intel Mac wheels in their newest versions, and building those dependencies needs Rust, so on an Intel Mac add `--no-build` to uv, or `--pip-args=--only-binary=:all:` to pipx.
+- A few dependencies have no Intel Mac wheels in their newest versions, and building those dependencies needs Rust, so on an Intel Mac add `--no-build` to uv, or `--pip-args=--only-binary=:all:` to pipx. The one-line installers do this for you.
+
+## From a clone
+
+This is the README's route, which needs uv and git and runs the CLI from the checkout.
+
+```text
+git clone https://github.com/sohan-bhat/OpenHAL
+cd OpenHAL
+uv run openhal demo
+```
+
 
 ## Set up
 

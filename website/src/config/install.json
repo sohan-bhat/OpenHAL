@@ -1,0 +1,35 @@
+{
+  "onPyPI": false,
+  "site": "https://sohan-bhat.github.io/OpenHAL",
+  "channels": [
+    {
+      "id": "shell",
+      "label": "macOS and Linux",
+      "runIn": "a terminal",
+      "prompt": "$",
+      "command": "curl -LsSf {site}/install.sh | sh"
+    },
+    {
+      "id": "powershell",
+      "label": "Windows",
+      "runIn": "PowerShell",
+      "prompt": "PS>",
+      "platform": "windows",
+      "command": "irm {site}/install.ps1 | iex"
+    },
+    {
+      "id": "uv",
+      "label": "uv",
+      "prompt": "$",
+      "command": "uv tool install {distribution}",
+      "beforePyPI": "uv tool install git+{repository}"
+    },
+    {
+      "id": "pipx",
+      "label": "pipx",
+      "prompt": "$",
+      "command": "pipx install {distribution}",
+      "beforePyPI": "pipx install git+{repository}"
+    }
+  ]
+}

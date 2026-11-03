@@ -48,22 +48,31 @@ const speculation = JSON.stringify({
       .join("\n");
   }
 
-  for (const figure of document.querySelectorAll<HTMLElement>("figure.code-block")) {
-    const code = figure.querySelector("pre");
-    if (!code || !navigator.clipboard) continue;
+  function copyButton(label: string, text: () => string): HTMLButtonElement {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "copy-button";
-    button.setAttribute("aria-label", "Copy code");
+    button.setAttribute("aria-label", label);
     for (const word of ["Copy", "Copied"]) button.append(Object.assign(document.createElement("span"), { textContent: word }));
     let timer = 0;
     button.addEventListener("click", async () => {
-      await navigator.clipboard.writeText(commandsOf(figure, code.innerText.replace(/\n$/, "")));
+      await navigator.clipboard.writeText(text());
       button.toggleAttribute("data-copied", true);
       window.clearTimeout(timer);
       timer = window.setTimeout(() => button.toggleAttribute("data-copied", false), 1500);
     });
-    figure.append(button);
+    return button;
+  }
+
+  if (navigator.clipboard) {
+    for (const figure of document.querySelectorAll<HTMLElement>("figure.code-block")) {
+      const code = figure.querySelector("pre");
+      if (code) figure.append(copyButton("Copy code", () => commandsOf(figure, code.innerText.replace(/\n$/, ""))));
+    }
+    for (const box of document.querySelectorAll<HTMLElement>("[data-copy-command]")) {
+      const command = () => box.querySelector<HTMLElement>("[role=tabpanel][data-state=active] [data-command]")?.dataset.command ?? "";
+      box.append(copyButton("Copy the install command", command));
+    }
   }
 
   function tableName(wrap: HTMLElement): string {
