@@ -729,30 +729,15 @@
       "id": "fan-unconfirmed",
       "steps": [],
       "result": {
-        "status": "blocked",
-        "code": "read_only_file",
-        "message": "Blocked. desk-fan-controller is read-only until a human confirms limits for file (interlocks, watchdog, safe state and hazard), write.fan_speed. Run the limits interview.",
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed.",
         "wire": {
-          "status": "blocked",
+          "status": "allowed",
           "device": "desk-fan-controller",
           "target": "write:fan_speed",
-          "value": null,
-          "unit": "%",
-          "error": {
-            "code": -32015,
-            "message": "desk-fan-controller is read-only until a person confirms its limits",
-            "data": {
-              "name": "UNVERIFIED_LIMITS",
-              "kernelCode": "read_only_file",
-              "kernelMessage": "Blocked. desk-fan-controller is read-only until a human confirms limits for file (interlocks, watchdog, safe state and hazard), write.fan_speed. Run the limits interview.",
-              "device": "desk-fan-controller",
-              "channel": "fan_speed",
-              "requested": {
-                "value": 20,
-                "unit": "%"
-              }
-            }
-          }
+          "value": 20.0,
+          "unit": "%"
         }
       }
     },
@@ -762,7 +747,7 @@
       "result": {
         "status": "blocked",
         "code": "read_only_file",
-        "message": "Blocked. desk-fan-controller is read-only until a human confirms limits for file (interlocks, watchdog, safe state and hazard), write.fan_speed. Run the limits interview.",
+        "message": "Blocked. fan_speed on desk-fan-controller has only suggested limits, so it is read-only until a person confirms limits for file (interlocks, watchdog, safe state and hazard), write.fan_speed. Run the limits interview.",
         "wire": {
           "status": "blocked",
           "device": "desk-fan-controller",
@@ -775,7 +760,7 @@
             "data": {
               "name": "UNVERIFIED_LIMITS",
               "kernelCode": "read_only_file",
-              "kernelMessage": "Blocked. desk-fan-controller is read-only until a human confirms limits for file (interlocks, watchdog, safe state and hazard), write.fan_speed. Run the limits interview.",
+              "kernelMessage": "Blocked. fan_speed on desk-fan-controller has only suggested limits, so it is read-only until a person confirms limits for file (interlocks, watchdog, safe state and hazard), write.fan_speed. Run the limits interview.",
               "device": "desk-fan-controller",
               "channel": "fan_speed",
               "requested": {
@@ -791,30 +776,15 @@
       "id": "hash-stale",
       "steps": [],
       "result": {
-        "status": "blocked",
-        "code": "read_only_file",
-        "message": "Blocked. hash-fan is read-only until a human confirms limits for file (limits changed after they were confirmed). Run the limits interview.",
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed.",
         "wire": {
-          "status": "blocked",
+          "status": "allowed",
           "device": "hash-fan",
           "target": "write:speed",
-          "value": null,
-          "unit": "%",
-          "error": {
-            "code": -32015,
-            "message": "hash-fan is read-only until a person confirms its limits",
-            "data": {
-              "name": "UNVERIFIED_LIMITS",
-              "kernelCode": "read_only_file",
-              "kernelMessage": "Blocked. hash-fan is read-only until a human confirms limits for file (limits changed after they were confirmed). Run the limits interview.",
-              "device": "hash-fan",
-              "channel": "speed",
-              "requested": {
-                "value": 20,
-                "unit": "%"
-              }
-            }
-          }
+          "value": 20.0,
+          "unit": "%"
         }
       }
     },
@@ -3550,6 +3520,303 @@
           }
         }
       }
+    },
+    {
+      "id": "risk-low-suggested-rate-ignored",
+      "steps": [],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "risk-lamp",
+          "target": "write:brightness",
+          "value": 100.0,
+          "unit": "%"
+        }
+      }
+    },
+    {
+      "id": "risk-medium-suggested-rate-kept",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "rate_limited",
+        "message": "Blocked. pump may change by 10 % per second. Right now it can go from -10 % to 10 %. Requested 100 %, which is possible in 9.0 s, or use small steps.",
+        "wire": {
+          "status": "blocked",
+          "device": "risk-lamp",
+          "target": "write:pump",
+          "value": null,
+          "unit": "%",
+          "error": {
+            "code": -32011,
+            "message": "pump 100 % changes faster than 10 %/s allows right now (risk-lamp.hal.yaml)",
+            "data": {
+              "name": "RATE_LIMITED",
+              "kernelCode": "rate_limited",
+              "kernelMessage": "Blocked. pump may change by 10 % per second. Right now it can go from -10 % to 10 %. Requested 100 %, which is possible in 9.0 s, or use small steps.",
+              "device": "risk-lamp",
+              "channel": "pump",
+              "limit": {
+                "value": 10,
+                "unit": "%/s"
+              },
+              "requested": {
+                "value": 100,
+                "unit": "%"
+              },
+              "file": "risk-lamp.hal.yaml"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "risk-lowered-by-a-person",
+      "steps": [],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "risk-heater",
+          "target": "write:power",
+          "value": 50.0,
+          "unit": "%"
+        }
+      }
+    },
+    {
+      "id": "risk-override-only-raises",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "read_only_file",
+        "message": "Blocked. element on risk-heater is high risk, so it is read-only until a person confirms limits for write.element. Run the limits interview.",
+        "wire": {
+          "status": "blocked",
+          "device": "risk-heater",
+          "target": "write:element",
+          "value": null,
+          "unit": "%",
+          "error": {
+            "code": -32015,
+            "message": "risk-heater is read-only until a person confirms its limits",
+            "data": {
+              "name": "UNVERIFIED_LIMITS",
+              "kernelCode": "read_only_file",
+              "kernelMessage": "Blocked. element on risk-heater is high risk, so it is read-only until a person confirms limits for write.element. Run the limits interview.",
+              "device": "risk-heater",
+              "channel": "element",
+              "requested": {
+                "value": 50,
+                "unit": "%"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "risk-high-action-undone-by-resume",
+      "steps": [],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "risk-press",
+          "target": "action:pause",
+          "value": {},
+          "unit": null
+        }
+      }
+    },
+    {
+      "id": "risk-high-action-held",
+      "steps": [],
+      "result": {
+        "status": "needs_confirmation",
+        "code": "needs_confirmation",
+        "message": "Held until a human approves action:stamp on risk-press.",
+        "wire": {
+          "status": "needs_confirmation",
+          "device": "risk-press",
+          "target": "action:stamp",
+          "value": {},
+          "unit": null
+        }
+      }
+    },
+    {
+      "id": "risk-high-action-start-held",
+      "steps": [],
+      "result": {
+        "status": "needs_confirmation",
+        "code": "needs_confirmation",
+        "message": "Held until a human approves action:start on risk-press.",
+        "wire": {
+          "status": "needs_confirmation",
+          "device": "risk-press",
+          "target": "action:start",
+          "value": {},
+          "unit": null
+        }
+      }
+    },
+    {
+      "id": "risk-high-action-window",
+      "steps": [
+        {
+          "status": "pending",
+          "code": "needs_confirmation",
+          "message": "Held until a human approves action:stamp on risk-press.",
+          "wire": {
+            "status": "pending",
+            "device": "risk-press",
+            "target": "action:stamp",
+            "value": {},
+            "unit": null,
+            "requestId": "REQUEST_ID"
+          }
+        },
+        {
+          "status": "done",
+          "code": null,
+          "message": "Done. stamp ran."
+        }
+      ],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "risk-press",
+          "target": "action:stamp",
+          "value": {},
+          "unit": null
+        }
+      }
+    },
+    {
+      "id": "risk-high-action-routine",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "needs_confirmation",
+        "message": "Blocked. action:stamp on risk-press needs a human to confirm, so a routine can't run it.",
+        "wire": {
+          "status": "blocked",
+          "device": "risk-press",
+          "target": "action:stamp",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32013,
+            "message": "stamp on risk-press needs a person to approve it",
+            "data": {
+              "name": "CONFIRMATION_REQUIRED",
+              "kernelCode": "needs_confirmation",
+              "kernelMessage": "Blocked. action:stamp on risk-press needs a human to confirm, so a routine can't run it.",
+              "device": "risk-press",
+              "action": "stamp"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "risk-scope-medium-target",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "not_permitted",
+        "message": "Blocked. door_lock is medium risk, which this client's control_low scope doesn't cover.",
+        "wire": {
+          "status": "blocked",
+          "device": "risk-kiln",
+          "target": "write:door_lock",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32003,
+            "message": "This token's scope doesn't cover risk-kiln",
+            "data": {
+              "name": "SCOPE_DENIED",
+              "kernelCode": "not_permitted",
+              "kernelMessage": "Blocked. door_lock is medium risk, which this client's control_low scope doesn't cover.",
+              "device": "risk-kiln",
+              "channel": "door_lock",
+              "requested": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "risk-scope-low-target",
+      "steps": [],
+      "result": {
+        "status": "needs_confirmation",
+        "code": "needs_confirmation",
+        "message": "Held until a human approves write:light on risk-kiln.",
+        "wire": {
+          "status": "needs_confirmation",
+          "device": "risk-kiln",
+          "target": "write:light",
+          "value": true,
+          "unit": null
+        }
+      }
+    },
+    {
+      "id": "risk-shared-pin-high",
+      "steps": [],
+      "result": {
+        "status": "blocked",
+        "code": "read_only_file",
+        "message": "Blocked. pin5 on risk-board is high risk, so it is read-only until a person confirms limits for write.pin5. Run the limits interview.",
+        "wire": {
+          "status": "blocked",
+          "device": "risk-board",
+          "target": "write:pin5",
+          "value": null,
+          "unit": null,
+          "error": {
+            "code": -32015,
+            "message": "risk-board is read-only until a person confirms its limits",
+            "data": {
+              "name": "UNVERIFIED_LIMITS",
+              "kernelCode": "read_only_file",
+              "kernelMessage": "Blocked. pin5 on risk-board is high risk, so it is read-only until a person confirms limits for write.pin5. Run the limits interview.",
+              "device": "risk-board",
+              "channel": "pin5",
+              "requested": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "risk-bare-pin-medium",
+      "steps": [],
+      "result": {
+        "status": "allowed",
+        "code": null,
+        "message": "Allowed.",
+        "wire": {
+          "status": "allowed",
+          "device": "risk-board",
+          "target": "write:out7",
+          "value": true,
+          "unit": null
+        }
+      }
     }
   ],
   "hashes": {
@@ -3574,7 +3841,13 @@
     "inline:stale-hash": "67ed889d3f453287147d968aa893e8615203b8aad7b356b88d36e20ffe8a2448",
     "inline:bound-hash": "67ed889d3f453287147d968aa893e8615203b8aad7b356b88d36e20ffe8a2448",
     "inline:hot-fan": "0ffa2aa9340dd5c9ddea094ebc46df603ee30731a0fd8fb785edc1230f692c7f",
-    "inline:waterer": "d5491ef1e63f99b656de01fece078affd4644e65df0356f690f4c69a07488ccb"
+    "inline:waterer": "d5491ef1e63f99b656de01fece078affd4644e65df0356f690f4c69a07488ccb",
+    "inline:risk-lamp": "0f7b0c61b1790a555395d6eda1da7e34864be3bd3fdcac90100a952b460b860a",
+    "inline:risk-heater": "80c157f447ea560d17d2fd74eef80bcfc1d62011d5102a22050dee3cba231080",
+    "inline:risk-press": "71019caf4e32535fafbe71ecb7f334302bbc904db4f3e82ccaa48843af5af4ae",
+    "inline:risk-kiln": "34014b2b1e0d0a760d3068cf9fcd89aad4daeb29e42d46ec444017be550610e7",
+    "inline:risk-board": "0f22bf03848cb829f6ee50aef0adaf0fc11e3c963bfcbe5812555b613c9d82ae",
+    "inline:risk-units": "f3efd30e54f65f219a5cce7443e9261e1964b6e2e06e0dc7a6c7bb80d57d011a"
   },
   "scenario": {
     "outcome": "You'll see the agent raise the bed target from 60 °C to 70 °C, have a request for a nozzle temperature of 300 °C blocked at the nozzle limit of 260 °C and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.",
@@ -3614,5 +3887,646 @@
       "→ hal/confirmations/approve { \"requestId\": \"REQUEST_ID\" }",
       "← result      { \"status\": \"done\" }"
     ]
+  },
+  "risk": {
+    "library/alpaca/sky-watcher-eq6-r-pro.hal.yaml": {
+      "targets": {
+        "read:right_ascension": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:declination": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:altitude": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:azimuth": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:slewing": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:at_park": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:tracking": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm", "scope": "medium", "read_only": [], "own_rate": true},
+        "action:abort_slew": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is medium"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "undoable": true},
+        "action:park": {"level": "high", "classified": "high", "reasons": ["park names machine motion", "park names machine motion", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.park"], "undoable": false},
+        "action:unpark": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "park names machine motion", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm", "scope": "medium", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.unpark"], "undoable": false},
+        "action:slew_to_coordinates": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "deg is angle", "deg is angle", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "undoable": false}
+      },
+      "guarded": ["actions.park", "actions.unpark"],
+      "unconfirmed": ["file (interlocks, watchdog, safe state and hazard)", "actions.park", "actions.unpark"]
+    },
+    "library/ble/polar-h10.hal.yaml": {
+      "targets": {
+        "read:heart_rate": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:battery": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/ble/xiaomi-lywsd03mmc-pvvx.hal.yaml": {
+      "targets": {
+        "read:temperature": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:humidity": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:battery": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/ble/xiaomi-lywsd03mmc.hal.yaml": {
+      "targets": {
+        "read:temperature": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:humidity": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:battery_voltage": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/esphome/apollo-air-1.hal.yaml": {
+      "targets": {
+        "read:co2": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:temperature": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:humidity": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:pressure": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:voc_index": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:nox_index": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:rgb_light": {"level": "low", "classified": "low", "reasons": ["rgb names light", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": false},
+        "write:rgb_light_brightness": {"level": "low", "classified": "low", "reasons": ["rgb names light", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": false}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/esphome/apollo-msr-2.hal.yaml": {
+      "targets": {
+        "read:temperature": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:pressure": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:light": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:uv_index": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:occupied": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:rgb_light": {"level": "low", "classified": "low", "reasons": ["rgb names light", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": false},
+        "write:rgb_light_brightness": {"level": "low", "classified": "low", "reasons": ["rgb names light", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": false}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/esphome/athom-smart-plug-v2.hal.yaml": {
+      "targets": {
+        "read:power": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:voltage": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:current": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:energy": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:relay": {"level": "high", "classified": "high", "reasons": ["relay names mains", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.relay"], "own_rate": true}
+      },
+      "guarded": ["write.relay"],
+      "unconfirmed": ["file (interlocks, watchdog, safe state and hazard)", "write.relay"]
+    },
+    "library/homeassistant/shelly-dimmer-gen3.hal.yaml": {
+      "targets": {
+        "write:light": {"level": "high", "classified": "high", "reasons": ["light names light", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.light"], "own_rate": true},
+        "write:light_brightness": {"level": "high", "classified": "high", "reasons": ["light names light", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.light_brightness"], "own_rate": true}
+      },
+      "guarded": ["write.light", "write.light_brightness"],
+      "unconfirmed": ["file (interlocks, watchdog, safe state and hazard)", "write.light", "write.light_brightness"]
+    },
+    "library/homeassistant/shelly-plus-plug-s.hal.yaml": {
+      "targets": {
+        "read:power": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:energy": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:relay": {"level": "high", "classified": "high", "reasons": ["relay names mains", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.relay"], "own_rate": true}
+      },
+      "guarded": ["write.relay"],
+      "unconfirmed": ["file (interlocks, watchdog, safe state and hazard)", "write.relay"]
+    },
+    "library/marlin/prusa-mini.hal.yaml": {
+      "targets": {
+        "read:extruder_temp": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:bed_temp": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:position_z": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:extruder_target": {"level": "high", "classified": "high", "reasons": ["extruder names heat", "degC is temperature", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.extruder_target"], "own_rate": true},
+        "write:bed_target": {"level": "high", "classified": "high", "reasons": ["bed names heat", "degC is temperature", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.bed_target"], "own_rate": true},
+        "write:fan_speed": {"level": "high", "classified": "high", "reasons": ["fan names motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.fan_speed"], "own_rate": true},
+        "action:home": {"level": "high", "classified": "high", "reasons": ["home names machine motion", "home names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.home"], "undoable": false}
+      },
+      "guarded": ["write.extruder_target", "write.bed_target", "write.fan_speed", "actions.home"],
+      "unconfirmed": ["file (interlocks, watchdog, safe state and hazard)", "write.extruder_target", "write.bed_target", "write.fan_speed", "actions.home"]
+    },
+    "library/marlin/prusa-mk3s.hal.yaml": {
+      "targets": {
+        "read:extruder_temp": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:bed_temp": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:position_z": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:sd_printing": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:sd_progress": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:extruder_target": {"level": "high", "classified": "high", "reasons": ["extruder names heat", "degC is temperature", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.extruder_target"], "own_rate": true},
+        "write:bed_target": {"level": "high", "classified": "high", "reasons": ["bed names heat", "degC is temperature", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.bed_target"], "own_rate": true},
+        "write:fan_speed": {"level": "high", "classified": "high", "reasons": ["fan names motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.fan_speed"], "own_rate": true},
+        "action:home": {"level": "high", "classified": "high", "reasons": ["home names machine motion", "home names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.home"], "undoable": false},
+        "action:pause": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "print names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.pause"], "undoable": true},
+        "action:resume": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "print names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.resume"], "undoable": true},
+        "action:cancel": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "print names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.cancel"], "undoable": false}
+      },
+      "guarded": ["write.extruder_target", "write.bed_target", "write.fan_speed", "actions.home", "actions.pause", "actions.resume", "actions.cancel"],
+      "unconfirmed": ["file (interlocks, watchdog, safe state and hazard)", "write.extruder_target", "write.bed_target", "write.fan_speed", "actions.home", "actions.pause", "actions.resume", "actions.cancel"]
+    },
+    "library/marlin/prusa-mk4.hal.yaml": {
+      "targets": {
+        "read:extruder_temp": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:bed_temp": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:position_z": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:extruder_target": {"level": "high", "classified": "high", "reasons": ["extruder names heat", "degC is temperature", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.extruder_target"], "own_rate": true},
+        "write:bed_target": {"level": "high", "classified": "high", "reasons": ["bed names heat", "degC is temperature", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.bed_target"], "own_rate": true},
+        "write:fan_speed": {"level": "high", "classified": "high", "reasons": ["fan names motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.fan_speed"], "own_rate": true},
+        "action:home": {"level": "high", "classified": "high", "reasons": ["home names machine motion", "home names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.home"], "undoable": false}
+      },
+      "guarded": ["write.extruder_target", "write.bed_target", "write.fan_speed", "actions.home"],
+      "unconfirmed": ["file (interlocks, watchdog, safe state and hazard)", "write.extruder_target", "write.bed_target", "write.fan_speed", "actions.home"]
+    },
+    "library/midi/akai-lpd8.hal.yaml": {
+      "targets": {
+        "read:knob_1": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_2": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_3": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_4": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_5": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_6": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_7": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_8": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:pad_1": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:pad_2": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:pad_3": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:pad_4": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:pad_5": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:pad_6": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:pad_7": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:pad_8": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/midi/korg-nanokontrol2.hal.yaml": {
+      "targets": {
+        "read:slider_1": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:slider_2": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:slider_3": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:slider_4": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:slider_5": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:slider_6": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:slider_7": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:slider_8": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_1": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_2": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_3": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_4": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_5": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_6": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_7": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:knob_8": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:play": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:stop": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:record": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:play_led": {"level": "low", "classified": "low", "reasons": ["led names light", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": false},
+        "write:stop_led": {"level": "low", "classified": "low", "reasons": ["led names light", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": false},
+        "write:record_led": {"level": "low", "classified": "low", "reasons": ["led names light", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": false}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/modbus/eastron-sdm120.hal.yaml": {
+      "targets": {
+        "read:voltage": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:current": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:power": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:power_factor": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:frequency": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:energy": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/modbus/eastron-sdm630.hal.yaml": {
+      "targets": {
+        "read:voltage_l1": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:voltage_l2": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:voltage_l3": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:current_l1": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:current_l2": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:current_l3": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:power": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:power_factor": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:frequency": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:energy_import": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:energy": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/moonraker/ratrig-v-core-4.hal.yaml": {
+      "targets": {
+        "read:state": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:extruder_temp": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:bed_temp": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:progress": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:extruder_target": {"level": "high", "classified": "high", "reasons": ["extruder names heat", "degC is temperature", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.extruder_target"], "own_rate": true},
+        "write:bed_target": {"level": "high", "classified": "high", "reasons": ["bed names heat", "degC is temperature", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.bed_target"], "own_rate": true},
+        "write:fan_speed": {"level": "high", "classified": "high", "reasons": ["fan names motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.fan_speed"], "own_rate": true},
+        "action:home": {"level": "high", "classified": "high", "reasons": ["home names machine motion", "home names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.home"], "undoable": false},
+        "action:pause": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "print names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.pause"], "undoable": true},
+        "action:resume": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "print names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.resume"], "undoable": true},
+        "action:cancel": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "print names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.cancel"], "undoable": false}
+      },
+      "guarded": ["write.extruder_target", "write.bed_target", "write.fan_speed", "actions.home", "actions.pause", "actions.resume", "actions.cancel"],
+      "unconfirmed": ["file (interlocks, watchdog, safe state and hazard)", "write.extruder_target", "write.bed_target", "write.fan_speed", "actions.home", "actions.pause", "actions.resume", "actions.cancel"]
+    },
+    "library/moonraker/sovol-sv08.hal.yaml": {
+      "targets": {
+        "read:state": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:extruder_temp": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:bed_temp": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:progress": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:extruder_target": {"level": "high", "classified": "high", "reasons": ["extruder names heat", "degC is temperature", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.extruder_target"], "own_rate": true},
+        "write:bed_target": {"level": "high", "classified": "high", "reasons": ["bed names heat", "degC is temperature", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.bed_target"], "own_rate": true},
+        "write:fan_speed": {"level": "high", "classified": "high", "reasons": ["fan names motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.fan_speed"], "own_rate": true},
+        "action:home": {"level": "high", "classified": "high", "reasons": ["home names machine motion", "home names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.home"], "undoable": false},
+        "action:pause": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "print names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.pause"], "undoable": true},
+        "action:resume": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "print names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.resume"], "undoable": true},
+        "action:cancel": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "print names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "actions.cancel"], "undoable": false}
+      },
+      "guarded": ["write.extruder_target", "write.bed_target", "write.fan_speed", "actions.home", "actions.pause", "actions.resume", "actions.cancel"],
+      "unconfirmed": ["file (interlocks, watchdog, safe state and hazard)", "write.extruder_target", "write.bed_target", "write.fan_speed", "actions.home", "actions.pause", "actions.resume", "actions.cancel"]
+    },
+    "library/mqtt/shelly-ht-gen3.hal.yaml": {
+      "targets": {
+        "read:temperature": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:humidity": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:battery": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/openhal_firmware/openhal-desk-fan.hal.yaml": {
+      "targets": {
+        "read:temperature": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:fan_speed": {"level": "medium", "classified": "medium", "reasons": ["fan names motion", "the device file's hazard is low"], "shared_with": [], "tier": "confirm", "scope": "low", "read_only": [], "own_rate": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/openhal_firmware/openhal-led-strip.hal.yaml": {
+      "targets": {
+        "read:ambient_light": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:brightness": {"level": "low", "classified": "low", "reasons": ["brightness names light", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": false}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/openhal_firmware/openhal-plant-waterer.hal.yaml": {
+      "targets": {
+        "read:soil_moisture": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:tank": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "action:water": {"level": "medium", "classified": "medium", "reasons": ["water names flow", "pump names flow", "the device file's hazard is low"], "shared_with": [], "tier": "confirm", "scope": "low", "read_only": [], "undoable": false},
+        "action:stop": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "pump names flow", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "undoable": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/openhal_firmware/openhal-servo-arm.hal.yaml": {
+      "targets": {
+        "write:angle": {"level": "medium", "classified": "medium", "reasons": ["angle names motion", "degree is angle", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm", "scope": "medium", "read_only": [], "own_rate": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/openhal_firmware/openhal-soil-pump.hal.yaml": {
+      "targets": {
+        "read:soil_moisture": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:pump": {"level": "medium", "classified": "medium", "reasons": ["pump names flow", "the device file's hazard is low"], "shared_with": [], "tier": "confirm", "scope": "low", "read_only": [], "own_rate": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/rpi_camera/raspberry-pi-camera-module-3.hal.yaml": {
+      "targets": {
+        "read:frame": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:light": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:exposure": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:lens_position": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:sensor_temperature": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/rpi_camera/raspberry-pi-hq-camera.hal.yaml": {
+      "targets": {
+        "read:frame": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:light": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:exposure": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:analogue_gain": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:colour_temperature": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/rpi_gpio/pimoroni-fan-shim.hal.yaml": {
+      "targets": {
+        "read:button": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:fan": {"level": "medium", "classified": "medium", "reasons": ["fan names motion", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/rpi_gpio/waveshare-rpi-relay-board.hal.yaml": {
+      "targets": {
+        "write:relay_1": {"level": "high", "classified": "high", "reasons": ["relay names mains", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.relay_1"], "own_rate": true},
+        "write:relay_2": {"level": "high", "classified": "high", "reasons": ["relay names mains", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.relay_2"], "own_rate": true},
+        "write:relay_3": {"level": "high", "classified": "high", "reasons": ["relay names mains", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.relay_3"], "own_rate": true}
+      },
+      "guarded": ["write.relay_1", "write.relay_2", "write.relay_3"],
+      "unconfirmed": ["file (interlocks, watchdog, safe state and hazard)", "write.relay_1", "write.relay_2", "write.relay_3"]
+    },
+    "library/scpi/keysight-34461a.hal.yaml": {
+      "targets": {
+        "read:dc_voltage": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:dc_current": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:resistance": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/scpi/rigol-dp832.hal.yaml": {
+      "targets": {
+        "read:ch1_voltage": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:ch1_current": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:ch2_voltage": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:ch2_current": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:ch3_voltage": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:ch3_current": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:ch1_output": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:ch2_output": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:ch3_output": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "own_rate": true},
+        "action:set_ch1": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "voltage up to 50 V", "current up to 10 A", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "undoable": false},
+        "action:set_ch2": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "voltage up to 50 V", "current up to 10 A", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "undoable": false},
+        "action:set_ch3": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "voltage up to 50 V", "current up to 10 A", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "undoable": false}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/scpi/rigol-ds1054z.hal.yaml": {
+      "targets": {
+        "read:trigger_status": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:ch1_vpp": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:ch1_frequency": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "action:run": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "undoable": false},
+        "action:stop": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "undoable": false},
+        "action:single": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "undoable": false}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/scpi/siglent-sdm3045x.hal.yaml": {
+      "targets": {
+        "read:dc_voltage": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:dc_current": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:resistance": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/scpi/siglent-spd3303x.hal.yaml": {
+      "targets": {
+        "read:ch1_voltage": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:ch1_current": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:ch2_voltage": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:ch2_current": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:ch1_output": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:ch2_output": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "own_rate": true},
+        "action:set_ch1_voltage": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "voltage up to 50 V", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "undoable": false},
+        "action:set_ch1_current": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "current up to 10 A", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "undoable": false},
+        "action:set_ch2_voltage": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "voltage up to 50 V", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "undoable": false},
+        "action:set_ch2_current": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "current up to 10 A", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "undoable": false}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "spec/examples/alpaca-mount.hal.yaml": {
+      "targets": {
+        "read:ra": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:dec": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:slewing": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "action:slew_to": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "degree is angle", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm", "scope": "medium", "read_only": [], "undoable": false},
+        "action:park": {"level": "high", "classified": "high", "reasons": ["park names machine motion", "the device file's hazard is medium"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "undoable": true}
+      },
+      "guarded": ["actions.park"],
+      "unconfirmed": []
+    },
+    "spec/examples/ble-environment-sensor.hal.yaml": {
+      "targets": {
+        "read:temperature": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:humidity": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "spec/examples/desk-fan-confirmed.hal.yaml": {
+      "targets": {
+        "read:temperature": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:fan_speed": {"level": "medium", "classified": "medium", "reasons": ["fan names motion", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "spec/examples/desk-fan.hal.yaml": {
+      "targets": {
+        "read:temperature": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:fan_speed": {"level": "medium", "classified": "medium", "reasons": ["fan names motion"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "spec/examples/esphome-plant.hal.yaml": {
+      "targets": {
+        "read:soil_moisture": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:pump": {"level": "medium", "classified": "medium", "reasons": ["pump names flow", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "spec/examples/grbl-laser.hal.yaml": {
+      "targets": {
+        "read:state": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:door_closed": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:laser_power": {"level": "high", "classified": "high", "reasons": ["laser names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": [], "own_rate": true},
+        "action:home": {"level": "high", "classified": "high", "reasons": ["home names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": [], "undoable": false},
+        "action:run_job": {"level": "high", "classified": "high", "reasons": ["from the device name, laser names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": [], "undoable": true},
+        "action:feed_hold": {"level": "high", "classified": "high", "reasons": ["feed names machine motion", "the device file's hazard is high"], "shared_with": [], "tier": "confirm-each-time", "scope": "high", "read_only": [], "undoable": true}
+      },
+      "guarded": ["write.laser_power", "actions.home", "actions.run_job", "actions.feed_hold"],
+      "unconfirmed": []
+    },
+    "spec/examples/ha-desk-lamp.hal.yaml": {
+      "targets": {
+        "write:power": {"level": "low", "classified": "low", "reasons": ["from the device name, lamp names light", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": true},
+        "write:brightness": {"level": "low", "classified": "low", "reasons": ["brightness names light", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "spec/examples/klipper-printer.hal.yaml": {
+      "targets": {
+        "read:state": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:extruder_temp": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:bed_temp": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:extruder_target": {"level": "high", "classified": "high", "reasons": ["extruder names heat", "degC is temperature", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:bed_target": {"level": "high", "classified": "high", "reasons": ["bed names heat", "degC is temperature", "the device file's hazard is medium"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:fan_speed": {"level": "medium", "classified": "medium", "reasons": ["fan names motion", "the device file's hazard is medium"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true},
+        "action:home": {"level": "high", "classified": "high", "reasons": ["home names machine motion", "axes names machine motion", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm", "scope": "medium", "read_only": [], "undoable": false},
+        "action:pause": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is medium"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "undoable": false},
+        "action:cancel": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm", "scope": "medium", "read_only": [], "undoable": false}
+      },
+      "guarded": ["write.extruder_target", "write.bed_target", "actions.home"],
+      "unconfirmed": []
+    },
+    "spec/examples/midi-controller.hal.yaml": {
+      "targets": {
+        "read:knob_1": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:pad_1_led": {"level": "low", "classified": "low", "reasons": ["led names light", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "spec/examples/modbus-energy-meter.hal.yaml": {
+      "targets": {
+        "read:voltage": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:power": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:energy": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "spec/examples/openhal-firmware-fan.hal.yaml": {
+      "targets": {
+        "read:temperature": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:fan_speed": {"level": "medium", "classified": "medium", "reasons": ["fan names motion"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.fan_speed"], "own_rate": true}
+      },
+      "guarded": ["write.fan_speed"],
+      "unconfirmed": ["file (interlocks, watchdog, safe state and hazard)", "write.fan_speed"]
+    },
+    "spec/examples/rigol-dp832.hal.yaml": {
+      "targets": {
+        "read:ch1_voltage": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:ch1_current": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:ch1_output": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "own_rate": true},
+        "action:set_ch1": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "voltage up to 50 V", "current up to 10 A", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "undoable": false}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "spec/examples/rpi-relay.hal.yaml": {
+      "targets": {
+        "write:relay": {"level": "high", "classified": "high", "reasons": ["relay names mains", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": true}
+      },
+      "guarded": ["write.relay"],
+      "unconfirmed": []
+    },
+    "spec/examples/usb-webcam.hal.yaml": {
+      "targets": {
+        "read:frame": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "spec/examples/workbench-heater.hal.yaml": {
+      "targets": {
+        "write:power": {"level": "high", "classified": "high", "reasons": ["from the device name, heater names heat", "power up to 100 W", "the device file's hazard is medium"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true}
+      },
+      "guarded": ["write.power"],
+      "unconfirmed": []
+    },
+    "inline:stale-hash": {
+      "targets": {
+        "write:speed": {"level": "medium", "classified": "medium", "reasons": ["speed names motion", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "inline:bound-hash": {
+      "targets": {
+        "write:speed": {"level": "medium", "classified": "medium", "reasons": ["speed names motion", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "inline:hot-fan": {
+      "targets": {
+        "read:temperature": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:fan_speed": {"level": "medium", "classified": "medium", "reasons": ["fan names motion", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "inline:waterer": {
+      "targets": {
+        "read:soil_moisture": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:tank": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:pump": {"level": "medium", "classified": "medium", "reasons": ["pump names flow", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": true},
+        "action:water": {"level": "medium", "classified": "medium", "reasons": ["water names flow", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "undoable": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "inline:risk-lamp": {
+      "targets": {
+        "write:brightness": {"level": "low", "classified": "low", "reasons": ["brightness names light"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": false},
+        "write:pump": {"level": "medium", "classified": "medium", "reasons": ["pump names flow"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "inline:risk-heater": {
+      "targets": {
+        "write:power": {"level": "medium", "classified": "high", "reasons": ["from the device name, heater names heat", "risk medium set by owner"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:element": {"level": "high", "classified": "high", "reasons": ["from the device name, heater names heat", "risk low in the device file only raises"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": ["write.element"], "own_rate": true}
+      },
+      "guarded": ["write.element"],
+      "unconfirmed": ["write.element"]
+    },
+    "inline:risk-press": {
+      "targets": {
+        "write:indicator": {"level": "high", "classified": "high", "reasons": ["indicator names light, but the device name names something high, so high"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true},
+        "action:pause": {"level": "high", "classified": "high", "reasons": ["from the device name, press names force"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "undoable": true},
+        "action:resume": {"level": "high", "classified": "high", "reasons": ["from the device name, press names force"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "undoable": true},
+        "action:stamp": {"level": "high", "classified": "high", "reasons": ["from the device name, press names force", "press names force"], "shared_with": [], "tier": "confirm", "scope": "medium", "read_only": [], "undoable": false},
+        "action:start": {"level": "high", "classified": "high", "reasons": ["from the device name, press names force"], "shared_with": [], "tier": "confirm", "scope": "medium", "read_only": [], "undoable": false}
+      },
+      "guarded": ["write.indicator", "actions.pause", "actions.resume", "actions.stamp", "actions.start"],
+      "unconfirmed": []
+    },
+    "inline:risk-kiln": {
+      "targets": {
+        "write:light": {"level": "low", "classified": "high", "reasons": ["light names light, but the device name names something high, so high", "the device file's hazard is high", "risk low set by owner"], "shared_with": [], "tier": "confirm-each-time", "scope": "low", "read_only": [], "own_rate": true},
+        "write:door_lock": {"level": "medium", "classified": "high", "reasons": ["door names motion", "the device file's hazard is high", "risk medium set by owner"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "own_rate": true}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "inline:risk-board": {
+      "targets": {
+        "write:pin5": {"level": "high", "classified": "medium", "reasons": ["no rule applies, so medium", "a bare pin, with no word for what is wired to it", "shares its pin with write:heater_pin, so high"], "shared_with": ["write:heater_pin"], "tier": "none", "scope": "medium", "read_only": ["write.pin5"], "own_rate": true},
+        "write:heater_pin": {"level": "high", "classified": "high", "reasons": ["heater names heat"], "shared_with": ["write:pin5"], "tier": "none", "scope": "medium", "read_only": ["write.heater_pin"], "own_rate": true},
+        "write:out7": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "a bare pin, with no word for what is wired to it"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true}
+      },
+      "guarded": ["write.pin5", "write.heater_pin"],
+      "unconfirmed": ["write.pin5", "write.heater_pin"]
+    },
+    "inline:risk-units": {
+      "targets": {
+        "write:low_volts": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "voltage up to 50 V"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:high_volts": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "voltage above 50 V"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": ["write.high_volts"], "own_rate": true},
+        "write:amps": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "current up to 10 A"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:big_amps": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "current above 10 A"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": ["write.big_amps"], "own_rate": true},
+        "write:watts": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "power up to 100 W"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:angle": {"level": "medium", "classified": "medium", "reasons": ["angle names motion", "deg is angle"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:spin": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "rpm is angular speed"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:glow": {"level": "low", "classified": "low", "reasons": ["glow names light", "lx is illuminance"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "own_rate": true},
+        "write:count": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "the unit is missing (dimensionless), so one level up"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": ["write.count"], "own_rate": true},
+        "write:resist": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "ohm is a unit the table doesn't list, so one level up"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": ["write.resist"], "own_rate": true},
+        "write:flow": {"level": "medium", "classified": "medium", "reasons": ["flow names flow", "l/min is flow"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:timer": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:mode": {"level": "high", "classified": "high", "reasons": ["no rule applies, so medium", "heat names heat"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": ["write.mode"], "own_rate": true},
+        "action:move_to": {"level": "high", "classified": "high", "reasons": ["move names machine motion", "x names machine motion", "mm is length", "mm is length", "mm is length", "moves three or more axes at once"], "shared_with": [], "tier": "confirm", "scope": "medium", "read_only": ["actions.move_to"], "undoable": false},
+        "action:dose": {"level": "medium", "classified": "medium", "reasons": ["dose names flow", "ml is volume"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "undoable": true}
+      },
+      "guarded": ["write.high_volts", "write.big_amps", "write.count", "write.resist", "write.mode", "actions.move_to"],
+      "unconfirmed": ["write.high_volts", "write.big_amps", "write.count", "write.resist", "write.mode", "actions.move_to"]
+    }
   }
 }

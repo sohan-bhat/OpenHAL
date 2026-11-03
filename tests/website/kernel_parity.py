@@ -8,6 +8,10 @@ and a unit, and is evaluated with wire=True. Every decision also records its pro
 openhal.protocol.convert, the Decision object with its registry error, so the playground answers
 exactly as the hub does.
 
+The file also records the risk level of every target in every device file under the folders that
+cases.json lists in `risk`, and in every inline file, with the tier, the read-only state and the
+reasons, so website/src/lib/kernel/risk.ts gives each target the level the hub gives it (ADR 0023).
+
 Run `uv run python -m tests.website.kernel_parity` to rewrite expected.json after a kernel change.
 """
 
@@ -29,7 +33,7 @@ from openhal.kernel.checks import Block
 from openhal.kernel.commands import Action, Command, Decision, Write
 from openhal.kernel.principals import Principal, human
 from openhal.protocol import convert
-from openhal.spec import loads
+from openhal.spec import DeviceFileError, loads, risk
 from openhal.spec.models import DeviceFile
 from openhal.spec.units import split_quantity
 from tests.kernel.conftest import FakeClock
@@ -201,6 +205,46 @@ async def run_step(
     raise ValueError(f"Unknown parity step {step!r}.")
 
 
+def risk_view(file: DeviceFile) -> dict[str, Any]:
+    """Each target's level with its reasons, and the tier, scope and read-only state the kernel uses."""
+    targets: dict[str, Any] = {}
+    for target, item in risk.assess(file).items():
+        kind, _, name = target.partition(":")
+        entry: dict[str, Any] = {
+            "level": item.level,
+            "classified": item.classified,
+            "reasons": list(item.reasons),
+            "shared_with": list(item.shared_with),
+        }
+        if kind != "read":
+            written = file.write[name].confirm if kind == "write" else file.actions[name].confirm
+            entry["tier"] = risk.tier(file, target, written)
+            entry["scope"] = risk.scope_level(file, target)
+            entry["read_only"] = file.read_only(target)
+        if kind == "write":
+            entry["own_rate"] = risk.own_rate(file, name)
+        if kind == "action":
+            entry["undoable"] = risk.undoable(file, name)
+        targets[target] = entry
+    return {"targets": targets, "guarded": file.guarded(), "unconfirmed": file.unconfirmed()}
+
+
+def risk_files(spec: dict[str, Any]) -> dict[str, str]:
+    """Every device file under the `risk` folders that loads, by path, and every inline file."""
+    found: dict[str, str] = {}
+    for folder in spec["risk"]:
+        for path in sorted((ROOT / folder).rglob("*.hal.yaml")):
+            text = path.read_text(encoding="utf-8")
+            try:
+                loads(text)
+            except DeviceFileError:
+                continue
+            found[path.relative_to(ROOT).as_posix()] = text
+    for name, text in spec["inline"].items():
+        found[f"inline:{name}"] = text
+    return found
+
+
 def run_all() -> dict[str, Any]:
     spec = load_cases()
 
@@ -212,11 +256,31 @@ def run_all() -> dict[str, Any]:
         hashes[f"inline:{name}"] = loads(text).limits_sha256()
     record = yaml.safe_load((ROOT / "docs" / "demo" / "scenario.yaml").read_text(encoding="utf-8"))
     scenario = {"outcome": trace.outcome(record), "lines": trace.lines(record)}
-    return {"cases": asyncio.run(every_case()), "hashes": hashes, "scenario": scenario}
+    levels = {path: risk_view(loads(text)) for path, text in risk_files(spec).items()}
+    return {"cases": asyncio.run(every_case()), "hashes": hashes, "scenario": scenario, "risk": levels}
+
+
+def _line(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False)
 
 
 def render(results: dict[str, Any]) -> str:
-    return json.dumps(results, indent=2, ensure_ascii=False) + "\n"
+    """The results as JSON, with each risk target on one line so the file stays short."""
+    rest = {key: value for key, value in results.items() if key != "risk"}
+    text = json.dumps(rest, indent=2, ensure_ascii=False)
+    if "risk" not in results:
+        return text + "\n"
+    files = []
+    for path, view in results["risk"].items():
+        targets = ",\n".join(f"        {_line(target)}: {_line(entry)}" for target, entry in view["targets"].items())
+        files.append(
+            f"    {_line(path)}: {{\n"
+            f'      "targets": {{\n{targets}\n      }},\n'
+            f'      "guarded": {_line(view["guarded"])},\n'
+            f'      "unconfirmed": {_line(view["unconfirmed"])}\n'
+            "    }"
+        )
+    return text[: -len("\n}")] + ',\n  "risk": {\n' + ",\n".join(files) + "\n  }\n}\n"
 
 
 if __name__ == "__main__":
