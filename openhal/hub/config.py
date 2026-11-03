@@ -5,8 +5,10 @@ Every setting has a safe default, so a missing file is fine. LAN access is off u
 
 from __future__ import annotations
 
+import os
+import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
@@ -37,6 +39,16 @@ class RoutineSettings(BaseModel):
     min_interval_s: float = Field(default=1.0, ge=0.1)
 
 
+class RunSettings(BaseModel):
+    """Caps on runs of steps, waits and samples. A person changes them with openhal runs caps."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    max_steps: int = Field(default=200, ge=1, le=10_000)
+    max_seconds: float = Field(default=600.0, ge=1, le=86_400)
+    per_agent: int = Field(default=2, ge=1, le=20)
+
+
 class GpioStopSettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -53,6 +65,7 @@ class HubConfig(BaseModel):
     api: ApiSettings = ApiSettings()
     confirm: ConfirmSettings = ConfirmSettings()
     routines: RoutineSettings = RoutineSettings()
+    runs: RunSettings = RunSettings()
     stop_button: GpioStopSettings = GpioStopSettings()
     poll_floor_s: float = Field(default=0.2, ge=0.05)
     watchdog_tick_s: float = Field(default=0.5, ge=0.05)
@@ -85,6 +98,36 @@ class HubConfig(BaseModel):
         for path in (self.home, self.devices_dir, self.routines_dir, self.locks_dir):
             path.mkdir(parents=True, exist_ok=True)
         self.home.chmod(0o700)
+
+
+_OUTSIDE: Final = re.compile(r"^\S")
+"""A line that starts at column 0 ends a section, a comment as much as the next key."""
+
+
+def save_section(home: Path, name: str, values: dict[str, Any]) -> Path:
+    """Write one top-level section of config.yaml and keep every other line, comments included.
+
+    The section's old lines, up to the next line at column 0, are replaced, or the section is added
+    at the end. The result must still load, so a bad value never reaches the file, and the new file
+    replaces the old one in one step, so a crash never leaves half a file.
+    """
+    path = home / "config.yaml"
+    lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+    block = yaml.safe_dump({name: values}, sort_keys=False).splitlines()
+    start = next((index for index, line in enumerate(lines) if re.match(rf"^{re.escape(name)}\s*:", line)), None)
+    if start is None:
+        kept = [*lines, *block]
+    else:
+        end = next((index for index in range(start + 1, len(lines)) if _OUTSIDE.match(lines[index])), len(lines))
+        kept = [*lines[:start], *block, *lines[end:]]
+    text = "\n".join(kept) + "\n"
+    data = yaml.safe_load(text) or {}
+    HubConfig.model_validate({**data, "home": home})
+    staged = path.with_name(f".{path.name}.{os.getpid()}.new")
+    staged.write_text(text, encoding="utf-8")
+    staged.chmod(0o600)
+    os.replace(staged, path)
+    return path
 
 
 def load_config(home: Path | None = None) -> HubConfig:

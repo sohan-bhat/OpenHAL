@@ -37,6 +37,42 @@
         "title": "Action",
         "type": "object"
       },
+      "ActionStep": {
+        "additionalProperties": false,
+        "description": "Run one action with its arguments.",
+        "properties": {
+          "action": {
+            "maxLength": 48,
+            "minLength": 1,
+            "title": "Action",
+            "type": "string"
+          },
+          "args": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Args",
+            "type": "object"
+          },
+          "device": {
+            "maxLength": 48,
+            "minLength": 1,
+            "title": "Device",
+            "type": "string"
+          },
+          "kind": {
+            "const": "action",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "device",
+          "action"
+        ],
+        "title": "ActionStep",
+        "type": "object"
+      },
       "AnswersBody": {
         "properties": {
           "answers": {
@@ -82,6 +118,65 @@
           "device"
         ],
         "title": "ApproveRoutineBody",
+        "type": "object"
+      },
+      "CapsBody": {
+        "additionalProperties": false,
+        "properties": {
+          "max_seconds": {
+            "anyOf": [
+              {
+                "maximum": 86400.0,
+                "minimum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Seconds"
+          },
+          "max_steps": {
+            "anyOf": [
+              {
+                "maximum": 10000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Steps"
+          },
+          "per_agent": {
+            "anyOf": [
+              {
+                "maximum": 20.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Per Agent"
+          },
+          "phrase": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "confirm, typed by a person to raise a cap.",
+            "title": "Phrase"
+          }
+        },
+        "title": "CapsBody",
         "type": "object"
       },
       "DiscoverBody": {
@@ -362,6 +457,35 @@
         "title": "ReadManyBody",
         "type": "object"
       },
+      "ReadStep": {
+        "additionalProperties": false,
+        "description": "Read one or more channels now.",
+        "properties": {
+          "kind": {
+            "const": "read",
+            "title": "Kind",
+            "type": "string"
+          },
+          "targets": {
+            "items": {
+              "maxLength": 97,
+              "minLength": 3,
+              "pattern": "^[^.\\s]+\\.[^.\\s]+$",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Targets",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "targets"
+        ],
+        "title": "ReadStep",
+        "type": "object"
+      },
       "RejectBody": {
         "additionalProperties": false,
         "properties": {
@@ -403,6 +527,102 @@
           "source"
         ],
         "title": "RoutineBody",
+        "type": "object"
+      },
+      "RunBody": {
+        "additionalProperties": false,
+        "properties": {
+          "repeat": {
+            "default": 1,
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Repeat",
+            "type": "integer"
+          },
+          "steps": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "action": "#/components/schemas/ActionStep",
+                  "read": "#/components/schemas/ReadStep",
+                  "wait": "#/components/schemas/WaitStep",
+                  "wait_until": "#/components/schemas/WaitUntilStep",
+                  "write": "#/components/schemas/WriteStep"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ReadStep"
+                },
+                {
+                  "$ref": "#/components/schemas/WriteStep"
+                },
+                {
+                  "$ref": "#/components/schemas/ActionStep"
+                },
+                {
+                  "$ref": "#/components/schemas/WaitStep"
+                },
+                {
+                  "$ref": "#/components/schemas/WaitUntilStep"
+                }
+              ]
+            },
+            "maxItems": 10000,
+            "minItems": 1,
+            "title": "Steps",
+            "type": "array"
+          },
+          "wait_s": {
+            "default": 5.0,
+            "description": "Seconds to wait for the run to end before replying.",
+            "maximum": 30.0,
+            "minimum": 0.0,
+            "title": "Wait S",
+            "type": "number"
+          }
+        },
+        "required": [
+          "steps"
+        ],
+        "title": "RunBody",
+        "type": "object"
+      },
+      "SampleBody": {
+        "additionalProperties": false,
+        "properties": {
+          "duration_s": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 86400.0,
+            "title": "Duration S",
+            "type": "number"
+          },
+          "interval_s": {
+            "default": 1.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 3600.0,
+            "title": "Interval S",
+            "type": "number"
+          },
+          "targets": {
+            "items": {
+              "maxLength": 97,
+              "minLength": 3,
+              "pattern": "^[^.\\s]+\\.[^.\\s]+$",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Targets",
+            "type": "array"
+          }
+        },
+        "required": [
+          "targets",
+          "duration_s"
+        ],
+        "title": "SampleBody",
         "type": "object"
       },
       "StopBody": {
@@ -557,6 +777,96 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "WaitBody": {
+        "additionalProperties": false,
+        "properties": {
+          "condition": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Condition",
+            "type": "string"
+          },
+          "interval_s": {
+            "default": 1.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 60.0,
+            "title": "Interval S",
+            "type": "number"
+          },
+          "timeout_s": {
+            "default": 30.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 86400.0,
+            "title": "Timeout S",
+            "type": "number"
+          }
+        },
+        "required": [
+          "condition"
+        ],
+        "title": "WaitBody",
+        "type": "object"
+      },
+      "WaitStep": {
+        "additionalProperties": false,
+        "description": "Wait a number of seconds.",
+        "properties": {
+          "kind": {
+            "const": "wait",
+            "title": "Kind",
+            "type": "string"
+          },
+          "seconds": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 86400.0,
+            "title": "Seconds",
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "seconds"
+        ],
+        "title": "WaitStep",
+        "type": "object"
+      },
+      "WaitUntilStep": {
+        "additionalProperties": false,
+        "description": "Wait until a condition over live readings holds, for at most `timeout_s`.",
+        "properties": {
+          "condition": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Condition",
+            "type": "string"
+          },
+          "interval_s": {
+            "default": 1.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 60.0,
+            "title": "Interval S",
+            "type": "number"
+          },
+          "kind": {
+            "const": "wait_until",
+            "title": "Kind",
+            "type": "string"
+          },
+          "timeout_s": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 86400.0,
+            "title": "Timeout S",
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "condition",
+          "timeout_s"
+        ],
+        "title": "WaitUntilStep",
+        "type": "object"
+      },
       "Write": {
         "additionalProperties": false,
         "description": "Set one write channel. A number carries its unit, in `unit` or as a `{value, unit}` mapping.",
@@ -620,6 +930,82 @@
           "value"
         ],
         "title": "Write",
+        "type": "object"
+      },
+      "WriteStep": {
+        "additionalProperties": false,
+        "description": "Set one write channel. `increment` is added to a number value once for each repeat before this one.",
+        "properties": {
+          "channel": {
+            "maxLength": 48,
+            "minLength": 1,
+            "title": "Channel",
+            "type": "string"
+          },
+          "device": {
+            "maxLength": 48,
+            "minLength": 1,
+            "title": "Device",
+            "type": "string"
+          },
+          "increment": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Increment"
+          },
+          "kind": {
+            "const": "write",
+            "title": "Kind",
+            "type": "string"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "kind",
+          "device",
+          "channel",
+          "value"
+        ],
+        "title": "WriteStep",
         "type": "object"
       },
       "WriterStartBody": {
@@ -1343,6 +1729,143 @@
         "summary": "Dry Run"
       }
     },
+    "/v1/find": {
+      "get": {
+        "description": "Channels and actions on every device that match the filters, as device.channel targets.",
+        "operationId": "find_targets_v1_find_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "text",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Text"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Unit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "readable",
+                    "writable",
+                    "action"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hazard",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hazard"
+            }
+          },
+          {
+            "in": "query",
+            "name": "connected",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Connected"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Find Targets V1 Find Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Find Targets"
+      }
+    },
     "/v1/limits": {
       "post": {
         "description": "Change one channel's limits. Narrowing applies at once, and widening needs a person.",
@@ -1928,6 +2451,278 @@
         "summary": "Rpc Log"
       }
     },
+    "/v1/runs": {
+      "get": {
+        "description": "The runs this token started, newest first. A person sees every run.",
+        "operationId": "list_runs_v1_runs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response List Runs V1 Runs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Runs"
+      },
+      "post": {
+        "description": "Check a list of steps as a plan, then run the steps in order through the kernel.",
+        "operationId": "start_run_v1_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Start Run V1 Runs Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Run"
+      }
+    },
+    "/v1/runs/caps": {
+      "get": {
+        "description": "The caps on steps per run, seconds per run and runs per token.",
+        "operationId": "run_caps_v1_runs_caps_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Run Caps V1 Runs Caps Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Run Caps"
+      },
+      "post": {
+        "description": "A person changes the caps. Raising a cap takes the phrase confirm.",
+        "operationId": "set_run_caps_v1_runs_caps_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CapsBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Set Run Caps V1 Runs Caps Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Run Caps"
+      }
+    },
+    "/v1/runs/{run_id}": {
+      "get": {
+        "description": "One run with its last step results, after waiting up to wait_s for the run to end.",
+        "operationId": "get_run_v1_runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "wait_s",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 30,
+              "minimum": 0,
+              "title": "Wait S",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "last",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 10000,
+              "minimum": 0,
+              "title": "Last",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Run V1 Runs  Run Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Run"
+      }
+    },
+    "/v1/runs/{run_id}/cancel": {
+      "post": {
+        "description": "End a run before its next step. Only the token that started the run, or a person.",
+        "operationId": "cancel_run_v1_runs__run_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Cancel Run V1 Runs  Run Id  Cancel Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Run"
+      }
+    },
+    "/v1/sample": {
+      "post": {
+        "description": "Read channels at an interval over a duration, with min, max and mean for numbers.",
+        "operationId": "sample_v1_sample_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampleBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Sample V1 Sample Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sample"
+      }
+    },
     "/v1/status": {
       "get": {
         "operationId": "status_v1_status_get",
@@ -2168,6 +2963,47 @@
           }
         },
         "summary": "Unlock"
+      }
+    },
+    "/v1/wait_until": {
+      "post": {
+        "description": "Wait until a condition over live readings holds, or the timeout passes.",
+        "operationId": "wait_until_v1_wait_until_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WaitBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Wait Until V1 Wait Until Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Wait Until"
       }
     },
     "/v1/whoami": {

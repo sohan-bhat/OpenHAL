@@ -20,6 +20,10 @@ Value = str | bool | int | float | dict[str, Any]
 Command = Write | Action | Mapping[str, Any]
 
 
+LONG_CALL_MARGIN_S = 30.0
+"""Seconds a waiting call gets on top of the time it waits, for slow reads and the reply."""
+
+
 @dataclass(frozen=True, slots=True)
 class Call[T]:
     method: str
@@ -27,6 +31,8 @@ class Call[T]:
     parse: Callable[[Any], T]
     json: Any = None
     params: dict[str, Any] | None = None
+    timeout: float | None = None
+    """The HTTP timeout for this call when it waits on the hub, instead of the client's own."""
 
 
 _ADAPTERS: dict[Any, TypeAdapter[Any]] = {}
@@ -312,3 +318,79 @@ def revoke_token(token_id: str) -> Call[m.OkResult]:
 
 def new_pairing_code() -> Call[m.PairingCode]:
     return Call("POST", "/v1/pair/code", _as(m.PairingCode), {})
+
+
+def find(
+    *,
+    text: str | None = None,
+    unit: str | None = None,
+    kind: str | None = None,
+    hazard: str | None = None,
+    connected: bool | None = None,
+    limit: int = 50,
+) -> Call[m.FindResult]:
+    params: dict[str, Any] = {"limit": limit}
+    for key, value in (("text", text), ("unit", unit), ("kind", kind), ("hazard", hazard)):
+        if value is not None:
+            params[key] = value
+    if connected is not None:
+        params["connected"] = "true" if connected else "false"
+    return Call("GET", "/v1/find", _as(m.FindResult), params=params)
+
+
+def wait_until(condition: str, timeout_s: float = 30.0, interval_s: float = 1.0) -> Call[m.WaitResult]:
+    body = {"condition": condition, "timeout_s": timeout_s, "interval_s": interval_s}
+    return Call("POST", "/v1/wait_until", _as(m.WaitResult), body, timeout=timeout_s + LONG_CALL_MARGIN_S)
+
+
+def sample(targets: Iterable[str], duration_s: float, interval_s: float = 1.0) -> Call[m.SampleResult]:
+    body = {"targets": list(targets), "duration_s": duration_s, "interval_s": interval_s}
+    return Call("POST", "/v1/sample", _as(m.SampleResult), body, timeout=duration_s + LONG_CALL_MARGIN_S)
+
+
+Step = Write | Action | Mapping[str, Any]
+
+
+def step_body(step: Step) -> dict[str, Any]:
+    """A run step as the hub takes it. Write and Action objects and dicts without a kind are commands."""
+    if isinstance(step, Write | Action) or "kind" not in step or step["kind"] in ("write", "action"):
+        return command_body(step)
+    return dict(step)
+
+
+def start_run(steps: Iterable[Step], repeat: int = 1, wait_s: float = 5.0) -> Call[m.StepRun]:
+    body = {"steps": [step_body(step) for step in steps], "repeat": repeat, "wait_s": wait_s}
+    return Call("POST", "/v1/runs", _as(m.StepRun), body, timeout=wait_s + LONG_CALL_MARGIN_S)
+
+
+def run(run_id: str, wait_s: float = 0.0, last: int = 50) -> Call[m.StepRun]:
+    params = {"wait_s": wait_s, "last": last}
+    return Call("GET", f"/v1/runs/{_seg(run_id)}", _as(m.StepRun), params=params, timeout=wait_s + LONG_CALL_MARGIN_S)
+
+
+def runs() -> Call[list[m.StepRun]]:
+    return Call("GET", "/v1/runs", _list_of(m.StepRun))
+
+
+def cancel_run(run_id: str) -> Call[m.StepRun]:
+    return Call("POST", f"/v1/runs/{_seg(run_id)}/cancel", _as(m.StepRun), timeout=LONG_CALL_MARGIN_S)
+
+
+def run_caps() -> Call[m.RunCaps]:
+    return Call("GET", "/v1/runs/caps", _as(m.RunCaps))
+
+
+def set_run_caps(
+    *,
+    max_steps: int | None = None,
+    max_seconds: float | None = None,
+    per_agent: int | None = None,
+    phrase: str | None = None,
+) -> Call[m.RunCaps]:
+    body: dict[str, Any] = {}
+    for key, value in (("max_steps", max_steps), ("max_seconds", max_seconds), ("per_agent", per_agent)):
+        if value is not None:
+            body[key] = value
+    if phrase is not None:
+        body["phrase"] = phrase
+    return Call("POST", "/v1/runs/caps", _as(m.RunCaps), body)

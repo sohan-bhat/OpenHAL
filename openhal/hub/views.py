@@ -17,6 +17,7 @@ from openhal.spec.models import DeviceFile
 from openhal.spec.units import wire_unit
 
 if TYPE_CHECKING:
+    from openhal.drivers.base import Reading
     from openhal.hub.hub import Hub
 
 
@@ -53,6 +54,28 @@ def device_value(file: Any, device_id: str, channel: str, value: Any, *, image_d
     return device_text(f"{device_id}.{channel} reading", value)
 
 
+def reading_view(hub: Hub, device_id: str, channel: str, reading: Reading, *, image_data: bool) -> dict[str, Any]:
+    """A reading as `/v1/read` returns it. `image_data` adds an image's pixels."""
+    file = hub.kernel.devices[device_id].file
+    return {
+        "device": device_id,
+        "channel": channel,
+        "ok": True,
+        "value": device_value(file, device_id, channel, reading.value, image_data=image_data),
+        "unit": wire_unit(reading.unit),
+        "at": reading.at,
+        "suspect": reading.suspect,
+        "bytes": len(reading.value) if isinstance(reading.value, bytes) else None,
+    }
+
+
+def failed_reading(device_id: str, channel: str, exc: BaseException) -> dict[str, Any]:
+    """A read the driver could not complete, with the driver's message as device data."""
+    fallback = "timed out" if isinstance(exc, TimeoutError) else type(exc).__name__
+    error = device_text(f"{device_id}.{channel} driver error", str(exc)) or fallback
+    return {"device": device_id, "channel": channel, "ok": False, "error": error}
+
+
 def audit_details(device_id: str | None, details: dict[str, Any]) -> dict[str, Any]:
     """Audit details as clients receive them. `detail` and `error` often quote a driver, so they are wrapped."""
     shown = dict(details)
@@ -62,7 +85,13 @@ def audit_details(device_id: str | None, details: dict[str, Any]) -> dict[str, A
     return shown
 
 
-def _value(runtime: Any, channel: str, now: float) -> dict[str, Any]:
+def confirm_tier(file: DeviceFile, tier: str | None) -> str | None:
+    """The confirmation tier shown to clients. A high hazard device holds every command for a person."""
+    return "confirm-each-time" if file.effective_hazard == "high" else tier
+
+
+def latest_value(runtime: Any, channel: str, now: float) -> dict[str, Any]:
+    """A channel's newest known value with its age, or known false when the hub has none."""
     sample = runtime.latest(channel, now)
     if sample is None:
         return {"value": None, "known": False}
@@ -111,7 +140,7 @@ def device_view(hub: Hub, device_id: str) -> dict[str, Any]:
                     "stream": spec.stream,
                     "range": list(spec.range) if spec.range else None,
                     "values": spec.values or None,
-                    **_value(runtime, name, now),
+                    **latest_value(runtime, name, now),
                 }
                 for name, spec in file.read.items()
             },
@@ -124,9 +153,9 @@ def device_view(hub: Hub, device_id: str) -> dict[str, Any]:
                     "step": spec.step,
                     "max_change_per_s": spec.max_change_per_s,
                     "values": spec.values or None,
-                    "confirm": "confirm-each-time" if file.effective_hazard == "high" else spec.confirm,
+                    "confirm": confirm_tier(file, spec.confirm),
                     "suggested": spec.suggested,
-                    **_value(runtime, name, now),
+                    **latest_value(runtime, name, now),
                 }
                 for name, spec in file.write.items()
             },
@@ -140,7 +169,7 @@ def device_view(hub: Hub, device_id: str) -> dict[str, Any]:
                     ],
                     "max_runs": {"count": spec.max_runs.count, "per_s": spec.max_runs.per} if spec.max_runs else None,
                     "effects": spec.effects,
-                    "confirm": "confirm-each-time" if file.effective_hazard == "high" else spec.confirm,
+                    "confirm": confirm_tier(file, spec.confirm),
                 }
                 for name, spec in file.actions.items()
             },

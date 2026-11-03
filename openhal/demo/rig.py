@@ -79,15 +79,22 @@ def plugged_in(device: str, board: PlantWatererSimulator) -> Iterator[str]:
 
 
 @contextlib.asynccontextmanager
-async def running_hub(home: Path) -> AsyncIterator[str]:
-    """A hub on `home`, served on a free loopback port. Yields its base URL."""
+async def serving(home: Path) -> AsyncIterator[tuple[Hub, str]]:
+    """A hub on `home`, served on a free loopback port. Yields the hub and its base URL."""
     hub = Hub(HubConfig(home=home))
     try:
         await hub.start()
         async with scenario.served(hub) as socket_url:
-            yield "http" + socket_url.removeprefix("ws").removesuffix("/rpc")
+            yield hub, "http" + socket_url.removeprefix("ws").removesuffix("/rpc")
     finally:
         await hub.close()
+
+
+@contextlib.asynccontextmanager
+async def running_hub(home: Path) -> AsyncIterator[str]:
+    """A hub on `home`, served on a free loopback port. Yields its base URL."""
+    async with serving(home) as (_hub, url):
+        yield url
 
 
 class Board:

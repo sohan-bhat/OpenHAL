@@ -41,6 +41,10 @@ confirm:
   ttl_s: 300              # how long a request is held for a person
 routines:
   agent_enable_low_hazard: false
+runs:
+  max_steps: 200          # steps in one run, counting every repeat
+  max_seconds: 600        # longest run, wait or sample
+  per_agent: 2            # runs, waits and samples one token may have going at once
 """
 
 SAMPLE_NAME: Final = "plant-waterer.hal.yaml"

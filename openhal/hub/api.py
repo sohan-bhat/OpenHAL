@@ -14,12 +14,13 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import ipaddress
+from collections.abc import Awaitable
 from dataclasses import asdict
 from pathlib import Path
 from typing import Annotated, Any, Literal
 from urllib.parse import urlparse
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.gzip import GZipMiddleware
@@ -29,9 +30,11 @@ from openhal._brand import PRODUCT_NAME, SPEC_VERSION
 from openhal.drivers import registry
 from openhal.drivers.base import DriverError
 from openhal.hub import discovery, views
+from openhal.hub.find import FindError, find
 from openhal.hub.hub import Hub
 from openhal.hub.limits import LimitError
 from openhal.hub.locks import DeviceLocked
+from openhal.hub.runs import CapsBody, RunBody, RunError, SampleBody, WaitBody
 from openhal.kernel.checks import Block
 from openhal.kernel.commands import Action, Write
 from openhal.kernel.principals import Principal
@@ -41,7 +44,6 @@ from openhal.protocol.version import LATEST
 from openhal.routines.engine import RoutineError
 from openhal.spec.loader import DeviceFileError
 from openhal.spec.models import DeviceFile
-from openhal.spec.units import wire_unit
 from openhal.writer.engine import NotHumanError, WriterError
 
 SESSION_COOKIE = "openhal_session"
@@ -206,6 +208,20 @@ def principal_for(request: Request) -> Principal:
 Who = Annotated[Principal, Depends(principal_for)]
 
 
+async def while_connected(request: Request, work: Awaitable[dict[str, Any]], poll_s: float = 1.0) -> dict[str, Any]:
+    """Run a long read for a client, and cancel it once the client has gone, so nothing reads for no one."""
+    task = asyncio.ensure_future(work)
+    while True:
+        done, _ = await asyncio.wait({task}, timeout=poll_s)
+        if done:
+            return task.result()
+        if await request.is_disconnected():
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+            raise HTTPException(499, "The client closed the connection, so the hub ended the request.")
+
+
 def create_app(hub: Hub) -> FastAPI:
     """Build the API for one hub."""
     app = FastAPI(title=f"{PRODUCT_NAME} hub", version=__version__, docs_url=None, redoc_url=None)
@@ -226,6 +242,14 @@ def create_app(hub: Hub) -> FastAPI:
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["X-Frame-Options"] = "DENY"
         return response
+
+    @app.exception_handler(RunError)
+    async def run_refused(request: Request, exc: RunError) -> JSONResponse:
+        return JSONResponse({"detail": exc.message}, status_code=exc.status)
+
+    @app.exception_handler(FindError)
+    async def find_refused(request: Request, exc: FindError) -> JSONResponse:
+        return JSONResponse({"detail": str(exc)}, status_code=400)
 
     def human_only(principal: Principal) -> None:
         if principal.kind != "human":
@@ -264,6 +288,19 @@ def create_app(hub: Hub) -> FastAPI:
         device_or_404(device_id)
         return views.device_view(hub, device_id)
 
+    @app.get("/v1/find")
+    async def find_targets(
+        who: Who,
+        text: Annotated[str | None, Query(max_length=200)] = None,
+        unit: Annotated[str | None, Query(max_length=40)] = None,
+        kind: Literal["readable", "writable", "action"] | None = None,
+        hazard: Literal["low", "medium", "high"] | None = None,
+        connected: bool | None = None,
+        limit: Annotated[int, Query(ge=1, le=500)] = 50,
+    ) -> dict[str, Any]:
+        """Channels and actions on every device that match the filters, as device.channel targets."""
+        return find(hub, text=text, unit=unit, kind=kind, hazard=hazard, connected=connected, limit=limit)
+
     @app.post("/v1/read")
     async def read(body: ReadBody, who: Who) -> dict[str, Any]:
         return await _read(body, who)
@@ -275,20 +312,8 @@ def create_app(hub: Hub) -> FastAPI:
         except LookupError as exc:
             raise HTTPException(404, str(exc)) from exc
         except (DriverError, TimeoutError, OSError) as exc:
-            error = views.device_text(f"{body.device}.{body.channel} driver error", str(exc)) or "timed out"
-            return {"device": body.device, "channel": body.channel, "ok": False, "error": error}
-        file = hub.kernel.devices[body.device].file
-        value = views.device_value(file, body.device, body.channel, reading.value, image_data=True)
-        return {
-            "device": body.device,
-            "channel": body.channel,
-            "ok": True,
-            "value": value,
-            "unit": wire_unit(reading.unit),
-            "at": reading.at,
-            "suspect": reading.suspect,
-            "bytes": len(reading.value) if isinstance(reading.value, bytes) else None,
-        }
+            return views.failed_reading(body.device, body.channel, exc)
+        return views.reading_view(hub, body.device, body.channel, reading, image_data=True)
 
     @app.post("/v1/read_many")
     async def read_many(body: ReadManyBody, who: Who) -> list[dict[str, Any]]:
@@ -376,6 +401,51 @@ def create_app(hub: Hub) -> FastAPI:
             return await hub.limits.request(who, body.device, body.channel, phrase=body.phrase, **values)
         except KeyError as exc:
             raise HTTPException(404, str(exc.args[0])) from exc
+
+    @app.post("/v1/wait_until")
+    async def wait_until(body: WaitBody, who: Who, request: Request) -> dict[str, Any]:
+        """Wait until a condition over live readings holds, or the timeout passes."""
+        return await while_connected(request, hub.runs.wait_until(who, body))
+
+    @app.post("/v1/sample")
+    async def sample(body: SampleBody, who: Who, request: Request) -> dict[str, Any]:
+        """Read channels at an interval over a duration, with min, max and mean for numbers."""
+        return await while_connected(request, hub.runs.sample(who, body))
+
+    @app.get("/v1/runs/caps")
+    async def run_caps(who: Who) -> dict[str, Any]:
+        """The caps on steps per run, seconds per run and runs per token."""
+        return hub.runs.caps_view()
+
+    @app.post("/v1/runs/caps")
+    async def set_run_caps(body: CapsBody, who: Who) -> dict[str, Any]:
+        """A person changes the caps. Raising a cap takes the phrase confirm."""
+        return hub.runs.set_caps(who, body)
+
+    @app.post("/v1/runs")
+    async def start_run(body: RunBody, who: Who) -> dict[str, Any]:
+        """Check a list of steps as a plan, then run the steps in order through the kernel."""
+        return await hub.runs.start(who, body)
+
+    @app.get("/v1/runs")
+    async def list_runs(who: Who) -> list[dict[str, Any]]:
+        """The runs this token started, newest first. A person sees every run."""
+        return hub.runs.listed(who)
+
+    @app.get("/v1/runs/{run_id}")
+    async def get_run(
+        run_id: str,
+        who: Who,
+        wait_s: Annotated[float, Query(ge=0, le=30)] = 0,
+        last: Annotated[int, Query(ge=0, le=10_000)] = 50,
+    ) -> dict[str, Any]:
+        """One run with its last step results, after waiting up to wait_s for the run to end."""
+        return await hub.runs.wait_for(who, run_id, wait_s, last)
+
+    @app.post("/v1/runs/{run_id}/cancel")
+    async def cancel_run(run_id: str, who: Who) -> dict[str, Any]:
+        """End a run before its next step. Only the token that started the run, or a person."""
+        return await hub.runs.cancel(who, run_id)
 
     @app.post("/v1/stop")
     async def stop(body: StopBody, who: Who) -> dict[str, Any]:
@@ -688,9 +758,11 @@ def create_app(hub: Hub) -> FastAPI:
     @app.delete("/v1/tokens/{token_id}")
     async def revoke_token(token_id: str, who: Who) -> dict[str, Any]:
         human_only(who)
-        if not hub.tokens.revoke(token_id):
+        info = next((item for item in hub.tokens.list() if item.token_id == token_id), None)
+        if info is None or not hub.tokens.revoke(token_id):
             raise HTTPException(404, f"There is no active token {token_id!r}.")
-        hub.audit.append("token_revoked", who.label, target=token_id)
+        ended = hub.runs.end_for(f"{info.kind}:{info.name}", "token_revoked")
+        hub.audit.append("token_revoked", who.label, target=token_id, runs_ended=ended)
         return {"ok": True}
 
     @app.get("/v1/whoami")

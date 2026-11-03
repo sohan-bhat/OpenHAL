@@ -1,0 +1,162 @@
+recorded_with: uv run python -m openhal.demo.general --record docs/demo/general-tools.yaml
+agent: agent:ai-client, scope control_low
+steps:
+- id: find-temperature
+  tool: find
+  arguments:
+    text: temperature
+  targets:
+  - warmer.temp
+- id: find-writable-percent
+  tool: find
+  arguments:
+    kind: writable
+    unit: '%'
+  targets:
+  - lamp.brightness
+- id: blink-five-times
+  tool: run_steps
+  arguments:
+    steps:
+    - kind: write
+      device: lamp
+      channel: 'on'
+      value: true
+    - kind: wait
+      seconds: 0.2
+    - kind: write
+      device: lamp
+      channel: 'on'
+      value: false
+    - kind: wait
+      seconds: 0.2
+    repeat: 5
+    wait_s: 10
+  run:
+    status: done
+    message: Done. All 20 steps ran.
+    total_steps: 20
+    done_steps: 20
+  lamp_received:
+  - true
+  - false
+  - true
+  - false
+  - true
+  - false
+  - true
+  - false
+  - true
+  - false
+- id: warm-the-plate
+  tool: run_steps
+  arguments:
+    steps:
+    - kind: wait
+      seconds: 1
+    - kind: write
+      device: warmer
+      channel: power
+      value: 10
+      unit: W
+  run:
+    status: done
+    message: Done. All 2 steps ran.
+    total_steps: 2
+    done_steps: 2
+- id: wait-until-warm
+  tool: wait_until
+  arguments:
+    condition: warmer.temp > 28 degC
+    timeout_s: 20
+    interval_s: 0.2
+  held: true
+  checks: 4
+  readings:
+  - target: warmer.temp
+    value: 29.08
+    unit: degC
+- id: sample-the-plate
+  tool: sample
+  arguments:
+    targets:
+    - warmer.temp
+    duration_s: 1
+    interval_s: 0.2
+  series:
+    target: warmer.temp
+    unit: degC
+    count: 6
+    min: 30.07
+    max: 32.71
+    mean: 31.58
+- id: run-past-a-limit
+  tool: run_steps
+  arguments:
+    steps:
+    - kind: write
+      device: lamp
+      channel: brightness
+      value: 40
+      unit: '%'
+    - kind: wait
+      seconds: 1
+    - kind: write
+      device: lamp
+      channel: brightness
+      value: 150
+      unit: '%'
+  run:
+    status: blocked
+    message: Nothing ran. Blocked. The brightness limit is 100 % (max). Requested 150 %.
+    total_steps: 3
+    done_steps: 0
+    stop:
+      index: 2
+      step: 2
+      iteration: 0
+      kind: write
+      code: above_max
+    error:
+      code: -32010
+      name: LIMIT_EXCEEDED
+      message: brightness 150 % exceeds the limit of 100 % (lamp.hal.yaml, confirmed by owner 2026-11-02)
+- id: start-a-long-run
+  tool: run_steps
+  arguments:
+    steps:
+    - kind: write
+      device: lamp
+      channel: 'on'
+      value: true
+    - kind: wait
+      seconds: 0.2
+    - kind: write
+      device: lamp
+      channel: 'on'
+      value: false
+    - kind: wait
+      seconds: 0.2
+    repeat: 50
+    wait_s: 0
+  run:
+    status: running
+    total_steps: 200
+- id: stop-everything
+  tool: stop_all
+  arguments:
+    reason: end of the demo
+  devices:
+    lamp: safe
+    warmer: safe
+- id: the-long-run-ended
+  tool: get_run
+  arguments:
+    run_id: RUN_ID
+    wait_s: 10
+    last: 0
+  run:
+    status: cancelled
+    code: stopped
+    message: Ended by a stop. The hub stays stopped until a person unlocks the hub.
+  ran_before_the_stop: fewer than all 200 steps

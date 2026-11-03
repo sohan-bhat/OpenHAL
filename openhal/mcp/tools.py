@@ -23,12 +23,17 @@ from openhal._brand import DATA_BLOCK_TAG
 from openhal.client import AsyncClient, OpenHALError
 from openhal.client import models as m
 from openhal.client.calls import Call
-from openhal.mcp.errors import Decision, ErrorMapper, tool_error_text
+from openhal.mcp.errors import Decision, ErrorInfo, ErrorMapper, tool_error_text
+from openhal.protocol.errors import BY_KERNEL_CODE
 from openhal.spec.schema import device_file_schema
 
-DeviceId = Annotated[str, Field(description="Device id from list_devices, for example printer.", max_length=48)]
-ChannelName = Annotated[str, Field(description="Channel name from describe_device, for example bed_temp.")]
-ActionName = Annotated[str, Field(description="Action name from describe_device, for example pause.")]
+DeviceId = Annotated[str, Field(description="A device id, from find or list_devices.", max_length=48)]
+ChannelName = Annotated[str, Field(description="A channel name, from find or describe_device.")]
+ActionName = Annotated[str, Field(description="An action name, from find or describe_device.")]
+TargetList = Annotated[
+    list[str],
+    Field(description="Channels as device.channel, from find. Up to 20.", min_length=1, max_length=20),
+]
 
 
 class Quantity(BaseModel):
@@ -86,6 +91,72 @@ class Step(BaseModel):
         return {"kind": "action", "device": self.device, "action": self.action, "args": arguments(self.args)}
 
 
+StepKind = Literal["read", "write", "action", "wait", "wait_until"]
+STEP_FIELDS: Final[dict[str, tuple[tuple[str, ...], tuple[str, ...]]]] = {
+    "read": (("targets",), ()),
+    "write": (("device", "channel", "value"), ("unit", "increment")),
+    "action": (("device", "action"), ("args",)),
+    "wait": (("seconds",), ()),
+    "wait_until": (("condition", "timeout_s"), ("interval_s",)),
+}
+"""The fields each kind of run step needs, then the ones it may also take."""
+
+
+class RunStep(BaseModel):
+    """One step of a run. kind picks the step, and each field names the kinds that take it."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: StepKind = Field(description="read, write, action, wait or wait_until.")
+    device: str | None = Field(default=None, max_length=48, description="write and action. A device id from find.")
+    channel: str | None = Field(default=None, max_length=48, description="write. The write channel.")
+    value: float | bool | str | None = Field(default=None, description="write. The value. A number needs unit too.")
+    unit: str | None = Field(default=None, max_length=40, description="write. The unit of a number value, such as %.")
+    increment: float | None = Field(
+        default=None,
+        allow_inf_nan=False,
+        description="write. Added to a number value once for each repeat before this one, in the same unit. "
+        "value 10, increment 10 and repeat 3 set 10, 20 and 30.",
+    )
+    action: str | None = Field(default=None, max_length=48, description="action. The action name.")
+    args: dict[str, Argument] = Field(
+        default={}, description='action. Arguments by name. A number is {"value", "unit"}.'
+    )
+    targets: list[str] | None = Field(
+        default=None, max_length=20, description="read. Channels as device.channel, read in order."
+    )
+    seconds: float | None = Field(default=None, gt=0, allow_inf_nan=False, description="wait. Seconds to wait.")
+    condition: str | None = Field(
+        default=None, max_length=256, description="wait_until. A condition with each channel as device.channel."
+    )
+    timeout_s: float | None = Field(
+        default=None,
+        gt=0,
+        allow_inf_nan=False,
+        description="wait_until. The most seconds to wait. The run fails at this step when the condition never holds.",
+    )
+    interval_s: float | None = Field(
+        default=None, gt=0, allow_inf_nan=False, description="wait_until. Seconds between checks, 1 when left out."
+    )
+
+    def body(self) -> dict[str, Any]:
+        """The step as the hub takes it. Fields another kind of step takes are an error, not ignored."""
+        needed, optional = STEP_FIELDS[self.kind]
+        given = {name for name in type(self).model_fields if name != "kind" and getattr(self, name) not in (None, {})}
+        missing = [name for name in needed if name not in given]
+        foreign = sorted(given - set(needed) - set(optional))
+        if missing or foreign:
+            parts = [f"needs {', '.join(missing)}"] if missing else []
+            parts += [f"doesn't take {', '.join(foreign)}"] if foreign else []
+            raise ToolError(f"A {self.kind} step {' and '.join(parts)}.")
+        body: dict[str, Any] = {"kind": self.kind}
+        for name in (*needed, *optional):
+            value = getattr(self, name)
+            if value not in (None, {}):
+                body[name] = arguments(value) if name == "args" else value
+        return body
+
+
 def arguments(args: dict[str, Argument] | None) -> dict[str, Any]:
     """Action arguments as the hub takes them, Quantity objects as `{value, unit}` mappings."""
     return {name: value.model_dump() if isinstance(value, Quantity) else value for name, value in (args or {}).items()}
@@ -108,6 +179,12 @@ class PlanCheck(BaseModel):
 class ConfirmationStatus(BaseModel):
     requests: list[m.ConfirmationRequest] = Field(description="Your requests, newest state from the hub.")
     note: str = Field(description="What the statuses mean and what to do next.")
+
+
+class RunView(m.StepRun):
+    """A run of steps, with the registry error when a command blocked or failed the run."""
+
+    error: ErrorInfo | None = Field(default=None, description="Set when a command blocked or failed the run.")
 
 
 class LimitsInterview(BaseModel):
@@ -236,7 +313,8 @@ class Tools:
 
     async def list_devices(self) -> list[m.DeviceSummary]:
         """List every device registered with the hub, with id, hazard class (low, medium, high), whether it is
-        writable and connected. Start here, then call describe_device before reading or writing."""
+        writable and connected. Each hub has its own devices, so start here or with find, then call
+        describe_device before reading or writing."""
         devices = await self._run(lambda hub: hub.devices())
         return [_wrap_summary(device) for device in devices]
 
@@ -259,7 +337,7 @@ class Tools:
         targets: Annotated[
             list[str],
             Field(
-                description="Up to 100 targets as device.channel, for example ['printer.bed_temp'].",
+                description="Up to 100 channels as device.channel, from find.",
                 max_length=100,
             ),
         ],
@@ -270,7 +348,7 @@ class Tools:
         for target in targets:
             device, dot, channel = target.partition(".")
             if not dot:
-                raise ToolError(f"{target!r} is not device.channel, for example printer.bed_temp.")
+                raise ToolError(f"{target!r} is not device.channel. find lists every channel as device.channel.")
             pairs.append((device, channel))
         readings = await self._run(lambda hub: hub.read_many(pairs))
         return [_without_pixels(_wrap_reading(reading)) for reading in readings]
@@ -285,8 +363,9 @@ class Tools:
         return await self.errors.decision(decision, {"kind": "write", "value": value, "unit": unit}, self.label)
 
     async def action(self, device: DeviceId, action: ActionName, args: ActionArgs | None = None) -> Decision:
-        """Send the hub a request to run one action, such as home or pulse, with typed arguments. The hub checks
-        an action and returns a result exactly like a write, including blocked and pending."""
+        """Send the hub a request to run one action a device file names, with typed arguments. The hub checks
+        an action and returns a result exactly like a write, including blocked and pending. find and
+        describe_device list each action with its arguments, units and limits."""
         body = arguments(args)
         decision = await self._run(lambda hub: hub.action(device, action, body))
         return await self.errors.decision(decision, {"kind": "action", "args": body}, self.label)
@@ -337,13 +416,159 @@ class Tools:
             all_allowed=not blocked and not waiting, blocked=blocked, needs_confirmation=waiting, decisions=decisions
         )
 
+    async def find(
+        self,
+        text: Annotated[
+            str | None, Field(description="Words to match, such as temperature, fan or door.", max_length=200)
+        ] = None,
+        unit: Annotated[
+            str | None, Field(description="Match channels a value in this unit converts to, such as degC or %.")
+        ] = None,
+        kind: Annotated[
+            Literal["readable", "writable", "action"] | None,
+            Field(description="readable (every channel, write channels included), writable or action."),
+        ] = None,
+        hazard: Annotated[Literal["low", "medium", "high"] | None, Field(description="Only this hazard class.")] = None,
+        connected: Annotated[bool | None, Field(description="Only connected devices, or only disconnected.")] = None,
+        limit: Annotated[int, Field(description="Most matches to return.", ge=1, le=500)] = 50,
+    ) -> m.FindResult:
+        """Search every device's channels and actions at once, so no device id is needed in advance. text matches
+        device and channel names, action descriptions, enum values, units and what a unit measures, so
+        temperature finds a degC channel named temp. unit matches every channel a value in that unit converts to,
+        and every action with an argument in it. The filters combine. Returns each match as a device.channel or
+        device.action target with its type, unit, limits or arguments, hazard class, whether the device takes
+        commands now and the latest value, best text matches first. Use find to choose targets, then
+        describe_device for a device's interlocks, watchdog rules and safe state. A search reads no device."""
+        found = await self._run(
+            lambda hub: hub.find(text, unit=unit, kind=kind, hazard=hazard, connected=connected, limit=limit)
+        )
+        for match in found.matches:
+            if isinstance(match.value, str):
+                match.value = wrap_device_text(f"{match.target} reading", match.value)
+        return found
+
+    async def wait_until(
+        self,
+        condition: Annotated[
+            str,
+            Field(
+                description="A condition with each channel as device.channel, such as <device>.<channel> > 30 degC.",
+                max_length=256,
+            ),
+        ],
+        timeout_s: Annotated[float, Field(description="The most seconds to wait.", gt=0, le=86_400)] = 30.0,
+        interval_s: Annotated[float, Field(description="Seconds between checks.", gt=0, le=60)] = 1.0,
+    ) -> m.WaitResult:
+        """Wait until a condition over live readings holds, then return. The condition is in the routine expression
+        language, with comparisons such as == and >, numbers with units, and and, or and not. The hub reads each
+        channel the condition names every interval_s, through the safety kernel and the audit log, until the
+        condition holds or timeout_s passes. Returns held, the condition's last value (null while a reading is
+        unknown) and the readings of the check that held, or of the last check on a timeout. The call holds for up
+        to timeout_s, so keep it under a minute. For a longer wait, or to act once a reading crosses a value, use a
+        wait_until step in run_steps and poll get_run. A stop ends the wait with status stopped."""
+        result = await self._run(lambda hub: hub.wait_until(condition, timeout_s=timeout_s, interval_s=interval_s))
+        result.readings = [_wrap_reading(reading) for reading in result.readings]
+        return result
+
+    async def sample(
+        self,
+        targets: TargetList,
+        duration_s: Annotated[float, Field(description="Seconds to sample for.", gt=0, le=86_400)],
+        interval_s: Annotated[float, Field(description="Seconds between readings.", gt=0, le=3600)] = 1.0,
+    ) -> m.SampleResult:
+        """Read one or more channels every interval_s for duration_s and return each series with its first, last,
+        min, max and mean over the number readings. Use sample to watch a trend or measure noise, read or
+        read_many for one value now, and wait_until to wait for a threshold. Every reading goes through the safety
+        kernel and the audit log, and a failed reading stays in the series with ok false. The call holds for
+        duration_s, so keep it under a minute. A sample takes at most 1000 readings of each channel."""
+        result = await self._run(lambda hub: hub.sample(targets, duration_s=duration_s, interval_s=interval_s))
+        for found in result.series:
+            for point in found.points:
+                if isinstance(point.value, str):
+                    point.value = wrap_device_text(f"{found.target} reading", point.value)
+        return result
+
+    async def _run_view(self, run: m.StepRun, steps: list[RunStep] | None = None) -> RunView:
+        view = RunView.model_validate(run.model_dump())
+        for result in view.results:
+            if result.readings:
+                result.readings = [_wrap_reading(reading) for reading in result.readings]
+        stop = view.stop
+        if stop is None or view.status not in ("blocked", "failed") or stop.code not in BY_KERNEL_CODE:
+            return view
+        decision = stop.decision
+        if decision is None:
+            if not view.results or view.results[-1].kind not in ("write", "action"):
+                return view
+            decision = m.Decision.model_validate(view.results[-1].model_dump())
+        body = None
+        if steps is not None and stop.step is not None and steps[stop.step].kind == "write":
+            body = steps[stop.step].body()
+            step = body.pop("increment", None)
+            if step is not None:
+                body["value"] += step * (stop.iteration or 0)
+        view.error = (await self.errors.decision(decision, body, self.label)).error
+        return view
+
+    async def run_steps(
+        self,
+        steps: Annotated[list[RunStep], Field(description="The steps in order.", min_length=1, max_length=500)],
+        repeat: Annotated[int, Field(description="How many times to run the steps, 1 to run them once.", ge=1)] = 1,
+        wait_s: Annotated[
+            float, Field(description="Seconds to wait for the run to end before replying.", ge=0, le=30)
+        ] = 5.0,
+    ) -> RunView:
+        """Run a list of steps in order, repeat times, for tasks such as blinking an output, stepping a value or
+        acting once a reading crosses a value. A step is read (targets), write (device, channel, value, unit and
+        an optional increment), action (device, action, args), wait (seconds) or wait_until (condition, timeout_s).
+        The hub checks the whole run as a plan first, with waits moving the clock, and runs nothing when a step
+        would be blocked. Every write and action then goes through the safety kernel exactly as the write and
+        action tools do, so limits, rate of change, interlocks, your scope, confirmations and the stop lock all
+        apply. The run stops at the first step that isn't done. A step that needs a person ends the run with
+        status pending and its request_id, and the steps after it don't run. Returns the run with run_id, status,
+        where it stopped and why, and the step results. A run still going after wait_s returns status running,
+        then use get_run to follow it and cancel_run to end it. stop_all ends every run at once. The hub caps the
+        steps per run, the seconds per run and how many runs one token has going."""
+        sent = [step.body() for step in steps]
+        run = await self._run(lambda hub: hub.run_steps(sent, repeat=repeat, wait_s=wait_s))
+        return await self._run_view(run, steps)
+
+    async def get_run(
+        self,
+        run_id: Annotated[str, Field(description="A run_id from run_steps or list_runs.", max_length=64)],
+        wait_s: Annotated[
+            float, Field(description="Seconds to wait for a running run to end before replying.", ge=0, le=30)
+        ] = 0.0,
+        last: Annotated[int, Field(description="How many of the newest step results to return.", ge=0)] = 20,
+    ) -> RunView:
+        """Show one of your runs with its status, current step, where it stopped and why, and its newest step
+        results. status is running, done, blocked, pending, failed or cancelled. wait_s holds the reply up to 30 s
+        while the run is still going, which saves polling. Only runs your token started show here."""
+        run = await self._run(lambda hub: hub.run(run_id, wait_s=wait_s, last=last))
+        return await self._run_view(run)
+
+    async def list_runs(self) -> list[m.StepRun]:
+        """List the runs your token started, newest first, with each status and where each run stopped, without
+        step results. Use list_runs to find a run_id again, then get_run for the steps."""
+        return await self._run(lambda hub: hub.runs())
+
+    async def cancel_run(
+        self, run_id: Annotated[str, Field(description="A run_id from run_steps or list_runs.", max_length=64)]
+    ) -> RunView:
+        """End one of your runs before its next step. A command already sent to a device finishes first, and the
+        run returns status cancelled with the step it reached. Use cancel_run to end one run, and stop_all when
+        anything looks unsafe, since stop_all also puts every device in its safe state."""
+        run = await self._run(lambda hub: hub.cancel_run(run_id))
+        return await self._run_view(run)
+
     async def stop_all(
         self,
         reason: Annotated[str, Field(description="Why you are stopping, for the audit log.", max_length=200)],
     ) -> m.StopReport:
-        """Emergency stop. Puts every device in its safe state, cancels pending confirmations, pauses routines
-        and blocks all writes until a person unlocks the hub with the human token. Call stop_all whenever
-        something looks unsafe. The report shows per device whether the device reached its safe state."""
+        """Emergency stop. Puts every device in its safe state, cancels pending confirmations, pauses routines,
+        ends every run, wait and sample, and blocks all writes until a person unlocks the hub with the human
+        token. Call stop_all whenever something looks unsafe. The report shows per device whether the device
+        reached its safe state."""
         return await self._run(lambda hub: hub.stop(reason))
 
     async def tighten_limits(
@@ -415,7 +640,9 @@ class Tools:
 
     async def draft_routine(
         self,
-        routine_id: Annotated[str, Field(description="Lowercase id with dashes, for example keep-room-cool.")],
+        routine_id: Annotated[
+            str, Field(description="Lowercase letters, digits and dashes, starting with a letter, at most 48.")
+        ],
         source: Annotated[str, Field(description="The routine source, YAML unless kind is python.")],
         kind: Annotated[Literal["yaml", "python"], Field(description="yaml (preferred) or python.")] = "yaml",
     ) -> m.Routine:
@@ -531,13 +758,20 @@ class Tools:
 TOOLS: Final[dict[str, ToolAnnotations]] = {
     "hub_status": READ_ONLY,
     "list_devices": READ_ONLY,
+    "find": READ_ONLY,
     "describe_device": READ_ONLY,
     "read": READ_ONLY,
     "read_many": READ_ONLY,
+    "sample": READ_ONLY,
+    "wait_until": READ_ONLY,
     "write": CONTROL,
     "action": CONTROL,
     "dry_run": READ_ONLY,
     "plan_check": READ_ONLY,
+    "run_steps": CONTROL,
+    "get_run": READ_ONLY,
+    "list_runs": READ_ONLY,
+    "cancel_run": DRAFT,
     "stop_all": CONTROL,
     "tighten_limits": DRAFT,
     "request_limit_change": DRAFT,

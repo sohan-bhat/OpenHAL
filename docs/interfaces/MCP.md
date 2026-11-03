@@ -98,14 +98,21 @@ Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)
 |---|---|
 | `hub_status` | Hub state, protocol version, stop lock, connected devices, pending confirmations |
 | `list_devices` | Every device with hazard class, writable and connected |
+| `find` | Search every device's channels and actions by text, unit, kind, hazard and connection, as `device.channel` targets |
 | `describe_device` | Channels with units and limits, actions, interlocks, watchdog, safe state, latest values, notes |
 | `read` | Read one channel now. A camera frame comes back as an image |
 | `read_many` | Read up to 100 channels. Images come without their pixels |
+| `sample` | Read channels at an interval over a duration, with min, max and mean for numbers |
+| `wait_until` | Wait until a condition over live readings holds, or a timeout passes, and return the readings |
 | `write` | Request a channel change, which the kernel checks. Returns done, blocked or pending |
 | `action` | Request an action, which the kernel checks |
 | `dry_run` | Check one write or action without running it |
 | `plan_check` | Check a list of steps in order without running any |
-| `stop_all` | Emergency stop. Every device goes to its safe state |
+| `run_steps` | Run read, write, action, wait and wait_until steps in order, with a repeat count, through the kernel |
+| `get_run` | One of your runs with its status, where it stopped and why, and its step results |
+| `list_runs` | Your runs, newest first |
+| `cancel_run` | End one of your runs before its next step |
+| `stop_all` | Emergency stop. Every device goes to its safe state and every run, wait and sample ends |
 | `tighten_limits` | Narrow min, max or rate for this session. Never widens |
 | `request_limit_change` | Narrow a limit at once, or file a wider limit as a pending change that a person approves |
 | `get_confirmation_status` | Status of requests held for a person's approval |
@@ -126,6 +133,24 @@ Numbers go in with their unit apart ([ADR 0016](../adr/0016-one-value-format.md)
 | `get_test_plan` | The staged write test plan for a new device |
 | `device_file_schema` | The device file JSON Schema, for drafting |
 
+## Runs and waits
+
+An agent finds what a hub has with `find`, so a task needs no device id in advance. `run_steps` takes a list of steps, each with a `kind`.
+
+| Kind | Fields |
+|---|---|
+| `read` | `targets`, channels as `device.channel` |
+| `write` | `device`, `channel`, `value`, `unit`, and `increment` to add that much on each repeat |
+| `action` | `device`, `action`, `args` |
+| `wait` | `seconds` |
+| `wait_until` | `condition`, `timeout_s`, `interval_s` |
+
+The hub checks the whole run as a plan first and runs nothing when a step would be blocked. After a `wait_until` step, a block that depends on live readings, such as an interlock, is left to the kernel's check when that step runs. Then every command goes through the kernel exactly as a `write` or `action` call does, and the run stops at the first step that isn't done, with the step, the code and the reason. A step that needs a person ends the run with status `pending` and its `request_id`, and the steps after it don't run. A run never approves, unlocks, widens a limit or enables a routine.
+
+A run belongs to the token that started it, so another agent's `get_run` and `cancel_run` find no run by that id. `stop_all`, a person's stop and revoking the token end a run at once. A condition uses the routine expression language with every channel as `device.channel`, such as `<device>.<channel> > 30 degC`. `wait_until` and `sample` hold the call for their duration, so keep them under a minute and put longer waits in a run.
+
+The caps in `config.yaml` bound the steps per run (200), the seconds per run, wait or sample (600) and the runs, waits and samples one token has going at once (2). Only a person changes them, with `openhal runs caps`. ADR 0019 has the whole run model.
+
 ## Prompts
 
 | Prompt | Arguments | What it guides |
@@ -142,6 +167,7 @@ Only a person with the human token can do the following, in the CLI or the dashb
 - Loosen a limit or confirm a device file (`openhal file confirm`, the limits interview)
 - Enable a routine, unless `routines.agent_enable_low_hazard` is on and every device the routine touches is low hazard
 - Sign a routine approval for a high hazard device
+- Change the run caps (`openhal runs caps`)
 
 ## Device text is data
 

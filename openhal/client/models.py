@@ -408,3 +408,158 @@ class NewToken(TokenInfo):
 class PairingCode(Model):
     code: str
     expires_in_s: float = 300.0
+
+
+class FindMatch(Model):
+    """One channel or action a search found. Limits come with write channels, arguments with actions."""
+
+    target: str = Field(description="device.channel or device.action, ready for read, write, action and runs.")
+    device: str
+    name: str
+    kind: str = Field(description="readable, writable or action. A writable channel reads back too.")
+    device_name: str | None = None
+    hazard: str | None = None
+    connected: bool | None = None
+    takes_commands: bool | None = Field(
+        default=None, description="False while the device is read-only, unavailable or the hub is stopped."
+    )
+    type: str | None = Field(default=None, description="number, bool, enum, string or image, for a channel.")
+    unit: str | None = None
+    values: list[str] | None = None
+    min: float | None = None
+    max: float | None = None
+    step: float | None = None
+    max_change_per_s: float | None = None
+    confirm: str | None = None
+    description: str | None = None
+    args: dict[str, dict[str, Any]] | None = None
+    require: list[str] | None = None
+    value: Any = None
+    known: bool | None = None
+    age_s: float | None = None
+    matched: list[str] | None = Field(default=None, description="The words of the text that matched.")
+
+
+class FindResult(Model):
+    count: int = Field(description="Every match, including any past the limit.")
+    matches: list[FindMatch] = []
+
+
+class WaitResult(Model):
+    """How a wait on a condition ended, with the readings of its last check."""
+
+    condition: str
+    status: str = Field(description="held, timeout, time_cap, stopped or token_revoked.")
+    held: bool
+    result: bool | None = Field(default=None, description="The condition at the last check. None means unknown.")
+    waited_s: float
+    checks: int
+    interval_s: float
+    readings: list[Reading] = []
+
+
+class SamplePoint(Model):
+    at: float | None = None
+    ok: bool
+    value: Any = None
+    error: str | None = None
+
+
+class SampleSeries(Model):
+    """One target's readings over time. min, max and mean are over the number readings only."""
+
+    target: str
+    unit: str | None = None
+    count: int
+    failed: int = 0
+    first: Any = None
+    last: Any = None
+    min: float | None = None
+    max: float | None = None
+    mean: float | None = None
+    points: list[SamplePoint] = []
+
+
+class SampleResult(Model):
+    status: str = Field(description="done, or why the sample ended early, stopped or time_cap.")
+    interval_s: float
+    duration_s: float
+    started_at: float | None = None
+    series: list[SampleSeries] = []
+
+
+class RunStop(Model):
+    """Where and why a run ended before its last step."""
+
+    index: int | None = Field(default=None, description="The step's place in the whole run, repeats included.")
+    step: int | None = Field(default=None, description="The step's place in the list that was sent.")
+    iteration: int | None = Field(default=None, description="Which repeat, from 0.")
+    kind: str | None = None
+    code: str | None = Field(
+        default=None, description="A block code such as above_max, or a run code such as time_cap."
+    )
+    message: str
+    request_id: str | None = None
+    decision: Decision | None = Field(default=None, description="The plan check's decision, when the plan blocked.")
+
+
+class StepResult(Model):
+    """What one step of a run did. Commands carry the kernel's decision fields."""
+
+    index: int
+    step: int
+    iteration: int
+    kind: str
+    status: str | None = None
+    code: str | None = None
+    message: str | None = None
+    device: str | None = None
+    target: str | None = None
+    value: Any = None
+    unit: str | None = None
+    limit: dict[str, Any] | None = None
+    request_id: str | None = None
+    seconds: float | None = None
+    readings: list[Reading] | None = None
+    condition: str | None = None
+    held: bool | None = None
+    result: bool | None = None
+    waited_s: float | None = None
+    checks: int | None = None
+
+
+class StepRun(Model):
+    """A run of steps. `status` is running, done, blocked, pending, failed or cancelled."""
+
+    run_id: str
+    owner: str
+    status: str
+    message: str
+    steps: int
+    repeat: int
+    total_steps: int
+    done_steps: int
+    current: dict[str, Any] | None = None
+    started_at: float | None = None
+    finished_at: float | None = None
+    elapsed_s: float | None = None
+    stop: RunStop | None = None
+    request_id: str | None = Field(default=None, description="Set when the run ended at a step held for a person.")
+    plan: dict[str, Any] = {}
+    results: list[StepResult] = []
+
+    @property
+    def ok(self) -> bool:
+        return self.status == "done"
+
+    @property
+    def running(self) -> bool:
+        return self.status == "running"
+
+
+class RunCaps(Model):
+    max_steps: int = Field(description="Steps in one run, counting every repeat.")
+    max_seconds: float = Field(description="The longest run, wait or sample.")
+    per_agent: int = Field(description="Runs, waits and samples one token may have going at once.")
+    max_points: int | None = Field(default=None, description="The most readings a sample takes of each target.")
+    changed: dict[str, Any] = {}
