@@ -88,7 +88,7 @@ Round 13 measured the Overview, Messages and the schema reference three times ea
 
 Mobile performance moves by a point or two between runs on this Mac. Pages that scored under 100 on the first run were measured three or four times, and the table shows the median. The rebuilt Overview scored 100 on four mobile runs, with a layout shift of 0, first contentful paint at 1.0 s, largest contentful paint at 1.4 to 1.5 s, no blocking time and 74 KB in all. Before the rebuild it scored 99, 99, 99 and 100. In round 6 the Overview scored 100 in every category on three mobile and three desktop runs, with a layout shift of 0, first contentful paint at 1.10 to 1.13 s, largest contentful paint at 1.51 to 1.59 s, no blocking time and 81 KB in all on a phone. The Playground scored 100 in every category on all six runs, with 79 KB on a phone, since its kernel loads only when a person first uses it. Messages scored 96, 100 and 99, Schema reference 99, 100 and 99, and Drivers 99, 100 and 100. The points they lose are first contentful paint at 1.1 to 1.5 s and blocking time of 70 to 210 ms under the simulated slow phone. The speed round measured the Overview, Messages, the Playground, Drivers, the Python reference, the Inspector docs, the documentation index and Architecture again, three times each on a phone and on a desktop, and their rows give the medians. Each of those pages scored 100 in every category on every desktop run and on every phone run, apart from the Overview's phone runs at 98, 99 and 100. The Overview lost those points to a first frame that Chrome drew late under Lighthouse, which Website speed describes.
 
-Gzipped, the home page's HTML is 14.7 KB, which holds 3.5 KB of inline script and 1.3 KB of inline style, its two stylesheets are 7.8 KB and the story script is 2.3 KB. The smooth scrolling code adds 0.6 KB once the page is idle. The Playground's HTML is 16.6 KB and its three stylesheets are 6.8 KB, and its kernel, 98 KB with the Svelte runtime, loads the first time a person uses the page, which then replays that first click. The speed round's weights are under Website speed below.
+Gzipped, the home page's HTML is 15.0 KB, its stylesheets are 19.2 KB and its script is 1.7 KB, measured by tests/e2e/budget.spec.ts on 2026-11-02 once How it works became a static chart and the story script and the smooth scrolling code left the page. The chart's images load lazily under the hero and are not counted. The Playground's HTML is 16.6 KB and its three stylesheets are 6.8 KB, and its kernel, 98 KB with the Svelte runtime, loads the first time a person uses the page, which then replays that first click. The speed round's weights are under Website speed below.
 
 ## Website speed
 
@@ -158,7 +158,7 @@ tests/e2e/budget.spec.ts loads one page of each template in Chromium and fails w
 
 | Template | Page | HTML | CSS | JavaScript | Fonts |
 |---|---|---|---|---|---|
-| Home | `/` | 13.6, 15.0 | 18.3, 20.2 | 12.5, 13.8 | 25.6, 28.1 |
+| Home | `/` | 15.0, 16.5 | 19.2, 21.1 | 1.7, 1.8 | 25.6, 28.2 |
 | Example page | `/docs/examples/3d-print-watch/` | 19.1, 21.1 | 17.7, 19.5 | 3.8, 4.2 | 25.6, 28.1 |
 | Docs index | `/docs/` | 12.2, 13.4 | 15.7, 17.3 | 1.4, 1.5 | 16.2, 17.8 |
 | Guide page | `/docs/quickstart/` | 14.2, 15.5 | 15.7, 17.3 | 2.7, 3.0 | 31.5, 34.5 |
@@ -174,6 +174,8 @@ tests/e2e/budget.spec.ts loads one page of each template in Chromium and fails w
 | Inspector page | `/inspector/` | 12.9, 14.3 | 15.7, 17.3 | 1.4, 1.5 | 25.6, 28.1 |
 | Blog | `/blog/` | 9.9, 10.9 | 15.7, 17.3 | 1.4, 1.5 | 25.6, 28.1 |
 | 404 | `/404.html` | 10.2, 11.3 | 15.7, 17.3 | 1.4, 1.5 | 25.6, 28.1 |
+
+The home row was measured again on 2026-11-02, after How it works became a static chart and the story script and smooth scrolling left the page.
 
 Round 16 moved the docs frame onto React islands with Tailwind, shadcn/ui, Radix, cmdk and Motion, and these are its new baselines. Against a build of main at c5a6db4, measured the same way, each page sends 27 to 29 KB less in all.
 
@@ -239,7 +241,7 @@ Rules from the tags wcag2a, wcag2aa, wcag21a and wcag21aa, with axe 4.14.0.
 | Surface | What is checked | Violations |
 |---|---|---|
 | Website | Every page in the sitemap (115 pages) and the 404, in the light and dark themes, at 1280 by 720 in Chromium | 0 |
-| Website | At 390 px in both themes, the open phone menu on home and on a spec page, the spec page's outline opened, the playground after a refused write with an information mark and the request builder open, empty driver and library filters, How it works halfway through its scroll and as the panels reduced motion shows, the full example's walkthrough two steps in, and the search palette opened from its icon button before typing and with results | 0 |
+| Website | At 390 px in both themes, the open phone menu on home and on a spec page, the spec page's outline opened, the playground after a refused write with an information mark and the request builder open, empty driver and library filters, How it works with its chart in view, the full example's walkthrough two steps in, and the search palette opened from its icon button before typing and with results | 0 |
 | Website | At 1280 by 800 in both themes, the search palette opened with Ctrl K before typing with a recent search, with results for LIMIT_EXCEEDED and the second one active, and with no results | 0 |
 | Website | At 1440 px in both themes, the theme menu open on a spec page, at 900 px the section menu and the theme menu open on Drivers, and at 390 px the theme menu open at the foot of the phone menu | 0 |
 | Website | At 1440 px in both themes, the hidden sidebar with its Show sidebar tooltip, and the sidebar peeking as an inset panel | 0 |
