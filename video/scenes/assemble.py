@@ -49,9 +49,19 @@ def public() -> None:
     shutil.copy2(REPO / "docs" / "assets" / "wordmark-dark.svg", PUBLIC / "brand" / "wordmark-dark.svg")
 
 
-def remotion(args: list[str]) -> None:
-    """Run the Remotion CLI from the project folder against the film's public folder."""
-    run(["pnpm", "exec", "remotion", *args, f"--public-dir={PUBLIC}"], cwd=REMOTION)
+BUNDLE = OUT / "bundle"
+
+
+def bundle() -> None:
+    """Bundle the Remotion project once with the film's public folder, for every render after it."""
+    if BUNDLE.exists():
+        shutil.rmtree(BUNDLE)
+    run(["pnpm", "exec", "remotion", "bundle", f"--out-dir={BUNDLE}", f"--public-dir={PUBLIC}"], cwd=REMOTION)
+
+
+def remotion(command: str, args: list[str]) -> None:
+    """Run a Remotion CLI command against the bundle."""
+    run(["pnpm", "exec", "remotion", command, str(BUNDLE), *args], cwd=REMOTION)
 
 
 def loudness(source: Path, target: Path) -> dict[str, float]:
@@ -167,18 +177,19 @@ def main() -> int:
             for aspect in ("landscape",):
                 source = OUT / "stills" / f"{still['shot']}-1920x1080.png"
                 shutil.copy2(source, PUBLIC / "stills" / f"{still['shot']}-{aspect}.png")
+        bundle()
         beats = [s["storyboard"] for s in plan["stills"]] + [8]
         for beat in beats:
             props = json.dumps({"aspect": "landscape", "beat": beat})
             remotion(
+                "still",
                 [
-                    "still",
                     "Storyboard",
                     str(PREVIEW / f"storyboard-{beat}-1920x1080.png"),
                     f"--props={props}",
                     "--scale=0.5",
                     "--timeout=300000",
-                ]
+                ],
             )
         return 0
     sound_raw = OUT / "sound" / "fx.wav"
@@ -189,21 +200,22 @@ def main() -> int:
     mixed = OUT / "sound" / "film-14lufs.wav"
     stats = loudness(sound_raw, mixed)
     print(f"loudness {stats}", flush=True)
+    bundle()
     for aspect in opts.aspects.split(","):
         w, h = edit["resolution"][aspect]
         size = f"{round(w * opts.scale)}x{round(h * opts.scale)}"
         silent = OUT / "edit" / f"film-{aspect}-{size}-silent.mp4"
         silent.parent.mkdir(parents=True, exist_ok=True)
         remotion(
+            "render",
             [
-                "render",
                 COMPOSITIONS[aspect],
                 str(silent),
                 f"--scale={opts.scale}",
                 "--muted",
                 "--crf=18",
                 "--timeout=300000",
-            ]
+            ],
         )
         final = PREVIEW / f"openhal-film-{aspect}-{size}.mp4"
         run(
