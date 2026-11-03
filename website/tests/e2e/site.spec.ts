@@ -35,16 +35,17 @@ test.describe("overview", () => {
     await expect(page.locator(".story-list")).toContainText(firstError.message.slice(0, firstError.message.indexOf(" (")).replace(/(\d) degC\b/g, "$1 °C").replace(/(\d) /g, "$1\u00a0"));
   });
 
-  test("the quickstart is three commands and says what they show", async ({ page }) => {
+  test("the demo is one command after the install box, with nothing to clone and no uv to find", async ({ page }) => {
     await page.goto("/");
     const block = page.locator("#try figure[data-tested]");
-    await expect(block).toContainText("git clone https://github.com/sohan-bhat/OpenHAL");
-    await expect(block).toContainText("cd OpenHAL");
-    await expect(block).toContainText("uv run openhal demo");
+    await expect(block.locator("pre")).toHaveText("$ openhal demo");
+    await expect(page.locator("#try")).not.toContainText("clone");
+    await expect(page.locator("#try")).not.toContainText("uv run");
+    await expect(page.locator("#try .lede")).toHaveText("The demo uses simulated devices, so nothing touches real hardware. Install OpenHAL from the top of the page, then run the demo.");
     await expect(page.locator("#try")).toContainText("The demo plays the same story in your terminal.");
   });
 
-  test("the quickstart sets its three commands one under another, and Copy copies all three", async ({ page, browserName, context }) => {
+  test("the demo's command sits on one line, and Copy copies the command without its prompt", async ({ page, browserName, context }) => {
     await page.goto("/");
     const block = page.locator("#try figure[data-tested]");
     const lines = await block.locator("pre .line").evaluateAll((items) =>
@@ -53,16 +54,13 @@ test.describe("overview", () => {
         return { top: box.top, bottom: box.bottom, height: box.height, position: getComputedStyle(el).position };
       }),
     );
-    expect(lines).toHaveLength(3);
-    for (const [index, line] of lines.entries()) {
-      expect(line.position).toBe("static");
-      expect(line.height).toBeGreaterThan(16);
-      if (index > 0) expect(line.top).toBeGreaterThanOrEqual(lines[index - 1].bottom - 0.5);
-    }
+    expect(lines).toHaveLength(1);
+    expect(lines[0].position).toBe("static");
+    expect(lines[0].height).toBeGreaterThan(16);
     test.skip(browserName !== "chromium", "clipboard permissions are a Chromium feature here");
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await block.getByRole("button", { name: "Copy code" }).click();
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("git clone https://github.com/sohan-bhat/OpenHAL\ncd OpenHAL\nuv run openhal demo");
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("openhal demo");
   });
 
   test("says plainly that OpenHAL is not affiliated with MHS", async ({ page }) => {
@@ -300,9 +298,9 @@ test.describe("site", () => {
     test.skip(browserName !== "chromium", "clipboard permissions are a Chromium feature here");
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await page.goto("/docs/quickstart/");
-    await page.locator("figure[data-tested]").first().getByRole("button", { name: "Copy code" }).click();
+    await page.locator("figure[data-tested]", { hasText: "openhal file confirm" }).getByRole("button", { name: "Copy code" }).click();
     const copied = await page.evaluate(() => navigator.clipboard.readText());
-    expect(copied).toBe("git clone https://github.com/sohan-bhat/OpenHAL\ncd OpenHAL\nuv run openhal demo");
+    expect(copied).toBe("openhal init\nopenhal file confirm ~/.openhal/devices/plant-waterer.hal.yaml\nopenhal start &\nopenhal status");
   });
 
   test("every page in the sitemap has its Open Graph image", async ({ request, browserName }) => {
