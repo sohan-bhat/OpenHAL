@@ -11,6 +11,7 @@ interface Base {
   scale: number;
   offset?: number;
   prefixable?: boolean;
+  angle?: number;
 }
 
 const L: Dims = { length: 1 };
@@ -30,9 +31,9 @@ const BASES: Array<[string[], Base]> = [
   [["count"], { name: "count", symbol: "count", dims: {}, scale: 1 }],
   [["percent"], { name: "percent", symbol: "%", dims: {}, scale: 0.01 }],
   [["ppm"], { name: "ppm", symbol: "ppm", dims: {}, scale: 1e-6 }],
-  [["radian", "radians", "rad"], { name: "radian", symbol: "rad", dims: {}, scale: 1, prefixable: true }],
-  [["degree", "degrees", "deg", "arcdeg"], { name: "degree", symbol: "deg", dims: {}, scale: Math.PI / 180 }],
-  [["rpm", "revolutions_per_minute"], { name: "revolutions_per_minute", symbol: "rpm", dims: { time: -1 }, scale: (2 * Math.PI) / 60 }],
+  [["radian", "radians", "rad"], { name: "radian", symbol: "rad", dims: {}, scale: 1, prefixable: true, angle: 1 }],
+  [["degree", "degrees", "deg", "arcdeg"], { name: "degree", symbol: "deg", dims: {}, scale: Math.PI / 180, angle: 1 }],
+  [["rpm", "revolutions_per_minute"], { name: "revolutions_per_minute", symbol: "rpm", dims: { time: -1 }, scale: (2 * Math.PI) / 60, angle: 1 }],
   [["kelvin", "K", "degK"], { name: "kelvin", symbol: "K", dims: K, scale: 1, offset: 0, prefixable: true }],
   [["degree_Celsius", "degC", "celsius", "°C", "degreeC"], { name: "degree_Celsius", symbol: "°C", dims: K, scale: 1, offset: 273.15 }],
   [["degree_Fahrenheit", "degF", "fahrenheit", "°F", "degreeF"], { name: "degree_Fahrenheit", symbol: "°F", dims: K, scale: 5 / 9, offset: 233.15 + 200 / 9 }],
@@ -55,7 +56,7 @@ const BASES: Array<[string[], Base]> = [
   [["newton", "newtons", "N"], { name: "newton", symbol: "N", dims: FORCE, scale: 1000, prefixable: true }],
   [["pascal", "Pa"], { name: "pascal", symbol: "Pa", dims: PRESSURE, scale: 1000, prefixable: true }],
   [["bar"], { name: "bar", symbol: "bar", dims: PRESSURE, scale: 1e8, prefixable: true }],
-  [["lux", "lx"], { name: "lux", symbol: "lx", dims: { luminosity: 1, length: -2 }, scale: 1, prefixable: true }],
+  [["lux", "lx"], { name: "lux", symbol: "lx", dims: { luminosity: 1, length: -2 }, scale: 1, prefixable: true, angle: 2 }],
 ];
 
 const PREFIXES: Array<[string, string, string, number]> = [
@@ -77,6 +78,7 @@ interface Atom {
   dims: Dims;
   scale: number;
   offset?: number;
+  angle?: number;
 }
 
 const TABLE = new Map<string, Atom>();
@@ -87,7 +89,7 @@ for (const [aliases, base] of BASES) {
   if (!base.prefixable) continue;
   const shortForms = aliases.filter((alias) => alias.length <= 3 && alias === base.symbol);
   for (const [symbol, long, pretty, factor] of PREFIXES) {
-    const atom: Atom = { name: `${long}${base.name}`, symbol: `${pretty}${base.symbol}`, dims: base.dims, scale: base.scale * factor };
+    const atom: Atom = { name: `${long}${base.name}`, symbol: `${pretty}${base.symbol}`, dims: base.dims, scale: base.scale * factor, angle: base.angle };
     for (const alias of shortForms) if (!TABLE.has(`${symbol}${alias}`)) TABLE.set(`${symbol}${alias}`, atom);
     for (const alias of aliases) if (alias.length > 3 && !TABLE.has(`${long}${alias}`)) TABLE.set(`${long}${alias}`, atom);
   }
@@ -179,6 +181,24 @@ function dimsOf(unit: Unit): string {
     .sort()
     .map((dim) => `${dim}^${total[dim]}`)
     .join(" ");
+}
+
+/**
+ * A unit's dimensions as pint gives them, each base dimension with its power and sorted by name,
+ * and how many angles the unit carries, 1 for degree, rad/s or rpm and 0 for percent or Hz.
+ */
+export function dimensions(unit: Unit): { dims: Array<[string, number]>; angle: number } {
+  const total: Dims = {};
+  let angle = 0;
+  for (const { atom, power } of unit.parts) {
+    for (const [dim, exp] of Object.entries(atom.dims)) total[dim] = (total[dim] ?? 0) + exp * power;
+    angle += (atom.angle ?? 0) * power;
+  }
+  const dims = Object.keys(total)
+    .filter((dim) => total[dim] !== 0)
+    .sort()
+    .map((dim): [string, number] => [dim, Math.trunc(total[dim])]);
+  return { dims, angle: Math.trunc(angle) };
 }
 
 function rootFactor(unit: Unit): number {

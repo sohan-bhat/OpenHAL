@@ -24,10 +24,15 @@ function isWriteChannel(spec: WriteChannel | ArgSpec): spec is WriteChannel {
   return "max_change_per_s" in spec;
 }
 
-export function effectiveLimits(spec: WriteChannel | ArgSpec, tightened?: Tightened | null): Limits {
+/**
+ * Combine a channel's file limits with session limits, which can only narrow them. Without
+ * `ownRate`, the file's max_change_per_s doesn't apply, as for a low risk channel whose rate was
+ * only suggested (ADR 0023). A session rate still does.
+ */
+export function effectiveLimits(spec: WriteChannel | ArgSpec, tightened?: Tightened | null, ownRate = true): Limits {
   let low = spec.min as number;
   let high = spec.max as number;
-  let rate = isWriteChannel(spec) ? spec.max_change_per_s : null;
+  let rate = isWriteChannel(spec) && ownRate ? spec.max_change_per_s : null;
   if (tightened && Object.keys(tightened).length) {
     low = Math.max(low, tightened.min ?? low);
     high = Math.min(high, tightened.max ?? high);
