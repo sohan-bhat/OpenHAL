@@ -38,10 +38,15 @@ from __future__ import annotations
 
 import math
 import re
-from dataclasses import dataclass
-from typing import Any, Final, Literal
+import weakref
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from openhal.spec.units import UnitError, convert, normalize_unit, parse_unit, registry
+
+if TYPE_CHECKING:
+    from openhal.spec.models import Action, ArgSpec, DeviceFile, WriteChannel
 
 Level = Literal["low", "medium", "high"]
 LEVELS: Final[tuple[Level, ...]] = ("low", "medium", "high")
@@ -295,3 +300,201 @@ def unit_signal(unit: str | None, maximum: float | None) -> UnitSignal:
     if top > limit:
         return UnitSignal("high", f"{row.quantity} above {limit:g} {base}")
     return UnitSignal("medium", f"{row.quantity} up to {limit:g} {base}")
+
+
+@dataclass
+class _Draft:
+    level: Level
+    reasons: list[str] = field(default_factory=list)
+
+    def raise_to(self, level: Level, reason: str) -> None:
+        if RANK[level] > RANK[self.level]:
+            self.level = level
+        self.reasons.append(reason)
+
+
+def _base(
+    name_words: list[str],
+    extra_words: list[str],
+    device_words: list[tuple[Level, str]],
+    units: list[UnitSignal],
+    *,
+    bare_pin: bool,
+) -> _Draft:
+    """The level from words and units, before the device-wide rules."""
+    own = word_levels(name_words)
+    if own:
+        draft = _Draft(highest(*(level for level, _ in own)), [reason for _, reason in own])
+    elif device_words:
+        draft = _Draft(
+            highest(*(level for level, _ in device_words)), [f"the device name says {r}" for _, r in device_words]
+        )
+    else:
+        draft = _Draft(DEFAULT, ["nothing in the name tells, so medium"])
+    if bare_pin and not own:
+        draft.raise_to("medium", "a bare pin, and the hub can't know what is wired to it")
+    for level, reason in word_levels(extra_words):
+        if RANK[level] > RANK["low"]:
+            draft.raise_to(level, reason)
+    for signal in units:
+        if signal.level is not None and signal.reason is not None:
+            draft.raise_to(signal.level, signal.reason)
+    if any(signal.odd for signal in units):
+        odd = next(signal.reason for signal in units if signal.odd and signal.reason)
+        draft.level = up(draft.level)
+        draft.reasons.append(odd)
+    return draft
+
+
+def _pin(mapping: dict[str, Any] | None) -> str | None:
+    if not mapping or PIN_KEY not in mapping:
+        return None
+    value = mapping[PIN_KEY]
+    if isinstance(value, bool) or not isinstance(value, int | str):
+        return None
+    return str(value)
+
+
+def _channel_draft(name: str, spec: WriteChannel, device_words: list[tuple[Level, str]]) -> tuple[_Draft, bool]:
+    signal = unit_signal(spec.unit, spec.max) if spec.type == "number" else UnitSignal(None, None)
+    draft = _base(
+        tokens(name),
+        tokens(*spec.values),
+        device_words,
+        [signal],
+        bare_pin=_pin(spec.map) is not None,
+    )
+    return draft, signal.motion
+
+
+def _action_draft(name: str, spec: Action, device_words: list[tuple[Level, str]]) -> _Draft:
+    signals = [unit_signal(arg.unit, arg.max) for arg in spec.args.values() if arg.type == "number"]
+    extra = tokens(spec.description, *spec.args, *(value for arg in spec.args.values() for value in arg.values))
+    return _base(tokens(name), extra, device_words, signals, bare_pin=_pin(spec.map) is not None)
+
+
+def _arg_motion(args: dict[str, ArgSpec]) -> int:
+    return sum(1 for arg in args.values() if arg.type == "number" and unit_signal(arg.unit, arg.max).motion)
+
+
+def _entries(file: DeviceFile) -> list[tuple[str, WriteChannel | Action]]:
+    """Every write channel and action as (target, spec)."""
+    found: list[tuple[str, WriteChannel | Action]] = [(f"write:{name}", spec) for name, spec in file.write.items()]
+    return found + [(f"action:{name}", spec) for name, spec in file.actions.items()]
+
+
+def _drafts(file: DeviceFile) -> dict[str, _Draft]:
+    """Each target's level from its words and units, the axis rule and the hazard floor."""
+    named = [word for word in tokens(file.device.name, file.device.model) if len(word) >= DEVICE_WORD_MIN]
+    device_words = word_levels(named)
+    drafts: dict[str, _Draft] = {}
+    motion: list[str] = []
+    for name, channel in file.write.items():
+        drafts[f"write:{name}"], moves = _channel_draft(name, channel, device_words)
+        if moves:
+            motion.append(f"write:{name}")
+    if len(motion) >= AXES_FOR_MACHINE:
+        for target in motion:
+            drafts[target].raise_to("high", f"one of {len(motion)} motion axes on this device")
+    for name, action in file.actions.items():
+        draft = _action_draft(name, action, device_words)
+        if _arg_motion(action.args) >= AXES_FOR_MACHINE:
+            draft.raise_to("high", "moves three or more axes at once")
+        drafts[f"action:{name}"] = draft
+    if file.hazard is not None:
+        for draft in drafts.values():
+            draft.raise_to(file.hazard, f"the device file's hazard is {file.hazard}")
+    return drafts
+
+
+def _share_pins(file: DeviceFile, levels: dict[str, Level], drafts: dict[str, _Draft]) -> dict[str, tuple[str, ...]]:
+    """Give every target on one pin the highest level among them. Returns who shares with whom."""
+    groups: dict[str, list[str]] = {}
+    for target, spec in _entries(file):
+        pin = _pin(spec.map)
+        if pin is not None:
+            groups.setdefault(pin, []).append(target)
+    shared: dict[str, tuple[str, ...]] = {}
+    for members in groups.values():
+        if len(members) < 2:
+            continue
+        top = highest(*(levels[member] for member in members))
+        for member in members:
+            others = tuple(other for other in members if other != member)
+            shared[member] = others
+            if RANK[top] > RANK[levels[member]]:
+                levels[member] = top
+                drafts[member].reasons.append(f"shares its pin with {', '.join(others)}, so {top}")
+    return shared
+
+
+def _assess(file: DeviceFile) -> dict[str, Assessment]:
+    drafts = _drafts(file)
+    classified = {target: draft.level for target, draft in drafts.items()}
+    levels = dict(classified)
+    applied: set[str] = set()
+    for target, spec in _entries(file):
+        if spec.risk is not None and (RANK[spec.risk.level] >= RANK[classified[target]] or spec.risk.by is not None):
+            levels[target] = spec.risk.level
+            applied.add(target)
+    for name, action in file.actions.items():
+        target = f"action:{name}"
+        for effect in action.effects:
+            effect_level = levels[f"write:{effect}"]
+            if RANK[effect_level] > RANK[levels[target]]:
+                levels[target] = effect_level
+                drafts[target].reasons.append(f"changes {effect}, which is {effect_level}")
+    shared = _share_pins(file, levels, drafts)
+    result: dict[str, Assessment] = {
+        f"read:{name}": Assessment(f"read:{name}", "low", "low", ("reading is always low",)) for name in file.read
+    }
+    for target, spec in _entries(file):
+        reasons = list(drafts[target].reasons)
+        override = spec.risk
+        if override is not None:
+            who = f"set by {override.by}" if override.by else "in the device file"
+            counts = target in applied
+            reasons.append(f"risk {override.level} {who}" if counts else f"risk {override.level} {who} only raises")
+        result[target] = Assessment(
+            target,
+            levels[target],
+            classified[target],
+            tuple(reasons),
+            override=override.level if override is not None else None,
+            override_by=override.by if override is not None else None,
+            override_applied=target in applied,
+            shared_with=shared.get(target, ()),
+        )
+    return result
+
+
+_CACHE: dict[int, tuple[weakref.ref[DeviceFile], dict[str, Any]]] = {}
+
+
+def memo[T](file: DeviceFile, name: str, compute: Callable[[], T]) -> T:
+    """A value computed once per device file. Device files are frozen, so the value can't go stale."""
+    key = id(file)
+    hit = _CACHE.get(key)
+    if hit is None or hit[0]() is not file:
+
+        def forget(_ref: weakref.ref[DeviceFile], key: int = key) -> None:
+            _CACHE.pop(key, None)
+
+        hit = (weakref.ref(file, forget), {})
+        _CACHE[key] = hit
+    values = hit[1]
+    if name not in values:
+        values[name] = compute()
+    found: T = values[name]
+    return found
+
+
+def assess(file: DeviceFile) -> dict[str, Assessment]:
+    """Every target's level for one file, assessed once per file."""
+    return memo(file, "assess", lambda: _assess(file))
+
+
+def level(file: DeviceFile, target: str) -> Level:
+    """The level of `read:<name>`, `write:<name>` or `action:<name>`. An unknown target is high."""
+    found = assess(file).get(target)
+    return found.level if found is not None else "high"
