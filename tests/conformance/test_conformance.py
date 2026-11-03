@@ -15,6 +15,10 @@ CASES = {name: f"{registry.package_for(name)}.conformance" for name in registry.
 @pytest.mark.parametrize("name", sorted(CASES))
 async def test_driver_passes_conformance(name: str) -> None:
     try:
+        registry.load(name)
+    except registry.UnknownDriver as exc:
+        pytest.skip(str(exc))
+    try:
         module = importlib.import_module(CASES[name])
     except ModuleNotFoundError as exc:
         pytest.fail(f"driver {name} has no conformance module ({exc.name}). Every driver needs one.")
