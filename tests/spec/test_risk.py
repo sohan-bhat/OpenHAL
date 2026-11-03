@@ -313,3 +313,16 @@ def test_a_bipolar_range_counts_by_its_far_end() -> None:
     assert level(supply, "write:output") == "high"
     sink = device(actions={"sink": {"args": {"current": {"unit": "A", "min": -30, "max": 0}}}})
     assert level(sink, "action:sink") == "high"
+
+
+def test_the_unit_signal_fails_closed() -> None:
+    assert risk.unit_signal(None, None) == risk.UnitSignal(None, None)
+    assert risk.unit_signal("no such unit", 1).odd
+    assert risk.unit_signal("W", float("inf")).level == "high", "a power that can't be converted counts as high"
+
+
+def test_a_pin_must_be_a_number_or_a_name_to_share() -> None:
+    odd = device(write={"a": {"type": "bool", "map": {"pin": True}}, "b": {"type": "bool", "map": {"pin": True}}})
+    assert risk.assess(odd)["write:a"].shared_with == ()
+    found = risk.assess(device(write=write("brightness")))["write:brightness"]
+    assert (found.kind, found.name) == ("write", "brightness")
