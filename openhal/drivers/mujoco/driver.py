@@ -210,7 +210,7 @@ class MujocoDriver(Driver):
             raise DriverError(f"{where}: no write channel drives a joint that moves {item.site}.")
         if item.joints:
             named = {self._id(model, mujoco.mjtObj.mjOBJ_JOINT, joint, where, "joint") for joint in item.joints}
-            outside = sorted(_name(model, model.name_jntadr[joint]) for joint in named - set(chain))
+            outside = sorted(_name(model, mujoco.mjtObj.mjOBJ_JOINT, joint) for joint in named - set(chain))
             if outside:
                 raise DriverError(
                     f"{where}: map.joints names {', '.join(outside)}, which no goal moves for {item.site}."
@@ -246,9 +246,9 @@ class MujocoDriver(Driver):
         identity = {"model_env": self.settings.model_env, "mujoco": mujoco.__version__, "simulated": "true"}
         if self.world is not None:
             model = self.world.model
-            identity["model"] = _name(model, 0)
-            identity["joints"] = ", ".join(_name(model, model.name_jntadr[i]) for i in range(model.njnt))
-            identity["actuators"] = ", ".join(_name(model, model.name_actuatoradr[i]) for i in range(model.nu))
+            identity["model"] = _model_name(model)
+            identity["joints"] = ", ".join(_name(model, mujoco.mjtObj.mjOBJ_JOINT, i) for i in range(model.njnt))
+            identity["actuators"] = ", ".join(_name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, i) for i in range(model.nu))
             identity["timestep"] = f"{self.world.timestep:g} s"
         return identity
 
@@ -339,8 +339,8 @@ class MujocoDriver(Driver):
         motion = world.move(phases)
         status = await self._wait(motion)
         goals = {
-            plan.chain[joint]: round(writers[joint].scale.channel(reach[writers[joint].actuator]), 3)
-            for joint in solution.joints
+            plan.chain[joint]: round(writers[joint].scale.channel(gears[joint] * value), 3)
+            for joint, value in solution.joints.items()
         }
         return {"status": status, "to_mm": shown, "goals": goals, "error_mm": round(solution.error_m * 1000, 3)}
 
@@ -364,11 +364,11 @@ class MujocoDriver(Driver):
         read: dict[str, Any] = {}
         write: dict[str, Any] = {}
         for joint in range(model.njnt):
-            name = _slug(_name(model, model.name_jntadr[joint]))
+            name = _slug(_name(model, mujoco.mjtObj.mjOBJ_JOINT, joint))
             if name and _scalar(model, joint):
                 read[name] = {"unit": "deg" if model.jnt_type[joint] == mujoco.mjtJoint.mjJNT_HINGE else "mm"}
         for actuator in range(model.nu):
-            name = _slug(_name(model, model.name_actuatoradr[actuator]))
+            name = _slug(_name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, actuator))
             joint = int(model.actuator_trnid[actuator][0])
             if not name or model.actuator_trntype[actuator] != mujoco.mjtTrn.mjTRN_JOINT or not _scalar(model, joint):
                 continue
@@ -379,7 +379,7 @@ class MujocoDriver(Driver):
                 entry |= {"min": round(span[0] * factor, 1), "max": round(span[1] * factor, 1)}
             write[f"{name[:42]}_goal"] = entry
         return {
-            "device": {"name": f"{_name(model, 0) or 'MuJoCo model'} (simulated)"},
+            "device": {"name": f"{_model_name(model) or 'MuJoCo model'} (simulated)"},
             "read": read,
             "write": write,
             "actions": {"hold": {"description": "Hold every actuator where it is.", "suggested": True}},
@@ -418,7 +418,9 @@ def _native_unit(model: Any, joint: int) -> str:
 def _joint_unit(model: Any, joint: int, where: str) -> tuple[str, tuple[float, float] | None]:
     """A joint's own unit, rad for a hinge and m for a slide, and its range when it has one."""
     if not _scalar(model, joint):
-        raise DriverError(f"{where}: {_name(model, model.name_jntadr[joint])} is a free or ball joint. Read a body.")
+        raise DriverError(
+            f"{where}: {_name(model, mujoco.mjtObj.mjOBJ_JOINT, joint)} is a free or ball joint. Read a body."
+        )
     span = (float(model.jnt_range[joint][0]), float(model.jnt_range[joint][1])) if model.jnt_limited[joint] else None
     return _native_unit(model, joint), span
 
@@ -441,9 +443,13 @@ def _joint_limits(model: Any, joint: int, writer: Writer, gear: float) -> tuple[
     return low, high
 
 
-def _name(model: Any, address: int) -> str:
-    raw = bytes(model.names[address:])
-    return raw.split(b"\0", 1)[0].decode("utf-8", errors="replace")
+def _name(model: Any, kind: Any, index: int) -> str:
+    return str(mujoco.mj_id2name(model, kind, index) or "")
+
+
+def _model_name(model: Any) -> str:
+    """The model's own name, the first entry in MuJoCo's names buffer."""
+    return bytes(model.names).split(b"\0", 1)[0].decode("utf-8", errors="replace")
 
 
 def _slug(name: str) -> str:

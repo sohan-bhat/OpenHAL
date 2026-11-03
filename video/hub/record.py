@@ -396,7 +396,6 @@ async def record(cache: Path, home: Path) -> dict[str, Any]:
             async with rig.serving(home) as (hub, url):
                 driver = hub.kernel.devices["arm"].driver
                 expect(isinstance(driver, MujocoDriver) and hub.kernel.devices["arm"].connected, "the arm is down")
-                assert isinstance(driver, MujocoDriver)
                 async with AsyncClient(url, person, use_human_token_file=False) as owner:
                     token = (await owner.create_token(AGENT, kind="agent", scope="control_medium")).token
                     async with rig.mcp_session(url, token, home) as agent:

@@ -141,17 +141,12 @@ class ActionMap(BaseModel):
         return self
 
 
-def problems(exc: ValidationError) -> str:
-    return "; ".join(
-        f"{'.'.join(str(part) for part in error['loc']) or 'map'}: {error['msg']}" for error in exc.errors()
-    )
-
-
 def validate(model: type[BaseModel], raw: dict[str, Any], where: str) -> Any:
     try:
         return model.model_validate(raw)
     except ValidationError as exc:
-        raise DriverError(f"{where}.map is not valid for the mujoco driver ({problems(exc)}).") from exc
+        problems = "; ".join(f"{'.'.join(str(p) for p in e['loc']) or 'map'}: {e['msg']}" for e in exc.errors())
+        raise DriverError(f"{where}.map is not valid for the mujoco driver ({problems}).") from exc
 
 
 def default_loader(variable: str) -> ModelLoader:
