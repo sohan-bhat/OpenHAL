@@ -42,9 +42,12 @@ interface Weight {
  * type became IBM Plex. Plex Mono comes as one file per weight, so a page that shows bold or
  * semibold code loads a second mono subset of 7.9 or 8.6 KB, and the Plex Sans subset is 1.7 KB
  * larger than the face before it.
+ * The home page was set again the same way when How it works became a static chart, because the
+ * scroll story, its Motion runtime, the smooth scrolling and its switch left the page, which took
+ * the page to 14.97 KB of HTML, 19.17 KB of CSS, 1.66 KB of JavaScript and 25.6 KB of fonts.
  */
 const BUDGETS: Record<string, { path: string } & Weight> = {
-  home: { path: "/", html: 16_600, css: 22_900, js: 14_000, fonts: 36_900 },
+  home: { path: "/", html: 16_500, css: 21_100, js: 1_800, fonts: 28_200 },
   "docs index": { path: "/docs/", html: 16_400, css: 20_300, js: 1_700, fonts: 19_600 },
   "guide page": { path: "/docs/quickstart/", html: 21_000, css: 20_300, js: 3_200, fonts: 34_500 },
   "example page": { path: "/docs/examples/3d-print-watch/", html: 24_200, css: 22_400, js: 4_400, fonts: 36_900 },

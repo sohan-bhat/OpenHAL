@@ -27,9 +27,8 @@ test.describe("overview", () => {
     expect(errors).toEqual([]);
   });
 
-  test("shows the recorded refusal in How it works, and the hub's own words on the full example", async ({ page }) => {
+  test("keeps the message trace off the home page, and shows the hub's own words on the full example", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".how-step").nth(1).locator(".how-answer")).toHaveText(firstError.data.name);
     await expect(page.locator("main .trace")).toHaveCount(0);
     await page.goto("/docs/examples/3d-print-watch/");
     await expect(page.locator(".messages")).toContainText(firstError.message);

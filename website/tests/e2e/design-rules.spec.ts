@@ -127,7 +127,7 @@ test.describe("driver counts", () => {
 });
 
 test.describe("the search index", () => {
-  test("leaves the diagrams' state text out of the home page's entry", async ({ page }) => {
+  test("leaves the hero's labels out of the home page's entry", async ({ page }) => {
     await page.goto("/drivers/");
     await page.keyboard.press("Control+k");
     await page.getByRole("dialog", { name: "Search" }).getByRole("combobox").fill("Interlocks");
@@ -137,8 +137,8 @@ test.describe("the search index", () => {
     const ignored = await page.evaluate(async () => {
       const html = await (await fetch("/")).text();
       const doc = new DOMParser().parseFromString(html, "text/html");
-      const stage = doc.querySelectorAll(".how-figure, .how-count");
-      return stage.length > 0 && [...stage].every((el) => el.closest("[data-pagefind-ignore]"));
+      const labels = doc.querySelectorAll(".hero-spell");
+      return labels.length > 0 && [...labels].every((el) => el.closest("[data-pagefind-ignore]"));
     });
     expect(ignored).toBe(true);
   });
@@ -147,7 +147,7 @@ test.describe("the search index", () => {
 /**
  * Every place the page paints the pink accent or the blue of pending, read from the computed
  * styles of every element and its ::before and ::after, with the role each place plays. Anything
- * else is reported by its tag and class. How it works is left to how.spec.ts.
+ * else is reported by its tag and class.
  */
 const accents = (page: Page) =>
   page.evaluate(() => {
@@ -172,7 +172,7 @@ const accents = (page: Page) =>
       return { any: style.backgroundColor === color || border || Boolean(text) || style.boxShadow.includes(color) || style.backgroundImage.includes(color) || style.stroke === color || style.fill === color, back: style.backgroundColor === color };
     };
     for (const element of document.querySelectorAll<HTMLElement | SVGElement>("body *")) {
-      if (!element.checkVisibility({ visibilityProperty: true }) || element.closest(".how")) continue;
+      if (!element.checkVisibility({ visibilityProperty: true })) continue;
       for (const pseudo of [null, "::before", "::after"] as const) {
         const style = getComputedStyle(element, pseudo);
         if (pseudo && (style.content === "none" || style.content === "normal")) continue;

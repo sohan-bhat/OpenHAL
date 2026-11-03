@@ -95,17 +95,8 @@ for (const scheme of ["light", "dark"] as const) {
       problems.push(...(await violations(page)).map((item) => `library empty ${item}`));
 
       await page.goto("/");
-      await page.evaluate(() => {
-        const how = document.querySelector<HTMLElement>("[data-how]")!;
-        window.scrollTo(0, how.offsetTop + how.offsetHeight / 2);
-      });
-      await page.waitForTimeout(400);
-      problems.push(...(await violations(page)).map((item) => `how it works mid scroll ${item}`));
-
-      await page.emulateMedia({ reducedMotion: "reduce" });
-      await page.goto("/");
-      problems.push(...(await violations(page)).map((item) => `how it works as panels ${item}`));
-      await page.emulateMedia({ reducedMotion: "no-preference" });
+      await page.locator("#how .how-chart").scrollIntoViewIfNeeded();
+      problems.push(...(await violations(page)).map((item) => `how it works ${item}`));
 
       await page.goto("/docs/examples/3d-print-watch/");
       await page.getByRole("button", { name: "Next step" }).click();

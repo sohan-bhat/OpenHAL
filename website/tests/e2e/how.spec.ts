@@ -1,293 +1,70 @@
 import { expect, test, type Page } from "@playwright/test";
-import { APPROVED, CAPTIONS, howSteps, type Reply } from "../../src/lib/story/how";
+import { HOW_CHART, chartLead, pathText } from "../../src/lib/story/how";
 
-const steps = howSteps();
-const flat = (text: string) => text.replace(/\s+/g, " ").trim();
-
-/** Scrolls to the point of How it works where step `step` (from 1) is `along` of the way through, along the run the steps play over. */
-async function howAt(page: Page, step: number, along: number): Promise<void> {
-  await page.evaluate(
-    ([at, count]) => {
-      const track = document.querySelector<HTMLElement>(".how-track")!;
-      const run = document.querySelector<HTMLElement>(".how-run")!;
-      const header = document.querySelector<HTMLElement>("header.header")?.offsetHeight ?? 0;
-      let top = 0;
-      for (let el: HTMLElement | null = track; el; el = el.offsetParent as HTMLElement | null) top += el.offsetTop;
-      const distance = (run.offsetHeight || track.offsetHeight) - (window.innerHeight - header);
-      window.scrollTo({ top: top - header + (at / count) * distance, behavior: "instant" });
-    },
-    [step - 1 + along, steps.length] as const,
+/** The chart image a person sees, its file and whether the file loaded. */
+const seen = (page: Page) =>
+  page.locator("#how .how-chart img").evaluateAll((images) =>
+    images
+      .filter((img) => (img as HTMLImageElement).getClientRects().length > 0)
+      .map((img) => {
+        const image = img as HTMLImageElement;
+        const box = image.getBoundingClientRect();
+        return { file: new URL(image.currentSrc).pathname.split("/").pop(), loaded: image.complete && image.naturalWidth > 0, left: box.left, right: box.right, width: box.width };
+      }),
   );
-  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-  await page.waitForTimeout(400);
+
+async function showChart(page: Page): Promise<void> {
+  await page.locator("#how .how-chart").scrollIntoViewIfNeeded();
+  await expect.poll(async () => (await seen(page)).every((image) => image.loaded) && (await seen(page)).length === 1).toBe(true);
 }
 
-const shown = (page: Page, selector: string) =>
-  page.evaluate(
-    (query) =>
-      [...document.querySelectorAll<HTMLElement>(query)]
-        .filter((el) => {
-          for (let node: HTMLElement | null = el; node && !node.matches("[data-how]"); node = node.parentElement) if (Number(getComputedStyle(node).opacity) < 0.9) return false;
-          return el.getClientRects().length > 0;
-        })
-        .map((el) => el.textContent!.replace(/\s+/g, " ").trim()),
-    selector,
-  );
-
-/** The lifelines and arrows of one step's diagram, in px from the left of the page, and how far each arrow has drawn. */
-const geometry = (page: Page, index: number) =>
-  page.evaluate((at) => {
-    const step = document.querySelectorAll<HTMLElement>(".how-step")[at];
-    const middle = (el: Element) => el.getBoundingClientRect().left + el.getBoundingClientRect().width / 2;
-    const x = Object.fromEntries([...step.querySelectorAll<HTMLElement>(".how-life")].map((el) => [el.dataset.line!, middle(el)]));
-    const legs = [...step.querySelectorAll<HTMLElement>(".how-leg")].map((el) => {
-      const box = el.getBoundingClientRect();
-      const stroke = el.querySelector<HTMLElement>(".how-line, .how-dash")!;
-      const drawn = stroke.getBoundingClientRect().width / Math.max(1, stroke.offsetWidth);
-      const clip = getComputedStyle(stroke).clipPath;
-      const hidden = clip.startsWith("inset") ? parseFloat(clip.replace(/^inset\(/, "").split(" ")[3] ?? "0") / 100 : 0;
-      return {
-        row: Number(el.dataset.row),
-        from: el.dataset.from!,
-        to: el.dataset.to!,
-        left: box.left,
-        right: box.right,
-        dashed: stroke.classList.contains("how-dash"),
-        drawn: stroke.classList.contains("how-dash") ? 1 - hidden : drawn,
-        tip: Number(getComputedStyle(el.querySelector(".how-tip")!).opacity),
-        color: getComputedStyle([...el.querySelectorAll<HTMLElement>(".how-ink")].filter((layer) => Number(getComputedStyle(layer).opacity) > 0.5).pop() ?? el).color,
-      };
-    });
-    return { x, legs };
-  }, index);
-
-/** Where each row of one step's diagram crosses the lifelines, its arrow line or its label's middle, and where the lifelines start and end, in px from the top of the window. */
-const rows = (page: Page, index: number) =>
-  page.evaluate((at) => {
-    const step = document.querySelectorAll<HTMLElement>(".how-step")[at];
-    const life = step.querySelector<HTMLElement>(".how-life")!.getBoundingClientRect();
-    const found = new Map<number, number>();
-    for (const el of step.querySelectorAll<HTMLElement>(".how-leg, .how-mark")) {
-      const box = el.getBoundingClientRect();
-      found.set(Number(el.dataset.row), box.top + box.height / 2);
-    }
-    return { top: life.top, bottom: life.bottom, at: [...found.entries()].sort(([a], [b]) => a - b).map(([, y]) => y) };
-  }, index);
-
-const tokens = (page: Page) =>
-  page.evaluate(() => {
-    const probe = document.createElement("span");
-    document.body.append(probe);
-    const resolve = (name: string) => {
-      probe.style.color = `var(${name})`;
-      return getComputedStyle(probe).color;
-    };
-    const out = { ok: resolve("--ok"), confirm: resolve("--confirm"), blocked: resolve("--blocked"), accent: resolve("--accent"), past: resolve("--text-2") };
-    probe.remove();
-    return out;
-  });
-
-const FORMS = [
-  { width: 1440, height: 900 },
-  { width: 1366, height: 641 },
-  { width: 1024, height: 768 },
-  { width: 768, height: 1024 },
-  { width: 390, height: 844 },
-  { width: 390, height: 664 },
-  { width: 360, height: 700 },
-];
-
 test.describe("How it works", () => {
-  test.use({ viewport: { width: 1440, height: 900 } });
-
-  for (const form of FORMS) {
-    test(`pins under the header, shows one step at a time and fits the screen, at ${form.width} by ${form.height}`, async ({ page }) => {
-      await page.setViewportSize(form);
-      await page.goto("/");
-      const how = page.locator("[data-how]");
-      await expect(how).toHaveAttribute("data-motion", "");
-      const places: string[] = [];
-      for (const [index, step] of steps.entries()) {
-        await howAt(page, index + 1, 0.5);
-        const where = `${form.width}x${form.height} step ${index + 1}`;
-        await expect(how, where).toHaveAttribute("data-step", String(index + 1));
-        const header = await page.locator("header.header").evaluate((el) => el.getBoundingClientRect().bottom);
-        const stage = (await page.locator(".how-stage").boundingBox())!;
-        expect(Math.abs(stage.y - header), where).toBeLessThan(1);
-        expect(stage.y + stage.height, where).toBeLessThanOrEqual(form.height + 1);
-        expect(await shown(page, ".how-caption"), where).toEqual([flat(step.caption)]);
-        expect(await shown(page, ".how-count > *"), where).toEqual([`${index + 1} / ${steps.length}`]);
-        const drawn = await rows(page, index);
-        expect(drawn.at.length, where).toBe(step.rows.length);
-        expect(drawn.at[0] - drawn.top, `${where} starts the first arrow near the top of the lifelines`).toBeLessThan(48);
-        const pitches = drawn.at.slice(1).map((y, place) => y - drawn.at[place]);
-        for (const pitch of pitches) expect(Math.abs(pitch - pitches[0]), `${where} spaces the arrows evenly`).toBeLessThan(3);
-        expect(Math.max(...pitches), `${where} leaves no wide band between arrows`).toBeLessThan(80);
-        expect(drawn.bottom - drawn.at[drawn.at.length - 1], `${where} leaves no band under the last arrow`).toBeLessThan(36);
-        expect(drawn.bottom, where).toBeLessThanOrEqual(stage.y + stage.height);
-        places.push(JSON.stringify(await page.locator(".how-step").nth(index).locator(".how-head, .how-life").evaluateAll((items) => items.map((el) => [Math.round(el.getBoundingClientRect().x), Math.round(el.getBoundingClientRect().y)]))));
-      }
-      expect(new Set(places).size, "the diagram stays in one place from step to step").toBe(1);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(form.width);
-    });
+  for (const scheme of ["light", "dark"] as const) {
+    for (const form of [
+      { width: 1440, height: 900, shape: "wide" },
+      { width: 768, height: 1024, shape: "narrow" },
+      { width: 390, height: 844, shape: "narrow" },
+      { width: 360, height: 700, shape: "narrow" },
+    ]) {
+      test(`shows the ${form.shape} chart in the ${scheme} theme at ${form.width} px, inside the screen`, async ({ page }) => {
+        await page.emulateMedia({ colorScheme: scheme });
+        await page.setViewportSize({ width: form.width, height: form.height });
+        await page.goto("/");
+        await showChart(page);
+        const [image] = await seen(page);
+        expect(image.file).toBe(`how-it-works-${form.shape}-${scheme}.png`);
+        expect(image.left).toBeGreaterThanOrEqual(0);
+        expect(image.right).toBeLessThanOrEqual(form.width);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(form.width);
+      });
+    }
   }
 
-  test("uses the owner's three captions word for word", async ({ page }) => {
+  test("follows the theme picker, not only the system", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.addInitScript(() => localStorage.setItem("starlight-theme", "dark"));
     await page.goto("/");
-    const captions = await page.locator(".how-caption").allTextContents();
-    expect(captions.map(flat)).toEqual([...CAPTIONS]);
+    await showChart(page);
+    expect((await seen(page))[0].file).toBe("how-it-works-wide-dark.png");
   });
 
-  test("draws each step's request to the lifeline the record says it reached, and the answer back to the agent", async ({ page }) => {
+  test("keeps its heading and names all three paths for screen readers", async ({ page }) => {
     await page.goto("/");
-    const color = await tokens(page);
-    for (const [index, step] of steps.entries()) {
-      await howAt(page, index + 1, 0.97);
-      const { x, legs } = await geometry(page, index);
-      expect(Object.keys(x)).toEqual(["agent", "hub", "printer"]);
-      expect(Math.abs(x.hub - x.agent - (x.printer - x.hub))).toBeLessThan(2);
-      const where = `step ${index + 1}`;
-      for (const [place, row] of step.rows.entries()) {
-        if (row.kind === "mark") continue;
-        const drawn = legs.filter((leg) => leg.row === place);
-        if (row.kind === "request") {
-          expect(drawn.map((leg) => `${leg.from} ${leg.to}`), where).toEqual(row.legs.map((leg) => `${leg.from} ${leg.to}`));
-          for (const [n, leg] of drawn.entries()) {
-            expect(Math.abs(leg.left - x[leg.from]), `${where} ${leg.from}`).toBeLessThan(2);
-            expect(Math.abs(leg.right - x[leg.to]), `${where} ${leg.to}`).toBeLessThan(2);
-            expect(leg.dashed, where).toBe(false);
-            expect(leg.drawn, where).toBeGreaterThan(0.98);
-            expect(leg.tip, where).toBeGreaterThan(0.9);
-            expect(leg.color, `${where} draws the current request in the accent and an earlier one muted`).toBe(row.past ? color.past : color.accent);
-          }
-        } else {
-          const [reply] = drawn;
-          const answer = row as Reply;
-          expect(Math.abs(reply.left - x.agent), where).toBeLessThan(2);
-          expect(Math.abs(reply.right - x[answer.from]), where).toBeLessThan(2);
-          expect(reply.dashed, where).toBe(true);
-          expect(reply.drawn, where).toBeGreaterThan(0.98);
-          expect(reply.color, where).toBe(color[answer.tone]);
-        }
-      }
-      expect(await shown(page, `.how-step:nth-child(${index + 1}) .how-answer > span`), where).toEqual(step.rows.flatMap((row) => (row.kind === "reply" ? [row.answer] : [])));
-      expect(await shown(page, `.how-step:nth-child(${index + 1}) .how-rule > span`), where).toEqual([flat(step.rule.text)]);
-      expect(await shown(page, `.how-step:nth-child(${index + 1}) .how-printer dd > span`), where).toEqual(step.readings.map((reading) => flat(reading.changes.at(-1)?.value ?? reading.value)));
-    }
-    expect(await shown(page, ".how-step:nth-child(3) .how-label > span")).toEqual(["cancel", "cancel"]);
-    expect(await shown(page, ".how-step:nth-child(3) .how-mark > span")).toEqual([APPROVED]);
-    const hub = (await geometry(page, 2)).x.hub;
-    const mark = (await page.locator(".how-step:nth-child(3) .how-mark > span").boundingBox())!;
-    expect(Math.abs(mark.x + mark.width / 2 - hub)).toBeLessThan(2);
+    await expect(page.getByRole("heading", { level: 2, name: "How it works" })).toBeVisible();
+    const caption = page.locator("#how figcaption");
+    await expect(caption.locator("p")).toHaveText(chartLead());
+    await expect(caption.locator("li")).toHaveText(HOW_CHART.paths.map(pathText));
+    await expect(page.locator("#how .how-chart img")).toHaveCount(2);
+    for (const img of await page.locator("#how .how-chart img").all()) await expect(img).toHaveAttribute("alt", "");
   });
 
-  test("shows pending, then the approval at the hub, then the cancel and done, while the nozzle cools", async ({ page }) => {
+  test("stays still, with no pinned stage, Skip or Smooth scrolling switch", async ({ page }) => {
     await page.goto("/");
-    const step = steps[2];
-    const order = step.rows.map((row) => (row.kind === "mark" ? row.shows[0] : row.kind === "request" ? row.shows[0] : row.draws[0]));
-    const seen = async (selector: string) => shown(page, `.how-step:nth-child(3) ${selector}`);
-    await howAt(page, 3, (order[1] + order[2]) / 2);
-    expect(await seen(".how-answer > span")).toEqual(["pending"]);
-    expect(await seen(".how-mark > span")).toEqual([]);
-    const mark = step.rows[2];
-    await howAt(page, 3, (mark.kind === "mark" ? mark.shows[0] + mark.shows[1] + order[3] : 0) / 2);
-    expect(await seen(".how-mark > span")).toEqual([APPROVED]);
-    expect(await seen(".how-label > span")).toEqual(["cancel"]);
-    const nozzle = step.readings.find((reading) => reading.name === "Nozzle")!;
-    const values: string[] = [];
-    for (const at of [0.5, ...nozzle.changes.map((change) => change.at[0] + change.at[1] + 0.01)]) {
-      await howAt(page, 3, at);
-      values.push((await seen(".how-printer div:first-child dd > span"))[0]);
-    }
-    expect(values).toEqual([nozzle.value, ...nozzle.changes.map((change) => change.value)].map(flat));
+    await expect(page.getByRole("switch", { name: "Smooth scrolling" })).toHaveCount(0);
+    await expect(page.locator("#how").getByRole("link", { name: /Skip/ })).toHaveCount(0);
+    expect(await page.locator("#how *").evaluateAll((items) => items.filter((el) => ["sticky", "fixed"].includes(getComputedStyle(el).position)).length)).toBe(0);
+    await expect(page.locator("#how script, #how + script")).toHaveCount(0);
   });
-
-  test("starts each step with nothing drawn, and plays back the same way it plays forward", async ({ page }) => {
-    await page.goto("/");
-    const forward: string[] = [];
-    for (const [index, step] of steps.entries()) {
-      await howAt(page, index + 1, 0.04);
-      const { legs } = await geometry(page, index);
-      for (const leg of legs) expect(leg.drawn, `step ${index + 1}`).toBeLessThan(0.02);
-      expect(await shown(page, `.how-step:nth-child(${index + 1}) .how-answer > span`)).toEqual([]);
-      const before = step.readings.map((reading) => flat(reading.value));
-      expect(await shown(page, `.how-step:nth-child(${index + 1}) .how-printer dd > span`)).toEqual(before);
-      await howAt(page, index + 1, 0.6);
-      forward.push(JSON.stringify(await geometry(page, index)));
-    }
-    await howAt(page, 3, 1);
-    const backward: string[] = [];
-    for (const index of [2, 1, 0]) {
-      await howAt(page, index + 1, 0.6);
-      backward.unshift(JSON.stringify(await geometry(page, index)));
-    }
-    expect(backward).toEqual(forward);
-  });
-
-  test("keeps every caption at the top of one slot, so the diagram never moves", async ({ page }) => {
-    for (const viewport of [{ width: 1440, height: 900 }, { width: 768, height: 1024 }, { width: 390, height: 844 }, { width: 360, height: 700 }]) {
-      await page.setViewportSize(viewport);
-      await page.goto("/");
-      const found = new Set<string>();
-      for (const index of steps.keys()) {
-        await howAt(page, index + 1, 0.5);
-        found.add(
-          JSON.stringify(
-            await page
-              .locator(".how-step")
-              .nth(index)
-              .evaluate((step) => {
-                const caption = step.querySelector(".how-caption")!.getBoundingClientRect();
-                const figure = step.querySelector(".how-figure")!.getBoundingClientRect();
-                const line = parseFloat(getComputedStyle(step.querySelector(".how-caption")!).lineHeight);
-                return { top: Math.round(caption.top), slot: Math.round(caption.height), figure: Math.round(figure.top), fits: Math.round(step.querySelector(".how-caption")!.scrollHeight / line) <= Math.round(caption.height / line) };
-              }),
-          ),
-        );
-      }
-      expect([...found].length, `${viewport.width}`).toBe(1);
-      expect(JSON.parse([...found][0]).fits).toBe(true);
-    }
-  });
-
-  test("lets a person skip it, and scrolling past it never stops", async ({ page }) => {
-    await page.goto("/");
-    await howAt(page, 1, 0.5);
-    await page.getByRole("link", { name: "Skip the three steps" }).click();
-    await expect(page).toHaveURL(/#safe$/);
-    await expect(page.locator("#safe-title")).toBeInViewport();
-    await page.keyboard.press("Home");
-    await page.waitForTimeout(300);
-    await page.keyboard.press("End");
-    await page.waitForTimeout(300);
-    expect(await page.evaluate(() => Math.abs(window.scrollY + innerHeight - document.documentElement.scrollHeight))).toBeLessThan(2);
-    await howAt(page, 3, 1);
-    const gap = await page.evaluate(() => document.querySelector(".how-onward")!.getBoundingClientRect().top - document.querySelector(".how-stage")!.getBoundingClientRect().bottom);
-    expect(gap).toBeGreaterThanOrEqual(-0.5);
-    expect(gap).toBeLessThan(48);
-  });
-
-  for (const form of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
-    test(`slides the content after it over the stage, so no caption line passes under the header, at ${form.width} px`, async ({ page }) => {
-      await page.setViewportSize(form);
-      await page.goto("/");
-      await howAt(page, 3, 1);
-      const header = await page.locator("header.header").evaluate((el) => el.getBoundingClientRect().bottom);
-      const start = await page.evaluate(() => window.scrollY);
-      for (let moved = 0; moved <= form.height; moved += 40) {
-        await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), start + moved);
-        await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-        const seen = await page.evaluate(() => {
-          const stage = document.querySelector<HTMLElement>(".how-stage")!;
-          const caption = document.querySelector<HTMLElement>(".how-step:nth-child(3) .how-caption")!.getBoundingClientRect();
-          const cover = document.querySelector<HTMLElement>(".how-onward")!.getBoundingClientRect();
-          return { visible: getComputedStyle(stage).visibility === "visible", caption: caption.top, cover: cover.top };
-        });
-        if (seen.visible && seen.cover > seen.caption) expect(seen.caption, `${moved} px past the last step`).toBeGreaterThanOrEqual(header - 0.5);
-      }
-      await expect(page.locator("#safe-title")).toBeInViewport();
-    });
-  }
 
   test("ends with a link to the full example", async ({ page }) => {
     await page.goto("/");
@@ -295,147 +72,5 @@ test.describe("How it works", () => {
     await expect(link).toHaveAttribute("href", "/docs/examples/3d-print-watch/");
     await link.click();
     await expect(page.locator("h1")).toHaveText("Example: an agent watching a 3D print");
-  });
-
-  test("changes no layout while it plays, once each step has shown", async ({ page, browserName }) => {
-    test.skip(browserName !== "chromium", "layout counters are a Chromium API");
-    await page.goto("/");
-    for (const step of [1, 2, 3, 1]) await howAt(page, step, 0.5);
-    await howAt(page, 1, 0);
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send("Performance.enable");
-    const layouts = async () => (await cdp.send("Performance.getMetrics")).metrics.find((metric) => metric.name === "LayoutCount")!.value;
-    const before = await layouts();
-    for (let at = 0; at <= 3; at += 0.25) await howAt(page, Math.floor(at) + 1, at - Math.floor(at));
-    expect(await layouts()).toBe(before);
-  });
-
-  for (const scheme of ["light", "dark"] as const) {
-    test(`draws no box, shadow or tinted area on the stage, in the ${scheme} theme`, async ({ page }) => {
-      await page.emulateMedia({ colorScheme: scheme });
-      for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 664 }]) {
-        await page.setViewportSize(viewport);
-        await page.goto("/");
-        await howAt(page, 3, 0.97);
-        const boxes = await page.evaluate(() => {
-          const out: string[] = [];
-          const bg = getComputedStyle(document.body).backgroundColor;
-          for (const el of document.querySelectorAll<HTMLElement>(".how-stage *")) {
-            if (el.closest(".smooth") || !el.getClientRects().length) continue;
-            const style = getComputedStyle(el);
-            const box = el.getBoundingClientRect();
-            const stroke = box.width <= 2.5 || box.height <= 2.5 || (box.width <= 8 && box.height <= 8);
-            const name = `${el.tagName.toLowerCase()}.${String(el.getAttribute("class") ?? "").replace(/\s+/g, ".")}`;
-            for (const side of ["top", "right", "bottom", "left"]) if (parseFloat(style.getPropertyValue(`border-${side}-width`)) > 0) out.push(`${name} has a ${side} border`);
-            if (style.boxShadow !== "none") out.push(`${name} has a shadow`);
-            if (!stroke && style.backgroundColor !== "rgba(0, 0, 0, 0)" && style.backgroundColor !== bg) out.push(`${name} has a ${style.backgroundColor} background`);
-          }
-          return out;
-        });
-        expect(boxes, `${viewport.width}`).toEqual([]);
-      }
-    });
-  }
-
-  test("keeps every word on the stage at 13 px or more and inside a phone's screen", async ({ page }) => {
-    for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 390, height: 664 }, { width: 360, height: 700 }]) {
-      await page.setViewportSize(viewport);
-      await page.goto("/");
-      for (const index of steps.keys()) {
-        await howAt(page, index + 1, 0.97);
-        const found = await page.locator(".how-step").nth(index).evaluate((step, width) => {
-          let least = Infinity;
-          let outside = 0;
-          const walker = document.createTreeWalker(step, NodeFilter.SHOW_TEXT);
-          for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-            const parent = node.parentElement!;
-            if (!node.textContent!.trim() || !parent.getClientRects().length) continue;
-            least = Math.min(least, parseFloat(getComputedStyle(parent).fontSize));
-            const range = document.createRange();
-            range.selectNodeContents(node);
-            const box = range.getBoundingClientRect();
-            if (box.left < 0 || box.right > width) outside++;
-          }
-          return { least, outside };
-        }, viewport.width);
-        expect(found.least, `${viewport.width}`).toBeGreaterThanOrEqual(13);
-        expect(found.outside, `${viewport.width} step ${index + 1}`).toBe(0);
-      }
-    }
-  });
-
-  test("with reduced motion shows the three steps as still panels, one under another, each drawn in full", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/");
-    const how = page.locator("[data-how]");
-    await expect(how).not.toHaveAttribute("data-motion");
-    const panels = page.locator(".how-step");
-    await expect(panels).toHaveCount(steps.length);
-    const tops = await panels.evaluateAll((items) => items.map((el) => el.getBoundingClientRect().top));
-    for (let index = 1; index < tops.length; index++) expect(tops[index]).toBeGreaterThan(tops[index - 1] + 200);
-    for (const [index, step] of steps.entries()) {
-      expect(flat((await panels.nth(index).locator(".how-caption").textContent())!)).toBe(step.caption);
-      const { legs } = await geometry(page, index);
-      for (const leg of legs) {
-        expect(leg.drawn, `step ${index + 1}`).toBeGreaterThan(0.98);
-        expect(leg.tip, `step ${index + 1}`).toBeGreaterThan(0.9);
-      }
-      expect(await shown(page, `.how-step:nth-child(${index + 1}) .how-printer dd > span`)).toEqual(step.readings.map((reading) => flat(reading.changes.at(-1)?.value ?? reading.value)));
-    }
-    await expect(page.locator(".how-count")).toBeHidden();
-    expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
-  });
-
-  test("on a screen too short for the stage shows the still panels", async ({ page }) => {
-    await page.setViewportSize({ width: 1024, height: 560 });
-    await page.goto("/");
-    await expect(page.locator("[data-how]")).not.toHaveAttribute("data-motion");
-    await expect(page.locator(".how-step").first()).toBeVisible();
-  });
-});
-
-test.describe("smooth scrolling", () => {
-  test("is a switch that is on by default, turns off and remembers it", async ({ page }) => {
-    await page.goto("/");
-    const toggle = page.getByRole("switch", { name: "Smooth scrolling" });
-    await expect(toggle).toBeVisible();
-    await expect(toggle).toHaveAttribute("aria-checked", "true");
-    await toggle.focus();
-    await page.keyboard.press("Space");
-    await expect(toggle).toHaveAttribute("aria-checked", "false");
-    await page.reload();
-    await expect(page.getByRole("switch", { name: "Smooth scrolling" })).toHaveAttribute("aria-checked", "false");
-    await page.getByRole("switch", { name: "Smooth scrolling" }).click();
-    await expect(page.getByRole("switch", { name: "Smooth scrolling" })).toHaveAttribute("aria-checked", "true");
-    await page.reload();
-    await expect(page.getByRole("switch", { name: "Smooth scrolling" })).toHaveAttribute("aria-checked", "true");
-    await page.getByText("Smooth scrolling", { exact: true }).click();
-    await expect(page.getByRole("switch", { name: "Smooth scrolling" })).toHaveAttribute("aria-checked", "false");
-  });
-
-  test("is off under reduced motion", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/");
-    const toggle = page.getByRole("switch", { name: "Smooth scrolling" });
-    await expect(toggle).toHaveAttribute("aria-checked", "false");
-    await expect(toggle).toBeDisabled();
-  });
-
-  test("eases the wheel and leaves keyboard scrolling alone", async ({ page, browserName }) => {
-    test.skip(browserName !== "chromium", "wheel timing is checked in one engine");
-    await page.goto("/");
-    await page.waitForTimeout(2500);
-    await page.mouse.move(700, 450);
-    const start = await page.evaluate(() => window.scrollY);
-    await page.mouse.wheel(0, 400);
-    await page.waitForTimeout(40);
-    const early = await page.evaluate(() => window.scrollY);
-    await page.waitForTimeout(900);
-    const settled = await page.evaluate(() => window.scrollY);
-    expect(early).toBeLessThan(settled);
-    expect(Math.abs(settled - start - 400)).toBeLessThan(6);
-    await page.keyboard.press("End");
-    await page.waitForTimeout(300);
-    expect(await page.evaluate(() => Math.abs(window.scrollY + innerHeight - document.documentElement.scrollHeight))).toBeLessThan(2);
   });
 });
