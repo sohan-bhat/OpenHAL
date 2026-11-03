@@ -1,7 +1,7 @@
 import {Composition, Still} from 'remotion';
 import shotData from '../../scenes/shots/test_pick.json';
 import {Compare, CompareProps} from './Compare';
-import {Film, FilmProps, Storyboard, StoryboardProps} from './film/Film';
+import {Film, FilmProps, Storyboard, StoryboardProps, Thumbnail, ThumbnailProps} from './film/Film';
 import {film} from './film/edit';
 import {TestPick} from './TestPick';
 
@@ -53,6 +53,13 @@ export const RemotionRoot: React.FC = () => (
       width={landscapeWidth}
       height={landscapeHeight}
       defaultProps={{aspect: 'landscape', beat: 1} satisfies StoryboardProps}
+    />
+    <Still
+      id="Thumbnail"
+      component={Thumbnail}
+      width={landscapeWidth}
+      height={landscapeHeight}
+      defaultProps={{beat: 6} satisfies ThumbnailProps}
     />
   </>
 );

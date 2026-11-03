@@ -1,14 +1,18 @@
-"""Cut the film in Remotion from the rendered shots, lay the sound under it and write the previews.
+"""Cut the film in Remotion from the rendered shots, lay the sound under it and write the cuts.
 
     uv run python video/scenes/assemble.py --scale 0.25
     uv run python video/scenes/assemble.py --scale 0.25 --stills
+    uv run python video/scenes/assemble.py --scale 0.6666666667 --crf 14 --out video/out/final
 
 The script copies the fonts and the wordmark into video/out/public, the folder Remotion serves,
-next to the shot videos render_film.py wrote there. Remotion renders the Film and FilmVertical
-compositions without sound. sound.py writes the effects mix, ffmpeg measures it and sets it to
+next to the shot videos render_film.py wrote there. The edit is laid out at 3840 by 2160 and
+--scale sets the output size, so 0.25 gives 960 by 540 and two thirds gives 2560 by 1440.
+Remotion renders the Film and FilmVertical compositions without sound, from PNG frames, tagged
+BT.709. sound.py writes the effects and the music bed, ffmpeg measures the mix and sets it to
 -14 LUFS integrated with true peaks at most -1 dBTP in two loudnorm passes, and the mix is muxed
-under each cut. Every output goes to video/out/preview/. --stills renders the storyboard instead,
-one still per beat, from the 3D stills render_film.py --stills wrote.
+under each cut. Outputs go to --out, video/out/preview/ by default. --stills renders the
+storyboard instead, one still per beat at the same scale, from the 3D stills render_film.py
+--stills wrote at that size, then the YouTube thumbnail and the poster.
 """
 
 from __future__ import annotations
@@ -165,29 +169,42 @@ def main() -> int:
     p.add_argument("--scale", type=float, default=0.25)
     p.add_argument("--aspects", default="landscape,vertical")
     p.add_argument("--stills", action="store_true")
-    p.add_argument("--music", default="")
+    p.add_argument("--music", default="", help="an outside 48 kHz PCM WAV in place of the generated bed")
+    p.add_argument("--out", default=str(PREVIEW))
+    p.add_argument("--crf", type=int, default=18)
+    p.add_argument("--concurrency", type=int, default=1)
+    p.add_argument("--thumbnail-beat", type=int, default=6)
+    p.add_argument("--poster-beat", type=int, default=2)
     opts = p.parse_args()
     public()
-    PREVIEW.mkdir(parents=True, exist_ok=True)
+    target = Path(opts.out).resolve()
+    target.mkdir(parents=True, exist_ok=True)
     edit = json.loads((SCENES / "shots" / "film" / "edit.json").read_text())
     if opts.stills:
         plan = json.loads((SCENES / "film.json").read_text())
+        w, h = edit["resolution"]["landscape"]
+        size = f"{round(w * opts.scale)}x{round(h * opts.scale)}"
         (PUBLIC / "stills").mkdir(parents=True, exist_ok=True)
         for still in plan["stills"]:
-            for aspect in ("landscape",):
-                source = OUT / "stills" / f"{still['shot']}-1920x1080.png"
-                shutil.copy2(source, PUBLIC / "stills" / f"{still['shot']}-{aspect}.png")
+            source = OUT / "stills" / f"{still['shot']}-{size}.png"
+            shutil.copy2(source, PUBLIC / "stills" / f"{still['shot']}-landscape.png")
         bundle()
         beats = [s["storyboard"] for s in plan["stills"]] + [8]
-        for beat in beats:
-            props = json.dumps({"aspect": "landscape", "beat": beat})
+        renders = [
+            ("Storyboard", f"storyboard-{beat}-{size}.png", {"aspect": "landscape", "beat": beat}) for beat in beats
+        ]
+        renders += [
+            ("Thumbnail", f"thumbnail-{size}.png", {"beat": opts.thumbnail_beat}),
+            ("Storyboard", f"poster-{size}.png", {"aspect": "landscape", "beat": opts.poster_beat}),
+        ]
+        for composition, name, props in renders:
             remotion(
                 "still",
                 [
-                    "Storyboard",
-                    str(PREVIEW / f"storyboard-{beat}-1920x1080.png"),
-                    f"--props={props}",
-                    "--scale=0.5",
+                    composition,
+                    str(target / name),
+                    f"--props={json.dumps(props)}",
+                    f"--scale={opts.scale}",
                     "--timeout=300000",
                 ],
             )
@@ -213,11 +230,14 @@ def main() -> int:
                 str(silent),
                 f"--scale={opts.scale}",
                 "--muted",
-                "--crf=18",
+                f"--crf={opts.crf}",
+                "--image-format=png",
+                "--color-space=bt709",
+                f"--concurrency={opts.concurrency}",
                 "--timeout=300000",
             ],
         )
-        final = PREVIEW / f"openhal-film-{aspect}-{size}.mp4"
+        final = target / f"openhal-film-{aspect}-{size}.mp4"
         run(
             [
                 str(FFMPEG),

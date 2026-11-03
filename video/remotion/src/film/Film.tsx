@@ -1,5 +1,5 @@
-import {AbsoluteFill, Img, OffthreadVideo, Sequence, staticFile} from 'remotion';
-import {EndCard, SceneWordmark} from './EndCard';
+import {AbsoluteFill, Img, OffthreadVideo, Sequence, staticFile, useVideoConfig} from 'remotion';
+import {EndCard, SceneWordmark, Wordmark} from './EndCard';
 import {Aspect, COLORS, Item, Label, card, film, stills} from './edit';
 import {LabelView} from './Label';
 
@@ -60,6 +60,18 @@ export const Storyboard: React.FC<StoryboardProps> = ({aspect, beat}) => {
       <Img src={staticFile(`stills/${still.shot}-${aspect}.png`)} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
       {item?.wordmark !== undefined && beat === item.storyboard ? <SceneWordmark aspect={aspect} still /> : null}
       {label ? <LabelView label={label} aspect={aspect} still /> : null}
+    </AbsoluteFill>
+  );
+};
+
+export type ThumbnailProps = {beat: number};
+
+export const Thumbnail: React.FC<ThumbnailProps> = ({beat}) => {
+  const {width, height} = useVideoConfig();
+  return (
+    <AbsoluteFill>
+      <Storyboard aspect="landscape" beat={beat} />
+      <Wordmark height={210} style={{position: 'absolute', left: 0.07 * width, top: 0.1 * height}} />
     </AbsoluteFill>
   );
 };
