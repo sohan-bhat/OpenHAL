@@ -20,3 +20,6 @@ website/.astro/
 /docs/design-rounds/
 
 /qa/
+
+/video/out/
+/video/assets/

@@ -1,0 +1,27 @@
+{
+  "palette": {
+    "backdrop": "#111210",
+    "desk": "#2c2e29",
+    "printed": "#e4e1d9",
+    "servo": "#151614",
+    "cable": "#1a1b19",
+    "cube": "#cbb99f",
+    "accent": "#ff8dcc"
+  },
+  "materials": {
+    "printed": { "roughness": 0.46, "specular": 0.5, "subsurface": 0.0, "bump": 0.035 },
+    "servo": { "roughness": 0.34, "specular": 0.5 },
+    "cable": { "roughness": 0.38, "specular": 0.5, "radius": 0.0016 },
+    "desk": { "roughness": 0.8, "specular": 0.32 },
+    "cube": { "roughness": 0.58, "specular": 0.45, "bevel": 0.0012 }
+  },
+  "desk": { "size": [1.8, 1.1, 0.03], "center": [0.15, 0.12] },
+  "backdrop": { "distance": 1.9, "width": 9.0, "height": 2.4 },
+  "lights": {
+    "key": { "position": [0.15, -0.7, 0.8], "target": [0.15, -0.02, 0.06], "size": [0.7, 0.5], "color": "#fff1e4" },
+    "rim": { "position": [-0.4, 0.55, 0.42], "target": [0.12, -0.02, 0.12], "size": [1.1, 0.16], "color": "#eef2ff" },
+    "fill": { "position": [0.95, -0.25, 0.25], "target": [0.12, -0.02, 0.08], "size": [0.8, 0.8], "color": "#fff4ea" },
+    "wash": { "position": [0.0, 0.3, 1.2], "target": [-0.6, 1.6, 0.4], "size": [1.2, 0.5], "color": "#ffe9d2" }
+  },
+  "hdri": { "file": "hdri/studio_small_09_2k.hdr", "strength": 0.1, "rotation_deg": 120 }
+}
