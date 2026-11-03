@@ -63,6 +63,12 @@ class Status:
     detail: str = ""
 
 
+def current_uid() -> int:
+    """This person's user id, or 0 on Windows, which has no user ids and runs no background service here."""
+    getuid = getattr(os, "getuid", None)
+    return int(getuid()) if getuid is not None else 0
+
+
 @dataclass
 class Service:
     """One hub service for one person, on one platform."""
@@ -72,7 +78,7 @@ class Service:
     user_home: Path
     config_home: Path
     command: list[str] = field(default_factory=daemon_command)
-    uid: int = field(default_factory=os.getuid)
+    uid: int = field(default_factory=lambda: current_uid())
     user: str = field(default_factory=getpass.getuser)
 
     @property

@@ -76,7 +76,10 @@ async def _run(config: HubConfig) -> None:
     )
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, lambda: setattr(server, "should_exit", True))
+        try:
+            loop.add_signal_handler(sig, lambda: setattr(server, "should_exit", True))
+        except NotImplementedError:
+            signal.signal(sig, lambda *_: setattr(server, "should_exit", True))
     try:
         await server.serve()
     finally:
