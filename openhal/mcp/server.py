@@ -56,7 +56,9 @@ class SetupError(RuntimeError):
 def load_agent_token(token_file: Path | None = None) -> str | None:
     """The agent token, from `--token-file` or `OPENHAL_TOKEN`, or None. The human token file is never used.
 
-    A token file that was named but is missing or empty is a setup mistake and stops the server.
+    A token file that was named but is missing or empty is a setup mistake and stops the server. A
+    client config with an empty token setting can pass its placeholder through unexpanded, such as
+    `${OPENHAL_TOKEN}`, which counts as no token.
     """
     if token_file is not None:
         path = token_file.expanduser()
@@ -64,7 +66,10 @@ def load_agent_token(token_file: Path | None = None) -> str | None:
         if token is None:
             raise SetupError(f"The token file {path} is missing or empty.")
         return token
-    return os.environ.get(TOKEN_ENV, "").strip() or None
+    token = os.environ.get(TOKEN_ENV, "").strip()
+    if token.startswith("${") and token.endswith("}"):
+        return None
+    return token or None
 
 
 def build_server(client: AsyncClient) -> tuple[MCPServer, Tools]:

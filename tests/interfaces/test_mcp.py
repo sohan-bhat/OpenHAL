@@ -269,6 +269,10 @@ def test_agent_token_sources(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, is
     isolated_env.mkdir(parents=True, exist_ok=True)
     (isolated_env / "human.token").write_text("ohal_human\n")
     assert load_agent_token() is None, "the human token file is never an agent token"
+    monkeypatch.setenv("OPENHAL_TOKEN", "${OPENHAL_TOKEN}")
+    assert load_agent_token() is None, "a client's unexpanded placeholder is no token"
+    monkeypatch.setenv("OPENHAL_TOKEN", "${user_config.openhal_token}")
+    assert load_agent_token() is None
     monkeypatch.setenv("OPENHAL_TOKEN", "ohal_agent")
     assert load_agent_token() == "ohal_agent"
     file = tmp_path / "agent.token"
