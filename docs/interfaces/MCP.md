@@ -145,7 +145,7 @@ An agent finds what a hub has with `find`, so a task needs no device id in advan
 | `wait` | `seconds` |
 | `wait_until` | `condition`, `timeout_s`, `interval_s` |
 
-The hub checks the whole run as a plan first and runs nothing when a step would be blocked. Then every command goes through the kernel exactly as a `write` or `action` call does, and the run stops at the first step that isn't done, with the step, the code and the reason. A step that needs a person ends the run with status `pending` and its `request_id`, and the steps after it don't run. A run never approves, unlocks, widens a limit or enables a routine.
+The hub checks the whole run as a plan first and runs nothing when a step would be blocked. After a `wait_until` step, a block that depends on live readings, such as an interlock, is left to the kernel's check when that step runs. Then every command goes through the kernel exactly as a `write` or `action` call does, and the run stops at the first step that isn't done, with the step, the code and the reason. A step that needs a person ends the run with status `pending` and its `request_id`, and the steps after it don't run. A run never approves, unlocks, widens a limit or enables a routine.
 
 A run belongs to the token that started it, so another agent's `get_run` and `cancel_run` find no run by that id. `stop_all`, a person's stop and revoking the token end a run at once. A condition uses the routine expression language with every channel as `device.channel`, such as `<device>.<channel> > 30 degC`. `wait_until` and `sample` hold the call for their duration, so keep them under a minute and put longer waits in a run.
 

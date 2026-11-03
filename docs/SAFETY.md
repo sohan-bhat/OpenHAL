@@ -96,11 +96,11 @@ A file is writable only when a human confirmed its limits (spec section 12). Int
 
 A run sends many commands with timing between them (ADR 0019), so the hub adds these rules, and the kernel still checks each command on its own.
 
-- The hub checks the whole run as a plan first, with each wait moving the simulated clock and a wait for a condition moving it by nothing. When the plan check blocks a step, nothing runs.
+- The hub checks the whole run as a plan first, with each wait moving the simulated clock and a wait for a condition moving it by nothing. When the plan check blocks a step, nothing runs. After a wait for a condition, a block that depends on live readings, such as an interlock, is left to the kernel's check when that command runs.
 - Every write and action in a run goes to the kernel as the principal that started the run, exactly as a single command does, so the rate check measures the time that really passed.
 - The first step that isn't done ends the run. A step that needs confirmation ends the run with the request id, approving the request runs only that command, and the steps after it never run.
 - A run's steps only read, change a channel, run an action or wait. No step approves, unlocks, widens a limit or enables a routine, and a step carries no principal or request id.
-- A stop, a cancel by the run's owner or a person, revoking the owner's token and the time cap each end a run before its next step.
+- A stop, a cancel by the run's owner or a person, revoking the owner's token and the time cap each end a run before its next step. A lower time cap reaches a run that is already going within a second.
 - Another agent can't see or cancel a run. A person sees and cancels every run.
 - `config.yaml` caps the steps per run, the seconds per run, wait or sample, and how many one token has going at once. Only a person changes the caps, and raising one takes the typed phrase `confirm`.
 - The audit log records each run's start and end and every step with the run id, next to the kernel's own entries for each read and command.

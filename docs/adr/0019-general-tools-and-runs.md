@@ -24,14 +24,14 @@ The hub gains four general building blocks, served over REST, the Python client 
 - Every reading goes through `Kernel.read`, so it is a read in the audit log.
 - The checks use the values just read. A failed or unknown reading makes the condition unknown, and an unknown condition never counts as held.
 - No check runs faster than `poll_floor_s`, and a sample takes at most 1000 readings of each channel.
-- A stop ends a wait or a sample at once with status `stopped`.
+- A stop ends a wait or a sample at once with status `stopped`, and a client that closes the connection ends its wait or sample, so no device is read for no one.
 
 ### Runs of steps
 
 `POST /v1/runs` takes a list of steps and an optional repeat count. A step is `read`, `write`, `action`, `wait` or `wait_until`. A write step may carry `increment`, which is added to its number value once for each repeat before it, so one step can step a value.
 
 1. **Caps first.** Steps times repeats must be within `runs.max_steps`, the run's waits within `runs.max_seconds`, and every target and condition must name a real channel.
-2. **Plan check.** Every write and action is evaluated in order with `Kernel.evaluate` on a shadow state, as `plan_check` does, with each wait moving the simulated clock and a `wait_until` moving it by nothing. When the plan check blocks a step, nothing runs and the run ends `blocked` at that step.
+2. **Plan check.** Every write and action is evaluated in order with `Kernel.evaluate` on a shadow state, as `plan_check` does, with each wait moving the simulated clock and a `wait_until` moving it by nothing. When the plan check blocks a step, nothing runs and the run ends `blocked` at that step. After a `wait_until` step the readings can differ from now, so a block whose code depends on live readings (`interlock`, `rate_limited`, `duration_exceeded`, `device_unavailable`) doesn't stop the plan. The run lists those steps in `plan.checked_when_run`, and the kernel checks each one when it runs.
 3. **Execution.** Each write and action goes to `Kernel.execute` as the caller's own principal with `wire=True`, exactly as `/v1/write` and `/v1/action` do. Units, limits, session limits, rate of change against real elapsed time, interlocks, watchdog budgets, scope, grants, the stop lock and confirmations apply to every step.
 4. **The first step that isn't done ends the run.** The run reports the step, the repeat, the code and the reason.
 
@@ -51,7 +51,8 @@ Rules that keep a run inside the kernel's checks.
 - A stop from any principal or the stop button ends every run, wait and sample through the kernel's stop hook. A command in flight at that moment is cancelled by the kernel's own stop path, and the hub applies the safe state again when it returns.
 - A run belongs to the principal that started it. Another agent gets no run by that id from `GET`, `cancel` or the list, and the attempt is in the audit log. A person sees and cancels every run.
 - Revoking a token ends that token's runs, waits and samples.
-- A run ends at `runs.max_seconds` from its start, with a wait or a `wait_until` cut short at that moment.
+- A run, wait or sample ends at `runs.max_seconds` from its start. Pauses sleep in slices of at most 1 s, so a lower cap reaches a job that is already going within a second.
+- A run of only reads and waits runs while the hub is stopped, as `read` and `sample` do, and a run with a command is blocked at the first command with `stopped`.
 - One token has at most `runs.per_agent` runs, waits and samples going at once.
 - The audit log records `run` when a run starts and ends, `run_step` for every step with the run id, `wait_until`, `sample`, `run_cancel` and `run_caps`, next to the kernel's own `read`, `write` and `action` entries.
 - Runs live in the hub's memory. A restart ends them, and the audit log keeps them.
@@ -98,4 +99,5 @@ A notification `runs/ended` with `{ runId, status, stop }` would let a client fo
 
 - An agent can do a task with timing on any device in one call, and every command in it gets the same checks as a single write.
 - `docs/SAFETY.md` states the run guarantees, and the red team covers a write that outruns its rate across repeats, a step after a stop, the time cap, a cancel by another agent and an interlock that fails partway.
-- The plan check counts a `wait_until` as no time, so a plan that needs time to pass for a rate limit adds a `wait` step. This can block a run that would have passed, and never passes one the kernel would block.
+- The plan check counts a `wait_until` as no time, so a plan that needs time to pass for a rate limit adds a `wait` step. After a `wait_until`, a live block is left to the kernel at run time. Neither rule lets a command past the kernel, which checks every command when it runs.
+- Ownership, the per token cap and ending runs on a revoked token go by the principal's label, as the kernel's session limits and the confirmation queue already do, so two tokens with the same name share them.
