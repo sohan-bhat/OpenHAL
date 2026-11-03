@@ -3,7 +3,8 @@
 Token commands use the hub's token routes when the hub has them. When the hub is not running, or is
 older and has no token routes, they work on the hub database in the config folder directly, the same
 way `openhal init` creates the first human token. The config folder is readable by its owner alone, so
-working on the database directly takes the owner's account.
+working on the database directly takes the owner's account. A bare `openhal token` lists the tokens,
+and at a terminal with the human token `revoke` without an id shows a picker (ADR 0020).
 """
 
 from __future__ import annotations
@@ -12,11 +13,14 @@ import typer
 from rich.markup import escape
 from rich.table import Table
 
+from openhal.cli import _choices
+from openhal.cli._choices import Need
 from openhal.cli._common import EXIT_FAILED, config, console, err, fail, handled, hub, print_json, when
+from openhal.cli._pick import Option
 from openhal.client import HubNotRunning, NotSupported
 from openhal.client.models import NewToken, TokenInfo
 
-app = typer.Typer(help="Create, list and revoke tokens for agents and people.", no_args_is_help=True)
+app = typer.Typer(help="Create, list and revoke tokens for agents and people.")
 
 SCOPES = ("read", "control_low", "control_medium")
 
@@ -37,12 +41,22 @@ def _note_local(reason: str) -> None:
 @app.command()
 @handled
 def create(
-    name: str = typer.Option(..., "--name", "-n", help="Who uses the token, for example claude or cursor."),
+    name: str = typer.Option(None, "--name", "-n", help="Who uses the token, for example claude or cursor."),
     agent: bool = typer.Option(True, "--agent/--human", help="An agent token (default) or a human token."),
     scope: str = typer.Option("read", "--scope", "-s", help="read, control_low or control_medium. Agents only."),
     as_json: bool = typer.Option(False, "--json", help="Print JSON."),
 ) -> None:
     """Create a token and print the token once. The hub keeps only the token's hash."""
+    if not name:
+        flags = "" if agent else " --human"
+        flags += f" --scope {scope}" if scope != "read" else ""
+        spec = Need(
+            "openhal token create",
+            "--name with who uses the token",
+            "names",
+            example=lambda _: f"openhal token create --name claude{flags}",
+        )
+        _choices.missing(spec, [])
     if scope not in SCOPES:
         raise ValueError(f"--scope must be one of {', '.join(SCOPES)}.")
     kind = "agent" if agent else "human"
@@ -103,17 +117,7 @@ def _list() -> list[TokenInfo]:
         return found
 
 
-@app.command("list")
-@handled
-def list_tokens(
-    show_revoked: bool = typer.Option(False, "--all", help="Include revoked tokens."),
-    as_json: bool = typer.Option(False, "--json", help="Print JSON."),
-) -> None:
-    """List tokens. Tokens themselves are never shown again, only their ids."""
-    tokens = [info for info in _list() if show_revoked or not info.revoked]
-    if as_json:
-        print_json(tokens)
-        return
+def _table(tokens: list[TokenInfo]) -> None:
     table = Table("id", "name", "kind", "scope", "created", "state", box=None, pad_edge=False)
     for info in tokens:
         state = "[red]revoked[/red]" if info.revoked else "[green]active[/green]"
@@ -128,10 +132,49 @@ def list_tokens(
     console.print(table)
 
 
+@app.callback(invoke_without_command=True)
+@handled
+def overview(ctx: typer.Context, as_json: bool = typer.Option(False, "--json", help="Print JSON.")) -> None:
+    """The active tokens, and how to create one for an agent."""
+    if ctx.invoked_subcommand is not None:
+        return
+    tokens = [info for info in _list() if not info.revoked]
+    if as_json:
+        print_json(tokens)
+        return
+    _table(tokens)
+    console.print("Create a token for an agent with openhal token create --name claude --scope control_low")
+
+
+@app.command("list")
+@handled
+def list_tokens(
+    show_revoked: bool = typer.Option(False, "--all", help="Include revoked tokens."),
+    as_json: bool = typer.Option(False, "--json", help="Print JSON."),
+) -> None:
+    """List tokens. Tokens themselves are never shown again, only their ids."""
+    tokens = [info for info in _list() if show_revoked or not info.revoked]
+    if as_json:
+        print_json(tokens)
+        return
+    _table(tokens)
+
+
+def _active() -> list[Option]:
+    return [Option(info.token_id, f"{info.kind} {info.name}, {info.scope}") for info in _list() if not info.revoked]
+
+
 @app.command()
 @handled
-def revoke(token_id: str = typer.Argument(..., help="The token id from openhal token list.")) -> None:
+def revoke(
+    token_id: str = typer.Argument(
+        None, help="The token id from openhal token list. A terminal with the human token shows a picker."
+    ),
+) -> None:
     """Revoke a token. Clients using the token get 401 from then on."""
+    if not token_id:
+        spec = Need("openhal token revoke", "a token id", "tokens", every="openhal token list", person=True)
+        token_id = _choices.need(spec, _active)
     try:
         with hub() as client:
             client.revoke_token(token_id)
