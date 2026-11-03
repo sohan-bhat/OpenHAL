@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import math
 import secrets
 import time
 from collections.abc import Awaitable, Callable
@@ -408,7 +409,7 @@ class RunEngine:
         if body.duration_s > self.caps.max_seconds:
             raise RunError(400, self._too_long("A sample", body.duration_s))
         interval = max(body.interval_s, self.hub.config.poll_floor_s)
-        ticks = int(body.duration_s // interval) + 1
+        ticks = math.floor(body.duration_s / interval + 1e-9) + 1
         if ticks > MAX_POINTS:
             raise RunError(
                 400,

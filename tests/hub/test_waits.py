@@ -83,6 +83,11 @@ def test_series_counts_failed_readings() -> None:
     assert series("x.y", [])["first"] is None
 
 
+async def test_a_sample_counts_its_last_reading_even_with_float_intervals(hub: Hub) -> None:
+    result = await hub.runs.sample(CLAUDE, SampleBody(targets=["lamp.on"], duration_s=1, interval_s=0.2))
+    assert result["series"][0]["count"] == 6
+
+
 async def test_sample_limits(hub: Hub) -> None:
     with pytest.raises(RunError, match=f"at most {MAX_POINTS}"):
         await hub.runs.sample(CLAUDE, SampleBody(targets=["lamp.on"], duration_s=500, interval_s=0.2))
