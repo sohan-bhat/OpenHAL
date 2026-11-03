@@ -1,14 +1,17 @@
 """Every install command in the docs comes from website/src/config/install.json.
 
 scripts/install_docs.py writes the one-line installers and the uv and pipx commands into the
-install guide and the quickstart, and the home page's install box reads the same file, so no
-install command is written twice. The installers are the first thing both pages show.
+install guide and the quickstart, and the installers and the demo command into the README. The
+home page's install box and demo section read the same file, so no install command is written
+twice. The installers are the first thing the install guide and the quickstart show, and the
+README names the Python versions that pyproject.toml's requires-python allows.
 """
 
 from __future__ import annotations
 
 import importlib.util
 import re
+import tomllib
 from pathlib import Path
 from types import ModuleType
 from typing import Final
@@ -19,7 +22,8 @@ from openhal._brand import DISTRIBUTION_NAME
 
 ROOT: Final = Path(__file__).resolve().parents[2]
 HISTORY: Final = ("docs/agents/", "docs/design-rounds/", "docs/verification/", "docs/adr/")
-BLOCK: Final = re.compile(r"<!-- (install|tools):start -->.*?<!-- \1:end -->", re.DOTALL)
+BLOCK: Final = re.compile(r"<!-- (install|tools|demo):start -->.*?<!-- \1:end -->", re.DOTALL)
+README: Final = ROOT / "README.md"
 
 
 def generator() -> ModuleType:
@@ -70,6 +74,43 @@ def test_uv_and_pipx_install_from_pypi_once_install_json_says_so() -> None:
     assert DOCS.tools(CONFIG) == (after if CONFIG["onPyPI"] else before)
 
 
+def test_the_readme_installs_then_runs_the_demo() -> None:
+    text = README.read_text(encoding="utf-8")
+    assert text.index("<!-- install:start -->") < text.index("<!-- demo:start -->") < text.index("## Why OpenHAL")
+    assert "<!-- tools:start -->" not in text, "the README shows the one-line installers and links the install guide"
+    assert "uv run openhal" not in text, "the README runs the openhal the installer put on PATH"
+
+
+def test_the_demo_runs_with_uvx_once_install_json_says_so() -> None:
+    uvx = f"uvx {DISTRIBUTION_NAME} demo"
+    before = DOCS.demo({**CONFIG, "onPyPI": False})
+    assert "```text\nopenhal demo\n```" in before
+    assert "uvx" not in before
+    after = DOCS.demo({**CONFIG, "onPyPI": True})
+    assert f"```text\n{uvx}\n```" in after
+    assert after.index("openhal demo") < after.index(uvx)
+    assert DOCS.demo(CONFIG) == (after if CONFIG["onPyPI"] else before)
+
+
+def test_no_page_runs_uvx_with_the_command_name() -> None:
+    """`uvx openhal` would fetch a different project from PyPI, because the distribution is named halkit."""
+    wrong = [
+        str(path.relative_to(ROOT))
+        for path in [*current_files(), ROOT / "website" / "src" / "config" / "install.json"]
+        if re.search(r"\buvx (?:--\S+ )*openhal\b", path.read_text(encoding="utf-8", errors="ignore"))
+    ]
+    assert not wrong, f"Run uvx {DISTRIBUTION_NAME}, not uvx openhal, in {wrong}"
+
+
+def test_the_readme_names_the_python_versions_from_pyproject() -> None:
+    required = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["requires-python"]
+    found = re.fullmatch(r">=\s*(\d+\.\d+)", required)
+    assert found, f"requires-python is {required!r}, so the README sentence needs a new form"
+    text = README.read_text(encoding="utf-8")
+    assert f"OpenHAL runs on Python {found.group(1)} or newer." in text
+    assert set(re.findall(r"Python (\d+\.\d+)", text)) == {found.group(1)}
+
+
 def test_install_json_names_the_distribution_only_through_the_brand() -> None:
     text = (ROOT / "website" / "src" / "config" / "install.json").read_text(encoding="utf-8")
     assert DISTRIBUTION_NAME not in text
@@ -90,6 +131,7 @@ def current_files() -> list[Path]:
 def test_no_install_command_is_written_by_hand() -> None:
     commands = [DOCS.fill(channel["command"], CONFIG) for channel in CONFIG["channels"]]
     commands += [DOCS.fill(channel["beforePyPI"], CONFIG) for channel in CONFIG["channels"] if "beforePyPI" in channel]
+    commands.append(DOCS.fill(CONFIG["demo"]["fromPyPI"], CONFIG))
     by_hand = []
     for path in current_files():
         try:
