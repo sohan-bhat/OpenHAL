@@ -22,6 +22,29 @@
       "conformance": "control"
     },
     {
+      "name": "mujoco",
+      "tier": 0,
+      "status": "implemented",
+      "protocols": [
+        "MuJoCo physics simulation"
+      ],
+      "families": [
+        "any MJCF model, such as the MuJoCo Menagerie arms",
+        "simulated arms with move_to by inverse kinematics"
+      ],
+      "hazard_default": "medium",
+      "conformance": "full",
+      "tests": "unit tests on a small built-in arm and the conformance suite, skipped when the mujoco extra isn't installed",
+      "estimate": {
+        "devices": "none (simulation only)",
+        "reasoning": "The mujoco driver never connects to hardware. It runs any MuJoCo model in real time, so a device file can be tried on a simulated machine before it drives a real one.",
+        "sources": [
+          "https://mujoco.readthedocs.io/en/stable/python.html",
+          "https://github.com/google-deepmind/mujoco_menagerie"
+        ]
+      }
+    },
+    {
       "name": "ble",
       "tier": 1,
       "status": "implemented",
