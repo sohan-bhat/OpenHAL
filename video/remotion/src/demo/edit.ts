@@ -1,4 +1,6 @@
 import type {Stat, Device} from './Cards';
+import type {DevicesScene as StageDevices, EndScene as StageEnd, StatsScene as StageStats} from './stage/Closing';
+import type {StageSpec} from './stage/Stage';
 import type {CameraMove} from './DeskScene';
 import type {CursorKey} from './Cursor';
 import type {HubFacts, PendingRequest, DeviceSummary} from './Inspector';
@@ -49,13 +51,13 @@ export type InspectorScene = {
   zoom: {from: number; to: number; origin: [number, number]};
 };
 
-export type StatsScene = {id: string; kind: 'stats'; from: number; frames: number; stats: Stat[]; source: string};
-export type DevicesScene = {id: string; kind: 'devices'; from: number; frames: number; title: string; devices: Device[]};
-export type EndScene = {id: string; kind: 'end'; from: number; frames: number; tagline: string; command: string; url: string; finePrint: string};
+export type StatsScene = {id: string; kind: 'stats-cards'; from: number; frames: number; stats: Stat[]; source: string};
+export type DevicesScene = {id: string; kind: 'device-cards'; from: number; frames: number; title: string; devices: Device[]};
+export type EndScene = {id: string; kind: 'end-card'; from: number; frames: number; tagline: string; command: string; url: string; finePrint: string};
 
-export type Scene = TerminalScene | DeskSceneSpec | InspectorScene | StatsScene | DevicesScene | EndScene;
+export type Scene = TerminalScene | DeskSceneSpec | InspectorScene | StatsScene | DevicesScene | EndScene | StageSpec | StageStats | StageDevices | StageEnd;
 
-export type Edit = {take: string; fps: number; frames: number; header: TerminalHeader; scenes: Scene[]};
+export type Edit = {take: string; fps: number; frames: number; header?: TerminalHeader; scenes: Scene[]};
 
 export const poseOf = (row: number[]): ArmPose => ({
   joints: {shoulder_pan: row[0], shoulder_lift: row[1], elbow_flex: row[2], wrist_flex: row[3], wrist_roll: row[4]},

@@ -7,6 +7,8 @@ import {DeskSceneSpec, DevicesScene, EndScene, InspectorScene, Scene, StatsScene
 import {EndCard} from './EndCard';
 import {ConfirmationsIntro, DevicesSidebar, INSPECTOR, InspectorHeader, InspectorNav, PendingCard, StoppedBanner} from './Inspector';
 import {Terminal, TerminalHeader} from './Terminal';
+import {Devices, End, Stats} from './stage/Closing';
+import {Stage} from './stage/Stage';
 import {COLOR, EASE, SANS, TIME, progress} from './theme';
 
 const TONE: Record<Tone, string> = {ok: COLOR.ok, blocked: COLOR.blocked, pending: COLOR.confirm, text: COLOR.text};
@@ -122,7 +124,7 @@ const DevicesView: React.FC<{scene: DevicesScene}> = ({scene}) => {
 
 const EndView: React.FC<{scene: EndScene}> = ({scene}) => <EndCard tagline={scene.tagline} command={scene.command} url={scene.url} finePrint={scene.finePrint} />;
 
-export const SceneView: React.FC<{scene: Scene; header: TerminalHeader}> = ({scene, header}) => {
+export const SceneView: React.FC<{scene: Scene; header?: TerminalHeader}> = ({scene, header = {title: 'Claude Code', model: ''}}) => {
   switch (scene.kind) {
     case 'terminal':
       return <TerminalView scene={scene} header={header} />;
@@ -130,11 +132,19 @@ export const SceneView: React.FC<{scene: Scene; header: TerminalHeader}> = ({sce
       return <DeskView scene={scene} />;
     case 'inspector':
       return <InspectorView scene={scene} />;
-    case 'stats':
+    case 'stats-cards':
       return <StatsView scene={scene} />;
-    case 'devices':
+    case 'device-cards':
       return <DevicesView scene={scene} />;
-    case 'end':
+    case 'end-card':
       return <EndView scene={scene} />;
+    case 'stage':
+      return <Stage spec={scene} />;
+    case 'stats':
+      return <Stats scene={scene} />;
+    case 'devices':
+      return <Devices scene={scene} />;
+    case 'end':
+      return <End scene={scene} />;
   }
 };
