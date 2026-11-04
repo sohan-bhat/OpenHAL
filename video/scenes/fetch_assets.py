@@ -1,4 +1,4 @@
-"""Download the SO-101 model and the studio HDRI that the film scenes use.
+"""Download the SO-101 model, the studio HDRI and the desk's wood texture that the videos use.
 
 Every file in video/assets.json is fetched from its pinned URL into video/assets/
 and checked against its SHA-256. Files already present with the right hash are
@@ -36,6 +36,8 @@ def sha256(path: Path) -> str:
 
 def target(group: str, name: str) -> Path:
     """Map a manifest entry to its path under video/assets."""
+    if group == "wood":
+        return ASSETS / group / Path(name).name
     prefix = STRIP.get(group, "")
     local = name[len(prefix) :] if prefix and name.startswith(prefix) else name
     return ASSETS / group / local

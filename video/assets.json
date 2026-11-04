@@ -24,5 +24,13 @@
     "files": {
       "studio_small_09_2k.hdr": "36724313c0fc66dab126ff90f081b85a0b1ef47be65eda1417bd20b033f0573f"
     }
+  },
+  "wood": {
+    "base": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg",
+    "files": {
+      "2k/wood_table_001/wood_table_001_diff_2k.jpg": "63ae5cd186197b40f18bc020fe2b652bb08df4d9fc6240c6cbf8a7e3bc32c096",
+      "1k/wood_table_001/wood_table_001_nor_gl_1k.jpg": "9bf7ddf5721e225c20290f1772ae37f9bdfd49658f6d458259eb794e2149d3cf",
+      "1k/wood_table_001/wood_table_001_rough_1k.jpg": "a2ca9ae89dfe7b8e2e5e92f0aa43467845417de8a50205b5852ef0d57c7624f9"
+    }
   }
 }

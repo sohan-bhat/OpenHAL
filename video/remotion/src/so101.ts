@@ -26,7 +26,7 @@ const firstGeometry = (scene: {traverse: (fn: (child: unknown) => void) => void}
   return found as BufferGeometry;
 };
 
-export const useSo101 = (materials: ArmMaterials): URDFRobot | null => {
+export const useSo101 = (materials: ArmMaterials, glbDir = 'glb'): URDFRobot | null => {
   const [robot, setRobot] = useState<URDFRobot | null>(null);
   const {delayRender, continueRender, cancelRender} = useDelayRender();
   const advance = useThree((state) => state.advance);
@@ -53,7 +53,7 @@ export const useSo101 = (materials: ArmMaterials): URDFRobot | null => {
     const geometryFor = (path: string) => {
       let geometry = geometries.get(path);
       if (!geometry) {
-        const glb = path.replace(/assets\/([^/]+)\.stl$/, 'glb/$1.glb');
+        const glb = path.replace(/assets\/([^/]+)\.stl$/, `${glbDir}/$1.glb`);
         geometry = gltf.loadAsync(glb).then((result) => firstGeometry(result.scene, glb));
         geometries.set(path, geometry);
       }
@@ -92,7 +92,7 @@ export const useSo101 = (materials: ArmMaterials): URDFRobot | null => {
         continueRender(handle);
       }
     };
-  }, [materials, delayRender, continueRender, cancelRender]);
+  }, [materials, glbDir, delayRender, continueRender, cancelRender]);
 
   useLayoutEffect(() => {
     if (robot && hold.current !== null) {
