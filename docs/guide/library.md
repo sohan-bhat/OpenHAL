@@ -8,7 +8,7 @@ The device library is a set of starter device files for real products, kept in `
 
 Because a USB class or an mDNS service type only names a kind of device, a class or a type adds to a match but never makes a match alone, so a MIDI keyboard never matches the file for a different MIDI controller.
 
-Some drivers can't report a product identifier yet. The midi driver lists port names only, and the rpi-gpio, rpi-camera and alpaca drivers report identifiers no match key holds. The moonraker, homeassistant, modbus and mqtt drivers don't discover anything, so add the files for those drivers by name.
+Some drivers can't report a product identifier yet. The midi driver lists port names only, and the rpi-gpio, rpi-camera and alpaca drivers report identifiers no match key holds. The moonraker, homeassistant, modbus and mqtt drivers don't discover anything, so add the files for those drivers by name. An RS-232 lab instrument on the serial driver reaches the hub through any USB serial adapter, whose identifiers name the adapter and not the instrument, so add a serial file such as the Mettler Toledo balance by name too.
 
 ## Adding a file
 

@@ -1,0 +1,30 @@
+openhal: "0.1"
+device: { name: Mettler Toledo MS-TS analytical balance, model: MS-TS, manufacturer: Mettler Toledo }
+id: mettler-toledo-ms-ts
+connect: { serial: auto, baud: 9600, newline: crlf, timeout: 3 s, identify: I4 }
+read:
+  weight: { unit: g, every: 1 s, map: { query: SI, parse: "^S [SD] +(?P<value>-?[0-9.]+) g$" } }
+  stable_weight: { unit: g, map: { query: S, parse: "^S S +(?P<value>-?[0-9.]+) g$" } }
+  tare_weight: { unit: g, map: { query: TA, parse: "^TA A +(?P<value>-?[0-9.]+) g$" } }
+  serial_number: { type: string, map: { query: I4, parse: '^I4 A "(?P<value>[^"]*)"$' } }
+actions:
+  zero:
+    description: Set a new zero once the weight is stable. The tare memory clears.
+    suggested: true
+    map: { command: Z, expect: "^Z A$", error: "^(Z [I+-]|E[STL])$" }
+  tare:
+    description: Store the next stable weight as the tare.
+    suggested: true
+    map: { command: T, expect: "^T S ", error: "^(T [IL+-]|E[STL])$" }
+  clear_tare:
+    description: Clear the tare memory.
+    suggested: true
+    map: { command: TAC, expect: "^TAC A$", error: "^(TAC [IL]|E[STL])$" }
+safe_state_note: "A balance has nothing to switch off. A stop leaves the weight and the tare as they are."
+hazard: low
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  Drafted with the driver writer from the MT-SICS command list in Mettler Toledo's reference manual
+  30014405C for standard and advanced level laboratory balances (MS-TS, ML-T, ME-T). Readings assume the
+  host unit is grams. The balance's RS-232 port defaults to 9600 baud, 8 data bits, no parity and 1 stop bit.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }

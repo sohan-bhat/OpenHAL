@@ -199,11 +199,34 @@ class WriterEngine:
             drafts.append(self._from_manual(session, manual_text))
 
         merged = self._merge(drafts)
+        if merged is None and driver and drafts:
+            merged = self._merge([self._frame(session, driver, address, params or {}, drafts[0]), *drafts])
         if merged is not None:
             self._set_draft(session, merged)
         else:
             session.status = "drafting"
         return session
+
+    @staticmethod
+    def _frame(
+        session: Session, driver: str, address: str | None, params: dict[str, Any], partial: dict[str, Any]
+    ) -> dict[str, Any]:
+        """The device and connect sections for a sketch or manual draft, when the named driver can't describe.
+
+        A serial instrument with a manual is the usual case. The driver and its parameters come from
+        the session, so the manual's commands become a draft the interview can start on.
+        """
+        connect: dict[str, Any] = dict(params)
+        if address and PRIMARY_PARAM.get(driver, "target") not in connect:
+            connect = {**registry.connect_params(driver, address), **connect}
+        primary = connect.pop(PRIMARY_PARAM.get(driver, "target"), "auto")
+        frame: dict[str, Any] = {
+            "device": session.detected.get("label") or "New device",
+            "connect": {driver: primary, **connect},
+        }
+        if isinstance(partial.get("provenance"), dict):
+            frame["provenance"] = partial["provenance"]
+        return frame
 
     def _review(self, who: Principal, device_id: str) -> Session:
         """A session that answers the interview for a device file the hub has loaded."""

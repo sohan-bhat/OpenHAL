@@ -30,6 +30,12 @@ openhal library add rigol-dp832
 | [`siglent-sdm3045x`](scpi/siglent-sdm3045x.hal.yaml) | Siglent SDM3045X multimeter | low | reads only |
 | [`siglent-spd3303x`](scpi/siglent-spd3303x.hal.yaml) | Siglent SPD3303X power supply | medium | 2 controls, 4 actions |
 
+## Lab instruments over serial
+
+| Name | Device | Hazard | Controls |
+|---|---|---|---|
+| [`mettler-toledo-ms-ts`](serial/mettler-toledo-ms-ts.hal.yaml) | Mettler Toledo MS-TS analytical balance | low | 3 actions |
+
 ## Marlin printers over USB
 
 | Name | Device | Hazard | Controls |
@@ -108,4 +114,4 @@ openhal library add rigol-dp832
 |---|---|---|---|
 | [`sky-watcher-eq6-r-pro`](alpaca/sky-watcher-eq6-r-pro.hal.yaml) | Sky-Watcher EQ6-R Pro mount | medium | 1 control, 4 actions |
 
-This list is generated from the files by `uv run python -m openhal.cli.library_cmd`. 33 files.
+This list is generated from the files by `uv run python -m openhal.cli.library_cmd`. 34 files.

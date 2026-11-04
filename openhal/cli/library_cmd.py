@@ -34,6 +34,7 @@ app = typer.Typer(help="Browse the device library and copy its files into the hu
 FAMILIES: dict[str, str] = {
     "openhal-firmware": "Arduino and ESP32 boards running the OpenHAL firmware",
     "scpi": "SCPI instruments",
+    "serial": "Lab instruments over serial",
     "marlin": "Marlin printers over USB",
     "moonraker": "Klipper printers through Moonraker",
     "rpi-gpio": "Raspberry Pi GPIO boards",

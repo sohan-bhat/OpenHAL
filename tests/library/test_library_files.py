@@ -32,6 +32,7 @@ NO_MATCH_KEY = {
     "rpi-camera": "discovery reports the libcamera sensor model, and match has no key for it",
     "alpaca": "discovery reports alpaca.* identifiers, and match has no alpaca section",
     "mqtt": "discovery finds nothing, and match has no key for MQTT topics",
+    "serial": "an RS-232 instrument reaches the hub through any USB serial adapter, whose ids name the adapter",
 }
 """Drivers whose discovery can't report anything a match key holds yet, as docs/guide/library.md says."""
 
