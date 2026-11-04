@@ -1,0 +1,22 @@
+# An Ocean USB spectrometer reading a cuvette in a light path, for absorbance at one wavelength.
+# Block the light and run store_dark, put the blank cuvette in and run store_reference, then
+# put the sample in and read absorbance_520. A new integration time clears both, so set the
+# integration time first.
+device: { name: Absorbance spectrometer, model: USB2000+, manufacturer: Ocean Insight }
+id: absorbance-spectrometer
+connect: { seabreeze: auto, timeout: 5 s, average: 4, scan_age: 500 ms }
+read:
+  spectrum: { type: image }
+  peak_wavelength: { unit: nm }
+  peak_intensity: { unit: dimensionless, range: [0, 65535] }
+  saturated: { type: bool }
+  absorbance_520: { unit: dimensionless, map: { absorbance: 520 nm } }
+  transmittance_520: { unit: percent, map: { transmittance: 520 nm } }
+write:
+  integration_time: { unit: ms, min: 1, max: 500 }
+actions:
+  store_dark: { description: Keep the next scan as the dark spectrum. Block the light first. }
+  store_reference: { description: Keep the next scan as the reference. Put the blank in the light path first. }
+  clear_references: { description: Forget the stored dark and reference. }
+hazard: low
+notes: "A spectrometer only measures, so nothing here needs a safe state. The integration time stops at 500 ms, so four averaged scans fit the 5 s timeout."

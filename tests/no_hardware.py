@@ -208,6 +208,8 @@ PATCHES: tuple[tuple[str, Callable[[], Any]], ...] = (
     (f"{DRIVERS}.opcua.driver.OpcuaDriver.discovery_urls", lambda: []),
     (f"{DRIVERS}.indi.driver.IndiDriver.discovery_hosts", lambda: []),
     (f"{DRIVERS}.micromanager.driver._core_class", lambda: _refuse("a Micro-Manager configuration")),
+    (f"{DRIVERS}.seabreeze.driver._list_devices", lambda: _nothing),
+    (f"{DRIVERS}.seabreeze.driver._spectrometers", lambda: _refuse("a seabreeze spectrometer")),
 )
 """Each place a driver finds or opens real devices, and what it gets during tests instead."""
 
