@@ -49,6 +49,21 @@ The website's packages are pinned in website/package.json and website/pnpm-lock.
 | @fontsource-variable/ibm-plex-sans | 5.3.0 | OFL-1.1 | IBM Plex Sans, the text and wordmark face. The package's Latin WOFF2 files are copied into design/fonts, so the package is not installed |
 | @fontsource/ibm-plex-mono | 5.3.0 | OFL-1.1 | IBM Plex Mono, the code face, copied into design/fonts the same way at the weights in use |
 
+## Micromanager extra
+
+| Package | Version | License | Why |
+|---|---|---|---|
+| pymmcore-plus | 0.18.1 | BSD-3-Clause | The Micro-Manager core for the micromanager driver, and the UniMMCore its simulator runs on |
+| pymmcore | 12.5.1.75.0 | LGPL-2.1-only | MMCore's Python bindings, installed with pymmcore-plus. Used unmodified as a dependency |
+| Pillow | 13.0.0 | MIT-CMU | Encodes camera frames as JPEG or PNG, and renders the simulated microscope's field of view |
+| numpy | 2.5.4 | BSD-3-Clause | Camera frames as arrays. Installed with pymmcore-plus |
+
+## Bundled media
+
+| File | Source | Author | License | Changes |
+|---|---|---|---|---|
+| openhal/drivers/micromanager/slide.jpg | [SK8/18-2 human derived cells, fluorescence microscopy](https://commons.wikimedia.org/wiki/File:SK8-18-2_human_derived_cells,_fluorescence_microscopy_(29942101073).jpg), Wikimedia Commons, 2016-09-09 | ZEISS Microscopy | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/) | Cropped to remove the scale bar and the edge, from 2758 x 2214 to 2750 x 1975 pixels, and saved again as JPEG. The simulated microscope images it |
+
 ## Development
 
 | Package | Version | License | Why |
