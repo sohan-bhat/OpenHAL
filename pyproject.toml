@@ -69,6 +69,7 @@ sila2 = ["sila2>=0.14.0"]
 alpaca = ["httpx>=0.28.1"]
 pylabrobot = ["pylabrobot>=0.2.2"]
 micromanager = ["pymmcore-plus>=0.18.1", "pillow>=12.0"]
+seabreeze = ["seabreeze[pyseabreeze]>=2.11.0", "pillow>=12.0"]
 mujoco = [
   "mujoco>=3.3,<3.11; sys_platform == 'darwin' and platform_machine == 'x86_64'",
   "mujoco>=3.3; sys_platform != 'darwin' or platform_machine != 'x86_64'",
