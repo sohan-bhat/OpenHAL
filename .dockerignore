@@ -8,5 +8,5 @@
 !examples/plant-waterer
 !examples/print-babysitter
 !library
-!docker
+!scripts/docker-entrypoint.sh
 **/__pycache__

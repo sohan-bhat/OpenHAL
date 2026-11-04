@@ -1,4 +1,4 @@
-"""Build drivers/catalog.json from each driver package's catalog.json and drivers/planned.json.
+"""Build docs/drivers/catalog.json from each driver package's catalog.json and docs/drivers/planned.json.
 
 Run `uv run python -m openhal.drivers.catalog` after adding or changing a driver. A test checks the
 checked-in catalog is current. The website renders it as the supported devices page.
@@ -12,8 +12,8 @@ from typing import Any
 
 PACKAGE = Path(__file__).parent
 ROOT = PACKAGE.parents[1]
-TARGET = ROOT / "drivers" / "catalog.json"
-PLANNED = ROOT / "drivers" / "planned.json"
+TARGET = ROOT / "docs" / "drivers" / "catalog.json"
+PLANNED = ROOT / "docs" / "drivers" / "planned.json"
 FIELDS = ("name", "tier", "status", "protocols", "families", "hazard_default", "tests", "estimate")
 
 

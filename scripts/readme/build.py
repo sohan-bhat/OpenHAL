@@ -1,6 +1,6 @@
 """Build the OpenHAL mark, wordmark and favicon in the protocol theme, in light and dark variants.
 
-    uv run --with fonttools --with brotli python tools/readme/build.py
+    uv run --with fonttools --with brotli python scripts/readme/build.py
 
 Writes docs/assets/wordmark-{light,dark}.svg with the text converted to paths, since GitHub loads no
 web fonts, docs/assets/mark-{light,dark}.svg and docs/assets/favicon.svg. Diagrams are built

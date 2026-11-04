@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import catalog from "../../../drivers/catalog.json";
+import catalog from "../../../docs/drivers/catalog.json";
 import groupData from "../../src/data/driver-groups.json";
 import { deviceDrivers, driverCounts, driverGroups, referenceDrivers } from "../../src/lib/catalog";
 

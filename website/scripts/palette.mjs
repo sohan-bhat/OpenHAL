@@ -61,7 +61,7 @@ export function diagramsPy(source) {
 
 const BRAND = { surface: "surface", border: "border", text: "text", text2: "text-2", ok: "ok", blocked: "blocked" };
 
-/** tools/readme/build.py with the colors of its wordmark, mark and favicon from the palette. */
+/** scripts/readme/build.py with the colors of its wordmark, mark and favicon from the palette. */
 export function brandPy(source) {
   const theme = (name) =>
     `    "${name}": {\n${Object.entries(BRAND)
@@ -75,7 +75,7 @@ export const FILES = {
   "docs/diagrams/theme-light.d2": () => d2Theme("light"),
   "docs/diagrams/theme-dark.d2": () => d2Theme("dark"),
   "scripts/diagrams.py": diagramsPy,
-  "tools/readme/build.py": brandPy,
+  "scripts/readme/build.py": brandPy,
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

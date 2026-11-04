@@ -12,7 +12,7 @@ Today 34 hardware drivers pass the conformance suite on simulators, and a MuJoCo
 
 ## 2. Next drivers
 
-Every driver in `drivers/planned.json` and the coverage plan ([COVERAGE.md](drivers/COVERAGE.md)) is built. What remains for those drivers is hardware verification.
+Every driver in `docs/drivers/planned.json` and the coverage plan ([COVERAGE.md](drivers/COVERAGE.md)) is built. What remains for those drivers is hardware verification.
 
 The drivers below are proposed next. Each implements a protocol no current driver covers, and each serves makers, teaching labs or small labs.
 

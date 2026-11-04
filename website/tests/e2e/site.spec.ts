@@ -240,7 +240,7 @@ test.describe("catalog pages", () => {
   });
 
   test("the driver counts leave the tier 0 reference driver out", async ({ page }) => {
-    const catalog = JSON.parse(readFileSync(fileURLToPath(new URL("../../../drivers/catalog.json", import.meta.url)), "utf8")) as {
+    const catalog = JSON.parse(readFileSync(fileURLToPath(new URL("../../../docs/drivers/catalog.json", import.meta.url)), "utf8")) as {
       drivers: Array<{ name: string; tier: number; status: string }>;
     };
     const devices = catalog.drivers.filter((driver) => driver.tier >= 1);

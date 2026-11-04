@@ -33,12 +33,12 @@ const fields = [SEARCH, ...selects.map((select) => select.name)].join(" ");
 
 <DocShell
   title="Drivers"
-  description="Every OpenHAL driver from drivers/catalog.json, with tier, status, conformance level and hazard default."
+  description="Every OpenHAL driver from docs/drivers/catalog.json, with tier, status, conformance level and hazard default."
   sidebar={driversSidebar()}
   wide
   pager={false}
 >
-  <p slot="after-title" class="lede">Each driver implements one protocol, and every status on this page comes from <code>drivers/catalog.json</code>.</p>
+  <p slot="after-title" class="lede">Each driver implements one protocol, and every status on this page comes from <code>docs/drivers/catalog.json</code>.</p>
 
     <CatalogFilters client:query={fields} label="Filter drivers" placeholder="Name, protocol or device family" selects={selects} />
     <p class="shown muted" aria-live="polite" data-shown data-noun="drivers" data-fields={fields}>{total} drivers.</p>

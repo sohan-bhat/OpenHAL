@@ -10,7 +10,7 @@ Every driver passes its conformance suite against a simulator. These plans are h
 4. **Medium hazard plans.** Low voltage first, then relays that can switch mains with no load on them, then motors, heaters and mounts.
 5. **High hazard plans last.** Machines that move with force or carry liquids.
 
-Within a group, cheap and common hardware comes first. The hazard column is the driver's default from drivers/catalog.json.
+Within a group, cheap and common hardware comes first. The hazard column is the driver's default from docs/drivers/catalog.json.
 
 | # | Plan | Hardware | Hazard | What the plan changes |
 |---|---|---|---|---|
@@ -140,7 +140,7 @@ provenance:
   verification: { status: verified-on-hardware, report: docs/hardware-tests/reports/fan-board-2026-11-02.md }
 ```
 
-Provenance is outside the limits hash, so the confirmation still holds. A library file gets only this change, and never a `confirmed` line. Check the file with `uv run openhal file validate` and its path. A maintainer reviews the report, sets the driver's `status` to `verified` in its package's `catalog.json` once a plan passes, and regenerates drivers/catalog.json and the README devices table.
+Provenance is outside the limits hash, so the confirmation still holds. A library file gets only this change, and never a `confirmed` line. Check the file with `uv run openhal file validate` and its path. A maintainer reviews the report, sets the driver's `status` to `verified` in its package's `catalog.json` once a plan passes, and regenerates docs/drivers/catalog.json and the README devices table.
 
 ```
 uv run python -m openhal.drivers.catalog

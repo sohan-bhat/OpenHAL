@@ -32,7 +32,7 @@ console = Console(highlight=False, soft_wrap=True)
 
 TEMPLATES = Path(__file__).parent / "templates" / "driver"
 NAME = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
-CATALOG = Path(__file__).resolve().parents[2] / "drivers" / "catalog.json"
+CATALOG = Path(__file__).resolve().parents[2] / "docs" / "drivers" / "catalog.json"
 
 
 def _catalog() -> dict[str, dict[str, Any]]:

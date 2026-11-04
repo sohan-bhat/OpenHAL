@@ -23,6 +23,35 @@ On Linux the MIDI and HID extras build against system headers. On Debian and Ubu
 sudo apt-get install -y libasound2-dev libjack-jackd2-dev libudev-dev libusb-1.0-0-dev
 ```
 
+## Repository layout
+
+| Folder | What the folder holds |
+|---|---|
+| `openhal/` | The Python package with the hub, the safety kernel, the drivers, the CLI and the MCP server |
+| `tests/` | The pytest suite, which runs on simulators and mocks only |
+| `spec/` | The protocol specification, the device file schema and example device files |
+| `docs/` | Guides, reference pages, ADRs, driver pages and hardware test plans, plus the maintainers' notes in `docs/internal/` |
+| `library/` | Device files for real products, released under CC0 |
+| `examples/` | The plant waterer and the print babysitter, which ship inside the package |
+| `firmware/` | The OpenHAL Arduino library |
+| `dashboard/` | The Inspector, the hub's web interface in Svelte, built into `openhal/hub/static/` |
+| `website/` | The Astro site on GitHub Pages, which also serves the one-line installers |
+| `design/` | The design tokens and fonts that the website, the Inspector and the README images share |
+| `scripts/` | Diagram and README image builders, the install doc generator, the Raspberry Pi installer and the container entrypoint |
+| `plugins/` | The Claude Code plugin |
+
+Besides README.md, LICENSE and CHANGELOG.md, every file at the root is there because a tool reads the file from the root.
+
+| File or folder | Read by |
+|---|---|
+| `pyproject.toml`, `uv.lock`, `.python-version` | uv and the PyPI build |
+| `Dockerfile` | `docker build` and the Docker MCP catalog |
+| `gemini-extension.json` | Gemini CLI extensions |
+| `glama.json` | The Glama MCP directory |
+| `llms-install.md` | The Cline MCP marketplace |
+| `.claude-plugin/marketplace.json` | Claude Code plugin marketplaces |
+| `.github/` | GitHub, for CI, the issue forms, this guide, the code of conduct and the security policy |
+
 ## Run the checks
 
 Every pull request passes the checks CI runs.

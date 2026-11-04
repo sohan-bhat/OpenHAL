@@ -188,7 +188,7 @@ Pages show the one thing a person needs and keep the depth one tap away. A term 
 
 ## Wordmark
 
-- **Wordmark, no logo.** The brand is the name, OpenHAL, set in IBM Plex Sans at weight 700, the heaviest Plex Sans has, with tracking at -0.04 em, in `--text`. At that tracking the closest pair, p and e, keeps a gap of about 0.04 em, which stays visible in the 24 px header. Every letter is the font's own. The arrow crossbar the H had on 2026-11-01 was removed on 2026-11-02 at the owner's request, and IBM Plex Sans became the wordmark's face the same day, also at the owner's request. Where a square is needed (favicon, app icons) the initials OH are set the same way with tracking at -0.08 em, sized so their outlines span 94 percent of the square's width. tools/readme/build.py draws every letter from the font's own outlines, one path per letter, into docs/assets/wordmark-{light,dark}.svg, mark-{light,dark}.svg and favicon.svg, which the README, the website's header and hero, the Inspector's header, the icons and the social images use. Icon links carry a version that rises when the mark changes.
+- **Wordmark, no logo.** The brand is the name, OpenHAL, set in IBM Plex Sans at weight 700, the heaviest Plex Sans has, with tracking at -0.04 em, in `--text`. At that tracking the closest pair, p and e, keeps a gap of about 0.04 em, which stays visible in the 24 px header. Every letter is the font's own. The arrow crossbar the H had on 2026-11-01 was removed on 2026-11-02 at the owner's request, and IBM Plex Sans became the wordmark's face the same day, also at the owner's request. Where a square is needed (favicon, app icons) the initials OH are set the same way with tracking at -0.08 em, sized so their outlines span 94 percent of the square's width. scripts/readme/build.py draws every letter from the font's own outlines, one path per letter, into docs/assets/wordmark-{light,dark}.svg, mark-{light,dark}.svg and favicon.svg, which the README, the website's header and hero, the Inspector's header, the icons and the social images use. Icon links carry a version that rises when the mark changes.
 - **HAL spelled out, on the landing hero only.** Under the letters H, A and L of the large hero wordmark sit three labels, written exactly `[hardware]`, `[abstraction]` and `[layer]` with their square brackets, for Open Hardware Abstraction Layer, in `--text-2` above WCAG AA, up to 17 px and never under 12 px, in one row. From 768 px each label is centered under its letter, and on a phone the labels move apart just enough to keep 8 px between them while each stays under its own letter. They are hidden from screen readers, which read OpenHAL, and the long name Open Hardware Abstraction Layer is in the page's metadata. The header wordmark, icons and the README stay plain.
 - Original. It never imitates MCP's, Anthropic's or any other logo.
 
@@ -287,7 +287,7 @@ These rules apply to the website, the docs and the dashboard, and to every diagr
 Honesty
 - Fake stats, user counts, star counts, download numbers, "trusted by" logo strips, testimonials or quotes.
 - Fake data presented as real. Screenshots come from the real product running on mocks, labeled as demo data where shown.
-- Listing a device or driver as supported unless drivers/catalog.json has it with that status. Unverified things are labeled unverified.
+- Listing a device or driver as supported unless docs/drivers/catalog.json has it with that status. Unverified things are labeled unverified.
 - Lorem ipsum, "John Doe", placeholder avatars, stock photos of people.
 - Pricing tables, "Book a demo", waitlist forms or "Enterprise" calls to action. There is nothing to sell.
 
@@ -384,7 +384,7 @@ The repository README follows this structure, in this order, left-aligned, as th
 5. Why OpenHAL, one paragraph on the problem.
 6. How it works, one paragraph on the flow and four bullets. The flow diagram moves here once the GIF heads the README.
 7. Safety model, at most five bullets, linking to docs/SAFETY.md.
-8. Supported devices. The driver count and families in one sentence and the simulator status, then the table generated from drivers/catalog.json with driver, devices covered, status and hazard default, in a collapsed `<details>`.
+8. Supported devices. The driver count and families in one sentence and the simulator status, then the table generated from docs/drivers/catalog.json with driver, devices covered, status and hazard default, in a collapsed `<details>`.
 9. Connect Claude or another MCP client, with `openhal init` and `openhal start` in one code block.
 10. Docs and specification, as links, with the MHS mapping and the note that OpenHAL is not affiliated with Anthropic or MHS.
 11. Contributing, then the license.

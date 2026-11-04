@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
 
-const catalog = JSON.parse(readFileSync(fileURLToPath(new URL("../../../drivers/catalog.json", import.meta.url)), "utf8")) as { drivers: Array<{ name: string; tier: number }> };
+const catalog = JSON.parse(readFileSync(fileURLToPath(new URL("../../../docs/drivers/catalog.json", import.meta.url)), "utf8")) as { drivers: Array<{ name: string; tier: number }> };
 const devices = catalog.drivers.filter((driver) => driver.tier !== 0).length;
 
 const PAGES = ["/", "/spec/playground/", "/drivers/", "/library/", "/spec/errors/", "/docs/quickstart/", "/inspector/", "/drivers/moonraker/"];
@@ -118,7 +118,7 @@ test.describe("the hero", () => {
 });
 
 test.describe("driver counts", () => {
-  test("come from drivers/catalog.json and agree on home and the Drivers page", async ({ page }) => {
+  test("come from docs/drivers/catalog.json and agree on home and the Drivers page", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("#works-title ~ .onward")).toContainText(`All ${devices} drivers`);
     await page.goto("/drivers/");

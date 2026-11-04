@@ -15,7 +15,7 @@ COPY examples/print-babysitter ./examples/print-babysitter
 COPY library ./library
 RUN uv pip install --system --no-cache --no-deps --compile-bytecode .
 
-COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/openhal-container
+COPY --chmod=755 scripts/docker-entrypoint.sh /usr/local/bin/openhal-container
 RUN useradd --create-home --uid 10001 openhal
 USER openhal
 WORKDIR /home/openhal

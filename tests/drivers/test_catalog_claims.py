@@ -2,7 +2,7 @@
 
 A driver listed as implemented (tested on simulator) has a simulator in its package, a conformance
 case the suite runs, and tests of its own. Anything less is planned. The README and the website
-count drivers from drivers/catalog.json, and the reference driver (tier 0) is never counted.
+count drivers from docs/drivers/catalog.json, and the reference driver (tier 0) is never counted.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ import pytest
 from openhal.drivers import registry
 
 ROOT = Path(__file__).resolve().parents[2]
-CATALOG = json.loads((ROOT / "drivers" / "catalog.json").read_text(encoding="utf-8"))["drivers"]
+CATALOG = json.loads((ROOT / "docs" / "drivers" / "catalog.json").read_text(encoding="utf-8"))["drivers"]
 TEST = re.compile(r"^(?:async )?def test_", re.M)
 MIN_TESTS = 10
 

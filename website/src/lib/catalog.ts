@@ -1,4 +1,4 @@
-import catalog from "../../../drivers/catalog.json";
+import catalog from "../../../docs/drivers/catalog.json";
 import groupData from "../data/driver-groups.json";
 
 export interface Estimate {

@@ -12,7 +12,7 @@ openhal/drivers/<name>/
   driver.py          the Driver subclass, with a header docstring about the protocol and its quirks
   simulator.py       a mock or protocol simulator used by tests and the conformance case
   conformance.py     def case() -> ConformanceCase
-  catalog.json       this driver's catalog entry (merged into drivers/catalog.json)
+  catalog.json       this driver's catalog entry (merged into docs/drivers/catalog.json)
   examples/          at least one complete example device file
 tests/drivers/<name>/test_<name>.py
 docs/drivers/<name>.md
