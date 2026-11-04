@@ -1,5 +1,9 @@
 # 0022 The launch film renders its 3D in Blender, and its type and edit in Remotion
 
+## Update, 2026-11-03
+
+The owner stopped Blender renders on this machine because they overheated the laptop. The launch video now renders its 3D in Remotion with React Three Fiber, and the video project lives outside this repository, so the `video/` paths below no longer exist here. The record below stays as the comparison that was made.
+
 ## Context
 
 The launch film shows OpenHAL on the SO-101 arm, drawn entirely in code. It needs studio lighting, real materials, slow camera moves, almost no text, and it has to render on the machine that makes it, a 2018 MacBook Pro (Intel Core i7-8750H, 16 GB, Radeon Pro 555X, about 10 GB of free disk). On 2026-11-03 the same 5-second test shot was built in the two strongest stacks and rendered at 3840 by 2160. The shot is the SO-101 picking up a cube on a desk under studio lighting with a slow camera dolly. Both stacks read one shot file, one look file and the official SO-101 URDF, so they render the same motion, materials and lights. The motion is hand-keyed for the test, not hub data.

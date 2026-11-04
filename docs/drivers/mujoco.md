@@ -89,7 +89,7 @@ safe_state: { action: hold }
 hazard: medium
 ```
 
-The bench arm's model is `BENCH_ARM` in `openhal/drivers/mujoco/conformance.py`. The film's SO-101 file is `video/hub/so101-sim.hal.yaml`.
+The bench arm's model is `BENCH_ARM` in `openhal/drivers/mujoco/conformance.py`.
 
 ## Known limitations
 
