@@ -4297,6 +4297,37 @@
       "guarded": [],
       "unconfirmed": []
     },
+    "library/serial/mettler-toledo-ms-ts.hal.yaml": {
+      "targets": {
+        "read:weight": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:stable_weight": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:tare_weight": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:serial_number": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "action:zero": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "undoable": false},
+        "action:tare": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "undoable": false},
+        "action:clear_tare": {"level": "medium", "classified": "medium", "reasons": ["no rule applies, so medium", "the device file's hazard is low"], "shared_with": [], "tier": "none", "scope": "low", "read_only": [], "undoable": false}
+      },
+      "guarded": [],
+      "unconfirmed": []
+    },
+    "library/serial/new-era-ne-500.hal.yaml": {
+      "targets": {
+        "read:status": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:infused_volume": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:withdrawn_volume": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "read:firmware": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},
+        "write:diameter": {"level": "high", "classified": "high", "reasons": ["from the device name, pump names flow", "mm is length", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm", "scope": "medium", "read_only": ["file (interlocks, watchdog, safe state and hazard)", "write.diameter"], "own_rate": true},
+        "write:rate": {"level": "medium", "classified": "medium", "reasons": ["from the device name, pump names flow", "mL/h is flow", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:volume": {"level": "medium", "classified": "medium", "reasons": ["volume names sound", "mL is volume", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm", "scope": "medium", "read_only": [], "own_rate": true},
+        "write:direction": {"level": "medium", "classified": "medium", "reasons": ["from the device name, pump names flow", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm", "scope": "medium", "read_only": [], "own_rate": true},
+        "action:use_millilitres": {"level": "medium", "classified": "medium", "reasons": ["from the device name, pump names flow", "pump names flow", "the device file's hazard is medium"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "undoable": false},
+        "action:run": {"level": "medium", "classified": "medium", "reasons": ["from the device name, pump names flow", "pumping names flow", "the device file's hazard is medium"], "shared_with": [], "tier": "confirm-each-time", "scope": "medium", "read_only": [], "undoable": false},
+        "action:stop": {"level": "medium", "classified": "medium", "reasons": ["from the device name, pump names flow", "pump names flow", "the device file's hazard is medium"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "undoable": true},
+        "action:clear_infused": {"level": "medium", "classified": "medium", "reasons": ["from the device name, pump names flow", "pump names flow", "the device file's hazard is medium"], "shared_with": [], "tier": "none", "scope": "medium", "read_only": [], "undoable": false}
+      },
+      "guarded": ["write.diameter"],
+      "unconfirmed": ["file (interlocks, watchdog, safe state and hazard)", "write.diameter"]
+    },
     "spec/examples/alpaca-mount.hal.yaml": {
       "targets": {
         "read:ra": {"level": "low", "classified": "low", "reasons": ["reading is always low"], "shared_with": []},

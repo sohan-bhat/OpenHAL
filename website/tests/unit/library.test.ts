@@ -49,6 +49,11 @@ describe("device library", () => {
     expect(convert(parseQuantity("1 klx"), "lux")).toBe(1000);
   });
 
+  it("reads millilitres written as mL, as a syringe pump's file writes them", () => {
+    expect(convert(parseQuantity("2 mL"), "ml")).toBe(2);
+    expect(convert(parseQuantity("12 mL/h"), "uL/min")).toBeCloseTo(200);
+  });
+
   it("keeps a file with an unknown unit as a problem instead of failing", () => {
     const odd = entries.find((entry) => entry.slug === "broken-units")!;
     expect(odd.file).toBeNull();

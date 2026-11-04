@@ -1,5 +1,5 @@
 openhal: "0.1"
-device: { name: New Era NE-500 syringe pump, model: NE-500, manufacturer: New Era Pump Systems }
+device: { name: New Era NE-500 syringe pump, model: NE-500, manufacturer: New Era }
 id: new-era-ne-500
 connect: { serial: auto, baud: 19200, newline: cr, framing: stx-etx, timeout: 1 s, identify: VER }
 read:

@@ -87,7 +87,7 @@ for (const [aliases, base] of BASES) {
 }
 for (const [aliases, base] of BASES) {
   if (!base.prefixable) continue;
-  const shortForms = aliases.filter((alias) => alias.length <= 3 && alias === base.symbol);
+  const shortForms = aliases.filter((alias) => alias.length <= 3 && (alias === base.symbol || alias === base.symbol.toUpperCase()));
   for (const [symbol, long, pretty, factor] of PREFIXES) {
     const atom: Atom = { name: `${long}${base.name}`, symbol: `${pretty}${base.symbol}`, dims: base.dims, scale: base.scale * factor, angle: base.angle };
     for (const alias of shortForms) if (!TABLE.has(`${symbol}${alias}`)) TABLE.set(`${symbol}${alias}`, atom);
