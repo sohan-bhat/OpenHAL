@@ -1,9 +1,10 @@
-import {Composition, Still} from 'remotion';
+import {Composition, Folder, Still} from 'remotion';
 import shotData from '../../scenes/shots/test_pick.json';
 import {Compare, CompareProps} from './Compare';
 import {Film, FilmProps, Storyboard, StoryboardProps, Thumbnail, ThumbnailProps} from './film/Film';
 import {film} from './film/edit';
 import {TestPick} from './TestPick';
+import {DeskTest} from './demo/DeskTest';
 
 const compareDefaults: CompareProps = {
   panels: [
@@ -20,6 +21,17 @@ const [verticalWidth, verticalHeight] = film.resolution.vertical;
 
 export const RemotionRoot: React.FC = () => (
   <>
+    <Folder name="Demo">
+      <Composition
+        id="DeskTest"
+        component={DeskTest}
+        durationInFrames={90}
+        fps={30}
+        width={1280}
+        height={720}
+        defaultProps={{start: 13.95}}
+      />
+    </Folder>
     <Composition
       id="TestPick"
       component={TestPick}
