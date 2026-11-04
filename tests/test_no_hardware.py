@@ -91,3 +91,9 @@ def test_tests_never_see_the_real_hub() -> None:
     assert resolve_token().token is None
     assert resolve_url() == no_hardware.NO_HUB_URL
     assert os.environ["GPIOZERO_PIN_FACTORY"] == "mock"
+
+
+def test_pymmcore_plus_logs_into_the_test_folder() -> None:
+    log = Path(os.environ["PYMM_LOG_FILE"])
+    assert log.parent == Path(os.environ["OPENHAL_HOME"]).parent
+    assert not log.is_relative_to(Path.home())

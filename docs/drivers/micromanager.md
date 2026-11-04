@@ -98,7 +98,7 @@ A stop cancels running actions, stops every stage the file uses where the stage 
 - Sequence acquisition, multi-dimensional acquisitions and ROIs are not exposed. A snapshot is one frame.
 - The driver sends one MMCore call at a time, so a read waits while a stage moves.
 - Homing follows the hardware, and some stages home toward the sample. Check the direction before confirming a home action.
-- pymmcore-plus writes its log file into the user's data folder unless `PYMM_LOG_FILE=0` is set.
+- pymmcore-plus writes its log file into the user's data folder unless `PYMM_LOG_FILE` names another file.
 
 ## Hazard defaults
 

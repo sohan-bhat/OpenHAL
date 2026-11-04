@@ -14,7 +14,7 @@ real serial port, HID device, MIDI port, Bluetooth device or Raspberry Pi camera
 loopback port nothing listens on, so a test, and every process a test starts, never reads the real
 `~/.openhal`, never sends the developer's token and never reaches a running hub. A developer's own
 OPENHAL_FIRMWARE_PORTS is cleared too, so no exported list of real boards reaches discovery, and
-pymmcore-plus writes no log file into the developer's data folder.
+pymmcore-plus writes its log file into the temporary folder instead of the developer's data folder.
 """
 
 from __future__ import annotations
@@ -240,6 +240,6 @@ def isolate_environment() -> None:
     os.environ["OPENHAL_HOME"] = str(folder / "home")
     os.environ["OPENHAL_URL"] = NO_HUB_URL
     os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
-    os.environ["PYMM_LOG_FILE"] = "0"
+    os.environ["PYMM_LOG_FILE"] = str(folder / "pymmcore-plus.log")
     for name in ("OPENHAL_TOKEN", "OPENHAL_FIRMWARE_PORTS"):
         os.environ.pop(name, None)
