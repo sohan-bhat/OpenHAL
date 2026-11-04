@@ -2,7 +2,7 @@
 
 What comes after v0.1, in the order the work should happen. Items carry no dates. OpenHAL is not affiliated with Anthropic or MHS.
 
-Today 34 hardware drivers pass the conformance suite on simulators, and a MuJoCo driver runs simulated machines.
+Today 35 hardware drivers pass the conformance suite on simulators, and a MuJoCo driver runs simulated machines.
 
 ## 1. Hardware verification
 
@@ -20,12 +20,13 @@ The drivers below are proposed next. Each implements a protocol no current drive
 |---|---|---|---|
 | `prusalink` | PrusaLink HTTP API | Prusa MK4, XL, MINI and Core One printers on their own network interface | medium |
 | `reprapfirmware` | RepRapFirmware HTTP API | Duet boards in printers, CNC machines and lasers | medium |
-| `micromanager` | Micro-Manager MMCore through pymmcore | microscope cameras, stages, shutters and filter wheels | medium |
 | `epics` | EPICS Channel Access and pvAccess | beamline and lab instruments behind an EPICS IOC | medium |
 | `labjack` | LabJack LJM | LabJack T4 and T7 data acquisition devices | low |
 | `dynamixel` | Dynamixel Protocol 2.0 | Robotis servos outside a LeRobot arm | medium |
 | `mavlink` | MAVLink 2 through pymavlink | ArduPilot and PX4 rovers, boats and drones | high |
 | `ur-dashboard` | Universal Robots Dashboard Server and RTDE | UR collaborative arms | high |
+
+OpenHAL covers lab and research equipment and never clinical or patient-connected medical devices, such as infusion pumps, ventilators or patient monitors ([ADR 0024](adr/0024-microscopy-and-lab-drivers.md)). Lab instruments with a documented serial or HTTP command set, such as balances and syringe pumps, become device files through the driver writer rather than new drivers.
 
 Many devices need only a device file on an existing driver. WLED and Shelly devices fit the `http` driver, and Philips Hue fits `matter` or `homeassistant`. Those devices go to the device library, not into new drivers.
 
