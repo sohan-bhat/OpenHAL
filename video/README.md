@@ -52,28 +52,34 @@ arm.key(frame=1)
 
 ## The demo video
 
-The demo video shows Claude Code driving the simulated SO-101 through the OpenHAL hub, in the style of the Oopsy, Taro and Wobbl videos that REFERENCE.md describes. Remotion draws every frame, the desk scenes with React Three Fiber, and no Blender runs. The video follows the take's own order, the pick, the drop held for a person and approved in the Inspector, the request at 120 deg/s that the hub blocks with LIMIT_EXCEEDED, and STOP during a move.
+The demo video shows Claude Code driving the simulated SO-101 through the OpenHAL hub. Remotion draws every frame, the desk with React Three Fiber, and no Blender runs. The video follows the take's own order, the pick, the drop held for a person and approved in the Inspector, the request at 120 deg/s that the hub blocks with LIMIT_EXCEEDED, and STOP during a move. REFERENCE.md sets the pacing and loudness from the Oopsy, Taro and Wobbl videos and lists what this video does differently.
+
+### What is on screen
+
+- The 3D desk fills the frame, with slow camera moves, a push in on the shoulder servo, the gripper up close and a low angle on the bin.
+- The hub is a thin pink layer across the desk. Each request crosses the layer as a short pink pulse named with the real tool. The drop waits at the layer as `pending` until the cursor clicks Approve on a small Inspector control. The 120 deg/s request stops at the layer as LIMIT_EXCEEDED, a pink wedge on the shoulder joint shows how far the joint may turn in one second at the device file's 60 deg/s, and a dashed red line drawing of the arm moves toward the requested pose at 120 deg/s and stops at the wedge's edge while the real arm stays still. STOP freezes the arm, the layer goes flat and the sound cuts to silence.
+- Claude Code shows only as a slim prompt line at the bottom, the real prompt typing out, then Claude Code's working timer.
+- The stat cards show the two numbers in `data/STATS.md`, and the device scene names three real example device files.
 
 ### What comes from the take
 
-- Every prompt, Claude message and tool call in the terminal is quoted from `data/take-4/claude.stream.jsonl`. A tool call reads the way Claude Code prints an MCP call, and a long call or result ends in an ellipsis where Claude Code shortens one.
-- The terminal keeps the session's whole history, so earlier lines scroll up as new ones arrive. Claude's closing message of the first turn is left out, because Claude wrote that message after a check made before the Approve click, and beside the drop the video has just shown the message would read as the current state.
-- Where the edit skips a wait, Claude Code's working line stays up and its timer runs over the real seconds that passed, counted from the moment the person sent the prompt. The first timer shows the 15 s Claude Code took to start.
-- Every joint angle, gripper opening and cube pose is sampled from `frames.csv.gz` at 1x on the hub's clock, each frame at its simulated time plus its `lag_ms`, so the arm lines up with the clicks and the hub's messages. The joint speed on the panel is measured in simulated time.
-- The pick plays in two shots. Between them the edit skips 1.35 s in which the arm holds still at the cube before the gripper closes, and the second shot opens from a new camera angle.
-- The Approve and STOP clicks land on the frames of their recorded clicks, and the Inspector is redrawn from the screenshots in `data/take-4/inspector/`.
-- The terminal and the Inspector are shown pushed in, 1.3 and 1.54 times, so their lines read on a phone. When Claude's long reply to the block arrives, the terminal scrolls back to the reply's first lines, where LIMIT_EXCEEDED is.
-- The panel's verdicts, "done", LIMIT_EXCEEDED and "stopped", appear on the frame of the hub message or audit entry that carries them.
-- The stat cards show the two numbers in `data/STATS.md`, and the device cards name three real example device files.
+- Every prompt, tool name and hub answer is quoted from `data/take-4/`, the tool names from `claude.stream.jsonl` and the answers from the hub's results, `pending` from the held drop and `LIMIT_EXCEEDED` from the error of the blocked `run_steps`.
+- Where the edit skips a wait, Claude Code's timer runs over the real seconds that passed, counted from the moment the person sent the prompt. The first timer shows the 15 s Claude Code took to start.
+- Every joint angle, gripper opening and cube pose is sampled from `frames.csv.gz` at 1x on the hub's clock, each frame at its simulated time plus its `lag_ms`, so the arm lines up with the clicks and the hub's messages.
+- The pick plays in shots. Between the shot that lowers the gripper to the cube and the shot that closes it, the edit skips 1.35 s in which the arm holds still at the cube.
+- The Approve and STOP clicks land on the frames of their recorded clicks.
+- The dashed line drawing's target is the arm's recorded pose at the same `move_to` target in the first pick, and the line drawing moves at the requested 120 deg/s. The line drawing illustrates the request the hub refused. The hub moved nothing.
 
 ### Rebuild the demo
+
+The sound needs the five files listed under Sound and music in CREDITS.md, downloaded from their pages into `video/out/sound-sources/`.
 
 ```sh
 python3 -I video/scenes/fetch_assets.py
 cd video/remotion && pnpm install && cd ../..
 RATIO=0.35 ERROR=0.001 node video/remotion/scripts/simplify-arm.mjs
 .venv/bin/python video/scenes/demo_edit.py --take take-4
-.venv/bin/python video/scenes/demo_sound.py --cues video/remotion/src/demo/cues.json --out video/out/demo/sound/mix-raw.wav --normalize video/assets/demo/mix.wav
+.venv/bin/python video/scenes/demo_sound.py --cues video/remotion/src/demo/cues.json --sources video/out/sound-sources --out video/out/demo/sound/mix-raw.wav --normalize video/assets/demo/mix.wav
 cd video/remotion
 pnpm exec remotion bundle --out-dir=../out/demo/bundle --public-dir=../assets
 pnpm exec remotion render ../out/demo/bundle OpenHALDemo ../out/openhal-demo-1440p.mp4 --scale=2 --concurrency=2 --gl=angle --crf=18
