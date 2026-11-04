@@ -2,11 +2,12 @@
 
     .venv/bin/python video/scenes/demo_edit.py --take take-4
 
-Every line in a terminal scene is a line Claude Code received in the take, quoted as received and
-shortened only where Claude Code itself cuts a long call or result. Every arm pose, cube pose and
-joint speed is sampled from the take's frames at the take time a video frame shows, at 1x. Every
-Inspector click lands on the frame of its recorded click. The terminal scenes show the real time
-that passed on Claude Code's own timer where the edit skips a wait.
+The video is built around the 3D desk. Claude Code shows only as a slim prompt line at the bottom,
+with the real prompt typing out and Claude Code's working timer counting the real seconds that
+passed. Each request travels to the arm through the hub's pink layer as a short pulse named with
+the real tool, waits at the layer as pending until the recorded Approve click, stops at the layer
+on LIMIT_EXCEEDED, and STOP freezes everything on the recorded click frame. Every arm pose, cube
+pose and joint speed is sampled from the take on the hub's clock at 1x.
 
 The script writes video/remotion/src/demo/edit.json for Remotion and
 video/remotion/src/demo/cues.json for demo_sound.py.
@@ -22,434 +23,283 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import demo_take
-from demo_lines import (
-    BOTTOM,
-    FPS,
-    TOP,
-    ZOOM,
-    Script,
-    audit,
-    clip,
-    find,
-    frame_in,
-    history,
-    motion_start,
-    result_of,
-    result_spans,
-)
+from demo_lines import FPS, audit, find, motion_start, result_of
 from demo_take import Take
 
 VIDEO = Path(__file__).resolve().parent.parent
 OUT = VIDEO / "remotion" / "src" / "demo"
-SPEED_LIMIT = 60.0
-REFUSED_SCROLL = 300
-"""Pixels the terminal scrolls back when Claude's long reply to the block arrives, so its first lines stay in view."""
-HUB = {"product": "OpenHAL 0.1.0", "protocol": "0.1", "conformance": "full"}
-DEVICE = {"name": "SO-101 arm (simulated)", "id": "arm", "driver": "mujoco", "conformance": "full", "hazard": "medium"}
-DEVICE_FILE = "arm.hal.yaml"
-CAMERAS = {
-    "pick": {
-        "from": {"position": [0.44, -0.84, 0.56], "target": [0.12, -0.02, 0.13], "fov": 30},
-        "to": {"position": [0.41, -0.78, 0.52], "target": [0.13, -0.01, 0.12], "fov": 30},
-    },
-    "drop": {
-        "from": {"position": [0.4, -0.82, 0.52], "target": [0.12, -0.07, 0.1], "fov": 30},
-        "to": {"position": [0.37, -0.76, 0.48], "target": [0.12, -0.08, 0.1], "fov": 30},
-    },
-    "grip": {
-        "from": {"position": [0.54, -0.56, 0.4], "target": [0.16, 0.04, 0.11], "fov": 28},
-        "to": {"position": [0.51, -0.52, 0.38], "target": [0.16, 0.04, 0.12], "fov": 28},
-    },
-    "wide": {
-        "from": {"position": [0.42, -0.84, 0.54], "target": [0.12, -0.04, 0.1], "fov": 30},
-        "to": {"position": [0.4, -0.8, 0.51], "target": [0.12, -0.04, 0.1], "fov": 30},
-    },
-}
-HELD_WHY = (
-    "arm.hal.yaml requires a person to confirm drop_in_bin each time. Nothing reaches the device until you approve."
-)
-"""The Inspector's reason for the held request, as its screenshot in take-4/inspector/1-pending-dark.png reads."""
-DEVICE_YAML = VIDEO / "hub" / "so101-demo.hal.yaml"
-MODELS = {"claude-opus-5-5": "Opus 5.5"}
-ROOT = VIDEO.parent
+CPS = 34
+REQUESTED_SWEEP = 60.0
+"""Degrees the wedge spans, how far the shoulder may turn in one second at the device file's 60 deg/s."""
 DEVICE_FILES = [
     "examples/print-babysitter/printer.hal.yaml",
     "openhal/drivers/esphome/examples/plant-waterer.hal.yaml",
     "openhal/drivers/scpi/examples/rigol-dp832.hal.yaml",
 ]
-STATS_FILE = VIDEO / "data" / "STATS.md"
-STATS: list[dict] = [
+STATS = [
     {"value": 5.5, "decimals": 1, "unit": "ms", "label": "added to check a request"},
-    {"value": 34, "decimals": 0, "unit": "drivers", "label": "for real hardware"},
+    {"value": 34, "decimals": 0, "unit": "drivers"},
 ]
-STATS_SOURCE = "Median of 1,200 requests to the simulated arm on a 2018 MacBook Pro"
+STATS_FILE = VIDEO / "data" / "STATS.md"
 
 
-def action_description(action: str) -> str:
-    """An action's description from the take's device file, which the Inspector shows."""
-    import yaml
-
-    return yaml.safe_load(DEVICE_YAML.read_text(encoding="utf-8"))["actions"][action]["description"]
+def cam(position: list[float], target: list[float], fov: float) -> dict:
+    """One camera pose, z up, metres."""
+    return {"position": position, "target": target, "fov": fov}
 
 
-def device_cards() -> list[dict]:
-    """A card for each example device file, with the file's own name, model and hazard."""
-    import yaml
-
-    cards = []
-    for path in DEVICE_FILES:
-        text = (ROOT / path).read_text(encoding="utf-8")
-        data = yaml.safe_load(text)
-        device = data["device"]
-        hazard = next(line for line in text.splitlines() if line.startswith("hazard:"))
-        if isinstance(device, dict):
-            cards.append(
-                {
-                    "name": device["name"],
-                    "file": Path(path).name,
-                    "lines": [f"{device['manufacturer']} {device['model']}", hazard],
-                }
-            )
-        else:
-            driver = next(iter(data["connect"]))
-            cards.append({"name": device, "file": Path(path).name, "lines": [f"{driver} driver", hazard]})
-    return cards
+def move(start: dict, end: dict, frames: int) -> dict:
+    """A slow eased move between two camera poses."""
+    return {"from": start, "to": end, "frames": frames}
 
 
-def stats_cards() -> dict | None:
-    """The stat cards, from the numbers in video/data/STATS.md, once that file exists."""
-    if not STATS_FILE.exists() or not STATS:
-        return None
-    text = STATS_FILE.read_text(encoding="utf-8")
-    for stat in STATS:
-        if str(stat["value"]) not in text:
-            raise SystemExit(f"{stat['value']} is not in {STATS_FILE}")
-    return {"stats": STATS, "source": STATS_SOURCE}
+CAMERAS = {
+    "establish": (cam([0.62, -0.9, 0.46], [0.08, -0.08, 0.1], 30), cam([0.52, -0.78, 0.4], [0.08, -0.07, 0.1], 30)),
+    "shoulder": (cam([0.3, -0.36, 0.2], [0.0, 0.0, 0.11], 30), cam([0.24, -0.29, 0.17], [0.0, 0.0, 0.11], 28)),
+    "reach": (cam([0.5, -0.62, 0.34], [0.12, 0.02, 0.07], 30), cam([0.46, -0.56, 0.31], [0.13, 0.03, 0.07], 30)),
+    "gripper": (cam([0.42, -0.2, 0.16], [0.2, 0.09, 0.07], 34), cam([0.39, -0.17, 0.15], [0.2, 0.09, 0.08], 33)),
+    "held": (cam([0.58, -0.86, 0.42], [0.06, -0.1, 0.13], 30), cam([0.53, -0.8, 0.39], [0.06, -0.1, 0.13], 30)),
+    "bin": (cam([0.42, -0.58, 0.07], [0.11, -0.15, 0.12], 36), cam([0.38, -0.53, 0.075], [0.11, -0.15, 0.12], 36)),
+    "wedge": (cam([0.3, -0.66, 0.66], [0.05, -0.06, 0.04], 34), cam([0.27, -0.6, 0.6], [0.05, -0.06, 0.05], 33)),
+    "stop": (cam([0.58, -0.86, 0.42], [0.06, -0.08, 0.12], 30), cam([0.52, -0.78, 0.38], [0.06, -0.08, 0.12], 30)),
+}
 
 
-def header(take: Take) -> dict:
-    """Claude Code's header from the session's init event, the version and the model."""
-    stream = demo_take.jsonl(take.folder / "claude.stream.jsonl")
-    init = next(event for event in stream if event.get("type") == "system" and event.get("subtype") == "init")
-    return {
-        "title": "Claude Code",
-        "version": f"v{init['claude_code_version']}",
-        "model": MODELS.get(init["model"], init["model"]),
-    }
+def shot(name: str, start: int, frames: int) -> dict:
+    """A named camera move starting at a scene frame."""
+    a, b = CAMERAS[name]
+    return {"start": start, "camera": move(a, b, frames)}
 
 
-def panel(label: str, value: object, verdict: dict | None, scale: float = 100, **extra: object) -> dict:
-    """The data panel beside the arm."""
-    return {
-        "title": "SO-101 arm",
-        "subtitle": DEVICE_FILE,
-        "label": label,
-        "unit": "deg/s",
-        "limit": SPEED_LIMIT,
-        "scaleMax": scale,
-        "limitLabel": f"{SPEED_LIMIT:.0f} deg/s max",
-        "value": value,
-        "verdict": verdict,
-        **extra,
-    }
+def sample(take: Take, times: list[float]) -> tuple[list[list[float]], list[float]]:
+    """Poses and the fastest joint speed at each take time."""
+    return [take.pose(t) for t in times], [round(take.speed(t), 2) for t in times]
+
+
+def typed_frames(text: str, cps: int = CPS) -> int:
+    """Frames the prompt takes to type out."""
+    return round(len(text) / cps * FPS)
 
 
 def build(take: Take) -> tuple[dict, dict]:
     """The edit and the cue sheet."""
     scenes: list[dict] = []
-    cues: dict = {
-        "fps": FPS,
-        "typing": [],
-        "calls": [],
-        "results": [],
-        "presses": [],
-        "blocks": [],
-        "chimes": [],
-        "servos": [],
-        "silence": [],
-        "sections": [],
-    }
+    cues: dict = {"fps": FPS, "typing": [], "clicks": [], "switches": [], "servos": [], "music": []}
     cursor = 0
-    hub = {**HUB, "host": f"127.0.0.1:{take.session['hub_port']}"}
 
-    def add(scene: dict, energy: int, chord: str, script: Script | None = None) -> dict:
+    def add(scene: dict) -> dict:
         nonlocal cursor
         scene["from"] = cursor
         scenes.append(scene)
-        cues["sections"].append(
-            {
-                "start": cursor / FPS,
-                "end": (cursor + scene["frames"]) / FPS,
-                "energy": energy,
-                "chord": chord,
-                "id": scene["id"],
-            }
-        )
-        if script:
-            for a, b, chars in script.typing:
-                cues["typing"].append({"start": (cursor + a) / FPS, "end": (cursor + b) / FPS, "chars": chars})
-            cues["calls"].extend((cursor + f) / FPS for f in script.calls)
-            cues["results"].extend((cursor + f) / FPS for f in script.results)
         cursor += scene["frames"]
         return scene
 
-    def desk(
-        scene_id: str,
-        start: float,
-        frames: int,
-        camera: str,
-        spec: dict,
-        energy: int,
-        chord: str,
-        stop: dict | None = None,
-        servo: int | None = None,
-    ) -> tuple[dict, float]:
-        poses, speeds, t0 = clip(take, start, frames)
-        scene = {
-            "id": scene_id,
-            "kind": "desk",
-            "frames": frames,
-            "poses": poses,
-            "speeds": speeds,
-            "camera": {**CAMERAS[camera], "frames": frames},
-            "panel": spec,
-        }
-        if stop:
-            scene["stop"] = stop
-        add(scene, energy, chord)
-        cues["servos"].append(
+    def absolute(scene: dict, frame: int) -> float:
+        return (scene["from"] + frame) / FPS
+
+    def stage(scene_id: str, times: list[float], shots: list[dict], **extra: object) -> dict:
+        poses, speeds = sample(take, times)
+        scene = add(
             {
-                "start": scene["from"] / FPS,
-                "limit": SPEED_LIMIT,
-                "speeds": speeds[: servo if servo is not None else frames],
+                "id": scene_id,
+                "kind": "stage",
+                "frames": len(times),
+                "poses": poses,
+                "speeds": speeds,
+                "shots": shots,
+                **extra,
             }
         )
-        return scene, t0
+        cues["servos"].append({"start": scene["from"] / FPS, "speeds": speeds})
+        return scene
 
+    sent = [mark["t_sent"] for mark in take.marks if mark.get("text") == "prompt sent"]
     ask = find(take, "prompt")
-    listing = find(take, "tool", after=ask.t, tool="list_devices")
-    describe = find(take, "tool", after=ask.t, tool="describe_device")
-    check = find(take, "tool", after=ask.t, tool="plan_check")
-    because = find(take, "text", after=check.t)
     steps = find(take, "tool", after=ask.t, tool="run_steps")
     steps_done = result_of(take, steps)
 
-    one = Script(take.mark("prompt sent", 0)["t_sent"], history(take, ask.t))
-    one.camera = [{"at": 0, "scale": ZOOM, "y": TOP}]
-    one.prompt(ask, at=10, cps=34)
-    one.wait(listing.t, 14)
-    one.call(take, listing, gap=7, after=6)
-    one.wait(describe.t, 8)
-    one.call(take, describe, gap=7, after=6)
-    one.wait(check.t, 16)
-    one.look(BOTTOM, at=one.frame - 6)
-    one.call(take, check, gap=10, after=10)
-    one.text(because, 28)
-    one.wait(steps.t, 8)
-    one.call(take, steps, result=False, after=6, brand=True)
-    one.wait(steps.t + 18 / FPS, 18)
-    first = one.scene("ask")
-    add(first, 2, "a", one)
+    typing = 12
+    submit = typing + typed_frames(ask.text) + 8
+    launch = submit + 42
+    layer_at = launch + 14
+    arrive = layer_at + 16
+    frames = arrive + 8
+    times = [steps.t + (f - launch) / FPS if f >= launch else steps.t for f in range(frames)]
+    one = stage(
+        "ask",
+        times,
+        [shot("establish", 0, frames)],
+        prompt={
+            "text": ask.text,
+            "at": typing,
+            "submit": submit,
+            "cps": CPS,
+            "timer": {"from": 0, "to": round(steps.t - sent[0], 2), "until": launch},
+        },
+        pulse={"tool": "run_steps", "at": launch, "layerAt": layer_at, "arriveAt": arrive},
+    )
+    cues["typing"].append({"start": absolute(one, typing), "end": absolute(one, submit - 8), "chars": len(ask.text)})
 
-    move = motion_start(take, steps.t)
-    lowered = audit(take, "action", after=move + 1.0, target="action:move_to", status="done")
+    move_start = motion_start(take, steps.t)
+    lowered = audit(take, "action", after=move_start + 1.0, target="action:move_to", status="done")
     lowered = audit(take, "action", after=lowered["t"] + 0.01, target="action:move_to", status="done")
     closing = audit(take, "write", after=lowered["t"], target="write:gripper_goal", status="done")
-    shot_a = (move - 0.15, lowered["t"] + 0.12)
-    shot_b = (closing["t"] - 0.1, steps_done.t + 0.4)
-    frames_a = round((shot_a[1] - shot_a[0]) * FPS)
-    frames_b = round((shot_b[1] - shot_b[0]) * FPS)
-    poses_a, speeds_a, _ = clip(take, shot_a[0], frames_a)
-    poses_b, speeds_b, _ = clip(take, shot_b[0], frames_b)
-    pick = add(
-        {
-            "id": "pick",
-            "kind": "desk",
-            "frames": frames_a + frames_b,
-            "poses": poses_a + poses_b,
-            "speeds": speeds_a + speeds_b,
-            "camera": {**CAMERAS["pick"], "frames": frames_a},
-            "shots": [{"start": frames_a, "camera": {**CAMERAS["grip"], "frames": frames_b}}],
-            "panel": panel(
-                "Fastest joint",
-                "speed",
-                {"text": "done", "tone": "ok", "at": frames_a + frame_in(shot_b[0], steps_done.t)},
-            ),
-            "skipped": [round(shot_a[1], 3), round(shot_b[0], 3)],
-        },
-        4,
-        "f",
+    a0 = max(steps.t + (frames - launch) / FPS, move_start - 0.3)
+    a1 = lowered["t"] + 0.12
+    b0, b1 = closing["t"] - 0.1, steps_done.t + 0.4
+    frames_a = round((a1 - a0) * FPS)
+    frames_b = round((b1 - b0) * FPS)
+    pick_times = [a0 + f / FPS for f in range(frames_a)] + [b0 + f / FPS for f in range(frames_b)]
+    pick = stage(
+        "pick",
+        pick_times,
+        [shot("shoulder", 0, 66), shot("reach", 66, frames_a - 66), shot("gripper", frames_a, frames_b)],
     )
-    cues["servos"].append({"start": pick["from"] / FPS, "limit": SPEED_LIMIT, "speeds": speeds_a + speeds_b})
+    pick["skipped"] = [round(a1, 3), round(b0, 3)]
 
-    lifted = find(take, "text", after=steps_done.t)
     drop = find(take, "tool", after=steps_done.t, tool="action")
-    two = Script(take.mark("prompt sent", 0)["t_sent"], history(take, steps_done.t + 0.001))
-    two.last = steps_done.t
-    two.wait(lifted.t, 8)
-    two.text(lifted, 24)
-    two.call(take, drop, gap=14, after=40, brand=True)
-    add(two.scene("held"), 3, "c", two)
-
+    pending = result_of(take, drop)
     held = take.mark("request held for a person", 0)
     click = take.mark("Approve clicked in the Inspector", 0)["t_click"]
-    press = 64
-    shown_from = click - press / FPS
-    approve = add(
-        {
-            "id": "approve",
-            "kind": "inspector",
-            "frames": press + 14,
-            "hub": hub,
-            "device": DEVICE,
-            "request": {
-                "agent": "claude",
-                "principal": "agent:claude",
-                "action": "drop_in_bin",
-                "deviceName": DEVICE["name"],
-                "requestId": held["request_id"],
-                "requested": f"{round(shown_from - held['t'])} s ago",
-                "method": "hal/action",
-                "params": '{ "device": "arm", "action": "drop_in_bin", "args": {} }',
-                "does": action_description("drop_in_bin"),
-                "why": HELD_WHY,
-                "expires": round(300 - (shown_from - held["t"])),
-            },
-            "cursor": [
-                {"at": 0, "x": 1180, "y": 660},
-                {"at": 8, "x": 1180, "y": 660},
-                {"at": press - 14, "x": 1010, "y": 398},
-            ],
-            "press": press,
-            "zoom": {"from": 1.0, "to": 1.54, "origin": [980, 769]},
+    launch = 10
+    layer_at = launch + round((pending.t - drop.t) * FPS)
+    press = layer_at + 78
+    frames = press + 22
+    held_times = [steps_done.t + 1.0 + f / FPS for f in range(frames)]
+    two = stage(
+        "held",
+        held_times,
+        [shot("held", 0, frames)],
+        prompt={
+            "text": ask.text,
+            "at": -1000,
+            "submit": 0,
+            "cps": CPS,
+            "timer": {"from": round(drop.t - sent[0], 2), "to": round(click - sent[0], 2), "until": press},
         },
-        2,
-        "d",
+        pulse={
+            "tool": "drop_in_bin",
+            "at": launch,
+            "layerAt": layer_at,
+            "holdUntil": press + 2,
+            "arriveAt": press + 18,
+        },
+        answer={"word": "pending", "tone": "pending", "at": layer_at, "until": press},
+        card={
+            "kind": "approve",
+            "label": "Approve and run drop_in_bin",
+            "at": layer_at + 10,
+            "press": press,
+            "cursor": [
+                {"at": 0, "x": -40, "y": 260},
+                {"at": press - 34, "x": -40, "y": 260},
+                {"at": press - 4, "x": 214, "y": 92},
+            ],
+        },
     )
-    cues["presses"].append((approve["from"] + press) / FPS)
+    two["request"] = held["request_id"]
+    cues["clicks"].append(absolute(two, press))
 
     drop_done = audit(take, "action", after=click, target="action:drop_in_bin", status="done")
-    drop_scene, _ = desk(
-        "drop",
-        click,
-        round((drop_done["t"] - click) * FPS) + 24,
-        "drop",
-        panel("Fastest joint", "speed", {"text": "done", "tone": "ok", "at": frame_in(click, drop_done["t"])}),
-        4,
-        "c",
-    )
-    cues["chimes"].append((drop_scene["from"] + frame_in(click, drop_done["t"])) / FPS)
+    frames = round((drop_done["t"] + 0.9 - click) * FPS)
+    stage("drop", [click + f / FPS for f in range(frames)], [shot("bin", 0, frames)])
 
     again = find(take, "prompt", after=drop_done["t"])
-    reading = find(take, "tool", after=again.t, tool="read_many")
-    status = find(take, "tool", after=again.t, tool="get_confirmation_status")
-    plan = find(take, "text", after=again.t)
     fast = find(take, "tool", after=again.t, tool="run_steps")
-    refused = find(take, "text", after=fast.t)
-    three = Script(take.mark("prompt sent", 1)["t_sent"], history(take, again.t))
-    three.prompt(again, at=8, cps=48)
-    three.wait(reading.t, 10)
-    three.call(take, reading, result=False, after=4)
-    three.call(take, status, result=False, after=4)
-    reading_result, status_result = result_of(take, reading), result_of(take, status)
-    three.blocks[-2]["result"] = {"spans": result_spans(reading_result.result), "at": three.frame + 2}
-    three.blocks[-1]["result"] = {"spans": result_spans(status_result.result), "at": three.frame + 4}
-    three.results.extend([three.frame + 2, three.frame + 4])
-    three.frame += 10
-    three.last = status_result.t
-    three.wait(plan.t, 8)
-    three.text(plan, 20)
-    three.wait(fast.t, 10)
-    three.call(take, fast, gap=14, after=34, brand=True, limit=190)
-    three.wait(refused.t, 10)
-    three.scroll(REFUSED_SCROLL, at=three.frame + 1)
-    three.text(refused, 46)
-    limit_scene = add(three.scene("limit"), 3, "g", three)
-    blocked_at = (limit_scene["from"] + three.results[-1]) / FPS
-    cues["blocks"].append(blocked_at)
-
-    error = json.loads(result_of(take, fast).result)["error"]
+    blocked = result_of(take, fast)
+    error = json.loads(blocked.result)["error"]
     requested = next(
         step["args"]["speed"]["value"]
         for step in fast.args["steps"]
         if step.get("kind") == "action" and "speed" in step.get("args", {})
     )
-    block_frames = 96
-    still = desk(
-        "refused",
-        result_of(take, fast).t - 0.5,
-        block_frames,
-        "wide",
-        panel(
-            "Requested speed",
-            requested,
-            {"text": error["name"], "tone": "blocked", "at": 40},
-            scale=140,
-            countFrom=0,
-            countFrames=26,
-        ),
-        1,
-        "g",
-    )[0]
-    cues["results"].append((still["from"] + 40) / FPS)
+    first_target = audit(take, "action", after=steps.t, target="action:move_to", status="done")
+    typing = 10
+    submit = typing + typed_frames(again.text, 44) + 8
+    launch = submit + 24
+    layer_at = launch + round((blocked.t - fast.t) * FPS)
+    frames = layer_at + 66
+    still = fast.t
+    three = stage(
+        "limit",
+        [still for _ in range(frames)],
+        [shot("wedge", 0, frames)],
+        prompt={
+            "text": again.text,
+            "at": typing,
+            "submit": submit,
+            "cps": 44,
+            "timer": {"from": 0, "to": round(fast.t - sent[1], 2), "until": launch},
+        },
+        pulse={"tool": "run_steps", "at": launch, "layerAt": layer_at, "blocked": True},
+        answer={"word": error["name"], "tone": "blocked", "at": layer_at + 2, "lift": 0.24, "dx": -230},
+        limit={
+            "at": layer_at + 4,
+            "ghostFrom": take.pose(still)[:6],
+            "ghostTo": take.pose(first_target["t"])[:6],
+            "requested": requested,
+            "sweepDeg": REQUESTED_SWEEP,
+        },
+    )
+    three["error"] = {"code": error["code"], "name": error["name"]}
+    cues["typing"].append(
+        {"start": absolute(three, typing), "end": absolute(three, submit - 8), "chars": len(again.text)}
+    )
+    cues["switches"].append({"at": absolute(three, layer_at), "level": -14})
 
     last = find(take, "prompt", after=fast.t)
     run = find(take, "tool", after=last.t, tool="run_steps")
-    four = Script(take.mark("prompt sent", 2)["t_sent"], history(take, last.t))
-    four.prompt(last, at=6, cps=36)
-    four.wait(run.t, 14)
-    four.call(take, run, result=False, after=16, brand=True)
-    add(four.scene("normal"), 3, "a", four)
-
     stop_click = take.mark("STOP clicked in the Inspector")["t_click"]
     stop_entry = audit(take, "stop", after=last.t)
-    opening = audit(take, "write", after=run.t, target="write:gripper_goal", status="done")
-    stop_start = opening["t"] - 0.1
-    stop_frames = round((stop_click - stop_start) * FPS) + 54
-    press = round((stop_click - stop_start) * FPS)
-    stop_scene, _ = desk(
+    typing = 8
+    submit = typing + typed_frames(last.text) + 8
+    launch = submit + 22
+    layer_at = launch + 12
+    press = launch + round((stop_click - run.t) * FPS)
+    frames = press + 56
+    four = stage(
         "stop",
-        stop_start,
-        stop_frames,
-        "wide",
-        panel(
-            "Fastest joint",
-            "speed",
-            {"text": "stopped", "tone": "blocked", "at": frame_in(stop_start, stop_entry["t"])},
-        ),
-        4,
-        "a",
-        stop={
-            "hub": hub,
-            "reason": stop_entry["details"]["reason"],
+        [run.t + (f - launch) / FPS if f >= launch else run.t for f in range(frames)],
+        [shot("stop", 0, press)],
+        prompt={
+            "text": last.text,
+            "at": typing,
+            "submit": submit,
+            "cps": CPS,
+            "timer": {"from": 0, "to": round(run.t - sent[2], 2), "until": launch},
+        },
+        pulse={"tool": "run_steps", "at": launch, "layerAt": layer_at, "arriveAt": layer_at + 14},
+        card={
+            "kind": "stop",
+            "label": "STOP",
+            "at": press - 40,
             "press": press,
             "cursor": [
-                {"at": 0, "x": 1236, "y": 250},
-                {"at": max(1, press - 30), "x": 1236, "y": 250},
-                {"at": max(2, press - 4), "x": 1186, "y": 40},
+                {"at": 0, "x": -40, "y": 260},
+                {"at": press - 30, "x": -40, "y": 260},
+                {"at": press - 4, "x": 132, "y": 96},
             ],
         },
-        servo=press,
+        flatAt=press + round((stop_entry["t"] - stop_click) * FPS),
     )
-    cues["presses"].append((stop_scene["from"] + press) / FPS)
-    cues["silence"].append(
-        {"start": (stop_scene["from"] + press) / FPS, "end": (stop_scene["from"] + stop_frames) / FPS}
-    )
-
-    stats = stats_cards()
-    if stats:
-        add({"id": "stats", "kind": "stats", "frames": 105, "stats": stats["stats"], "source": stats["source"]}, 4, "f")
-    add(
+    four["shots"].append(
         {
-            "id": "devices",
-            "kind": "devices",
-            "frames": 105,
-            "title": "The same hub works with other hardware.",
-            "devices": device_cards(),
-        },
-        4,
-        "a",
+            "start": press,
+            "camera": {"from": four["shots"][0]["camera"]["to"], "to": four["shots"][0]["camera"]["to"], "frames": 1},
+        }
     )
+    cues["typing"].append({"start": absolute(four, typing), "end": absolute(four, submit - 8), "chars": len(last.text)})
+    cues["clicks"].append(absolute(four, press))
+    cues["switches"].append({"at": absolute(four, press) + 0.02, "level": -6})
+    cues["servos"][-1]["speeds"] = cues["servos"][-1]["speeds"][:press]
+    stop_at = absolute(four, press)
+
+    text = STATS_FILE.read_text(encoding="utf-8")
+    for stat in STATS:
+        if str(stat["value"]) not in text:
+            raise SystemExit(f"{stat['value']} is not in {STATS_FILE}")
+    stats = add({"id": "stats", "kind": "stats", "frames": 96, "stats": STATS})
+    add({"id": "devices", "kind": "devices", "frames": 84, "files": [Path(path).name for path in DEVICE_FILES]})
     add(
         {
             "id": "end",
@@ -459,26 +309,29 @@ def build(take: Take) -> tuple[dict, dict]:
             "command": "uvx halkit demo",
             "url": "sohan-bhat.github.io/OpenHAL",
             "finePrint": "Simulated arm. Real OpenHAL hub. Not affiliated with Anthropic.",
-        },
-        2,
-        "a",
+        }
     )
+    for path in DEVICE_FILES:
+        if not (VIDEO.parent / path).exists():
+            raise SystemExit(f"{path} is missing")
 
-    edit = {
-        "take": take.name,
-        "fps": FPS,
-        "frames": cursor,
-        "header": header(take),
-        "scenes": scenes,
-    }
+    cues["music"] = [
+        {"start": 0.0, "end": stop_at, "offset": 0.0, "fade_in": 1.0},
+        {"start": stats["from"] / FPS, "end": cursor / FPS, "offset": MUSIC_RETURN, "fade_in": 0.05, "fade_out": 1.6},
+    ]
     cues["duration"] = cursor / FPS
+    edit = {"take": take.name, "fps": FPS, "frames": cursor, "scenes": scenes}
     return edit, cues
+
+
+MUSIC_RETURN = 82.0
+"""Seconds into the track where the music comes back after STOP, the bar where the hats enter."""
 
 
 def main() -> int:
     """Write the edit and the cue sheet."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--take", default="take-3")
+    parser.add_argument("--take", default="take-4")
     args = parser.parse_args()
     take = demo_take.load(args.take)
     edit, cues = build(take)
@@ -486,7 +339,7 @@ def main() -> int:
     (OUT / "cues.json").write_text(json.dumps(cues, separators=(",", ":")) + "\n", encoding="utf-8")
     for scene in edit["scenes"]:
         last = scene["from"] + scene["frames"] - 1
-        print(f"{scene['id']:8} {scene['kind']:9} frames {scene['from']:4} to {last:4}, {scene['frames'] / FPS:5.2f} s")
+        print(f"{scene['id']:8} {scene['kind']:8} frames {scene['from']:4} to {last:4}, {scene['frames'] / FPS:5.2f} s")
     print(f"{edit['frames']} frames, {edit['frames'] / FPS:.2f} s")
     return 0
 
