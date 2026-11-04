@@ -10,6 +10,10 @@ a device pass their own fake, a simulator or a temporary path, and those keep wo
 real serial port, HID device, MIDI port, Bluetooth device or Raspberry Pi camera fails the test with
 `RealHardwareError`.
 
+A connection to the developer's own hub, the default port on this machine, is refused as if nothing
+listened there. A test that drops OPENHAL_URL to check the default address then sees no hub, the same
+as on CI, and never sends a request to a hub that drives real devices.
+
 `isolate_environment()` points the hub's home at a temporary folder and the hub address at a
 loopback port nothing listens on, so a test, and every process a test starts, never reads the real
 `~/.openhal`, never sends the developer's token and never reaches a running hub. A developer's own
@@ -20,12 +24,13 @@ pymmcore-plus writes its log file into the temporary folder instead of the devel
 from __future__ import annotations
 
 import atexit
+import errno
 import functools
 import glob
 import importlib
 import os
-import pkgutil
 import shutil
+import socket
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
@@ -33,6 +38,8 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+
+from openhal._brand import DEFAULT_PORT
 
 NO_HUB_URL = "http://127.0.0.1:9"
 DRIVERS = "openhal.drivers"
@@ -215,22 +222,76 @@ PATCHES: tuple[tuple[str, Callable[[], Any]], ...] = (
 
 
 @functools.cache
+def _resolve(owner: str) -> Any | None:
+    """The object `owner` names, or None when its library, or a library its module needs, isn't installed.
+
+    A misspelled name inside an installed package still raises, so a guard can't go missing quietly.
+    """
+    parts = owner.split(".")
+    for cut in range(len(parts), 0, -1):
+        module_name = ".".join(parts[:cut])
+        try:
+            found: Any = importlib.import_module(module_name)
+        except ModuleNotFoundError as error:
+            missing = error.name or ""
+            if module_name == missing or module_name.startswith(f"{missing}."):
+                continue
+            return None
+        except ImportError:
+            return None
+        for name in parts[cut:]:
+            found = getattr(found, name)
+        return found
+    return None
+
+
 def _replacements() -> tuple[tuple[Any, str, Any], ...]:
     """Each owner, attribute and replacement, resolved once. A library that isn't installed has no devices to hide."""
     made = []
     for target, make in PATCHES:
         owner, _, name = target.rpartition(".")
-        try:
-            made.append((pkgutil.resolve_name(owner), name, make()))
-        except ImportError:
-            continue
+        resolved = _resolve(owner)
+        if resolved is not None:
+            made.append((resolved, name, make()))
     return tuple(made)
 
 
+LOOPBACK: frozenset[str] = frozenset({"127.0.0.1", "localhost", "::1", "0.0.0.0", "::"})
+
+
+def is_own_hub(address: object) -> bool:
+    """True for an address on this machine at the hub's default port, where a developer's own hub listens."""
+    if not isinstance(address, tuple) or len(address) < 2:
+        return False
+    return address[1] == DEFAULT_PORT and str(address[0]) in LOOPBACK
+
+
+def _connect_without_own_hub(original: Callable[..., Any]) -> Callable[..., Any]:
+    @functools.wraps(original)
+    def connect(self: socket.socket, address: object, *args: object, **kwargs: object) -> Any:
+        if is_own_hub(address):
+            raise ConnectionRefusedError(errno.ECONNREFUSED, f"Tests never connect to the hub on port {DEFAULT_PORT}")
+        return original(self, address, *args, **kwargs)
+
+    return connect
+
+
+def _connect_ex_without_own_hub(original: Callable[..., Any]) -> Callable[..., Any]:
+    @functools.wraps(original)
+    def connect_ex(self: socket.socket, address: object, *args: object, **kwargs: object) -> Any:
+        if is_own_hub(address):
+            return errno.ECONNREFUSED
+        return original(self, address, *args, **kwargs)
+
+    return connect_ex
+
+
 def guard(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Hide every real device for one test."""
+    """Hide every real device and the developer's own hub for one test."""
     for owner, name, value in _replacements():
         monkeypatch.setattr(owner, name, value)
+    monkeypatch.setattr(socket.socket, "connect", _connect_without_own_hub(socket.socket.connect))
+    monkeypatch.setattr(socket.socket, "connect_ex", _connect_ex_without_own_hub(socket.socket.connect_ex))
 
 
 def isolate_environment() -> None:

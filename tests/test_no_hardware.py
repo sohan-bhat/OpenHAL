@@ -7,7 +7,9 @@ so the guard has to make `auto` find nothing.
 
 from __future__ import annotations
 
+import errno
 import os
+import socket
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -15,7 +17,7 @@ import pytest
 import serial
 from serial.tools import list_ports
 
-from openhal._brand import DEFAULT_CONFIG_DIR, config_dir
+from openhal._brand import DEFAULT_CONFIG_DIR, DEFAULT_PORT, config_dir
 from openhal.client.settings import resolve_token, resolve_url
 from openhal.drivers import registry
 from openhal.drivers.base import DriverError
@@ -75,7 +77,13 @@ def test_a_pyserial_url_still_opens() -> None:
 
 @pytest.mark.parametrize("name", [name for name in registry.names() if name != "mock"])
 async def test_every_driver_discovers_nothing(name: str) -> None:
-    assert await registry.load(name).discover() == []
+    try:
+        driver = registry.load(name)
+    except registry.UnknownDriver as error:
+        if "optional dependency" not in str(error):
+            raise
+        pytest.skip(f"{name} needs an extra that isn't installed here")
+    assert await driver.discover() == []
 
 
 async def test_a_camera_set_to_auto_never_opens() -> None:
@@ -97,3 +105,19 @@ def test_pymmcore_plus_logs_into_the_test_folder() -> None:
     log = Path(os.environ["PYMM_LOG_FILE"])
     assert log.parent == Path(os.environ["OPENHAL_HOME"]).parent
     assert not log.is_relative_to(Path.home())
+
+
+@pytest.mark.parametrize("host", ["127.0.0.1", "localhost"])
+def test_a_test_never_connects_to_the_developers_own_hub(host: str) -> None:
+    with socket.socket() as sock, pytest.raises(ConnectionRefusedError):
+        sock.connect((host, DEFAULT_PORT))
+    with socket.socket() as sock:
+        assert sock.connect_ex((host, DEFAULT_PORT)) == errno.ECONNREFUSED
+
+
+def test_other_ports_still_connect() -> None:
+    with socket.socket() as server:
+        server.bind(("127.0.0.1", 0))
+        server.listen(1)
+        with socket.create_connection(server.getsockname(), timeout=2):
+            pass
