@@ -45,10 +45,11 @@ Within a group, cheap and common hardware comes first. The hazard column is the 
 | 29 | [sila2](sila2.md) | empty SiLA 2 device | medium | a 25 °C target, a short shake |
 | 30 | [alpaca](alpaca.md) | mount over ASCOM Alpaca | medium | abort, tracking, a 5 degree slew |
 | 31 | [indi](indi.md) | mount on indiserver | medium | abort, tracking, a 5 degree slew |
-| 32 | [grbl](grbl.md) | CNC router or laser on GRBL | high | a 1 mm jog, a low spindle speed |
-| 33 | [lerobot](lerobot.md) | SO-101 arm | high | one joint, 5 degrees |
-| 34 | [ros2](ros2.md) | ROS 2 robot with its wheels off the floor | high | 0.05 m/s |
-| 35 | [pylabrobot](pylabrobot.md) | liquid handler with water | high | one tip and 10 uL |
+| 32 | [micromanager](micromanager.md) | motorized microscope with a test slide | medium | 5 um of focus, a 100 um stage move |
+| 33 | [grbl](grbl.md) | CNC router or laser on GRBL | high | a 1 mm jog, a low spindle speed |
+| 34 | [lerobot](lerobot.md) | SO-101 arm | high | one joint, 5 degrees |
+| 35 | [ros2](ros2.md) | ROS 2 robot with its wheels off the floor | high | 0.05 m/s |
+| 36 | [pylabrobot](pylabrobot.md) | liquid handler with water | high | one tip and 10 uL |
 
 ## Setup
 

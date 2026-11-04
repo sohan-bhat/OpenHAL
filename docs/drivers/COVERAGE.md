@@ -41,6 +41,7 @@ Device estimates are rough orders of magnitude with the reasoning given. The est
 | alpaca | httpx (ASCOM Alpaca REST) | ASCOM Alpaca devices | medium | tested on simulator |
 | onvif | own SOAP client on httpx and defusedxml | ONVIF cameras, read-only and PTZ with limits | low | tested on simulator |
 | pylabrobot | pylabrobot | Liquid handlers and lab robots | high | tested on simulator |
+| micromanager | pymmcore-plus | Research microscopes, their cameras, stages, turrets, wheels, shutters and light sources | medium | tested on simulator |
 | lerobot | lerobot | Hugging Face LeRobot arms | high | tested on simulator |
 
 ## Tier 3

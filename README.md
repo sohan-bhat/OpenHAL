@@ -74,10 +74,10 @@ The flow diagram follows one command. An agent sends `hal/write` to the hub, and
 
 ## Supported devices
 
-OpenHAL has 34 drivers for microcontrollers, 3D printers and CNC machines, lab instruments, home automation, industrial buses, robots, telescopes, cameras and input devices. Every driver passes the conformance suite on a simulator, and no driver is verified on real hardware yet. [The hardware test plans](docs/hardware-tests/README.md) say how to run a plan on a device you own, and [the device library](library/README.md) lists the device files that come with OpenHAL. The hub gives each channel and action its own risk level, and the table's usual hazard is the hazard class of a typical device in that family. A device file's `hazard` raises every channel and action on the device to at least that level.
+OpenHAL has 35 drivers for microcontrollers, 3D printers and CNC machines, lab instruments, microscopes, home automation, industrial buses, robots, telescopes, cameras and input devices. Every driver passes the conformance suite on a simulator, and no driver is verified on real hardware yet. OpenHAL covers lab and research equipment and has no driver for clinical or patient-connected medical devices. [The hardware test plans](docs/hardware-tests/README.md) say how to run a plan on a device you own, and [the device library](library/README.md) lists the device files that come with OpenHAL. The hub gives each channel and action its own risk level, and the table's usual hazard is the hazard class of a typical device in that family. A device file's `hazard` raises every channel and action on the device to at least that level.
 
 <details>
-<summary>All 34 drivers</summary>
+<summary>All 35 drivers</summary>
 
 <!-- devices:start -->
 | Driver | Devices covered | Status | Usual hazard |
@@ -104,6 +104,7 @@ OpenHAL has 34 drivers for microcontrollers, 3D printers and CNC machines, lab i
 | `grbl` | desktop CNC routers, diode and CO2 laser engravers, pen plotters | tested on simulator | high |
 | `indi` | telescope mounts, focusers, astronomy cameras | tested on simulator | medium |
 | `lerobot` | SO-100 and SO-101 arms, Koch and OMX arms, other LeRobot arms with joint goals | tested on simulator | high |
+| `micromanager` | research microscopes from Nikon, Zeiss, Olympus and Leica, scientific cameras from Hamamatsu, Andor, Photometrics and PCO, stages, focus drives, filter wheels, shutters and light sources from ASI, Prior, Ludl, Sutter, Lumencor and CoolLED | tested on simulator | medium |
 | `onvif` | ONVIF IP cameras, ONVIF PTZ cameras, network video recorders with ONVIF | tested on simulator | low |
 | `opcua` | PLCs with an OPC UA server, LADS lab instruments, process equipment and gateways | tested on simulator | medium |
 | `pylabrobot` | Hamilton STAR and STARlet, Tecan Freedom EVO, Opentrons OT-2 | tested on simulator | high |
