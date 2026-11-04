@@ -91,7 +91,7 @@ Each listing is a public post, so each one is yours to approve. List OpenHAL aft
 - **Cline.** Open an issue on https://github.com/cline/mcp-marketplace with the repository URL, docs/assets/logo-400.png and a reason to list OpenHAL. Cline installs from README.md and llms-install.md.
 - **Claude Code.** The repository is a plugin marketplace already. A person installs the plugin with `/plugin marketplace add sohan-bhat/OpenHAL` and then `/plugin install openhal@openhal`.
 - **Gemini CLI.** The repository is a Gemini extension already. A person installs the extension with `gemini extensions install https://github.com/sohan-bhat/OpenHAL`.
-- **The official MCP Registry.** Its terms require users to be 18 or older, so OpenHAL stays off the registry for now.
+- **The official MCP Registry.** OpenHAL stays off the registry for now.
 
 ## 7. Domain
 
