@@ -15,6 +15,7 @@ export type DataPanelProps = {
   limitLabel: string;
   verdict?: Verdict | null;
   overColor?: string;
+  offset?: number;
 };
 
 const fmt = (value: number, decimals: number) =>
@@ -33,6 +34,7 @@ export const DataPanel: React.FC<DataPanelProps> = ({
   limitLabel,
   verdict,
   overColor = COLOR.blocked,
+  offset = 0,
 }) => {
   const head = progress(frame, 0, 14);
   const body = progress(frame, 6, 14);
@@ -44,13 +46,13 @@ export const DataPanel: React.FC<DataPanelProps> = ({
   const over = Math.max(0, fraction - limitAt);
   const shown = verdict ? progress(frame, verdict.at, 10) : 0;
   return (
-    <div style={{position: 'absolute', left: 80, top: 0, width, height: '100%', color: COLOR.text}}>
+    <div style={{position: 'absolute', left: 80, top: offset, width, height: '100%', color: COLOR.text}}>
       <div style={{position: 'absolute', top: 104, opacity: head, translate: `0 ${(1 - head) * 10}px`}}>
         <div style={{fontFamily: SANS, fontWeight: 700, fontSize: 46, letterSpacing: '-0.02em', lineHeight: 1.08}}>{title}</div>
-        <div style={{fontFamily: MONO, fontSize: 18, color: COLOR.text2, marginTop: 12}}>{subtitle}</div>
+        <div style={{fontFamily: MONO, fontSize: 20, color: COLOR.text2, marginTop: 12}}>{subtitle}</div>
       </div>
       <div style={{position: 'absolute', top: 300, opacity: body, translate: `0 ${(1 - body) * 10}px`}}>
-        <div style={{fontFamily: MONO, fontSize: 18, color: COLOR.text2}}>{label}</div>
+        <div style={{fontFamily: MONO, fontSize: 21, color: COLOR.text2}}>{label}</div>
         <div style={{display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 6}}>
           <span style={{fontFamily: MONO, fontWeight: 400, fontSize: 84, letterSpacing: '-0.03em', lineHeight: 1, fontVariantNumeric: 'tabular-nums'}}>
             {fmt(value, decimals)}
@@ -72,7 +74,7 @@ export const DataPanel: React.FC<DataPanelProps> = ({
             translate: '-50% 0',
             whiteSpace: 'nowrap',
             fontFamily: MONO,
-            fontSize: 18,
+            fontSize: 20,
             color: COLOR.text2,
           }}
         >

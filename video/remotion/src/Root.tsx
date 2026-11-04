@@ -7,6 +7,8 @@ import {TestPick} from './TestPick';
 import {DeskTest} from './demo/DeskTest';
 import {TerminalTest} from './demo/TerminalTest';
 import {InspectorTest} from './demo/InspectorTest';
+import {DemoScene, OpenHALDemo, edit} from './demo/Demo';
+import {DemoThumbnail} from './demo/Thumbnail';
 
 const compareDefaults: CompareProps = {
   panels: [
@@ -23,6 +25,30 @@ const [verticalWidth, verticalHeight] = film.resolution.vertical;
 
 export const RemotionRoot: React.FC = () => (
   <>
+    <Composition
+      id="OpenHALDemo"
+      component={OpenHALDemo}
+      durationInFrames={edit.frames}
+      fps={30}
+      width={1280}
+      height={720}
+      defaultProps={{sound: true}}
+    />
+    <Still id="DemoThumbnail" component={DemoThumbnail} width={1280} height={720} defaultProps={{scene: 'refused', frame: 60}} />
+    <Folder name="DemoScenes">
+      {edit.scenes.map((scene) => (
+        <Composition
+          key={scene.id}
+          id={`Scene-${scene.id}`}
+          component={DemoScene}
+          durationInFrames={scene.frames}
+          fps={30}
+          width={1280}
+          height={720}
+          defaultProps={{id: scene.id}}
+        />
+      ))}
+    </Folder>
     <Folder name="Demo">
       <Composition
         id="DeskTest"

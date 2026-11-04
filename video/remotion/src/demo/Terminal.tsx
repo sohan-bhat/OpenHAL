@@ -8,7 +8,7 @@ export type Span = {text: string; tone?: Tone; bold?: boolean};
 
 export type TerminalBlock =
   | {kind: 'prompt'; text: string; at: number; submit: number; cps?: number}
-  | {kind: 'text'; spans: Span[]; at: number}
+  | {kind: 'text'; text: string; at: number}
   | {
       kind: 'tool';
       server: string;
@@ -20,7 +20,7 @@ export type TerminalBlock =
     }
   | {kind: 'spinner'; word: string; at: number; until: number; elapsed?: [number, number]};
 
-export type TerminalHeader = {title: string; model: string; cwd: string};
+export type TerminalHeader = {title: string; version?: string; model: string; cwd?: string};
 
 const TONE: Record<Tone, string> = {
   text: COLOR.text,
@@ -123,7 +123,41 @@ const ToolCall: React.FC<{block: Extract<TerminalBlock, {kind: 'tool'}>; frame: 
   );
 };
 
-export const Terminal: React.FC<{header: TerminalHeader; blocks: TerminalBlock[]; scroll?: number}> = ({header, blocks, scroll = 0}) => {
+const ERROR_NAMES = /^[A-Z][A-Z_]{4,}$/;
+
+const Inline: React.FC<{text: string}> = ({text}) => (
+  <>
+    {text.split(/(\*\*[^*]+\*\*|`[^`]+`)/).map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <span key={i} style={{fontWeight: 700}}>
+            {part.slice(2, -2)}
+          </span>
+        );
+      }
+      if (part.startsWith('`') && part.endsWith('`')) {
+        const code = part.slice(1, -1);
+        const error = ERROR_NAMES.test(code);
+        return (
+          <span key={i} style={{color: error ? COLOR.blocked : COLOR.neutral, fontWeight: error ? 700 : 400}}>
+            {code}
+          </span>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    })}
+  </>
+);
+
+const Markdown: React.FC<{text: string}> = ({text}) => (
+  <span style={{display: 'grid'}}>
+    {text.split('\n').map((line, i) => (line.trim() === '' ? <span key={i} style={{height: '0.6em'}} /> : <span key={i}>
+        <Inline text={line} />
+      </span>))}
+  </span>
+);
+
+export const Terminal: React.FC<{header: TerminalHeader; blocks: TerminalBlock[]}> = ({header, blocks}) => {
   const frame = useCurrentFrame();
   const prompt = blocks.filter((b): b is Extract<TerminalBlock, {kind: 'prompt'}> => b.kind === 'prompt').find((b) => frame >= b.at && frame < b.submit);
   const spinner = blocks.filter((b): b is Extract<TerminalBlock, {kind: 'spinner'}> => b.kind === 'spinner').find((b) => frame >= b.at && frame < b.until);
@@ -157,13 +191,17 @@ export const Terminal: React.FC<{header: TerminalHeader; blocks: TerminalBlock[]
           </div>
           <div style={{textAlign: 'center', fontFamily: SANS, fontSize: 14, lineHeight: '36px', color: COLOR.windowTitle}}>{header.title}</div>
         </div>
-        <div style={{position: 'absolute', left: 30, right: 30, top: 36 + 22 - scroll}}>
+        <div style={{position: 'absolute', left: 30, right: 30, top: 37, bottom: 18, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end'}}>
+          <div style={{flexShrink: 0, paddingTop: 22}}>
           <div style={{display: 'flex', gap: 22, alignItems: 'center', marginBottom: 18}}>
             <Mascot cell={FONT * 1.25} color={COLOR.claude} />
             <div style={{lineHeight: 1.3}}>
-              <div style={{fontWeight: 700}}>Claude Code</div>
+              <div>
+                <span style={{fontWeight: 700}}>Claude Code</span>
+                {header.version ? <span style={{color: COLOR.text2}}> {header.version}</span> : null}
+              </div>
               <div style={{color: COLOR.text2}}>{header.model}</div>
-              <div style={{color: COLOR.text2}}>{header.cwd}</div>
+              {header.cwd ? <div style={{color: COLOR.text2}}>{header.cwd}</div> : null}
             </div>
           </div>
           <div style={{display: 'grid', gap: 14}}>
@@ -178,7 +216,7 @@ export const Terminal: React.FC<{header: TerminalHeader; blocks: TerminalBlock[]
               if (block.kind === 'text') {
                 return (
                   <Row key={i} marker="●" style={{opacity: progress(frame, block.at, 6)}}>
-                    <Spans spans={block.spans} />
+                    <Markdown text={block.text} />
                   </Row>
                 );
               }
@@ -208,6 +246,8 @@ export const Terminal: React.FC<{header: TerminalHeader; blocks: TerminalBlock[]
             </Row>
           </div>
           <div style={{color: COLOR.text2, marginTop: 6, paddingLeft: '1.6em'}}>? for shortcuts</div>
+          </div>
+          <div style={{flexGrow: 1}} />
         </div>
       </div>
     </AbsoluteFill>

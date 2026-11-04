@@ -21,22 +21,28 @@ export const DESK_CAMERA: CameraMove = {
   frames: 240,
 };
 
-export const DeskScene: React.FC<{pose: ArmPose; camera: CameraPose; panel: React.ReactNode; aside?: React.ReactNode}> = ({pose, camera, panel, aside}) => (
+export const DeskScene: React.FC<{pose: ArmPose; camera: CameraPose; panel: React.ReactNode; aside?: React.ReactNode; offset?: number}> = ({
+  pose,
+  camera,
+  panel,
+  aside,
+  offset = 0,
+}) => (
   <AbsoluteFill style={{background: COLOR.bg}}>
     {panel}
     <div
       style={{
         position: 'absolute',
         left: VIEWPORT.left,
-        top: VIEWPORT.top,
+        top: VIEWPORT.top + offset,
         width: VIEWPORT.width,
-        height: VIEWPORT.height,
+        height: VIEWPORT.height - Math.round(offset * 0.4),
         overflow: 'hidden',
         borderRadius: 6,
         boxShadow: `0 0 0 1px ${COLOR.border}`,
       }}
     >
-      <Arm3D pose={pose} camera={camera} width={VIEWPORT.width} height={VIEWPORT.height} />
+      <Arm3D pose={pose} camera={camera} width={VIEWPORT.width} height={VIEWPORT.height - Math.round(offset * 0.4)} />
     </div>
     {aside}
   </AbsoluteFill>

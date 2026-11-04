@@ -144,12 +144,12 @@ export const InspectorNav: React.FC<{active: string; pending?: number}> = ({acti
   </div>
 );
 
-export const StoppedBanner: React.FC<{reason: string; opacity?: number}> = ({reason, opacity = 1}) => (
+export const StoppedBanner: React.FC<{reason: string; opacity?: number; top?: number}> = ({reason, opacity = 1, top = INSPECTOR.headerHeight + INSPECTOR.navHeight}) => (
   <div
     style={{
       position: 'absolute',
       left: 0,
-      top: INSPECTOR.headerHeight + INSPECTOR.navHeight,
+      top,
       width: 1280,
       height: INSPECTOR.bannerHeight,
       background: COLOR.surface,

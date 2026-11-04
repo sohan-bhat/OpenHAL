@@ -6,7 +6,7 @@ export const TerminalTest: React.FC = () => (
     blocks={[
       {kind: 'prompt', text: 'Pick up the red cube and put it in the bin.', at: 6, submit: 60},
       {kind: 'spinner', word: 'Thinking…', at: 62, until: 90, elapsed: [0, 4]},
-      {kind: 'text', spans: [{text: 'I’ll read where the cube is, then move the arm above it.'}], at: 90},
+      {kind: 'text', text: 'I’ll read where the cube is, then move the arm above it.', at: 90},
       {
         kind: 'tool',
         server: 'openhal',

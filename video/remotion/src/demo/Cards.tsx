@@ -33,8 +33,8 @@ export const DeviceCard: React.FC<{device: Device; at: number}> = ({device, at})
   return (
     <div
       style={{
-        width: 352,
-        padding: '26px 26px 24px',
+        width: 357,
+        padding: '28px 28px 26px',
         borderRadius: 6,
         background: COLOR.surface,
         boxShadow: `inset 0 0 0 1px ${COLOR.border}`,
@@ -42,10 +42,10 @@ export const DeviceCard: React.FC<{device: Device; at: number}> = ({device, at})
         translate: `0 ${(1 - shown) * 24}px`,
       }}
     >
-      <div style={{fontFamily: SANS, fontWeight: 700, fontSize: 28, letterSpacing: '-0.015em', color: COLOR.text, lineHeight: 1.2}}>{device.name}</div>
-      <div style={{fontFamily: MONO, fontSize: 18, color: COLOR.text2, marginTop: 6}}>{device.file}</div>
+      <div style={{fontFamily: SANS, fontWeight: 700, fontSize: 30, letterSpacing: '-0.015em', color: COLOR.text, lineHeight: 1.2}}>{device.name}</div>
+      <div style={{fontFamily: MONO, fontSize: 20, color: COLOR.text2, marginTop: 8}}>{device.file}</div>
       <div style={{height: 1, background: COLOR.border, margin: '18px 0 16px'}} />
-      <div style={{fontFamily: MONO, fontSize: 16, lineHeight: 1.65, color: COLOR.text, whiteSpace: 'pre'}}>
+      <div style={{fontFamily: MONO, fontSize: 19, lineHeight: 1.6, color: COLOR.text, whiteSpace: 'pre'}}>
         {device.lines.map((line, i) => {
           const colon = line.indexOf(':');
           return (
