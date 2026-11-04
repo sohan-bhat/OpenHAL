@@ -22,12 +22,28 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import demo_take
-from demo_lines import FPS, Script, audit, clip, find, frame_in, history, motion_start, result_of, result_spans
+from demo_lines import (
+    BOTTOM,
+    FPS,
+    TOP,
+    ZOOM,
+    Script,
+    audit,
+    clip,
+    find,
+    frame_in,
+    history,
+    motion_start,
+    result_of,
+    result_spans,
+)
 from demo_take import Take
 
 VIDEO = Path(__file__).resolve().parent.parent
 OUT = VIDEO / "remotion" / "src" / "demo"
 SPEED_LIMIT = 60.0
+REFUSED_SCROLL = 300
+"""Pixels the terminal scrolls back when Claude's long reply to the block arrives, so its first lines stay in view."""
 HUB = {"product": "OpenHAL 0.1.0", "protocol": "0.1", "conformance": "full"}
 DEVICE = {"name": "SO-101 arm (simulated)", "id": "arm", "driver": "mujoco", "conformance": "full", "hazard": "medium"}
 DEVICE_FILE = "arm.hal.yaml"
@@ -219,12 +235,14 @@ def build(take: Take) -> tuple[dict, dict]:
     steps_done = result_of(take, steps)
 
     one = Script(take.mark("prompt sent", 0)["t_sent"], history(take, ask.t))
+    one.camera = [{"at": 0, "scale": ZOOM, "y": TOP}]
     one.prompt(ask, at=10, cps=34)
     one.wait(listing.t, 14)
     one.call(take, listing, gap=7, after=6)
     one.wait(describe.t, 8)
     one.call(take, describe, gap=7, after=6)
     one.wait(check.t, 16)
+    one.look(BOTTOM, at=one.frame - 6)
     one.call(take, check, gap=10, after=10)
     one.text(because, 28)
     one.wait(steps.t, 8)
@@ -303,7 +321,7 @@ def build(take: Take) -> tuple[dict, dict]:
                 {"at": press - 14, "x": 1010, "y": 398},
             ],
             "press": press,
-            "zoom": {"from": 1.0, "to": 1.32, "origin": [1060, 420]},
+            "zoom": {"from": 1.0, "to": 1.54, "origin": [980, 769]},
         },
         2,
         "d",
@@ -344,6 +362,7 @@ def build(take: Take) -> tuple[dict, dict]:
     three.wait(fast.t, 10)
     three.call(take, fast, gap=14, after=34, brand=True, limit=190)
     three.wait(refused.t, 10)
+    three.scroll(REFUSED_SCROLL, at=three.frame + 1)
     three.text(refused, 46)
     limit_scene = add(three.scene("limit"), 3, "g", three)
     blocked_at = (limit_scene["from"] + three.results[-1]) / FPS
@@ -372,7 +391,7 @@ def build(take: Take) -> tuple[dict, dict]:
         1,
         "g",
     )[0]
-    cues["blocks"].append((still["from"] + 36) / FPS)
+    cues["results"].append((still["from"] + 40) / FPS)
 
     last = find(take, "prompt", after=fast.t)
     run = find(take, "tool", after=last.t, tool="run_steps")
@@ -404,7 +423,11 @@ def build(take: Take) -> tuple[dict, dict]:
             "hub": hub,
             "reason": stop_entry["details"]["reason"],
             "press": press,
-            "cursor": [{"at": 0, "x": 960, "y": 330}, {"at": max(1, press - 18), "x": 1186, "y": 40}],
+            "cursor": [
+                {"at": 0, "x": 1236, "y": 250},
+                {"at": max(1, press - 30), "x": 1236, "y": 250},
+                {"at": max(2, press - 4), "x": 1186, "y": 40},
+            ],
         },
         servo=press,
     )

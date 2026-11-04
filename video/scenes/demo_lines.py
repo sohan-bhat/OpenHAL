@@ -16,6 +16,11 @@ FPS = 30
 CPS = 30
 ARGS_MAX = 150
 RESULT_MAX = 120
+ZOOM = 1.3
+"""How far the camera pushes in on the terminal, so its lines read on a phone."""
+TOP = 180
+BOTTOM = 660
+"""Heights in the frame the push-in centres on, the window's top lines or its newest lines."""
 STATUS_TONES = {
     "done": "ok",
     "granted": "ok",
@@ -178,6 +183,16 @@ class Script:
         self.calls: list[int] = []
         self.results: list[int] = []
         self.typing: list[tuple[int, int, int]] = []
+        self.camera: list[dict] = [{"at": 0, "scale": ZOOM, "y": BOTTOM}]
+        self.scrolls: list[dict] = [{"at": 0, "px": 0}]
+
+    def look(self, y: float, scale: float = ZOOM, at: int | None = None) -> None:
+        """Move the push-in so a band of the window stays in view, from the current frame on."""
+        self.camera.append({"at": self.frame if at is None else at, "scale": scale, "y": y})
+
+    def scroll(self, px: float, at: int | None = None) -> None:
+        """Scroll the transcript up by px, the way a person scrolls back in a terminal."""
+        self.scrolls.append({"at": self.frame if at is None else at, "px": px})
 
     def prompt(self, line: Line, at: int = 10, cps: int = CPS) -> None:
         """Type the prompt and submit it on the frame that stands for the moment the person sent it."""
@@ -225,7 +240,14 @@ class Script:
 
     def scene(self, scene_id: str, tail: int = 0) -> dict:
         """The finished scene."""
-        return {"id": scene_id, "kind": "terminal", "frames": self.frame + tail, "blocks": self.blocks}
+        return {
+            "id": scene_id,
+            "kind": "terminal",
+            "frames": self.frame + tail,
+            "blocks": self.blocks,
+            "camera": self.camera,
+            "scroll": self.scrolls,
+        }
 
 
 def history(take: Take, before: float) -> list[dict]:
