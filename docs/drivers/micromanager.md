@@ -43,7 +43,7 @@ An image channel snaps one frame and returns the frame as an image the agent can
 
 ## Autofocus
 
-`autofocus` runs the configuration's autofocus device when the configuration has one, such as a Prior PureFocus or a Nikon Perfect Focus. Without one, or with `method: image` in the map, the driver sweeps the focus drive over `span` around the current z, scores each frame's sharpness, sweeps again in finer steps around the best frame and stops at the sharpest z. The sweep never leaves the limits of the file's focus channel and moves no faster than the channel's `max_change_per_s`, so the kernel's z limits hold for every step of a sweep the kernel never sees, and `steps` in the map sets the coarse sweep's frames.
+`autofocus` runs the configuration's autofocus device when the configuration has one, such as a Prior PureFocus or a Nikon Perfect Focus. Without one, or with `method: image` in the map, the driver sweeps the focus drive over `span` around the current z, scores each frame's sharpness, sweeps again in finer steps around the best frame and stops at the sharpest z. The sweep never leaves the limits of the file's focus channel and moves no faster than the channel's `max_change_per_s`, so the kernel's z limits hold for every step of a sweep whose single steps never pass through the kernel, and `steps` in the map sets the coarse sweep's frames.
 
 ## The z limit
 

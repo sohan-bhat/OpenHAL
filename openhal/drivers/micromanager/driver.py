@@ -23,7 +23,7 @@ are in `channels.py`, frame conversion in `frames.py` and the simulated microsco
   one. Without an autofocus device the driver sweeps the focus drive, scores each frame's
   sharpness and stops at the sharpest z. The sweep never leaves the limits of the file's focus
   channel or goes faster than the channel's max_change_per_s, so the kernel's z limits hold for
-  a sweep the kernel never sees step by step.
+  a sweep whose single steps never pass through the kernel.
 - `home` runs the adapters' own homing, which some stages don't implement. Homing moves the
   stage the way the hardware homes, so check the direction before confirming the action.
 - An action longer than `action_wait` returns `started` and finishes in the background, and the
