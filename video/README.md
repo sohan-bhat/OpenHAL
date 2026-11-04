@@ -1,6 +1,6 @@
-# Launch film
+# Launch film and demo video
 
-The OpenHAL launch film is drawn entirely from code. There is no stock footage, AI video or screen recording. This folder holds the scenes, the shared shot and look files, and the stack test that picked the graphics tools (ADR 0022).
+The OpenHAL launch film and the demo video are drawn entirely from code. There is no stock footage, AI video or screen recording. This folder holds the scenes, the shared shot and look files, the stack test that picked the graphics tools (ADR 0022), and the demo video described in [The demo video](#the-demo-video).
 
 ## Layout
 
@@ -27,6 +27,13 @@ The OpenHAL launch film is drawn entirely from code. There is no stock footage, 
 | `scenes/sound.py` | Synthesizes the film's sound from the edit and the recording |
 | `scenes/assemble.py` | Cuts the film in Remotion, sets the sound to -14 LUFS and muxes it, or renders the storyboard |
 | `remotion/` | The test shot in Remotion with React Three Fiber, and the film's edit, labels and end card in `src/film/` |
+| `data/take-4/`, `data/TAKE.md`, `data/STATS.md` | The recorded session the demo video uses, and the two measured numbers on its stat cards |
+| `scenes/demo_take.py`, `scenes/demo_lines.py` | Read a take, sample the arm on the hub's clock, and lay out Claude Code's lines |
+| `scenes/demo_edit.py` | Cuts the demo from the take into `remotion/src/demo/edit.json` and the sound's `cues.json` |
+| `scenes/demo_sound.py` | Synthesizes the demo's sound from `cues.json` and sets it to -14 LUFS |
+| `remotion/src/demo/` | The demo's composition `OpenHALDemo`, one `Scene-<id>` composition per scene, and `DemoThumbnail` |
+| `remotion/scripts/simplify-arm.mjs` | Writes the arm's parts with fewer triangles for the demo into `assets/so101/glb-lite/` |
+| `REFERENCE.md`, `TOOLS.md`, `PERF.md`, `YOUTUBE.md` | The series style the demo follows, the tools, the render times and the upload text |
 | `out/` | Renders, which git ignores |
 
 Every file uses the real arm's joint names, `shoulder_pan`, `shoulder_lift`, `elbow_flex`, `wrist_flex`, `wrist_roll` and `gripper`, in radians in code and degrees in shot files. Joint zero is the middle of each joint's range, the URDF's "new calibration". The test motion in `shots/test_pick.json` is hand-keyed by inverse kinematics. It is not hub data. The film's motion will come from a recording of the OpenHAL hub, written into the same shot format.
@@ -42,6 +49,36 @@ cables = so101_blender.add_cables(mats["cable"])
 arm.pose({"shoulder_pan": 0.3, "elbow_flex": -0.2, "gripper": 0.5})
 arm.key(frame=1)
 ```
+
+## The demo video
+
+The demo video shows Claude Code driving the simulated SO-101 through the OpenHAL hub, in the style of the Oopsy, Taro and Wobbl videos that REFERENCE.md describes. Remotion draws every frame, the desk scenes with React Three Fiber, and no Blender runs. The video follows the take's own order, the pick, the drop held for a person and approved in the Inspector, the request at 120 deg/s that the hub blocks with LIMIT_EXCEEDED, and STOP during a move.
+
+### What comes from the take
+
+- Every prompt, Claude message and tool call in the terminal is quoted from `data/take-4/claude.stream.jsonl`. A tool call reads the way Claude Code prints an MCP call, and a long call or result ends in an ellipsis where Claude Code shortens one.
+- The terminal keeps the session's whole history, so earlier lines scroll up as new ones arrive. Claude's closing message of the first turn is left out, because Claude wrote that message after a check made before the Approve click, and beside the drop the video has just shown the message would read as the current state.
+- Where the edit skips a wait, Claude Code's working line stays up and its timer runs over the real seconds that passed, counted from the moment the person sent the prompt. The first timer shows the 15 s Claude Code took to start.
+- Every joint angle, gripper opening and cube pose is sampled from `frames.csv.gz` at 1x on the hub's clock, each frame at its simulated time plus its `lag_ms`, so the arm lines up with the clicks and the hub's messages. The joint speed on the panel is measured in simulated time.
+- The pick plays in two shots. Between them the edit skips 1.35 s in which the arm holds still at the cube before the gripper closes, and the second shot opens from a new camera angle.
+- The Approve and STOP clicks land on the frames of their recorded clicks, and the Inspector is redrawn from the screenshots in `data/take-4/inspector/`.
+- The panel's verdicts, "done", LIMIT_EXCEEDED and "stopped", appear on the frame of the hub message or audit entry that carries them.
+- The stat cards show the two numbers in `data/STATS.md`, and the device cards name three real example device files.
+
+### Rebuild the demo
+
+```sh
+python3 -I video/scenes/fetch_assets.py
+cd video/remotion && pnpm install && cd ../..
+RATIO=0.35 ERROR=0.001 node video/remotion/scripts/simplify-arm.mjs
+.venv/bin/python video/scenes/demo_edit.py --take take-4
+.venv/bin/python video/scenes/demo_sound.py --cues video/remotion/src/demo/cues.json --out video/out/demo/sound/mix-raw.wav --normalize video/assets/demo/mix.wav
+cd video/remotion
+pnpm exec remotion bundle --out-dir=../out/demo/bundle --public-dir=../assets
+pnpm exec remotion render ../out/demo/bundle OpenHALDemo ../out/openhal-demo-1440p.mp4 --scale=2 --concurrency=2 --gl=angle --crf=18
+```
+
+PERF.md lists the scene by scene renders and the settings of each output.
 
 ## The launch film
 

@@ -31,6 +31,7 @@ Every render of the demo runs on the 2018 MacBook Pro described in video/README.
 | 2026-11-03 19:13 | `DeskTest` at 1440p, concurrency 2, with bundling and the arm at a ratio of 0.25 | 90 | 30 s | 0.33 s | 58 and 56 percent |
 | 2026-11-03 19:14 | `DeskTest` at 1440p, concurrency 2, from the bundle, the arm at a ratio of 0.25 | 90 | 18.0 s | 0.20 s | 100 and 100 percent |
 | 2026-11-03 19:15 | `DeskTest` at 1440p, concurrency 2, from the bundle, the arm at a ratio of 0.35 | 90 | 18.0 s | 0.20 s | 100 and 100 percent |
+| 2026-11-03 19:42 | `OpenHALDemo` rough cut at 720p, concurrency 2, from the bundle | 1650 | 275 s | 0.17 s | 39 and 29 percent |
 
 The wall time includes starting the browser, loading the arm, the HDRI and the wood texture, and encoding. Bundling took 5 s. The first test started at a 58 percent speed limit left over from the stills rendered just before, and the limit was back at 100 percent 20 s after the render ended.
 
