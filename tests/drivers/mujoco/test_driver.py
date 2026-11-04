@@ -13,7 +13,7 @@ mujoco = pytest.importorskip("mujoco")
 from openhal.drivers.base import DriverError  # noqa: E402
 from openhal.drivers.mujoco.conformance import BENCH_ARM  # noqa: E402
 from openhal.drivers.mujoco.driver import MujocoDriver  # noqa: E402
-from openhal.drivers.mujoco.maps import MujocoParams, Scale, default_loader, scale  # noqa: E402
+from openhal.drivers.mujoco.maps import MujocoParams, Scale, Turn, default_loader, scale  # noqa: E402
 from openhal.drivers.mujoco.simulator import World  # noqa: E402
 from openhal.spec import loads  # noqa: E402
 from tests.drivers.serial.kit import Bench, assert_done, assert_failed, eventually  # noqa: E402
@@ -180,6 +180,59 @@ async def test_joints_limit_which_joints_a_move_turns() -> None:
     assert set(result["goals"]) == {"pan_goal", "lift_goal", "elbow_goal"}
     assert driver.world.data.ctrl[3] == pytest.approx(wrist)
     await bench.close()
+
+
+SPEED = (
+    "      z: { unit: mm, min: 0, max: 150 }\n    map: { command: move_to, site: tip, aim",
+    "      z: { unit: mm, min: 0, max: 150 }\n      speed: { unit: deg/s, min: 5, max: 45 }\n"
+    "    map: { command: move_to, site: tip, speed: speed, aim",
+)
+
+
+async def test_a_speed_argument_slows_the_move_and_its_max_is_a_limit() -> None:
+    driver, bench = make(edit(*SPEED))
+    await bench.connect()
+    assert driver.world is not None
+    world = driver.world
+    blocked = await bench.act("move_to", x="200 mm", y="40 mm", z="60 mm", speed="200 deg/s")
+    assert (blocked.status, blocked.code) == ("blocked", "above_max")
+    assert world.motions == []
+    move = asyncio.create_task(driver._action("move_to", {"x": 150.0, "y": -80.0, "z": 120.0, "speed": 10.0}))
+    await eventually(lambda: _moving(world), within=5)
+    speeds = list(world.motions[0].phases[0].speeds.values())
+    assert speeds == pytest.approx([math.radians(10)] * 4)
+    world.hold()
+    assert (await move)["status"] == "held"
+    await bench.close()
+
+
+def test_a_speed_cap_never_raises_a_joint_and_skips_the_other_kind() -> None:
+    turn = Turn("pan_goal", 0, 1.0, -1.0, 1.0, 1.0)
+    assert turn.capped(None) == 1.0
+    assert turn.capped((2.0, "rad/s")) == 1.0
+    assert turn.capped((0.5, "rad/s")) == 0.5
+    assert turn.capped((0.5, "m/s")) == 1.0
+    assert Turn("pan_goal", 0, 1.0, -1.0, 1.0, None).capped((0.5, "rad/s")) == 0.5
+    assert Turn("slide_goal", 0, 1.0, 0.0, 0.1, 0.2, "m").capped((0.05, "m/s")) == 0.05
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "message"),
+    [
+        ("speed: { unit: deg/s, min: 5,", "speed: { unit: mm, min: 5,", "move_to.args.speed is a speed"),
+        ("speed: { unit: deg/s, min: 5,", "speed: { unit: deg/s, min: 0,", "needs a min above zero"),
+        ("site: tip, speed: speed,", "site: tip, speed: pace,", "map.speed names pace, which isn't an argument"),
+        (
+            "site: tip, speed: speed,",
+            "site: tip, speed: speed, axes: { x: x, y: y, z: z, speed: z },",
+            "map.speed names speed, which map.axes uses as a coordinate",
+        ),
+        ("  hold: {}", "  hold: { map: { command: hold, speed: speed } }", "hold takes nothing but the command"),
+    ],
+)
+def test_a_speed_argument_is_checked_when_the_driver_is_built(old: str, new: str, message: str) -> None:
+    with pytest.raises(DriverError, match=message):
+        MujocoDriver(loads(edit(old, new, edit(*SPEED))))
 
 
 async def test_a_long_move_returns_started_and_keeps_going() -> None:

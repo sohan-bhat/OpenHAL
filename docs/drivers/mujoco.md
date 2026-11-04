@@ -36,8 +36,9 @@ Hinge joints and their actuators are in radians and slides in metres, so any ang
 | `aim` | `{ axis: [1, 0, 0], toward: [0, 0, -1] }` points the site's own x axis straight down |
 | `joints` | The joints the move may turn. The default is every actuated joint in the site's chain |
 | `then` | Goal channels to set once the site arrives, such as `{ gripper_goal: 60 }` |
+| `speed` | The argument that sets the move's speed, such as `speed` with unit `deg/s`. Hinge joints take an angular speed and slides a linear one |
 
-The action's arguments are the coordinates in a length unit, and their limits are the workspace box the kernel checks. The driver solves joint positions inside both the model's ranges and the file's own goal limits, and a point out of reach fails with the closest miss. Every joint moves at most at its goal channel's `max_change_per_s`, and all of them arrive together. Every goal channel the move changes, `then` included, must be in the action's `effects`, so the kernel reads it back after the move.
+The action's arguments are the coordinates in a length unit, and their limits are the workspace box the kernel checks. The driver solves joint positions inside both the model's ranges and the file's own goal limits, and a point out of reach fails with the closest miss. Every joint moves at most at its goal channel's `max_change_per_s`, and all of them arrive together. With `speed`, every joint of that kind moves at most at the requested speed too, so the argument's `max` is a speed limit the kernel checks before the move, and a request above it is blocked with LIMIT_EXCEEDED. The argument's `min` must be above zero. Every goal channel the move changes, `then` included, must be in the action's `effects`, so the kernel reads it back after the move.
 
 ## How it works
 

@@ -19,7 +19,9 @@ The driver never reaches hardware, so it reports itself as simulated.
   own goal limits. `joints` narrows that to the joints it names, so the others keep their goals.
   Every joint moves at most at its channel's `max_change_per_s`, and all of them arrive
   together. `aim` points one of the site's axes along a world direction, and `then` sets
-  goal channels once the site has arrived. Every goal channel a move changes must be in the
+  goal channels once the site has arrived. `speed` names an argument in deg/s or mm/s that
+  slows every joint of the same kind to at most that speed for one move, so the argument's
+  limits are a speed limit the kernel checks. Every goal channel a move changes must be in the
   action's `effects`, so the kernel reads them back.
 - `{ command: hold }`, or an action named hold, ends every move and holds each actuator where it is.
 
@@ -51,6 +53,7 @@ from openhal.drivers.mujoco.maps import (
     default_loader,
     is_length,
     scale,
+    speed_unit,
     validate,
 )
 from openhal.drivers.mujoco.simulator import Aim, Motion, World
@@ -111,12 +114,19 @@ class MujocoDriver(Driver):
         unknown = sorted(set(axes) - set(spec.args))
         if unknown:
             raise DriverError(f"actions.{name}: map.axes names {', '.join(unknown)}, which aren't arguments.")
+        speed = action_map.speed
+        if speed is not None:
+            if speed in axes:
+                raise DriverError(f"actions.{name}: map.speed names {speed}, which map.axes uses as a coordinate.")
+            self._check_speed(name, speed)
         for arg, arg_spec in spec.args.items():
+            if arg == speed:
+                continue
             if arg not in axes:
                 raise DriverError(f"actions.{name}: map.axes must name an axis for {arg}.")
             if arg_spec.type != "number" or arg_spec.unit is None or not is_length(arg_spec):
                 raise DriverError(f"actions.{name}.args.{arg} is a coordinate, so it needs a length unit such as mm.")
-        named = [axes[arg] for arg in spec.args]
+        named = [axes[arg] for arg in spec.args if arg != speed]
         if sorted(named + list(action_map.at)) != list(AXES):
             raise DriverError(f"actions.{name}: x, y and z each come from one argument or from map.at.")
         for channel, value in action_map.then.items():
@@ -132,6 +142,17 @@ class MujocoDriver(Driver):
                 )
             if channel not in spec.effects:
                 raise DriverError(f"actions.{name} changes {channel}, so list it in effects.")
+
+    def _check_speed(self, name: str, speed: str) -> None:
+        """The argument map.speed names must be a speed in deg/s, mm/s or the like, and above zero."""
+        arg_spec = self.device.actions[name].args.get(speed)
+        if arg_spec is None:
+            raise DriverError(f"actions.{name}: map.speed names {speed}, which isn't an argument.")
+        if speed_unit(arg_spec) is None:
+            raise DriverError(f"actions.{name}.args.{speed} is a speed, so it needs a unit such as deg/s or mm/s.")
+        assert arg_spec.min is not None
+        if arg_spec.min <= 0:
+            raise DriverError(f"actions.{name}.args.{speed} needs a min above zero, so every move arrives.")
 
     @property
     def simulated(self) -> bool:
@@ -229,7 +250,7 @@ class MujocoDriver(Driver):
         aim = Aim(item.aim.axis, item.aim.toward) if item.aim else None
         at = {AXES.index(axis): value for axis, value in item.at.items()}
         arguments = {arg: AXES.index(axis) for arg, axis in axes.items()}
-        return Plan(site, arguments, at, aim, turns, dict(item.then))
+        return Plan(site, arguments, at, aim, turns, dict(item.then), item.speed)
 
     def _turn(self, model: Any, joint: int, channel: str, where: str) -> Turn:
         """Where a move may put a joint, inside the model's ranges and the file's goal limits, and how fast."""
@@ -244,7 +265,7 @@ class MujocoDriver(Driver):
         if low > high:
             raise DriverError(f"{where}: {channel}'s limits don't overlap the joint's range in the model.")
         speed = writer.speed / abs(gear) if writer.speed else None
-        return Turn(channel, writer.actuator, gear, low, high, speed)
+        return Turn(channel, writer.actuator, gear, low, high, speed, _native_unit(model, joint))
 
     def _chain(self, model: Any, body: int) -> dict[int, str]:
         """Joints that move `body`, driven by one of the file's write channels, by joint id."""
@@ -320,13 +341,21 @@ class MujocoDriver(Driver):
             assert unit is not None
             point[axis] = convert(Quantity(float(args[arg]), parse_unit(unit)), "m")
         x, y, z = point
+        cap = None
+        if plan.speed is not None:
+            spec = specs[plan.speed]
+            native = speed_unit(spec)
+            assert spec.unit is not None
+            assert native is not None
+            cap = convert(Quantity(float(args[plan.speed]), parse_unit(spec.unit)), native), native
+        speeds = {joint: turn.capped(cap) for joint, turn in plan.joints.items()}
         solution = await asyncio.to_thread(
             world.solve,
             plan.site,
             (x, y, z),
             {joint: (turn.low, turn.high) for joint, turn in plan.joints.items()},
             aim=plan.aim,
-            speeds={joint: turn.speed for joint, turn in plan.joints.items()},
+            speeds=speeds,
             tolerance=self.settings.tolerance,
             aim_tolerance=self.settings.aim_tolerance,
         )
@@ -339,7 +368,10 @@ class MujocoDriver(Driver):
             )
         turns = plan.joints
         reach = {turns[joint].actuator: turns[joint].gear * value for joint, value in solution.joints.items()}
-        reach_speeds = {turn.actuator: self.writers[turn.channel].speed for turn in turns.values()}
+        reach_speeds = {
+            turn.actuator: (None if (speed := speeds[joint]) is None else speed * abs(turn.gear))
+            for joint, turn in turns.items()
+        }
         phases = [(reach, reach_speeds)]
         if plan.then:
             then = {

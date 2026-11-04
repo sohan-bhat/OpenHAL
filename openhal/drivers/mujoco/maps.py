@@ -123,6 +123,7 @@ class ActionMap(BaseModel):
     aim: Aiming | None = None
     joints: list[Annotated[str, Field(pattern=NAME)]] = Field(default=[], max_length=64)
     then: dict[str, float] = {}
+    speed: str | None = Field(default=None, pattern=NAME)
 
     @field_validator("at", mode="before")
     @classmethod
@@ -133,7 +134,7 @@ class ActionMap(BaseModel):
 
     @model_validator(mode="after")
     def _shape(self) -> ActionMap:
-        moves = (self.site, self.axes, self.at, self.aim, self.joints, self.then)
+        moves = (self.site, self.axes, self.at, self.aim, self.joints, self.then, self.speed)
         if self.command == "hold" and any(moves):
             raise ValueError("hold takes nothing but the command.")
         if self.command == "move_to" and self.site is None:
@@ -224,6 +225,13 @@ class Turn:
     low: float
     high: float
     speed: float | None
+    native: str = "rad"
+
+    def capped(self, cap: tuple[float, str] | None) -> float | None:
+        """The joint's speed for one move, never above its channel's, with a cap in the same kind of unit."""
+        if cap is None or cap[1] != f"{self.native}/s":
+            return self.speed
+        return cap[0] if self.speed is None else min(self.speed, cap[0])
 
 
 @dataclass(frozen=True)
@@ -236,6 +244,7 @@ class Plan:
     aim: Aim | None
     joints: dict[int, Turn]
     then: dict[str, float]
+    speed: str | None = None
 
 
 def axes_of(action_map: ActionMap, spec: Action) -> dict[str, str]:
@@ -243,6 +252,19 @@ def axes_of(action_map: ActionMap, spec: Action) -> dict[str, str]:
     if action_map.axes:
         return dict(action_map.axes)
     return {arg: arg for arg in spec.args if arg in AXES}
+
+
+def speed_unit(spec: ArgSpec) -> str | None:
+    """rad/s for an angular speed argument, m/s for a linear one, or None when the unit is neither."""
+    if spec.type != "number" or spec.unit is None:
+        return None
+    for native in ("rad/s", "m/s"):
+        try:
+            convert(Quantity(1.0, parse_unit(spec.unit)), native)
+        except UnitError:
+            continue
+        return native
+    return None
 
 
 def is_length(spec: ArgSpec) -> bool:
