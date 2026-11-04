@@ -113,14 +113,14 @@ class Clock:
 class Frames:
     """The arm and the cube at a fixed rate, taken on the physics thread."""
 
-    def __init__(self, driver: MujocoDriver, clock: Clock) -> None:
+    def __init__(self, driver: MujocoDriver, clock: Clock, rate_hz: int = RATE_HZ) -> None:
         world = driver.world
         assert world is not None
         model = world.model
         self.world = world
         self.clock = clock
-        steps = (1.0 / RATE_HZ) / world.timestep
-        expect(abs(steps - round(steps)) < 1e-6, f"{RATE_HZ} Hz isn't a whole number of {world.timestep} s steps")
+        steps = (1.0 / rate_hz) / world.timestep
+        expect(abs(steps - round(steps)) < 1e-6, f"{rate_hz} Hz isn't a whole number of {world.timestep} s steps")
         self.every = round(steps)
         self.joints = [int(model.jnt_qposadr[model.joint(name).id]) for name in (*ARM_JOINTS, "gripper")]
         self.low, self.high = (float(value) for value in model.jnt_range[model.joint("gripper").id])
