@@ -36,6 +36,7 @@ The `serial` driver connects to any device with a line-based text protocol over 
 | `port` | required | Device path, pyserial URL or `auto` |
 | `baud` | 9600 | Baud rate |
 | `newline` | `lf` | Line ending sent and expected. `lf`, `crlf` or `cr` |
+| `framing` | `line` | How each reply ends. `line` reads a line, and `stx-etx` reads a packet from STX (0x02) to ETX (0x03), as New Era syringe pumps reply |
 | `encoding` | `ascii` | `ascii`, `utf-8` or `latin-1` |
 | `timeout` | `1 s` | How long to wait for each reply, 50 ms to 30 s |
 | `settle` | `0 s` | Wait after opening, for boards that reset when the port opens. Bytes received meanwhile are dropped |

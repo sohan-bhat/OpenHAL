@@ -30,6 +30,9 @@ Quirks.
   next command is sent, so a slow device can't shift replies onto the wrong channel.
 - A value with control characters fails the write, so a string channel can't append a
   second command with an embedded newline.
+- Replies are lines by default. `framing: stx-etx` reads each reply from STX (0x02) to ETX
+  (0x03) instead, as New Era syringe pumps and other instruments with packet replies send them,
+  and the reply text is what lies between the two bytes. Commands still end with `newline`.
 - Many Arduino boards reset when the port opens. Set `settle` (for example `2 s`) to wait for
   the boot banner before the first command. Anything received during that time is discarded.
 - Without `map.get`, reading a write channel returns the last value this driver sent, and
@@ -71,6 +74,7 @@ class SerialParams(BaseModel):
     port: str = Field(min_length=1, max_length=300, description="Device path, pyserial URL or auto.")
     baud: int = Field(default=9600, ge=50, le=4_000_000)
     newline: Literal["lf", "crlf", "cr", "\n", "\r\n", "\r"] = "lf"
+    framing: Literal["line", "stx-etx"] = Field(default="line", description="How each reply is delimited.")
     encoding: Literal["ascii", "utf-8", "latin-1"] = "ascii"
     timeout: float = Field(default=1.0, description="How long to wait for a reply.")
     settle: float = Field(default=0.0, description="Wait after opening, for boards that reset on open.")
@@ -255,13 +259,19 @@ class SerialDriver(Driver):
 
     async def _pump(self, link: SerialLink) -> None:
         terminator = b"\r" if self.newline == "\r" else b"\n"
+        strip = "\r\n"
+        if self.settings.framing == "stx-etx":
+            terminator, strip = b"\x03", "\r\n\x02\x03"
         try:
             while True:
                 try:
                     raw = await link.read_line(3600, terminator)
                 except TimeoutError:
                     continue
-                text = raw[:MAX_LINE].decode(self.settings.encoding, errors="replace").strip("\r\n")
+                text = raw[:MAX_LINE].decode(self.settings.encoding, errors="replace")
+                if self.settings.framing == "stx-etx":
+                    text = text.rsplit("\x02", 1)[-1]
+                text = text.strip(strip)
                 if not self._route_stream(text):
                     self._replies.put_nowait(text)
         except DriverError:

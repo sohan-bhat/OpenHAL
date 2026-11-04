@@ -6,6 +6,9 @@ that start with a command, in the shapes manuals use: SCPI (`VOLTage <value>`, `
 short command codes followed by an en or em dash and a description, as instrument command sets
 such as Mettler Toledo's MT-SICS list them (S, then a dash, then Stable weight value). A table of
 contents line keeps its command and description, and its dot leader and page number are dropped.
+A command summary line of two to four capitals, bracketed arguments and a capitalized description,
+as New Era's pump manuals print one (DIA, then [ <float> ], then Syringe inside diameter), is read
+with its nested brackets balanced.
 
 A short code has no question mark, so its description decides its kind. A description that names
 a value, such as a weight value or a serial number, and starts with no verb that changes the
@@ -49,10 +52,13 @@ _CHANGE_VERBS: Final = re.compile(
 )
 _CAREFUL: Final = re.compile(
     r"\b(reset|reboot|erase|format|factory|delete|firmware|flash|bootloader|calibrat\w*|power|output on|"
-    r"enable|fire|laser|spindle|heat\w*|motor|move|home|zero|unlock|override|repeat|continuous\w*)\b",
+    r"enable|fire|laser|spindle|heat\w*|motor|move|home|zero|unlock|override|repeat|continuous\w*|start\w*|purge)\b",
     re.I,
 )
 _WORDS_ONLY: Final = re.compile(r"^[A-Z]{2,}$")
+_SUMMARY_HEAD: Final = re.compile(r"^\s*(?P<command>[A-Z]{2,4}) +(?P<rest>\S.*)$")
+_ACTION_VERBS: Final = re.compile(r"^(start|stop|pause|run|purge|sound|clear|reset|trigger|jump|loop)", re.I)
+_OPEN, _CLOSE = "[{<", "]}>"
 
 Kind = Literal["query", "set", "action"]
 
@@ -79,6 +85,41 @@ class ManualCommand:
         }
 
 
+def _summary(line: str) -> tuple[str, str, str] | None:
+    """A command summary line as (command, argument, description), or None.
+
+    The argument is every bracketed group after the command, nested or not, and the description
+    starts at the first capitalized word outside every bracket.
+    """
+    head = _SUMMARY_HEAD.match(line)
+    if head is None:
+        return None
+    rest, depth = head.group("rest"), 0
+    for index, char in enumerate(rest):
+        if char in _OPEN:
+            depth += 1
+        elif char in _CLOSE:
+            depth = max(0, depth - 1)
+        elif depth == 0 and re.match(r"[A-Z][a-z]", rest[index : index + 2]) and (index == 0 or rest[index - 1] == " "):
+            description = rest[index:].strip()
+            if len(description) < 6:
+                return None
+            return head.group("command"), rest[:index].strip(), description
+        elif depth == 0 and not char.isspace():
+            return None
+    return None
+
+
+def _summary_kind(argument: str, description: str) -> Kind:
+    if description.lower().startswith("query"):
+        return "query"
+    if _ACTION_VERBS.match(description):
+        return "action"
+    if argument:
+        return "set"
+    return "query" if _VALUE_WORDS.search(description) and not _CHANGE_VERBS.match(description) else "action"
+
+
 def extract(text: str) -> list[ManualCommand]:
     """Find candidate commands. Returns at most MAX_COMMANDS, in the order the manual lists them."""
     if len(text) > MAX_MANUAL_CHARS:
@@ -90,15 +131,19 @@ def extract(text: str) -> list[ManualCommand]:
     for number, line in enumerate(text.splitlines(), start=1):
         if len(line) > 400:
             continue
-        match = _LINE.match(line)
-        code = None if match is not None else _CODE_LINE.match(line)
-        if match is None and code is None:
+        summary = _summary(line)
+        match = None if summary is not None else _LINE.match(line)
+        code = None if summary is not None or match is not None else _CODE_LINE.match(line)
+        if summary is None and match is None and code is None:
             continue
-        if code is not None:
+        if summary is not None:
+            command, argument, description = summary
+            kind: Kind = _summary_kind(argument, description)
+        elif code is not None:
             command, argument = code.group("command"), ""
             description = code.group("description").strip()
             named = _VALUE_WORDS.search(description) and not _CHANGE_VERBS.match(description)
-            kind: Kind = "query" if named else "action"
+            kind = "query" if named else "action"
         else:
             assert match is not None
             command = match.group("command")
