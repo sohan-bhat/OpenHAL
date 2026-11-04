@@ -1,0 +1,52 @@
+{
+  "measured_on": "2026-11-03 19:33",
+  "openhal": "0.1.0",
+  "python": "3.13.2",
+  "requests_per_kind": 1200,
+  "warm_up_per_kind": 50,
+  "added_before_the_driver": {
+    "count": 1200,
+    "median_ms": 5.459,
+    "p10_ms": 4.216,
+    "p90_ms": 17.644,
+    "p99_ms": 26.702,
+    "min_ms": 3.519,
+    "max_ms": 51.272
+  },
+  "kernel_before_the_driver": {
+    "count": 1200,
+    "median_ms": 1.314,
+    "p10_ms": 1.025,
+    "p90_ms": 2.213,
+    "p99_ms": 13.003,
+    "min_ms": 0.957,
+    "max_ms": 15.081
+  },
+  "blocked_until_the_response": {
+    "count": 1200,
+    "median_ms": 7.367,
+    "p10_ms": 6.518,
+    "p90_ms": 9.553,
+    "p99_ms": 14.526,
+    "min_ms": 5.856,
+    "max_ms": 277.426
+  },
+  "client_round_trip_write": {
+    "count": 1200,
+    "median_ms": 23.167,
+    "p10_ms": 16.463,
+    "p90_ms": 49.215,
+    "p99_ms": 72.832,
+    "min_ms": 14.41,
+    "max_ms": 154.571
+  },
+  "client_round_trip_blocked": {
+    "count": 1200,
+    "median_ms": 15.558,
+    "p10_ms": 13.914,
+    "p90_ms": 19.076,
+    "p99_ms": 28.63,
+    "min_ms": 12.408,
+    "max_ms": 286.105
+  }
+}
