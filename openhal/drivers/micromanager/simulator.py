@@ -37,12 +37,23 @@ import functools
 import math
 import threading
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 
 import numpy as np
 from PIL import Image, ImageFilter
+from pymmcore_plus.core import FocusDirection
+from pymmcore_plus.experimental.unicore import (
+    GenericDevice,
+    ShutterDevice,
+    SimpleCameraDevice,
+    StageDevice,
+    StateDevice,
+    UniMMCore,
+    XYStageDevice,
+)
 
 HERE: Final = Path(__file__).parent
 SLIDE: Final = HERE / "slide.jpg"
@@ -273,3 +284,225 @@ def _field(
     if radius > 0.3:
         canvas = canvas.filter(ImageFilter.GaussianBlur(radius))
     return canvas
+
+
+class SimCamera(SimpleCameraDevice):
+    """A 1024 x 768 camera with 6.5 um pixels, imaging the simulated slide."""
+
+    def __init__(self, scope: Microscope) -> None:
+        super().__init__()
+        self.scope = scope
+        self.set_property_limits("Exposure", (0.1, 10000.0))
+
+    def get_exposure(self) -> float:
+        self.scope.call("camera")
+        return self.scope.exposure_ms
+
+    def set_exposure(self, exposure: float) -> None:
+        self.scope.call("camera")
+        self.scope.exposure_ms = float(exposure)
+
+    def sensor_shape(self) -> tuple[int, int, int]:
+        return (*SENSOR, 3)
+
+    def dtype(self) -> Any:
+        return np.uint8
+
+    def snap(self, buffer: np.ndarray) -> Mapping[str, Any]:
+        buffer[:] = self.scope.frame(buffer.shape)
+        return {}
+
+
+class SimXYStage(XYStageDevice):
+    """A motorized XY stage with 50 mm of travel. Home is the slide's center."""
+
+    def __init__(self, scope: Microscope) -> None:
+        super().__init__()
+        self.scope = scope
+
+    def set_position_um(self, x: float, y: float) -> None:
+        self.scope.move_xy(x, y)
+
+    def get_position_um(self) -> tuple[float, float]:
+        self.scope.call("XY stage")
+        return (self.scope.x_um, self.scope.y_um)
+
+    def busy(self) -> bool:
+        return self.scope.busy("xy")
+
+    def home(self) -> None:
+        self.scope.move_xy(0.0, 0.0)
+
+    def stop(self) -> None:
+        self.scope.call("XY stage")
+        self.scope.busy_until.pop("xy", None)
+
+    def set_origin_x(self) -> None:
+        raise SimulatedDeviceError("The simulated XY stage keeps its origin at the slide's center.")
+
+    def set_origin_y(self) -> None:
+        raise SimulatedDeviceError("The simulated XY stage keeps its origin at the slide's center.")
+
+
+class SimFocus(StageDevice):
+    """A motorized focus drive under the objective. A larger z moves toward the slide."""
+
+    def __init__(self, scope: Microscope) -> None:
+        super().__init__()
+        self.scope = scope
+
+    def set_position_um(self, val: float) -> None:
+        self.scope.move_z(val)
+
+    def get_position_um(self) -> float:
+        self.scope.call("focus drive")
+        return self.scope.z_um
+
+    def get_focus_direction(self) -> FocusDirection:
+        return FocusDirection.TowardSample
+
+    def busy(self) -> bool:
+        return self.scope.busy("z")
+
+    def home(self) -> None:
+        self.scope.move_z(self.scope.z_travel_um[0])
+
+    def stop(self) -> None:
+        self.scope.call("focus drive")
+        self.scope.busy_until.pop("z", None)
+
+    def set_origin(self) -> None:
+        raise SimulatedDeviceError("The simulated focus drive keeps its origin at the bottom of its travel.")
+
+
+class SimTurret(StateDevice):
+    """A motorized objective turret."""
+
+    def __init__(self, scope: Microscope) -> None:
+        super().__init__({index: lens.label for index, lens in enumerate(OBJECTIVES)})
+        self.scope = scope
+
+    def get_state(self) -> int:
+        self.scope.call("objective turret")
+        return self.scope.objective
+
+    def set_state(self, position: int) -> None:
+        self.scope.call("objective turret")
+        with self.scope.lock:
+            self.scope.objective = int(position)
+            if self.scope.z_um >= self.scope.contact():
+                self.scope.touching = True
+                self.scope.crashes += 1
+
+
+class SimFilterWheel(StateDevice):
+    """A filter wheel with DAPI, GFP, dual band and TRITC cubes."""
+
+    def __init__(self, scope: Microscope) -> None:
+        super().__init__(dict(enumerate(FILTERS)))
+        self.scope = scope
+
+    def get_state(self) -> int:
+        self.scope.call("filter wheel")
+        return self.scope.filter
+
+    def set_state(self, position: int) -> None:
+        self.scope.call("filter wheel")
+        self.scope.filter = int(position)
+
+
+class SimShutter(ShutterDevice):
+    """The excitation shutter in front of the LED."""
+
+    def __init__(self, scope: Microscope) -> None:
+        super().__init__()
+        self.scope = scope
+
+    def get_open(self) -> bool:
+        self.scope.call("shutter")
+        return self.scope.shutter_open
+
+    def set_open(self, open: bool) -> None:
+        self.scope.call("shutter")
+        self.scope.shutter_open = bool(open)
+
+
+class SimLED(GenericDevice):
+    """A white LED light source with an intensity in percent."""
+
+    def __init__(self, scope: Microscope) -> None:
+        super().__init__()
+        self.scope = scope
+        self.register_property(
+            "Intensity", default_value=50.0, getter=SimLED.intensity, setter=SimLED.set_intensity, limits=(0.0, 100.0)
+        )
+
+    def intensity(self) -> float:
+        self.scope.call("LED")
+        return self.scope.led_percent
+
+    def set_intensity(self, value: float) -> None:
+        self.scope.call("LED")
+        self.scope.led_percent = float(value)
+
+
+class SimulatedCore(UniMMCore):
+    """UniMMCore with the simulated devices loaded, as a configuration file would load the devices."""
+
+    def __init__(self, scope: Microscope) -> None:
+        super().__init__(mm_path=str(HERE))
+        self.scope = scope
+        devices = {
+            "Camera": SimCamera(scope),
+            "XYStage": SimXYStage(scope),
+            "ZDrive": SimFocus(scope),
+            "Objective": SimTurret(scope),
+            "Filter": SimFilterWheel(scope),
+            "Shutter": SimShutter(scope),
+            "LED": SimLED(scope),
+        }
+        for label, device in devices.items():
+            self.loadPyDevice(label, device)
+        self.initializeAllDevices()
+        self.setCameraDevice("Camera")
+        self.setXYStageDevice("XYStage")
+        self.setFocusDevice("ZDrive")
+        self.setShutterDevice("Shutter")
+        self.setAutoShutter(True)
+        self.defineConfigGroup("Channel")
+        for preset, label in CHANNEL_PRESETS.items():
+            self.defineConfig("Channel", preset, "Filter", "Label", label)
+
+    def snapImage(self) -> None:  # noqa: N802 (MMCore's name)
+        """Snap with the shutter open for the exposure when auto shutter is on, as MMCore does for its devices."""
+        lighting = self.getAutoShutter()
+        self.scope.lighting = lighting
+        try:
+            super().snapImage()
+        finally:
+            self.scope.lighting = False
+
+    def getPixelSizeUm(self, cached: bool = False) -> float:  # noqa: N802 (MMCore's name)
+        """The camera pixel at the slide under the current objective, as a pixel size configuration gives the size."""
+        return CAMERA_PIXEL_UM / self.scope.lens.magnification
+
+
+_MICROSCOPES: dict[str, Microscope] = {}
+
+
+def microscope_for(name: str = "default") -> Microscope:
+    """The simulated microscope with this name. Every core that connects to the name shares its state."""
+    return _MICROSCOPES.setdefault(name, Microscope())
+
+
+def reset_microscope(name: str = "default", **state: Any) -> Microscope:
+    """Put a fresh simulated microscope under this name, with any starting state given."""
+    _MICROSCOPES[name] = Microscope(**state)
+    return _MICROSCOPES[name]
+
+
+def build_core(name: str = "default") -> SimulatedCore:
+    """A new core connected to the simulated microscope with this name."""
+    scope = microscope_for(name)
+    scope.call("hub")
+    return SimulatedCore(scope)
