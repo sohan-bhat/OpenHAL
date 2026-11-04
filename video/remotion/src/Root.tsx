@@ -5,6 +5,8 @@ import {Film, FilmProps, Storyboard, StoryboardProps, Thumbnail, ThumbnailProps}
 import {film} from './film/edit';
 import {TestPick} from './TestPick';
 import {DeskTest} from './demo/DeskTest';
+import {TerminalTest} from './demo/TerminalTest';
+import {InspectorTest} from './demo/InspectorTest';
 
 const compareDefaults: CompareProps = {
   panels: [
@@ -31,6 +33,8 @@ export const RemotionRoot: React.FC = () => (
         height={720}
         defaultProps={{start: 13.95}}
       />
+      <Composition id="TerminalTest" component={TerminalTest} durationInFrames={150} fps={30} width={1280} height={720} />
+      <Still id="InspectorTest" component={InspectorTest} width={1280} height={720} />
     </Folder>
     <Composition
       id="TestPick"
