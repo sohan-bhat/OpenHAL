@@ -44,11 +44,12 @@ import time
 from collections.abc import Callable
 from typing import Any, ClassVar, Final, Literal, TypeVar
 
+import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from openhal.drivers.base import Driver, DriverError, DriverInfo, Health, Reading
 from openhal.drivers.micromanager import channels, frames
-from openhal.drivers.micromanager.channels import ChannelMap, to_unit
+from openhal.drivers.micromanager.channels import ActionMap, ChannelMap, to_unit
 from openhal.drivers.serial import mapping
 from openhal.spec.models import DeviceFile
 
@@ -425,3 +426,138 @@ class MicromanagerDriver(Driver):
         if core is not None:
             with contextlib.suppress(Exception):
                 await asyncio.wait_for(asyncio.to_thread(core.unloadAllDevices), 5.0)
+
+    async def _action(self, name: str, args: dict[str, Any]) -> Any:
+        action_map = self.actions.get(name)
+        if action_map is None:
+            raise DriverError(f"{self.device.device_id} has no action {name!r}.")
+        if self._lost is not None:
+            raise DriverError(f"The connection to the microscope failed ({self._lost}). Reconnect the microscope.")
+        task = asyncio.create_task(self._operation(name, action_map, args))
+        self._running.add(task)
+        task.add_done_callback(self._finished)
+        try:
+            result = await asyncio.wait_for(asyncio.shield(task), self.settings.action_wait)
+        except TimeoutError:
+            return {"command": action_map.command, "status": "started"}
+        return {**result, "status": "done"}
+
+    def _finished(self, task: asyncio.Task[Any]) -> None:
+        self._running.discard(task)
+        if not task.cancelled():
+            task.exception()
+
+    async def _operation(self, name: str, action_map: ActionMap, args: dict[str, Any]) -> dict[str, Any]:
+        async with self._busy:
+            command = action_map.command
+            if command == "move_xy":
+                spec = self.device.actions[name].args
+                x = to_unit(float(args["x"]), spec["x"].unit or "um", "um")
+                y = to_unit(float(args["y"]), spec["y"].unit or "um", "um")
+                for axis, target in (("x", x), ("y", y)):
+                    self._inside(axis, target)
+                await self._call("move_xy", self._move_xy, x, y)
+                return {"command": command, "x_um": x, "y_um": y}
+            if command == "stop":
+                await self._call("stop", self._stop_stages)
+                return {"command": command}
+            if command == "home":
+                stages = ["focus", "xy"] if action_map.stage == "all" else [action_map.stage]
+                for stage in stages:
+                    label = self._stage_label(stage)
+                    if label:
+                        await self._call(f"homing {label}", self._home, label, limit=max(self.settings.timeout, 9.0))
+                return {"command": command, "stages": stages}
+            return await self._autofocus(name, action_map, args)
+
+    def _inside(self, axis: str, target_um: float) -> None:
+        """Fail before a move that leaves the limits of the file's own channel for that axis."""
+        for channel, channel_map in self.writes.items():
+            if channel_map.stage != "xy" or channel_map.axis != axis:
+                continue
+            spec = self.device.write[channel]
+            unit = spec.unit or "um"
+            assert spec.min is not None
+            assert spec.max is not None
+            low, high = to_unit(spec.min, unit, "um"), to_unit(spec.max, unit, "um")
+            if not low - 1e-6 <= target_um <= high + 1e-6:
+                raise DriverError(f"{axis} = {target_um:g} um is outside {channel}'s limits, {low:g} to {high:g} um.")
+
+    def _move_xy(self, x: float, y: float) -> None:
+        label = self._stage_label("xy")
+        if not label:
+            raise DriverError("The configuration sets no XY stage.")
+        self.core.setXYPosition(label, x, y)
+        self.core.waitForDevice(label)
+
+    def _home(self, label: str) -> None:
+        self.core.home(label)
+        self.core.waitForDevice(label)
+
+    async def _autofocus(self, name: str, action_map: ActionMap, args: dict[str, Any]) -> dict[str, Any]:
+        method = action_map.method
+        if method == "auto":
+            method = "device" if self.autofocus_device else "image"
+        if method == "device":
+            if not self.autofocus_device:
+                raise DriverError("The configuration has no autofocus device. Use method: image in the action's map.")
+            await self._call("fullFocus", self.core.fullFocus, limit=max(self.settings.timeout, 9.0))
+            return {"command": "autofocus", "method": "device", "device": self.autofocus_device}
+        focus = next((channel for channel, item in self.writes.items() if item.stage == "focus"), None)
+        if focus is None:
+            raise DriverError("Image autofocus needs a focus write channel, whose limits bound the sweep.")
+        spec = self.device.write[focus]
+        unit = spec.unit or "um"
+        assert spec.min is not None
+        assert spec.max is not None
+        z_min, z_max = to_unit(spec.min, unit, "um"), to_unit(spec.max, unit, "um")
+        span = action_map.span
+        if "span" in args:
+            span = to_unit(float(args["span"]), self.device.actions[name].args["span"].unit or "um", "um")
+        label = self.labels[focus]
+        rate = to_unit(spec.max_change_per_s, unit, "um") if spec.max_change_per_s else None
+        start = float(await self._call("reading the focus", self.core.getPosition, label))
+        low, high = max(z_min, start - span / 2), min(z_max, start + span / 2)
+        if high - low < 1e-3:
+            raise DriverError(
+                f"The focus is at {start:g} um, at the edge of {focus}'s limits, so there is nothing to sweep."
+            )
+        coarse = np.linspace(low, high, action_map.steps)
+        best, _ = await self._sweep(label, coarse, start, rate)
+        spacing = float(coarse[1] - coarse[0])
+        fine = np.linspace(max(low, best - spacing), min(high, best + spacing), FINE_STEPS)
+        best, score = await self._sweep(label, fine, float(coarse[-1]), rate)
+        await self._pace(float(fine[-1]), best, rate)
+        await self._call("moving the focus", self._focus_to, label, best)
+        return {
+            "command": "autofocus",
+            "method": "image",
+            "z_um": round(best, 3),
+            "score": round(score, 4),
+            "frames": len(coarse) + len(fine),
+        }
+
+    async def _sweep(self, label: str, positions: np.ndarray, start: float, rate: float | None) -> tuple[float, float]:
+        scores = []
+        last = start
+        for z in positions:
+            await self._pace(last, float(z), rate)
+            scores.append(await self._call(f"scoring focus at {z:.2f} um", self._score_at, label, float(z)))
+            last = float(z)
+        index = int(np.argmax(scores))
+        return float(positions[index]), float(scores[index])
+
+    @staticmethod
+    async def _pace(here: float, there: float, rate: float | None) -> None:
+        """Wait so a focus step is no faster than the focus channel's max_change_per_s allows."""
+        if rate:
+            await asyncio.sleep(abs(there - here) / rate)
+
+    def _focus_to(self, label: str, z: float) -> None:
+        self.core.setPosition(label, z)
+        self.core.waitForDevice(label)
+
+    def _score_at(self, label: str, z: float) -> float:
+        self._focus_to(label, z)
+        self.core.snapImage()
+        return frames.focus_score(self.core.getImage())

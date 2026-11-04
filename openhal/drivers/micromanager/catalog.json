@@ -1,0 +1,24 @@
+{
+  "name": "micromanager",
+  "tier": 2,
+  "status": "implemented",
+  "protocols": [
+    "Micro-Manager MMCore through pymmcore-plus"
+  ],
+  "families": [
+    "research microscopes from Nikon, Zeiss, Olympus and Leica",
+    "scientific cameras from Hamamatsu, Andor, Photometrics and PCO",
+    "stages, focus drives, filter wheels, shutters and light sources from ASI, Prior, Ludl, Sutter, Lumencor and CoolLED"
+  ],
+  "hazard_default": "medium",
+  "tests": "the real pymmcore-plus core (UniMMCore) with a simulated camera, stages, turret, filter wheel, shutter and LED imaging a real micrograph",
+  "estimate": {
+    "devices": "about 250 device adapters, covering hundreds of microscope components",
+    "reasoning": "Micro-Manager is the standard open source control layer for research microscopes, and its device support page lists about 250 adapters for cameras, stands, stages, focus drives, wheels, shutters, light sources and autofocus units. The driver reaches any of them a Micro-Manager configuration file loads. The count of adapters is read from that page, and the number of models each adapter covers varies.",
+    "sources": [
+      "https://micro-manager.org/Device_Support",
+      "https://pymmcore-plus.github.io/pymmcore-plus/",
+      "https://github.com/micro-manager/mmCoreAndDevices"
+    ]
+  }
+}

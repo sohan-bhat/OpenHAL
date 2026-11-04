@@ -1,0 +1,34 @@
+# A motorized inverted microscope with a camera, an XY stage, a focus drive, an objective turret,
+# a filter turret, a shutter and an LED light source, loaded from a Micro-Manager configuration.
+# Point MICROMANAGER_CONFIG at the .cfg file Micro-Manager's hardware wizard saved. The labels
+# under map (Objective, Filter, LED) are the device labels in that file, so change them to yours,
+# or run describe on the connected microscope for a draft with your labels and states.
+device: { name: Inverted microscope, model: motorized inverted microscope }
+id: inverted-microscope
+connect: { micromanager: MICROMANAGER_CONFIG, timeout: 5 s, action_wait: 8 s }
+read:
+  image: { type: image }
+  pixel_size: { unit: um }
+  busy: { type: bool }
+write:
+  x: { unit: mm, min: -50, max: 50 }
+  y: { unit: mm, min: -35, max: 35 }
+  z: { unit: um, min: 0, max: 3000, max_change_per_s: 500 }
+  objective: { type: enum, values: [10x, 20x, 40x], map: { state: Objective } }
+  filter: { type: enum, values: [DAPI, GFP, TRITC], map: { state: Filter } }
+  exposure: { unit: ms, min: 1, max: 2000 }
+  light: { unit: percent, min: 0, max: 100, map: { device: LED, property: Intensity } }
+  shutter: { type: bool }
+actions:
+  move_xy:
+    args: { x: { unit: mm, min: -50, max: 50 }, y: { unit: mm, min: -35, max: 35 } }
+    effects: [x, y]
+  autofocus:
+    args: { span: { unit: um, min: 5, max: 100 } }
+    effects: [z]
+  stop: {}
+safe_state: { shutter: false }
+safe_state_note: "A stop ends any running action, halts the stage and the focus drive where they are and closes the shutter. The light source stays at its level unless the shutter blocks it."
+hazard: medium
+notes: "Set z's maximum below the point where your shortest working distance objective touches the slide, and the x and y ranges to the stage's travel with the insert in place."
+provenance: { source: hand-written, by: openhal micromanager driver example, at: 2026-11-03 }

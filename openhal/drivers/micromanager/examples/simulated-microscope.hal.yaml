@@ -1,0 +1,43 @@
+# The built-in simulated inverted fluorescence microscope, with no hardware and no Micro-Manager
+# install. The camera images a real micrograph of cells (ZEISS Microscopy, CC BY 2.0) at the
+# objective's magnification, the stage pans across it and defocus blurs it. A larger z moves the
+# objective up toward the slide, and the 63x objective touches the slide near z = 1688 um, so z
+# stops at 1650 um, under every objective's contact point.
+device: { name: Simulated fluorescence microscope, model: inverted microscope (simulated), manufacturer: OpenHAL }
+id: microscope
+connect: { micromanager: sim, timeout: 5 s, action_wait: 8 s, max_side: 1024 }
+read:
+  image: { type: image }
+  pixel_size: { unit: um }
+  busy: { type: bool }
+write:
+  x: { unit: um, min: -150, max: 150 }
+  y: { unit: um, min: -110, max: 110 }
+  z: { unit: um, min: 1000, max: 1650 }
+  objective:
+    type: enum
+    values: [20x Plan-Apochromat 0.8, 40x Plan-Apochromat 0.95, 63x Plan-Apochromat 1.4 Oil]
+    map: { state: Objective }
+  filter: { type: enum, values: [DAPI, GFP, DAPI-GFP, TRITC], map: { state: Filter } }
+  exposure: { unit: ms, min: 1, max: 1000 }
+  light: { unit: percent, min: 0, max: 100, map: { device: LED, property: Intensity } }
+  shutter: { type: bool }
+actions:
+  move_xy:
+    description: Move the stage to x and y at once.
+    args: { x: { unit: um, min: -150, max: 150 }, y: { unit: um, min: -110, max: 110 } }
+    effects: [x, y]
+  autofocus:
+    description: Sweep the focus over span around the current z and stop at the sharpest frame, inside z's limits.
+    args: { span: { unit: um, min: 5, max: 100 } }
+    effects: [z]
+  home_focus:
+    description: Lower the objective to the bottom of the focus drive's travel, away from the slide.
+    effects: [z]
+  stop:
+    description: Stop the stage and the focus drive where they are.
+safe_state: { shutter: false }
+safe_state_note: "A stop ends any running action, halts the stage and the focus drive where they are and closes the shutter."
+hazard: medium
+notes: "A simulation, so nothing here can be harmed. On a real microscope set z's maximum from the objective that has the shortest working distance."
+provenance: { source: hand-written, by: openhal micromanager driver example, at: 2026-11-03 }
