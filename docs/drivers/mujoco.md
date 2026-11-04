@@ -20,6 +20,7 @@ MuJoCo has no wheels for Intel Macs after 3.10, so the extra pins 3.10 there.
 |---|---|---|
 | `{ joint: shoulder_pan }`, or a channel named like the joint | read | the joint's position |
 | `{ site: tip, axis: z }`, `{ body: cube, axis: x }` | read | a site's or a body's world position on one axis |
+| `{ camera: overhead, width: 640, height: 480 }` on a `type: image` channel | read | a PNG frame from a camera the model names |
 | `{ actuator: gripper }`, or a channel named `<actuator>_goal` | set | the actuator's control value |
 | `{ command: move_to, site: tip }` | action | inverse kinematics on the site's Jacobian, then a move |
 | `{ command: hold }`, or an action named `hold` | action | every setpoint stays where it is |
@@ -39,6 +40,17 @@ Hinge joints and their actuators are in radians and slides in metres, so any ang
 | `speed` | The argument that sets the move's speed, such as `speed` with unit `deg/s`. Hinge joints take an angular speed and slides a linear one |
 
 The action's arguments are the coordinates in a length unit, and their limits are the workspace box the kernel checks. The driver solves joint positions inside both the model's ranges and the file's own goal limits, and a point out of reach fails with the closest miss. Every joint moves at most at its goal channel's `max_change_per_s`, and all of them arrive together. With `speed`, every joint of that kind moves at most at the requested speed too, so the argument's `max` is a speed limit the kernel checks before the move, and a request above it is blocked with LIMIT_EXCEEDED. The argument's `min` must be above zero. Every goal channel the move changes, `then` included, must be in the action's `effects`, so the kernel reads it back after the move.
+
+### Cameras
+
+A camera named in the MJCF model, on a fixed stand or on a moving body such as a wrist, becomes an image channel. A read renders the camera's view of one whole physics step offscreen and returns the frame as a PNG, the way the uvc and rpi_camera drivers return theirs, so an agent sees the frame through the same read tool. `width` and `height` set the frame size in pixels, 640 by 480 by default and at most 2048 on a side. The driver raises the model's offscreen buffer to fit the largest frame.
+
+```yaml
+read:
+  overhead: { type: image, map: { camera: overhead, width: 640, height: 480 } }
+```
+
+Rendering uses `mujoco.Renderer`, which needs OpenGL. A machine with a display has it. On a machine without one, such as a server or a CI runner, set `MUJOCO_GL` to `egl` or `osmesa` before the hub starts. Without OpenGL a read of the image channel fails with that advice, and every other channel works as before. The renders run on one thread the driver owns, because an OpenGL context belongs to the thread that made it. The first frame of a size takes a few tenths of a second to set up, and later frames take about 10 ms.
 
 ## How it works
 
@@ -96,6 +108,7 @@ The bench arm's model is `BENCH_ARM` in `openhal/drivers/mujoco/conformance.py`.
 - `move_to` follows a straight line in joint space, not in space, so a long move can bow. Short moves near the work stay close to straight.
 - A stop freezes setpoints, and a joint that lagged behind its setpoint settles onto it within a few hundredths of a second.
 - The physics thread shares the Python interpreter with the hub, so a busy hub can leave simulated time a little behind the clock. The health detail shows how far.
+- A camera frame is a render of the model's own geometry and lights, with no lens distortion or noise.
 
 ## Hazard defaults
 
@@ -105,4 +118,5 @@ The default hazard is `medium`. A simulation can't hurt anyone, but a file writt
 
 - MuJoCo Python bindings, https://mujoco.readthedocs.io/en/stable/python.html
 - MuJoCo API reference for `mj_jacSite`, https://mujoco.readthedocs.io/en/stable/APIreference/APIfunctions.html
+- MuJoCo Python rendering, `mujoco.Renderer` and `MUJOCO_GL`, https://mujoco.readthedocs.io/en/stable/python.html#rendering
 - MuJoCo Menagerie, https://github.com/google-deepmind/mujoco_menagerie

@@ -7,6 +7,9 @@ The driver never reaches hardware, so it reports itself as simulated.
 
 - Read channels are joint positions, `{ joint: shoulder_pan }`, or world positions of a site or a
   body along one axis, `{ body: cube, axis: z }`. A channel named like a joint reads that joint.
+- An image channel, `{ camera: overhead, width: 640, height: 480 }`, renders a camera the model
+  names and reads as a PNG frame (camera.py). Rendering needs OpenGL, MUJOCO_GL=egl or osmesa
+  on a machine without a display.
 - Write channels are actuator goals, `{ actuator: gripper }`. A channel named `<actuator>_goal`
   sets that actuator. A goal moves along a minimum-jerk path whose peak speed is the channel's
   `max_change_per_s`, and reads back as where the actuator is headed.
@@ -33,11 +36,13 @@ from __future__ import annotations
 
 import asyncio
 import math
+import time
 from typing import Any, ClassVar
 
 import mujoco
 
 from openhal.drivers.base import Driver, DriverError, DriverInfo, Health, Reading
+from openhal.drivers.mujoco.camera import Cameras, RendererFactory, Shot, default_renderer
 from openhal.drivers.mujoco.maps import (
     AXES,
     ActionMap,
@@ -70,16 +75,21 @@ class MujocoDriver(Driver):
         name="mujoco",
         protocols=("MuJoCo physics simulation",),
         hazard_default="medium",
-        summary="Any MuJoCo model in real time. Joint reads, actuator goals, move_to by inverse kinematics, hold.",
+        summary="Any MuJoCo model in real time. Joints, camera frames, goals, move_to by inverse kinematics, hold.",
         safe_state_support="native",
         conformance="full",
     )
     params_model: ClassVar[type[Any] | None] = MujocoParams
 
-    def __init__(self, device: DeviceFile, *, loader: ModelLoader | None = None) -> None:
+    def __init__(
+        self, device: DeviceFile, *, loader: ModelLoader | None = None, renderer: RendererFactory = default_renderer
+    ) -> None:
         super().__init__(device)
         self.settings = MujocoParams.model_validate(device.connect.params)
         self._loader = loader or default_loader(self.settings.model_env)
+        self._renderer = renderer
+        self.cameras: Cameras | None = None
+        self.shots: dict[str, Shot] = {}
         self.world: World | None = None
         self.read_maps: dict[str, ReadMap] = {}
         self.write_maps: dict[str, WriteMap] = {}
@@ -88,9 +98,12 @@ class MujocoDriver(Driver):
         self.writers: dict[str, Writer] = {}
         self.plans: dict[str, Plan] = {}
         for name, spec in device.read.items():
-            if spec.type != "number":
+            read_map = validate(ReadMap, spec.map or {"joint": name}, f"read.{name}")
+            if (spec.type == "image") != (read_map.camera is not None):
+                raise DriverError(f"read.{name}: an image channel needs map.camera, and a camera reads as an image.")
+            if spec.type not in ("number", "image"):
                 raise DriverError(f"read.{name}: positions are numbers.")
-            self.read_maps[name] = validate(ReadMap, spec.map or {"joint": name}, f"read.{name}")
+            self.read_maps[name] = read_map
         for name, write in device.write.items():
             if write.type != "number":
                 raise DriverError(f"write.{name}: actuator goals are numbers.")
@@ -168,11 +181,17 @@ class MujocoDriver(Driver):
         model = await asyncio.to_thread(self._loader)
         if self.settings.timestep is not None:
             model.opt.timestep = self.settings.timestep
+        frames = [read_map for read_map in self.read_maps.values() if read_map.camera is not None]
+        if frames:
+            model.vis.global_.offwidth = max(model.vis.global_.offwidth, *(item.width for item in frames))
+            model.vis.global_.offheight = max(model.vis.global_.offheight, *(item.height for item in frames))
         try:
             world = World(model, keyframe=self.settings.keyframe)
         except KeyError:
             raise DriverError(f"The model has no keyframe named {self.settings.keyframe!r}.") from None
         self._bind(model)
+        if self.shots:
+            self.cameras = Cameras(self._renderer)
         world.start()
         self.world = world
 
@@ -184,7 +203,15 @@ class MujocoDriver(Driver):
 
     def _bind(self, model: Any) -> None:
         """Resolve every map against the model, or raise DriverError naming the first mismatch."""
-        self.readers = {name: self._reader(model, name, item) for name, item in self.read_maps.items()}
+        self.readers = {
+            name: self._reader(model, name, item) for name, item in self.read_maps.items() if item.camera is None
+        }
+        self.shots = {
+            name: Shot(self._id(model, mujoco.mjtObj.mjOBJ_CAMERA, item.camera, f"read.{name}", "camera"), item.camera,
+                       item.width, item.height)
+            for name, item in self.read_maps.items()
+            if item.camera is not None
+        }  # fmt: skip
         self.writers = {name: self._writer(model, name, item) for name, item in self.write_maps.items()}
         self.plans = {
             name: self._plan(model, name, item) for name, item in self.action_maps.items() if item.command == "move_to"
@@ -289,11 +316,16 @@ class MujocoDriver(Driver):
             identity["model"] = _model_name(model)
             identity["joints"] = ", ".join(_name(model, mujoco.mjtObj.mjOBJ_JOINT, i) for i in range(model.njnt))
             identity["actuators"] = ", ".join(_name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, i) for i in range(model.nu))
+            identity["cameras"] = ", ".join(_name(model, mujoco.mjtObj.mjOBJ_CAMERA, i) for i in range(model.ncam))
             identity["timestep"] = f"{self.world.timestep:g} s"
         return identity
 
     async def read(self, channel: str) -> Reading:
         world = self._world()
+        shot = self.shots.get(channel)
+        if shot is not None:
+            assert self.cameras is not None
+            return Reading(channel, await self.cameras.snapshot(world, shot), at=time.time())
         unit = self.device.channel_unit(channel)
         writer = self.writers.get(channel)
         if writer is not None:
@@ -415,6 +447,11 @@ class MujocoDriver(Driver):
                 real = _name(model, mujoco.mjtObj.mjOBJ_JOINT, joint)
                 if real != name:
                     read[name]["map"] = {"joint": real}
+        for camera in range(model.ncam):
+            real = _name(model, mujoco.mjtObj.mjOBJ_CAMERA, camera)
+            name = _slug(real)
+            if name and name not in read:
+                read[name] = {"type": "image", "map": {"camera": real}}
         for actuator in range(model.nu):
             name = _slug(_name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, actuator))
             joint = int(model.actuator_trnid[actuator][0])
@@ -452,6 +489,9 @@ class MujocoDriver(Driver):
         return Health(connected=True, detail=detail)
 
     async def close(self) -> None:
+        cameras, self.cameras = self.cameras, None
+        if cameras is not None:
+            await cameras.close()
         world, self.world = self.world, None
         if world is not None:
             await asyncio.to_thread(world.close)

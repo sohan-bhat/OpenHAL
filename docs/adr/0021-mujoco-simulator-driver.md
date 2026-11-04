@@ -31,3 +31,12 @@ Option 2, the `mujoco` driver, an optional extra on the official `mujoco` packag
 - Any MJCF model, such as a MuJoCo Menagerie robot, runs as a device with a device file and no new code.
 - The kernel checks a `move_to` point against the action's argument limits, the workspace box. It doesn't see the joint angles the driver solves, so the driver keeps them inside the goal limits a person confirmed and moves them no faster than those channels allow.
 - A simulated device can be medium hazard where the real machine is high, because a simulation can't hurt anyone. Its file says so in its notes.
+
+## Cameras, added 2026-11-04
+
+The owner asked how the hub and the model know what to avoid. A camera the MJCF model names now becomes an image channel, `{ camera: name, width, height }` on a `type: image` read.
+
+- A read renders the camera offscreen with `mujoco.Renderer` and returns a PNG, encoded with the standard library, so the extra needs no imaging package and an agent gets the frame like a uvc or rpi_camera frame.
+- The frame comes from one whole physics step, read under the world's lock, and the renders run on one thread the driver owns, because an OpenGL context belongs to its thread.
+- Rendering needs OpenGL. Without it only the image channel fails, with advice to set `MUJOCO_GL` to `egl` or `osmesa`. The tests that render skip where no OpenGL context can be made, and the rest of the camera code runs everywhere against a stand-in renderer.
+- A camera reads and never moves anything, so it adds no write channel, no action and no risk to the device.

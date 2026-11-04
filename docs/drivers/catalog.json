@@ -30,7 +30,8 @@
       ],
       "families": [
         "any MJCF model, such as the MuJoCo Menagerie arms",
-        "simulated arms with move_to by inverse kinematics"
+        "simulated arms with move_to by inverse kinematics",
+        "camera frames from any camera the model names"
       ],
       "hazard_default": "medium",
       "conformance": "full",

@@ -78,13 +78,22 @@ class ReadMap(BaseModel):
     joint: str | None = Field(default=None, pattern=NAME)
     site: str | None = Field(default=None, pattern=NAME)
     body: str | None = Field(default=None, pattern=NAME)
+    camera: str | None = Field(default=None, pattern=NAME)
     axis: Axis | None = None
+    width: int = Field(default=640, ge=16, le=2048)
+    height: int = Field(default=480, ge=16, le=2048)
 
     @model_validator(mode="after")
     def _one(self) -> ReadMap:
-        given = [name for name in ("joint", "site", "body") if getattr(self, name) is not None]
+        given = [name for name in ("joint", "site", "body", "camera") if getattr(self, name) is not None]
         if len(given) != 1:
-            raise ValueError("give exactly one of joint, site or body.")
+            raise ValueError("give exactly one of joint, site, body or camera.")
+        if self.camera is not None:
+            if self.axis is not None:
+                raise ValueError("a camera takes no axis.")
+            return self
+        if self.model_fields_set & {"width", "height"}:
+            raise ValueError("width and height are a camera's frame size, so they need camera.")
         if (self.joint is None) != (self.axis is not None):
             raise ValueError("a site or a body needs an axis, x, y or z, and a joint takes none.")
         return self

@@ -24,7 +24,7 @@ import threading
 import time
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, TypeVar
 
 import mujoco
 import numpy as np
@@ -42,6 +42,7 @@ AIM_WEIGHT: float = 0.2
 """How much an aim error in radians counts against a position error in metres."""
 
 Watcher = Callable[[float, Any], None]
+T = TypeVar("T")
 
 
 def minimum_jerk(tau: float) -> float:
@@ -250,6 +251,11 @@ class World:
                     self._watchers.remove(entry)
 
         return remove
+
+    def peek(self, look: Callable[[Any, Any], T]) -> T:
+        """Call `look(model, data)` with the world held still, so it sees one whole step."""
+        with self._lock:
+            return look(self.model, self.data)
 
     def qpos(self, joint: int) -> float:
         with self._lock:
