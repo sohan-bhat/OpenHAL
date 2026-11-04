@@ -35,6 +35,7 @@ openhal library add rigol-dp832
 | Name | Device | Hazard | Controls |
 |---|---|---|---|
 | [`mettler-toledo-ms-ts`](serial/mettler-toledo-ms-ts.hal.yaml) | Mettler Toledo MS-TS analytical balance | low | 3 actions |
+| [`new-era-ne-500`](serial/new-era-ne-500.hal.yaml) | New Era NE-500 syringe pump | medium | 4 controls, 4 actions |
 
 ## Marlin printers over USB
 
@@ -114,4 +115,4 @@ openhal library add rigol-dp832
 |---|---|---|---|
 | [`sky-watcher-eq6-r-pro`](alpaca/sky-watcher-eq6-r-pro.hal.yaml) | Sky-Watcher EQ6-R Pro mount | medium | 1 control, 4 actions |
 
-This list is generated from the files by `uv run python -m openhal.cli.library_cmd`. 34 files.
+This list is generated from the files by `uv run python -m openhal.cli.library_cmd`. 35 files.

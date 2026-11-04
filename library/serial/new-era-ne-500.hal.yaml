@@ -1,0 +1,94 @@
+openhal: "0.1"
+device: { name: New Era NE-500 syringe pump, model: NE-500, manufacturer: New Era Pump Systems }
+id: new-era-ne-500
+connect: { serial: auto, baud: 19200, newline: cr, framing: stx-etx, timeout: 1 s, identify: VER }
+read:
+  status:
+    type: enum
+    values: [infusing, withdrawing, stopped, paused, phase_pause, user_wait, purging, alarm]
+    every: 1 s
+    map:
+      query: ""
+      parse: "^\\d\\d(?P<value>[IWSPTUXA])"
+      lookup: { I: infusing, W: withdrawing, S: stopped, P: paused, T: phase_pause, U: user_wait, X: purging, A: alarm }
+  infused_volume: { unit: mL, map: { query: DIS, parse: "^\\d\\d[IWSPTUX]I(?P<value>[0-9.]+)W[0-9.]+ML$" } }
+  withdrawn_volume: { unit: mL, map: { query: DIS, parse: "^\\d\\d[IWSPTUX]I[0-9.]+W(?P<value>[0-9.]+)ML$" } }
+  firmware: { type: string, map: { query: VER, parse: "^\\d\\d[IWSPTUX](?P<value>NE.+)$" } }
+write:
+  diameter:
+    unit: mm
+    min: 1
+    max: 30
+    confirm: confirm
+    suggested: true
+    map:
+      command: "DIA {value:.4g}"
+      expect: "^\\d\\d[SP]$"
+      error: "\\?"
+      get: DIA
+      parse: "^\\d\\d[IWSPTUX](?P<value>[0-9.]+)$"
+  rate:
+    unit: mL/h
+    min: 0.01
+    max: 50
+    confirm: confirm
+    suggested: true
+    map:
+      command: "RAT {value:.4g} MH"
+      expect: "^\\d\\d[IWSP]$"
+      error: "\\?"
+      get: RAT
+      parse: "^\\d\\d[IWSPTUX](?P<value>[0-9.]+)MH$"
+  volume:
+    unit: mL
+    min: 0
+    max: 10
+    confirm: confirm
+    suggested: true
+    map:
+      command: "VOL {value:.4g}"
+      expect: "^\\d\\d[SP]$"
+      error: "\\?"
+      get: VOL
+      parse: "^\\d\\d[IWSPTUX](?P<value>[0-9.]+)ML$"
+  direction:
+    type: enum
+    values: [infuse, withdraw]
+    confirm: confirm
+    suggested: true
+    map:
+      command: "DIR {value}"
+      lookup: { INF: infuse, WDR: withdraw }
+      expect: "^\\d\\d[SP]$"
+      error: "\\?"
+      get: DIR
+      parse: "^\\d\\d[IWSPTUX](?P<value>INF|WDR)$"
+actions:
+  use_millilitres:
+    description: Set the pump's volume units to mL, which the volume channels read in.
+    suggested: true
+    map: { command: VOL ML, expect: "^\\d\\d[SP]$", error: "\\?" }
+  run:
+    description: Start pumping at the set rate until the set volume, in the set direction.
+    confirm: confirm-each-time
+    suggested: true
+    map: { command: RUN, expect: "^\\d\\d[IW]$", error: "\\?|A\\?" }
+  stop:
+    description: Stop the pump. A running program pauses, and a second stop resets the program.
+    suggested: true
+    map: { command: STP, expect: "^\\d\\d[SP]$", error: "\\?" }
+  clear_infused:
+    description: Set the infused volume back to 0 while the pump is stopped.
+    suggested: true
+    map: { command: CLD INF, expect: "^\\d\\d[SP]$", error: "\\?" }
+safe_state: [{ action: stop }]
+safe_state_note: "A stop stops the motor at once and pauses the pumping program. The syringe keeps its pressure, so close the line's valve before disconnecting tubing."
+hazard: medium
+notes: >-
+  Suggested limits. A person must confirm every limit before this device can be written.
+  Drafted with the driver writer from the RS-232 command summary in New Era's NE-500 user manual,
+  publication 1200-02, for lab use on a bench, never on a person. The pump replies in Basic mode
+  packets from STX to ETX at 19200 baud, so the file sets framing stx-etx. Run use_millilitres once, then
+  set the diameter from the syringe's own data before the first run. The rate limit of 50 mL/h and the
+  volume limit of 10 mL suit a 10 mL syringe. Raise them only for the syringe and the tubing in use.
+provenance: { source: library, by: OpenHAL starter library, at: 2026-10-25, verification: { status: unverified } }
