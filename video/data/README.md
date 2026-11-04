@@ -1,6 +1,6 @@
 # Film data
 
-This folder holds the motion and the hub messages for the launch film's arm shots. A real OpenHAL hub drove a simulated SO-101 in MuJoCo, an agent sent every command through `openhal mcp`, and a person approved and stopped through the routes the Inspector uses. Nothing here is animated by hand.
+This folder holds the motion and the hub messages for the launch film's arm shots. The demo video's real Claude Code session is in the `take-1` to `take-4` folders, recorded by `video/hub/record_session.py`. [TAKE.md](TAKE.md) names the take the video uses, and [STATS.md](STATS.md) holds the stat card's two numbers. A real OpenHAL hub drove a simulated SO-101 in MuJoCo, an agent sent every command through `openhal mcp`, and a person approved and stopped through the routes the Inspector uses. Nothing here is animated by hand.
 
 `video/hub/record.py` made these files, and `check.py` checks them.
 
