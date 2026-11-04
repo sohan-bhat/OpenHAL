@@ -49,10 +49,10 @@ export const DataPanel: React.FC<DataPanelProps> = ({
     <div style={{position: 'absolute', left: 80, top: offset, width, height: '100%', color: COLOR.text}}>
       <div style={{position: 'absolute', top: 104, opacity: head, translate: `0 ${(1 - head) * 10}px`}}>
         <div style={{fontFamily: SANS, fontWeight: 700, fontSize: 46, letterSpacing: '-0.02em', lineHeight: 1.08}}>{title}</div>
-        <div style={{fontFamily: MONO, fontSize: 20, color: COLOR.text2, marginTop: 12}}>{subtitle}</div>
+        <div style={{fontFamily: MONO, fontSize: 23, color: COLOR.text2, marginTop: 12}}>{subtitle}</div>
       </div>
       <div style={{position: 'absolute', top: 300, opacity: body, translate: `0 ${(1 - body) * 10}px`}}>
-        <div style={{fontFamily: MONO, fontSize: 21, color: COLOR.text2}}>{label}</div>
+        <div style={{fontFamily: MONO, fontSize: 24, color: COLOR.text2}}>{label}</div>
         <div style={{display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 6}}>
           <span style={{fontFamily: MONO, fontWeight: 400, fontSize: 84, letterSpacing: '-0.03em', lineHeight: 1, fontVariantNumeric: 'tabular-nums'}}>
             {fmt(value, decimals)}
@@ -74,7 +74,7 @@ export const DataPanel: React.FC<DataPanelProps> = ({
             translate: '-50% 0',
             whiteSpace: 'nowrap',
             fontFamily: MONO,
-            fontSize: 20,
+            fontSize: 23,
             color: COLOR.text2,
           }}
         >
@@ -88,7 +88,7 @@ export const DataPanel: React.FC<DataPanelProps> = ({
             top: 520,
             fontFamily: MONO,
             fontWeight: 700,
-            fontSize: 40,
+            fontSize: 44,
             letterSpacing: '0.01em',
             color: verdict.color,
             opacity: shown,

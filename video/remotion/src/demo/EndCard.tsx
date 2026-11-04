@@ -22,9 +22,9 @@ export const EndCard: React.FC<EndCardProps> = ({tagline, command, url, finePrin
         <div style={{fontFamily: MONO, fontSize: 27, color: COLOR.text, marginTop: 44, ...rise(frame, 21)}}>
           <span style={{color: COLOR.accent}}>$</span> {command}
         </div>
-        <div style={{fontFamily: MONO, fontSize: 22, color: COLOR.text2, marginTop: 14, ...rise(frame, 28)}}>{url}</div>
+        <div style={{fontFamily: MONO, fontSize: 25, color: COLOR.text2, marginTop: 14, ...rise(frame, 28)}}>{url}</div>
       </div>
-      <div style={{position: 'absolute', bottom: 52, fontFamily: SANS, fontSize: 17, color: COLOR.text2, ...rise(frame, 40, 18)}}>{finePrint}</div>
+      <div style={{position: 'absolute', bottom: 48, fontFamily: SANS, fontSize: 21, color: COLOR.text2, ...rise(frame, 40, 18)}}>{finePrint}</div>
     </AbsoluteFill>
   );
 };

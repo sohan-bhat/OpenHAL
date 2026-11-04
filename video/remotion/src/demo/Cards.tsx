@@ -33,8 +33,8 @@ export const DeviceCard: React.FC<{device: Device; at: number}> = ({device, at})
   return (
     <div
       style={{
-        width: 357,
-        padding: '28px 28px 26px',
+        flex: '1 1 0',
+        padding: '32px 30px 30px',
         borderRadius: 6,
         background: COLOR.surface,
         boxShadow: `inset 0 0 0 1px ${COLOR.border}`,
@@ -42,10 +42,10 @@ export const DeviceCard: React.FC<{device: Device; at: number}> = ({device, at})
         translate: `0 ${(1 - shown) * 24}px`,
       }}
     >
-      <div style={{fontFamily: SANS, fontWeight: 700, fontSize: 30, letterSpacing: '-0.015em', color: COLOR.text, lineHeight: 1.2}}>{device.name}</div>
-      <div style={{fontFamily: MONO, fontSize: 20, color: COLOR.text2, marginTop: 8}}>{device.file}</div>
-      <div style={{height: 1, background: COLOR.border, margin: '18px 0 16px'}} />
-      <div style={{fontFamily: MONO, fontSize: 19, lineHeight: 1.6, color: COLOR.text, whiteSpace: 'pre'}}>
+      <div style={{fontFamily: SANS, fontWeight: 700, fontSize: 36, letterSpacing: '-0.02em', color: COLOR.text, lineHeight: 1.12, minHeight: 81}}>{device.name}</div>
+      <div style={{fontFamily: MONO, fontSize: 22, color: COLOR.text2, marginTop: 14, whiteSpace: 'nowrap'}}>{device.file}</div>
+      <div style={{height: 1, background: COLOR.border, margin: '22px 0 20px'}} />
+      <div style={{fontFamily: MONO, fontSize: 24, lineHeight: 1.55, color: COLOR.text, whiteSpace: 'pre'}}>
         {device.lines.map((line, i) => {
           const colon = line.indexOf(':');
           return (
@@ -63,7 +63,7 @@ export const DeviceCard: React.FC<{device: Device; at: number}> = ({device, at})
         })}
       </div>
       {device.status ? (
-        <div style={{fontFamily: MONO, fontWeight: 700, fontSize: 20, color: COLOR.ok, marginTop: 16, opacity: status}}>{device.status.word}</div>
+        <div style={{fontFamily: MONO, fontWeight: 700, fontSize: 24, color: COLOR.ok, marginTop: 16, opacity: status}}>{device.status.word}</div>
       ) : null}
     </div>
   );

@@ -1,6 +1,6 @@
 import {AbsoluteFill, useCurrentFrame} from 'remotion';
 import {Mascot} from './Mascot';
-import {COLOR, MONO, SANS, progress} from './theme';
+import {COLOR, EASE, MONO, SANS, clamp01, progress} from './theme';
 
 export type Tone = 'text' | 'muted' | 'ok' | 'blocked' | 'pending';
 
@@ -30,7 +30,7 @@ const TONE: Record<Tone, string> = {
   pending: COLOR.confirm,
 };
 
-const FONT = 19;
+const FONT = 21;
 const LINE = 1.5;
 const SPINNER = ['·', '✢', '✳', '✶', '✻', '✽', '✻', '✶', '✳', '✢'];
 
@@ -157,22 +157,47 @@ const Markdown: React.FC<{text: string}> = ({text}) => (
   </span>
 );
 
-export const Terminal: React.FC<{header: TerminalHeader; blocks: TerminalBlock[]}> = ({header, blocks}) => {
+export type CameraKey = {at: number; scale: number; y: number};
+export type ScrollKey = {at: number; px: number};
+
+const keyed = <K extends {at: number}>(keys: K[], frame: number, pick: (key: K) => number, length = 16): number => {
+  let value = pick(keys[0]);
+  for (let i = 1; i < keys.length; i++) {
+    const key = keys[i];
+    if (frame <= key.at) {
+      break;
+    }
+    const t = EASE.inOut(clamp01((frame - key.at) / length));
+    value = value + (pick(key) - value) * t;
+  }
+  return value;
+};
+
+export const Terminal: React.FC<{header: TerminalHeader; blocks: TerminalBlock[]; camera?: CameraKey[]; scroll?: ScrollKey[]}> = ({
+  header,
+  blocks,
+  camera = [{at: 0, scale: 1, y: 360}],
+  scroll = [{at: 0, px: 0}],
+}) => {
   const frame = useCurrentFrame();
+  const zoom = keyed(camera, frame, (k) => k.scale);
+  const originY = keyed(camera, frame, (k) => k.y);
+  const lift = keyed(scroll, frame, (k) => k.px, 12);
   const prompt = blocks.filter((b): b is Extract<TerminalBlock, {kind: 'prompt'}> => b.kind === 'prompt').find((b) => frame >= b.at && frame < b.submit);
   const spinner = blocks.filter((b): b is Extract<TerminalBlock, {kind: 'spinner'}> => b.kind === 'spinner').find((b) => frame >= b.at && frame < b.until);
   const visible = blocks.filter((b) => (b.kind === 'prompt' ? frame >= b.submit : b.kind !== 'spinner' && frame >= b.at));
   const typing = prompt ? typed(prompt.text, frame, prompt.at, prompt.cps ?? 32) : '';
   const settled = prompt ? typing.length === prompt.text.length : true;
   return (
-    <AbsoluteFill style={{background: COLOR.bg}}>
+    <AbsoluteFill style={{background: COLOR.bg, overflow: 'hidden'}}>
+      <AbsoluteFill style={{scale: `${zoom}`, transformOrigin: `640px ${originY}px`}}>
       <div
         style={{
           position: 'absolute',
-          left: 100,
-          top: 64,
-          width: 1080,
-          height: 592,
+          left: 160,
+          top: 56,
+          width: 960,
+          height: 608,
           borderRadius: 12,
           background: COLOR.surface,
           boxShadow: `0 0 0 1px ${COLOR.border}, 0 30px 80px rgba(0, 0, 0, 0.55)`,
@@ -191,8 +216,8 @@ export const Terminal: React.FC<{header: TerminalHeader; blocks: TerminalBlock[]
           </div>
           <div style={{textAlign: 'center', fontFamily: SANS, fontSize: 14, lineHeight: '36px', color: COLOR.windowTitle}}>{header.title}</div>
         </div>
-        <div style={{position: 'absolute', left: 30, right: 30, top: 37, bottom: 18, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end'}}>
-          <div style={{flexShrink: 0, paddingTop: 22}}>
+        <div style={{position: 'absolute', left: 14, right: 14, top: 37, bottom: 18, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end'}}>
+          <div style={{flexShrink: 0, padding: '22px 16px 0', translate: `0 ${lift}px`}}>
           <div style={{display: 'flex', gap: 22, alignItems: 'center', marginBottom: 18}}>
             <Mascot cell={FONT * 1.25} color={COLOR.claude} />
             <div style={{lineHeight: 1.3}}>
@@ -250,6 +275,7 @@ export const Terminal: React.FC<{header: TerminalHeader; blocks: TerminalBlock[]
           <div style={{flexGrow: 1}} />
         </div>
       </div>
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };

@@ -2,7 +2,7 @@ import type {Stat, Device} from './Cards';
 import type {CameraMove} from './DeskScene';
 import type {CursorKey} from './Cursor';
 import type {HubFacts, PendingRequest, DeviceSummary} from './Inspector';
-import type {TerminalBlock, TerminalHeader} from './Terminal';
+import type {CameraKey, ScrollKey, TerminalBlock, TerminalHeader} from './Terminal';
 import type {Quat, Vec3, ArmPose} from './recording';
 
 export type Tone = 'ok' | 'blocked' | 'pending' | 'text';
@@ -21,7 +21,7 @@ export type PanelSpec = {
   verdict?: {text: string; tone: Tone; at: number} | null;
 };
 
-export type TerminalScene = {id: string; kind: 'terminal'; from: number; frames: number; blocks: TerminalBlock[]};
+export type TerminalScene = {id: string; kind: 'terminal'; from: number; frames: number; blocks: TerminalBlock[]; camera?: CameraKey[]; scroll?: ScrollKey[]};
 
 export type DeskSceneSpec = {
   id: string;

@@ -16,7 +16,9 @@ const pressOf = (frame: number, at: number) => {
   return d >= 0 && d < 8 ? 1 - Math.abs(d - 2) / 6 : 0;
 };
 
-const TerminalView: React.FC<{scene: TerminalScene; header: TerminalHeader}> = ({scene, header}) => <Terminal header={header} blocks={scene.blocks} />;
+const TerminalView: React.FC<{scene: TerminalScene; header: TerminalHeader}> = ({scene, header}) => (
+  <Terminal header={header} blocks={scene.blocks} camera={scene.camera} scroll={scene.scroll} />
+);
 
 const STRIP = 56;
 
@@ -96,7 +98,7 @@ const StatsView: React.FC<{scene: StatsScene}> = ({scene}) => {
           <StatCard key={stat.label} stat={stat} at={4 + i * TIME.stagger * 2} />
         ))}
       </div>
-      <div style={{position: 'absolute', right: 80, bottom: 64, fontFamily: SANS, fontSize: 17, color: COLOR.text2, opacity: progress(frame, 30, 12)}}>{scene.source}</div>
+      <div style={{position: 'absolute', left: 80, bottom: 70, fontFamily: SANS, fontSize: 22, color: COLOR.text2, opacity: progress(frame, 30, 12)}}>{scene.source}</div>
     </AbsoluteFill>
   );
 };
@@ -106,10 +108,10 @@ const DevicesView: React.FC<{scene: DevicesScene}> = ({scene}) => {
   const head = progress(frame, 0, 12);
   return (
     <AbsoluteFill style={{background: COLOR.bg}}>
-      <div style={{position: 'absolute', left: 80, top: 176, fontFamily: SANS, fontWeight: 700, fontSize: 40, letterSpacing: '-0.02em', color: COLOR.text, opacity: head, translate: `0 ${(1 - head) * 10}px`}}>
+      <div style={{position: 'absolute', left: 64, top: 118, fontFamily: SANS, fontWeight: 700, fontSize: 48, letterSpacing: '-0.02em', color: COLOR.text, opacity: head, translate: `0 ${(1 - head) * 10}px`}}>
         {scene.title}
       </div>
-      <div style={{position: 'absolute', left: 80, top: 284, display: 'flex', gap: 32}}>
+      <div style={{position: 'absolute', left: 64, right: 64, top: 236, display: 'flex', gap: 28}}>
         {scene.devices.map((device, i) => (
           <DeviceCard key={device.file} device={device} at={10 + i * TIME.stagger} />
         ))}
