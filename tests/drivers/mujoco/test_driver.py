@@ -407,7 +407,7 @@ def test_parameters_take_quantities() -> None:
     [
         ("  lift: { unit: rad }", "  lift: { type: bool }", "read.lift: positions are numbers"),
         ("{ site: tip, axis: z }", "{ site: tip }", "a site or a body needs an axis"),
-        ("{ site: tip, axis: z }", "{ site: tip, joint: pan }", "give exactly one of joint, site or body"),
+        ("{ site: tip, axis: z }", "{ site: tip, joint: pan }", "give exactly one of joint, site, body or camera"),
         (
             "  pan_goal: { unit: deg,",
             "  pan_goal: { map: { motor: pan }, unit: deg,",
