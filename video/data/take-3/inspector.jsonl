@@ -1,0 +1,13 @@
+{"t":15.793,"kind":"screenshot","file":"inspector/0-devices-dark.png"}
+{"t":84.126,"kind":"screenshot","file":"inspector/1-pending-dark.png"}
+{"kind":"click","what":"Approve","t":85.7642,"epoch_ms":1793755474453.2,"button":"Approve and run drop_in_bin","aria_label":null,"t_command_sent":85.6961,"t_playwright_before":85.72,"t_playwright_after":85.784}
+{"t":85.935,"kind":"screenshot","file":"inspector/2-approve-clicked-dark.png"}
+{"t":90.681,"kind":"screenshot","file":"inspector/3-approved-dark.png"}
+{"t":126.447,"kind":"screenshot","file":"inspector/1-pending-2-dark.png"}
+{"kind":"click","what":"Approve","t":128.2066,"epoch_ms":1793755516895.5999,"button":"Approve and run drop_in_bin","aria_label":null,"t_command_sent":128.155,"t_playwright_before":128.177,"t_playwright_after":128.221}
+{"t":128.364,"kind":"screenshot","file":"inspector/2-approve-clicked-2-dark.png"}
+{"t":133.121,"kind":"screenshot","file":"inspector/3-approved-2-dark.png"}
+{"t":136.941,"kind":"screenshot","file":"inspector/4-before-stop-dark.png"}
+{"kind":"click","what":"STOP","t":148.8852,"epoch_ms":1793755537574.2,"button":"STOP","aria_label":"STOP every device","t_command_sent":148.6329,"t_playwright_before":148.794,"t_playwright_after":148.924}
+{"t":150.248,"kind":"screenshot","file":"inspector/5-stopped-dark.png"}
+{"t":161.769,"kind":"screenshot","file":"inspector/6-end-dark.png"}

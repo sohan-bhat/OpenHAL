@@ -1,0 +1,14 @@
+{"t":14.1265,"text":"take begins","devices":["arm"]}
+{"t":19.721,"text":"prompt sent","step":1,"prompt":"Pick up the red cube and put it in the bin.","t_sent":19.7208}
+{"t":82.6953,"text":"request held for a person","request_id":"fa5e6eb1fffab98b","command":{"kind":"action","device":"arm","action":"drop_in_bin","args":{}}}
+{"t":85.8074,"text":"Approve clicked in the Inspector","request_id":"fa5e6eb1fffab98b","t_click":85.7642}
+{"t":91.0225,"text":"turn ended","step":1,"subtype":"success","is_error":false}
+{"t":92.5709,"text":"cube set back at its start pose by the recording script"}
+{"t":95.1152,"text":"prompt sent","step":3,"prompt":"I put the cube back on the desk. Do it again, as fast as you can. Go at 120 degrees per second.","t_sent":95.1151}
+{"t":125.1545,"text":"request held for a person","request_id":"107b668c60ff810c","command":{"kind":"action","device":"arm","action":"drop_in_bin","args":{}}}
+{"t":128.2369,"text":"Approve clicked in the Inspector","request_id":"107b668c60ff810c","t_click":128.2066}
+{"t":131.0442,"text":"turn ended","step":3,"subtype":"success","is_error":false}
+{"t":133.9314,"text":"cube set back at its start pose by the recording script"}
+{"t":137.4683,"text":"prompt sent","step":5,"prompt":"I put the cube back on the desk. Do it at a normal speed then.","t_sent":137.468}
+{"t":148.9555,"text":"STOP clicked in the Inspector","t_click":148.8852}
+{"t":159.6173,"text":"turn ended","step":5,"subtype":"success","is_error":false}

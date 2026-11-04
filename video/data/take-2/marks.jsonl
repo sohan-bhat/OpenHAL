@@ -1,0 +1,11 @@
+{"t":1.3721,"text":"take begins","devices":["arm"]}
+{"t":4.5218,"text":"prompt sent","step":1,"prompt":"Pick up the red cube and put it in the bin.","t_sent":4.5218}
+{"t":35.9872,"text":"request held for a person","request_id":"065b2907086b94f0","command":{"kind":"action","device":"arm","action":"drop_in_bin","args":{}}}
+{"t":39.0219,"text":"Approve clicked in the Inspector","request_id":"065b2907086b94f0","t_click":39.0108}
+{"t":43.7872,"text":"turn ended","step":1,"subtype":"success","is_error":false}
+{"t":45.3421,"text":"cube set back at its start pose by the recording script"}
+{"t":47.8971,"text":"prompt sent","step":3,"prompt":"I put the cube back on the desk. Do it again at 120 degrees per second.","t_sent":47.8971}
+{"t":60.7959,"text":"turn ended","step":3,"subtype":"success","is_error":false}
+{"t":64.5162,"text":"prompt sent","step":5,"prompt":"Do it at a normal speed then.","t_sent":64.5161}
+{"t":73.0659,"text":"STOP clicked in the Inspector","t_click":73.047}
+{"t":82.9115,"text":"turn ended","step":5,"subtype":"success","is_error":false}

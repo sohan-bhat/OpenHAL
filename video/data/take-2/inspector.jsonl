@@ -1,0 +1,9 @@
+{"t":2.809,"kind":"screenshot","file":"inspector/0-devices-dark.png"}
+{"t":37.268,"kind":"screenshot","file":"inspector/1-pending-dark.png"}
+{"kind":"click","what":"Approve","t":39.0108,"epoch_ms":1793755255757.8,"button":"Approve and run drop_in_bin","aria_label":null,"t_command_sent":38.9876,"t_playwright_before":38.995,"t_playwright_after":39.018}
+{"t":39.144,"kind":"screenshot","file":"inspector/2-approve-clicked-dark.png"}
+{"t":43.829,"kind":"screenshot","file":"inspector/3-approved-dark.png"}
+{"t":64.341,"kind":"screenshot","file":"inspector/4-before-stop-dark.png"}
+{"kind":"click","what":"STOP","t":73.047,"epoch_ms":1793755289794,"button":"STOP","aria_label":"STOP every device","t_command_sent":73.002,"t_playwright_before":73.016,"t_playwright_after":73.052}
+{"t":73.74,"kind":"screenshot","file":"inspector/5-stopped-dark.png"}
+{"t":85.035,"kind":"screenshot","file":"inspector/6-end-dark.png"}
