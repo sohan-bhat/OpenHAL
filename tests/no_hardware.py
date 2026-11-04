@@ -13,7 +13,8 @@ real serial port, HID device, MIDI port, Bluetooth device or Raspberry Pi camera
 `isolate_environment()` points the hub's home at a temporary folder and the hub address at a
 loopback port nothing listens on, so a test, and every process a test starts, never reads the real
 `~/.openhal`, never sends the developer's token and never reaches a running hub. A developer's own
-OPENHAL_FIRMWARE_PORTS is cleared too, so no exported list of real boards reaches discovery.
+OPENHAL_FIRMWARE_PORTS is cleared too, so no exported list of real boards reaches discovery, and
+pymmcore-plus writes no log file into the developer's data folder.
 """
 
 from __future__ import annotations
@@ -206,6 +207,7 @@ PATCHES: tuple[tuple[str, Callable[[], Any]], ...] = (
     (f"{DRIVERS}.bambu.driver.DISCOVERY_S", lambda: 0.0),
     (f"{DRIVERS}.opcua.driver.OpcuaDriver.discovery_urls", lambda: []),
     (f"{DRIVERS}.indi.driver.IndiDriver.discovery_hosts", lambda: []),
+    (f"{DRIVERS}.micromanager.driver._core_class", lambda: _refuse("a Micro-Manager configuration")),
 )
 """Each place a driver finds or opens real devices, and what it gets during tests instead."""
 
@@ -236,5 +238,6 @@ def isolate_environment() -> None:
     os.environ["OPENHAL_HOME"] = str(folder / "home")
     os.environ["OPENHAL_URL"] = NO_HUB_URL
     os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
+    os.environ["PYMM_LOG_FILE"] = "0"
     for name in ("OPENHAL_TOKEN", "OPENHAL_FIRMWARE_PORTS"):
         os.environ.pop(name, None)
