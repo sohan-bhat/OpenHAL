@@ -364,7 +364,8 @@ openhal library add [NAME]
 
 ```
 openhal init [--yes] [--discover | --no-discover] [--driver NAME ...] [--device DRIVER=ADDRESS ...]
-             [--agent-scope read|control_low|control_medium] [--client NAME ...] [--service | --no-service]
+             [--agent-scope read|control_low|control_medium] [--client NAME ...] [--no-clients]
+             [--service | --no-service]
              [--new-token] [--no-sample]
 ```
 
@@ -377,12 +378,12 @@ In an interactive terminal, `init` sets up the config folder, the human token an
 | Agent token in `agent.token` | scope, default `read` | `read`, or `--agent-scope` |
 | Print the MCP client setup | always, once there is an agent token | always |
 | Answer the high risk limits of a device it adds | yes or no, default yes, only when it has some | never |
-| Add OpenHAL to each MCP client found | yes or no for each, default yes | every client found |
+| Add OpenHAL to each MCP client found | yes or no for each, default yes, none with `--no-clients` | every client found, none with `--no-clients` |
 | Install the background service | yes or no, default no | only `--service` |
 
 Found devices are saved as device files, where a library match is copied with the address discovery found and an `openhal-firmware` board or an ESPHome node returns its own description in reply to read-only commands. Every limit is marked `suggested: true` and every confirmation is dropped. Low and medium risk channels and actions take commands at once within the device's own range, and init prints how many entries sit at each level. High risk ones stay read-only until a person answers the limits interview, in init or later with `openhal file confirm`. A device that already has a file is left out, `--driver` limits discovery to some drivers, and `--device` adds a self-describing device at a known address, such as `openhal-firmware=/dev/ttyACM0`.
 
-`init` keeps the agent token while the token works and has the requested scope. The client setup for Claude Desktop, Claude Code and Cursor starts `openhal mcp --token-file ~/.openhal/agent.token` with the full path to `openhal`. Init finds Claude Code by the `claude` program on your PATH and Claude Desktop and Cursor by their app or config folder. Claude Code gets `claude mcp add openhal --scope user`, so every session has the server, after a backup of `~/.claude.json`. `--client claude-desktop`, `claude-code` or `cursor` adds that client even when init doesn't find the client. An existing file is copied to `NAME.openhal-backup-DATE` first and keeps every other entry and its mode. A file that isn't valid JSON is left as it is, and `init` exits 1 if a step you asked for failed.
+`init` keeps the agent token while the token works and has the requested scope. The client setup for Claude Desktop, Claude Code and Cursor starts `openhal mcp --token-file ~/.openhal/agent.token` with the full path to `openhal`. Init finds Claude Code by the `claude` program on your PATH and Claude Desktop and Cursor by their app or config folder. Claude Code gets `claude mcp add openhal --scope user`, so every session has the server, after a backup of `~/.claude.json`. `--client claude-desktop`, `claude-code` or `cursor` adds that client even when init doesn't find the client. `--no-clients` looks for no client and changes no client's settings, still printing the setup, so a test home or a script leaves the person's own clients as they are. An existing file is copied to `NAME.openhal-backup-DATE` first and keeps every other entry and its mode. A file that isn't valid JSON is left as it is, and `init` exits 1 if a step you asked for failed.
 
 ### openhal service
 

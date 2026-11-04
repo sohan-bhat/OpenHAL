@@ -95,7 +95,7 @@ Read every limit in the file, then confirm them yourself. The confirm lists each
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
-uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal init --yes --no-clients --no-sample --no-discover --no-service
 uv run openhal file confirm ./device.hal.yaml
 cp ./device.hal.yaml "$OPENHAL_HOME/devices/"
 bash docs/hardware-tests/hub.sh start

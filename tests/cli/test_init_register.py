@@ -73,3 +73,20 @@ def test_nothing_is_registered_when_no_client_is_found(machine: Machine) -> None
     assert "Found" not in out
     assert machine.runner.commands == []
     assert not (machine.home / ".claude.json").exists()
+
+
+def test_no_clients_registers_nothing_even_with_yes(machine: Machine, claude_on_path: str) -> None:
+    (machine.home / ".cursor").mkdir()
+    code, out = run("init", "--yes", "--no-clients", "--no-discover")
+    assert code == 0, out
+    assert "Found" not in out
+    assert machine.runner.commands == []
+    assert not (machine.home / ".claude.json").exists()
+    assert not (machine.home / ".cursor" / "mcp.json").exists()
+    assert "Claude Code, run this" in out, "the setup for each client is still printed"
+
+
+def test_a_named_client_is_still_written_with_no_clients(machine: Machine) -> None:
+    code, out = run("init", "--yes", "--no-clients", "--no-discover", "--client", "cursor")
+    assert code == 0, out
+    assert "openhal" in json.loads((machine.home / ".cursor" / "mcp.json").read_text())["mcpServers"]

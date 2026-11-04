@@ -73,7 +73,7 @@ In a terminal, `openhal init` prompts with a few short questions.
 5. Add OpenHAL to each MCP client init finds, Claude Code at user scope, Claude Desktop and Cursor, with yes as the default. The setup for every client is printed either way, and a file is backed up before the file changes.
 6. Run the hub in the background, starting at login.
 
-`openhal init --yes` takes the safe defaults without prompting. With `--yes`, init scans for devices, adds every device read-only, makes a read token and adds OpenHAL to every MCP client init finds, naming each backup. The service installs only with `--service`.
+`openhal init --yes` takes the safe defaults without prompting. With `--yes`, init scans for devices, adds every device read-only, makes a read token and adds OpenHAL to every MCP client init finds, naming each backup. Add `--no-clients` to set up a home, such as a test home, that leaves your MCP clients as they are. The service installs only with `--service`.
 
 A device that discovery can't find, such as a board on a known port, goes in with `--device`.
 

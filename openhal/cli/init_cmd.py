@@ -259,8 +259,12 @@ def _agent(mode: Mode, scope: str | None, config_home: Path, db_path: Path) -> P
     return path
 
 
-def _clients(mode: Mode, token_file: Path, write: list[str]) -> bool:
-    """Print the setup for every client, then register OpenHAL with each installed client the person picks."""
+def _clients(mode: Mode, token_file: Path, write: list[str], find: bool = True) -> bool:
+    """Print the setup for every client, then register OpenHAL with each installed client the person picks.
+
+    With `find` off, as `--no-clients` sets, init registers only the clients `--client` names and
+    looks for no others, so a test home or a script never edits the person's own client settings.
+    """
     from openhal.service import clients
     from openhal.service.runner import RunError
 
@@ -274,7 +278,7 @@ def _clients(mode: Mode, token_file: Path, write: list[str]) -> bool:
         console.print(f"[bold]{client.title}[/bold], {escape(where)}")
         console.print(escape(clients.setup_text(client, entry)), style="dim")
     chosen = list(write)
-    if not chosen and mode in ("ask", "yes"):
+    if find and not chosen and mode in ("ask", "yes"):
         found = clients.installed(user_home, platform)
         if found:
             console.print(f"\nFound {escape(', '.join(client.title for client in found))}")
@@ -428,6 +432,9 @@ def register(app: typer.Typer) -> None:
         device: list[str] = typer.Option(None, "--device", help="A self-describing device at DRIVER=ADDRESS."),  # noqa: B008
         agent_scope: str = typer.Option(None, "--agent-scope", help="Scope of the AI client token. read with --yes."),
         client: list[str] = typer.Option(None, "--client", help="Write this MCP client's config, after a backup."),  # noqa: B008
+        find_clients: bool = typer.Option(
+            True, "--clients/--no-clients", help="Offer to register with the MCP clients found. Off for a test home."
+        ),
         service: bool = typer.Option(None, "--service/--no-service", help="Install the background service."),
     ) -> None:
         """Set up the config folder, tokens, devices, MCP clients and the background service."""
@@ -441,7 +448,7 @@ def register(app: typer.Typer) -> None:
         sample_path = _base(config, new_token, sample)
         added = _devices(mode, config.devices_dir, discover, drivers or [], known)
         token_file = _agent(mode, agent_scope, config.home, config.db_path)
-        ok = _clients(mode, token_file, client or []) if token_file is not None else True
+        ok = _clients(mode, token_file, client or [], find_clients) if token_file is not None else True
         if client and token_file is None:
             console.print("[red]error[/red]  --client needs an agent token. Add --agent-scope read")
             ok = False

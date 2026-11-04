@@ -24,7 +24,7 @@ Make a test home and start the hub with no device files. `hub.sh` starts the hub
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
-uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal init --yes --no-clients --no-sample --no-discover --no-service
 bash docs/hardware-tests/hub.sh start
 ```
 

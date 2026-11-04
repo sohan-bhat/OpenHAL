@@ -69,7 +69,7 @@ Read every limit in the file, then confirm the limits yourself. The confirm list
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
-uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal init --yes --no-clients --no-sample --no-discover --no-service
 uv run openhal file confirm ./scope.hal.yaml
 cp ./scope.hal.yaml "$OPENHAL_HOME/devices/"
 bash docs/hardware-tests/hub.sh start
