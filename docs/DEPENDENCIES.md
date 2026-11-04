@@ -58,6 +58,14 @@ The website's packages are pinned in website/package.json and website/pnpm-lock.
 | Pillow | 13.0.0 | MIT-CMU | Encodes camera frames as JPEG or PNG, and renders the simulated microscope's field of view |
 | numpy | 2.5.4 | BSD-3-Clause | Camera frames as arrays. Installed with pymmcore-plus |
 
+## Seabreeze extra
+
+| Package | Version | License | Why |
+|---|---|---|---|
+| seabreeze | 2.11.0 | MIT | Ocean spectrometers for the seabreeze driver, with its cseabreeze and pyseabreeze backends |
+| pyusb | 1.3.1 | BSD-3-Clause | USB access for the pyseabreeze backend. Installed with seabreeze's pyseabreeze extra |
+| Pillow | 13.0.0 | MIT-CMU | Draws the spectrum chart |
+
 ## Bundled media
 
 | File | Source | Author | License | Changes |

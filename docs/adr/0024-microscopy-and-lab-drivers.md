@@ -23,6 +23,7 @@ Option 2.
 - An instrument with a documented serial or HTTP command set becomes a device file in the device library, drafted by the driver writer from the instrument's public manual, confirmed through the limits interview and run by an existing protocol driver. A test loads the file and runs the file through the kernel.
 - Where the writer or a protocol driver can't handle such an instrument, the fix goes into the general code, with a test, so every similar instrument benefits.
 - The `micromanager` driver is the first framework driver of this kind. One device file is one microscope as a Micro-Manager configuration file describes the microscope. Stage, focus, objective, filter, exposure, shutter and light channels map onto MMCore calls, snapshots return images the agent sees, and autofocus runs the configuration's autofocus device or an image sweep that never leaves the file's z limits.
+- The `seabreeze` driver is the second. python-seabreeze reaches every Ocean Insight and Ocean Optics USB spectrometer, and the driver turns a scan into a chart, peaks, counts at a wavelength and absorbance against a stored dark and reference.
 - The micromanager simulator is pymmcore-plus's UniMMCore with Python devices in place of device adapters. The simulated camera images a real micrograph under CC BY 2.0 at the objective's magnification, defocus blurs the frame, and a focus move past the objective's working distance stalls at the slide with an error.
 
 ### The boundary
