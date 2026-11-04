@@ -8,7 +8,7 @@
 export const CHART_FILES = ["how-it-works-wide-light.png", "how-it-works-wide-dark.png", "how-it-works-narrow-light.png", "how-it-works-narrow-dark.png"] as const;
 
 /** Each shape's size in CSS pixels. The files are 2x exports of these sizes. */
-export const CHART_SIZES = { wide: { width: 884, height: 544 }, narrow: { width: 440, height: 623 } } as const;
+export const CHART_SIZES = { wide: { width: 952, height: 716 }, narrow: { width: 472, height: 720 } } as const;
 
 /** One path of the chart, its branch label, the values under the branch and the outcomes in order. */
 export interface HowPath {
