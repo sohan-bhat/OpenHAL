@@ -95,7 +95,11 @@ const Prompt: React.FC<{spec: PromptSpec; frame: number}> = ({spec, frame}) => {
         left: 130,
         right: 130,
         bottom: 34,
-        height: 58,
+        minHeight: 58,
+        paddingTop: 12,
+        paddingBottom: 12,
+        boxSizing: 'border-box',
+        lineHeight: 1.35,
         borderRadius: 6,
         background: COLOR.surface,
         boxShadow: `inset 0 0 0 1px ${COLOR.border}`,
@@ -112,7 +116,7 @@ const Prompt: React.FC<{spec: PromptSpec; frame: number}> = ({spec, frame}) => {
     >
       <Mascot cell={17} color={COLOR.claude} />
       <span style={{color: COLOR.text2}}>&gt;</span>
-      <span style={{flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'clip', color: submitted ? COLOR.text2 : COLOR.text}}>
+      <span style={{flex: 1, whiteSpace: 'normal', color: submitted ? COLOR.text2 : COLOR.text}}>
         {text}
         {!submitted ? <span style={{display: 'inline-block', width: '0.6em', height: '1.1em', verticalAlign: '-0.2em', background: COLOR.text, marginLeft: 2}} /> : null}
       </span>
@@ -201,7 +205,9 @@ export const Stage: React.FC<{spec: StageSpec}> = ({spec}) => {
   return (
     <AbsoluteFill style={{background: COLOR.bg}}>
       <World width={WIDTH} height={HEIGHT} pose={poseOf(spec.poses[i])} camera={camera} flat={flat} pulse={pulse} wedge={limit} />
-      {pulse && headScreen && spec.pulse ? <Label at={[headScreen[0], headScreen[1] - 10]} text={spec.pulse.tool} color={pulse.color} opacity={pulse.visible} size={24} /> : null}
+      {pulse && headScreen && spec.pulse ? (
+        <Label at={[headScreen[0], headScreen[1] - 10]} text={spec.pulse.tool} color={pulse.color} opacity={pulse.visible * clamp01((600 - headScreen[1]) / 40)} size={24} />
+      ) : null}
       {answer && answerShow > 0 ? <Label at={[layerScreen[0] + (answer.dx ?? 0), layerScreen[1] - 8]} text={answer.word} color={TONE[answer.tone]} opacity={answerShow} size={34} weight={700} /> : null}
       {spec.card ? <Card spec={spec.card} frame={frame} /> : null}
       {spec.prompt ? <Prompt spec={spec.prompt} frame={frame} /> : null}

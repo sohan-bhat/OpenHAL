@@ -9,7 +9,7 @@ Every render of the demo runs on the 2018 MacBook Pro described in video/README.
 | Design size | 1280 by 720, 30 fps |
 | Output scale | `--scale=2` for 2560 by 1440, `--scale=1.5` for 1920 by 1080 |
 | WebGL | `--gl=angle`, Remotion's recommendation for three.js on a desktop |
-| 3D canvas | 716 by 536 in the design, drawn at the render scale through `usePixelDensity()`, so 1432 by 1072 at 1440p |
+| 3D canvas | 716 by 536 in the design for the first cut, and the full 1280 by 720 frame for the recut, drawn at the render scale through `usePixelDensity()` |
 | Concurrency | 2 browser tabs |
 | Encoder | H.264, CRF 18, yuv420p |
 | Bundle | `remotion bundle` once into `video/out/demo/bundle/`, then every render reads that bundle |
@@ -33,6 +33,8 @@ Every render of the demo runs on the 2018 MacBook Pro described in video/README.
 | 2026-11-03 19:15 | `DeskTest` at 1440p, concurrency 2, from the bundle, the arm at a ratio of 0.35 | 90 | 18.0 s | 0.20 s | 100 and 100 percent |
 | 2026-11-03 19:42 | `OpenHALDemo` rough cut at 720p, concurrency 2, from the bundle | 1650 | 275 s | 0.17 s | 39 and 29 percent |
 | 2026-11-03 19:50 | `OpenHALDemo` second rough cut at 720p, concurrency 2, from the bundle | 1654 | 259 s | 0.16 s | 24 and 31 percent |
+| 2026-11-03 20:04 | `OpenHALDemo` first 1440p master in 6 chunks of whole scenes, concurrency 2 | 1654 | 389 s | 0.24 s | 24 and 100 percent |
+| 2026-11-03 20:34 | `OpenHALDemo` recut around the full-bleed desk at 720p, concurrency 2, from the bundle | 1378 | 109 s | 0.08 s | 90 and 85 percent |
 
 The wall time includes starting the browser, loading the arm, the HDRI and the wood texture, and encoding. Bundling took 5 s. The first test started at a 58 percent speed limit left over from the stills rendered just before, and the limit was back at 100 percent 20 s after the render ended.
 
