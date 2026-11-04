@@ -2,7 +2,14 @@
 
 The text comes from the user, usually pasted from a PDF or a web page. The parser searches for lines
 that start with a command, in the shapes manuals use: SCPI (`VOLTage <value>`, `MEAS:CURR?`,
-`*IDN?`), G-code (`M104 S<temp>`) and plain uppercase words with an argument (`FAN <0-255>`).
+`*IDN?`), G-code (`M104 S<temp>`), plain uppercase words with an argument (`FAN <0-255>`), and
+short command codes followed by an en or em dash and a description, as instrument command sets
+such as Mettler Toledo's MT-SICS list them (S, then a dash, then Stable weight value). A table of
+contents line keeps its command and description, and its dot leader and page number are dropped.
+
+A short code has no question mark, so its description decides its kind. A description that names
+a value, such as a weight value or a serial number, and starts with no verb that changes the
+device is a query. Every other short code is an action.
 
 Every extracted command is unconfirmed. The hub never sends one during detection, because a
 command that isn't marked read-only might change something. Commands whose description
@@ -27,9 +34,22 @@ _LINE: Final = re.compile(
     r"(?P<gap>\s{2,}|\s*[\t|]\s*|\s+-\s+|\s*$)"
     r"(?P<description>.*)$"
 )
+_CODE_LINE: Final = re.compile(
+    r"^\s*(?P<command>@|[A-Z][A-Z0-9]{0,5})\s+[\u2013\u2014]\s+"
+    r"(?P<description>[^\n]*?[A-Za-z][^\n]*?)(?:\s*\.{2,}\s*\d*)?\s*$"
+)
+_VALUE_WORDS: Final = re.compile(
+    r"\b(value|values|number|data|information|status|version|level|state|temperature|weight|reading|serial)\b",
+    re.I,
+)
+_CHANGE_VERBS: Final = re.compile(
+    r"^(clear|set|preset|start|stop|reset|restart|switch|cancel|adjust|calibrat\w*|zero|lock|unlock|enable|"
+    r"disable|define|delete|write|store|save|initiali[sz]e)\b",
+    re.I,
+)
 _CAREFUL: Final = re.compile(
     r"\b(reset|reboot|erase|format|factory|delete|firmware|flash|bootloader|calibrat\w*|power|output on|"
-    r"enable|fire|laser|spindle|heat\w*|motor|move|home|zero|unlock|override)\b",
+    r"enable|fire|laser|spindle|heat\w*|motor|move|home|zero|unlock|override|repeat|continuous\w*)\b",
     re.I,
 )
 _WORDS_ONLY: Final = re.compile(r"^[A-Z]{2,}$")
@@ -45,6 +65,7 @@ class ManualCommand:
     description: str
     line: int
     careful: bool
+    short: bool = False
 
     def view(self) -> dict[str, Any]:
         return {
@@ -70,22 +91,30 @@ def extract(text: str) -> list[ManualCommand]:
         if len(line) > 400:
             continue
         match = _LINE.match(line)
-        if match is None:
+        code = None if match is not None else _CODE_LINE.match(line)
+        if match is None and code is None:
             continue
-        command = match.group("command")
-        argument = match.group("argument").strip()
-        description = match.group("description").strip()
-        if _WORDS_ONLY.match(command) and not (argument or description):
-            continue
-        if _WORDS_ONLY.match(command) and not argument and not command.endswith("?") and len(description) < 8:
-            continue
+        if code is not None:
+            command, argument = code.group("command"), ""
+            description = code.group("description").strip()
+            named = _VALUE_WORDS.search(description) and not _CHANGE_VERBS.match(description)
+            kind: Kind = "query" if named else "action"
+        else:
+            assert match is not None
+            command = match.group("command")
+            argument = match.group("argument").strip()
+            description = match.group("description").strip()
+            if _WORDS_ONLY.match(command) and not (argument or description):
+                continue
+            if _WORDS_ONLY.match(command) and not argument and not command.endswith("?") and len(description) < 8:
+                continue
+            kind = "query" if command.endswith("?") else "set" if argument else "action"
         key = command.upper().lstrip(":")
         if key in seen:
             continue
         seen.add(key)
-        kind: Kind = "query" if command.endswith("?") else "set" if argument else "action"
         careful = bool(_CAREFUL.search(description) or _CAREFUL.search(command))
-        found.append(ManualCommand(command, kind, argument, description[:200], number, careful))
+        found.append(ManualCommand(command, kind, argument, description[:200], number, careful, code is not None))
         if len(found) >= MAX_COMMANDS:
             break
     return found
@@ -105,8 +134,8 @@ def draft_sections(commands: list[ManualCommand]) -> dict[str, Any]:
     write: dict[str, Any] = {}
     listed: list[str] = []
     for command in commands:
-        name = _name(command.command)
-        if command.kind == "query" and name not in read:
+        name = _name(" ".join(command.description.split()[:4]) if command.short else command.command)
+        if command.kind == "query" and not command.careful and name not in read:
             read[name] = {"type": "string", "map": {"query": command.command, "parse": r"(?P<value>.+)"}}
         elif command.kind == "set" and not command.careful and name not in write:
             write[name] = {

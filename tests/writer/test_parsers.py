@@ -8,6 +8,7 @@ import pytest
 
 from openhal.spec.loader import from_data
 from openhal.writer import manual, sketch
+from tests.library.mt_sics import CONTENTS as MT_SICS_CONTENTS
 
 FIXTURES = Path(__file__).parent / "fixtures"
 EXAMPLES = Path(__file__).resolve().parents[2] / "firmware" / "arduino" / "OpenHAL" / "examples"
@@ -129,3 +130,24 @@ def test_manual_draft_never_makes_careful_commands_into_channels() -> None:
 
 def test_headings_are_not_commands() -> None:
     assert not manual.extract("INTRODUCTION\n\nSAFETY\nWARNINGS\n")
+
+
+def test_short_command_codes_from_a_contents_list() -> None:
+    commands = {command.command: command for command in manual.extract(MT_SICS_CONTENTS)}
+    assert set(commands) == {"@", "I4", "S", "SI", "SIR", "T", "TA", "TAC", "Z"}
+    assert commands["S"].description == "Stable weight value"
+    assert {name for name, command in commands.items() if command.kind == "query"} == {"I4", "S", "SI", "SIR", "TA"}
+    assert commands["TAC"].kind == "action", "clearing names a value but changes the balance"
+    assert commands["Z"].careful
+    assert commands["@"].careful
+    assert commands["SIR"].careful, "a repeating reply is a stream, not a query"
+
+
+def test_short_code_drafts_name_reads_from_their_descriptions() -> None:
+    sections = manual.draft_sections(manual.extract(MT_SICS_CONTENTS))
+    assert sections["read"]["stable_weight_value"]["map"]["query"] == "S"
+    assert sections["read"]["serial_number"]["map"]["query"] == "I4"
+    assert "weight_value_immediately_and" not in sections["read"]
+    assert "SIR" in sections["notes"]
+    assert "Z" in sections["notes"]
+    assert "write" not in sections
