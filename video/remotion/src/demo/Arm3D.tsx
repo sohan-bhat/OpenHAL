@@ -21,9 +21,9 @@ import {COLOR} from './theme';
 
 export type CameraPose = {position: Vec3; target: Vec3; fov: number};
 
-const yUp = (v: Vec3): Vec3 => [v[0], v[2], -v[1]];
+export const yUp = (v: Vec3): Vec3 => [v[0], v[2], -v[1]];
 
-const DEG = Math.PI / 180;
+export const DEG = Math.PI / 180;
 
 export const SET = {
   cube: {size: 0.025, color: '#d24a33'},
@@ -31,7 +31,7 @@ export const SET = {
   desk: {size: [1.5, 0.95, 0.03] as Vec3, center: [0.08, 0.02] as [number, number]},
 };
 
-const useMaterials = () =>
+export const useMaterials = () =>
   useMemo(
     () => ({
       printed: new MeshPhysicalMaterial({color: new Color('#e6e3dc'), roughness: 0.5, metalness: 0, clearcoat: 0.15, clearcoatRoughness: 0.6}),
@@ -42,7 +42,7 @@ const useMaterials = () =>
     [],
   );
 
-const Desk: React.FC = () => {
+export const Desk: React.FC = () => {
   const [map, normalMap] = useTexture([staticFile('wood/wood_table_001_diff_2k.jpg'), staticFile('wood/wood_table_001_nor_gl_1k.jpg')]);
   const material = useMemo(() => {
     map.colorSpace = SRGBColorSpace;
@@ -64,7 +64,7 @@ const Desk: React.FC = () => {
   );
 };
 
-const Bin: React.FC<{material: MeshPhysicalMaterial}> = ({material}) => {
+export const Bin: React.FC<{material: MeshPhysicalMaterial}> = ({material}) => {
   const {inside, wall, height, center} = SET.bin;
   const outer = inside + 2 * wall;
   const half = inside / 2 + wall / 2;
@@ -86,7 +86,7 @@ const Bin: React.FC<{material: MeshPhysicalMaterial}> = ({material}) => {
   );
 };
 
-const Lights: React.FC = () => {
+export const Lights: React.FC = () => {
   const target = useMemo(() => {
     const object = new Object3D();
     object.position.set(...yUp([0.12, -0.03, 0.04]));
