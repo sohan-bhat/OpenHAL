@@ -209,7 +209,7 @@ Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the reply of the `configureddevices` request from step 2, the Alpaca server and driver names and versions, and what your planetarium or ASCOM tool showed at the time. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the reply of the `configureddevices` request from step 2, the Alpaca server and driver names and versions, and what your planetarium or ASCOM tool showed at the time. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

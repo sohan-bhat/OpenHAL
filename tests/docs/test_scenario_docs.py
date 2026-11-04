@@ -171,7 +171,7 @@ def demo_pages() -> list[Path]:
     for example in ("plant-waterer", "print-babysitter"):
         found += sorted((ROOT / "examples" / example).glob("*.md"))
     found.append(ROOT / "firmware" / "arduino" / "OpenHAL" / "README.md")
-    skipped = ("docs/agents/", "docs/research/", "docs/verification/")
+    skipped = ("docs/agents/", "docs/internal/", "docs/research/", "docs/verification/")
     return [path for path in found if path.is_file() and not any(part in path.as_posix() for part in skipped)]
 
 

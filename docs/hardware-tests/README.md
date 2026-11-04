@@ -110,7 +110,7 @@ You confirm the limits yourself. `uv run openhal file confirm` with the file's p
 - Read-only steps come first. Stop at the first step that fails.
 - Never widen a limit to make a step pass. The only limit changes are the ones a plan names, and the plan confirms the file again after each.
 - Keep the device's own power switch or emergency stop in reach for anything that moves, heats or switches mains.
-- A blocked command that reaches the device is a safety issue. Stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+- A blocked command that reaches the device is a safety issue. Stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 - Stop the hub with `bash docs/hardware-tests/hub.sh stop` at the end, and keep `$OPENHAL_HOME` until the report is filed.
 
 ## If a step fails

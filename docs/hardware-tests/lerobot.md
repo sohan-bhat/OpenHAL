@@ -152,7 +152,7 @@ Stop the hub with `bash docs/hardware-tests/hub.sh stop`. Expected. The arm goes
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the LeRobot version (`uv run python -c "from importlib.metadata import version; print(version('lerobot'))"`), the robot type and id, the numbers of the assumptions that didn't hold, and any motor bus errors. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the LeRobot version (`uv run python -c "from importlib.metadata import version; print(version('lerobot'))"`), the robot type and id, the numbers of the assumptions that didn't hold, and any motor bus errors. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

@@ -132,7 +132,7 @@ Expected. Blocked with code `above_max` (the example limits the fan to 80 %). Th
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the output of `uv run python -m serial.tools.list_ports -v`, the identify line from step 3, the board model, and which optional parts are wired. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the output of `uv run python -m serial.tools.list_ports -v`, the identify line from step 3, the board model, and which optional parts are wired. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

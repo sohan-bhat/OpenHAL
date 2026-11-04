@@ -43,7 +43,7 @@ Other security problems are in scope too. Examples are reaching the hub from ano
 
 ## Out of scope
 
-[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) lists these as residual risks. A report that makes one of them easier to exploit is still welcome.
+[docs/THREAT_MODEL.md](../docs/THREAT_MODEL.md) lists these as residual risks. A report that makes one of them easier to exploit is still welcome.
 
 - Limits a person confirmed that are unsafe.
 - A device that ignores commands, or a sensor that reports wrong values.
@@ -51,7 +51,7 @@ Other security problems are in scope too. Examples are reaching the hub from ano
 - An agent with shell access that runs the CLI as the owner (T18).
 - Someone with full control of the owner's account.
 
-Bugs in a device's own firmware or a vendor's service belong with that vendor. OpenHAL is not a substitute for e-stops, enclosures, hardware interlocks or certified safety systems ([docs/SAFETY.md](docs/SAFETY.md)).
+Bugs in a device's own firmware or a vendor's service belong with that vendor. OpenHAL is not a substitute for e-stops, enclosures, hardware interlocks or certified safety systems ([docs/SAFETY.md](../docs/SAFETY.md)).
 
 ## After a report
 

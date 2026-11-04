@@ -17,7 +17,15 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-HISTORY = ("docs/agents/", "docs/design-rounds/", "docs/verification/", "docs/adr/", "docs/research/", "docs/DESIGN.md")
+HISTORY = (
+    "docs/agents/",
+    "docs/internal/",
+    "docs/design-rounds/",
+    "docs/verification/",
+    "docs/adr/",
+    "docs/research/",
+    "docs/DESIGN.md",
+)
 OBJECT = (
     r"(?:hubs?|kernels?|printers?|devices?|drivers?|boards?|firmware|servers?|clients?|SDKs?|Inspector|bridges?|OpenHAL"
     r"|cameras?|webcams?|sensors?|robots?|machines?|protocols?|specification|spec|files?|pages?|site|apps?|tools?"

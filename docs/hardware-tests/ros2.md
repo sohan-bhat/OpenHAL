@@ -143,7 +143,7 @@ Expected. The action returns `started`, the stop cancels the goal and the robot 
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the output of `ros2 topic list -t`, the `ros2 topic echo` output from the same minutes, the rosbridge launch output, and the ROS distribution. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the output of `ros2 topic list -t`, the `ros2 topic echo` output from the same minutes, the rosbridge launch output, and the ROS distribution. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

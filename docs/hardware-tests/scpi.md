@@ -152,7 +152,7 @@ Expected. `blocked above_max  Blocked. The volts limit is 12 V (max). Requested 
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the `*IDN?` reply from step 3, the output of `uv run pyvisa-info`, the resource string, and what the front panel showed at the time. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the `*IDN?` reply from step 3, the output of `uv run pyvisa-info`, the resource string, and what the front panel showed at the time. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

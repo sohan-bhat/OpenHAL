@@ -26,6 +26,7 @@ INSTALL_SPECS: Final = (
 )
 HISTORY: Final = (
     "docs/agents/",
+    "docs/internal/",
     "docs/design-rounds/",
     "docs/verification/",
     "docs/adr/0002-naming-and-distribution.md",
@@ -34,7 +35,7 @@ HISTORY: Final = (
 
 
 def current_files() -> list[Path]:
-    found = [ROOT / name for name in ("README.md", "CONTRIBUTING.md", "SECURITY.md")]
+    found = [ROOT / "README.md", ROOT / ".github" / "CONTRIBUTING.md", ROOT / ".github" / "SECURITY.md"]
     for folder, pattern in (("docs", "*.md"), ("spec", "*.md"), ("examples", "*.md"), ("openhal", "*.py")):
         found += sorted((ROOT / folder).rglob(pattern))
     found += sorted(path for path in (ROOT / "scripts").iterdir() if path.is_file())

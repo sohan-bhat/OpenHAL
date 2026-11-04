@@ -139,7 +139,7 @@ Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the endpoint and security mode, what UaExpert or the PLC tool shows for the node (data type, access level, engineering units), and the server's product and version. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the endpoint and security mode, what UaExpert or the PLC tool shows for the node (data type, access level, engineering units), and the server's product and version. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

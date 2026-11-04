@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Report a security or safety problem privately, as [SECURITY.md](https://github.com/sohan-bhat/OpenHAL/blob/main/SECURITY.md) describes, and never in a public issue. A command that got past a limit, a stop or a confirmation is a safety problem.
+        Report a security or safety problem privately, as [SECURITY.md](https://github.com/sohan-bhat/OpenHAL/security/policy) describes, and never in a public issue. A command that got past a limit, a stop or a confirmation is a safety problem.
   - type: textarea
     id: what-happened
     attributes:

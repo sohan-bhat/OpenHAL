@@ -200,7 +200,7 @@ Stop the hub with `bash docs/hardware-tests/hub.sh stop` when done.
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the indiserver output from the same minutes, a screenshot of the INDI control panel's properties, and the INDI driver name and version. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the indiserver output from the same minutes, a screenshot of the INDI control panel's properties, and the INDI driver name and version. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

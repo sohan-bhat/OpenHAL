@@ -58,7 +58,8 @@ def pages() -> list[Path]:
         found.extend(sorted((ROOT / folder).rglob("*.md")))
     found += sorted((ROOT / "examples").rglob("*.md"))
     found.append(ROOT / "firmware" / "arduino" / "OpenHAL" / "README.md")
-    return [path for path in found if path.is_file() and "docs/agents/" not in path.as_posix()]
+    records = ("docs/agents/", "docs/internal/")
+    return [path for path in found if path.is_file() and not any(part in path.as_posix() for part in records)]
 
 
 def prose(text: str) -> str:

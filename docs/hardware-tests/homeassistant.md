@@ -130,7 +130,7 @@ Expected. Blocked with code `above_max` (the file allows 60 %), although Home As
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the Home Assistant version, the entity ids with their state from Developer Tools, and the logbook entries from the same minutes. Never send the token. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the Home Assistant version, the entity ids with their state from Developer Tools, and the logbook entries from the same minutes. Never send the token. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

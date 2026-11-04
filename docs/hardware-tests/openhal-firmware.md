@@ -143,7 +143,7 @@ Expected. `intact  The audit chain verifies.` and the head hash.
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the arduino-cli or IDE version and the core version, the board and its USB id from step 1, and the output of `uv run openhal library show openhal-led-strip`. If the LED changed for a command the hub blocked, unplug the board and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the arduino-cli or IDE version and the core version, the board and its USB id from step 1, and the output of `uv run openhal library show openhal-led-strip`. If the LED changed for a command the hub blocked, unplug the board and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

@@ -78,8 +78,8 @@ Some devices have an interface but no description, and only the vendor's app con
 - Out-of-process drivers, so a third-party driver can't reach the kernel (SAFETY.md, threat T17, ADR 0004).
 - Exporting the audit chain head outside the hub, so a deleted database is detectable (ADR 0010).
 - Notification filters in the hub protocol (ADR 0015).
-- The driver proposals in PROGRESS.md, including a reconnect hook, a push path for drivers that receive values and per-driver install hints.
-- The first PyPI release as `halkit`, and a domain (NEEDS_HUMAN.md, items 3 and 4).
+- The driver proposals in [PROGRESS.md](internal/PROGRESS.md), including a reconnect hook, a push path for drivers that receive values and per-driver install hints.
+- The first PyPI release as `halkit`, and a domain ([NEEDS_HUMAN.md](internal/NEEDS_HUMAN.md), items 3 and 4).
 
 ## 8. Business model sketch
 

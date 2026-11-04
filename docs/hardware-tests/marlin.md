@@ -143,7 +143,7 @@ Expected. The printer homes. The action returns `done`, or `started` if homing t
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the firmware line from the printer's About screen, the output of `uv run python -m serial.tools.list_ports -v`, and whether another program had the port open. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the firmware line from the printer's About screen, the output of `uv run python -m serial.tools.list_ports -v`, and whether another program had the port open. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

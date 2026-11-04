@@ -135,7 +135,7 @@ Expected. The stop reports `starlet  safe`. The instrument finishes the move it 
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the PyLabRobot version (`uv run python -c "from importlib.metadata import version; print(version('pylabrobot'))"`), the deck layout from the file, and a photo of the deck. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the PyLabRobot version (`uv run python -c "from importlib.metadata import version; print(version('pylabrobot'))"`), the deck layout from the file, and a photo of the deck. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

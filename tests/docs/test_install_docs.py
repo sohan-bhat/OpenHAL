@@ -21,7 +21,14 @@ import pytest
 from openhal._brand import DISTRIBUTION_NAME
 
 ROOT: Final = Path(__file__).resolve().parents[2]
-HISTORY: Final = ("docs/agents/", "docs/design-rounds/", "docs/verification/", "docs/adr/", "docs/releases/")
+HISTORY: Final = (
+    "docs/agents/",
+    "docs/internal/",
+    "docs/design-rounds/",
+    "docs/verification/",
+    "docs/adr/",
+    "docs/releases/",
+)
 BLOCK: Final = re.compile(r"<!-- (install|tools|demo):start -->.*?<!-- \1:end -->", re.DOTALL)
 README: Final = ROOT / "README.md"
 
@@ -118,7 +125,7 @@ def test_install_json_names_the_distribution_only_through_the_brand() -> None:
 
 
 def current_files() -> list[Path]:
-    found = [ROOT / "README.md", ROOT / "CONTRIBUTING.md"]
+    found = [ROOT / "README.md", ROOT / ".github" / "CONTRIBUTING.md"]
     found += sorted((ROOT / "docs").rglob("*.md"))
     found += sorted(path for path in (ROOT / "website" / "src").rglob("*") if path.is_file())
     return [

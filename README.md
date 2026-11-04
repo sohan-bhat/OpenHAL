@@ -140,7 +140,7 @@ Any other MCP client can start `openhal mcp` over stdio with a separate agent to
 
 ## Contributing
 
-You can add a driver, a device file, a hardware test report or a docs fix. [CONTRIBUTING.md](CONTRIBUTING.md) covers the setup and the checks, and [the driver guide](docs/drivers/WRITING-A-DRIVER.md) covers drivers. Issues labeled [good first issue](https://github.com/sohan-bhat/OpenHAL/labels/good%20first%20issue) are small and self-contained. Report a security or safety problem privately, as [SECURITY.md](SECURITY.md) describes.
+You can add a driver, a device file, a hardware test report or a docs fix. [CONTRIBUTING.md](.github/CONTRIBUTING.md) covers the setup and the checks, and [the driver guide](docs/drivers/WRITING-A-DRIVER.md) covers drivers. Issues labeled [good first issue](https://github.com/sohan-bhat/OpenHAL/labels/good%20first%20issue) are small and self-contained. Report a security or safety problem privately, as [SECURITY.md](.github/SECURITY.md) describes.
 
 ## License
 

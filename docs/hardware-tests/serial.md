@@ -182,7 +182,7 @@ Expected. Blocked with code `above_max`. The fan doesn't change. Stop the hub wi
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the line the Arduino serial monitor shows for the same command at 115200 baud with newline endings, the sketch if you changed it, and the output of `uv run python -m serial.tools.list_ports -v`. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the line the Arduino serial monitor shows for the same command at 115200 baud with newline endings, the sketch if you changed it, and the output of `uv run python -m serial.tools.list_ports -v`. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

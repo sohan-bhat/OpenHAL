@@ -153,7 +153,7 @@ Expected. The printer homes. The action returns `done`, or `started` if homing t
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the reply of the `curl` command from step 1, the Klipper and Moonraker versions from Mainsail or Fluidd, the Klipper console lines from the same minutes, and the transport you used. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the reply of the `curl` command from step 1, the Klipper and Moonraker versions from Mainsail or Fluidd, the Klipper console lines from the same minutes, and the transport you used. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

@@ -179,7 +179,7 @@ Expected. The stop reports `router  safe` and the axis decelerates and stops wel
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the `$I` and `$$` replies from your usual sender, the machine and board, and whether homing and limit switches are on. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the `$I` and `$$` replies from your usual sender, the machine and board, and whether homing and limit switches are on. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

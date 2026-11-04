@@ -143,7 +143,7 @@ Expected. `done  Done. home ran.`, because OctoPrint accepted the command into i
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the reply of the `curl` command from step 1, OctoPrint's terminal lines from the same minutes, and the printer model and firmware. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the reply of the `curl` command from step 1, OctoPrint's terminal lines from the same minutes, and the printer model and firmware. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 

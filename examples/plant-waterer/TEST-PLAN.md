@@ -207,7 +207,7 @@ Expected. `plant-waterer  safe`, the relay stays off, `intact  The audit chain v
 
 ## If something fails
 
-Send what [docs/hardware-tests/README.md](../../docs/hardware-tests/README.md#if-a-step-fails) lists, plus the arduino-cli or IDE version and the `arduino:avr` core version, the board and its USB id from step 1, your `SOIL_DRY` and `SOIL_WET` if you changed them, and what the relay did. If the relay clicked for a command the hub blocked, unplug the board and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [docs/hardware-tests/README.md](../../docs/hardware-tests/README.md#if-a-step-fails) lists, plus the arduino-cli or IDE version and the `arduino:avr` core version, the board and its USB id from step 1, your `SOIL_DRY` and `SOIL_WET` if you changed them, and what the relay did. If the relay clicked for a command the hub blocked, unplug the board and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report
 

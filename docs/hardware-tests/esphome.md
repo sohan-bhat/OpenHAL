@@ -177,7 +177,7 @@ Expected. The node restarts. The hub shows it disconnected for a few seconds, th
 
 ## If something fails
 
-Send what [README.md](README.md#if-a-step-fails) lists, plus the `esphome logs` output from the same minutes, the node's YAML without its keys, and the ESPHome version. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../SECURITY.md) describes.
+Send what [README.md](README.md#if-a-step-fails) lists, plus the `esphome logs` output from the same minutes, the node's YAML without its keys, and the ESPHome version. If a blocked command reached the device, stop the hub, power the device off and report it privately as [SECURITY.md](../../.github/SECURITY.md) describes.
 
 ## Report template
 
