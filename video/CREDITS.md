@@ -92,3 +92,50 @@ The bed holds one soft chord per beat of the edit, a quiet pluck on a 100 BPM gr
 ## Model check
 
 `video/scenes/check_model.py` fetches the Menagerie files above into a cache folder with `video/hub/menagerie.py`, checks each one against its pinned SHA-256, and compares that model with the render model. Nothing it fetches is stored in this repository.
+
+## The demo video
+
+The demo video, `OpenHALDemo` in `remotion/src/demo/`, is drawn in Remotion with React Three Fiber and uses no Blender. It reuses the SO-101 render model, the studio HDRI and the fonts above, and adds the items below.
+
+### Recorded session
+
+The arm's motion, every Claude Code line and every Inspector click come from `video/data/take-4/`, a recording of the real OpenHAL hub driving the MuJoCo Menagerie SO-101 above. `video/data/TAKE.md` describes the take, and the model rows above cover its arm.
+
+### Simplified arm parts
+
+`remotion/scripts/simplify-arm.mjs` derives copies of the SO-101 parts with about a third of their triangles, kept only in `video/assets/so101/glb-lite/`. The source and license are the SO-101 render model's above, The Robot Studio's parts under the Apache License 2.0.
+
+### Desk wood texture
+
+| | |
+|---|---|
+| Texture | Wood Table 001, photographed by Dimitrios Savva and processed by Rico Cilliers, diffuse at 2K and normal map at 1K, `wood_table_001_diff_2k.jpg` and `wood_table_001_nor_gl_1k.jpg` |
+| Source | https://polyhaven.com/a/wood_table_001 |
+| License | CC0 1.0. Poly Haven publishes every asset under CC0 |
+| Fetched by | `video/scenes/fetch_assets.py`, against a pinned SHA-256 in `video/assets.json`, into `video/assets/wood/` |
+
+### Sound and music
+
+`video/scenes/demo_sound.py` synthesizes every sound in the demo from the edit's cue sheet, the key clicks, the tool call clicks, the servo whir from the recorded joint speeds, the low tone on LIMIT_EXCEEDED, the chime when the approved drop finishes, the STOP click and the music bed. No sample, recording or library sound is used, so the sound needs no license. The music is generated in code the same way, and no outside track is used.
+
+| | |
+|---|---|
+| Track | none, the demo uses the generated bed |
+| Composer | |
+| Source | |
+| License | |
+
+### Software
+
+| Package | Version | License |
+|---|---|---|
+| Remotion, `@remotion/cli`, `@remotion/transitions`, `@remotion/media`, `@remotion/fonts` | 4.0.540 | Remotion License, free for an individual |
+| `@remotion/three` | 4.0.540 | MIT |
+| three.js | 0.187.0 | MIT |
+| React Three Fiber and drei | 9.8.2 and 10.7.9 | MIT |
+| urdf-loader | 0.13.1 | Apache License 2.0 |
+| glTF Transform and meshoptimizer | 4.5.1 and 1.3.0 | MIT |
+
+### Redrawn interfaces
+
+The Claude Code window and the OpenHAL Inspector are redrawn in code from the recorded session and from the Inspector screenshots in `video/data/take-4/inspector/`. The Claude Code window keeps that product's layout so the session reads as it ran. OpenHAL is not affiliated with Anthropic, and the end card says so.
