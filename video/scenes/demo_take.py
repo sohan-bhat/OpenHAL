@@ -66,7 +66,11 @@ class Take:
         return self.columns.index(name)
 
     def value(self, name: str, t: float) -> float:
-        """A frame column at take time t, linearly interpolated between the two nearest rows."""
+        """A frame column at clock time t, linearly interpolated between the two nearest rows.
+
+        A row's own t is simulated time. The row happened on the clock at t plus its lag_ms, so
+        the arm lines up with the clicks, the hub's messages and Claude Code's lines.
+        """
         i = self.column(name)
         times = self._times
         k = bisect_right(times, t)
@@ -75,15 +79,19 @@ class Take:
         if k >= len(times):
             return self.rows[-1][i]
         a, b = self.rows[k - 1], self.rows[k]
-        span = b[0] - a[0]
-        f = (t - a[0]) / span if span > 0 else 0.0
+        span = times[k] - times[k - 1]
+        f = (t - times[k - 1]) / span if span > 0 else 0.0
         return a[i] + (b[i] - a[i]) * f
 
     @property
     def _times(self) -> list[float]:
         cached = getattr(self, "_cache", None)
         if cached is None:
-            cached = [row[0] for row in self.rows]
+            lag = self.column("lag_ms")
+            cached = []
+            for row in self.rows:
+                clock = row[0] + row[lag] / 1000
+                cached.append(max(clock, cached[-1] + 1e-6) if cached else clock)
             object.__setattr__(self, "_cache", cached)
         return cached
 
@@ -95,9 +103,35 @@ class Take:
         cube = [round(v, 5) for v in cube[:3]] + [round(q / norm, 5) for q in cube[3:]]
         return joints + cube
 
+    def sim_time(self, t: float) -> float:
+        """The simulated time of the frame the clock shows at clock time t."""
+        return self.value("t", t)
+
+    def sim_value(self, name: str, s: float) -> float:
+        """A frame column at simulated time s."""
+        i = self.column(name)
+        k = bisect_right(self._sim, s)
+        if k <= 0:
+            return self.rows[0][i]
+        if k >= len(self._sim):
+            return self.rows[-1][i]
+        a, b = self.rows[k - 1], self.rows[k]
+        span = b[0] - a[0]
+        f = (s - a[0]) / span if span > 0 else 0.0
+        return a[i] + (b[i] - a[i]) * f
+
+    @property
+    def _sim(self) -> list[float]:
+        cached = getattr(self, "_sim_cache", None)
+        if cached is None:
+            cached = [row[0] for row in self.rows]
+            object.__setattr__(self, "_sim_cache", cached)
+        return cached
+
     def speed(self, t: float, window: float = 2 / 60) -> float:
-        """The fastest of the pan, lift and elbow joints at take time t, in deg/s."""
-        return max(abs(self.value(n, t + window) - self.value(n, t - window)) / (2 * window) for n in SPEED)
+        """The fastest of the pan, lift and elbow joints at clock time t, in deg/s of simulated time."""
+        s = self.sim_time(t)
+        return max(abs(self.sim_value(n, s + window) - self.sim_value(n, s - window)) / (2 * window) for n in SPEED)
 
     def mark(self, text: str, nth: int = 0) -> dict:
         """The nth mark whose text starts with text."""
@@ -133,7 +167,15 @@ def transcript(stream: list[dict], times: dict[int, float]) -> list[Line]:
                 if block.get("type") == "text":
                     out.append(Line(t, "prompt", text=block["text"]))
                 elif block.get("type") == "tool_result":
-                    out.append(Line(t, "result", result=tool_text(block.get("content")), error=bool(block.get("is_error")), tool_id=block.get("tool_use_id", "")))
+                    out.append(
+                        Line(
+                            t,
+                            "result",
+                            result=tool_text(block.get("content")),
+                            error=bool(block.get("is_error")),
+                            tool_id=block.get("tool_use_id", ""),
+                        )
+                    )
         elif kind == "assistant":
             for block in event["message"]["content"]:
                 if block.get("type") == "text":
@@ -141,7 +183,9 @@ def transcript(stream: list[dict], times: dict[int, float]) -> list[Line]:
                 elif block.get("type") == "thinking":
                     out.append(Line(t, "thinking", text=block.get("thinking", "")))
                 elif block.get("type") == "tool_use":
-                    out.append(Line(t, "tool", tool=block["name"], args=block.get("input", {}), tool_id=block.get("id", "")))
+                    out.append(
+                        Line(t, "tool", tool=block["name"], args=block.get("input", {}), tool_id=block.get("id", ""))
+                    )
         elif kind == "result":
             out.append(Line(t, "end", text=str(event.get("subtype", ""))))
     return out

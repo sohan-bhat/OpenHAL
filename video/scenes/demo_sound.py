@@ -96,13 +96,21 @@ def whir(speeds: list[float], fps: float, limit: float) -> np.ndarray:
     return (tone + buzz) * level
 
 
-def section_bed(mix: s.Mix, start: float, end: float, energy: int, chord: str, rng: np.random.Generator, first: bool) -> None:
+def section_bed(
+    mix: s.Mix, start: float, end: float, energy: int, chord: str, rng: np.random.Generator, first: bool
+) -> None:
     """Fill one section with the parts its energy plays, on a grid that starts at the section."""
     roots, notes = CHORDS[chord]
     parts = PARTS[energy]
     length = end - start
     if "pad" in parts:
-        mix.add(start, s.pad([s.note(n) for n in roots] + [s.note(notes[0]), s.note(notes[2])], length, 0.25 if first else 0.06, 0.35), s.db(-21))
+        mix.add(
+            start,
+            s.pad(
+                [s.note(n) for n in roots] + [s.note(notes[0]), s.note(notes[2])], length, 0.25 if first else 0.06, 0.35
+            ),
+            s.db(-21),
+        )
     steps = int(length / (BEAT / 2) + 1e-6)
     for i in range(steps):
         at = start + i * BEAT / 2
@@ -130,7 +138,12 @@ def build(cues: dict) -> tuple[np.ndarray, np.ndarray]:
         count = max(1, typing["chars"])
         span = typing["end"] - typing["start"]
         for i in range(count):
-            mix.add(typing["start"] + span * i / count + 0.004 * rng.standard_normal(), key_click(rng), s.db(-24), pan=0.1 * rng.standard_normal())
+            mix.add(
+                typing["start"] + span * i / count + 0.004 * rng.standard_normal(),
+                key_click(rng),
+                s.db(-24),
+                pan=0.1 * rng.standard_normal(),
+            )
     for at in cues.get("calls", []):
         mix.add(at, s.click(rng, 1200, 0.06), s.db(-16))
     for at in cues.get("results", []):
@@ -180,7 +193,18 @@ def write_wav(path: Path, left: np.ndarray, right: np.ndarray) -> None:
 def normalize(source: Path, target: Path) -> dict:
     """Two pass loudnorm to -14 LUFS integrated and -1.5 dBTP, written as 24-bit PCM at 48 kHz."""
     first = subprocess.run(  # noqa: S603
-        [str(FFMPEG), "-hide_banner", "-nostats", "-i", str(source), "-af", "loudnorm=I=-14:TP=-1.5:LRA=11:print_format=json", "-f", "null", "-"],
+        [
+            str(FFMPEG),
+            "-hide_banner",
+            "-nostats",
+            "-i",
+            str(source),
+            "-af",
+            "loudnorm=I=-14:TP=-1.5:LRA=11:print_format=json",
+            "-f",
+            "null",
+            "-",
+        ],
         capture_output=True,
         text=True,
         check=True,
@@ -192,7 +216,22 @@ def normalize(source: Path, target: Path) -> dict:
         f"measured_thresh={stats['input_thresh']}:offset={stats['target_offset']}"
     )
     subprocess.run(  # noqa: S603
-        [str(FFMPEG), "-hide_banner", "-v", "error", "-y", "-i", str(source), "-af", filt, "-ar", str(RATE), "-c:a", "pcm_s24le", str(target)],
+        [
+            str(FFMPEG),
+            "-hide_banner",
+            "-v",
+            "error",
+            "-y",
+            "-i",
+            str(source),
+            "-af",
+            filt,
+            "-ar",
+            str(RATE),
+            "-c:a",
+            "pcm_s24le",
+            str(target),
+        ],
         check=True,
     )
     return stats
