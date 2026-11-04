@@ -772,6 +772,31 @@
       "conformance": "full"
     },
     {
+      "name": "seabreeze",
+      "tier": 2,
+      "status": "implemented",
+      "protocols": [
+        "Ocean spectrometers through python-seabreeze"
+      ],
+      "families": [
+        "Ocean Insight and Ocean Optics USB spectrometers (USB2000+, USB4000, Flame)",
+        "Ocean HR, QE Pro and Maya spectrometers",
+        "Ocean STS and SPARK spectrometers"
+      ],
+      "hazard_default": "low",
+      "tests": "a simulated USB2000+ looking at a halogen lamp through a dye, behind the same Spectrometer methods",
+      "estimate": {
+        "devices": "about 30 spectrometer models",
+        "reasoning": "python-seabreeze wraps Ocean's open SeaBreeze library, the device layer Ocean ships for its USB spectrometers, and its pure Python backend reimplements the same protocols. Its device table lists about 30 models across the USB, Flame, HR, QE, Maya, STS and SPARK lines, which are some of the most common spectrometers in teaching and research labs. The count is read from the library's device list.",
+        "sources": [
+          "https://github.com/ap--/python-seabreeze",
+          "https://python-seabreeze.readthedocs.io/en/latest/",
+          "https://www.oceanoptics.com/software/resources/seabreeze-software-development-kit/"
+        ]
+      },
+      "conformance": "full"
+    },
+    {
       "name": "sila2",
       "tier": 2,
       "status": "implemented",

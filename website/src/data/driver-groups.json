@@ -2,7 +2,7 @@
   "groups": [
     { "name": "Microcontrollers and maker boards", "drivers": ["openhal-firmware", "firmata", "esphome", "serial", "rpi-gpio", "pi-i2c-spi", "ble"] },
     { "name": "3D printers and CNC", "drivers": ["marlin", "moonraker", "octoprint", "bambu", "grbl"] },
-    { "name": "Lab instruments and automation", "drivers": ["scpi", "pylabrobot", "micromanager", "sila2", "http"] },
+    { "name": "Lab instruments and automation", "drivers": ["scpi", "pylabrobot", "micromanager", "seabreeze", "sila2", "http"] },
     { "name": "Home and building", "drivers": ["homeassistant", "mqtt", "matter", "zigbee-zwave", "knx"] },
     { "name": "Industrial buses", "drivers": ["modbus", "opcua", "can"] },
     { "name": "Robotics and astronomy", "drivers": ["ros2", "lerobot", "alpaca", "indi"] },

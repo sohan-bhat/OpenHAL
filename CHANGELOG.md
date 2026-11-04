@@ -17,7 +17,7 @@ The first release. Every driver is tested on a simulator, and none is tested on 
 - The hub, with a REST API, the hub protocol over WebSocket and over stdio with `openhal rpc`, and an MCP server with 36 tools through `openhal mcp`.
 - The `openhal` command line. `openhal init` sets up the config folder, tokens, devices, MCP clients and the background service, and `openhal start` runs the hub.
 - `openhal demo`, an agent babysitting a 3D print on a simulated Klipper printer and camera, with no hardware and no API key. `openhal demo --full` runs the whole system with a simulated plant waterer.
-- 35 hardware drivers, from serial, Firmata and the OpenHAL Arduino library to Klipper, OctoPrint, SCPI instruments, Home Assistant, ESPHome, MQTT, Modbus, ROS 2, OPC UA and research microscopes through Micro-Manager. Each driver passes the conformance suite against a simulator, and none is verified on real hardware yet.
+- 36 hardware drivers, from serial, Firmata and the OpenHAL Arduino library to Klipper, OctoPrint, SCPI instruments, Home Assistant, ESPHome, MQTT, Modbus, ROS 2, OPC UA, research microscopes through Micro-Manager and Ocean spectrometers through python-seabreeze. Each driver passes the conformance suite against a simulator, and none is verified on real hardware yet.
 - A MuJoCo driver that runs any MuJoCo model as a simulated device.
 - The OpenHAL Arduino library, which describes a board to the hub and offers each free pin as a channel.
 - A device library of 35 device files. Every file is unverified until a person checks the file's limits.

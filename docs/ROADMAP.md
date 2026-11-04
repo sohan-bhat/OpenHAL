@@ -2,7 +2,7 @@
 
 What comes after v0.1, in the order the work should happen. Items carry no dates. OpenHAL is not affiliated with Anthropic or MHS.
 
-Today 35 hardware drivers pass the conformance suite on simulators, and a MuJoCo driver runs simulated machines.
+Today 36 hardware drivers pass the conformance suite on simulators, and a MuJoCo driver runs simulated machines.
 
 ## 1. Hardware verification
 

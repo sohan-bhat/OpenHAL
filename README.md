@@ -74,10 +74,10 @@ The flow diagram follows one command. An agent sends `hal/write` to the hub, and
 
 ## Supported devices
 
-OpenHAL has 35 drivers for microcontrollers, 3D printers and CNC machines, lab instruments, microscopes, home automation, industrial buses, robots, telescopes, cameras and input devices. Every driver passes the conformance suite on a simulator, and no driver is verified on real hardware yet. OpenHAL covers lab and research equipment and has no driver for clinical or patient-connected medical devices. [The hardware test plans](docs/hardware-tests/README.md) say how to run a plan on a device you own, and [the device library](library/README.md) lists the device files that come with OpenHAL. The hub gives each channel and action its own risk level, and the table's usual hazard is the hazard class of a typical device in that family. A device file's `hazard` raises every channel and action on the device to at least that level.
+OpenHAL has 36 drivers for microcontrollers, 3D printers and CNC machines, lab instruments, microscopes, spectrometers, home automation, industrial buses, robots, telescopes, cameras and input devices. Every driver passes the conformance suite on a simulator, and no driver is verified on real hardware yet. OpenHAL covers lab and research equipment and has no driver for clinical or patient-connected medical devices. [The hardware test plans](docs/hardware-tests/README.md) say how to run a plan on a device you own, and [the device library](library/README.md) lists the device files that come with OpenHAL. The hub gives each channel and action its own risk level, and the table's usual hazard is the hazard class of a typical device in that family. A device file's `hazard` raises every channel and action on the device to at least that level.
 
 <details>
-<summary>All 35 drivers</summary>
+<summary>All 36 drivers</summary>
 
 <!-- devices:start -->
 | Driver | Devices covered | Status | Usual hazard |
@@ -109,6 +109,7 @@ OpenHAL has 35 drivers for microcontrollers, 3D printers and CNC machines, lab i
 | `opcua` | PLCs with an OPC UA server, LADS lab instruments, process equipment and gateways | tested on simulator | medium |
 | `pylabrobot` | Hamilton STAR and STARlet, Tecan Freedom EVO, Opentrons OT-2 | tested on simulator | high |
 | `ros2` | ROS 2 mobile robots, ROS 2 arms, any ROS 2 graph with rosbridge | tested on simulator | high |
+| `seabreeze` | Ocean Insight and Ocean Optics USB spectrometers (USB2000+, USB4000, Flame), Ocean HR, QE Pro and Maya spectrometers, Ocean STS and SPARK spectrometers | tested on simulator | low |
 | `sila2` | SiLA 2 lab devices, SiLA 2 gateways, custom SiLA 2 servers | tested on simulator | medium |
 | `bambu` | Bambu Lab X1 series, Bambu Lab P1 series, Bambu Lab A1 and A1 mini | tested on simulator | medium |
 | `can` | motor controllers (VESC, ODrive, CubeMars), battery management systems, CAN sensor and IO nodes | tested on simulator | medium |

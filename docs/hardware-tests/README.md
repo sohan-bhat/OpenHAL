@@ -16,40 +16,41 @@ Within a group, cheap and common hardware comes first. The hazard column is the 
 |---|---|---|---|---|
 | 1 | [plant waterer](../../examples/plant-waterer/TEST-PLAN.md) | Arduino Uno, soil sensor, float switch, relay, pump | low | the relay with the pump unplugged, then 5 s of water |
 | 2 | [uvc](uvc.md) | USB webcam | low | nothing |
-| 3 | [rpi-camera](rpi-camera.md) | Raspberry Pi and a camera module | low | nothing |
-| 4 | [openhal-firmware](openhal-firmware.md) | Arduino Uno or ESP32 with an LED | low | an LED's brightness |
-| 5 | [firmata](firmata.md) | Arduino Uno with StandardFirmata | low | an LED, then a small fan and a servo |
-| 6 | [serial](serial.md) | Arduino Uno with the test sketch | medium | an LED, then a small fan |
-| 7 | [hid](hid.md) | macropad with key LEDs | low | a key LED |
-| 8 | [midi](midi.md) | MIDI controller with pad LEDs | low | a pad LED |
-| 9 | [ble](ble.md) | BLE sensor, then an LED board | low | an LED |
-| 10 | [rpi-gpio](rpi-gpio.md) | Raspberry Pi, an LED and a button | low | an LED |
-| 11 | [pi-i2c-spi](pi-i2c-spi.md) | Raspberry Pi and a TMP102 | low | an alert register |
-| 12 | [esphome](esphome.md) | ESP32 running ESPHome | low | the onboard LED, then a restart |
-| 13 | [homeassistant](homeassistant.md) | Home Assistant and a dimmable light | low | a lamp |
-| 14 | [matter](matter.md) | Matter Server and a plug with nothing plugged in | low | identify, then the plug |
-| 15 | [zigbee-zwave](zigbee-zwave.md) | Zigbee bulb and Z-Wave plug | low | a bulb, then the plug's relay |
-| 16 | [knx](knx.md) | KNX installation | low | a light, a dimmer and a setpoint |
-| 17 | [upnp](upnp.md) | UPnP speaker | low | mute, a low volume, play and pause |
-| 18 | [onvif](onvif.md) | ONVIF PTZ camera | low | a short pan |
-| 19 | [scpi](scpi.md) | bench supply with nothing connected | medium | 1 V at 10 mA |
-| 20 | [modbus](modbus.md) | energy meter, then a relay module with nothing wired | medium | a relay |
-| 21 | [http](http.md) | smart plug with nothing plugged in | medium | the plug's relay |
-| 22 | [mqtt](mqtt.md) | Tasmota plug with nothing plugged in | medium | the plug's relay |
-| 23 | [can](can.md) | VESC with an unloaded motor | medium | 300 rpm |
-| 24 | [marlin](marlin.md) | printer running Marlin | medium | the part fan, a 35 °C bed, optional homing |
-| 25 | [octoprint](octoprint.md) | printer behind OctoPrint | medium | the part fan, a 35 °C bed, optional homing |
-| 26 | [moonraker](moonraker.md) | Klipper printer | medium | the part fan, a 35 °C bed, optional homing |
-| 27 | [bambu](bambu.md) | Bambu Lab printer in Developer Mode | medium | the chamber light, the speed level, a pause |
-| 28 | [opcua](opcua.md) | OPC UA server | medium | one variable that drives nothing |
-| 29 | [sila2](sila2.md) | empty SiLA 2 device | medium | a 25 °C target, a short shake |
-| 30 | [alpaca](alpaca.md) | mount over ASCOM Alpaca | medium | abort, tracking, a 5 degree slew |
-| 31 | [indi](indi.md) | mount on indiserver | medium | abort, tracking, a 5 degree slew |
-| 32 | [micromanager](micromanager.md) | motorized microscope with a test slide | medium | 5 um of focus, a 100 um stage move |
-| 33 | [grbl](grbl.md) | CNC router or laser on GRBL | high | a 1 mm jog, a low spindle speed |
-| 34 | [lerobot](lerobot.md) | SO-101 arm | high | one joint, 5 degrees |
-| 35 | [ros2](ros2.md) | ROS 2 robot with its wheels off the floor | high | 0.05 m/s |
-| 36 | [pylabrobot](pylabrobot.md) | liquid handler with water | high | one tip and 10 uL |
+| 3 | [seabreeze](seabreeze.md) | Ocean spectrometer and a lamp | low | the integration time |
+| 4 | [rpi-camera](rpi-camera.md) | Raspberry Pi and a camera module | low | nothing |
+| 5 | [openhal-firmware](openhal-firmware.md) | Arduino Uno or ESP32 with an LED | low | an LED's brightness |
+| 6 | [firmata](firmata.md) | Arduino Uno with StandardFirmata | low | an LED, then a small fan and a servo |
+| 7 | [serial](serial.md) | Arduino Uno with the test sketch | medium | an LED, then a small fan |
+| 8 | [hid](hid.md) | macropad with key LEDs | low | a key LED |
+| 9 | [midi](midi.md) | MIDI controller with pad LEDs | low | a pad LED |
+| 10 | [ble](ble.md) | BLE sensor, then an LED board | low | an LED |
+| 11 | [rpi-gpio](rpi-gpio.md) | Raspberry Pi, an LED and a button | low | an LED |
+| 12 | [pi-i2c-spi](pi-i2c-spi.md) | Raspberry Pi and a TMP102 | low | an alert register |
+| 13 | [esphome](esphome.md) | ESP32 running ESPHome | low | the onboard LED, then a restart |
+| 14 | [homeassistant](homeassistant.md) | Home Assistant and a dimmable light | low | a lamp |
+| 15 | [matter](matter.md) | Matter Server and a plug with nothing plugged in | low | identify, then the plug |
+| 16 | [zigbee-zwave](zigbee-zwave.md) | Zigbee bulb and Z-Wave plug | low | a bulb, then the plug's relay |
+| 17 | [knx](knx.md) | KNX installation | low | a light, a dimmer and a setpoint |
+| 18 | [upnp](upnp.md) | UPnP speaker | low | mute, a low volume, play and pause |
+| 19 | [onvif](onvif.md) | ONVIF PTZ camera | low | a short pan |
+| 20 | [scpi](scpi.md) | bench supply with nothing connected | medium | 1 V at 10 mA |
+| 21 | [modbus](modbus.md) | energy meter, then a relay module with nothing wired | medium | a relay |
+| 22 | [http](http.md) | smart plug with nothing plugged in | medium | the plug's relay |
+| 23 | [mqtt](mqtt.md) | Tasmota plug with nothing plugged in | medium | the plug's relay |
+| 24 | [can](can.md) | VESC with an unloaded motor | medium | 300 rpm |
+| 25 | [marlin](marlin.md) | printer running Marlin | medium | the part fan, a 35 °C bed, optional homing |
+| 26 | [octoprint](octoprint.md) | printer behind OctoPrint | medium | the part fan, a 35 °C bed, optional homing |
+| 27 | [moonraker](moonraker.md) | Klipper printer | medium | the part fan, a 35 °C bed, optional homing |
+| 28 | [bambu](bambu.md) | Bambu Lab printer in Developer Mode | medium | the chamber light, the speed level, a pause |
+| 29 | [opcua](opcua.md) | OPC UA server | medium | one variable that drives nothing |
+| 30 | [sila2](sila2.md) | empty SiLA 2 device | medium | a 25 °C target, a short shake |
+| 31 | [alpaca](alpaca.md) | mount over ASCOM Alpaca | medium | abort, tracking, a 5 degree slew |
+| 32 | [indi](indi.md) | mount on indiserver | medium | abort, tracking, a 5 degree slew |
+| 33 | [micromanager](micromanager.md) | motorized microscope with a test slide | medium | 5 um of focus, a 100 um stage move |
+| 34 | [grbl](grbl.md) | CNC router or laser on GRBL | high | a 1 mm jog, a low spindle speed |
+| 35 | [lerobot](lerobot.md) | SO-101 arm | high | one joint, 5 degrees |
+| 36 | [ros2](ros2.md) | ROS 2 robot with its wheels off the floor | high | 0.05 m/s |
+| 37 | [pylabrobot](pylabrobot.md) | liquid handler with water | high | one tip and 10 uL |
 
 ## Setup
 
@@ -84,7 +85,7 @@ Every plan that runs the hub uses a test home of its own, so nothing touches you
 
 ```
 export OPENHAL_HOME="$PWD/openhal-test"
-uv run openhal init --yes --no-sample --no-discover --no-service
+uv run openhal init --yes --no-clients --no-sample --no-discover --no-service
 bash docs/hardware-tests/hub.sh start
 ```
 
