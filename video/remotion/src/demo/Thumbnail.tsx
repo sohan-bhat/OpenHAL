@@ -14,12 +14,12 @@ export const DemoThumbnail: React.FC<{scene: string; frame: number}> = ({scene, 
   const value = panel.value === 'speed' ? spec.speeds[frame] : panel.value;
   return (
     <AbsoluteFill style={{background: COLOR.bg}}>
-      <div style={{position: 'absolute', left: 460, top: 0, width: 820, height: 720}}>
+      <div style={{position: 'absolute', left: 590, top: 56, width: 634, height: 608, overflow: 'hidden', borderRadius: 6, boxShadow: `0 0 0 1px ${COLOR.border}`}}>
         <Arm3D
           pose={poseOf(spec.poses[frame])}
-          camera={{position: [0.36, -0.62, 0.4], target: [0.105, -0.05, 0.11], fov: 30}}
-          width={820}
-          height={720}
+          camera={{position: [0.4, -0.66, 0.44], target: [0.12, -0.03, 0.1], fov: 34}}
+          width={634}
+          height={608}
         />
       </div>
       <div style={{position: 'absolute', left: 72, top: 64}}>

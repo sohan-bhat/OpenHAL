@@ -62,6 +62,7 @@ The demo video shows Claude Code driving the simulated SO-101 through the OpenHA
 - Every joint angle, gripper opening and cube pose is sampled from `frames.csv.gz` at 1x on the hub's clock, each frame at its simulated time plus its `lag_ms`, so the arm lines up with the clicks and the hub's messages. The joint speed on the panel is measured in simulated time.
 - The pick plays in two shots. Between them the edit skips 1.35 s in which the arm holds still at the cube before the gripper closes, and the second shot opens from a new camera angle.
 - The Approve and STOP clicks land on the frames of their recorded clicks, and the Inspector is redrawn from the screenshots in `data/take-4/inspector/`.
+- The terminal and the Inspector are shown pushed in, 1.3 and 1.54 times, so their lines read on a phone. When Claude's long reply to the block arrives, the terminal scrolls back to the reply's first lines, where LIMIT_EXCEEDED is.
 - The panel's verdicts, "done", LIMIT_EXCEEDED and "stopped", appear on the frame of the hub message or audit entry that carries them.
 - The stat cards show the two numbers in `data/STATS.md`, and the device cards name three real example device files.
 
