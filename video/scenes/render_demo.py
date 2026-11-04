@@ -70,6 +70,7 @@ def main() -> int:
     parser.add_argument("--pause", type=float, default=20.0)
     args = parser.parse_args()
     edit = json.loads(EDIT.read_text(encoding="utf-8"))
+    args.out = args.out.resolve()
     work = args.out.parent / f".{args.out.stem}-chunks"
     work.mkdir(parents=True, exist_ok=True)
     baseline = speed_limit()
