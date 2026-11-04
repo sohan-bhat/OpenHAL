@@ -99,7 +99,7 @@ YouTube's own content loudness readout agrees with the measurements, at -14.2 dB
 | Wobbl | -14.2 LUFS | -1.7 dBFS | 4.2 LU | A beat driven track with a strong low end, changing section at the scene changes (14.3 s and 22.5 s) and dipping at single cuts |
 | Taro | -27.4 LUFS | -10.1 dBFS | 4.2 LU | A soft low pad with typing ticks and soft whooshes on transitions |
 
-Two of the three mix music to about -14 LUFS with peaks near -2 dBFS. The OpenHAL video follows those two, at -14 LUFS with a music bed, and adds the clicks, the servo and the tones the brief asks for.
+Two of the three mix music to about -14 LUFS with peaks near -2 dBFS. The OpenHAL video follows those two at -14 LUFS, with one recorded track by a composer and recorded foley, the key presses, the mouse clicks, a switch and a stepper motor for the servo.
 
 ## How the OpenHAL video adapts the series
 
@@ -108,7 +108,20 @@ Two of the three mix music to about -14 LUFS with peaks near -2 dBFS. The OpenHA
 | The product's palette | OpenHAL's dark palette from `design/tokens.css`, `#111210` background, `#212220` surface, `#383a36` rules, `#eceeec` text, `#afb5ad` secondary text, with the pink `#ff8dcc` used rarely |
 | A heavy display face and a mono | IBM Plex Sans at 700 for headings and the wordmark, IBM Plex Mono for UI, numbers, codes and labels, as `docs/DESIGN.md` sets |
 | A logo on the end card | The wordmark "OpenHAL" alone, set as text in IBM Plex Sans 700 at -0.04 em tracking |
-| The product's badge in the tool call | An `openhal` badge in the pink fill with dark text, and the pink outline on the call |
-| Wobbl's boxed stamps, `FAILS` and `OK` | Plain words in the status colors, set in bold mono with no box, border, dot or icon, because `docs/DESIGN.md` never puts a status in a box. Red appears only for `LIMIT_EXCEEDED` and the stop |
+| Wobbl's boxed stamps, `FAILS` and `OK` | The hub's answers, `pending` and `LIMIT_EXCEEDED`, as plain words in the status colors with no box, border, dot or icon, because `docs/DESIGN.md` never puts a status in a box. Red appears only for `LIMIT_EXCEEDED` and STOP |
 | Status colors | The site's dulled tokens, green `#72b88e`, blue `#7db2f0` for pending, red `#d57a72` |
 | 60 fps in Oopsy and Taro | 30 fps, as the brief sets, which halves the render load on this laptop |
+
+## What OpenHAL does differently from Wobbl
+
+The owner's review of the first rough cut found the video too close to Wobbl's, so the OpenHAL video keeps the series' length, pacing, loudness and end card order and drops Wobbl's grammar.
+
+| Wobbl | OpenHAL |
+|---|---|
+| The Claude Code window fills the frame for whole scenes | The 3D desk fills the frame. Claude Code is a slim prompt line at the bottom, with the real prompt and Claude Code's timer, and no transcript |
+| A data panel on the left beside a framed 3D view, with a big number, a bar and a stamp | No panel. The hub is a thin pink layer across the desk, each request crosses the layer as a short pulse named with its real tool, and the hub's answer sits at the layer |
+| Limits shown as a bar against a number | The speed limit is a pink wedge on the shoulder joint, and the 120 deg/s request is a dashed red line drawing of the arm that stops at the wedge's edge, as in the How it works chart on the site |
+| Montage of many objects | One arm, one desk, slow camera moves, a push in on the shoulder servo, the gripper up close and a low angle on the bin |
+| Boxed stat cards | Two numbers above the pink layer line |
+| Centered logo, tagline and install line | The wordmark above the layer line on the left, the tagline, the command and the URL under the line |
+| A beat driven music bed | A recorded track by a composer and recorded foley, the music stopping dead on STOP |

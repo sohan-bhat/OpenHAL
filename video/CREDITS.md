@@ -116,14 +116,17 @@ The arm's motion, every Claude Code line and every Inspector click come from `vi
 
 ### Sound and music
 
-`video/scenes/demo_sound.py` synthesizes every sound in the demo from the edit's cue sheet, the key clicks, the tool call clicks, the servo whir from the recorded joint speeds, the low tone on LIMIT_EXCEEDED, the chime when the approved drop finishes, the STOP click and the music bed. No sample, recording or library sound is used, so the sound needs no license. The music is generated in code the same way, and no outside track is used.
+The demo's sound is mixed by `video/scenes/demo_sound.py` from the recordings and the track below, downloaded into `video/out/sound-sources/`, which git ignores. No sound in the demo is synthesized or AI-generated. Each file's license allows use in a monetized YouTube video, and none is non-commercial or no-derivatives.
 
-| | |
-|---|---|
-| Track | none, the demo uses the generated bed |
-| Composer | |
-| Source | |
-| License | |
+| Use | File | Author | Source | License |
+|---|---|---|---|---|
+| Music | "Inspired", `Inspired.mp3` | Kevin MacLeod, incompetech.com | https://incompetech.com/music/royalty-free/mp3-royaltyfree/Inspired.mp3, listed at https://incompetech.filmmusic.io/song/3918-inspired/ | Creative Commons Attribution 4.0, https://creativecommons.org/licenses/by/4.0/. The incompetech FAQ allows monetized YouTube videos with credit in the description |
+| Servo | `nema17_10mm.wav` from "Stepper Motor Pack 1", a NEMA 17 stepper recorded with a piezo contact microphone | dklon | https://opengameart.org/content/stepper-motor-pack-1 | Creative Commons Attribution 3.0, https://creativecommons.org/licenses/by/3.0/. The page asks for credit as dklon |
+| Typing | "Typing on Keychron V1 Ultra (Red Linear Switch).wav" | C40115 | https://commons.wikimedia.org/wiki/File:Typing_on_Keychron_V1_Ultra_(Red_Linear_Switch).wav | Creative Commons Attribution 4.0 |
+| Mouse click | "Computer mouse single click.ogg" | Darklanlan | https://commons.wikimedia.org/wiki/File:Computer_mouse_single_click.ogg | CC0 1.0 |
+| Switch | "Clickick switch.ogg" | stephan | https://commons.wikimedia.org/wiki/File:Clickick_switch.ogg | Public domain, as marked on the file page |
+
+The YouTube description carries the attribution lines in video/YOUTUBE.md.
 
 ### Software
 
@@ -138,4 +141,4 @@ The arm's motion, every Claude Code line and every Inspector click come from `vi
 
 ### Redrawn interfaces
 
-The Claude Code window and the OpenHAL Inspector are redrawn in code from the recorded session and from the Inspector screenshots in `video/data/take-4/inspector/`. The Claude Code window keeps that product's layout so the session reads as it ran. OpenHAL is not affiliated with Anthropic, and the end card says so.
+The Claude Code prompt line, with its mascot, and the Inspector's Approve and STOP controls are redrawn in code from the recorded session and from the Inspector screenshots in `video/data/take-4/inspector/`. OpenHAL is not affiliated with Anthropic, and the end card says so.
