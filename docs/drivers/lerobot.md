@@ -1,104 +1,68 @@
 # lerobot driver
 
-The `lerobot` driver controls Hugging Face LeRobot arms, such as the SO-100, SO-101 and Koch followers. Joint positions are reads, goal positions are channels with per-joint limits and rates, and torque off is the native safe state.
+The `lerobot` driver controls LeRobot arms such as the SO-100, SO-101 and Koch followers through LeRobot 0.6.1. Install LeRobot separately, such as `pip install 'lerobot[feetech]'`, since LeRobot pulls in PyTorch, which lacks wheels for some machines such as Intel Macs.
 
-| | |
-|---|---|
-| Driver name | `lerobot` |
-| Library | LeRobot 0.6.1 (Apache-2.0), installed separately |
-| Extra | none. Install LeRobot with `pip install 'lerobot[feetech]'`, or the extra for your motors |
-| Hazard default | high |
-| Conformance | full |
-| Safe state | native. Torque off on every motor |
-| Self-describe | yes, from the arm's joints and where they are now |
-
-Because LeRobot pulls in PyTorch, which is several gigabytes and has no wheels for some machines such as Intel Macs, LeRobot is not an OpenHAL extra. The driver imports LeRobot only when a device connects and, when LeRobot is missing, explains how to install it.
-
-## What it supports
+## Supports
 
 | Channel name | Kind | LeRobot call |
 |---|---|---|
-| `<joint>`, for example `shoulder_pan` | read, deg (or -100 to 100), gripper in percent | `get_observation()["<joint>.pos"]` |
+| `<joint>` such as `shoulder_pan` | read, deg or -100 to 100, gripper in percent | `get_observation()["<joint>.pos"]` |
 | `torque` | read, bool | `bus.sync_read("Torque_Enable")` on every motor |
-| `<joint>_goal`, for example `elbow_flex_goal` | set, same unit as the joint | `send_action({"<joint>.pos": goal})` |
+| `<joint>_goal` such as `elbow_flex_goal` | set, same unit as the joint | `send_action({"<joint>.pos": goal})` |
 | `torque_off`, `torque_on` | action | `bus.disable_torque()`, `bus.enable_torque()` |
-| `move` (one argument per joint) | action | one `send_action()` for several joints |
+| `move` with one argument per joint | action | one `send_action()` for several joints |
 
 | Map | Meaning |
 |---|---|
 | `{ joint: wrist_flex }` | A joint under another channel name |
 | `{ joint: x, unit: m/s }` | The unit LeRobot uses for that key, for robots that aren't arms |
 | `{ torque: true }` | The torque state |
-| `{ command: move, joints: { pan: shoulder_pan, lift: shoulder_lift } }` | A move action, each argument naming its joint |
+| `{ command: move, joints: { pan: shoulder_pan, lift: shoulder_lift } }` | A move action, each argument naming a joint |
 
-Body joints are in degrees with `use_degrees: true`, LeRobot's default, and from -100 to 100 otherwise. Grippers are 0 to 100 percent open. Angles and plain numbers are never mixed, even though both count as dimensionless to the unit library.
+Body joints read in degrees, or -100 to 100 with `use_degrees: false`. Grippers read 0 to 100 percent open.
 
-## How it works
+## Behavior
 
-- connect() builds the robot from its LeRobot type and calls `connect(calibrate=False)`. Because calibration moves the arm by hand and prompts at the keyboard, the driver never runs calibration, and connecting an uncalibrated arm fails with the exact `lerobot-calibrate` command to run.
-- Connecting turns torque on, so the arm holds its position and nothing moves.
-- Because the servo holds the joint's present position, a goal channel reads that position until a goal is sent, so the kernel's `max_change_per_s` is measured from where the joint really is.
-- A goal reads back as the value LeRobot actually wrote, after its own `max_relative_target` clipping.
-- `torque_on` sends every present position as the goal first, so no joint jumps to an old goal.
-- Every LeRobot call blocks on the serial bus, so each call runs in a worker thread with a deadline.
+- The driver never calibrates. An uncalibrated arm fails to connect with the `lerobot-calibrate` command to run.
+- Connecting turns torque on, so the arm holds position.
+- A goal channel reads the present position until a goal is sent, so `max_change_per_s` counts from the real position. Read-back shows the goal after `max_relative_target` clipping.
+- `torque_on` first sets every goal to the present position, so no joint jumps.
 
 ## Safe state
 
-A stop turns torque off on every motor, so the arm goes limp and falls under gravity. Rest the arm over something soft while testing, and keep the power switch within reach. The device file's own safe state steps run afterwards, and with torque off those steps only set registers.
-
-close() turns torque off too, LeRobot's `disable_torque_on_disconnect`, unless `torque_off_on_close: false`.
+A stop turns torque off, so the arm goes limp and falls. Rest the arm over something soft while testing. `close()` also turns torque off unless `torque_off_on_close: false`.
 
 ## Setup
 
-1. Install LeRobot and its motor extra, for example `pip install 'lerobot[feetech]'` in the hub's environment.
-2. Calibrate the arm once with `lerobot-calibrate --robot.type=so101_follower --robot.port=<port> --robot.id=<id>`.
-3. Start from `openhal/drivers/lerobot/examples/so101-follower.hal.yaml`. Set the port and the id you calibrated with, and keep the goal limits narrow.
-4. Run `openhal file validate`, then confirm the limits by hand.
-
-## Parameters
+1. Install LeRobot with the motor extra in the hub's environment.
+2. Calibrate once with `lerobot-calibrate --robot.type=so101_follower --robot.port=<port> --robot.id=<id>`.
+3. Start from `openhal/drivers/lerobot/examples/so101-follower.hal.yaml` and keep goal limits narrow.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `robot` | required | LeRobot robot type, for example `so101_follower` or `koch_follower` |
-| `port` | required | Serial port of the motor bus |
-| `robot_id` | required | The id the arm was calibrated under |
+| `robot` | required | LeRobot type such as `so101_follower` or `koch_follower` |
+| `port` | required | Motor bus serial port |
+| `robot_id` | required | Calibration id |
 | `use_degrees` | true | Degrees for body joints, or -100 to 100 |
-| `max_relative_target` | none | LeRobot's own clip on how far one goal may move from the present position, in degrees |
-| `torque_off_on_close` | true | Turn torque off when the hub closes the device |
+| `max_relative_target` | none | LeRobot's clip on one goal's distance from the present position, in degrees |
+| `torque_off_on_close` | true | Torque off when the hub closes the device |
 | `timeout` | `2 s` | Per call |
-| `action_wait` | `8 s` | How long `move` waits for the joints to arrive before returning `started` |
-| `observation_age` | `50 ms` | Reuse one observation across reads this close together |
-| `tolerance` | 2 | How close, in the joint's unit, counts as arrived for `move` |
-
-## Example device file
-
-```yaml
-device: SO-101 follower arm
-id: so101
-connect: { lerobot: so101_follower, port: /dev/ttyACM0, robot_id: my_follower, max_relative_target: 10 }
-read:
-  shoulder_pan: { unit: deg }
-  torque: { type: bool }
-write:
-  shoulder_pan_goal: { unit: deg, min: -30, max: 30, max_change_per_s: 20, confirm: confirm-each-time }
-actions:
-  torque_off: {}
-hazard: high
-```
+| `action_wait` | `8 s` | Time `move` allows for arrival before returning `started` |
+| `observation_age` | `50 ms` | Observation reuse window |
+| `tolerance` | 2 | Arrival tolerance for `move`, in the joint's unit |
 
 ## Known limitations
 
-- The driver doesn't read the cameras in the observation.
-- The fake in `simulator.py` stands in for LeRobot in tests, and the fake's assumptions are listed in its docstring and checked step by step in the hardware test plan.
-- Kinematics and Cartesian moves are not exposed, so goals are per joint.
-- `move` arguments get their limits from the action, not from the goal channels, so keep both the same.
+- No camera reads, kinematics or Cartesian moves.
+- `move` uses the action's limits, so match the action limits to the goal channels.
+- Tests use the fake in `simulator.py`, and the hardware test plan checks the fake's assumptions.
 
 ## Hazard defaults
 
-The default hazard is `high`, because arms can pinch and strike and fall when torque goes off, so the hub holds every change and action until a person approves the request.
+`high`, so the hub holds every change and action until a person approves the request.
 
 ## Sources
 
-- LeRobot repository and robot interface, https://github.com/huggingface/lerobot (src/lerobot/robots/robot.py, so_follower)
+- LeRobot repository, robot interface in src/lerobot/robots/robot.py and so_follower, https://github.com/huggingface/lerobot
 - SO-101 guide, https://huggingface.co/docs/lerobot/so101
 - Bring your own hardware, https://huggingface.co/docs/lerobot/integrate_hardware

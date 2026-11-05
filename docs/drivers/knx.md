@@ -1,14 +1,13 @@
 # knx driver
 
-The knx driver reads and sets KNX group addresses through a KNXnet/IP interface or router, using xknx. Each channel names a group address and its datapoint type (DPT), so lights, dimmers, blinds, thermostats and sensors from any KNX manufacturer work from a group address list, such as the one ETS exports.
+The knx driver reads and sets KNX group addresses through a KNXnet/IP interface or router with xknx. Channels come from the ETS group address list, each with a group address and a datapoint type.
 
-## What it supports
+## Supports
 
-- KNXnet/IP tunneling over UDP or TCP, and KNXnet/IP routing over multicast.
-- Read channels of type bool (DPT 1.x), number (numeric DPTs such as 5.001, 7.x, 9.x, 13.x and 14.x), enum (enum DPTs such as 20.102) and string (DPT 16).
-- Control channels that send a GroupValueWrite, read back from the actuator's status address.
-- Units from the DPT, converted to the channel unit, such as DPT 9.001 in degC to a channel in degF.
-- `discover()` sends a KNXnet/IP SEARCH_REQUEST, which only requests a description from each interface.
+- Tunneling over UDP or TCP, and routing over multicast.
+- DPT 1.x bools, numeric DPTs such as 5.001, 7.x, 9.x, 13.x and 14.x, enum DPTs such as 20.102 with lower case names like `comfort`, and DPT 16 strings.
+- DPT units convert to the channel unit.
+- `discover()` sends a SEARCH_REQUEST, which only requests interface descriptions.
 
 ## Setup
 
@@ -16,21 +15,17 @@ The knx driver reads and sets KNX group addresses through a KNXnet/IP interface 
 uv tool install --compile-bytecode "halkit[knx] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-You need a KNXnet/IP interface or router on the network, and the group address list from the ETS project with each address's DPT.
-
-## Parameters
+KNX Secure isn't supported yet, so enable a plain tunnel for the hub.
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `gateway` | required | The interface's address for tunneling, or the multicast group for routing. The shorthand `knx: 192.168.1.20` sets it |
+| `gateway` | required | Interface address for tunneling, or the multicast group for routing. `knx: 192.168.1.20` is shorthand |
 | `port` | `3671` | KNXnet/IP port |
 | `connection` | `tunneling` | `tunneling`, `tunneling_tcp` or `routing` |
-| `local_ip` | found automatically | The hub's address on the KNX network |
-| `individual_address` | from the interface | The hub's own individual address, needed for routing |
-| `route_back` | `false` | For tunneling through NAT |
-| `timeout` | `2 s` | How long a read waits for a response |
-
-KNX Secure isn't supported yet, so a secure interface needs a plain tunnel enabled for the hub.
+| `local_ip` | automatic | Hub address on the KNX network |
+| `individual_address` | from the interface | Hub individual address, needed for routing |
+| `route_back` | `false` | Tunneling through NAT |
+| `timeout` | `2 s` | Read response deadline |
 
 ## Channel maps
 
@@ -44,42 +39,35 @@ write:
 
 | Key | Meaning |
 |---|---|
-| `group_address` | The address the channel reads, or sends to. Three-level (`1/2/3`), two-level (`1/2`) or free (`4660`) |
-| `dpt` | The datapoint type, quoted, such as `"9.001"`. YAML reads an unquoted 5.010 as the number 5.01 |
-| `state_address` | For control channels, the actuator's status address to read back |
+| `group_address` | Address read or sent to, three-level `1/2/3`, two-level `1/2` or free `4660` |
+| `dpt` | Quoted datapoint type such as `"9.001"`, since YAML reads an unquoted 5.010 as 5.01 |
+| `state_address` | Control channels. Actuator status address for read-back |
 
-Enum channels use the DPT's names in lower case, such as `comfort` and `economy` for DPT 20.102.
+## Behavior
 
-## How reads and commands behave
-
-- The driver listens to every telegram for its addresses, and a read returns the newest value with the time the value arrived. When nothing has arrived since connecting, the read sends one GroupValueRead and waits `timeout`. An address whose read flag is off never responds, and reads as no value until a telegram arrives.
-- A command waits for the interface's L_Data.con, which shows that the telegram reached the bus but not that an actuator acted, so read the status address to see whether the actuator acted.
-- Values are rounded to the DPT's resolution. A channel without a status address reads back the value as encoded, such as 51 % for 50.4 %.
-- Because xknx's own reconnect is off, a lost tunnel leaves the device unavailable until the hub reconnects, so nothing goes out late.
+- Reads return the newest telegram, or send one GroupValueRead when nothing has arrived. An address with the read flag off reads as no value.
+- A command confirms only that the telegram reached the bus, so read the `state_address` to check the actuator.
+- Values round to the DPT resolution, such as 51 % for 50.4 %.
+- A lost tunnel leaves the device unavailable until the hub reconnects, so nothing goes out late.
+- Bad DPTs and malformed addresses fail at load. Values a DPT can't carry are never sent.
 
 ## Example
 
-`openhal/drivers/knx/examples/living-room.hal.yaml` switches and dims a ceiling light, sets the heating setpoint and the HVAC mode, and keeps the setpoint low while a window is open.
-
-## Errors
-
-- A tunnel connection that fails and an interface that can't be reached raise `DriverError` or `TimeoutError`.
-- A channel whose DPT doesn't fit its type or unit, an unknown DPT and a malformed group address fail when the device file loads, with `DriverError`.
-- A command the interface doesn't confirm raises `DriverError` or `TimeoutError` naming the group address. A value the DPT can't carry raises `DriverError` and nothing is sent.
+`openhal/drivers/knx/examples/living-room.hal.yaml` switches and dims a ceiling light, sets the heating setpoint and HVAC mode, and keeps the setpoint low while a window is open.
 
 ## Limitations
 
-- The driver has no KNX Secure, no device management (programming, individual address changes) and no ETS project import.
-- `describe()` returns nothing, because KNX devices can't list their group addresses.
-- Because the KNX bus is slow (about 50 telegrams a second), the driver sends one telegram at a time per device file.
+- No KNX Secure, device programming or ETS project import.
+- `describe()` returns nothing, since KNX devices can't list their addresses.
+- One telegram at a time per file, as the bus carries about 50 a second.
 
 ## Hazard default and safe state
 
-The default hazard is low, because most KNX group addresses switch lights and blinds and set room temperatures. KNX has no emergency command of its own, so `safe_state_support` is `file`. The hub sends the device file's safe state like any other telegram, which needs the interface and the bus to be up. Actuators have their own behavior on bus voltage failure and recovery, set in ETS, which is the real fallback.
+Low. `safe_state_support` is `file`. Set each actuator's bus failure behavior in ETS as the real fallback.
 
 ## Sources
 
 - xknx documentation, https://xknx.io/
 - xknx repository, https://github.com/XKNX/xknx
 - KNX Association, KNXnet/IP overview, https://www.knx.org/knx-en/for-professionals/What-is-KNX/A-brief-introduction/
-- KNX Association, datapoint types (System Specifications 03.07.02), https://www.knx.org/knx-en/for-professionals/downloads/
+- KNX Association, datapoint types in System Specifications 03.07.02, https://www.knx.org/knx-en/for-professionals/downloads/
