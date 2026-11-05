@@ -1,19 +1,19 @@
 # rpi-camera driver
 
-The rpi-camera driver captures JPEG frames from Raspberry Pi camera modules on the CSI connector, through picamera2 and libcamera, and reads the per-frame metadata libcamera reports, such as light level and exposure time. The driver is read-only and never changes camera controls.
+The rpi-camera driver captures JPEG frames from Raspberry Pi CSI camera modules through picamera2 and libcamera, and reads per-frame metadata such as light level and exposure time. The driver is read-only and never changes camera controls.
 
-Because picamera2 installs only on Raspberry Pi OS, this driver has only been tested against a fake Picamera2 class, and docs/hardware-tests/rpi-camera.md lists what a person has to check on a real Pi.
+The driver is tested only against a fake Picamera2 class, since picamera2 installs only on Raspberry Pi OS. docs/hardware-tests/rpi-camera.md lists the checks for a real Pi.
 
-## What it supports
+## Supports
 
-- `image` read channels, one JPEG frame per read.
-- Number read channels from the libcamera metadata fields `Lux`, `ExposureTime`, `AnalogueGain`, `DigitalGain`, `ColourTemperature`, `SensorTemperature`, `FrameDuration`, `FocusFoM` and `LensPosition`.
-- Still or video configurations, with an optional frame size.
-- `discover()` and `identify()` list attached modules without opening them.
+- `image` reads, one JPEG frame each.
+- Number reads from the libcamera metadata fields `Lux`, `ExposureTime`, `AnalogueGain`, `DigitalGain`, `ColourTemperature`, `SensorTemperature`, `FrameDuration`, `FocusFoM` and `LensPosition`.
+- Still or video configurations with an optional frame size.
+- `discover()` and `identify()` list attached modules without opening any.
 
 ## Setup
 
-Because picamera2 needs the system libcamera bindings, picamera2 comes from apt on Raspberry Pi OS Bookworm or later rather than from pip, so there is no `rpi-camera` pip extra.
+picamera2 needs the system libcamera bindings, so picamera2 comes from apt on Raspberry Pi OS Bookworm or later and there is no `rpi-camera` pip extra.
 
 ```sh
 sudo apt install -y python3-picamera2
@@ -22,18 +22,16 @@ uv pip install -e .
 rpicam-hello --list-cameras
 ```
 
-`rpicam-hello --list-cameras` should list your module. If the module isn't listed, check the ribbon cable and, on older OS images, the `camera_auto_detect=1` line in `/boot/firmware/config.txt`.
-
-## Parameters
+If `rpicam-hello --list-cameras` doesn't list the module, check the ribbon cable and, on older images, `camera_auto_detect=1` in `/boot/firmware/config.txt`.
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `camera` | `0` | Camera number from `rpicam-hello --list-cameras`, or `auto` for the first one. The shorthand `rpi-camera: 0` sets it |
-| `configuration` | `still` | `still` uses the full sensor resolution and captures slowly. `video` is smaller and faster |
-| `width`, `height` | from the configuration | Main stream size. Give both or neither |
-| `jpeg_quality` | `85` | JPEG quality, 1 to 100 |
-| `warmup` | `1 s` | Wait after starting the camera, so autoexposure and white balance settle |
-| `timeout` | `10 s` | Deadline for starting the camera and for each capture |
+| `camera` | `0` | Number from `rpicam-hello --list-cameras`, or `auto` for the first. `rpi-camera: 0` is shorthand |
+| `configuration` | `still` | `still` is full resolution and slow, `video` smaller and faster |
+| `width`, `height` | from the configuration | Main stream size, both or neither |
+| `jpeg_quality` | `85` | 1 to 100 |
+| `warmup` | `1 s` | Settle time for autoexposure and white balance |
+| `timeout` | `10 s` | Camera start and capture deadline |
 
 ## Channels
 
@@ -44,11 +42,11 @@ read:
   exposure: { unit: ms, map: { metadata: ExposureTime } }
 ```
 
-Metadata channels report the unit libcamera uses (`lux`, `us` for times, `K`, `degC`, `dimensionless` for gains and figures of merit). The kernel converts a reading into the channel's unit when the units differ, so `exposure` above reads in milliseconds.
+Metadata reads arrive in libcamera's units, `lux`, `us` for times, `K`, `degC` and `dimensionless` for gains and figures of merit. The kernel converts to the channel unit, so `exposure` above reads in ms.
 
-## How it works
+## Behavior
 
-The driver opens and starts the camera once on connect and keeps it running, so each capture takes one frame time rather than a full camera start. Only one process can hold a camera, so a second hub or a `rpicam-*` app running at the same time makes connect fail with "Device or resource busy". A capture or metadata request that fails marks the camera as failed, the next heartbeat reports the failure, and the hub reopens the camera.
+The camera starts once on connect and keeps running, so each capture takes one frame time. One process can hold a camera, so a second hub or a running `rpicam-*` app fails the connect with "Device or resource busy". A failed capture marks the camera failed, and the hub reopens the camera after the next heartbeat.
 
 ## Example
 
@@ -56,24 +54,22 @@ The driver opens and starts the camera once on connect and keeps it running, so 
 
 ## Errors
 
-- picamera2 missing raises `DriverError` with the apt command above.
-- A missing camera number, no attached module, or a busy camera raises `DriverError`.
-- A capture that fails, or bytes that aren't a JPEG, raise `DriverError`. No frame within `timeout` raises `TimeoutError`.
-- A metadata field the sensor doesn't report raises `DriverError` listing the fields it does report.
+- Missing picamera2 raises `DriverError` with the apt command.
+- A missing camera number, no module, a busy camera, a failed capture and non-JPEG bytes raise `DriverError`. No frame within `timeout` raises `TimeoutError`.
+- A metadata field the sensor lacks raises `DriverError` listing the available fields.
 
 ## Limitations
 
-- The driver has no camera controls (exposure, gain, focus, white balance) and no video recording.
-- The driver takes one capture at a time per camera.
-- The driver is only tested against the fake until the hardware test plan has been run.
+- No camera controls such as exposure, gain, focus or white balance, and no video recording.
+- One capture at a time per camera.
 
 ## Hazard default and safe state
 
-The default hazard is low and the driver has no write channels, so `safe_state_support` is `none`. Frames can show people and private spaces, so point cameras with care.
+Low with no write channels, so `safe_state_support` is `none`. Frames can show people and private spaces, so point cameras with care.
 
 ## Sources
 
 - The Picamera2 Library manual, Raspberry Pi Ltd, https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf
 - Raspberry Pi camera software documentation, https://www.raspberrypi.com/documentation/computers/camera_software.html
 - Raspberry Pi camera hardware documentation, https://www.raspberrypi.com/documentation/accessories/camera.html
-- libcamera control and metadata definitions (control_ids_core.yaml), https://libcamera.org/api-html/namespacelibcamera_1_1controls.html
+- libcamera control and metadata definitions in control_ids_core.yaml, https://libcamera.org/api-html/namespacelibcamera_1_1controls.html
