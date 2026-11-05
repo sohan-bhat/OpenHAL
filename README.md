@@ -45,36 +45,34 @@ openhal demo
 You'll see the agent raise the bed target from 60 °C to 70 °C, have a request for a nozzle temperature of 300 °C blocked at the nozzle limit of 260 °C and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.
 <!-- outcome:end -->
 
-OpenHAL runs on Python 3.12 or newer. The installer needs nothing installed first, because the installer puts uv in place and uv installs a matching Python when the machine has none. [The install guide](docs/guide/install.md) covers uv, pipx, a clone of the repository, the background service and Raspberry Pi.
+OpenHAL runs on Python 3.12 or newer. [The install guide](docs/guide/install.md) covers uv, pipx, a clone, the background service and Raspberry Pi.
 
 ## Why OpenHAL
 
-An AI agent that controls a 3D printer or a lab instrument usually goes through a script or an MCP server made for that one device. Each server describes the device in a different way, and whatever limits exist sit in that one server's code. OpenHAL describes every device in one file format and puts one hub between the agents and the devices, so every command goes through the same checks.
+Agents usually reach each printer or lab instrument through a script or MCP server made for that one device, with the limits in that server's code. OpenHAL gives every device one file format and one hub that checks every command.
 
 ## How it works
 
-The flow diagram follows one command. An agent sends `hal/write` to the hub, and the safety kernel checks the command against the limits in the device file. A command inside the limits gets a grant and goes through the driver to the device, and a command outside the limits is blocked with an error such as `LIMIT_EXCEEDED`.
-
-- A `.hal.yaml` device file describes what a device can read and do, with units and limits.
-- The safety kernel checks every command for range, rate, interlocks and confirmation before any driver can act.
-- One driver covers a whole device family, so one SCPI driver covers bench instruments and one Moonraker driver covers Klipper printers.
-- The hub's protocol is JSON-RPC 2.0 over WebSocket and stdio, and agents reach the hub through MCP, the CLI or the Python client.
+- A `.hal.yaml` device file lists a device's channels and actions, with units and limits.
+- The safety kernel checks range, rate, interlocks and confirmation before a driver acts. A command outside the limits is blocked with an error such as `LIMIT_EXCEEDED`.
+- One driver covers a device family, such as SCPI for bench instruments.
+- Agents connect over MCP, the CLI or the Python client, and the protocol is JSON-RPC 2.0 over WebSocket and stdio.
 
 ## Safety model
 
-- Every channel and action has a risk level, low, medium or high, from what it is, and the level sets where a person comes in.
-- High risk channels and actions stay read-only until a person confirms their limits, and nothing an agent proposes counts as a confirmation.
-- Low and medium ones take commands at once within the device's own range, and only a person lowers a level with `openhal risk set`.
-- Every hardware change needs a single-use grant the kernel issues for that exact command.
-- Unknown values never pass a check, so a stale or missing reading blocks the command.
-- One stop puts every device in its safe state, and the hub blocks every command until a person lifts the stop.
+- Every channel and action has a risk level of low, medium or high. A device file's `hazard` sets the lowest level for the whole device.
+- High risk channels and actions stay read-only until a person confirms the limits. An agent's proposal never counts as a confirmation.
+- Low and medium channels and actions take commands within the device's own range. Only a person lowers a level, with `openhal risk set`.
+- Each hardware change needs a single-use grant for that exact command.
+- A stale or missing reading blocks the command.
+- One stop puts every device in its safe state until a person lifts the stop.
 - Every decision goes into a hash-chained audit log.
 
 [docs/SAFETY.md](docs/SAFETY.md) has the details.
 
 ## Supported devices
 
-OpenHAL has 36 drivers for microcontrollers, 3D printers and CNC machines, lab instruments, microscopes, spectrometers, home automation, industrial buses, robots, telescopes, cameras and input devices. Every driver passes the conformance suite on a simulator, and no driver is verified on real hardware yet. OpenHAL covers lab and research equipment and has no driver for clinical or patient-connected medical devices. [The hardware test plans](docs/hardware-tests/README.md) say how to run a plan on a device you own, and [the device library](library/README.md) lists the device files that come with OpenHAL. The hub gives each channel and action its own risk level, and the table's usual hazard is the hazard class of a typical device in that family. A device file's `hazard` raises every channel and action on the device to at least that level.
+OpenHAL has 36 drivers. Every driver passes the conformance suite on a simulator, and none is verified on real hardware yet. No driver covers clinical or patient-connected medical devices. To test a device you own, follow [the hardware test plans](docs/hardware-tests/README.md). [The device library](library/README.md) lists the bundled device files.
 
 <details>
 <summary>All 36 drivers</summary>
@@ -124,26 +122,26 @@ OpenHAL has 36 drivers for microcontrollers, 3D printers and CNC machines, lab i
 
 ## Connect Claude or another MCP client
 
-`openhal init` sets up the hub and makes a token for your AI client. When init finds Claude Desktop, Claude Code or Cursor, init adds OpenHAL to that client after you say yes, and the setup for every client is printed either way. Then start OpenHAL.
+`openhal init` sets up the hub, makes a token and offers to add OpenHAL to Claude Desktop, Claude Code and Cursor. The setup for every client is printed either way.
 
 ```text
 openhal init
 openhal start
 ```
 
-Any other MCP client can start `openhal mcp` over stdio with a separate agent token, as [the MCP guide](docs/interfaces/MCP.md) shows. [Connect Claude](docs/guide/tutorials/connect-claude.md) walks through the setup by hand.
+Any other MCP client runs `openhal mcp` over stdio with its own agent token, as [the MCP guide](docs/interfaces/MCP.md) shows. [Connect Claude](docs/guide/tutorials/connect-claude.md) covers the manual setup.
 
 ## Docs and specification
 
-- [Documentation](https://sohan-bhat.github.io/OpenHAL/docs/) with the quickstart, guides and tutorials
-- [Specification](https://sohan-bhat.github.io/OpenHAL/spec/), with every message, error and conformance level, also in [spec/](spec/SPEC.md)
-- [The demo step by step](docs/QUICKSTART.md), a real run of the hub against a simulated [printer and camera](examples/print-babysitter/) with every message and the audit log
-- [Mapping to Anthropic's MHS](spec/MHS-MAPPING.md). OpenHAL is not affiliated with Anthropic or with the Model Hardware Standard.
+- [Documentation](https://sohan-bhat.github.io/OpenHAL/docs/)
+- [Specification](https://sohan-bhat.github.io/OpenHAL/spec/), also in [spec/](spec/SPEC.md)
+- [The demo step by step](docs/QUICKSTART.md), with the simulated [printer and camera](examples/print-babysitter/)
+- [Mapping to Anthropic's MHS](spec/MHS-MAPPING.md). OpenHAL is not affiliated with Anthropic or the Model Hardware Standard.
 
 ## Contributing
 
-You can add a driver, a device file, a hardware test report or a docs fix. [CONTRIBUTING.md](.github/CONTRIBUTING.md) covers the setup and the checks, and [the driver guide](docs/drivers/WRITING-A-DRIVER.md) covers drivers. Issues labeled [good first issue](https://github.com/sohan-bhat/OpenHAL/labels/good%20first%20issue) are small and self-contained. Report a security or safety problem privately, as [SECURITY.md](.github/SECURITY.md) describes.
+Drivers, device files, hardware test reports and docs fixes are welcome. See [CONTRIBUTING.md](.github/CONTRIBUTING.md), [the driver guide](docs/drivers/WRITING-A-DRIVER.md) and issues labeled [good first issue](https://github.com/sohan-bhat/OpenHAL/labels/good%20first%20issue). Report security or safety problems privately through [SECURITY.md](.github/SECURITY.md).
 
 ## License
 
-OpenHAL is licensed under Apache-2.0, and the full text is in [LICENSE](LICENSE). Device files in `library/` are released under CC0.
+Apache-2.0, in [LICENSE](LICENSE). Device files in `library/` are CC0.
