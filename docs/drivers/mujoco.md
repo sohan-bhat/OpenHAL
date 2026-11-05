@@ -1,20 +1,8 @@
 # mujoco driver
 
-The `mujoco` driver runs any MuJoCo model in real time as a device. Joints are reads, actuators are goal channels with limits and speeds, `move_to` puts a site at a point, and a stop holds every joint where it stands. The driver never reaches hardware and reports itself as simulated.
+The `mujoco` driver runs any MuJoCo model in real time as a device, on MuJoCo 3.3 or later, or 3.10 on Intel Macs, which have no newer wheels. Joints are reads, actuators are goal channels with limits and speeds, `move_to` puts a site at a point, and a stop holds every joint in place. The driver never reaches hardware and reports itself as simulated. `describe()` builds channels from the model's joints and actuators.
 
-| | |
-|---|---|
-| Driver name | `mujoco` |
-| Library | MuJoCo 3.3 or later (Apache-2.0), 3.10 on Intel Macs |
-| Extra | `uv tool install --compile-bytecode "halkit[mujoco] @ git+https://github.com/sohan-bhat/OpenHAL"` |
-| Hazard default | medium |
-| Conformance | full |
-| Safe state | native. Every move ends and every setpoint holds |
-| Self-describe | yes, from the model's joints and actuators |
-
-MuJoCo has no wheels for Intel Macs after 3.10, so the extra pins 3.10 there.
-
-## What it supports
+## Supports
 
 | Map | Kind | MuJoCo |
 |---|---|---|
@@ -23,56 +11,56 @@ MuJoCo has no wheels for Intel Macs after 3.10, so the extra pins 3.10 there.
 | `{ camera: overhead, width: 640, height: 480 }` on a `type: image` channel | read | a PNG frame from a camera the model names |
 | `{ actuator: gripper }`, or a channel named `<actuator>_goal` | set | the actuator's control value |
 | `{ command: move_to, site: tip }` | action | inverse kinematics on the site's Jacobian, then a move |
-| `{ command: hold }`, or an action named `hold` | action | every setpoint stays where it is |
+| `{ command: hold }`, or an action named `hold` | action | every setpoint holds |
 
-Hinge joints and their actuators are in radians and slides in metres, so any angle or length unit converts. A channel in percent spans the joint's range, or the actuator's `ctrlrange`, from its low end at 0 to its high end at 100. An actuator that doesn't drive a joint takes its unit from `map.unit`.
+Hinges are in radians and slides in metres, so any angle or length unit converts. A percent channel spans the joint's range or the actuator's `ctrlrange`, with 0 at the low end. An actuator without a joint takes `map.unit`.
 
 ### move_to
 
 | Key | Meaning |
 |---|---|
 | `site` | The site that moves |
-| `axes` | Which axis each argument sets. Arguments named `x`, `y` and `z` set their own axis |
-| `at` | Fixed coordinates for the axes no argument sets, such as `{ x: 120 mm }` |
-| `aim` | `{ axis: [1, 0, 0], toward: [0, 0, -1] }` points the site's own x axis straight down |
-| `joints` | The joints the move may turn. The default is every actuated joint in the site's chain |
+| `axes` | The axis each argument sets. Arguments named `x`, `y` and `z` set their own axis |
+| `at` | Fixed coordinates for axes no argument sets, such as `{ x: 120 mm }` |
+| `aim` | `{ axis: [1, 0, 0], toward: [0, 0, -1] }` points the site's x axis straight down |
+| `joints` | Joints the move may turn, by default every actuated joint in the site's chain |
 | `then` | Goal channels to set once the site arrives, such as `{ gripper_goal: 60 }` |
-| `speed` | The argument that sets the move's speed, such as `speed` with unit `deg/s`. Hinge joints take an angular speed and slides a linear one |
+| `speed` | The argument that sets the move's speed, angular for hinges and linear for slides |
 
-The action's arguments are the coordinates in a length unit, and their limits are the workspace box the kernel checks. The driver solves joint positions inside both the model's ranges and the file's own goal limits, and a point out of reach fails with the closest miss. Every joint moves at most at its goal channel's `max_change_per_s`, and all of them arrive together. With `speed`, every joint of that kind moves at most at the requested speed too, so the argument's `max` is a speed limit the kernel checks before the move, and a request above it is blocked with LIMIT_EXCEEDED. The argument's `min` must be above zero. Every goal channel the move changes, `then` included, must be in the action's `effects`, so the kernel reads it back after the move.
+The arguments are coordinates, and their limits are the workspace box the kernel checks. Joint solutions stay inside the model's ranges and the file's goal limits, and an unreachable point fails with the closest miss. Joints move at most at their goal channel's `max_change_per_s` and arrive together. With `speed`, the argument's `max` is a speed limit the kernel checks, blocking faster requests with LIMIT_EXCEEDED, and `min` must be above zero. Every goal channel the move changes, `then` included, must be in `effects`.
 
 ### Cameras
 
-A camera named in the MJCF model, on a fixed stand or on a moving body such as a wrist, becomes an image channel. A read renders the camera's view of one whole physics step offscreen and returns the frame as a PNG, the way the uvc and rpi_camera drivers return theirs, so an agent sees the frame through the same read tool. `width` and `height` set the frame size in pixels, 640 by 480 by default and at most 2048 on a side. The driver raises the model's offscreen buffer to fit the largest frame.
+A camera in the MJCF model, fixed or on a moving body such as a wrist, becomes an image channel that returns a PNG of one physics step, like the uvc and rpi_camera drivers. `width` and `height` default to 640 by 480, at most 2048 a side.
 
 ```yaml
 read:
   overhead: { type: image, map: { camera: overhead, width: 640, height: 480 } }
 ```
 
-Rendering uses `mujoco.Renderer`, which needs OpenGL. A machine with a display has it. On a machine without one, such as a server or a CI runner, set `MUJOCO_GL` to `egl` or `osmesa` before the hub starts. Without OpenGL a read of the image channel fails with that advice, and every other channel works as before. The renders run on one thread the driver owns, because an OpenGL context belongs to the thread that made it. The first frame of a size takes a few tenths of a second to set up, and later frames take about 10 ms.
+Rendering needs OpenGL. Without a display, set `MUJOCO_GL` to `egl` or `osmesa` before the hub starts, or image reads fail with that advice while other channels work. The first frame of a size takes a few tenths of a second, and later frames about 10 ms.
 
-## How it works
+## Behavior
 
-- connect() loads the model from the path in the environment variable `model_env` names, resets it to `keyframe` when one is set, checks every map against the model and starts stepping in real time on its own thread.
-- A goal moves along a minimum-jerk path whose peak speed is the channel's `max_change_per_s`, and a goal channel reads back where the actuator is headed. A channel with no speed jumps in one step.
-- A new goal takes over only the actuators it names, and a move already going keeps the others.
-- `move_to` waits up to `action_wait` for the move and returns `done`, or `started` when the move is still going.
+- `connect()` loads the model from the path in the `model_env` variable, resets to `keyframe` if set, checks every map and steps in real time on a separate thread.
+- A goal follows a minimum-jerk path peaking at the channel's `max_change_per_s` and reads back the target. A channel with no speed jumps in one step.
+- A new goal takes over only the actuators the goal names, and a running move keeps the rest.
+- `move_to` returns `done`, or `started` after `action_wait`.
 
 ## Safe state
 
-A stop ends every move and freezes every setpoint, so position servos hold the joints where they stand and a closed gripper keeps its grip. A device file can add steps after that. A real arm on the lerobot driver goes limp on a stop instead, so a file for a real arm keeps that arm's own safe state.
+A stop ends every move and freezes every setpoint, so servos hold the joints and a closed gripper stays closed. File steps can follow. A real arm on the lerobot driver goes limp instead, so a real arm's file keeps that arm's own safe state.
 
 ## Parameters
 
 | Key | Default | Meaning |
 |---|---|---|
-| `model_env` | required | Name of the environment variable that holds the MJCF file's path |
-| `keyframe` | none | The model keyframe to start from |
+| `model_env` | required | Variable holding the MJCF file's path |
+| `keyframe` | none | Starting keyframe |
 | `timestep` | the model's | Physics step, such as `4 ms` |
-| `action_wait` | `8 s` | How long `move_to` waits before returning `started` |
-| `tolerance` | `1 mm` | How close the site must get for a point to count as reached |
-| `aim_tolerance` | `3 deg` | How close the aim must get |
+| `action_wait` | `8 s` | Time before `move_to` returns `started` |
+| `tolerance` | `1 mm` | Distance that counts as reached |
+| `aim_tolerance` | `3 deg` | Aim error that counts as reached |
 
 ## Example device file
 
@@ -105,14 +93,14 @@ The bench arm's model is `BENCH_ARM` in `openhal/drivers/mujoco/conformance.py`.
 
 ## Known limitations
 
-- `move_to` follows a straight line in joint space, not in space, so a long move can bow. Short moves near the work stay close to straight.
-- A stop freezes setpoints, and a joint that lagged behind its setpoint settles onto it within a few hundredths of a second.
-- The physics thread shares the Python interpreter with the hub, so a busy hub can leave simulated time a little behind the clock. The health detail shows how far.
-- A camera frame is a render of the model's own geometry and lights, with no lens distortion or noise.
+- `move_to` moves in a straight line in joint space, so long moves can bow.
+- After a stop, a joint that lagged the setpoint settles onto the setpoint within a few hundredths of a second.
+- A busy hub can leave simulated time a little behind the clock, as the health detail shows.
+- Camera frames have no lens distortion or noise.
 
 ## Hazard defaults
 
-The default hazard is `medium`. A simulation can't hurt anyone, but a file written for a simulated machine is often the draft of one for the real machine, which may need `high`.
+`medium`, since a file for a simulated machine is often the draft for a real one, which may need `high`.
 
 ## Sources
 
