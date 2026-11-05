@@ -1,6 +1,6 @@
 # Quickstart
 
-This guide runs the demo, an agent keeping an eye on a simulated 3D print, then a [Hub](glossary:hub) you control with the simulated Arduino plant waterer. Nothing in this guide touches real hardware.
+Run the demo of an agent watching a simulated 3D print, then a [Hub](glossary:hub) of your own with a simulated Arduino plant waterer. Nothing here touches real hardware.
 
 ## Install
 
@@ -18,7 +18,7 @@ irm https://sohan-bhat.github.io/OpenHAL/install.ps1 | iex
 ```
 <!-- install:end -->
 
-The installer puts uv, Python and OpenHAL in place, so you need nothing installed first. [Install](install.md) also covers uv, pipx and a clone of the repository.
+The installer needs nothing installed first. [Install](install.md) also covers uv, pipx and a clone.
 
 ## Run the demo
 
@@ -26,12 +26,12 @@ The installer puts uv, Python and OpenHAL in place, so you need nothing installe
 $ openhal demo
 ```
 
-The demo starts a hub with a simulated Klipper printer and its camera, and connects an agent to watch a print. The agent reads camera frames and warms the bed, the hub blocks the agent's request for a nozzle temperature above the limit, and the agent pauses the print and sends a request to cancel the print. Because a cancel can't be undone, the hub holds the cancel until the owner approves the cancel over the same protocol. The demo prints these messages, one step at a time.
+The demo connects an agent to a hub with a simulated Klipper printer and its camera, then prints each message.
 
 ```scenario
 ```
 
-[The full example](/docs/examples/3d-print-watch/) walks through the same run step by step, with every message and the audit log.
+[The full example](/docs/examples/3d-print-watch/) shows the same run with the audit log.
 
 ## Run the whole system
 
@@ -41,11 +41,11 @@ $ openhal demo --full
 <- error -32010 LIMIT_EXCEEDED
 ```
 
-`--full` runs the whole system with the Arduino plant waterer, starting from a hub with no devices that discovers the simulated board. The driver writer builds a draft of the board's [Device File](glossary:device-file) from the board and the sketch, and a script fills in the limits interview the way a person would. An agent then connects through `openhal mcp` and drafts a routine, which a person enables. The routine waters the plant. Because 120 s is above the duration limit, the agent's request to water for 120 s never reaches the board. Every step is recorded in [e2e.yaml](../demo/e2e.yaml).
+`--full` starts from an empty hub, discovers the simulated plant waterer board and drafts the board's [Device File](glossary:device-file) with the driver writer. A script fills in the limits interview, and an agent connects through `openhal mcp` and drafts a routine that a person enables. The duration limit blocks the agent's request to water for 120 s before the request reaches the board. [e2e.yaml](../demo/e2e.yaml) records every step.
 
 ## Run the hub yourself
 
-`init` creates `~/.openhal` with a human token and a [Device File](glossary:device-file) for the simulated plant waterer. Every channel and action has a risk level, and the plant waterer's are medium, so the file takes commands at once within the board's own range. `openhal risk show plant-waterer` lists each level.
+`init` creates `~/.openhal` with a human token and a [Device File](glossary:device-file) for the simulated plant waterer. The plant waterer is medium risk, so the board takes commands at once within the board's own range. `openhal risk show plant-waterer` lists each level.
 
 ```sh tested
 $ openhal init
@@ -55,13 +55,13 @@ $ openhal status
 devices 1 of 1 connected
 ```
 
-The hub listens on `127.0.0.1:7420` only. A high risk channel, such as a heater, stays read-only until you answer its limits with `openhal file confirm`, and a running hub loads each confirmed file at once, so a confirm never needs a restart.
+The hub listens on `127.0.0.1:7420` only. A high risk channel such as a heater stays read-only until you confirm the limits with `openhal file confirm`. A running hub loads each confirmed file with no restart.
 
 ## Your first device
 
-Plug in a board running the OpenHAL firmware, or an ESPHome node, and run `openhal init` again. Init finds the device, and its low and medium channels, such as an LED or a pump, take commands at once within the device's own range. For a high risk channel, such as a heater, init shows the limits interview. Each question names one channel, its unit and a suggestion, such as "brightness, in percent. The most an agent may set. Suggested 100 %." Enter keeps the suggestion, a typed value replaces the suggestion, and a value past what the device reports is asked again with the reason. You type `confirm` once at the end, and the device is writable. The Inspector's Review limits action on a read-only device shows the same questions.
+Plug in a board running the OpenHAL firmware, or an ESPHome node, and run `openhal init` again. Low and medium channels such as an LED or a pump take commands at once within the device's own range. A high risk channel opens the limits interview, one question per limit with a suggestion. Enter keeps the suggestion, a typed value replaces the suggestion, and you type `confirm` once at the end. The Inspector's Review limits action shows the same questions.
 
-To raise a limit later, run `openhal limits set DEVICE.CHANNEL --max VALUE` and type `confirm`. A narrower limit applies at once, and a wider limit asked for from a script or an agent waits in `openhal confirm list` for you to approve.
+To raise a limit later, run `openhal limits set DEVICE.CHANNEL --max VALUE` and type `confirm`. A narrower limit applies at once. A wider limit from a script or an agent is held in `openhal confirm list` until you approve.
 
 ## Send two commands
 
@@ -72,11 +72,11 @@ $ openhal action plant-waterer.water duration=20s
 done  Done. water ran.
 ```
 
-Because the duration in the first command is above the limit, the [Safety Kernel](glossary:safety-kernel) blocked the command before anything reached the board. Over the protocol, the hub returns `error -32010 LIMIT_EXCEEDED` for the same command.
+The first duration is above the limit, so the [Safety Kernel](glossary:safety-kernel) blocked the command before the command reached the board. Over the protocol, the same command returns `error -32010 LIMIT_EXCEEDED`.
 
 ## Stop
 
-Any client may stop every device, but lifting the stop takes the human token and the typed phrase `unlock`.
+Any client may stop every device. Lifting the stop takes the human token and the typed phrase `unlock`.
 
 ```sh tested
 $ openhal stop
