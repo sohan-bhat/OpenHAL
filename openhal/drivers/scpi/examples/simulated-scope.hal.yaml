@@ -1,0 +1,41 @@
+# The built-in simulated bench oscilloscope, with no hardware. Its generator drives a small test
+# board, an RC low-pass filter of 1 kOhm and 100 nF, and the probe on channel 1 hooks onto the
+# filter's output. The board's input is rated for 2 V peak to peak, so the generator's amplitude
+# stops at 2 V although the generator itself makes up to 5 V.
+device: { name: Simulated bench oscilloscope, model: SIM-SCOPE-4 (simulated), manufacturer: OpenHAL }
+id: scope
+match: { scpi_idn: "^OpenHAL,SIM-SCOPE-4" }
+connect: { scpi: "sim:scope", timeout: 3 s }
+read:
+  screen: { type: image, map: { query: ":DISP:DATA? PNG" } }
+  trigger_status: { type: enum, values: [triggered, auto, waiting, stopped], map: { query: ":TRIG:STAT?", lookup: { TD: triggered, AUTO: auto, WAIT: waiting, STOP: stopped } } }
+  frequency: { unit: Hz, map: { query: ":MEAS:FREQ? CHAN1" } }
+  period: { unit: ms, map: { query: ":MEAS:PER? CHAN1", unit: s } }
+  vpp: { unit: V, map: { query: ":MEAS:VPP? CHAN1" } }
+  vmax: { unit: V, map: { query: ":MEAS:VMAX? CHAN1" } }
+  vmin: { unit: V, map: { query: ":MEAS:VMIN? CHAN1" } }
+  vrms: { unit: V, map: { query: ":MEAS:VRMS? CHAN1" } }
+  rise_time: { unit: us, map: { query: ":MEAS:RIS? CHAN1", unit: s } }
+write:
+  ch1_scale: { unit: V, min: 1 mV, max: 10 V, map: { set: ":CHAN1:SCAL {value}", get: ":CHAN1:SCAL?" } }
+  ch1_offset: { unit: V, min: -5 V, max: 5 V, map: { set: ":CHAN1:OFFS {value}", get: ":CHAN1:OFFS?" } }
+  timebase: { unit: s, min: 5 ns, max: 50 s, map: { set: ":TIM:SCAL {value}", get: ":TIM:SCAL?" } }
+  trigger_level: { unit: V, min: -5 V, max: 5 V, map: { set: ":TRIG:EDGE:LEV {value}", get: ":TRIG:EDGE:LEV?" } }
+  trigger_slope: { type: enum, values: [rising, falling], map: { set: ":TRIG:EDGE:SLOP {value}", get: ":TRIG:EDGE:SLOP?", lookup: { POS: rising, NEG: falling } } }
+  gen_output: { type: bool, map: { set: ":OUTP {on_off}", get: ":OUTP?" } }
+  gen_function: { type: enum, values: [sine, square], map: { set: ":SOUR:FUNC {value}", get: ":SOUR:FUNC?", lookup: { SIN: sine, SQU: square } } }
+  gen_frequency: { unit: Hz, min: 1 Hz, max: 100 kHz, map: { set: ":SOUR:FREQ {value}", get: ":SOUR:FREQ?" } }
+  gen_amplitude: { unit: V, min: 10 mV, max: 2 V, map: { set: ":SOUR:VOLT {value}", get: ":SOUR:VOLT?" } }
+actions:
+  run: { description: Acquire continuously., map: { command: ":RUN" } }
+  stop: { description: Stop acquiring and hold the screen., map: { command: ":STOP" } }
+  single: { description: Capture the next triggered acquisition and stop., map: { command: ":SING" } }
+safe_state:
+  - { gen_output: false }
+safe_state_note: "The safe state turns the generator's output off. The scope keeps acquiring."
+hazard: low
+notes: >-
+  screen is a picture of the scope's display, 10 divisions wide and 8 tall, with channel 1 in
+  yellow. ch1_scale is volts a division and timebase is seconds a division. gen_amplitude is
+  peak to peak. A measurement read fails when the trace runs off the screen or when the screen
+  holds less than one cycle or too many cycles to resolve.
