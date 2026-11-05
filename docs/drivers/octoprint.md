@@ -1,91 +1,60 @@
 # octoprint driver
 
-The `octoprint` driver connects to printers that OctoPrint controls, through OctoPrint's REST API. The driver reads temperatures, the printer state and job progress, sets heater targets and the part fan, and runs homing and job control. Channel names match the moonraker driver where the API allows it.
+The `octoprint` driver connects to printers that OctoPrint controls, through OctoPrint's REST API with httpx. The driver reads temperatures, printer state and job progress, sets heater targets and the part fan, and runs homing and job control. Channel names match the moonraker driver where the API allows. `describe()` builds channels from the current printer profile.
 
-| | |
-|---|---|
-| Driver name | `octoprint` |
-| Library | httpx 0.28.1 (BSD-3-Clause) |
-| Extra | `uv tool install --compile-bytecode "halkit[octoprint] @ git+https://github.com/sohan-bhat/OpenHAL"` |
-| Hazard default | medium |
-| Safe state | native. Every heater in the file, plus tool0 and the bed, gets target 0 |
-| Self-describe | yes, from the current printer profile |
-
-## What it supports
+## Supports
 
 | Channel name | Kind | Endpoint |
 |---|---|---|
-| `state` | read, enum (standby, printing, paused, cancelling, error, offline) | `GET /api/printer`, from `state.flags` |
-| `state_text` | read, string | `state.text`, for example `Operational` |
+| `state` | read, enum of standby, printing, paused, cancelling, error, offline | `GET /api/printer`, from `state.flags` |
+| `state_text` | read, string | `state.text`, such as `Operational` |
 | `extruder_temp`, `bed_temp`, `chamber_temp` | read, temperature | `temperature.tool0`, `bed`, `chamber` |
-| `progress`, `filename` | read | `GET /api/job` (`progress.completion`, unknown with no job) |
+| `progress`, `filename` | read | `GET /api/job`, with `progress.completion` unknown without a job |
 | `extruder_target`, `bed_target`, `chamber_target` | write, temperature | `POST /api/printer/tool`, `/bed`, `/chamber` with `command: target` |
 | `fan_speed` | write, percent | `POST /api/printer/command` with `M106 P0 S0..255` |
-| `home` (arg `axes` x, y, z, xy or all) | action | `POST /api/printer/printhead` with `command: home` |
+| `home` with `axes` x, y, z, xy or all | action | `POST /api/printer/printhead` with `command: home` |
 | `pause`, `resume`, `cancel` | action | `POST /api/job` |
 
-Other names need a `map`, such as `{ heater: tool1 }` (or `tool0` to `tool9`, `bed`, `chamber`) with `field: actual` or `field: target` for reads, and `{ heater: tool1 }` or `{ fan: 1 }` for writes. Actions take `{ command: home }` and so on under another name.
+Other names take a `map`. Reads use `{ heater: tool1 }`, `tool0` to `tool9`, `bed` or `chamber`, with `field: actual` or `field: target`. Writes use `{ heater: tool1 }` or `{ fan: 1 }`, and actions use `{ command: home }` and the like.
 
-Temperatures are degC on the wire and converted to the channel unit both ways.
+## Behavior
 
-## How the protocol is handled
+- The API key from `token_env` goes out as `X-Api-Key`. A missing variable fails the connect, and a 403 means a bad key.
+- A 409, for a disconnected printer or a wrong state, fails the command and `state` reads `offline`.
+- `health()` counts a non-operational printer as disconnected.
+- `fan_speed` reads back the last value sent, since OctoPrint has no fan read, and unknown before the first write or after a failed one.
+- `home` returns `queued`, since OctoPrint queues homing.
 
-- The API key comes from the environment variable named in `token_env` (default `OCTOPRINT_API_KEY`) and is sent as `X-Api-Key`. A missing variable fails the connect before any request, and a 403 means OctoPrint didn't accept the key.
-- OctoPrint returns 409 when the printer isn't connected or the operation doesn't fit the current state. The driver turns that into an error stating that the printer can't run the operation now, and `state` reads `offline`.
-- `health()` reads `/api/printer`, and a printer that isn't operational counts as disconnected.
-- OctoPrint has no fan read, so `fan_speed` reads back the last value this driver sent, and unknown before the first write or after a failed one.
-- Homing is queued by OctoPrint and the request returns at once, so the action returns `queued`.
+## Safe state
+
+Every heater in the file, plus tool0 and the bed, gets target 0.
 
 ## Setup
 
-1. Install the extra with `uv tool install --compile-bytecode "halkit[octoprint] @ git+https://github.com/sohan-bhat/OpenHAL"`.
-2. In OctoPrint, open Settings, Application Keys, and create a key for OpenHAL. A user with the Control permission is enough.
-3. Export the key, for example `export OCTOPRINT_API_KEY=...`, in the environment the hub runs in.
+1. Install with `uv tool install --compile-bytecode "halkit[octoprint] @ git+https://github.com/sohan-bhat/OpenHAL"`.
+2. In OctoPrint under Settings, Application Keys, create a key for a user with the Control permission.
+3. Run `export OCTOPRINT_API_KEY=...` where the hub runs.
 4. Start from `openhal/drivers/octoprint/examples/prusa-mk3s-octopi.hal.yaml`.
-5. Validate with `openhal file validate`, then confirm the limits by hand.
-
-## Parameters
 
 | Key | Default | Meaning |
 |---|---|---|
-| `host` | required | OctoPrint host name or address |
+| `host` | required | OctoPrint host |
 | `port` | 80 | HTTP port |
 | `scheme` | `http` | `http` or `https` |
-| `path` | empty | Prefix when OctoPrint runs under a sub path, for example `/octoprint` |
-| `token_env` | `OCTOPRINT_API_KEY` | Environment variable that holds the API key |
-| `timeout` | `5 s` | Deadline for each request |
-
-## Example device file
-
-```yaml
-device: { name: Prusa MK3S, manufacturer: Prusa Research }
-id: mk3s
-connect: { octoprint: octopi.local, token_env: OCTOPRINT_API_KEY }
-read:
-  state: { type: enum, values: [standby, printing, paused, cancelling, error, offline], every: 2 s }
-  extruder_temp: { unit: degC, every: 2 s }
-  bed_temp: { unit: degC, every: 2 s }
-write:
-  extruder_target: { unit: degC, min: 0, max: 260, max_change_per_s: 50, confirm: confirm }
-  bed_target: { unit: degC, min: 0, max: 100, max_change_per_s: 20 }
-  fan_speed: { unit: percent, min: 0, max: 100 }
-actions:
-  home: { args: { axes: { type: enum, values: [x, y, z, xy, all] } }, require: ["state != printing"] }
-safe_state:
-  - { extruder_target: 0, bed_target: 0, fan_speed: 0 }
-hazard: medium
-```
+| `path` | empty | Sub path prefix such as `/octoprint` |
+| `token_env` | `OCTOPRINT_API_KEY` | Variable holding the API key |
+| `timeout` | `5 s` | Per request |
 
 ## Known limitations
 
-- File upload, selection and starting prints are not exposed.
-- The fan speed can't be read from the printer, and a fan change made on the printer's own display isn't seen.
-- Because printer profiles don't record heater maxima, the channels `describe()` returns use placeholder heater maxima (250, 100 and 60 degC), so lower the maxima to your printer's real limits.
-- The driver can't check the printer's firmware thermal protection, which remains the last line of defense.
+- No file upload, selection or print start.
+- Fan changes made on the printer's display don't show.
+- Printer profiles hold no heater maxima, so `describe()` uses placeholders of 250, 100 and 60 degC. Lower the placeholders to the printer's real limits.
+- The driver can't check the firmware's thermal protection.
 
 ## Hazard defaults
 
-The default hazard is `medium`, because heaters and moving axes can burn or pinch, so keep `confirm: confirm` on the hotend target and on `home`.
+`medium`. Keep `confirm: confirm` on the hotend target and `home`.
 
 ## Sources
 

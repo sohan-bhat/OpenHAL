@@ -1,15 +1,14 @@
 # mqtt driver
 
-The mqtt driver reads devices that publish their state on MQTT topics and controls devices that take commands on topics, through a broker such as Mosquitto. The driver uses paho-mqtt and MQTT 3.1.1. Each channel's map names the state topic, the command topic and how the payload is written, so Tasmota, Zigbee2MQTT, ESPHome, Shelly and homemade boards all work without device-specific code.
+The mqtt driver reads device state from MQTT topics and publishes commands through a broker such as Mosquitto, with paho-mqtt and MQTT 3.1.1. Channel maps name the state topic, the command topic and the payload format, so Tasmota, Zigbee2MQTT, ESPHome, Shelly and homemade boards need no device-specific code.
 
-## What it supports
+## Supports
 
-- Read channels of type number, bool, string and enum from raw payloads (`21.5`, `ON`) or JSON payloads with a JSON path.
-- Write channels that publish raw words, numbers, JSON built from a path, or a JSON template.
-- Retained messages seed reads right after connecting, and live messages replace the retained ones as they arrive.
-- QoS 0 or 1 for commands, and an optional retain flag.
-- Username and password, with the password from an environment variable, and TLS.
-- `describe()` listens on the broker for a moment and returns suggested read channels from the topics that carry messages.
+- Number, bool, string and enum reads from raw payloads such as `21.5` and `ON`, or from JSON through a JSON path.
+- Writes that publish raw words, numbers, JSON built from a path, or a JSON template, at QoS 0 or 1 with an optional retain flag.
+- Retained messages seed reads on connect.
+- Username and password from an environment variable, and TLS.
+- `describe()` listens briefly and suggests reads from active topics, all `dimensionless` until units are set.
 
 ## Setup
 
@@ -17,26 +16,20 @@ The mqtt driver reads devices that publish their state on MQTT topics and contro
 uv tool install --compile-bytecode "halkit[mqtt] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-You need a broker the hub can reach, and Mosquitto works well and runs on a Raspberry Pi.
-
-## Parameters
-
 | Parameter | Default | Meaning |
 |---|---|---|
-| `host` | required | Broker address. The shorthand `mqtt: 192.168.1.10` sets it |
-| `port` | `1883` | Broker port. TLS brokers usually use `8883` |
-| `client_id` | `oh-` and the device id with a short hash | At most 23 characters, as MQTT 3.1.1 servers must accept. Each device needs its own, because a broker drops the older session when two clients share an id |
-| `username` | none | Broker user name |
-| `token_env` | none | Name of an environment variable holding the broker password |
-| `tls`, `ca_env` | `false`, none | Use TLS. `ca_env` names an environment variable that holds the path of a CA bundle, since a device file never names a path |
-| `keepalive` | `30` | Keep-alive interval in seconds |
+| `host` | required | Broker address. `mqtt: 192.168.1.10` is shorthand |
+| `port` | `1883` | Broker port, usually `8883` with TLS |
+| `client_id` | `oh-` plus the device id and a short hash | At most 23 characters. Each device needs a unique id, since a broker drops the older session on a clash |
+| `username` | none | Broker user |
+| `token_env` | none | Variable holding the broker password. Parameter names with `password` fail to load |
+| `tls`, `ca_env` | `false`, none | TLS, with `ca_env` naming a variable that holds a CA bundle path |
+| `keepalive` | `30` | Keep-alive in seconds |
 | `timeout` | `5 s` | Connect and acknowledgement deadline |
-| `qos` | `1` | Default QoS for commands |
-| `prefix` | `""` | Prepended to every topic in the maps |
-| `retain_commands` | `false` | Default retain flag for commands |
-| `discover_topic` | `#` | Topic filter `describe()` listens on, under `prefix` |
-
-Because the device file loader reports an error for any parameter whose name contains `password`, the password parameter is `token_env` rather than `password_env`.
+| `qos` | `1` | Default command QoS |
+| `prefix` | `""` | Prepended to every topic |
+| `retain_commands` | `false` | Default command retain flag |
+| `discover_topic` | `#` | Topic filter for `describe()`, under `prefix` |
 
 ## Channel maps
 
@@ -57,43 +50,37 @@ write:
 
 | Key | Default | Meaning |
 |---|---|---|
-| `state` | required for reads | Exact topic the device publishes on. Wildcards are not allowed |
-| `command` | required for writes | Exact topic the driver publishes commands to |
+| `state` | required for reads | Exact topic the device publishes on, no wildcards |
+| `command` | required for writes | Exact command topic |
 | `format` | `raw` | `raw` text or `json` |
-| `json` | none | JSON path to the value, such as `$.ENERGY.Power`. For commands, the JSON is built from the path |
-| `template` | none | A JSON template for commands, such as `{ state: "{value}", transition: 2 }` |
-| `on`, `off` | `ON` and `OFF` for raw commands | Words for bool channels. Reads accept a list |
-| `scale`, `offset` | `1`, `0` | channel value = payload value × scale + offset. Commands send the inverse, and results within one millionth of a whole number go out as integers |
+| `json` | none | JSON path such as `$.ENERGY.Power`, also used to build command JSON |
+| `template` | none | Command JSON template such as `{ state: "{value}", transition: 2 }` |
+| `on`, `off` | `ON` and `OFF` for raw commands | Bool words. Reads accept a list |
+| `scale`, `offset` | `1`, `0` | value = payload × scale + offset. Commands send the inverse, near-integers as integers |
 | `qos`, `retain` | from the parameters | Per-command override |
 
-A write channel without a `state` topic reads back the last value the driver sent, or no value before the first write.
+A write channel without `state` reads back the last value sent.
 
-## How reads and writes behave
+## Behavior
 
-- Because MQTT only pushes, the driver subscribes to every state topic and keeps the newest message per topic, and a read returns that message with the time the message arrived. A topic that has had no message since connecting reads as no value (`None`), which the kernel treats as unknown.
-- Commands are never queued, so a write while the broker is down fails, and paho's automatic reconnect is off so nothing is replayed later on a new connection. The hub's heartbeat reconnects with a fresh client.
-- A QoS 1 command waits for the broker's PUBACK. Without the PUBACK the write fails with `TimeoutError` and the driver drops the connection, so the broker can't deliver the command late. A PUBACK shows that the broker has the message but not that the device acted, so watch the state topic to see whether the device acted.
+- Reads return the newest message per state topic, or `None` before the first message.
+- Commands are never queued and paho's reconnect is off, so a write during a broker outage fails and nothing replays later. The heartbeat reconnects with a fresh client.
+- A QoS 1 command without a PUBACK within `timeout` fails with `TimeoutError` and drops the connection, so no command arrives late. A PUBACK shows only that the broker has the message, so watch the state topic.
+- An unreachable broker, failed authentication, a missing password variable and payloads that don't parse as the channel's type raise `DriverError`.
 
 ## Example
 
-`openhal/drivers/mqtt/examples/tasmota-plug.hal.yaml` reads power and energy from a Tasmota plug and switches its relay. Set `PowerRetain 1` on the plug so the relay state is retained.
-
-## Errors
-
-- Unreachable broker, failed authentication and a missing password variable raise `DriverError`.
-- A payload that is not a number, not JSON, missing the JSON field, not an on or off word, or an enum value outside the list raises `DriverError` on read.
-- No CONNACK or PUBACK within `timeout` raises `TimeoutError` or `DriverError` with the topic.
+`openhal/drivers/mqtt/examples/tasmota-plug.hal.yaml` reads power and energy from a Tasmota plug and switches the relay. Set `PowerRetain 1` on the plug so the relay state is retained.
 
 ## Limitations
 
-- The driver uses MQTT 3.1.1 only and doesn't use MQTT 5 properties.
-- The driver doesn't support binary or protobuf payloads or image channels.
-- The driver has no actions, so model each command topic as a write channel.
-- `describe()` only finds topics that carry messages while `describe()` listens, so `describe()` returns reads only, all `dimensionless` until you set the units.
+- MQTT 3.1.1 only, with no MQTT 5 properties.
+- No binary or protobuf payloads and no image channels.
+- No actions. Model each command topic as a write channel.
 
 ## Hazard default and safe state
 
-The default hazard is medium, because MQTT topics can switch anything. MQTT has no emergency behavior of its own, so `safe_state_support` is `file`. The hub publishes the device file's `safe_state` like any other command, which needs both the broker and the device to be up. Use the device's own power-on and connection-loss behavior (Tasmota `PowerOnState`, for example) as the real fallback.
+Medium, since MQTT topics can switch anything. `safe_state_support` is `file`, published while the broker and device are up. The device's own power-on and connection-loss behavior, such as Tasmota `PowerOnState`, is the real fallback.
 
 ## Sources
 
