@@ -1,102 +1,65 @@
 # sila2 driver
 
-The `sila2` driver connects to lab automation devices through SiLA 2, using the official `sila2` Python package. Properties become read channels, observable properties become streams, and commands become actions and the way channels change.
+The `sila2` driver connects to SiLA 2 lab automation devices with the `sila2` package 0.14.0, loading features from the server's Feature Definitions. Properties become reads or streams, and commands become actions and channel changes. `describe` drafts a file from the definitions.
 
-| | |
-|---|---|
-| Driver name | `sila2` |
-| Library | sila2 0.14.0 (MIT), with grpcio 1.84 (Apache-2.0) and lxml 6 (BSD-3-Clause) |
-| Extra | `uv tool install --compile-bytecode "halkit[sila2] @ git+https://github.com/sohan-bhat/OpenHAL"` |
-| Hazard default | medium |
-| Conformance | full |
-| Safe state | from the device file. SiLA has no general emergency behavior |
-| Self-describe | yes, from the server's Feature Definitions |
+## Supports
 
-## What it supports
-
-Every channel and action names its SiLA feature in a `map`. The client loads each feature from the server's own Feature Definition, so no generated code is needed.
+Every channel and action names a SiLA feature in a `map`.
 
 | Map | Meaning |
 |---|---|
-| `{ feature: TemperatureController, property: CurrentTemperature }` | A property. An observable one is a stream |
+| `{ feature: TemperatureController, property: CurrentTemperature }` | A property. Observable properties stream |
 | `{ feature: TemperatureController, property: DeviceState, field: LidClosed }` | One element of a structure property |
 | `{ feature: TemperatureController, command: SetTargetTemperature, parameter: TargetTemperature, readback: TargetTemperature }` | A channel that changes through a command and reads back from a property |
-| `{ feature: ShakeController, command: Shake, parameters: { rpm: Speed, seconds: Duration } }` | An action. Each argument names the parameter it fills |
-| `{ ..., base: { Mode: Gentle } }` | Fixed values for the other parameters of a command |
+| `{ feature: ShakeController, command: Shake, parameters: { rpm: Speed, seconds: Duration } }` | An action, each argument naming a parameter |
+| `{ ..., base: { Mode: Gentle } }` | Fixed values for the command's other parameters |
 
-`feature` is the feature identifier, or its fully qualified form such as `org.example/lab/TemperatureController/v1` to pin a version. `unit` overrides the Unit constraint and `scale` multiplies the SiLA value.
+`feature` is the identifier, or the fully qualified form such as `org.example/lab/TemperatureController/v1` to pin a version. `unit` overrides the Unit constraint and `scale` multiplies the value.
 
 ## How the protocol is handled
 
-- connect() opens the gRPC channel and checks every feature, property, command and parameter the file names, with their types. Anything that doesn't fit stops the connect with a reason.
-- Units come from each data type's Unit constraint label, and a channel whose unit can't be converted from that label's unit fails the connect.
-- Unobservable properties are read on demand. Observable properties are subscribed on connect and the newest value is kept, so a read costs no round trip and is unknown until the first value arrives.
-- SiLA properties are read-only, so a channel changes through a command with one parameter. Without `readback`, the channel reads back as the last value the driver sent.
-- An observable command waits up to `action_wait` and returns `done` with its responses, or returns `started` and keeps running on the server.
-- Defined execution errors fail the command with their identifier and message, for example `TooHot`. Constraint violations come back as validation errors.
-- The sila2 client is blocking, so every call runs in a worker thread with a deadline. Because the client compiles each feature definition, connecting gets 8 s.
-- sila2 0.14 loads two builds of its framework protos, which protobuf's default implementation reports as a conflict once another package, such as the ESPHome driver's aioesphomeapi, has loaded protobuf. The driver registers one build under both names first, so SiLA devices work next to every other driver in one hub.
+- Connect checks every named feature, property, command, parameter, type and unit, and allows 8 s for feature compilation.
+- Observable properties stream from connect, and others read on demand.
+- A channel changes through a one-parameter command and reads back the last value sent without `readback`.
+- An observable command returns `done` within `action_wait`, or `started`.
+- Execution errors fail the command with identifier and message, such as `TooHot`, and constraint violations return validation errors.
+- sila2 0.14 loads two builds of the framework protos, which conflict once another package such as aioesphomeapi loads protobuf. The driver registers one build under both names, so SiLA runs beside every other driver.
 
 ## Safe state
 
-SiLA has no general stop command, and the core features have none either, so the driver has no native safe state. Give the device file a `safe_state` with the device's own stop commands and safe setpoints. The safe state's steps run in order on every stop.
+SiLA has no general stop, so give the file a `safe_state` with the device's own stop commands and safe setpoints.
 
 ## Discovery
 
-`openhal discover` listens for `_sila._tcp.local.` services with mDNS for 2 s and lists each server with its address and the values from its TXT record, and listening never touches a device.
+`openhal discover` lists `_sila._tcp.local.` mDNS services heard within 2 s.
 
 ## Setup
 
-1. Install the extra with `uv tool install --compile-bytecode "halkit[sila2] @ git+https://github.com/sohan-bhat/OpenHAL"`.
-2. Get the server's CA certificate (SiLA servers encrypt by default, many with a self-signed CA in their mDNS record) and save it as a PEM file.
-3. Start from `openhal/drivers/sila2/examples/thermoshaker.hal.yaml`, or call `describe` for a draft, and keep only what you need.
-4. Run `openhal file validate`, then confirm the limits by hand.
-
-## Parameters
+1. Install with `uv tool install --compile-bytecode "halkit[sila2] @ git+https://github.com/sohan-bhat/OpenHAL"`.
+2. Save the server's CA certificate as a PEM file, since SiLA servers encrypt by default, often with a self-signed CA in the mDNS record.
+3. Start from `openhal/drivers/sila2/examples/thermoshaker.hal.yaml` or `describe`.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `host` | required | SiLA server host name or address |
-| `port` | 50052 | SiLA server port |
-| `insecure` | false | Connect without encryption, for development servers only |
-| `ca_env` | none | The name of an environment variable that holds the path of the server's CA certificate, a PEM file. The device file never names the path itself |
+| `host` | required | Server host |
+| `port` | 50052 | Server port |
+| `insecure` | false | No encryption, for development servers only |
+| `ca_env` | none | Variable holding the CA certificate PEM path |
 | `timeout` | `5 s` | Per call |
-| `action_wait` | `8 s` | How long an observable command waits before returning `started`. At most 9 s |
-
-## Example device file
-
-```yaml
-device: Thermoshaker
-id: thermoshaker
-connect: { sila2: thermoshaker.lab.local, port: 50052, ca_env: THERMOSHAKER_CA }
-read:
-  temperature: { unit: degC, stream: true, map: { feature: TemperatureController, property: CurrentTemperature } }
-write:
-  target:
-    unit: degC
-    min: 4
-    max: 60
-    map: { feature: TemperatureController, command: SetTargetTemperature, parameter: TargetTemperature, readback: TargetTemperature }
-actions:
-  stop_shaking: { map: { feature: ShakeController, command: StopShaking } }
-safe_state:
-  - { action: stop_shaking }
-  - { target: 22 }
-hazard: medium
-```
+| `action_wait` | `8 s` | Time before an observable command returns `started`, at most 9 s |
 
 ## Known limitations
 
-- Lists, binaries, dates, times and nested structures in parameters are not sent yet. Structure properties are read one element at a time.
-- Because SiLA's CancelController is optional and rarely implemented, running observable commands can't be cancelled, so use the device's own stop command.
-- SiLA metadata, such as lock identifiers from LockController, is not sent.
+- No lists, binaries, dates, times or nested structures in parameters yet.
+- Running observable commands can't be cancelled. Use the device's own stop command.
+- No SiLA metadata such as LockController lock identifiers.
 
 ## Hazard defaults
 
-The default hazard is `medium`, because lab devices heat, spin and move plates. Raise the file's hazard to `high` for devices that can injure, such as centrifuges and robotic arms.
+`medium`, since lab devices heat, spin and move plates. Use `high` for devices that can injure, such as centrifuges and robotic arms.
 
 ## Sources
 
-- SiLA 2 Part A (overview and concepts) and Part B (mapping to gRPC), https://sila-standard.com/standards/
+- SiLA 2 Part A, overview and concepts, and Part B, mapping to gRPC, https://sila-standard.com/standards/
 - SiLA feature definition schema and core features, https://gitlab.com/SiLA2/sila_base
 - sila2 Python package documentation, https://sila2.gitlab.io/sila_python/
