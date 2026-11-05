@@ -49,7 +49,7 @@ OpenHAL runs on Python 3.12 or newer. [The install guide](docs/guide/install.md)
 
 ## Why OpenHAL
 
-Agents usually reach each printer or lab instrument through a script or MCP server made for that one device, with the limits in that server's code. OpenHAL gives every device one file format and one hub that checks every command.
+Agents usually reach each printer or lab instrument through a script or MCP server made for that one device, with the limits in that server's code. OpenHAL is a universal driver specification instead. Agents discover, integrate and control lab and manufacturing equipment through one standard set of commands such as `read` and `write`, and every command is checked against the device's limits.
 
 ## How it works
 

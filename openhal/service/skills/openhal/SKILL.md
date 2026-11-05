@@ -1,6 +1,6 @@
 ---
 name: openhal
-description: Read and control hardware through OpenHAL, where every device has one file with its limits and one hub checks every command. Use for /openhal, for what an agent may do on a device, or to read, set, move or set up a device.
+description: Discover, read and control lab and manufacturing equipment through OpenHAL, the universal driver specification with one standard set of read and write commands. Use for /openhal, for what an agent may do on a device, or to read, set, move or set up a device.
 argument-hint: "[a task, or limits, setup or routine]"
 ---
 
@@ -8,12 +8,12 @@ argument-hint: "[a task, or limits, setup or routine]"
 
 The person typed /openhal $ARGUMENTS
 
-Each device has one file with its channels, units, limits and risk levels. The hub checks every command against that file. In Claude Code the tools start with mcp__openhal__.
+OpenHAL gives every device the same read and write commands, and a device file sets each device's units, limits and risk levels. OpenHAL checks every command against that file. In Claude Code the tools start with mcp__openhal__.
 
 ## Check the connection
 
 1. If mcp__openhal__hub_status is missing, tell the person to run openhal init, say yes to Claude Code, run openhal start and reconnect in /mcp. Stop.
-2. Call hub_status. If the hub doesn't answer, tell the person to run openhal start. Stop.
+2. Call hub_status. If OpenHAL doesn't answer, tell the person to run openhal start. Stop.
 
 ## Do the task
 

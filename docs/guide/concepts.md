@@ -1,6 +1,6 @@
 # Concepts
 
-OpenHAL is an open protocol for agents to control hardware, with one device file per device and one hub that checks every command.
+OpenHAL is a universal driver specification. AI agents use OpenHAL to safely discover, integrate and control lab and manufacturing equipment through one standard set of read and write commands.
 
 ## What the name means
 
