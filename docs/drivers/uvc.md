@@ -5,8 +5,7 @@ The uvc driver captures JPEG frames from USB webcams and other cameras the opera
 ## Supports
 
 - `image` reads, one fresh JPEG frame each.
-- Number reads of the capture properties `width`, `height`, `fps`, `brightness`, `contrast`, `saturation`, `hue`, `gain`, `exposure` and `focus`, as the camera reports them.
-- A requested resolution and frame rate on open.
+- Number reads of the capture properties `width`, `height`, `fps`, `brightness`, `contrast`, `saturation`, `hue`, `gain`, `exposure` and `focus`, as reported by the camera.
 - `discover()` on Linux lists capture devices from sysfs without opening any.
 
 ## Setup

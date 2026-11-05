@@ -51,8 +51,7 @@ A stop cancels running operations after the current firmware command. Nothing mo
 ## Setup
 
 1. Install with `uv tool install --compile-bytecode "halkit[pylabrobot] @ git+https://github.com/sohan-bhat/OpenHAL"`, plus PyLabRobot's USB or HTTP extras for the instrument.
-2. Lay out the deck in the file to match the physical deck, or save one from PyLabRobot.
-3. Start from `openhal/drivers/pylabrobot/examples/starlet.hal.yaml` or `describe`.
+2. Start from `openhal/drivers/pylabrobot/examples/starlet.hal.yaml` or `describe`.
 
 | Key | Default | Meaning |
 |---|---|---|

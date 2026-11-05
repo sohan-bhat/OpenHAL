@@ -1,6 +1,6 @@
 # mujoco driver
 
-The `mujoco` driver runs any MuJoCo model in real time as a device, on MuJoCo 3.3 or later, or 3.10 on Intel Macs, which have no newer wheels. Joints are reads, actuators are goal channels with limits and speeds, `move_to` puts a site at a point, and a stop holds every joint in place. The driver never reaches hardware and reports itself as simulated. `describe()` builds channels from the model's joints and actuators.
+The `mujoco` driver runs any MuJoCo model in real time as a simulated device, on MuJoCo 3.3 or later, or 3.10 on Intel Macs. Joints are reads, actuators are goal channels, `move_to` puts a site at a point, and a stop holds every joint. `describe()` builds channels from the model.
 
 ## Supports
 
@@ -27,18 +27,18 @@ Hinges are in radians and slides in metres, so any angle or length unit converts
 | `then` | Goal channels to set once the site arrives, such as `{ gripper_goal: 60 }` |
 | `speed` | The argument that sets the move's speed, angular for hinges and linear for slides |
 
-The arguments are coordinates, and their limits are the workspace box the kernel checks. Joint solutions stay inside the model's ranges and the file's goal limits, and an unreachable point fails with the closest miss. Joints move at most at their goal channel's `max_change_per_s` and arrive together. With `speed`, the argument's `max` is a speed limit the kernel checks, blocking faster requests with LIMIT_EXCEEDED, and `min` must be above zero. Every goal channel the move changes, `then` included, must be in `effects`.
+The arguments are coordinates whose limits are the workspace box the kernel checks. Solutions stay inside the model's ranges and the goal limits, and an unreachable point fails with the closest miss. Joints arrive together, each within the goal channel's `max_change_per_s`. With `speed`, the argument's `max` is a speed limit the kernel checks, blocking faster requests with LIMIT_EXCEEDED, and `min` must be above zero. Every goal channel the move changes, `then` included, must be in `effects`.
 
 ### Cameras
 
-A camera in the MJCF model, fixed or on a moving body such as a wrist, becomes an image channel that returns a PNG of one physics step, like the uvc and rpi_camera drivers. `width` and `height` default to 640 by 480, at most 2048 a side.
+A camera in the MJCF model, fixed or on a moving body, becomes an image channel returning a PNG, 640 by 480 by default and at most 2048 a side.
 
 ```yaml
 read:
   overhead: { type: image, map: { camera: overhead, width: 640, height: 480 } }
 ```
 
-Rendering needs OpenGL. Without a display, set `MUJOCO_GL` to `egl` or `osmesa` before the hub starts, or image reads fail with that advice while other channels work. The first frame of a size takes a few tenths of a second, and later frames about 10 ms.
+Rendering needs OpenGL, so without a display set `MUJOCO_GL` to `egl` or `osmesa` before the hub starts. The first frame of a size takes a few tenths of a second, and later frames about 10 ms.
 
 ## Behavior
 
@@ -49,7 +49,7 @@ Rendering needs OpenGL. Without a display, set `MUJOCO_GL` to `egl` or `osmesa` 
 
 ## Safe state
 
-A stop ends every move and freezes every setpoint, so servos hold the joints and a closed gripper stays closed. File steps can follow. A real arm on the lerobot driver goes limp instead, so a real arm's file keeps that arm's own safe state.
+A stop ends every move and freezes every setpoint, so servos hold the joints. A real arm on the lerobot driver goes limp instead, so a real arm's file keeps that arm's own safe state.
 
 ## Parameters
 
@@ -94,7 +94,6 @@ The bench arm's model is `BENCH_ARM` in `openhal/drivers/mujoco/conformance.py`.
 ## Known limitations
 
 - `move_to` moves in a straight line in joint space, so long moves can bow.
-- After a stop, a joint that lagged the setpoint settles onto the setpoint within a few hundredths of a second.
 - A busy hub can leave simulated time a little behind the clock, as the health detail shows.
 - Camera frames have no lens distortion or noise.
 

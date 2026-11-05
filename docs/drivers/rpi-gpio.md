@@ -59,7 +59,7 @@ write:
 | `min_angle`, `max_angle` | `-90`, `90` | Servo range in degrees |
 | `min_pulse_ms`, `max_pulse_ms`, `frame_ms` | `1`, `2`, `20` | Servo pulse widths and frame |
 
-With a pull-up a button wired to ground reads true when pressed, and with a pull-down a pin driven high reads true. With `pull: none`, `active_high` sets the active level. PWM limits must fit 0 to 100 % or 0 to 1, and servo limits `min_angle` to `max_angle`, or the file fails to load.
+With a pull-up a button wired to ground reads true when pressed. With `pull: none`, `active_high` sets the active level. PWM limits must fit 0 to 100 % or 0 to 1, and servo limits `min_angle` to `max_angle`.
 
 ## The stop button
 
@@ -71,9 +71,7 @@ button = watch_stop_button(27, kernel_stop, loop=asyncio.get_running_loop())
 button.close()
 ```
 
-`watch_stop_button(pin, on_press, *, pull_up=True, active_state=None, bounce_s=0.05, loop=None, pin_factory=None)` calls `on_press` on each press of BCM `pin`. With `loop` the call runs on that loop, a coroutine function as a task, and otherwise on gpiozero's thread. The function never touches an output. `RpiGpioDriver.stop_button_pin()` returns a `stop_button` pin named in `pins` and unused by channels. The hub wires the button up, and the driver never calls `watch_stop_button`.
-
-A GPIO stop button only sends a stop request, so keep a hardware e-stop that cuts power.
+`watch_stop_button(pin, on_press, *, pull_up=True, active_state=None, bounce_s=0.05, loop=None, pin_factory=None)` calls `on_press` on each press of BCM `pin`, on `loop` when given, a coroutine function as a task, and otherwise on gpiozero's thread. The function never touches an output. `RpiGpioDriver.stop_button_pin()` returns an unused `stop_button` pin from `pins` for the hub to wire up. A GPIO stop button only sends a stop request, so keep a hardware e-stop.
 
 ## Example
 

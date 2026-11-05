@@ -10,7 +10,7 @@ Checked 2026-10-24.
 - Developer Mode, opt-in at the printer on X1, P1, A1 and A1 mini, leaves MQTT, the live stream and FTP open on the local network. Bambu Lab gives no support for the mode, and the owner secures the network. Reports of the mode on H2D and P2S are unchecked.
 - Section 3.1 of the Bambu Lab Terms of Use, quoted secondhand, restricts building software for Bambu Lab products without consent. In April 2026 Bambu Lab sent a cease-and-desist to an OrcaSlicer fork that reached Bambu Cloud posing as Bambu Studio. The owner reviewed this on 2026-10-25 and approved the driver.
 
-The driver connects only on the local network with the LAN access code. The driver never uses Bambu Cloud or Bambu Connect, never poses as Bambu Studio and never bypasses authorization. The driver sends only status requests and pause, resume, stop, speed level and chamber light commands. Without Developer Mode, commands fail with a hint to turn the mode on and reads still work.
+The driver uses only the local MQTT interface and the LAN access code, never Bambu Cloud, Bambu Connect or an authorization bypass, and never poses as Bambu Studio. The driver sends only status requests and pause, resume, stop, speed level and chamber light commands. Without Developer Mode, commands fail with a hint and reads still work.
 
 ## Setup
 
@@ -59,8 +59,7 @@ Other report fields read through a map such as `map: { field: cooling_fan_speed,
 
 - The driver requests one full report on connect and merges later reports, since P1 and A1 printers send only changes. Unsent fields read as no value. No polling.
 - Commands go out at QoS 1 and are never queued. A missing broker acknowledgement drops the connection, so no command arrives late.
-- A failure reply raises `DriverError` with the printer's reason. Some firmware sends no reply, so check `state`.
-- A missing access code, a pin mismatch, a failed login, no report for the serial and a wrong-typed report value raise `DriverError` naming what to check.
+- A failure reply raises `DriverError` with the printer's reason, and some firmware sends no reply, so check `state`. Login and pin failures name what to check.
 
 ## Example
 

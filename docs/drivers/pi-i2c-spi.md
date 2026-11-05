@@ -62,8 +62,8 @@ actions:
 - Values round to the field's raw step and the reading returned shows the value sent. A value the field can't hold fails with nothing sent.
 - A control channel without `state` reads as the last value sent.
 - `health()` reads the first read channel, so make that channel a register that is safe to read often, not one that clears on read.
-- Transactions run one at a time per device, and i2c-dev locking separates device files on the same bus.
-- A chip that doesn't acknowledge raises `DriverError` with the `i2cdetect` command to try. A missing device node or a permission problem names what to enable or which group to join. A hung transaction raises `TimeoutError`, and a wrong-length reply or an unmapped raw value raises `DriverError`.
+- A chip that doesn't acknowledge raises `DriverError` with the `i2cdetect` command to try. Missing nodes and permission problems name the fix, wrong-length replies and unmapped raw values raise `DriverError`, and a hung transaction raises `TimeoutError`.
+- Several device files can share one bus.
 
 ## Examples
 

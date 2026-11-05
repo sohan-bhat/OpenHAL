@@ -1,6 +1,6 @@
 # seabreeze driver
 
-The `seabreeze` driver reads Ocean Insight and Ocean Optics spectrometers through python-seabreeze 2.11, the open source Python layer over Ocean's SeaBreeze library. One device file is one spectrometer, and each scan becomes readings such as the spectrum as a chart, the peak, the counts at a wavelength, and absorbance against a stored dark and reference. `describe` drafts a file from the spectrometer's wavelengths and integration limits.
+The `seabreeze` driver reads Ocean Insight and Ocean Optics spectrometers through python-seabreeze 2.11. One device file is one spectrometer, and each scan becomes readings such as the spectrum as a chart, the peak, the counts at a wavelength, and absorbance against a stored dark and reference. `describe` drafts a file from the spectrometer's wavelengths and integration limits.
 
 The driver is for lab and research spectrometers. OpenHAL has no driver for clinical or patient-connected medical devices, see [ADR 0024](../adr/0024-microscopy-and-lab-drivers.md).
 

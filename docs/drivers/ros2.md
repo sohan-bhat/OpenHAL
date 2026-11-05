@@ -33,7 +33,7 @@ A stop cancels every running goal this driver started, allowing up to 2 s each. 
 
 1. On the robot, run `ros2 launch rosbridge_server rosbridge_websocket_launch.xml`, which starts rosapi too.
 2. List topics and types with `ros2 topic list -t`.
-3. Start from `openhal/drivers/ros2/examples/turtlebot4.hal.yaml` or `describe`, keeping only what you need.
+3. Start from `openhal/drivers/ros2/examples/turtlebot4.hal.yaml` or `describe`.
 
 | Key | Default | Meaning |
 |---|---|---|

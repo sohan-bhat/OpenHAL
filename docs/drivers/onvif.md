@@ -15,7 +15,7 @@ The onvif driver reads an ONVIF camera's identity and stream addresses and moves
 uv tool install --compile-bytecode "halkit[onvif] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-Turn ONVIF on in the camera's web interface, create an ONVIF user, and `export CAMERA_PASSWORD=...`. Keep the camera clock on NTP, since some cameras log requests with a wrong time even though the driver corrects drift.
+Turn ONVIF on in the camera's web interface, create an ONVIF user, and `export CAMERA_PASSWORD=...`. Keep the camera clock on NTP.
 
 | Parameter | Default | Meaning |
 |---|---|---|
@@ -63,7 +63,7 @@ actions:
 - Position reads call GetStatus. Changing one axis reads the others first, so the other axes stay put.
 - The kernel checks `move` and `step` speeds and distances, not end positions, so those actions can pass a position limit. Keep `duration` short and set the camera's own PTZ limits.
 - Camera faults become `DriverError` with the ONVIF subcode and reason, such as `ter:NoToken` for a missing preset.
-- An unreachable camera, failed authentication, a missing password variable, a missing profile, a PTZ file on a profile without PTZ and a non-SOAP reply raise `DriverError`. A silent camera raises `TimeoutError`.
+- Connect failures, a PTZ file on a profile without PTZ and non-SOAP replies raise `DriverError`, and a silent camera `TimeoutError`.
 
 ## Example
 

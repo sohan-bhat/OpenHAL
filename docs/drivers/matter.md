@@ -8,8 +8,6 @@ Checked 2026-10-24. python-matter-server was archived in June 2026 at 8.1.2. The
 
 ## Supports
 
-- Reads of any attribute, with scale, offset, unit, one bitmap bit or an enum lookup.
-- Changes through `write_attribute`, a cluster command such as `MoveToLevelWithOnOff`, or `On` and `Off` for a bool, read back from the attribute.
 - Actions that run any cluster command, including timed commands for door locks.
 - A connect check that every attribute and command cluster exists on the node.
 - `describe()` suggests channels for on and off, level, color temperature, temperature, humidity, pressure, occupancy, contact, battery, power, thermostat, fan, window covering and door lock.
@@ -70,7 +68,7 @@ Values going out round to whole attribute units.
 - Reads come from the server's subscription pushes. A null attribute reads as no value.
 - A command returns with the device's response. An error status fails with `DriverError` naming the Matter status, such as `CONSTRAINT_ERROR` or `UNSUPPORTED_WRITE`.
 - An unavailable node fails reads and reports disconnected, since the last values may be stale.
-- An unreachable or wrong server, an unknown node and a missing attribute or cluster raise `DriverError` naming what to check. Server errors carry the server's error name, such as `node not ready`, and a silent server raises `TimeoutError`.
+- Connect failures name what to check. Server errors carry the server's error name, such as `node not ready`, and a silent server raises `TimeoutError`.
 
 ## Example
 

@@ -8,7 +8,6 @@ The driver is tested only against a fake Picamera2 class, since picamera2 instal
 
 - `image` reads, one JPEG frame each.
 - Number reads from the libcamera metadata fields `Lux`, `ExposureTime`, `AnalogueGain`, `DigitalGain`, `ColourTemperature`, `SensorTemperature`, `FrameDuration`, `FocusFoM` and `LensPosition`.
-- Still or video configurations with an optional frame size.
 - `discover()` and `identify()` list attached modules without opening any.
 
 ## Setup

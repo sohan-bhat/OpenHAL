@@ -1,10 +1,14 @@
 # ${name}
 
-Experimental. Scaffolded by `openhal driver new`. The driver connects to its simulator only, until the real transport is written and the driver passes conformance and a hardware test.
+Experimental, scaffolded by `openhal driver new`. The driver connects only to the built-in simulator until the real transport passes conformance and a hardware test.
 
 ## Supports
 
-Describe the protocol, the transports and the device families this driver covers.
+Protocol, transports and device families.
+
+## Setup
+
+Install command and device prerequisites.
 
 ## Device file
 
@@ -20,8 +24,12 @@ safe_state: { level: 0 }
 
 ## Limitations
 
-List what the protocol can't do safely, and how the device file must cover it.
+What the protocol can't do safely.
+
+## Hazard default and safe state
+
+Default hazard and what a stop does.
 
 ## Sources
 
-List the specifications and manuals the protocol knowledge came from.
+Specifications and manuals used.

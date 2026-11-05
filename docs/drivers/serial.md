@@ -4,10 +4,6 @@ The `serial` driver connects to any device with a line-based text protocol over 
 
 ## Supports
 
-- Number, bool, enum and string reads, queried with `map.query` or pushed by the device and caught with `map.listen`.
-- Writes with an optional readback query, `map.get`.
-- Actions whose arguments fill a command template.
-- Unit conversion, plus linear `scale` and `offset` for raw counts.
 - Discovery of serial ports with USB ids, opening none.
 - `port: auto` picks the one port matching `match.usb` and any `match.serial_number`.
 
