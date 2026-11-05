@@ -1,17 +1,8 @@
 # esphome driver
 
-The `esphome` driver connects to ESPHome devices over the native API, the same protocol Home Assistant uses. Channels bind to the device's entities by object id, buttons become actions, and a write completes only when the device reports the new state.
+The `esphome` driver connects to ESPHome devices over the native API through aioesphomeapi 46.22.0, MIT. Channels bind to entities by object id, buttons become actions, and `describe()` builds channels from the entity list.
 
-| | |
-|---|---|
-| Driver name | `esphome` |
-| Library | aioesphomeapi 46.22.0 (MIT), with protobuf, zeroconf, cryptography and noiseprotocol |
-| Extra | `uv tool install --compile-bytecode "halkit[esphome] @ git+https://github.com/sohan-bhat/OpenHAL"` |
-| Hazard default | low |
-| Safe state | from the device file only |
-| Self-describe | yes, from the device's entity list |
-
-## What it supports
+## Supports
 
 | Entity | Channel | Type | Command |
 |---|---|---|---|
@@ -28,63 +19,37 @@ The `esphome` driver connects to ESPHome devices over the native API, the same p
 | select | write | enum | `select_command` |
 | button | action | no arguments | `button_command` |
 
-A channel binds to the entity whose object id is the channel name, and a name ending in `_brightness`, `_speed` or `_preset` binds to the entity named by the rest of the name. `map: { object_id: pump_seconds, attribute: state }` sets both explicitly. Bindings are checked against the device's entity list on every connect, and a missing entity fails the connect with the list of entities the device has.
-
-Because native API commands have no acknowledgement, the driver verifies each write by waiting up to `timeout` after the command for the state update that shows the new value. A device that doesn't report the new value fails the write, and a later read shows what the device really reports. Fan speeds snap to the nearest supported level, and the write's reading is the speed the fan really runs at.
-
-`match.esphome` holds glob patterns for device info fields such as `name` and `model`, checked on connect.
+A channel binds to the entity whose object id is the channel name, minus any `_brightness`, `_speed` or `_preset` suffix, or to `map: { object_id: pump_seconds, attribute: state }`. A missing entity fails the connect with the list of entities on the device. A write succeeds only when the device reports the new state within `timeout`, and fan speeds snap to the nearest level. `match.esphome` holds glob patterns for device info fields such as `name` and `model`.
 
 ## Setup
 
-1. Install the extra with `uv tool install --compile-bytecode "halkit[esphome] @ git+https://github.com/sohan-bhat/OpenHAL"`.
-2. Give the node an `api:` block in its YAML. With `encryption: key: ...`, put the same base64 key in an environment variable such as `PLANT_PSK` and set `noise_psk_env`.
-3. Prefer failsafes on the node itself, for example an `on_turn_on` automation that turns a pump off after a delay, or `api: reboot_timeout`. Because the hub can't detect those failsafes, mention them in `safe_state_note`.
-4. Start from `openhal/drivers/esphome/examples/plant-waterer.hal.yaml` or from `describe()`.
-5. Validate with `openhal file validate`, then confirm the limits by hand.
-
-## Parameters
+1. Install with `uv tool install --compile-bytecode "halkit[esphome] @ git+https://github.com/sohan-bhat/OpenHAL"`.
+2. Add an `api:` block to the node. With `encryption: key: ...`, put the key in a variable such as `PLANT_PSK` and set `noise_psk_env`.
+3. Add node failsafes such as an `on_turn_on` pump timer or `api: reboot_timeout`, and list the failsafes in `safe_state_note`.
+4. Start from `openhal/drivers/esphome/examples/plant-waterer.hal.yaml` or `describe()`.
 
 | Key | Default | Meaning |
 |---|---|---|
 | `host` | required | Host name, `.local` name or address |
 | `port` | 6053 | Native API port |
-| `noise_psk_env` | none | Environment variable that holds the API encryption key |
-| `password_env` | none | Environment variable that holds the legacy API password |
-| `timeout` | `5 s` | Handshake deadline, and how long a write waits for the new state |
-
-## Example device file
-
-```yaml
-device: Plant waterer
-id: plant
-match: { mdns: _esphomelib._tcp, esphome: { name: "plant-*" } }
-connect: { esphome: plant-node.local, port: 6053, noise_psk_env: PLANT_PSK }
-read:
-  soil_moisture: { unit: percent, every: 10 s, range: [0, 100] }
-write:
-  pump: { type: bool }
-safe_state: { pump: false }
-watchdog:
-  max_duration:
-    - when: "pump == true"
-      for: 20 s
-hazard: low
-```
+| `noise_psk_env` | none | Variable holding the API encryption key |
+| `password_env` | none | Variable holding the legacy API password |
+| `timeout` | `5 s` | Handshake deadline and write confirmation window |
 
 ## Known limitations
 
-- Covers, climate, locks, valves, media players, alarm panels and user-defined services are not mapped yet.
-- RGB and white channels of lights are not exposed, only state and brightness.
-- A node in deep sleep is unreachable most of the time, which the hub reports as disconnected.
-- The native API allows one Home Assistant and several other clients. Commands from Home Assistant automations still reach the device and are outside OpenHAL's limits.
+- No covers, climate, locks, valves, media players, alarm panels or user-defined services yet.
+- Lights expose state and brightness only.
+- A deep-sleeping node reads as disconnected most of the time.
+- Home Assistant automations on the same node bypass OpenHAL's limits.
 
 ## Hazard defaults
 
-The default hazard is `low`, because most nodes switch lights, fans, pumps and relays at low voltage, but a relay that switches mains to a heater needs `medium` or `high` in the device file.
+`low`, with `safe_state` from the device file only. A relay switching mains to a heater needs `medium` or `high`.
 
 ## Sources
 
-- ESPHome native API component, https://esphome.io/components/api.html (port, encryption, password, reboot_timeout)
-- ESPHome api.proto, https://github.com/esphome/esphome/blob/dev/esphome/components/api/api.proto (message types, used through aioesphomeapi's generated classes)
-- aioesphomeapi, https://github.com/esphome/aioesphomeapi (client API, MIT)
-- ESPHome mDNS, https://esphome.io/components/mdns.html (`_esphomelib._tcp` discovery)
+- ESPHome native API component for port, encryption, password and reboot_timeout, https://esphome.io/components/api.html
+- ESPHome api.proto message types, https://github.com/esphome/esphome/blob/dev/esphome/components/api/api.proto
+- aioesphomeapi client, MIT, https://github.com/esphome/aioesphomeapi
+- ESPHome mDNS and `_esphomelib._tcp` discovery, https://esphome.io/components/mdns.html
