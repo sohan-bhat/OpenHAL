@@ -1,6 +1,6 @@
 # Create a routine
 
-A routine is an automation that runs on the [Hub](glossary:hub) without a model. Triggers set when a routine runs and steps set what the routine does, and every change a step makes goes through the [Safety Kernel](glossary:safety-kernel) like any other command.
+A routine runs on the [Hub](glossary:hub) without a model. Triggers set when the routine runs, steps set what the routine does, and every step's change goes through the [Safety Kernel](glossary:safety-kernel).
 
 ## Start the hub
 
@@ -25,9 +25,9 @@ steps:
       - action: { device: plant-waterer, action: water, args: { duration: 20 s } }
 ```
 
-## Store it and dry run it
+## Store and dry run the routine
 
-A new routine starts disabled, and a dry run checks every command in every branch against the current state without sending anything to the device.
+A new routine starts disabled. A dry run checks every command in every branch against the current state and sends nothing.
 
 ```sh tested
 $ uv run openhal routine new morning-water --file morning-water.yaml
@@ -39,7 +39,7 @@ dry run passes
 
 ## Enable the routine
 
-A person enables the routine with the human token and the typed phrase `enable`, and the hub runs the dry run again before enabling the routine.
+A person enables the routine with the human token and the typed phrase `enable`, after the hub repeats the dry run.
 
 ```sh tested
 $ uv run openhal routine enable morning-water
@@ -64,4 +64,4 @@ $ uv run openhal routine dry-run long-soak
 blocked above_max  Blocked. The duration limit is 30 s (max). Requested 120 s.
 ```
 
-The file also caps the pump at 3 runs per hour, and a routine's runs count toward the cap. Over the protocol, `hal/routines/dryRun` returns the same results. The [routines section](../../../spec/v0.1/routines.md) of the specification defines triggers, steps and approvals for high hazard devices.
+The file also caps the pump at 3 runs per hour, routine runs included. `hal/routines/dryRun` returns the same results over the protocol. The [routines section](../../../spec/v0.1/routines.md) of the specification defines triggers, steps and approvals for high hazard devices.

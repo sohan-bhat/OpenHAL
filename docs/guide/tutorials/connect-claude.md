@@ -1,6 +1,6 @@
 # Connect Claude
 
-Claude reaches the [Hub](glossary:hub) through `openhal mcp`, a stdio MCP server that maps tool calls onto the hub's methods. The MCP server runs as an agent [Principal](glossary:principal) with its own token. This tutorial starts from the [quickstart](../quickstart.md), in the `OpenHAL` folder.
+Claude reaches the [Hub](glossary:hub) through `openhal mcp`, a stdio MCP server that runs as an agent [Principal](glossary:principal) with a separate token. Start from the [quickstart](../quickstart.md), in the `OpenHAL` folder.
 
 ## Create a token
 
@@ -10,7 +10,7 @@ $ uv run openhal token create --agent --scope control_low --name claude | tail -
 $ chmod 600 ~/.openhal/claude.token
 ```
 
-The token is shown only once, and the token's scope limits the requests the hub accepts with the token.
+The token is shown once, and the scope sets what the token may do.
 
 | Scope | Allows |
 |---|---|
@@ -18,7 +18,7 @@ The token is shown only once, and the token's scope limits the requests the hub 
 | `control_low` | Changes to low hazard devices |
 | `control_medium` | Changes to low and medium hazard devices |
 
-The hub holds every change requested with an agent token on a high hazard device until a person approves the change, and `openhal mcp` exits with an error at start when given the human token.
+The hub holds every agent change to a high hazard device until a person approves. `openhal mcp` exits with an error when given the human token.
 
 ## Claude Code
 
@@ -26,11 +26,11 @@ The hub holds every change requested with an agent token on a high hazard device
 $ claude mcp add openhal --scope user -- uv run --directory "$PWD" openhal mcp --token-file ~/.openhal/claude.token
 ```
 
-Run `claude mcp list` to check that the OpenHAL server connects.
+`claude mcp list` shows whether the server connects.
 
 ## Claude Desktop
 
-Add the server to `claude_desktop_config.json`, which on macOS is in `~/Library/Application Support/Claude/`. Because Claude Desktop does not read your shell's `PATH`, use absolute paths.
+Add the server to `claude_desktop_config.json`, in `~/Library/Application Support/Claude/` on macOS. Claude Desktop does not read your shell's `PATH`, so use absolute paths.
 
 ```json tested
 {
@@ -47,6 +47,6 @@ Restart Claude Desktop after you edit the file.
 
 ## Try it
 
-Ask Claude to water the plant for 120 seconds. Because 120 seconds is above the duration limit, the [Safety Kernel](glossary:safety-kernel) blocks the command before the command reaches the board, and Claude reports the reason. When you ask for 20 seconds, the command runs.
+Ask Claude to water the plant for 120 seconds. The [Safety Kernel](glossary:safety-kernel) blocks the command at the duration limit, and Claude reports the reason. A request for 20 seconds runs.
 
 `uv run openhal log` lists both requests under the token's name.

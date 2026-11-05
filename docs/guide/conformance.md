@@ -1,32 +1,32 @@
 # Conformance suite
 
-Every driver in the repository passes the same battery of checks before the driver ships. The suite runs the driver inside a real kernel, against the driver's own mock or simulator, and monitors every call from the driver into the driver's protocol code, which is how the suite checks that a blocked command never reaches the device.
+Every driver passes the same checks before shipping. The suite runs the driver inside a real kernel against the driver's own mock or simulator and records every call into the driver's protocol code, so a blocked command that reaches the device fails the suite.
 
 ## What the suite checks
 
-The suite tests the driver's declared [Conformance Level](glossary:conformance-level) and nothing above it. Checks above that level are skipped, and the report names the reason.
+The suite tests the driver's declared [Conformance Level](glossary:conformance-level) and skips higher checks, with the reason in the report.
 
 | Check | Level | What passes |
 |---|---|---|
-| `identify` | Core | Identification returns a result using read-only commands |
+| `identify` | Core | Identification uses read-only commands |
 | `connect` | Core | The kernel connects the device |
-| `describe` | Core | Self-description, if the protocol has one, uses only known sections |
-| `read every channel` | Core | Each readable channel returns a value in its declared unit |
-| `disconnect and reconnect` | Core | A lost connection is detected, and every channel returns a value again afterwards |
+| `describe` | Core | Self-description, if any, uses only known sections |
+| `read every channel` | Core | Each readable channel returns a value in the declared unit |
+| `disconnect and reconnect` | Core | A lost connection is detected, then every channel reads again |
 | `timeout handling` | Core | A slow device times out or raises a driver error instead of hanging |
 | `close` | Core | The driver closes cleanly |
-| `write inside limits` | Control | A change the kernel passes reaches the driver exactly once |
+| `write inside limits` | Control | A passed change reaches the driver exactly once |
 | `write outside limits is blocked before the driver` | Control | A change over the limit never reaches the protocol code |
-| `no write without a kernel grant` | Control | Calling the driver without a grant fails, and nothing reaches the protocol code |
-| `action inside limits` | Full | An action with every argument inside its limits runs and reaches the driver exactly once |
-| `action outside limits is blocked before the driver` | Full | An action with an argument over its limit never reaches the driver |
-| `no action without a kernel grant` | Full | Calling an action without a grant fails, and nothing reaches the protocol code |
+| `no write without a kernel grant` | Control | A call without a grant fails before the protocol code |
+| `action inside limits` | Full | An action inside the limits reaches the driver exactly once |
+| `action outside limits is blocked before the driver` | Full | An action over a limit never reaches the driver |
+| `no action without a kernel grant` | Full | An action call without a grant fails before the protocol code |
 | `concurrent access` | Control | Racing commands each end done, blocked or failed |
 | `safe state` | Control | A stop leaves the device in its safe state |
 
-## Run it
+## Run the suite
 
-The suite runs as part of the normal tests, and every driver package with a `conformance.py` is picked up automatically.
+The suite runs with the normal tests and includes every driver package with a `conformance.py`.
 
 ```sh tested
 $ uv run pytest tests/conformance -q
@@ -39,7 +39,7 @@ $ uv run openhal driver test mock
 12 passed, 3 skipped, 0 failed
 ```
 
-You can also run the suite from Python against one driver's case and read the report.
+From Python, run the suite on one driver's case and read the report.
 
 ```python tested
 import asyncio
@@ -56,7 +56,7 @@ assert report.ok
 
 ## Add a case for your driver
 
-A driver supplies one `ConformanceCase` in `openhal/drivers/<name>/conformance.py`. The case holds a confirmed device file, a factory that builds the driver against its simulator, and optional hooks that break the connection or slow the device down, so the disconnect and timeout checks mean something. This case runs the openhal-firmware driver against the simulated plant waterer.
+A driver supplies one `ConformanceCase` in `openhal/drivers/<name>/conformance.py`, with a confirmed device file, a factory that builds the driver against the simulator, and optional hooks that break the connection or slow the device for the disconnect and timeout checks. This case runs the openhal-firmware driver against the simulated plant waterer.
 
 ```python tested
 from openhal.conformance import ConformanceCase
@@ -103,8 +103,8 @@ def case() -> ConformanceCase:
     )
 ```
 
-The plant waterer has no control channel, so the four checks that need one are skipped, the report gives the reason, and the other 11 pass. The case should use a device file that matches the real device, with real units and limits, so the suite exercises the same conversions that commands to the real hardware go through. The [driver contract](../drivers/WRITING-A-DRIVER.md) has every rule.
+The plant waterer has no control channel, so the four checks that need a control channel are skipped and the other 11 pass. Use a device file with the real device's units and limits, so the suite exercises the same conversions as real commands. The [driver contract](../drivers/WRITING-A-DRIVER.md) has every rule.
 
 ## Passing is not verified
 
-Because conformance runs against a simulator, a driver that passes is marked implemented in the catalog, and the driver is marked verified only once a person runs the driver's hardware test plan on a real device and files a report.
+Passing on a simulator marks a driver implemented in the catalog. A driver is marked verified only after a person runs the driver's hardware test plan on a real device and files a report.

@@ -1,14 +1,14 @@
 # Add a device
 
-Most devices need a [Device File](glossary:device-file) and no new code. This tutorial creates a device file, validates the file, confirms the limits and shares the file. The [device file format](../../../spec/SPEC.md) defines every field.
+Most devices need only a [Device File](glossary:device-file), with no new code. The [device file format](../../../spec/SPEC.md) defines every field.
 
 ## Pick a driver
 
-A device file names one [Driver](glossary:driver), and [Drivers](/drivers/) lists each driver with its status. If no driver supports your device's protocol, see [Build a driver](build-a-driver.md).
+A device file names one [Driver](glossary:driver). [Drivers](/drivers/) lists every driver, and [Build a driver](build-a-driver.md) covers a protocol with no driver yet.
 
 ## Describe the device
 
-List what the device can do, then add the limits. Keep each limit at or inside what you would accept with nobody watching.
+Set each limit at or inside what you would accept with nobody watching.
 
 ```yaml tested file=led-strip.hal.yaml
 openhal: "0.1"
@@ -49,18 +49,18 @@ The [playground](/spec/playground/) runs the same schema in the browser.
 
 ## Confirm the limits
 
-A person confirms the limits at a terminal, so read each limit before you type `confirm`.
+Read each limit before you type `confirm`.
 
 ```sh tested
 $ uv run openhal file confirm led-strip.hal.yaml --by owner
 control brightness  0 % to 80 %, at most 40 %/s
 ```
 
-The file now records who confirmed it, the date and a hash of the limits.
+The file now records the confirmer, the date and a hash of the limits.
 
-## Test it
+## Test the file
 
-Copy the file into `~/.openhal/devices/` and start OpenHAL with `uv run openhal start`. When OpenHAL runs already, run `uv run openhal file confirm` on the copy, which loads the copy at once. Read every channel and then try each change at the change's smallest value. Run `uv run openhal stop`, check that the device reached its safe state, and record what you tested in `provenance.verification`.
+Copy the file into `~/.openhal/devices/` and run `uv run openhal start`, or run `uv run openhal file confirm` on the copy when the hub already runs. Read every channel, then try each change at the smallest value. Run `uv run openhal stop`, check the safe state, and record what you tested in `provenance.verification`.
 
 | Status | Meaning |
 |---|---|
@@ -68,6 +68,6 @@ Copy the file into `~/.openhal/devices/` and start OpenHAL with `uv run openhal 
 | `tested-reads` | Reads checked on the real device |
 | `verified-on-hardware` | Reads, changes and the safe state checked on the real device, with a report |
 
-## Share it
+## Share the file
 
-Open a pull request that adds the file under `library/`, one file per device model, where every file is CC0. The [Device Library](/library/) lists each file with its badge.
+Open a pull request that adds the file under `library/`, one CC0 file per model. The [Device Library](/library/) lists each file with a badge.
