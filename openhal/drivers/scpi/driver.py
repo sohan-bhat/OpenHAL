@@ -8,6 +8,7 @@ handles the transports, or NI-VISA when `visa_library` points at it.
 Mapping, per channel in the device file.
 
     read   { query: "MEAS:VOLT? CH1", parse, scale, offset, unit, on, off, lookup }
+    image  { query: ":DISP:DATA? PNG" }                        a screenshot in a definite-length block
     write  { set: "OUTP CH1,{on_off}", get: "OUTP? CH1" }      {value} for every type, {on_off} for bool
     action { command: "APPL CH1,{volts},{amps}" }              placeholders are the argument names
 
@@ -26,6 +27,12 @@ Quirks.
 - `describe()` reads `*IDN?` and proposes channels for known power supplies, multimeters,
   loads, generators and scopes (families.py). Proposed writes are `suggested: true`.
 - SCPI has no universal emergency command, so the safe state comes from the device file.
+- A number reply of 9.9E37 or more is SCPI's code for an invalid or overflowed value, so the read
+  fails with that reason instead of returning it as a measurement.
+- An image channel's query returns an IEEE 488.2 definite-length block, `#<digits><length><data>`,
+  holding a PNG, JPEG or GIF, the way bench scopes send screenshots.
+- `resource: sim:scope` or `sim:supply` connects to a simulated instrument served in the hub's own
+  process on a free loopback port (simulator.py), through PyVISA like any other instrument.
 """
 
 from __future__ import annotations
@@ -40,6 +47,7 @@ from typing import Any, ClassVar, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
+from openhal import images
 from openhal.drivers.base import Discovered, Driver, DriverError, DriverInfo, Health, Reading
 from openhal.drivers.scpi import families
 from openhal.drivers.serial import mapping
@@ -48,13 +56,15 @@ from openhal.spec.models import DeviceFile
 T = TypeVar("T")
 TERMINATIONS = {"lf": "\n", "crlf": "\r\n", "cr": "\r"}
 NO_ERROR = re.compile(r"^\s*[+]?0\s*(,|$)")
+SIMULATORS = ("scope", "supply")
+INVALID = 9.9e37
 USB_RESOURCE = re.compile(r"^USB\d*::(0x[0-9A-Fa-f]+|\d+)::(0x[0-9A-Fa-f]+|\d+)::([^:]+)::", re.IGNORECASE)
 
 
 class ScpiParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    resource: str = Field(min_length=1, max_length=300, description="VISA resource string or auto.")
+    resource: str = Field(min_length=1, max_length=300, description="VISA resource string, auto, or sim:<kind>.")
     visa_library: str = Field(default="@py", max_length=300, description="@py, a NI-VISA path, or file.yaml@sim.")
     timeout: float = 2.0
     termination: Literal["lf", "crlf", "cr"] = "lf"
@@ -68,6 +78,17 @@ class ScpiParams(BaseModel):
         if not 0.05 <= seconds <= 60:
             raise ValueError("timeout must be between 50 ms and 60 s.")
         return seconds
+
+    @field_validator("resource")
+    @classmethod
+    def _simulator(cls, value: str) -> str:
+        if value.startswith("sim:") and value[4:] not in SIMULATORS:
+            raise ValueError(f"the simulated instruments are {', '.join('sim:' + kind for kind in SIMULATORS)}.")
+        return value
+
+    @property
+    def simulated(self) -> bool:
+        return self.resource.startswith("sim:")
 
 
 class ReadMap(mapping.ValueMap):
@@ -165,8 +186,6 @@ class ScpiDriver(Driver):
 
     def _check_maps(self) -> None:
         for name, spec in self.device.read.items():
-            if spec.type == "image":
-                raise DriverError(f"read.{name}: the scpi driver doesn't read images.")
             read_map = _parse(ReadMap, spec.map, f"read.{name}", "query: 'MEAS:VOLT?'")
             mapping.check_template(read_map.query, set(), f"read.{name}.map.query")
             mapping.plain_text(read_map.query, f"read.{name}.map.query")
@@ -223,7 +242,15 @@ class ScpiDriver(Driver):
         self._broken = None
         self._dirty = False
 
+    @property
+    def simulated(self) -> bool:
+        return self.settings.simulated
+
     def _resolve(self, rm: Any) -> str:
+        if self.settings.simulated:
+            from openhal.drivers.scpi import simulator
+
+            return simulator.serve(self.settings.resource[4:]).resource
         if self.settings.resource != "auto":
             return self.settings.resource
         wanted = {item.lower() for item in self.device.match.usb}
@@ -373,7 +400,14 @@ class ScpiDriver(Driver):
         unit = self.device.channel_unit(channel)
         if channel in self.reads:
             read_map = self.reads[channel]
+            if self.device.read[channel].type == "image":
+                return Reading(channel, await self._image(read_map.query), None)
             reply = await self._query(read_map.query)
+            if self.device.read[channel].type == "number" and _invalid(mapping.extract(reply, read_map, channel)):
+                raise DriverError(
+                    f"read.{channel}: the instrument sent {reply!r}, SCPI's code for a value it couldn't measure. "
+                    "Check that the signal fits the screen and that enough of it is on screen."
+                )
             value = mapping.decode(channel, reply, self.device.read[channel], read_map, f"read.{channel}")
             return Reading(channel, value, unit)
         if channel in self.writes:
@@ -390,6 +424,15 @@ class ScpiDriver(Driver):
 
     async def _query(self, command: str) -> str:
         return await self._call(lambda inst: str(inst.query(command)).strip(), command)
+
+    async def _image(self, command: str) -> bytes:
+        def fetch(inst: Any) -> bytes:
+            return bytes(inst.query_binary_values(command, datatype="B", container=bytes))
+
+        data = await self._call(fetch, command)
+        if not images.is_image(data):
+            raise DriverError(f"The instrument's reply to {command!r} is not a PNG, JPEG or GIF image.")
+        return data
 
     async def _setting(self, command: str) -> None:
         def run(inst: Any) -> list[str]:
@@ -426,6 +469,14 @@ class ScpiDriver(Driver):
         command = mapping.render(action_map.command, values, f"actions.{name}")
         await self._setting(command)
         return {"sent": command}
+
+
+def _invalid(text: str) -> bool:
+    """Whether a reply is SCPI's 9.9E37 for an invalid or overflowed value."""
+    try:
+        return abs(float(text)) >= INVALID
+    except ValueError:
+        return False
 
 
 def _usb_id(resource: str) -> str | None:

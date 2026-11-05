@@ -344,7 +344,6 @@ def test_usb_ids_from_resource_names() -> None:
     [
         ("read: { v: { unit: V } }", "needs a map"),
         ("read: { v: { unit: V, map: { set: 'X' } } }", "query"),
-        ("read: { v: { type: image, map: { query: 'X?' } } }", "images"),
         ("write: { w: { unit: V, min: 0, max: 1, map: { set: 'VOLT {on_off}' } } }", "not allowed"),
         ("write: { w: { type: bool, map: { set: 'OUTP {state}' } } }", "not allowed"),
         ("write: { w: { type: bool, map: { set: 'OUTP {on_off}', get: \"OUTP?\\nRST\" } } }", "control characters"),
