@@ -1,15 +1,6 @@
 # hid driver
 
-The hid driver reads input reports from USB HID devices and sends output and feature reports to them, through hidapi. The driver suits macropads, knobs, foot switches, status lights and homemade HID gadgets whose report layout is documented. `describe()` reads the device's report descriptor and returns suggested channels built from the descriptor.
-
-## What it supports
-
-- Input reports, read by a background thread as they arrive, where each read decodes the newest report.
-- Feature reports, read with a GET_REPORT request each time and written with SET_REPORT.
-- Output reports, written as whole reports from a buffer the driver keeps per report.
-- Fields at any byte offset, as `uint8`, `int8`, `uint16`, `int16`, `uint32` or `int32`, with an optional bit mask for single bits and packed fields.
-- Bool, number and enum channels.
-- `discover()` lists HID interfaces without opening them, and `describe()` parses the report descriptor.
+The hid driver reads input and feature reports from USB HID devices and writes output and feature reports, through hidapi. The driver suits macropads, knobs, foot switches, status lights and homemade gadgets with a documented report layout. Fields are bools, numbers or enums at any byte offset, with an optional bit mask.
 
 ## Setup
 
@@ -17,22 +8,20 @@ The hid driver reads input reports from USB HID devices and sends output and fea
 uv tool install --compile-bytecode "halkit[hid] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-The `hidapi` package bundles the hidapi C library. On Linux, a regular user can only open HID devices with a udev rule, for example `/etc/udev/rules.d/70-openhal-hid.rules` containing `KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="0001", MODE="0660", TAG+="uaccess"`, then `sudo udevadm control --reload` and replug the device. On macOS, the app running the hub may need Input Monitoring permission for devices that send keyboard reports.
-
-## Parameters
+On Linux a regular user needs a udev rule such as `/etc/udev/rules.d/70-openhal-hid.rules` containing `KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="0001", MODE="0660", TAG+="uaccess"`, then `sudo udevadm control --reload` and a replug. On macOS, devices that send keyboard reports may need Input Monitoring permission. `discover()` lists interfaces without opening any.
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `name` | `auto` | Part of the product string, matched without case. The shorthand `hid: auto` sets it |
-| `vid`, `pid` | from `match.usb` when it has exactly one entry | USB vendor and product id, as numbers or `0x` hex |
-| `serial` | none | Serial number, to pick one of several identical devices |
-| `path` | none | Exact hidapi path, from `discover()` |
-| `usage_page` | none | HID usage page, to pick one interface of a composite device |
-| `interface` | none | USB interface number, for the same reason |
-| `report_length` | `64` | Largest report the driver reads, in bytes after the report id |
-| `timeout` | `1 s` | Deadline for feature reads and for writes |
+| `name` | `auto` | Part of the product string, any case. `hid: auto` is shorthand |
+| `vid`, `pid` | from a single `match.usb` entry | Vendor and product id, decimal or `0x` hex |
+| `serial` | none | Picks one of several identical devices |
+| `path` | none | Exact hidapi path from `discover()` |
+| `usage_page` | none | Picks one interface of a composite device |
+| `interface` | none | USB interface number, for the same purpose |
+| `report_length` | `64` | Largest report read, in bytes after the report id |
+| `timeout` | `1 s` | Feature read and write deadline |
 
-Exactly one interface must match, otherwise connect fails and lists the candidates.
+Exactly one interface must match, or connect fails listing the candidates.
 
 ## Channel maps
 
@@ -48,27 +37,23 @@ write:
 
 | Key | Default | Meaning |
 |---|---|---|
-| `report` | `0` | Report id. Use 0 for devices without report ids |
-| `kind` | `input` | `input` for read channels, `output` or `feature` for write channels. Read channels can also use `feature` |
-| `byte` | `0` | Byte offset into the report, after the report id byte |
+| `report` | `0` | Report id, 0 for devices without ids |
+| `kind` | `input` | `input` or `feature` for reads, `output` or `feature` for writes |
+| `byte` | `0` | Offset after the report id byte |
 | `format` | `uint8` | `uint8`, `int8`, `uint16`, `int16`, `uint32`, `int32` |
-| `byteorder` | `little` | HID fields are little-endian. Some vendor reports are big-endian |
-| `mask` | none | Bit mask inside the field. The value is shifted down by the mask's lowest bit |
-| `scale`, `offset` | `1`, `0` | channel value = raw × scale + offset |
-| `on`, `off` | `1`, `0` | Raw values for bool channels |
-| `values` | none | Enum word to raw value, required for enum channels |
-| `length` | the end of the furthest field | Length of the output or feature report payload |
-| `fill` | zeros | Starting bytes for an output or feature report, for reports with a command byte |
+| `byteorder` | `little` | Some vendor reports are big-endian |
+| `mask` | none | Bit mask, with the value shifted down to the mask's lowest bit |
+| `scale`, `offset` | `1`, `0` | value = raw × scale + offset |
+| `on`, `off` | `1`, `0` | Raw bool values |
+| `values` | none | Enum word to raw value, required for enums |
+| `length` | end of the furthest field | Output or feature payload length |
+| `fill` | zeros | Starting bytes, for reports with a command byte |
 
-When several write channels share one output report, a write changes only that channel's bits and sends the whole report, so the other channels keep the values last written. Write channels on output reports read back the last value the driver sent, or no value before the first write.
-
-## How reads work
-
-Input reports arrive when the device sends them. A read returns the newest input report for the channel's report id, stamped with the time it arrived, and no value (`None`) until the first report, which the kernel treats as unknown. Most devices send a report whenever something changes, so a button that has never been pressed reads as unknown until the button is pressed.
+A write changes only the channel's bits and sends the whole report. Output channels read back the last value sent. Input reads return the newest report, so a button never pressed reads as unknown.
 
 ## Describe
 
-`describe()` parses the report descriptor (USB HID 1.11 section 6.2.2) and returns one channel per data field that sits on whole bytes (8, 16 or 32 bits) or is a single bit. Buttons, LEDs and the generic desktop axes get names from the usage tables, other fields get `field_r<report>_b<bit>`. Input fields become read channels with their logical range as `range`, and output fields become write channels marked `suggested: true`, with the logical range as limits. Feature fields and odd-sized fields are listed in the notes.
+`describe()` parses the report descriptor and suggests a channel per whole-byte or single-bit field, named from the usage tables or `field_r<report>_b<bit>`, with the logical range as `range` or limits. Feature and odd-sized fields go in the notes.
 
 ## Example
 
@@ -76,24 +61,23 @@ Input reports arrive when the device sends them. A read returns the newest input
 
 ## Errors and health
 
-- No match, several matches, or a device that can't be opened (held by another program or blocked by permissions) raises `DriverError` with what to do.
-- Reports too short for the map, enum raw values outside the map, values that don't fit the field and reports that fail at the device raise `DriverError`.
-- A failed read in the reader thread marks the device as gone, `health()` reports the loss, and the hub reopens the device when the device comes back.
+- `DriverError` for no match, several matches, a device held elsewhere or blocked by permissions, short reports, unmapped enum values, values too big for the field and reports the device fails.
+- A failed read marks the device gone in `health()`, and the hub reopens the device on return.
 
 ## Limitations
 
-- `describe()` skips long items in report descriptors and doesn't return fields that are neither whole bytes nor single bits.
-- Keyboards, mice and gamepads that the operating system claims exclusively can't be opened on some platforms (macOS and Windows keyboards in particular).
-- The driver has no actions, so model each report field as a channel.
+- `describe()` skips long items and fields that are neither whole bytes nor single bits.
+- Keyboards, mice and gamepads the OS claims, especially keyboards on macOS and Windows, may not open.
+- No actions.
 
 ## Hazard default and safe state
 
-The default hazard is low, because HID devices are mostly inputs and indicators. HID has no emergency behavior, so `safe_state_support` is `file`, and the hub sends the device file's `safe_state` as ordinary reports. A HID gadget that switches something physical needs a higher hazard in its device file.
+Low. `safe_state_support` is `file`, sent as ordinary reports.
 
 ## Sources
 
 - Device Class Definition for HID 1.11, USB-IF, https://www.usb.org/document-library/device-class-definition-hid-111
 - HID Usage Tables 1.5, USB-IF, https://www.usb.org/document-library/hid-usage-tables-15
 - hidapi, https://github.com/libusb/hidapi
-- cython-hidapi (the `hidapi` Python package), https://github.com/trezor/cython-hidapi
+- cython-hidapi, the `hidapi` Python package, https://github.com/trezor/cython-hidapi
 - pid.codes test PID `1209:0001`, https://pid.codes/1209/0001/
