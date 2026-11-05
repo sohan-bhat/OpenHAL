@@ -1,15 +1,13 @@
 # onvif driver
 
-The onvif driver reads an ONVIF camera's identity and stream addresses and moves PTZ cameras through the safety kernel. The driver calls the ONVIF device, media and PTZ services directly, with a small SOAP 1.2 client and WS-Security digest authentication, so the driver works with the Profile S and T cameras most brands sell.
+The onvif driver reads an ONVIF camera's identity and stream addresses and moves PTZ cameras under the safety kernel, for the Profile S and T cameras most brands sell. The driver uses a small built-in SOAP 1.2 client on httpx and defusedxml with WS-Security digest authentication, since onvif-zeep-async reconfigures the root logger, clears the proxy variables and turns TLS checks off for every camera.
 
-## What it supports
+## Supports
 
-- Device information (manufacturer, model, firmware, serial number, hardware id) and the chosen profile's name, RTSP stream URI and snapshot URI, as text channels read on connect.
-- Pan, tilt and zoom positions as number channels, and `moving` as a bool. As control channels, pan, tilt and zoom move the camera to the given position with AbsoluteMove.
-- Actions for ContinuousMove (`move`), RelativeMove (`step`), AbsoluteMove (`go_to`), presets (`goto_preset`), the home position (`home`) and `stop`.
-- A native safe state that stops pan, tilt and zoom.
-- `discover()` sends one WS-Discovery Probe for network video transmitters.
-- `describe()` returns the identity and URI channels, the PTZ channels and actions, and the camera's presets.
+- Identity and the chosen profile's name, RTSP stream URI and snapshot URI as text reads, read once on connect and never opened.
+- Pan, tilt and zoom positions as numbers and `moving` as a bool. Setting pan, tilt or zoom sends AbsoluteMove.
+- `move`, `step`, `go_to`, `goto_preset`, `home` and `stop` actions.
+- `discover()` sends one WS-Discovery Probe. `describe()` returns the identity, URI and PTZ channels, actions and presets.
 
 ## Setup
 
@@ -17,23 +15,21 @@ The onvif driver reads an ONVIF camera's identity and stream addresses and moves
 uv tool install --compile-bytecode "halkit[onvif] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-Turn ONVIF on in the camera's web interface and create an ONVIF user. Put the user's password in an environment variable, `export CAMERA_PASSWORD=...`. Keep the camera's clock on NTP, because the driver corrects for clock drift but some cameras log every request with a wrong time.
-
-## Parameters
+Turn ONVIF on in the camera's web interface, create an ONVIF user, and `export CAMERA_PASSWORD=...`. Keep the camera clock on NTP, since some cameras log requests with a wrong time even though the driver corrects drift.
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `host` | required | The camera's address. The shorthand `onvif: 192.168.1.40` sets it |
-| `port`, `scheme` | `80`, `http` | Where the device service listens |
-| `username`, `token_env` | none | The ONVIF user, and the variable that holds its password |
-| `profile` | the first profile | A profile token or name, such as `MainStream` |
-| `device_path` | `/onvif/device_service` | The device service path |
-| `move_timeout` | `1 s` | How long `move` runs when it has no `duration` |
-| `timeout` | `5 s` | How long one SOAP call may take |
+| `host` | required | Camera address. `onvif: 192.168.1.40` is shorthand |
+| `port`, `scheme` | `80`, `http` | Device service location |
+| `username`, `token_env` | none | ONVIF user and the variable holding the password |
+| `profile` | the first profile | Profile token or name, such as `MainStream` |
+| `device_path` | `/onvif/device_service` | Device service path |
+| `move_timeout` | `1 s` | `move` run time without `duration` |
+| `timeout` | `5 s` | Per SOAP call |
 
 ## Channels and actions
 
-Channels are named after what they read, or map to it with `map: { field: pan }`. Pan, tilt and zoom are in ONVIF's generic spaces, where pan and tilt run from -1 to 1 and zoom from 0 to 1, and `scale`, `offset` and `unit` turn them into degrees or another unit.
+Channels are named after the field, or map with `map: { field: pan }`. Pan and tilt run from -1 to 1 and zoom from 0 to 1 in ONVIF's generic spaces, and `scale`, `offset` and `unit` convert to degrees or another unit.
 
 ```yaml
 read:
@@ -60,43 +56,34 @@ actions:
 | `home` | GotoHomePosition | none |
 | `stop` | Stop | none |
 
-An action named otherwise picks its operation with `map: { operation: move }`.
+`map: { operation: move }` picks the operation for another action name.
 
-## How reads and commands behave
+## Behavior
 
-- Identity and URIs are read once on connect, and the driver only reports the URIs and never opens them.
-- Position reads call GetStatus, and changing one axis reads the other axes first, so the other axes stay where they are.
-- The kernel checks every argument against the device file, but because the kernel checks speeds and distances rather than end positions, `move` and `step` can still carry the camera past a position limit. Keep `duration` short, and set the camera's own PTZ limits as well.
-- Faults from the camera become `DriverError` with the ONVIF subcode and reason, such as `ter:NoToken` for a missing preset.
-
-## Why the driver has its own SOAP client
-
-onvif-zeep-async (MIT, maintained) was checked first. Importing onvif-zeep-async configures the root logger, creating a camera removes `http_proxy` and `https_proxy` from the process environment, and the library turns TLS certificate checks off for every camera. Those side effects are wrong inside a long-running hub, so the driver uses about 250 lines of its own SOAP, WS-Security and WS-Discovery code on httpx and defusedxml.
+- Position reads call GetStatus. Changing one axis reads the others first, so the other axes stay put.
+- The kernel checks `move` and `step` speeds and distances, not end positions, so those actions can pass a position limit. Keep `duration` short and set the camera's own PTZ limits.
+- Camera faults become `DriverError` with the ONVIF subcode and reason, such as `ter:NoToken` for a missing preset.
+- An unreachable camera, failed authentication, a missing password variable, a missing profile, a PTZ file on a profile without PTZ and a non-SOAP reply raise `DriverError`. A silent camera raises `TimeoutError`.
 
 ## Example
 
 `openhal/drivers/onvif/examples/ptz-camera.hal.yaml` reads a Hikvision PTZ camera's stream URIs and moves the camera within limits, with two presets.
 
-## Errors
-
-- A camera that can't be reached, failed authentication, a missing password variable and a missing profile raise `DriverError` with a message that names what to check. A file that uses PTZ with a profile that has no PTZ fails the connect.
-- A reply that isn't SOAP raises `DriverError`, and a camera that doesn't respond raises `TimeoutError`.
-
 ## Limitations
 
-- The driver doesn't support events, imaging settings, recording or audio, and because the driver has no Media2 (ver20 media) service, Profile T cameras are used through their Media1 service.
-- The driver supports only WS-Security UsernameToken, which ONVIF requires, and no HTTP digest authentication.
-- `https` uses normal certificate checks, so cameras with self-signed certificates need plain `http` on a trusted network.
+- No events, imaging settings, recording, audio or Media2, so Profile T cameras use Media1.
+- WS-Security UsernameToken only, with no HTTP digest.
+- `https` checks certificates, so self-signed cameras need `http` on a trusted network.
 
 ## Hazard default and safe state
 
-The default hazard is low, because a camera's motors are small. `safe_state_support` is `native`, so a hub stop sends Stop for pan, tilt and zoom on the profile in use, and the camera holds its position.
+Low. `safe_state_support` is `native`, so a hub stop sends Stop for pan, tilt and zoom and the camera holds position.
 
 ## Sources
 
 - ONVIF Core Specification, https://www.onvif.org/specs/core/ONVIF-Core-Specification.pdf
 - ONVIF Media Service Specification, https://www.onvif.org/specs/srv/media/ONVIF-Media-Service-Spec.pdf
 - ONVIF PTZ Service Specification, https://www.onvif.org/specs/srv/ptz/ONVIF-PTZ-Service-Spec.pdf
-- ONVIF Application Programmer's Guide (digest example), https://www.onvif.org/wp-content/uploads/2016/12/ONVIF_WG-APG-Application_Programmers_Guide-1.pdf
+- ONVIF Application Programmer's Guide with the digest example, https://www.onvif.org/wp-content/uploads/2016/12/ONVIF_WG-APG-Application_Programmers_Guide-1.pdf
 - OASIS Web Services Security UsernameToken Profile 1.0, https://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0.pdf
 - OASIS WS-Discovery 1.1, https://docs.oasis-open.org/ws-dd/discovery/1.1/os/wsdd-discovery-1.1-spec-os.html
