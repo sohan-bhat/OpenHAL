@@ -1,8 +1,6 @@
 # Architecture
 
-OpenHAL is one hub process that owns every device, plus thin clients around the hub. Safety lives in one deterministic kernel inside the hub, so everything else, including the MCP server an agent connects to, sends requests to the hub.
-
-The decisions behind this design are in docs/adr/, the safety rules are in docs/SAFETY.md and the device file format is in spec/SPEC.md.
+One hub process owns every device and checks every command in one deterministic safety kernel. Thin clients, including the MCP server an agent connects to, send requests to the hub. The decisions are in docs/adr/, the safety rules in docs/SAFETY.md and the device file format in spec/SPEC.md.
 
 ## Components
 
@@ -51,26 +49,26 @@ flowchart LR
 
 | Component | Module | Role |
 |---|---|---|
-| Brand | `openhal/_brand.py` | Every public name in one place (ADR 0002) |
-| Spec models | `openhal/spec/` | Pydantic models for device files, routines and commands, the unit registry, the expression language, JSON Schema export |
-| Safety kernel | `openhal/kernel/` | Every check, grant issuing and verification, rate limit state, interlocks, watchdog budgets, stop lock, confirmation checks |
-| Audit log | `openhal/audit/` | Append-only SQLite table with a hash chain (ADR 0010) |
-| Hub | `openhal/hub/` | Daemon, registry, config, tokens, storage, local API, discovery, library matcher, static dashboard files |
-| Drivers | `openhal/drivers/` | Base class, driver registry, mock framework, one package per protocol or bridge |
+| Brand | `openhal/_brand.py` | Every public name, per ADR 0002 |
+| Spec models | `openhal/spec/` | Models for device files, routines and commands, units, the expression language, JSON Schema export |
+| Safety kernel | `openhal/kernel/` | Checks, grants, rate limit state, interlocks, watchdog budgets, stop lock, confirmations |
+| Audit log | `openhal/audit/` | Append-only SQLite table with a hash chain, per ADR 0010 |
+| Hub | `openhal/hub/` | Daemon, registry, config, tokens, storage, local API, discovery, library matcher, dashboard files |
+| Drivers | `openhal/drivers/` | Base class, registry, mock framework, one package per protocol or bridge |
 | Routines | `openhal/routines/` | YAML and Python routines, triggers, scheduler |
 | MCP server | `openhal/mcp/` | Tools and prompts that forward to the hub |
 | CLI | `openhal/cli/` | Typer application |
-| Client | `openhal/client/` | Sync and async client of the local API, used by the CLI, MCP server and library |
+| Client | `openhal/client/` | Sync and async API client behind the CLI, MCP server and library |
 | Driver writer | `openhal/writer/` | Detection, sketch parsing, manual extraction, interview, staged test plans |
-| Conformance | `openhal/conformance/` | The standard battery every driver must pass |
+| Conformance | `openhal/conformance/` | The battery every driver must pass |
 | Dashboard | `dashboard/` | Svelte 5 app, built into `openhal/hub/static/` |
 | Website | `website/` | Astro site built from the repository |
-| Firmware | `firmware/arduino/OpenHAL/` | Arduino library that adds a self-description to a maker's device |
-| Library | `library/` | Shared device files (CC0) |
+| Firmware | `firmware/arduino/OpenHAL/` | Arduino library that gives a maker's device a self-description |
+| Library | `library/` | Shared CC0 device files |
 
 ## The life of a command
 
-Every command from every source takes this path, shown here for the printer's `pause` action from an agent, and no other path leads to a driver's `_write` or `_action`.
+Every command takes this path, shown for an agent's `pause` of the printer. No other path reaches a driver's `_write` or `_action`.
 
 ```mermaid
 sequenceDiagram
@@ -108,7 +106,7 @@ sequenceDiagram
   end
 ```
 
-A human approving a queued request sends `POST /v1/confirmations/{id}/approve` with a human token. The kernel evaluates the request again with current state (an approval never applies to a stale check), then follows the allowed branch.
+A person approves a queued request with `POST /v1/confirmations/{id}/approve` and a human token. The kernel checks the request again against the current state, then follows the allowed branch.
 
 ## Device discovery
 
@@ -132,7 +130,7 @@ flowchart TD
   MATCH -->|unknown| UNK[List as unknown device,<br/>offer the driver writer]
 ```
 
-Serial probing sends only identify commands that are documented as read-only for the protocol being probed, at a short timeout, and never opens a port that another process holds.
+Serial probing sends only identify commands documented as read-only for the protocol, with a short timeout, and never opens a port another process holds.
 
 ## Driver writer
 
@@ -159,7 +157,7 @@ flowchart TD
   NEW --> DONE
 ```
 
-The user's own model participates through MCP (ADR 0006) while the hub does every deterministic step, and nothing a model proposes can confirm a limit.
+The user's own model takes part through MCP, per ADR 0006, and the hub runs every deterministic step. Nothing a model proposes can confirm a limit.
 
 ## Routine execution
 
@@ -182,7 +180,7 @@ sequenceDiagram
   R->>R: record run history
 ```
 
-Routines run with no model, and a routine's principal is `routine:<name>`, whose scope is the scope of the human who enabled the routine, capped at `control_medium`.
+Routines run with no model as `routine:<name>`, with the scope of the human who enabled the routine, capped at `control_medium`.
 
 ## Bridges
 
@@ -210,14 +208,14 @@ flowchart TD
   LOCKED --> UNLOCK[openhal unlock or dashboard unlock<br/>human token, typed phrase]
 ```
 
-The lock is set before any safe-state step, so a racing command can't slip in between. Safe-state steps are issued by the kernel to itself and still go through the driver's grant check.
+The lock comes before any safe-state step, so a racing command can't slip in. The kernel issues safe-state steps to itself, and those steps still pass the driver's grant check.
 
 ## Contracts frozen after M1
 
 - `spec/schema/device-file.schema.json` and the Pydantic models in `openhal/spec/models.py`.
-- The driver interface in `openhal/drivers/base.py`: `discover`, `identify`, `connect`, `describe`, `read`, `write`, `action`, `safe_state`, `health`, `close`.
-- The kernel API in `openhal/kernel/__init__.py`: `Kernel.evaluate`, `Kernel.execute`, `Kernel.dry_run`, `Kernel.stop_all`, `Kernel.unlock`, `Kernel.confirm`, `Kernel.reject`.
+- The driver interface in `openhal/drivers/base.py`, with `discover`, `identify`, `connect`, `describe`, `read`, `write`, `action`, `safe_state`, `health`, `close`.
+- The kernel API in `openhal/kernel/__init__.py`, with `Kernel.evaluate`, `Kernel.execute`, `Kernel.dry_run`, `Kernel.stop_all`, `Kernel.unlock`, `Kernel.confirm`, `Kernel.reject`.
 - The local API, versioned under `/v1`, described by FastAPI's OpenAPI document checked in at `docs/api/openapi.json`.
 - The MCP tool list and input schemas in `openhal/mcp/tools.py`.
 
-Changes to any of these after the freeze are made only by the orchestrator and are recorded in an ADR.
+After the freeze, only the orchestrator changes these, and each change gets an ADR.

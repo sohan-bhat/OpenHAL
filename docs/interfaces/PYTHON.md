@@ -1,12 +1,10 @@
 # Python library
 
-`openhal.client` is a sync and an async client of the hub's local API v1, and scripts, the CLI and the MCP server all use the client. The client runs no safety checks, because the hub's kernel checks every command, and a blocked command comes back as a `Decision` rather than as an exception.
+`openhal.client` is the sync and async client of the hub's local API v1 that scripts, the CLI and the MCP server use. Safety checks run in the hub's kernel, and a blocked command comes back as a `Decision`.
 
 ```sh
 uv pip install "halkit @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
-
-The install puts the client in the current environment, so your own scripts can import the client.
 
 ## Connect
 
@@ -19,9 +17,7 @@ with connect() as hub:
     print(reading.value, reading.unit)
 ```
 
-`connect()` calls `/v1/whoami` on the hub straight away, so a wrong address or token fails at once with a clear exception, and `check=False` skips that call.
-
-The async client has the same methods.
+`connect()` calls `/v1/whoami` first, so a wrong address or token fails right away. `check=False` skips the call. The async client has the same methods.
 
 ```python
 import asyncio
@@ -41,23 +37,23 @@ asyncio.run(main())
 | Argument | Lookup when not given |
 |---|---|
 | `url` | `OPENHAL_URL`, then `api.host` and `api.port` from `config.yaml`, then `http://127.0.0.1:7420` |
-| `token` | `OPENHAL_TOKEN`, then `$OPENHAL_HOME/human.token` (default `~/.openhal/human.token`) |
+| `token` | `OPENHAL_TOKEN`, then `$OPENHAL_HOME/human.token` |
 | `home` | `OPENHAL_HOME`, then `~/.openhal` |
 
-`Client(..., use_human_token_file=False)` never falls back to the human token file, so pass `use_human_token_file=False` for anything that acts for an agent. The client doesn't use proxy environment variables, so a token is never sent through a proxy.
+Pass `use_human_token_file=False` for anything that acts for an agent, so the client never falls back to the human token file. The client uses no proxy environment variables, so a token never goes through a proxy.
 
 ## Exceptions
 
-All of these exceptions derive from `openhal.client.OpenHALError`, which has `message`, `status_code` and `detail`.
+Every exception derives from `openhal.client.OpenHALError`, with `message`, `status_code` and `detail`.
 
 | Exception | When |
 |---|---|
-| `HubNotRunning` | No hub responds at the hub address. The message names the command that starts the hub |
-| `Unauthorized` | No token, or the hub doesn't accept the token. The message names where the token came from |
+| `HubNotRunning` | No hub at the address. The message names the command that starts the hub |
+| `Unauthorized` | No token, or a token the hub doesn't accept. The message names the token's source |
 | `NotFound` | Unknown device, channel, request, routine or session |
 | `NotSupported` | The hub is older and has no such route. A subclass of `NotFound` |
-| `Refused` | The hub blocked the request, for example an approval sent with an agent token, or a request that is no longer pending |
-| `BadRequest` | The hub could not read the request, or a wrong unlock phrase |
+| `Refused` | The hub blocked the request, such as an approval with an agent token or a request no longer pending |
+| `BadRequest` | An unreadable request, or a wrong unlock phrase |
 | `HubError` | The hub failed or timed out |
 
 ## Decisions
@@ -66,14 +62,14 @@ All of these exceptions derive from `openhal.client.OpenHALError`, which has `me
 
 | Field | Meaning |
 |---|---|
-| `status` | `done`, `allowed` (dry run), `blocked`, `pending` or `needs_confirmation`, `failed` |
-| `code` | Stable block code, for example `above_max`, `rate_limited`, `interlock`, `not_permitted`, `stopped`, `misconfigured`, `queue_full` |
-| `message` | What happened and what to do next |
+| `status` | `done`, `allowed` for a dry run, `blocked`, `pending` or `needs_confirmation`, `failed` |
+| `code` | Stable block code, such as `above_max`, `rate_limited`, `interlock`, `not_permitted`, `stopped`, `misconfigured`, `queue_full` |
+| `message` | What happened and the next step |
 | `value`, `unit` | The value in the channel's unit |
-| `limit` | The limit that blocked it, with its unit |
+| `limit` | The blocking limit, with its unit |
 | `request_id` | Set when a person has to approve |
 
-`decision.ok` is true for done and allowed, and `decision.pending` is true when the hub holds the request for a person's approval.
+`decision.ok` is true for done and allowed. `decision.pending` is true when the request is held for a person.
 
 ```python
 decision = hub.write("printer", "extruder_target", 300, "degC")
@@ -83,11 +79,11 @@ elif decision.pending:
     print("approve with openhal confirm approve", decision.request_id)
 ```
 
-The request for a nozzle temperature of 300 degC prints `above_max {'max': 260.0, 'unit': 'degC'}`. Because a person approves each cancel, a `cancel` of the print comes back pending.
+The request for a nozzle temperature of 300 degC prints `above_max {'max': 260.0, 'unit': 'degC'}`. A `cancel` of the print comes back pending, since a person approves each cancel.
 
 ## Images
 
-An image channel, such as a camera frame, reads as an `Image` with `mime_type`, `bytes`, `width` and `height`. `content()` gives the image itself.
+An image channel, such as a camera frame, reads as an `Image` with `mime_type`, `bytes`, `width` and `height`. `content()` gives the image.
 
 ```python
 frame = hub.read("printer-cam", "frame").value
@@ -96,7 +92,7 @@ with open("frame.jpg", "wb") as out:
     out.write(frame.content())
 ```
 
-Device views carry the same object without the pixels, so `content()` is empty there.
+In device views `content()` is empty, since views carry no pixels.
 
 ## Methods
 
@@ -128,9 +124,9 @@ Every method exists on `Client` and, as a coroutine, on `AsyncClient`.
 | `unlock(phrase)` | `POST /v1/unlock` (human) |
 | `ramp_to(device, channel, target, unit, interval_s=1.0, margin=0.9)` | several `POST /v1/write` |
 
-`Write` and `Action` are the kernel's command models, exported from `openhal.client`. A plain dict with `device` and `channel` and `value`, or `device` and `action` and `args`, works too.
+`Write` and `Action` are the kernel's command models, exported from `openhal.client`. A dict with `device`, `channel` and `value`, or `device`, `action` and `args`, works too.
 
-`ramp_to` moves a channel to a target in steps that each pass its `max_change_per_s`, waiting `interval_s` before each step, with `margin` of the allowed change per step. The kernel still checks every step, the ramp stops at the first step the kernel blocks, and `ramp_to` returns the `Decision` of every step. The LED strip from [Add a device](../guide/tutorials/add-a-device.md) limits `brightness` to a change of at most 40 %/s.
+`ramp_to` moves a channel to a target in steps that each pass `max_change_per_s`, `interval_s` apart, each using `margin` of the allowed change. The kernel checks every step, the ramp stops at the first blocked step, and `ramp_to` returns every step's `Decision`. The LED strip from [Add a device](../guide/tutorials/add-a-device.md) changes `brightness` by at most 40 %/s.
 
 ```python
 for decision in hub.ramp_to("led-strip", "brightness", 80, "%"):
@@ -151,21 +147,21 @@ for decision in hub.ramp_to("led-strip", "brightness", 80, "%"):
 | `run_caps()` | `GET /v1/runs/caps` |
 | `set_run_caps(max_steps=None, max_seconds=None, per_agent=None, phrase=None)` | `POST /v1/runs/caps` (human) |
 
-`find` searches every device at once and returns `device.channel` and `device.action` targets with their units, limits and latest values. Text also matches what a unit measures, so `find("current")` finds a channel in A, and `unit="degC"` finds every channel a temperature converts to.
+`find` searches every device and returns `device.channel` and `device.action` targets with units, limits and latest values. Text also matches what a unit measures, so `find("current")` finds a channel in A, and `unit="degC"` finds every temperature channel.
 
 ```python
 for match in hub.find("current", kind="readable").matches:
     print(match.target, match.value, match.unit)
 ```
 
-`wait_until` reads the channels a condition names until the condition holds or the timeout passes, and `sample` reads channels at an interval and returns each series with min, max and mean. Both read through the kernel, so every reading is in the audit log.
+`wait_until` reads the condition's channels until the condition holds or the timeout passes. `sample` reads channels at an interval and returns each series with min, max and mean. Every reading goes through the kernel into the audit log.
 
 ```python
 result = hub.wait_until("led-strip.current_draw < 1 A", timeout_s=30)
 print(result.held, result.readings[0].value)
 ```
 
-`run_steps` checks a list of steps as a plan, then runs the steps in order. A step is a `Write`, an `Action` or a dict whose `kind` is `read`, `write`, `action`, `wait` or `wait_until`, and `increment` on a number step adds that much on each repeat. The kernel checks every command in the run as it checks a single one, and the run stops at the first step that isn't done. A step that needs a person ends the run with `request_id`. The reply comes when the run ends or after `wait_s`, and `run()` and `cancel_run()` follow a longer run.
+`run_steps` checks the steps as a plan, then runs the steps in order. A step is a `Write`, an `Action` or a dict whose `kind` is `read`, `write`, `action`, `wait` or `wait_until`, and `increment` adds that much on each repeat. The kernel checks each command, and the run stops at the first step that isn't done. A step that needs a person ends the run with `request_id`. The reply comes when the run ends or after `wait_s`, and `run()` and `cancel_run()` follow a longer run.
 
 ```python
 run = hub.run_steps(
@@ -180,7 +176,7 @@ run = hub.run_steps(
 print(run.status, run.message)
 ```
 
-The hub caps the steps per run, the seconds per run, wait or sample, and how many one token has at once. `run_caps()` shows the caps, and only a human token changes them, with `phrase="confirm"` to raise one.
+`run_caps()` shows the caps on steps per run, seconds per run, wait or sample, and how many one token has at once. Only a human token changes the caps, with `phrase="confirm"` to raise one.
 
 ### Confirmations
 
@@ -191,7 +187,7 @@ The hub caps the steps per run, the seconds per run, wait or sample, and how man
 | `approve(request_id)` | `POST /v1/confirmations/{id}/approve` (human) |
 | `reject(request_id, reason="")` | `POST /v1/confirmations/{id}/reject` (human) |
 
-The library never prompts, and because a script with the human token can approve, the human token file is readable by its owner only. The CLI adds the terminal and typed phrase checks of ADR 0012.
+The library never prompts. A script with the human token can approve, so the human token file is readable by its owner only. The CLI adds the terminal and typed phrase checks of ADR 0012.
 
 ### Audit log
 
@@ -247,7 +243,7 @@ The library never prompts, and because a script with the human token can approve
 
 ### Live events
 
-`AsyncClient.events()` yields the hub's live events from `/v1/live` (`hello`, `reading`, `state`, `audit`, `watchdog`) as dicts.
+`AsyncClient.events()` yields the hub's live events from `/v1/live` as dicts, typed `hello`, `reading`, `state`, `audit` or `watchdog`.
 
 ```python
 async with AsyncClient() as hub:
@@ -258,8 +254,8 @@ async with AsyncClient() as hub:
 
 ### Any route
 
-`client.call(Call(...))` sends one request built with `openhal.client.calls`, for routes newer than the client's methods.
+`client.call(Call(...))` sends one request built with `openhal.client.calls`, for routes newer than the methods.
 
 ## Models
 
-Every response is a pydantic model from `openhal.client.models` that keeps unknown fields, so a newer hub does not break an older client. Timestamps named `at`, `started_at` and `finished_at` are Unix seconds. The `created_at` and `expires_at` of a confirmation request use the hub's monotonic clock and only mean something relative to each other.
+Responses are pydantic models from `openhal.client.models` that keep unknown fields, so a newer hub works with an older client. `at`, `started_at` and `finished_at` are Unix seconds. A confirmation request's `created_at` and `expires_at` use the hub's monotonic clock and only compare with each other.
