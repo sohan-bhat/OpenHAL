@@ -1,20 +1,10 @@
 # seabreeze driver
 
-The `seabreeze` driver reads Ocean Insight and Ocean Optics spectrometers through python-seabreeze, the open source Python layer over Ocean's own SeaBreeze library. One device file is one spectrometer. A scan becomes readings an agent can use, such as the spectrum as a chart, the peak, the counts at a wavelength, and absorbance against a stored dark and reference.
-
-| | |
-|---|---|
-| Driver name | `seabreeze` |
-| Library | python-seabreeze 2.11 (MIT) |
-| Extra | `uv tool install --compile-bytecode "halkit[seabreeze] @ git+https://github.com/sohan-bhat/OpenHAL"` |
-| Hazard default | low |
-| Conformance | full |
-| Safe state | none. A spectrometer only measures |
-| Self-describe | yes, from the spectrometer's wavelengths and integration limits |
+The `seabreeze` driver reads Ocean Insight and Ocean Optics spectrometers through python-seabreeze 2.11, the open source Python layer over Ocean's SeaBreeze library. One device file is one spectrometer, and each scan becomes readings such as the spectrum as a chart, the peak, the counts at a wavelength, and absorbance against a stored dark and reference. `describe` drafts a file from the spectrometer's wavelengths and integration limits.
 
 The driver is for lab and research spectrometers. OpenHAL has no driver for clinical or patient-connected medical devices, see [ADR 0024](../adr/0024-microscopy-and-lab-drivers.md).
 
-## What it supports
+## Supports
 
 | Name | Kind | Map | What the driver reads |
 |---|---|---|---|
@@ -29,50 +19,47 @@ The driver is for lab and research spectrometers. OpenHAL has no driver for clin
 | `integration_time` | write, time | `{ setting: integration_time }` | `integration_time_micros` |
 | `store_dark`, `store_reference`, `clear_references` | action | `{ command: store_dark }` | keep the next scan, or forget both |
 
-## How it works
+## Behavior
 
-- Every reading comes from a scan, the counts of each pixel for one integration time, averaged over `average` scans. Readings within `scan_age` of a scan share that scan, so reading the peak and the spectrum together costs one scan.
-- seabreeze sets the integration time and reads no integration time back, so `integration_time` reads the value the driver last set, and unknown before the first write.
-- A new integration time clears the stored dark and reference, because counts from another integration time don't match the new scans.
-- For absorbance, block the light and run `store_dark`, put the blank in the light path and run `store_reference`, then put the sample in and read. Without both, an absorbance or transmittance read fails with the step to take.
-- The chart's area takes the color of each wavelength from 380 to 750 nm, and the counts axis runs to the detector's maximum, so a saturated scan reaches the top. Numbers come from the reading channels, not the chart.
-- `discover()` lists spectrometers through seabreeze's `list_devices`, which reads USB descriptors and opens no spectrometer.
+- Every reading comes from a scan averaged over `average` scans, and readings within `scan_age` share one scan.
+- `integration_time` reads the value last set, or unknown before the first write, since seabreeze reads no integration time back.
+- A new integration time clears the stored dark and reference.
+- For absorbance, block the light and run `store_dark`, put the blank in and run `store_reference`, then read the sample. Without both, absorbance and transmittance reads fail with the missing step.
+- The chart colors each wavelength from 380 to 750 nm, and the counts axis runs to the detector maximum, so a saturated scan reaches the top. Numbers come from the reading channels.
+- `discover()` lists spectrometers from USB descriptors without opening any.
 
 ## The simulated spectrometer
 
-`seabreeze: sim` connects to a simulated USB2000+, 2048 pixels from 340 to 1025 nm with a 16 bit detector, behind the same `Spectrometer` methods the driver calls on hardware. The light path is a 2900 K halogen lamp through a cuvette of dye with one absorbance band at 520 nm. Counts grow with the integration time up to 65535, and each scan carries dark counts, shot noise and read noise. `sim:<name>` connects to a separate simulated spectrometer.
+`seabreeze: sim` is a simulated USB2000+, 2048 pixels from 340 to 1025 nm with a 16 bit detector, behind the same `Spectrometer` methods as hardware. A 2900 K halogen lamp shines through a cuvette of dye with one absorbance band at 520 nm. Counts grow with integration time up to 65535, with dark counts, shot noise and read noise. `sim:<name>` makes a separate simulated spectrometer.
 
 ## Setup
 
-1. Install the extra.
-2. On Linux, install the udev rules with `uv run seabreeze_os_setup`, so a user can open the spectrometer. Close OceanView, which holds the spectrometer.
-3. Start from [absorbance-spectrometer.hal.yaml](../../openhal/drivers/seabreeze/examples/absorbance-spectrometer.hal.yaml), or call `describe` for a draft with your spectrometer's limits.
-4. Run `openhal file validate`, then confirm the limits.
-
-## Parameters
+1. Install with `uv tool install --compile-bytecode "halkit[seabreeze] @ git+https://github.com/sohan-bhat/OpenHAL"`.
+2. On Linux, install the udev rules with `uv run seabreeze_os_setup`, and close OceanView, which holds the spectrometer.
+3. Start from [absorbance-spectrometer.hal.yaml](../../openhal/drivers/seabreeze/examples/absorbance-spectrometer.hal.yaml) or `describe`.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `spectrometer` | `auto` | A serial number, `auto` for the first one found, or `sim` and `sim:<name>` |
-| `backend` | `cseabreeze` | `cseabreeze`, which brings its own USB code, or `pyseabreeze`, which needs pyusb and libusb |
-| `timeout` | `5 s` | The longest wait for a scan, every averaged scan included. At most 9 s |
-| `scan_age` | `500 ms` | Readings within this long of a scan share that scan |
-| `average` | 1 | Scans averaged into each reading, 1 to 100 |
-| `dark_correction` | false | Subtract the detector's electric dark pixels in each scan |
-| `nonlinearity_correction` | false | Apply the spectrometer's stored nonlinearity correction |
+| `spectrometer` | `auto` | Serial number, `auto` for the first found, or `sim` and `sim:<name>` |
+| `backend` | `cseabreeze` | `cseabreeze` with built-in USB code, or `pyseabreeze`, which needs pyusb and libusb |
+| `timeout` | `5 s` | Longest scan, every averaged scan included, at most 9 s |
+| `scan_age` | `500 ms` | Scan reuse window |
+| `average` | 1 | Scans averaged per reading, 1 to 100 |
+| `dark_correction` | false | Subtract the detector's electric dark pixels |
+| `nonlinearity_correction` | false | Apply the stored nonlinearity correction |
 
 ## Known limitations
 
-- The driver doesn't use external triggers, the spectrometer's light source or shutter features, or its thermoelectric cooler.
-- The integration time and the number of averaged scans must fit the timeout, so long exposures need fewer averaged scans.
-- The stored dark and reference live in the hub's memory and are gone after a restart.
+- No external triggers, light source or shutter features, or thermoelectric cooler.
+- Integration time times averaged scans must fit `timeout`.
+- The stored dark and reference are lost on a hub restart.
 
 ## Hazard defaults
 
-The default hazard is `low`, because a spectrometer only measures. A light source in the same setup, such as a laser, is a separate device with its own file and its own hazard.
+`low`, with no safe state, since a spectrometer only measures. A light source such as a laser needs a separate device file with a separate hazard.
 
 ## Sources
 
 - python-seabreeze documentation, https://python-seabreeze.readthedocs.io/en/latest/
-- python-seabreeze source, the Spectrometer class and its device list, https://github.com/ap--/python-seabreeze (MIT, used as a library)
+- python-seabreeze source, the Spectrometer class and device list, MIT and used as a library, https://github.com/ap--/python-seabreeze
 - Ocean SeaBreeze, https://www.oceanoptics.com/software/resources/seabreeze-software-development-kit/

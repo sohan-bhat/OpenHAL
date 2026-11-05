@@ -1,40 +1,31 @@
 # scpi driver
 
-The `scpi` driver connects to programmable test instruments over VISA. Bench supplies, multimeters, electronic loads, function generators and oscilloscopes all use SCPI over USB-TMC, LAN, serial or GPIB. Each channel's `map` gives the query or setting command, and `describe()` returns suggested channels for common instrument families from the `*IDN?` reply.
+The `scpi` driver connects to programmable test instruments over VISA with PyVISA 1.16.2 and pyvisa-py 0.8.1. Bench supplies, multimeters, electronic loads, function generators and oscilloscopes use SCPI over USB-TMC, LAN, serial or GPIB. Each channel `map` gives the query or setting command, and `describe()` drafts channels for common families from the `*IDN?` reply.
 
-| | |
-|---|---|
-| Driver name | `scpi` |
-| Libraries | PyVISA 1.16.2 (MIT), pyvisa-py 0.8.1 (MIT), pyusb 1.3.1 (BSD-3-Clause), pyserial 3.5 (BSD-3-Clause). pyvisa-sim 0.7.1 (MIT) for tests only |
-| Extra | `uv tool install --compile-bytecode "halkit[scpi] @ git+https://github.com/sohan-bhat/OpenHAL"` |
-| Hazard default | medium |
-| Safe state | from the device file only (SCPI has no universal outputs-off command) |
-| Self-describe | yes, from `*IDN?` |
+## Supports
 
-## What it supports
-
-- Read channels of type number, bool, enum and string through a query.
-- Write channels of every type through a setting command, with an optional readback query.
-- Actions whose arguments fill a command template, such as `APPL CH1,{volts},{amps}`.
-- Error checking, where the driver reads `SYST:ERR?` after every setting until the queue reports `0`, and any error fails the command with the instrument's message, for example `-222,"Data out of range"`.
-- Health checks with `*OPC?`, which every IEEE 488.2 instrument responds to.
-- `resource: auto`, which picks the one USB instrument whose vendor and product id match `match.usb`. `match.scpi_idn` is checked against `*IDN?` on every connect, so a file can't drive the wrong instrument.
+- Number, bool, enum and string reads through a query.
+- Writes through a setting command with an optional readback query.
+- Actions whose arguments fill a template such as `APPL CH1,{volts},{amps}`.
+- `SYST:ERR?` after every setting until the queue reports `0`, so any error fails the command with the instrument's message, such as `-222,"Data out of range"`.
+- Health through `*OPC?`.
+- `resource: auto` picks the one USB instrument matching `match.usb`, and `match.scpi_idn` is checked against `*IDN?` on every connect.
 
 ## Channel maps
 
 | Key | Used by | Meaning |
 |---|---|---|
-| `query` | read | Query to send, such as `MEAS:VOLT? CH1` |
-| `set` | write | Setting template. `{value}` for every type, `{on_off}` (ON or OFF) for bool channels |
-| `get` | write | Readback query. Without a readback query a read returns the last value sent, or unknown before the first write |
-| `command` | action | Template with the action's argument names as placeholders |
-| `parse`, `scale`, `offset`, `unit`, `on`, `off`, `lookup` | read, write | As in the serial driver (docs/drivers/serial.md) |
+| `query` | read | Query such as `MEAS:VOLT? CH1` |
+| `set` | write | Setting template with `{value}`, or `{on_off}` for ON or OFF on bools |
+| `get` | write | Readback query. Without one, a read returns the last value sent |
+| `command` | action | Template with the action's argument names |
+| `parse`, `scale`, `offset`, `unit`, `on`, `off`, `lookup` | read, write | As in `docs/drivers/serial.md` |
 
-`unit` in a map is the unit the instrument uses, so a channel in `mA` can read a query that returns amps. Numbers are formatted with Python format specs, for example `{value:.3f}`. Templates are checked when the file loads, and the driver blocks a rendered command with a control character.
+`unit` is the instrument's unit, so a `mA` channel can read a query in amps. Numbers use Python format specs such as `{value:.3f}`. Templates are checked at load, and a rendered command with a control character is blocked.
 
-## describe()
+## Describe
 
-The draft always has `device` and `match.scpi_idn`, and the rest of the draft depends on the instrument family.
+The draft always has `device` and `match.scpi_idn`, plus channels for the family.
 
 | Family | Matched by | Draft |
 |---|---|---|
@@ -45,62 +36,35 @@ The draft always has `device` and `match.scpi_idn`, and the rest of the draft de
 | Generators | Rigol DG, Siglent SDG, Keysight 33500 and 33600 | channel 1 frequency read and output switch |
 | Scopes | Rigol DS, MSO and DHO, Siglent SDS | trigger status |
 
-Every drafted write and action is `suggested: true` and carries rated limits at most. High risk entries stay read-only until a human lowers and confirms the limits, and low and medium ones take commands within the rated limits.
+Drafted writes and actions are `suggested: true` with rated limits at most. High risk entries stay read-only until a person lowers and confirms the limits, and low and medium ones work within the rated limits.
 
 ## Setup
 
-1. Install the extra with `uv tool install --compile-bytecode "halkit[scpi] @ git+https://github.com/sohan-bhat/OpenHAL"`. The extra brings pyusb and pyserial for the USB-TMC and serial transports. USB-TMC also needs the system libusb library.
-2. On Linux, give your user access to the USB device (a udev rule for the vendor id).
+1. Install with `uv tool install --compile-bytecode "halkit[scpi] @ git+https://github.com/sohan-bhat/OpenHAL"`, which brings pyusb and pyserial. USB-TMC also needs the system libusb.
+2. On Linux, add a udev rule for the vendor id.
 3. Find the resource with `python -m pyvisa info` and `python -c "import pyvisa; print(pyvisa.ResourceManager('@py').list_resources())"`.
-4. Start from `openhal/drivers/scpi/examples/rigol-dp832.hal.yaml`, or from the driver's `describe()` output.
-5. Validate with `openhal file validate`, then confirm the limits by hand.
-
-## Parameters
+4. Start from `openhal/drivers/scpi/examples/rigol-dp832.hal.yaml` or `describe()`.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `resource` | required | VISA resource string, for example `USB0::0x1AB1::0x0E11::DP8C1234::INSTR` or `TCPIP0::192.168.1.20::5025::SOCKET`, or `auto` |
-| `visa_library` | `@py` | `@py` for pyvisa-py, a path to NI-VISA, or `file.yaml@sim` for pyvisa-sim |
-| `timeout` | `2 s` | VISA timeout per exchange |
-| `termination` | `lf` | Read and write termination. `lf`, `crlf` or `cr` |
+| `resource` | required | VISA resource such as `USB0::0x1AB1::0x0E11::DP8C1234::INSTR` or `TCPIP0::192.168.1.20::5025::SOCKET`, or `auto` |
+| `visa_library` | `@py` | `@py` for pyvisa-py, an NI-VISA path, or `file.yaml@sim` for pyvisa-sim |
+| `timeout` | `2 s` | Per exchange |
+| `termination` | `lf` | `lf`, `crlf` or `cr` |
 | `check_errors` | true | Read `SYST:ERR?` after every setting |
 | `baud` | none | Baud rate for `ASRL` resources |
 
-## Example device file
-
-```yaml
-device: { name: Bench power supply, model: DP832, manufacturer: Rigol }
-id: bench-psu
-match: { usb: ["1ab1:0e11"], scpi_idn: "^RIGOL TECHNOLOGIES,DP832" }
-connect: { driver: scpi, resource: auto, timeout: 2 s }
-read:
-  ch1_voltage: { unit: V, every: 500 ms, map: { query: "MEAS:VOLT? CH1" } }
-  ch1_current: { unit: A, every: 500 ms, map: { query: "MEAS:CURR? CH1" } }
-write:
-  ch1_output: { type: bool, confirm: confirm-each-time, map: { set: "OUTP CH1,{on_off}", get: "OUTP? CH1" } }
-actions:
-  set_ch1:
-    args:
-      volts: { unit: V, min: 0, max: 12, step: 0.01 }
-      amps: { unit: A, min: 0, max: 1, step: 0.001 }
-    confirm: confirm-each-time
-    map: { command: "APPL CH1,{volts},{amps}" }
-safe_state:
-  - { ch1_output: false }
-hazard: medium
-```
-
 ## Known limitations
 
-- Binary block transfers (screenshots, waveform data) are not read, so use the `string` type for short text replies only.
-- An instrument that doesn't implement `SYST:ERR?` needs `check_errors: false`, and then a setting that fails on the instrument passes silently.
-- After a timeout the driver reopens the VISA session before the next command, so a late reply can't be read as the next response. Instruments that are slow to accept new sessions may take one extra timeout to recover.
-- The first `ResourceManager('@py')` in a process can take several seconds while pyvisa-py loads its backends.
-- Supplies keep their outputs on after the host disconnects, and the safe state only runs when the hub can still reach the instrument.
+- No binary block transfers such as screenshots or waveforms. `string` suits short text replies only.
+- Instruments without `SYST:ERR?` need `check_errors: false`, and failed settings then pass silently.
+- After a timeout the VISA session reopens before the next command, so a late reply can't pass as the next response. Slow instruments may take one extra timeout to recover.
+- The first `ResourceManager('@py')` in a process can take several seconds.
+- Supplies keep outputs on after the host disconnects, and the safe state runs only while the hub reaches the instrument.
 
 ## Hazard defaults
 
-The default hazard is `medium`, because supplies and loads can damage circuits and start fires. Keep `confirm-each-time` on output switches and set actions, and keep the volt and amp limits at what the circuit can take.
+`medium`, since supplies and loads can damage circuits and start fires. `safe_state` comes from the device file only, since SCPI has no universal outputs-off command. Keep `confirm-each-time` on output switches and set actions.
 
 ## Sources
 
@@ -108,6 +72,6 @@ The default hazard is `medium`, because supplies and loads can damage circuits a
 - PyVISA documentation, https://pyvisa.readthedocs.io/en/latest/
 - pyvisa-py documentation, https://pyvisa.readthedocs.io/projects/pyvisa-py/en/latest/
 - pyvisa-sim definition format, https://pyvisa.readthedocs.io/projects/pyvisa-sim/en/latest/definitions.html
-- Rigol DP800 Programming Guide (`MEAS`, `OUTP`, `APPL`, `SYST:ERR?`)
-- Keysight E36300 Series Programming Guide (channel lists)
+- Rigol DP800 Programming Guide for `MEAS`, `OUTP`, `APPL` and `SYST:ERR?`
+- Keysight E36300 Series Programming Guide for channel lists
 - Siglent SPD3303X Programming Guide
