@@ -1,39 +1,39 @@
 # Concepts
 
-OpenHAL is an open protocol between agents and hardware. This page defines the protocol's parts.
+OpenHAL is an open protocol for agents to control hardware, with one device file per device and one hub that checks every command.
 
 ## What the name means
 
-OpenHAL stands for Open Hardware Abstraction Layer, and each of the last three words names a part of the system.
+OpenHAL stands for Open Hardware Abstraction Layer.
 
-- **Hardware.** The hardware is any device OpenHAL controls. Each device has a [Device File](glossary:device-file) that lists the device's channels and the limits a person confirmed.
-- **Abstraction.** A hardware abstraction layer gives every device the same interface, so an agent reads and changes a 3D printer, a bench power supply or an Arduino board with the same few requests while the device file and the driver handle the differences.
-- **Layer.** The layer is the [Hub](glossary:hub) between the agent and the hardware, where the [Safety Kernel](glossary:safety-kernel) checks every request against the device file's limits before a [Driver](glossary:driver) sends a command to the device.
+- **Hardware.** Any device OpenHAL controls. Each device has a [Device File](glossary:device-file) with the device's channels and the limits a person confirmed.
+- **Abstraction.** Every device gets the same interface, so an agent drives a 3D printer, a bench power supply or an Arduino board with the same few requests.
+- **Layer.** The [Hub](glossary:hub) between the agent and the hardware. The [Safety Kernel](glossary:safety-kernel) checks every request against the device file before a [Driver](glossary:driver) sends a command.
 
 ## Hub
 
-The [Hub](glossary:hub) is one process on your computer or a Raspberry Pi, and the hub owns every device. Clients connect to the hub and send JSON-RPC 2.0 messages over a WebSocket or stdio, or connect through the MCP server, which maps onto the same methods.
+The [Hub](glossary:hub) is one process on your computer or a Raspberry Pi that owns every device. Clients connect with JSON-RPC 2.0 over a WebSocket or stdio, or through the MCP server.
 
 ## Device files
 
-Each device has a [Device File](glossary:device-file) that lists what can be read, what can be changed, the limits on every change and the safe state.
+Each [Device File](glossary:device-file) lists what can be read and changed, the limits on each change and the safe state.
 
 ```yaml tested include=examples/print-babysitter/printer.hal.yaml
 ```
 
-Every channel and action has a risk level, low, medium or high, from what it is. A high risk one is read-only until a person confirms its limits, and a low or medium one takes commands within the device's own range. A limit that a tool generates stays a suggestion until a person confirms the limit.
+Every channel and action has a risk level of low, medium or high. A high risk channel or action stays read-only until a person confirms the limits, and the rest take commands within the device's own range. A generated limit stays a suggestion until a person confirms the limit.
 
 ## Safety kernel
 
-The [Safety Kernel](glossary:safety-kernel) evaluates every command, from every client, in a fixed order. The kernel checks units, range, step, rate of change, interlocks, the token's scope and confirmation, and stops at the first failure. The kernel is plain code with no model in it, and an unknown value, such as a stale reading, counts as unsafe.
+The [Safety Kernel](glossary:safety-kernel) checks every command for units, range, step, rate of change, interlocks, token scope and confirmation, in that order, and stops at the first failure. The kernel is plain code with no model, and an unknown value such as a stale reading counts as unsafe.
 
 ## Drivers and grants
 
-A [Driver](glossary:driver) implements one protocol, such as SCPI or Moonraker. A driver changes hardware only with a [Grant](glossary:grant), a single-use permission the kernel issues for one exact command.
+A [Driver](glossary:driver) implements one protocol, such as SCPI or Moonraker. A driver changes hardware only with a [Grant](glossary:grant), a single-use permission for one exact command.
 
 ## Errors
 
-When the kernel blocks or holds a command, the hub returns a JSON-RPC error with a stable code and name.
+A blocked or held command returns a JSON-RPC error with a stable code and name.
 
 | Code | Name | Meaning |
 |---|---|---|
@@ -48,7 +48,7 @@ The specification lists every code.
 
 ## Principals and hazard classes
 
-Every request comes from a principal. A person uses the human token, and an agent uses an agent token with a scope of `read`, `control_low` or `control_medium`. A device file sets its hazard class to `low`, `medium` or `high`, and the hub holds every change to a high hazard device until a person approves the change.
+A person uses the human token. An agent uses an agent token with a scope of `read`, `control_low` or `control_medium`. A device file's hazard class is `low`, `medium` or `high`, and the hub holds every change to a high hazard device until a person approves.
 
 ## Conformance levels
 
@@ -56,4 +56,4 @@ Hubs and drivers declare a [Conformance Level](glossary:conformance-level). Core
 
 ## What OpenHAL doesn't do
 
-Each device's firmware still controls the device, and OpenHAL doesn't replace e-stops, enclosures or interlocks wired in hardware.
+Each device's firmware still controls the device. OpenHAL doesn't replace e-stops, enclosures or hardware interlocks.
