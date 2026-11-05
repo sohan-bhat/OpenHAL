@@ -1,14 +1,6 @@
 # modbus driver
 
-The modbus driver reads and writes Modbus RTU devices on a serial line (usually RS-485) and Modbus TCP devices on the network, through pymodbus. Each channel's map names a register, its table, its number format and a linear scale, taken from the device's register map.
-
-## What it supports
-
-- All four tables, where coils and discrete inputs map to bool channels and holding and input registers map to number, bool and enum channels.
-- Formats `uint16`, `int16`, `uint32`, `int32` and `float32`, with configurable word order and byte order.
-- Writes to coils (function 5) and holding registers (function 6, or 16 for 32-bit values and for devices that only accept 16).
-- Single bits of a register as read-only bool channels.
-- Read Device Identification (function 43 / 14) for `identify()` where the device supports it.
+The modbus driver reads and writes Modbus RTU devices on serial lines, usually RS-485, and Modbus TCP devices, through pymodbus. Coils and discrete inputs map to bools, holding and input registers to numbers, bools and enums. Coil writes use function 5 and register writes function 6, or 16 for 32-bit values. `identify()` uses Read Device Identification, function 43 / 14, where supported.
 
 ## Setup
 
@@ -16,25 +8,25 @@ The modbus driver reads and writes Modbus RTU devices on a serial line (usually 
 uv tool install --compile-bytecode "halkit[modbus] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-For RTU you need a USB to RS-485 adapter and the bus wired A to A and B to B, with termination at both ends of longer runs. On Linux, add your user to the `dialout` group to open the port.
+RTU needs a USB to RS-485 adapter wired A to A and B to B, termination at both ends of long runs, and on Linux the `dialout` group.
 
 ## Parameters
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `transport` | required | `tcp` or `rtu`. The shorthand `modbus: rtu` sets it |
-| `host` | none | TCP only. Address of the device or gateway |
-| `port` | `502` for TCP | TCP port number, or the serial device for RTU (`/dev/ttyUSB0`, `COM3`) |
+| `transport` | required | `tcp` or `rtu`. `modbus: rtu` is shorthand |
+| `host` | none | TCP device or gateway address |
+| `port` | `502` for TCP | TCP port, or the RTU serial device such as `/dev/ttyUSB0` or `COM3` |
 | `unit` | `1` | Unit id, 1 to 247 |
 | `baud` | `9600` | RTU only |
 | `parity` | `N` | RTU only. `N`, `E` or `O` |
 | `stopbits` | `1` | RTU only |
 | `bytesize` | `8` | RTU only |
-| `timeout` | `1 s` | How long to wait for each response |
+| `timeout` | `1 s` | Response deadline |
 | `retries` | `1` | Extra attempts after a timeout |
-| `word_order` | `big` | Default order of the two registers of 32-bit values. `big` sends the high word first |
-| `byte_order` | `big` | Default byte order inside each register. Only a few devices need `little` |
-| `always_write_multiple` | `false` | Use function 16 even for single registers |
+| `word_order` | `big` | High word first for 32-bit values |
+| `byte_order` | `big` | Byte order in each register |
+| `always_write_multiple` | `false` | Function 16 for single registers too |
 
 ## Channel maps
 
@@ -52,40 +44,36 @@ write:
 
 | Key | Default | Meaning |
 |---|---|---|
-| `register` | required | Zero-based protocol address. Manuals that write `40011` or `30001` mean holding register 10 and input register 0 |
+| `register` | required | Zero-based address. Manual addresses `40011` and `30001` mean holding register 10 and input register 0 |
 | `kind` | `holding` | `coil`, `discrete`, `holding` or `input` |
 | `format` | `uint16` | `uint16`, `int16`, `uint32`, `int32`, `float32` |
 | `word_order`, `byte_order` | from the parameters | Per-channel override |
-| `scale`, `offset` | `1`, `0` | channel value = raw × scale + offset |
-| `bit` | none | Read one bit (0 to 15) of a register as a bool. Read channels only |
-| `values` | none | Enum word to raw value, required for enum channels |
-| `on`, `off` | `1`, `0` | Raw values for a bool channel on a register |
+| `scale`, `offset` | `1`, `0` | value = raw × scale + offset |
+| `bit` | none | Bit 0 to 15 as a read-only bool |
+| `values` | none | Enum word to raw value, required for enums |
+| `on`, `off` | `1`, `0` | Raw values for a bool on a register |
 
-Writes compute raw = (value - offset) / scale and round integer formats to the nearest whole number. The reading the driver returns shows the value it really sent, so `42.47 %` with `scale: 0.1` is sent as 425 and reported as 42.5 %. Set `step` on the channel to the register's resolution and the kernel blocks values that would be rounded.
-
-Because changing one bit needs a read-modify-write that could race with the device or another master, bit channels can't be written.
+Writes send `raw = (value - offset) / scale`, rounded for integer formats, and return the value sent, so with `scale: 0.1` a write of `42.47 %` sends 425 and reads back 42.5 %. Set `step` to the register resolution so the kernel blocks values that would round. Bit channels are read-only, since read-modify-write races other masters.
 
 ## Example
 
-`openhal/drivers/modbus/examples/sdm120-energy-meter.hal.yaml` reads an Eastron SDM120 meter over RTU. The file has no write channels, so the file needs no confirmation.
+`openhal/drivers/modbus/examples/sdm120-energy-meter.hal.yaml` reads an Eastron SDM120 meter over RTU.
 
 ## Errors and health
 
-- No response within `timeout`, after `retries`, raises `TimeoutError` with a hint about the unit id, wiring, baud rate and parity.
-- Modbus exception responses raise `DriverError` naming the exception, for example illegal data address.
-- A NaN float, an enum raw value outside the map, or a value that doesn't fit the register format raises `DriverError`.
-- Because a TCP socket or a serial port stays open after the device behind it dies, `health()` reads the first mapped channel, and three failed transactions in a row also report the device as disconnected.
+- A timeout after `retries` raises `TimeoutError` with a hint about unit id, wiring, baud rate and parity.
+- A Modbus exception, a NaN float, an unmapped enum value or a value too big for the format raises `DriverError`.
+- `health()` reads the first mapped channel. Three failed transactions in a row mark the device disconnected.
 
 ## Limitations
 
-- Because scanning unit ids would send requests to devices nobody configured, the driver has no discovery.
-- The driver doesn't support strings, 64-bit values or file records.
-- Modbus devices don't describe their registers, so `describe()` only returns the unit id and any identification objects.
-- The driver doesn't coordinate with other masters, so don't run the driver on a bus with another master.
+- No discovery, strings, 64-bit values or file records.
+- `describe()` returns only the unit id and identification objects.
+- One master per bus.
 
 ## Hazard default and safe state
 
-The default hazard is medium, because Modbus often drives motors, heaters and valves. Raise the hazard to high for drives and anything that can injure. Modbus has no emergency behavior of its own, so `safe_state_support` is `file`, and the hub applies the device file's `safe_state` through ordinary writes, which work only while the device responds. Wire hardware stops for anything dangerous.
+Medium, or high for drives and anything that can injure. `safe_state_support` is `file`, so `safe_state` goes out as ordinary writes while the device responds.
 
 ## Sources
 

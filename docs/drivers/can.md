@@ -1,15 +1,6 @@
 # can driver
 
-The can driver reads signals out of CAN bus frames and sends frames as commands and actions. The driver uses python-can, so it can use SocketCAN on Linux and the USB adapters python-can supports (PCAN, Kvaser, slcan, gs_usb and others). The driver is tested on a simulated bus and not yet on a real adapter. Each channel's map names the frame id that carries the value and where the value sits in the data bytes, so motor drives, battery systems, sensors and homemade nodes work without device-specific code.
-
-## What it supports
-
-- Classic CAN with 11-bit and 29-bit identifiers, and CAN FD with up to 64 data bytes.
-- Read channels of type number, bool and enum, decoded from any byte range or bit range, big or little endian, signed or unsigned, with scale, offset and a device unit.
-- Control channels that place a value in a frame and send the frame, where several channels can share one frame.
-- Actions that send a fixed frame, with action arguments placed in it.
-- `describe()` listens to the bus for a moment and returns one suggested read channel per frame id it receives.
-- `discover()` lists SocketCAN interfaces that are up and sends nothing.
+The can driver reads signals from CAN frames and sends frames as commands and actions, through python-can on SocketCAN or USB adapters such as PCAN, Kvaser, slcan and gs_usb. Classic CAN with 11-bit and 29-bit ids and CAN FD up to 64 bytes both work. The driver is tested on a simulated bus and not yet on a real adapter.
 
 ## Setup
 
@@ -17,18 +8,16 @@ The can driver reads signals out of CAN bus frames and sends frames as commands 
 uv tool install --compile-bytecode "halkit[can] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-On Linux, bring the interface up first, for example `sudo ip link set can0 up type can bitrate 500000`. Every node on the bus must use the same bitrate, and the bus needs 120 ohm termination at both ends.
-
-## Parameters
+On Linux, run `sudo ip link set can0 up type can bitrate 500000` first. All nodes need the same bitrate and the bus needs 120 ohm termination at both ends. `discover()` lists SocketCAN interfaces that are up, and `describe()` suggests one channel per frame id heard.
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `channel` | required | The interface or channel name, such as `can0`, `PCAN_USBBUS1` or `/dev/ttyACM0`. The shorthand `can: can0` sets it |
-| `interface` | `socketcan` | Any python-can interface name, such as `socketcan`, `pcan`, `kvaser`, `slcan`, `gs_usb` or `virtual` |
-| `bitrate` | none | Bitrate in bit/s for adapters that set it themselves. SocketCAN takes it from `ip link` instead |
-| `fd` | `false` | Use CAN FD frames |
+| `channel` | required | Interface such as `can0`, `PCAN_USBBUS1` or `/dev/ttyACM0`. `can: can0` is shorthand |
+| `interface` | `socketcan` | Any python-can interface, such as `pcan`, `kvaser`, `slcan`, `gs_usb` or `virtual` |
+| `bitrate` | none | Bit/s for adapters that set the rate. SocketCAN uses `ip link` |
+| `fd` | `false` | CAN FD frames |
 | `data_bitrate` | none | CAN FD data phase bitrate |
-| `timeout` | `1 s` | How long a send may take before it fails |
+| `timeout` | `1 s` | Send deadline |
 
 ## Channel maps
 
@@ -48,55 +37,48 @@ actions:
 
 | Key | Default | Meaning |
 |---|---|---|
-| `id` | required | The frame identifier |
-| `extended` | `true` above 0x7FF | Use a 29-bit identifier. Set `extended` to `true` for low ids on 29-bit buses such as J1939 or VESC |
-| `byte`, `length` | `0`, `1` | Where the value starts and how many bytes it spans, 1 to 8 |
-| `endian` | `big` | Byte order, `big` or `little` |
+| `id` | required | Frame id |
+| `extended` | `true` above 0x7FF | 29-bit id. Set for low ids on 29-bit buses such as J1939 or VESC |
+| `byte`, `length` | `0`, `1` | Start byte and length, 1 to 8 |
+| `endian` | `big` | `big` or `little` |
 | `signed` | `false` | Two's complement |
-| `bit`, `bits` | `0`, the rest | The bit range inside those bytes, counted from the least significant bit |
+| `bit`, `bits` | `0`, the rest | Bit range from the least significant bit |
 | `scale`, `offset` | `1`, `0` | device value = raw × scale + offset |
-| `unit` | the channel unit | The unit the device value is in, which the driver converts to the channel unit |
-| `on`, `off` | `1`, `0` | Raw values for bool channels |
+| `unit` | the channel unit | Device unit, converted to the channel unit |
+| `on`, `off` | `1`, `0` | Raw bool values |
 | `lookup` | none | Raw numbers to enum values, such as `{ 0: coast, 1: eco }` |
-| `data` | zeros | Command and action frames. The bytes the rest of the frame carries |
-| `dlc` | the longest field | Command and action frames. The frame length in bytes |
-| `state` | none | Control channels. A read map for the status frame that shows the result |
-| `args` | none | Actions. A field map for each action argument |
+| `data` | zeros | Command and action frames. The other bytes |
+| `dlc` | the longest field | Command and action frames. Frame length |
+| `state` | none | Control channels. Status frame map that shows the result |
+| `args` | none | Actions. Field map per argument |
 
-A change starts from the last payload the driver sent with that id, so changing `enable` keeps the setpoint that `setpoint` put in the same frame. After reconnecting the frame starts from `data` again.
+A command starts from the last payload sent with that id, so `enable` keeps the `setpoint` in the same frame. A reconnect starts again from `data`.
 
-## How reads and commands behave
+## Behavior
 
-- Because CAN only broadcasts, a background thread keeps the newest frame per id, and a read decodes that frame with the time the frame arrived. An id that hasn't been received since connecting reads as no value, which the kernel treats as unknown, and reads never put anything on the bus.
-- Values are rounded to the field's raw step, and the reading a command returns shows the value actually sent. A value the field can't hold fails the command, and nothing is sent or clamped.
-- A successful send means the controller put the frame on the bus, which doesn't prove the node acted, so use a `state` map or a read channel to check whether the node acted.
-- Frames are never queued or retried, so a failed send fails the command.
+- Reads decode the newest frame per id and never transmit. An id not heard since connecting reads as no value.
+- Values round to the field's raw step and the reading returned shows the value sent. A value the field can't hold fails with nothing sent.
+- A sent frame doesn't prove the node acted, so check a `state` map or a read.
+- Frames are never queued or retried. A failed send raises `DriverError` and a hung send `TimeoutError`, with the frame in candump notation.
+- An interface that fails to open raises `DriverError` with the `ip link` command to try. Short frames, unmapped raw values and a downed bus raise `DriverError` on read.
+- `health()` reports receive errors and bus-off as down.
 
 ## Example
 
-`openhal/drivers/can/examples/vesc-motor-controller.hal.yaml` reads speed, current, temperatures and input voltage from a VESC motor controller and sets an ERPM target. The file's safe state sends the zero current frame so the motor coasts.
-
-## Errors
-
-- An interface that can't be opened raises `DriverError` with the `ip link` command to try.
-- A frame too short for a field, a raw value a bool or enum map doesn't name, and a bus that went down raise `DriverError` on read.
-- A send that fails raises `DriverError` and a send that hangs raises `TimeoutError`, each with the frame in candump notation.
-- `health()` reports the bus as down after a receive error, and reports bus-off where the interface exposes the bus state.
+`openhal/drivers/can/examples/vesc-motor-controller.hal.yaml` reads a VESC motor controller and sets an ERPM target. The safe state sends zero current so the motor coasts.
 
 ## Limitations
 
-- The driver reads raw signals only. CANopen SDO and NMT, J1939 multi-frame transport and ISO-TP are not handled, so values that need a request and reply protocol can't be read, but the periodic PDOs and PGNs of those protocols can be read.
-- The driver has no DBC file import, so make the maps from the node's documentation or DBC file by hand.
-- Remote frames are not supported.
-- Fields are at most 8 bytes long.
+- Raw signals only. No CANopen SDO or NMT, J1939 multi-frame transport or ISO-TP, though periodic PDOs and PGNs read fine.
+- No DBC import, no remote frames, and fields of at most 8 bytes.
 
 ## Hazard default and safe state
 
-The default hazard is medium, because CAN nodes are usually motor drives, battery systems and actuators. CAN has no emergency behavior of its own, so `safe_state_support` is `file`. The hub sends the device file's safe state frames like any other frame, which needs the bus and the node to be up. Most drives stop on their own when command frames stop arriving, and because that timeout is the real fallback when the hub or the bus fails, configure the timeout on the node.
+Medium. `safe_state_support` is `file`, so safe state frames need the bus and node up. Set the node's own command timeout, which stops most drives when frames stop.
 
 ## License note
 
-python-can is licensed LGPL-3.0, and OpenHAL uses python-can unmodified as an optional dependency and copies none of its code.
+python-can is LGPL-3.0, used unmodified as an optional dependency with no code copied.
 
 ## Sources
 
@@ -105,4 +87,4 @@ python-can is licensed LGPL-3.0, and OpenHAL uses python-can unmodified as an op
 - SocketCAN, Linux kernel documentation, https://docs.kernel.org/networking/can.html
 - CAN in Automation, CAN FD, https://www.can-cia.org/can-knowledge/can-fd-the-basic-idea
 - VESC CAN documentation, https://github.com/vedderb/bldc/blob/master/documentation/comm_can.md
-- can-utils (candump, cansend), https://github.com/linux-can/can-utils
+- can-utils with candump and cansend, https://github.com/linux-can/can-utils
