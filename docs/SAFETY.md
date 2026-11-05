@@ -9,7 +9,7 @@ The safety kernel is reviewed against this page. Where the code and this page di
 3. **Risk decides where a person comes in.** Every channel and action has a [risk level](#risk-levels). High risk targets stay read-only until a person confirms their limits, and the file records who and when. Low and medium targets take commands within the device's own range. Agents may only tighten limits, for their own session. Only a person loosens a limit or lowers a level.
 4. **Stop works.** One stop puts every device in its safe state and locks writes until a human unlocks.
 5. **Fail closed.** An unexpected exception in the kernel blocks the command and is logged.
-6. **Everything is recorded.** Every read, write attempt, block, confirmation, stop and unlock goes into an append-only, hash-chained audit log.
+6. **Everything is recorded.** Every read, write attempt, block, confirmation, stop and unlock goes into an append-only, hash-chained audit log. A change that runs also records the first 12 hex digits of its grant as `grant` and the device's own commands as `native`.
 
 ## The checks, in order
 

@@ -19,7 +19,7 @@ The `scpi` driver connects to programmable test instruments over VISA with PyVIS
 | `command` | action | Template with the action's argument names |
 | `parse`, `scale`, `offset`, `unit`, `on`, `off`, `lookup` | read, write | As in `docs/drivers/serial.md` |
 
-An image channel's `query`, such as `:DISP:DATA? PNG`, returns an IEEE 488.2 definite-length block holding a PNG, JPEG or GIF. A reading of 9.9E37 or more fails as an invalid measurement. `unit` is the instrument's unit, so a `mA` channel can read a query in amps. Numbers use Python format specs such as `{value:.3f}`. Templates are checked at load, and a rendered command with a control character is blocked.
+An image channel's `query`, such as `:DISP:DATA? PNG`, returns an IEEE 488.2 definite-length block holding a PNG, JPEG or GIF. A reading of 9.9E37 or more fails as an invalid measurement. `unit` is the instrument's unit, so a `mA` channel can read a query in amps. Numbers use Python format specs such as `{value:.3f}`. Templates are checked at load, and a rendered command with a control character is blocked. Each change records the SCPI lines sent in the audit entry's `native` field.
 
 ## Describe
 

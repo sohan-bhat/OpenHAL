@@ -46,6 +46,7 @@ Rendering needs OpenGL, so without a display set `MUJOCO_GL` to `egl` or `osmesa
 - A goal follows a minimum-jerk path peaking at the channel's `max_change_per_s` and reads back the target. A channel with no speed jumps in one step.
 - A new goal takes over only the actuators the goal names, and a running move keeps the rest.
 - `move_to` returns `done`, or `started` after `action_wait`.
+- Each change records its actuator targets in the audit entry's `native` field.
 
 ## Safe state
 
