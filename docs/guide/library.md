@@ -8,7 +8,7 @@ The device library holds starter device files for real products, shipped with th
 
 A USB class or mDNS service type only names a kind of device, so a class or type adds to a match but never makes a match alone.
 
-Some drivers report no product identifier yet. midi lists port names only, and rpi-gpio, rpi-camera and alpaca report identifiers no match key holds. moonraker, homeassistant, modbus and mqtt don't discover anything, so add files for those drivers by name. An RS-232 instrument on the serial driver shows only the USB serial adapter's identifiers, so add a serial file such as the Mettler Toledo balance by name too.
+midi lists port names only, rpi-gpio, rpi-camera and alpaca report identifiers no match key holds, and moonraker, homeassistant, modbus and mqtt don't discover anything. Add files for those drivers by name. Add a serial file such as the Mettler Toledo balance by name too, because an RS-232 instrument shows only the USB serial adapter's identifiers.
 
 ## Adding a file
 
@@ -21,7 +21,7 @@ $ openhal library add rigol-dp832
 added
 ```
 
-`add` copies the file into your devices folder unchanged. `add` never adds a confirmation or overwrites an existing file.
+`add` copies the file into your devices folder unchanged, with no confirmation, and never overwrites an existing file.
 
 ## Suggested limits
 

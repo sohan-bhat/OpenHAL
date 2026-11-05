@@ -18,7 +18,7 @@ irm https://sohan-bhat.github.io/OpenHAL/install.ps1 | iex
 ```
 <!-- install:end -->
 
-The installer needs nothing installed first. [Install](install.md) also covers uv, pipx and a clone.
+[Install](install.md) also covers uv, pipx and a clone.
 
 ## Run the demo
 
@@ -45,7 +45,7 @@ $ openhal demo --full
 
 ## Run the hub yourself
 
-`init` creates `~/.openhal` with a human token and a [Device File](glossary:device-file) for the simulated plant waterer. The plant waterer is medium risk, so the board takes commands at once within the board's own range. `openhal risk show plant-waterer` lists each level.
+`init` creates `~/.openhal` with a human token and a [Device File](glossary:device-file) for the simulated plant waterer, a medium risk board that takes commands at once within the board's own range. `openhal risk show plant-waterer` lists each level.
 
 ```sh tested
 $ openhal init
@@ -55,11 +55,11 @@ $ openhal status
 devices 1 of 1 connected
 ```
 
-The hub listens on `127.0.0.1:7420` only. A high risk channel such as a heater stays read-only until you confirm the limits with `openhal file confirm`. A running hub loads each confirmed file with no restart.
+The hub listens on `127.0.0.1:7420` only. A high risk channel such as a heater stays read-only until `openhal file confirm`, and a running hub loads each confirmed file with no restart.
 
 ## Your first device
 
-Plug in a board running the OpenHAL firmware, or an ESPHome node, and run `openhal init` again. Low and medium channels such as an LED or a pump take commands at once within the device's own range. A high risk channel opens the limits interview, one question per limit with a suggestion. Enter keeps the suggestion, a typed value replaces the suggestion, and you type `confirm` once at the end. The Inspector's Review limits action shows the same questions.
+Plug in a board running the OpenHAL firmware, or an ESPHome node, and run `openhal init` again. Low and medium channels such as an LED or a pump take commands at once. A high risk channel opens the limits interview, one question per limit, where Enter keeps the suggestion and you type `confirm` once at the end. The Inspector's Review limits action shows the same questions.
 
 To raise a limit later, run `openhal limits set DEVICE.CHANNEL --max VALUE` and type `confirm`. A narrower limit applies at once. A wider limit from a script or an agent is held in `openhal confirm list` until you approve.
 

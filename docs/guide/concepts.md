@@ -16,7 +16,7 @@ The [Hub](glossary:hub) is one process on your computer or a Raspberry Pi that o
 
 ## Device files
 
-Each [Device File](glossary:device-file) lists what can be read and changed, the limits on each change and the safe state.
+Each [Device File](glossary:device-file) lists what can be read and changed, the limits and the safe state.
 
 ```yaml tested include=examples/print-babysitter/printer.hal.yaml
 ```
@@ -25,7 +25,7 @@ Every channel and action has a risk level of low, medium or high. A high risk ch
 
 ## Safety kernel
 
-The [Safety Kernel](glossary:safety-kernel) checks every command for units, range, step, rate of change, interlocks, token scope and confirmation, in that order, and stops at the first failure. The kernel is plain code with no model, and an unknown value such as a stale reading counts as unsafe.
+The [Safety Kernel](glossary:safety-kernel) checks units, range, step, rate of change, interlocks, token scope and confirmation, in that order, and stops at the first failure. The kernel is plain code with no model, and an unknown value such as a stale reading counts as unsafe.
 
 ## Drivers and grants
 
@@ -38,7 +38,7 @@ A blocked or held command returns a JSON-RPC error with a stable code and name.
 | Code | Name | Meaning |
 |---|---|---|
 | -32010 | LIMIT_EXCEEDED | Outside the confirmed limits |
-| -32011 | RATE_LIMITED | Faster than the rate limit allows right now |
+| -32011 | RATE_LIMITED | Faster than the rate limit |
 | -32012 | INTERLOCK_BLOCKED | An interlock doesn't hold |
 | -32013 | CONFIRMATION_REQUIRED | Held until a person approves |
 | -32014 | STOPPED | The hub is stopped |
