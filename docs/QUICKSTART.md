@@ -12,7 +12,7 @@ uv run openhal demo
 You'll see the agent raise the bed target from 60 °C to 70 °C, have a request for a nozzle temperature of 300 °C blocked at the nozzle limit of 260 °C and pause the print when the camera shows the print has come loose. The owner then approves the cancel, and the printer's state becomes cancelled.
 <!-- outcome:end -->
 
-The demo connects an agent to a hub with a simulated Klipper [printer and its camera](../examples/print-babysitter/). Nothing reaches hardware, but the safety kernel checks every command as for a real printer. A held request expires after five minutes.
+The demo connects an agent to a hub with a simulated Klipper [printer and camera](../examples/print-babysitter/). Nothing reaches hardware, but the safety kernel checks every command as for a real printer. A held request expires after five minutes.
 
 <!-- trace:start -->
 The agent reads a frame from the printer's camera to check how the print is starting.

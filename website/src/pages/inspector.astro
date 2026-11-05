@@ -20,10 +20,10 @@ const sidebar = [
 
 <DocShell title="Inspector" description="The OpenHAL Inspector shows every device and every message, and stops every device in one click." sidebar={sidebar} wide>
   <div class="prose">
-    <p>The Inspector is the hub's dashboard, which shows every device and every JSON-RPC message and stops every device in one click.</p>
+    <p>The Inspector is the hub's dashboard for every device and JSON-RPC message, with a one-click stop.</p>
 
     <h2 id="open"><a class="heading-link" href="#open">Open the Inspector</a></h2>
-    <p>The hub serves the Inspector at <code>http://127.0.0.1:7420/</code>, and a browser pairs with the one-time code that <code>openhal pair</code> prints.</p>
+    <p>Open <code>http://127.0.0.1:7420/</code> and pair the browser with the one-time code from <code>openhal pair</code>.</p>
 
     <h2 id="views"><a class="heading-link" href="#views">Views</a></h2>
     <Table containerClassName="table-wrap">
@@ -31,14 +31,14 @@ const sidebar = [
         <TableRow><TableHead scope="col">View</TableHead><TableHead scope="col">Shows</TableHead></TableRow>
       </TableHeader>
       <TableBody>
-        <TableRow><TableCell data-label="View">Devices</TableCell><TableCell data-label="Shows">Every device with its connection, conformance level and verification, and the selected device's channels, limits and actions</TableCell></TableRow>
+        <TableRow><TableCell data-label="View">Devices</TableCell><TableCell data-label="Shows">Each device's connection, conformance level, verification, channels, limits and actions</TableCell></TableRow>
         <TableRow><TableCell data-label="View">Message log</TableCell><TableCell data-label="Shows">Every request, response, notification and error, as formatted JSON-RPC</TableCell></TableRow>
-        <TableRow><TableCell data-label="View">Confirmations</TableCell><TableCell data-label="Shows">Commands held for a person's approval or rejection</TableCell></TableRow>
+        <TableRow><TableCell data-label="View">Confirmations</TableCell><TableCell data-label="Shows">Commands held for a person to approve or reject</TableCell></TableRow>
         <TableRow><TableCell data-label="View">Audit log</TableCell><TableCell data-label="Shows">Every decision, in a hash chain</TableCell></TableRow>
-        <TableRow><TableCell data-label="View">Routines</TableCell><TableCell data-label="Shows">Each routine with its source and its dry run</TableCell></TableRow>
+        <TableRow><TableCell data-label="View">Routines</TableCell><TableCell data-label="Shows">Each routine's source and dry run</TableCell></TableRow>
         <TableRow><TableCell data-label="View">Driver writer</TableCell><TableCell data-label="Shows">A draft device file for an unknown device, and the limits interview</TableCell></TableRow>
         <TableRow><TableCell data-label="View">Settings</TableCell><TableCell data-label="Shows">Client tokens</TableCell></TableRow>
-        <TableRow><TableCell data-label="View">Stop</TableCell><TableCell data-label="Shows">The stop control, which is always visible. Any client may send a stop, but lifting the stop takes a person's token</TableCell></TableRow>
+        <TableRow><TableCell data-label="View">Stop</TableCell><TableCell data-label="Shows">The always visible stop. Any client may stop, and lifting the stop takes a person's token</TableCell></TableRow>
       </TableBody>
     </Table>
 
@@ -46,7 +46,7 @@ const sidebar = [
       shots.length > 0 && (
         <>
           <h2 id="screenshots"><a class="heading-link" href="#screenshots">Screenshots</a></h2>
-          <p class="muted">Each screenshot comes from the Inspector on a hub with the simulated printer and its webcam, and shows the part its caption names at full size.</p>
+          <p class="muted">From a hub with the simulated printer and webcam.</p>
         </>
       )
     }

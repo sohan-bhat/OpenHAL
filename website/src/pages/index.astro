@@ -20,9 +20,9 @@ const { withoutInstall } = demoCommands();
 const groups = driverGroups();
 const { total, tested } = driverCounts();
 const points = [
-  { title: "Risk levels", text: "Each channel and action has a risk level that sets where a person comes in. High risk ones stay read-only until a person confirms their limits, and low and medium ones work within the device's own range." },
-  { title: "One STOP", text: "One command puts every device in its safe state, and the devices stay stopped until a person lifts the stop." },
-  { title: "Everything logged", text: "Every request with its result, every stop and every confirmation goes into an append-only audit log." },
+  { title: "Risk levels", text: "High risk channels and actions stay read-only until a person confirms the limits. The rest work within the device's own range." },
+  { title: "One STOP", text: "One command puts every device in a safe state until a person lifts the stop." },
+  { title: "Everything logged", text: "Every request, stop and confirmation goes into an append-only audit log." },
 ];
 const after = "safe";
 const site = JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: PRODUCT_NAME, alternateName: PRODUCT_LONG_NAME, url: new URL("/", Astro.site).href });
@@ -34,8 +34,8 @@ const head = [
   { tag: "script" as const, attrs: { type: "application/ld+json" }, content: site },
 ];
 const more = [
-  { href: latestSpecHref(), title: "Read the specification", text: "The specification defines every message, error and rule, and each version has a number such as v0.1." },
-  { href: "/docs/", title: "Read the docs", text: "The docs explain how to run the hub, create device files and add drivers." },
+  { href: latestSpecHref(), title: "Read the specification", text: "Every message, error and rule, in numbered versions such as v0.1." },
+  { href: "/docs/", title: "Read the docs", text: "Run the hub, create device files and add drivers." },
 ];
 ---
 
@@ -82,19 +82,19 @@ const more = [
 
   <section id="try" class="home-width part" aria-labelledby="try-title">
     <h2 id="try-title">Run the demo</h2>
-    <p class="lede">The demo uses simulated devices, so nothing touches real hardware. Install OpenHAL from the top of the page, then run the demo.</p>
+    <p class="lede">The demo runs on simulated devices, so nothing touches real hardware.</p>
     <div class="prose quickstart">
       <Quickstart />
       {
         withoutInstall && (
           <>
-            <p>With uv installed, you can also run the demo without installing OpenHAL.</p>
+            <p>With uv, run the demo without installing OpenHAL.</p>
             <Fragment set:html={codeHtml(`$ ${withoutInstall}`, "sh")} />
           </>
         )
       }
     </div>
-    <p class="onward">The demo plays the same story in your terminal. <a href="/spec/playground/">Send the requests in your browser</a></p>
+    <p class="onward"><a href="/spec/playground/">Send the requests in your browser</a></p>
   </section>
 
   <section class="home-width part" aria-labelledby="more-title">

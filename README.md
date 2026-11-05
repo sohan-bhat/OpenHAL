@@ -60,12 +60,12 @@ Agents usually reach each printer or lab instrument through a script or MCP serv
 
 ## Safety model
 
-- Every channel and action has a risk level of low, medium or high. A device file's `hazard` sets the lowest level for the whole device.
+- Every channel and action has a risk level of low, medium or high. A device file's `hazard` sets the minimum level for every channel and action on the device.
 - High risk channels and actions stay read-only until a person confirms the limits. An agent's proposal never counts as a confirmation.
 - Low and medium channels and actions take commands within the device's own range. Only a person lowers a level, with `openhal risk set`.
 - Each hardware change needs a single-use grant for that exact command.
 - A stale or missing reading blocks the command.
-- One stop puts every device in its safe state until a person lifts the stop.
+- One stop puts every device in a safe state until a person lifts the stop.
 - Every decision goes into a hash-chained audit log.
 
 [docs/SAFETY.md](docs/SAFETY.md) has the details.
@@ -129,7 +129,7 @@ openhal init
 openhal start
 ```
 
-Any other MCP client runs `openhal mcp` over stdio with its own agent token, as [the MCP guide](docs/interfaces/MCP.md) shows. [Connect Claude](docs/guide/tutorials/connect-claude.md) covers the manual setup.
+Any other MCP client runs `openhal mcp` over stdio with a separate agent token, as [the MCP guide](docs/interfaces/MCP.md) shows. [Connect Claude](docs/guide/tutorials/connect-claude.md) covers the manual setup.
 
 ## Docs and specification
 

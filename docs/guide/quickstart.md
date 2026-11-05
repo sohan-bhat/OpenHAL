@@ -26,7 +26,7 @@ The installer needs nothing installed first. [Install](install.md) also covers u
 $ openhal demo
 ```
 
-The demo connects an agent to a hub with a simulated Klipper printer and its camera, then prints each message.
+The demo connects an agent to a hub with a simulated Klipper printer and camera, then prints each message.
 
 ```scenario
 ```
@@ -87,5 +87,5 @@ $ openhal unlock
 ## Next
 
 - [Concepts](concepts.md) defines the hub, device files, the kernel and the error codes.
-- [Connect Claude](tutorials/connect-claude.md) gives an agent its own token.
+- [Connect Claude](tutorials/connect-claude.md) gives an agent a separate token.
 - [Add a device](tutorials/add-a-device.md) describes your own hardware.

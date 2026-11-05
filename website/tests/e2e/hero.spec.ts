@@ -168,7 +168,7 @@ test.describe("the install box", () => {
     const top = (selector: string) => page.locator(selector).first().evaluate((el) => el.getBoundingClientRect().top);
     const order = [await top(".hero-spell"), await top(".hero-install"), await top(".hero-next"), await top(".hero-actions")];
     expect([...order].sort((a, b) => a - b)).toEqual(order);
-    await expect(page.locator(".hero-next")).toHaveText("Then set up your first device with openhal init, and start OpenHAL with openhal start.");
+    await expect(page.locator(".hero-next")).toHaveText("Then run openhal init and openhal start.");
     await expect(page.getByRole("tablist", { name: `Install ${PRODUCT_NAME}` })).toBeVisible();
   });
 

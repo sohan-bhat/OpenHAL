@@ -43,8 +43,8 @@ test.describe("overview", () => {
     await expect(block.locator("pre")).toHaveText("$ openhal demo");
     await expect(page.locator("#try")).not.toContainText("clone");
     await expect(page.locator("#try")).not.toContainText("uv run");
-    await expect(page.locator("#try .lede")).toHaveText("The demo uses simulated devices, so nothing touches real hardware. Install OpenHAL from the top of the page, then run the demo.");
-    await expect(page.locator("#try")).toContainText("The demo plays the same story in your terminal.");
+    await expect(page.locator("#try .lede")).toHaveText("The demo runs on simulated devices, so nothing touches real hardware.");
+    await expect(page.locator("#try").getByRole("link", { name: "Send the requests in your browser" })).toHaveAttribute("href", "/spec/playground/");
   });
 
   test("the demo runs through uvx with the PyPI name only once install.json says the distribution is on PyPI", async ({ page }) => {
@@ -53,7 +53,7 @@ test.describe("overview", () => {
     const blocks = page.locator("#try figure.code-block pre");
     if (withoutInstall) {
       await expect(blocks).toHaveText(["$ openhal demo", `$ ${withoutInstall}`]);
-      await expect(page.locator("#try")).toContainText("With uv installed, you can also run the demo without installing OpenHAL.");
+      await expect(page.locator("#try")).toContainText("With uv, run the demo without installing OpenHAL.");
     } else {
       await expect(blocks).toHaveText(["$ openhal demo"]);
       await expect(page.locator("#try")).not.toContainText("uvx");

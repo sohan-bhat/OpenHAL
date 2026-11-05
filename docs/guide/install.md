@@ -105,4 +105,4 @@ The camera needs Raspberry Pi OS with Python 3.12 or newer, for the system's pic
 ## Next
 
 - [Quickstart](quickstart.md) runs the demo and a hub you control.
-- [Connect Claude](tutorials/connect-claude.md) gives an AI client its own token.
+- [Connect Claude](tutorials/connect-claude.md) gives an AI client a separate token.

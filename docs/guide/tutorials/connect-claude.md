@@ -45,7 +45,7 @@ Add the server to `claude_desktop_config.json`, in `~/Library/Application Suppor
 
 Restart Claude Desktop after you edit the file.
 
-## Try it
+## Try a command
 
 Ask Claude to water the plant for 120 seconds. The [Safety Kernel](glossary:safety-kernel) blocks the command at the duration limit, and Claude reports the reason. A request for 20 seconds runs.
 
