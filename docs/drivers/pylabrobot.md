@@ -1,18 +1,8 @@
 # pylabrobot driver
 
-The `pylabrobot` driver runs liquid handlers through PyLabRobot. Picking up tips, aspirating, dispensing and transferring are actions, and on a high hazard device the hub holds each action until a person confirms the action.
+The `pylabrobot` driver runs liquid handlers through PyLabRobot 0.2.2. Picking up tips, aspirating, dispensing and transferring are actions, and the hub holds each action until a person confirms the action. `describe` drafts a file from the deck.
 
-| | |
-|---|---|
-| Driver name | `pylabrobot` |
-| Library | PyLabRobot 0.2.2 (MIT) |
-| Extra | `uv tool install --compile-bytecode "halkit[pylabrobot] @ git+https://github.com/sohan-bhat/OpenHAL"` |
-| Hazard default | high |
-| Conformance | full |
-| Safe state | native. Running operations are cancelled after their current firmware command |
-| Self-describe | yes, from the deck |
-
-## What it supports
+## Supports
 
 | Name | Kind | PyLabRobot call |
 |---|---|---|
@@ -22,18 +12,18 @@ The `pylabrobot` driver runs liquid handlers through PyLabRobot. Picking up tips
 | `{ channel: 0 }` | read, bool | whether that channel holds a tip |
 | `{ container: "plate:A1" }` | read, volume | the tracked liquid volume in that well |
 | `initialize` | action | `setup()`, which homes the channels |
-| `pick_up_tips`, `drop_tips` (arg `tips`) | action | `pick_up_tips`, `drop_tips` |
+| `pick_up_tips`, `drop_tips` with `tips` | action | `pick_up_tips`, `drop_tips` |
 | `return_tips`, `discard_tips` | action | `return_tips`, `discard_tips` |
-| `aspirate`, `dispense` (args `well`, `volume`) | action | `aspirate`, `dispense` with the same volume in every well |
-| `transfer` (args `source`, `target`, `volume`) | action | `aspirate` then `dispense` |
+| `aspirate`, `dispense` with `well`, `volume` | action | `aspirate`, `dispense` with the same volume in every well |
+| `transfer` with `source`, `target`, `volume` | action | `aspirate` then `dispense` |
 
-An action under another name takes `map: { op: aspirate }`. Because every motion is an action, the driver has no channels that change.
+An action under another name takes `map: { op: aspirate }`. Every motion is an action, so no channel changes anything.
 
-Tip spots and wells are addressed as `<resource>:<spot>` or `<resource>:<first>:<last>`, such as `tips:A1` or `plate:A1:H1`. Give address arguments a `pattern` or an enum of allowed addresses, so the kernel blocks anything else before PyLabRobot receives the address. Volumes are converted to uL.
+Addresses are `<resource>:<spot>` or `<resource>:<first>:<last>`, such as `tips:A1` or `plate:A1:H1`. Give address arguments a `pattern` or an enum so the kernel blocks anything else. Volumes convert to uL.
 
 ## The deck
 
-The deck comes from a layout in the file, or from a JSON file saved with PyLabRobot's `deck.save()`.
+The deck comes from a `layout` in the file, or from a `deck.save()` JSON file through `deck_env`.
 
 ```yaml
 connect:
@@ -44,55 +34,52 @@ connect:
     - { name: plate, resource: cor_96_wellplate_360uL_Fb, rails: 9 }
 ```
 
-`resource` is the name of a resource factory in `pylabrobot.resources`. Hamilton and Tecan decks place by `rails`, and the Opentrons deck places by `slot`. connect() checks every address the file names against the deck.
+`resource` names a resource factory in `pylabrobot.resources`. Hamilton and Tecan decks place by `rails`, and the Opentrons deck by `slot`. Connect checks every address in the file against the deck.
 
-## How it works
+## Behavior
 
-- connect() builds the deck and the LiquidHandler and checks the file, but doesn't move anything. PyLabRobot's `setup()` homes the channels, so it runs as the `initialize` action under the kernel, unless `setup_on_connect: true`.
-- PyLabRobot checks tips and tracked volumes before anything moves, so an error such as `TooLittleLiquidError` or `HasTipError` fails the action before anything is sent.
-- An operation longer than `action_wait` returns `started` and finishes in the background, and the driver starts the next action only after that operation finishes.
-- When an operation fails while it runs, the tip and volume model may no longer match the deck, so reads are marked suspect until `initialize` runs again.
-- Tracked volumes are PyLabRobot's model of what was pipetted rather than a measurement, and every well starts empty unless `volumes` sets another volume.
+- Connect builds the deck and LiquidHandler without moving anything. `setup()` homes the channels, so the setup runs as the `initialize` action under the kernel unless `setup_on_connect: true`.
+- PyLabRobot checks tips and tracked volumes first, so errors such as `TooLittleLiquidError` or `HasTipError` fail the action before anything is sent.
+- An operation longer than `action_wait` returns `started` and finishes in the background before the next action starts.
+- After a failed operation, reads are suspect until `initialize` runs again.
+- Tracked volumes model what was pipetted, and wells start empty unless `volumes` sets a starting volume.
 
 ## Safe state
 
-A stop cancels running operations, and the instrument finishes the firmware command it is executing and then stops. Because any move on a liquid handler can spill or crash a tip, the driver moves nothing to make the deck safe, so keep the instrument's own cover interlock closed.
+A stop cancels running operations after the current firmware command. Nothing moves to make the deck safe, since any move can spill or crash a tip, so keep the instrument's cover interlock closed.
 
 ## Setup
 
-1. Install the extra with `uv tool install --compile-bytecode "halkit[pylabrobot] @ git+https://github.com/sohan-bhat/OpenHAL"`, plus PyLabRobot's USB or HTTP extras for your instrument.
+1. Install with `uv tool install --compile-bytecode "halkit[pylabrobot] @ git+https://github.com/sohan-bhat/OpenHAL"`, plus PyLabRobot's USB or HTTP extras for the instrument.
 2. Lay out the deck in the file to match the physical deck, or save one from PyLabRobot.
-3. Start from `openhal/drivers/pylabrobot/examples/starlet.hal.yaml`, or call `describe` for a draft.
-4. Run `openhal file validate`, then confirm the limits by hand.
-
-## Parameters
+3. Start from `openhal/drivers/pylabrobot/examples/starlet.hal.yaml` or `describe`.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `backend` | required | `star` (Hamilton STAR and STARlet), `evo` (Tecan EVO), `opentrons` (OT-2) or `chatterbox` (simulation) |
+| `backend` | required | `star` for Hamilton STAR and STARlet, `evo` for Tecan EVO, `opentrons` for the OT-2 or `chatterbox` for simulation |
 | `deck` | by backend | `starlet`, `star`, `ot2` or `evo150` |
-| `deck_env` | none | An environment variable that holds the path of a PyLabRobot deck JSON file, instead of `layout`. A device file never names the path itself |
-| `layout` | empty | Resources and where they go |
-| `num_channels` | 8 | Channels of the chatterbox simulation |
-| `host`, `port` | none, 31950 | The OT-2's address |
-| `serial_number` | none | Which STAR to open when several are plugged in |
-| `setup_on_connect` | false | Run `setup()`, which homes the channels, during connect |
-| `track_volumes` | true | Turn on PyLabRobot's tip and volume tracking |
-| `volumes` | empty | Starting volumes, such as `{ "plate:A1": 200 uL }`. Every well starts empty otherwise |
-| `action_wait` | `8 s` | How long an action waits before returning `started`. At most 9 s |
+| `deck_env` | none | Variable holding a deck JSON path, instead of `layout` |
+| `layout` | empty | Resources and positions |
+| `num_channels` | 8 | Chatterbox channel count |
+| `host`, `port` | none, 31950 | OT-2 address |
+| `serial_number` | none | Picks one of several STARs |
+| `setup_on_connect` | false | Run `setup()`, which homes the channels, on connect |
+| `track_volumes` | true | PyLabRobot tip and volume tracking |
+| `volumes` | empty | Starting volumes such as `{ "plate:A1": 200 uL }` |
+| `action_wait` | `8 s` | Time before an action returns `started`, at most 9 s |
 
 ## Known limitations
 
-- The 96 channel head, the gripper arm and resource moves are not exposed yet.
-- PyLabRobot's plate readers, heater shakers and other machines need drivers of their own.
+- No 96 channel head, gripper arm or resource moves yet.
+- Plate readers, heater shakers and other PyLabRobot machines need separate drivers.
 - Real backends report a lost instrument only when a command fails.
 - Tracking is global in PyLabRobot, so `track_volumes` affects every PyLabRobot user in the hub's process.
 
 ## Hazard defaults
 
-The default hazard is `high`, because channels move fast across the deck, tips can crash, and liquids can be hazardous. The hub holds every action until a person approves the action, and the example keeps `confirm-each-time` on each action.
+`high`. Channels move fast, tips can crash and liquids can be hazardous. The example keeps `confirm-each-time` on each action.
 
 ## Sources
 
 - PyLabRobot documentation, https://docs.pylabrobot.org/
-- PyLabRobot LiquidHandler and resources source, https://github.com/PyLabRobot/pylabrobot (MIT, used as a library)
+- PyLabRobot LiquidHandler and resources source, MIT and used as a library, https://github.com/PyLabRobot/pylabrobot
