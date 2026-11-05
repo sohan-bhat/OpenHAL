@@ -61,6 +61,20 @@ claude mcp add openhal --scope user -- openhal mcp --token-file ~/.openhal/claud
 
 Run `claude mcp list` to check that the OpenHAL server connects.
 
+### The /openhal command
+
+When `openhal init` adds OpenHAL to Claude Code, init also saves the `/openhal` command at `~/.claude/skills/openhal/SKILL.md`. The Claude Code plugin in `plugins/openhal` ships the same command as `/openhal:openhal`. A file that differs from the new command is backed up next to the new file first.
+
+| You type | Claude does |
+|---|---|
+| `/openhal` | Checks that the server connects and the hub runs, then shows each device's reads, settable channels with their limits, actions and the ones that wait for a person |
+| `/openhal limits printer` | The same table for one device |
+| `/openhal setup` and a few words about the device | Walks the driver writer from discovery to the limits interview, without writing to the device |
+| `/openhal routine` and a goal | Drafts a routine and dry runs the routine, which stays disabled |
+| `/openhal` and any other task | Does the task through the OpenHAL tools |
+
+The command uses only the MCP tools for changes, so every change carries the agent token, and a blocked or held command is reported as it is. The server's two prompts also appear in Claude Code as `/mcp__openhal__set_up_device` and `/mcp__openhal__write_routine`.
+
 ## Cursor
 
 Add the server to `~/.cursor/mcp.json` for every project, or `.cursor/mcp.json` for one.

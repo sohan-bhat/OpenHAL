@@ -4,7 +4,9 @@
 offers to register OpenHAL with each one. A config file is backed up before it changes, keeps every
 other entry and is left as it is when it isn't valid JSON. Claude Code is registered at user scope
 with its own `claude mcp add`, so every session gets the server. The client starts `openhal mcp`
-with a token file, so no token goes into its config.
+with a token file, so no token goes into its config. Claude Code also gets the /openhal command, a
+personal skill at ~/.claude/skills/openhal/SKILL.md that checks the connection and works through the
+OpenHAL tools.
 """
 
 from __future__ import annotations
@@ -28,6 +30,8 @@ APPLICATION_DIRS: tuple[Path, ...] = (Path("/Applications"),)
 """Where macOS apps live besides ~/Applications. Tests point this at an empty folder."""
 APPS: Final = {"claude-desktop": "Claude.app", "cursor": "Cursor.app"}
 PROGRAMS: Final = {"claude-code": "claude", "cursor": "cursor"}
+SKILL_SOURCE: Final = Path(__file__).parent / "skills" / SERVER_NAME / "SKILL.md"
+"""The /openhal command for Claude Code. plugins/openhal ships the same file."""
 
 
 def find_program(name: str) -> str | None:
@@ -133,6 +137,26 @@ def register(client: McpClient, entry: dict[str, Any], runner: Runner) -> tuple[
     runner.run([claude, "mcp", "remove", SERVER_NAME, "--scope", "user"], check=False)
     runner.run([claude, "mcp", "add", SERVER_NAME, "--scope", "user", "--", entry["command"], *entry["args"]])
     return backup, True
+
+
+def skill_path(user_home: Path) -> Path:
+    """Where Claude Code reads the /openhal command for this person."""
+    return user_home / ".claude" / "skills" / SERVER_NAME / "SKILL.md"
+
+
+def install_skill(user_home: Path, runner: Runner) -> tuple[Path, Path | None, bool]:
+    """Save the /openhal command for Claude Code. Returns its path, any backup and whether the file changed.
+
+    A file that already matches stays as it is. A different file, such as an older version or the
+    person's own edit, is backed up next to the new one first.
+    """
+    target = skill_path(user_home)
+    text = SKILL_SOURCE.read_text(encoding="utf-8")
+    if target.is_file() and target.read_text(encoding="utf-8") == text:
+        return target, None, False
+    backup = _backup(target, runner)
+    runner.write(target, text)
+    return target, backup, True
 
 
 def write_config(client: McpClient, entry: dict[str, Any], runner: Runner) -> Path | None:

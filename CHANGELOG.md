@@ -4,6 +4,10 @@ Every notable change to OpenHAL is listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+### Added
+
+- The `/openhal` command for Claude Code. `openhal init` saves the command when init adds OpenHAL to Claude Code, and the Claude Code plugin ships the same command. A bare `/openhal` checks the connection and shows what the agent may do on each device.
+
 ## [0.1.0] - 2026-11-03
 
 The first release. Every driver is tested on a simulator, and none is tested on real hardware yet.

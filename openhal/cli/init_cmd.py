@@ -30,6 +30,7 @@ from openhal.kernel.principals import Scope
 
 if TYPE_CHECKING:
     from openhal.hub.config import HubConfig
+    from openhal.service.runner import Runner
 
 CONFIG_TEMPLATE: Final = f"""\
 # OpenHAL hub settings. Every setting has a safe default, so this file can stay as it is.
@@ -287,15 +288,16 @@ def _clients(mode: Mode, token_file: Path, write: list[str], find: bool = True) 
                 chosen.append(client.key)
     ok = True
     for key in chosen:
+        runner = service_cmd.runner_for(False)
         try:
             client = clients.client_for(key, user_home, platform)
-            backup, by_cli = clients.register(
-                client, clients.server_entry(client, command, token_file), service_cmd.runner_for(False)
-            )
+            backup, by_cli = clients.register(client, clients.server_entry(client, command, token_file), runner)
         except (clients.ClientConfigError, RunError, OSError) as exc:
             console.print(f"[red]error[/red]  {escape(str(exc))}")
             ok = False
             continue
+        if client.key == "claude-code":
+            ok = _skill(user_home, runner) and ok
         saved = f", backup of {client.path} at {backup}" if backup else ""
         if by_cli:
             console.print(
@@ -307,6 +309,23 @@ def _clients(mode: Mode, token_file: Path, write: list[str], find: bool = True) 
             where = escape(str(client.path))
             console.print(f"client         {where} updated{escape(backup_note)}. Restart {escape(client.title)}")
     return ok
+
+
+def _skill(user_home: Path, runner: Runner) -> bool:
+    """Save the /openhal command for Claude Code and say where the command lives."""
+    from openhal.service import clients
+
+    try:
+        path, backup, changed = clients.install_skill(user_home, runner)
+    except OSError as exc:
+        console.print(f"[red]error[/red]  The /openhal command wasn't saved. {escape(str(exc))}")
+        return False
+    if not changed:
+        console.print(f"command        /openhal is already at {escape(str(path))}")
+        return True
+    saved = f", backup at {backup}" if backup else ""
+    console.print(f"command        /openhal saved at {escape(str(path))}{escape(saved)}. Type /openhal in Claude Code")
+    return True
 
 
 def _service(mode: Mode, flag: bool | None) -> tuple[bool, bool]:

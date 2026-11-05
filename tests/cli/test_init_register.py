@@ -90,3 +90,32 @@ def test_a_named_client_is_still_written_with_no_clients(machine: Machine) -> No
     code, out = run("init", "--yes", "--no-clients", "--no-discover", "--client", "cursor")
     assert code == 0, out
     assert "openhal" in json.loads((machine.home / ".cursor" / "mcp.json").read_text())["mcpServers"]
+
+
+def test_claude_code_gets_the_openhal_command(machine: Machine, claude_on_path: str) -> None:
+    code, out = run("init", "--yes", "--no-discover")
+    assert code == 0, out
+    skill = machine.home / ".claude" / "skills" / "openhal" / "SKILL.md"
+    assert skill.read_text(encoding="utf-8") == clients.SKILL_SOURCE.read_text(encoding="utf-8")
+    assert "/openhal saved at" in out
+    code, out = run("init", "--yes", "--no-discover")
+    assert code == 0, out
+    assert "/openhal is already at" in out
+    assert not [path for path in skill.parent.iterdir() if "openhal-backup" in path.name]
+
+
+def test_a_changed_openhal_command_is_backed_up_before_the_new_one(machine: Machine, claude_on_path: str) -> None:
+    skill = machine.home / ".claude" / "skills" / "openhal" / "SKILL.md"
+    skill.parent.mkdir(parents=True)
+    skill.write_text("my own version\n", encoding="utf-8")
+    code, out = run("init", "--yes", "--no-discover")
+    assert code == 0, out
+    backups = [path for path in skill.parent.iterdir() if "openhal-backup" in path.name]
+    assert [path.read_text(encoding="utf-8") for path in backups] == ["my own version\n"]
+    assert skill.read_text(encoding="utf-8") == clients.SKILL_SOURCE.read_text(encoding="utf-8")
+
+
+def test_no_clients_saves_no_openhal_command(machine: Machine, claude_on_path: str) -> None:
+    code, out = run("init", "--yes", "--no-clients", "--no-discover")
+    assert code == 0, out
+    assert not (machine.home / ".claude").exists()
