@@ -1,21 +1,18 @@
 # matter driver
 
-The matter driver reads and controls Matter devices through a Matter Server, the WebSocket service that runs the Matter fabric for Home Assistant and other controllers. Each device file names one node, and attributes become channels while cluster commands become channel changes and actions.
-
-The Home Assistant bridge stays the other route. If Home Assistant already runs the Matter Server, the homeassistant driver reaches the same devices through their Home Assistant entities, and this driver connects to the Matter Server directly.
+The matter driver reads and controls Matter devices through a Matter Server, the WebSocket service that runs the Matter fabric for Home Assistant and other controllers. Each device file names one node. Attributes become channels and cluster commands become changes and actions. When Home Assistant already runs the Matter Server, the homeassistant driver reaches the same devices through entities.
 
 ## Server status
 
-This status was checked on 2026-10-24. python-matter-server was archived in June 2026, and 8.1.2 is its final version. The successor is matterjs-server, built on matter.js by the Open Home Foundation, which aims to keep the same WebSocket API and lists a few intentional differences. The driver uses only the documented commands both share (`start_listening`, `read_attribute`, `write_attribute`, `device_command`) and the server info and event messages. The driver was tested against a simulator of the python-matter-server format, not against matterjs-server.
+Checked 2026-10-24. python-matter-server was archived in June 2026 at 8.1.2. The successor, matterjs-server from the Open Home Foundation, aims to keep the same WebSocket API with a few intentional differences. The driver uses only the shared `start_listening`, `read_attribute`, `write_attribute` and `device_command` commands plus server info and event messages. The driver is tested against a simulator of the python-matter-server format, not against matterjs-server.
 
-## What it supports
+## Supports
 
-- Read channels for any attribute, named by endpoint, cluster and attribute, with scale, offset and unit, one bit of a bitmap, or a lookup for enums.
-- Control channels that set an attribute with `write_attribute`, or run a cluster command such as `MoveToLevelWithOnOff`, or pick `On` and `Off` for a bool. The attribute reads back the result.
-- Actions that run any cluster command with their arguments in the payload, including timed commands such as door locks need.
-- A check on connect that every attribute exists on the node and every command's cluster exists on its endpoint.
-- Health from the WebSocket and the node's `available` flag.
-- `describe()` returns suggested channels for the clusters the driver supports (on and off, level, color temperature, temperature, humidity, pressure, occupancy, contact, battery, power, thermostat, fan, window covering and door lock), scaled as the Matter specification defines.
+- Reads of any attribute, with scale, offset, unit, one bitmap bit or an enum lookup.
+- Changes through `write_attribute`, a cluster command such as `MoveToLevelWithOnOff`, or `On` and `Off` for a bool, read back from the attribute.
+- Actions that run any cluster command, including timed commands for door locks.
+- A connect check that every attribute and command cluster exists on the node.
+- `describe()` suggests channels for on and off, level, color temperature, temperature, humidity, pressure, occupancy, contact, battery, power, thermostat, fan, window covering and door lock.
 
 ## Setup
 
@@ -23,14 +20,12 @@ This status was checked on 2026-10-24. python-matter-server was archived in June
 uv tool install --compile-bytecode "halkit[matter] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-Commission the device into the Matter Server first, with the server's frontend or Home Assistant, and note the node id the device gets. The server listens on `ws://<host>:5580/ws`.
-
-## Parameters
+Commission the device into the Matter Server with the server frontend or Home Assistant and note the node id. The server listens on `ws://<host>:5580/ws`.
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `url` | required | The Matter Server WebSocket, such as `ws://192.168.1.10:5580/ws`. The shorthand `matter: "ws://..."` sets it |
-| `node` | required | The node id |
+| `url` | required | Matter Server WebSocket such as `ws://192.168.1.10:5580/ws`. `matter: "ws://..."` is shorthand |
+| `node` | required | Node id |
 | `timeout` | `5 s` | Connect and response deadline |
 
 ## Channel maps
@@ -59,42 +54,37 @@ actions:
 
 | Key | Meaning |
 |---|---|
-| `path` | `endpoint/cluster/attribute` in decimal. Or give `endpoint`, `cluster` and `attribute` |
-| `scale`, `offset` | channel value = attribute × scale + offset |
-| `unit` | The unit the scaled attribute is in, when not the channel unit |
-| `bit` | Read one bit of a bitmap attribute as a bool |
+| `path` | `endpoint/cluster/attribute` in decimal, or separate `endpoint`, `cluster` and `attribute` |
+| `scale`, `offset` | value = attribute × scale + offset |
+| `unit` | Unit of the scaled attribute, when not the channel unit |
+| `bit` | One bit of a bitmap as a bool |
 | `lookup` | Attribute numbers to enum values |
 | `command`, `payload` | Run this command with `{value}` in the payload instead of setting the attribute |
-| `on_command`, `off_command` | For bool channels, the commands for true and false |
-| `timed_ms` | Send the command as a timed interaction, needed by locks and some covers |
+| `on_command`, `off_command` | Bool commands for true and false |
+| `timed_ms` | Timed interaction, needed by locks and some covers |
 
-Because Matter attributes are integers, values going out are rounded to whole attribute units.
+Values going out round to whole attribute units.
 
-## How reads and commands behave
+## Behavior
 
-- The Matter Server subscribes to every attribute of every node, so reads come from its pushes with the time they arrived and cost no round trip. A null attribute reads as no value.
-- A command returns when the server reports the device's response. An attribute change that returns an error status fails with `DriverError` naming the Matter status, such as `CONSTRAINT_ERROR` or `UNSUPPORTED_WRITE`.
-- Because an unavailable node's last values may be stale, the node fails its reads and reports itself disconnected.
+- Reads come from the server's subscription pushes. A null attribute reads as no value.
+- A command returns with the device's response. An error status fails with `DriverError` naming the Matter status, such as `CONSTRAINT_ERROR` or `UNSUPPORTED_WRITE`.
+- An unavailable node fails reads and reports disconnected, since the last values may be stale.
+- An unreachable or wrong server, an unknown node and a missing attribute or cluster raise `DriverError` naming what to check. Server errors carry the server's error name, such as `node not ready`, and a silent server raises `TimeoutError`.
 
 ## Example
 
-`openhal/drivers/matter/examples/eve-energy-plug.hal.yaml` switches an Eve Energy plug and reads its power.
-
-## Errors
-
-- A server that can't be reached, a server too old or not a Matter Server, and an unknown node raise `DriverError` with a message that names what to check.
-- A channel whose attribute or cluster the node doesn't have fails the connect with `DriverError`.
-- Server errors carry the server's error name, for example `node not ready` or `SDK stack error`, and its details. A server that doesn't respond raises `TimeoutError`.
+`openhal/drivers/matter/examples/eve-energy-plug.hal.yaml` switches an Eve Energy plug and reads the plug's power.
 
 ## Limitations
 
-- The driver has no commissioning, binding, access control or OTA updates, so use the Matter Server's own frontend for those tasks.
-- Matter events (such as button presses) are not channels yet, and only attributes are.
-- Each device file holds one node, and because bridged devices are nodes with several endpoints, map their endpoints in one file or one file per node.
+- No commissioning, binding, access control or OTA updates. Use the Matter Server frontend.
+- Matter events such as button presses are not channels yet.
+- One node per file. A bridge is one node with several endpoints, so map the endpoints in one file.
 
 ## Hazard default and safe state
 
-The default hazard is low, because most Matter devices are lights, plugs and sensors. Locks, covers and plugs that switch heaters need a higher hazard in their device file, and lock commands should need confirmation each time. Matter has no fabric-wide emergency command, so `safe_state_support` is `file`. The hub sends the device file's safe state like any other command, which needs the server and the node to be reachable.
+Low. Locks, covers and plugs that switch heaters need a higher hazard, and lock commands need `confirm-each-time`. `safe_state_support` is `file`, sent while the server and node are reachable.
 
 ## Sources
 
