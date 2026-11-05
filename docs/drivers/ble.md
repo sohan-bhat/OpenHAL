@@ -1,15 +1,13 @@
 # ble driver
 
-The ble driver reads and writes GATT characteristics of Bluetooth Low Energy peripherals, through bleak. The driver runs on Linux (BlueZ), macOS (CoreBluetooth) and Windows (WinRT). Each channel's map names a characteristic UUID, the value format, a byte offset and a scale. `describe()` maps the standard Environmental Sensing and Battery services by itself.
+The ble driver reads and writes GATT characteristics of Bluetooth Low Energy peripherals through bleak, on Linux with BlueZ, macOS and Windows.
 
-## What it supports
+## Supports
 
-- Read channels of type number, bool, enum and string from any readable or notifying characteristic.
-- `stream: true` read channels subscribe to notifications or indications when the driver connects.
-- Write channels to writable characteristics, with or without response.
-- All GATT Specification Supplement number formats, including the IEEE 11073 `sfloat` and `float` medical formats.
-- `address: auto`, which scans advertisements and picks the one peripheral matching `match.ble_name` and `match.ble_services`.
-- `discover()`, which lists advertising peripherals without connecting.
+- Number, bool, enum and string reads. `stream: true` subscribes to notifications or indications.
+- Writes with or without response, replacing the whole characteristic.
+- Every GATT Specification Supplement number format, including IEEE 11073 `sfloat` and `float`.
+- `address: auto` picks the one advertiser matching `match.ble_name` and `match.ble_services`. `discover()` lists advertisers without connecting.
 - `identify()` and `describe()` read the Device Information service.
 
 ## Setup
@@ -18,16 +16,14 @@ The ble driver reads and writes GATT characteristics of Bluetooth Low Energy per
 uv tool install --compile-bytecode "halkit[ble] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-On Linux, BlueZ 5.55 or newer must be running and your user needs access to BlueZ (usually the `bluetooth` group). On macOS, the terminal or app running the hub needs Bluetooth permission in System Settings, and peripherals are addressed by the UUID CoreBluetooth assigns, not by MAC address. Run `discover()` (or the hardware test plan's step 1) to find the UUID.
-
-## Parameters
+Linux needs BlueZ 5.55 or newer and the `bluetooth` group. On macOS the app running the hub needs Bluetooth permission, and peripherals use a CoreBluetooth UUID from `discover()` instead of a MAC address.
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `address` | `auto` | MAC address on Linux and Windows, CoreBluetooth UUID on macOS, or `auto`. The shorthand `ble: auto` sets it |
-| `scan_timeout` | `5 s` | How long `auto` listens for advertisements |
+| `address` | `auto` | MAC address, CoreBluetooth UUID on macOS, or `auto`. `ble: auto` is shorthand |
+| `scan_timeout` | `5 s` | Scan time for `auto` |
 | `timeout` | `10 s` | Connect, read and write deadline |
-| `pair` | `false` | Request pairing from the OS while connecting. Needed by devices with encrypted characteristics |
+| `pair` | `false` | Pair on connect, for encrypted characteristics |
 
 ## Channel maps
 
@@ -41,25 +37,21 @@ write:
 
 | Key | Default | Meaning |
 |---|---|---|
-| `characteristic` | required | 16-bit SIG UUID such as `2a6e`, or a full 128-bit UUID |
-| `service` | none | Service UUID, when the same characteristic appears in more than one service |
+| `characteristic` | required | 16-bit SIG UUID such as `2a6e`, or a 128-bit UUID |
+| `service` | none | Service UUID, when the characteristic is in several services |
 | `format` | `uint8` | `uint8`, `uint16`, `uint24`, `uint32`, `sint8` to `sint32`, `float32`, `float64`, `sfloat`, `float`, `utf8` |
-| `byte` | `0` | Byte offset of the value inside the characteristic. Read channels only |
-| `byteorder` | `little` | GATT values are little-endian. Some vendor characteristics are big-endian |
-| `scale`, `offset` | `1`, `0` | channel value = raw × scale + offset |
-| `on`, `off` | `1`, `0` | Raw values for bool channels |
-| `values` | none | Enum word to raw value, required for enum channels |
-| `response` | the device's choice | `true` for write with response, `false` for write without response |
+| `byte` | `0` | Byte offset. Reads only |
+| `byteorder` | `little` | Some vendor characteristics are big-endian |
+| `scale`, `offset` | `1`, `0` | value = raw × scale + offset |
+| `on`, `off` | `1`, `0` | Raw bool values |
+| `values` | none | Enum word to raw value, required for enums |
+| `response` | device default | Write with or without response |
 
-Writes encode raw = (value - offset) / scale, rounded for integer formats, and the returned reading shows the value really sent. Values that don't fit the format fail with `DriverError` and nothing is sent. Writes always replace the whole characteristic value.
+Writes send `raw = (value - offset) / scale`, rounded for integer formats, and return the value sent. A value outside the format fails with nothing sent.
 
-## How reads work
-
-A `stream: true` channel returns the newest notification. Before the first notification the channel does a GATT read if the characteristic allows one, and otherwise reports no value (`None`), which the kernel treats as unknown. Other channels do a GATT read every time. A write channel on a write-only characteristic reports the last value the driver wrote.
+A `stream: true` channel returns the newest notification, or a GATT read before the first one, or `None` when the characteristic has no read. Other channels read each time. A write-only characteristic reports the last value written.
 
 ## Describe
-
-`describe()` returns suggested read channels for the standard characteristics the driver finds, with their units, formats and scales.
 
 | Characteristic | Channel | Format | Scale | Unit |
 |---|---|---|---|---|
@@ -70,35 +62,33 @@ A `stream: true` channel returns the newest notification. Before the first notif
 | 0x2A6C Elevation | `elevation` | sint24 | 0.01 | m |
 | 0x2A19 Battery Level | `battery_level` | uint8 | 1 | percent |
 
-`describe()` also fills `device` from the Device Information service and `match.ble_services` from the service list. Because the formats of vendor characteristics can't be known without the device's documentation, `describe()` lists every vendor characteristic with its properties in the notes.
+`describe()` suggests these channels, fills `device` and `match.ble_services`, and lists vendor characteristics in the notes.
 
 ## Example
 
-`openhal/drivers/ble/examples/environment-sensor.hal.yaml` reads a room sensor with the standard Environmental Sensing service, found by name and service.
+`openhal/drivers/ble/examples/environment-sensor.hal.yaml` reads a room sensor's Environmental Sensing service.
 
 ## Errors
 
-- No matching advertiser, or more than one, for `address: auto` raises `DriverError` listing the candidates.
-- Connect failures, missing characteristics, and reads and writes that fail with a GATT error raise `DriverError` with what to check.
-- No response within `timeout` raises `TimeoutError`.
-- Values too short for the format, IEEE 11073 special values (NaN, NRes, infinity) and non-finite floats raise `DriverError`.
+- `DriverError` for no match or several matches under `auto`, failed connects, missing characteristics, GATT errors, short values, IEEE 11073 NaN, NRes and infinity, and non-finite floats.
+- `TimeoutError` past `timeout`.
 
 ## Limitations
 
-- The driver has no actions, no image channels and no descriptors.
-- Because only one central can usually connect to a peripheral, close the vendor's phone app first.
-- Values that are split over several characteristics, or that need a flags byte to parse (such as Health Thermometer measurements), need a dedicated driver.
-- Broadcast-only sensors that put readings in advertisements without a GATT server are not covered yet.
+- No actions, images or descriptors.
+- Most peripherals take one central, so close the vendor's phone app.
+- Values split across characteristics or behind a flags byte, such as Health Thermometer, need a dedicated driver.
+- No advertisement-only sensors yet.
 
 ## Hazard default and safe state
 
-The default hazard is low, because most BLE peripherals are sensors, lights and small gadgets. BLE has no emergency behavior of its own, so `safe_state_support` is `file`. The hub writes the device file's `safe_state` like any other value, which only works while the link is up. Many peripherals keep their last state when the link drops, so don't rely on BLE alone for anything that must turn off.
+Low. `safe_state_support` is `file`, and the hub writes `safe_state` only while the link is up. Many peripherals keep their last state when the link drops.
 
 ## Sources
 
-- Bluetooth Core Specification 5.4, Vol 3, Part G (Generic Attribute Profile), https://www.bluetooth.com/specifications/specs/core-specification-5-4/
+- Bluetooth Core Specification 5.4, Vol 3, Part G, Generic Attribute Profile, https://www.bluetooth.com/specifications/specs/core-specification-5-4/
 - GATT Specification Supplement, https://www.bluetooth.com/specifications/gss/
-- Assigned Numbers (UUIDs, format types), https://www.bluetooth.com/specifications/assigned-numbers/
+- Assigned Numbers for UUIDs and format types, https://www.bluetooth.com/specifications/assigned-numbers/
 - Environmental Sensing Service 1.0, https://www.bluetooth.com/specifications/specs/environmental-sensing-service-1-0/
-- IEEE 11073-20601 (SFLOAT and FLOAT types), as summarised in the GATT Specification Supplement
+- IEEE 11073-20601 SFLOAT and FLOAT types, as summarised in the GATT Specification Supplement
 - bleak documentation, https://bleak.readthedocs.io/

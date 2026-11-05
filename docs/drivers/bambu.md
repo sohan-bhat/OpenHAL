@@ -1,30 +1,16 @@
 # bambu driver
 
-The bambu driver reads a Bambu Lab printer's status and pauses, resumes and stops prints over the printer's own MQTT broker on the local network. The driver needs the printer in LAN-only mode with Developer Mode on. The driver uses paho-mqtt, the same client as the mqtt driver.
+The bambu driver reads a Bambu Lab printer's status and pauses, resumes and stops prints through the printer's local MQTT broker, with paho-mqtt. The printer needs LAN-only mode and Developer Mode on.
 
 ## Local access status
 
-This section was checked on 2026-10-24, and you should read this section before you connect a printer.
+Checked 2026-10-24.
 
-- In January 2025 Bambu Lab added Authorization Control to its firmware. Starting a print and controlling motion, temperature, fans, the AMS and calibration now need authorization in cloud mode and in normal LAN mode. Status reports over MQTT stay readable. X1 printers got Authorization Control first, from firmware 01.08.03.00, and the P and A series followed.
-- Bambu Lab's follow-up post describes Developer Mode, an opt-in setting for X1, P1, A1 and A1 mini printers. Developer Mode must be turned on at the printer, leaves MQTT, the live stream and FTP open on the local network, and makes the owner responsible for securing that network. Bambu Lab says the company won't give customer support for this mode. Later guides report Developer Mode on newer models too, but this wasn't checked on an H2D or P2S.
-- Bambu Lab's Terms of Use restrict using its technology to develop software associated with its products without consent (section 3.1, quoted secondhand because the terms page didn't load here). In April 2026 Bambu Lab sent a cease-and-desist letter to the maintainer of an OrcaSlicer fork that reached Bambu Cloud by presenting itself as Bambu Studio. The owner reviewed this on 2026-10-25 and approved shipping the driver.
+- Since January 2025, Authorization Control firmware gates print starts, motion, temperature, fans, the AMS and calibration in cloud and normal LAN mode, from 01.08.03.00 on X1 and later on the P and A series. MQTT status stays readable.
+- Developer Mode, opt-in at the printer on X1, P1, A1 and A1 mini, leaves MQTT, the live stream and FTP open on the local network. Bambu Lab gives no support for the mode, and the owner secures the network. Reports of the mode on H2D and P2S are unchecked.
+- Section 3.1 of the Bambu Lab Terms of Use, quoted secondhand, restricts building software for Bambu Lab products without consent. In April 2026 Bambu Lab sent a cease-and-desist to an OrcaSlicer fork that reached Bambu Cloud posing as Bambu Studio. The owner reviewed this on 2026-10-25 and approved the driver.
 
-Given that status, the driver works within these rules.
-
-- The driver connects only to the printer on the local network, only through the MQTT interface Developer Mode leaves open, and only with the LAN access code shown on the printer's screen.
-- The driver never contacts Bambu Cloud, never uses Bambu Connect or its keys, never presents itself as Bambu Studio and never bypasses authorization.
-- The driver sends only status requests and the pause, resume, stop, speed level and chamber light commands, and doesn't start prints, upload files, send G-code, change temperatures or move axes.
-- Without Developer Mode the printer returns an error for each command, and the driver reports the error with a hint to turn the mode on, but reads keep working.
-
-## What it supports
-
-- Reads of the print state, nozzle, bed and chamber temperatures and targets, progress, time left, the current and total count from `layer_num` and `total_layer_num`, the job name, the error code and the Wi-Fi signal, plus any other report field through a map.
-- The speed level (silent, standard, sport, ludicrous) and the chamber light as control channels.
-- Pause, resume and stop as actions.
-- A native safe state, where a hub stop sends `stop`, or `pause` with `safe_stop: pause`.
-- `discover()` listens for the printers' own SSDP announcements on UDP port 2021 and sends nothing.
-- `describe()` returns suggested channels built from the printer's report.
+The driver connects only on the local network with the LAN access code. The driver never uses Bambu Cloud or Bambu Connect, never poses as Bambu Studio and never bypasses authorization. The driver sends only status requests and pause, resume, stop, speed level and chamber light commands. Without Developer Mode, commands fail with a hint to turn the mode on and reads still work.
 
 ## Setup
 
@@ -32,29 +18,25 @@ Given that status, the driver works within these rules.
 uv tool install --compile-bytecode "halkit[bambu] @ git+https://github.com/sohan-bhat/OpenHAL"
 ```
 
-1. On the printer's screen, open the network settings, turn on LAN-only mode, then turn on Developer Mode. Note the access code and the serial number shown there.
-2. Put the access code in an environment variable, `export BAMBU_ACCESS_CODE=12345678`.
-3. Read the printer certificate's fingerprint and put it in `cert_sha256`, as in step 2 of docs/hardware-tests/bambu.md.
-
-## Parameters
+1. On the printer, turn on LAN-only mode, then Developer Mode. Note the access code and serial number.
+2. `export BAMBU_ACCESS_CODE=12345678` with your code.
+3. Put the certificate fingerprint in `cert_sha256`, as in step 2 of docs/hardware-tests/bambu.md.
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `host` | required | The printer's address. The shorthand `bambu: 192.168.1.50` sets it |
-| `serial` | required | The printer's serial number, which names its MQTT topics |
+| `host` | required | Printer address. `bambu: 192.168.1.50` is shorthand |
+| `serial` | required | Serial number, which names the MQTT topics |
 | `port` | `8883` | MQTT over TLS |
-| `token_env` | `BAMBU_ACCESS_CODE` | The environment variable that holds the LAN access code |
-| `cert_sha256` | none | The SHA-256 fingerprint of the printer's certificate, quoted, with or without colons |
-| `ca_env` | none | Instead of `cert_sha256`, an environment variable that holds the path of Bambu Lab's authority certificate. The driver then checks the certificate names the serial |
+| `token_env` | `BAMBU_ACCESS_CODE` | Variable holding the access code |
+| `cert_sha256` | none | Quoted SHA-256 certificate fingerprint, colons optional |
+| `ca_env` | none | Instead of `cert_sha256`, a variable holding the path of Bambu Lab's CA certificate, checked with the serial |
 | `timeout` | `5 s` | Login, status and acknowledgement deadline |
-| `reply_wait` | `2 s` | How long to wait for the printer's reply to a command |
+| `reply_wait` | `2 s` | Time allowed for a command reply |
 | `safe_stop` | `stop` | What a hub stop sends, `stop` or `pause` |
 
-The printer's certificate names its serial number rather than its address and is signed by Bambu Lab's own authority, so ordinary TLS checks fail and the driver instead checks the fingerprint, or the authority and the serial, before the access code leaves the hub.
+The printer certificate names the serial and is signed by Bambu Lab's own CA, so ordinary TLS checks fail. The driver checks the pin before the access code leaves the hub.
 
 ## Channels
-
-Channels are named after what they read. A map can read any other field of the report, `map: { field: cooling_fan_speed, scale: 6.6667 }` for example, with an optional `unit` the field is in.
 
 | Channel | Report field | Type and unit |
 |---|---|---|
@@ -68,44 +50,38 @@ Channels are named after what they read. A map can read any other field of the r
 | `job` | `subtask_name` | string |
 | `print_error` | `print_error` | dimensionless |
 | `wifi_signal` | `wifi_signal` | string |
-| `speed_level` | `spd_lvl` | enum, control channel |
-| `chamber_light` | `lights_report` | bool, control channel |
+| `speed_level` | `spd_lvl` | enum of silent, standard, sport, ludicrous, settable |
+| `chamber_light` | `lights_report` | bool, settable |
 
-Actions are named `pause`, `resume` and `stop`, or map to one with `map: { command: pause }`, and the actions take no arguments.
+Other report fields read through a map such as `map: { field: cooling_fan_speed, scale: 6.6667 }`, with an optional `unit`. Actions `pause`, `resume` and `stop` take no arguments, and `map: { command: pause }` gives one another name. `discover()` listens for SSDP on UDP port 2021 and sends nothing. `describe()` suggests channels from the report.
 
-## How reads and commands behave
+## Behavior
 
-- After connecting, the driver requests a full report once. X1 printers then send full reports and P1 and A1 printers send only what changed, so the driver merges every report into one state. A field the printer hasn't sent reads as no value.
-- Commands go out at QoS 1 and wait for the broker's acknowledgement. When the printer responds with a result, a failure becomes a `DriverError` with the printer's reason. Some firmware doesn't respond to every command, so a missing response is not an error, and reading `state` shows what happened.
-- Commands are never queued, and without an acknowledgement the driver drops the connection, so a command can't arrive late.
-- Because Bambu Lab printers push their state and P1 printers are known to respond poorly to frequent full status requests, the driver doesn't poll.
+- The driver requests one full report on connect and merges later reports, since P1 and A1 printers send only changes. Unsent fields read as no value. No polling.
+- Commands go out at QoS 1 and are never queued. A missing broker acknowledgement drops the connection, so no command arrives late.
+- A failure reply raises `DriverError` with the printer's reason. Some firmware sends no reply, so check `state`.
+- A missing access code, a pin mismatch, a failed login, no report for the serial and a wrong-typed report value raise `DriverError` naming what to check.
 
 ## Example
 
-`openhal/drivers/bambu/examples/p1s-lan.hal.yaml` reads a P1S and has pause, resume and stop actions, with stop needing a confirmation.
-
-## Errors
-
-- A missing access code variable, a certificate that doesn't match the pin, a failed login and a printer that sends no report for the serial number raise `DriverError` with a message that names what to check.
-- A command that fails on the printer raises `DriverError` with the printer's reason, and a verification error adds the hint to turn on Developer Mode.
-- A report value that isn't the channel's type raises `DriverError` on read.
+`openhal/drivers/bambu/examples/p1s-lan.hal.yaml` reads a P1S and pauses, resumes and stops, with stop confirmed.
 
 ## Limitations
 
-- The driver deliberately leaves out print start, file upload, camera, AMS control, G-code, temperature targets and motion.
-- The driver uses MQTT 3.1.1 only and supports one printer per device file.
-- The driver is untested on real printers so far, and the simulator follows the community documentation of the report format, which Bambu Lab doesn't publish.
+- By design, no print start, upload, camera, AMS, G-code, temperature targets or motion.
+- MQTT 3.1.1, one printer per file.
+- Untested on real printers. The simulator follows community documentation of the report format.
 
 ## Hazard default and safe state
 
-The default hazard is medium, because a printer has heaters and moving parts. `safe_state_support` is `native`, so a hub stop sends `stop`, and the firmware ends the print, turns the heaters off and parks the head. The printer handles a lost connection on its own and keeps printing.
+Medium. `safe_state_support` is `native`. A hub stop sends `stop` and the firmware ends the print, turns the heaters off and parks the head. A lost connection leaves the print running.
 
 ## Sources
 
 - Bambu Lab, Firmware Update Introducing New Authorization Control System, 2025-01-16, https://blog.bambulab.com/firmware-update-introducing-new-authorization-control-system-2/
 - Bambu Lab, Updates and Third-Party Integration with Bambu Connect, 2025-01-20, https://blog.bambulab.com/updates-and-third-party-integration-with-bambu-connect/
-- Bambu Lab wiki, Third-party integration, https://wiki.bambulab.com/en/software/third-party-integration (not loaded here, check it directly)
-- Bambu Lab Terms of Use, https://bambulab.com/en-us/policies/terms (not loaded here, section 3.1 quoted secondhand)
+- Bambu Lab wiki, Third-party integration, not loaded here, https://wiki.bambulab.com/en/software/third-party-integration
+- Bambu Lab Terms of Use, not loaded here, https://bambulab.com/en-us/policies/terms
 - Consumer Rights Wiki, Bambu Lab Authorization Control System, https://consumerrights.wiki/w/Bambu_Lab_Authorization_Control_System
 - Tom's Hardware on the April 2026 cease-and-desist, https://www.tomshardware.com/3d-printing/developer-re-enables-3d-printer-features-that-bambu-lab-disabled-firm-promptly-threatens-legal-action-orcaslicer-bambulab-project-now-shuttered
 - OpenBambuAPI, community documentation of the MQTT messages, https://github.com/Doridian/OpenBambuAPI/blob/main/mqtt.md
