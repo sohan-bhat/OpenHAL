@@ -435,6 +435,8 @@ class ScpiDriver(Driver):
         return data
 
     async def _setting(self, command: str) -> None:
+        self.note_sent(command)
+
         def run(inst: Any) -> list[str]:
             inst.write(command)
             return self._drain_errors(inst) if self.settings.check_errors else []

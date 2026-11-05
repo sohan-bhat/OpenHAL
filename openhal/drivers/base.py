@@ -74,7 +74,7 @@ class DriverError(RuntimeError):
 
 
 _NO_VERIFIER: Final = "This driver is not attached to a safety kernel, so it can't change hardware."
-_SEALED: Final = frozenset({"write", "action", "safe_state", "attach", "_consume"})
+_SEALED: Final = frozenset({"write", "action", "safe_state", "attach", "_consume", "take_sent"})
 
 
 class Driver(abc.ABC):
@@ -95,6 +95,7 @@ class Driver(abc.ABC):
         self.device = device
         self.params = self.validate_params(device.connect.params)
         self._verify: Verifier | None = None
+        self._native_sent: list[object] = []
 
     @final
     def attach(self, verifier: Verifier) -> None:
@@ -136,12 +137,14 @@ class Driver(abc.ABC):
     async def write(self, channel: str, value: float | bool | str, grant: object) -> Reading | None:
         """Change one channel. `value` is already in the channel's unit. Needs a kernel grant."""
         self._consume(grant, f"write:{channel}", value)
+        self._native_sent = []
         return await self._write(channel, value)
 
     @final
     async def action(self, name: str, args: dict[str, Any], grant: object) -> Any:
         """Run one action with already-validated arguments. Needs a kernel grant."""
         self._consume(grant, f"action:{name}", args)
+        self._native_sent = []
         return await self._action(name, args)
 
     @final
@@ -155,6 +158,22 @@ class Driver(abc.ABC):
 
     async def close(self) -> None:
         return None
+
+    def note_sent(self, native: object) -> None:
+        """Record one native command sent for the change in progress, such as a SCPI line or actuator targets.
+
+        The kernel puts what a change sent in its audit entry, so the log shows the device's own commands.
+        """
+        if not hasattr(self, "_native_sent"):
+            self._native_sent = []
+        self._native_sent.append(native)
+
+    @final
+    def take_sent(self) -> list[object]:
+        """The native commands the last write or action sent, cleared as they are taken."""
+        sent: list[object] = getattr(self, "_native_sent", [])
+        self._native_sent = []
+        return sent
 
     @final
     def _consume(self, grant: object, target: str, value: object) -> None:

@@ -28,7 +28,7 @@ from openhal.drivers.base import Driver, Reading
 from openhal.kernel.checks import Block, check_rate, effective_limits, normalize
 from openhal.kernel.commands import Action, Command, Decision, Write
 from openhal.kernel.confirmations import ConfirmationQueue, QueueFull, Request
-from openhal.kernel.grants import GrantBook, GrantError, value_digest
+from openhal.kernel.grants import Grant, GrantBook, GrantError, value_digest
 from openhal.kernel.principals import SYSTEM, Principal
 from openhal.kernel.runtime import DeviceRuntime, RuleState, Sample
 from openhal.spec import expressions, risk
@@ -41,6 +41,8 @@ DRIVER_TIMEOUT_S: Final = 10.0
 STOP_DEVICE_TIMEOUT_S: Final = 10.0
 STOP_LOCK_WAIT_S: Final = 5.0
 READBACK_TIMEOUT_S: Final = 2.0
+GRANT_SHOWN: Final = 12
+"""Hex digits of a spent grant's id kept in its audit entry, enough to tell grants apart."""
 APPROVAL_WINDOW_S: Final = 600.0
 UNLOCK_PHRASE: Final = "unlock"
 WATCHDOG_MAX_FAILURES: Final = 3
@@ -879,10 +881,13 @@ class Kernel:
         finally:
             runtime.inflight.difference_update(channels)
             runtime.inflight_task = None
+        native = runtime.driver.take_sent()
         if not sent or isinstance(command, Action):
             self._mark_unknown(runtime, channels)
             await self._read_back(runtime, channels)
-        self._log(command, principal, result, before=before, request=request, started=started)
+        self._log(
+            command, principal, result, before=before, request=request, started=started, grant=grant, native=native
+        )
         if generation != self._stop_generation:
             await self._reapply_after_stop(runtime)
         return result
@@ -926,8 +931,14 @@ class Kernel:
         before: Any = None,
         request: Request | None = None,
         started: int | None = None,
+        grant: Grant | None = None,
+        native: list[object] | None = None,
     ) -> None:
         details: dict[str, Any] = {"message": decision.message}
+        if grant is not None:
+            details["grant"] = grant.grant_id[:GRANT_SHOWN]
+        if native:
+            details["native"] = _jsonable(native)
         if started is not None:
             details["started"] = started
         if isinstance(command, Write):

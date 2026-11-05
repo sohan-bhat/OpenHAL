@@ -350,7 +350,10 @@ class MujocoDriver(Driver):
             raise DriverError(f"{self.device.device_id} has no write channel {channel!r}.")
         if isinstance(value, bool) or not isinstance(value, int | float):
             raise DriverError(f"{channel} needs a number.")
-        self._world().move([({writer.actuator: writer.scale.native(float(value))}, {writer.actuator: writer.speed})])
+        world = self._world()
+        target = writer.scale.native(float(value))
+        self.note_sent({"ctrl": {_name(world.model, mujoco.mjtObj.mjOBJ_ACTUATOR, writer.actuator): round(target, 5)}})
+        world.move([({writer.actuator: target}, {writer.actuator: writer.speed})])
         return Reading(channel, float(value), self.device.channel_unit(channel))
 
     async def _action(self, name: str, args: dict[str, Any]) -> Any:
@@ -413,6 +416,9 @@ class MujocoDriver(Driver):
             phases.append(
                 (then, {self.writers[channel].actuator: self.writers[channel].speed for channel in plan.then})
             )
+        actuator = mujoco.mjtObj.mjOBJ_ACTUATOR
+        for targets, _speeds in phases:
+            self.note_sent({"ctrl": {_name(world.model, actuator, index): round(v, 5) for index, v in targets.items()}})
         motion = world.move(phases)
         status = await self._wait(motion)
         goals = {

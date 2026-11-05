@@ -149,6 +149,23 @@ async def test_move_to_puts_the_site_at_the_point_pointing_down() -> None:
     await bench.close()
 
 
+async def test_the_audit_holds_the_actuator_targets_a_change_sent() -> None:
+    driver, bench = make()
+    await bench.connect()
+    await asyncio.sleep(1.2)
+    assert_done(await bench.write("pan_goal", "45 deg"))
+    details = bench.kernel.audit.entries(event="write", limit=1)[0].body["details"]
+    assert details["native"] == [{"ctrl": {"pan": pytest.approx(math.radians(45), abs=1e-4)}}]
+    assert len(details["grant"]) == 12
+    assert_done(await bench.act("move_to", x="200 mm", y="40 mm", z="60 mm"))
+    assert driver.world is not None
+    details = bench.kernel.audit.entries(event="action", limit=1)[0].body["details"]
+    sent = details["native"][0]["ctrl"]
+    assert sorted(sent) == ["elbow", "lift", "pan", "wrist"]
+    assert sent["lift"] == pytest.approx(driver.world.data.ctrl[1], abs=1e-4)
+    await bench.close()
+
+
 async def test_move_to_out_of_reach_fails_in_the_driver() -> None:
     _driver, bench = make()
     await bench.connect()

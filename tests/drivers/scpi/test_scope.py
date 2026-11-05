@@ -220,3 +220,21 @@ def test_simulated_resources_are_named() -> None:
         ScpiParams.model_validate({"resource": "sim:laser"})
     assert simulator.serve("supply") is simulator.serve("supply")
     assert simulator.serve("supply").resource.startswith("TCPIP0::127.0.0.1::")
+
+
+async def test_the_audit_names_the_grant_and_the_scpi_line_sent(scope: BenchScope) -> None:
+    file = loads(confirmed_example())
+    bench = await Bench(file, ScpiDriver(file)).connect()
+    assert_done(await bench.write("timebase", "500 us"))
+    entry = bench.kernel.audit.entries(event="write", limit=1)[0].body["details"]
+    assert entry["native"] == [":TIM:SCAL 0.0005"]
+    assert re.fullmatch(r"[0-9a-f]{12}", entry["grant"])
+    assert_done(await bench.act("run"))
+    assert bench.kernel.audit.entries(event="action", limit=1)[0].body["details"]["native"] == [":RUN"]
+    blocked = await bench.write("gen_amplitude", "5 V")
+    assert blocked.status == "blocked"
+    entry = bench.kernel.audit.entries(event="write", limit=1)[0].body["details"]
+    assert "native" not in entry
+    assert "grant" not in entry
+    assert ":SOUR:VOLT 5.0" not in scope.commands
+    await bench.close()
