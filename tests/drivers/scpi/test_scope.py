@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 
 from openhal import images
-from openhal.drivers.scpi import simulator
+from openhal.drivers.scpi import families, simulator
 from openhal.drivers.scpi.driver import ScpiDriver, ScpiParams
 from openhal.drivers.scpi.scope import INVALID, BenchScope, block
 from openhal.drivers.scpi.screen import si
@@ -56,6 +57,27 @@ def test_measurements_after_finding_the_signal() -> None:
     assert number(scope.answer(":MEAS:FREQ? CHAN1")) == pytest.approx(1000.0, rel=0.01)
     scope.answer(":TIM:SCAL 50E-6")
     assert number(scope.answer(":MEAS:FREQ? CHAN1")) == INVALID
+
+
+def test_timing_holds_with_edges_on_the_screen_edges() -> None:
+    scope = tuned()
+    for k in range(40):
+        acquisition = scope.acquire(1000.0 + k * 0.137)
+        assert scope.measure("FREQ", 1, acquisition) == pytest.approx(1000.0, rel=0.01)
+        assert scope.measure("RIS", 1, acquisition) == pytest.approx(2.2e-4, rel=0.08)
+        scope.answer(":TIM:POS 0")
+
+
+def test_describe_proposes_the_example_channels() -> None:
+    from openhal.spec.loader import from_data
+
+    proposal = families.propose(BenchScope.idn)
+    assert re.search(proposal["match"]["scpi_idn"], BenchScope.idn)
+    assert proposal["write"]["gen_amplitude"]["suggested"] is True
+    file = from_data({**proposal, "connect": {"scpi": "sim:scope"}})
+    ScpiDriver(file)
+    assert "screen" in file.read
+    assert not file.writable
 
 
 def test_the_generator_and_its_own_range() -> None:
@@ -166,6 +188,29 @@ async def test_the_example_file_drives_the_simulator(scope: BenchScope) -> None:
     assert await bench.stop() == "safe"
     assert scope.generator.output is False
     await bench.close()
+
+
+SUPPLY = """
+device: { name: Bench supply, model: DP832, manufacturer: Rigol }
+id: psu
+connect: { scpi: "sim:supply", timeout: 1 s }
+read:
+  ch1_voltage: { unit: V, map: { query: "MEAS:VOLT? CH1" } }
+write:
+  ch1_output: { type: bool, map: { set: "OUTP CH1,{on_off}", get: "OUTP? CH1" } }
+confirmed: { by: tester, at: 2026-11-04 }
+"""
+
+
+async def test_the_simulated_supply_by_name() -> None:
+    supply = simulator.reset("supply")
+    file = loads(SUPPLY)
+    bench = await Bench(file, ScpiDriver(file)).connect()
+    assert_done(await bench.write("ch1_output", True))
+    assert supply.output[1] is True
+    assert (await bench.read("ch1_voltage")).value == 0.0
+    await bench.close()
+    simulator.reset("supply")
 
 
 def test_simulated_resources_are_named() -> None:

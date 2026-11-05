@@ -243,7 +243,7 @@ class BenchScope:
     def _timing(self, item: str, values: list[float], high: float, low: float) -> float:
         dt = COLUMNS * self.timebase / POINTS
         mid, band = (high + low) / 2, (high - low) * 0.1
-        rising, falling, state = [], [], values[0] > mid
+        rising, falling, state = [], [], values[0] >= mid + band
         for i in range(1, len(values)):
             if not state and values[i] >= mid + band:
                 state = True

@@ -3,13 +3,17 @@
 `propose(idn)` returns device file sections for `describe()`. Every write channel and action is
 marked `suggested: true`, so the proposal loads read-only until a human confirms the limits.
 Command sets come from each vendor's programming guide, listed in docs/drivers/scpi.md.
+The simulated oscilloscope in scope.py proposes the channels of its own example file.
 """
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
+
+import yaml
 
 
 @dataclass(frozen=True)
@@ -168,7 +172,18 @@ def _scope() -> dict[str, Any]:
     }
 
 
+def _simulated_scope() -> dict[str, Any]:
+    """The simulated scope's example file, with every write and action marked suggested."""
+    path = Path(__file__).parent / "examples" / "simulated-scope.hal.yaml"
+    sections: dict[str, Any] = yaml.safe_load(path.read_text(encoding="utf-8"))
+    for group in ("write", "actions"):
+        for item in sections.get(group, {}).values():
+            item["suggested"] = True
+    return {key: sections[key] for key in ("read", "write", "actions", "safe_state", "notes") if key in sections}
+
+
 FAMILIES: list[tuple[str, str, str]] = [
+    (r"^OpenHAL$", r"^SIM-SCOPE", "scope-sim"),
     (r"RIGOL", r"^DP8\d\d", "supply-rigol"),
     (r"SIGLENT", r"^SPD\d", "supply-siglent"),
     (r"KEYSIGHT|AGILENT", r"^E363\d\dA", "supply-keysight"),
@@ -220,6 +235,8 @@ def propose(reply: str) -> dict[str, Any]:
         sections.update(_generator())
     elif kind == "scope":
         sections.update(_scope())
+    elif kind == "scope-sim":
+        sections.update(_simulated_scope())
     else:
         sections["notes"] = "Unknown instrument class. Add channels from the programming guide by hand."
     return sections
