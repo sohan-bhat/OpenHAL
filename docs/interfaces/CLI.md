@@ -14,7 +14,7 @@ Every command except `init`, `file` and the local checks of `doctor` needs a run
 
 ## The next step
 
-A bare `openhal` shows the setup state, connected devices, requests held for a person and the next steps. `openhal --help` lists every command. A bare group shows its main view and one command to copy, built from your own devices and ids, per [ADR 0020](../adr/0020-command-line-interaction-rules.md). `openhal file` shows every device file and the next step, `openhal writer` the unknown devices discovery found, `openhal runs` the runs this token can see, and `openhal service` the service state with exit code 0.
+A bare `openhal` shows the setup state, connected devices, requests held for a person and the next steps. A bare group shows its main view and one command to copy, built from your own ids, per [ADR 0020](../adr/0020-command-line-interaction-rules.md). `openhal file` shows every device file, `openhal writer` the unknown devices discovery found, and `openhal service` the service state with exit code 0.
 
 At a terminal, a left-out argument opens a picker of real values. Values for `write`, `dry-run` and action arguments are typed with the limits in view, and an answer out of range is typed again. Person-only pickers need the human token and still take the typed phrase.
 
@@ -41,23 +41,9 @@ A mistyped command or id gets the closest real matches.
 
 ## Commands that need a person
 
-These commands need the human token. With the default `confirm.require_tty: true`, these commands also need a terminal and a typed phrase, read from the terminal itself so no script or agent's shell can pipe the phrase in. `--phrase` works only when `confirm.require_tty` is false.
+`unlock`, `confirm approve`, `routine enable`, `routine run`, `routine approve`, `writer interview`, `writer finish` and `file confirm` need the human token. With the default `confirm.require_tty: true`, these commands also need a terminal and the typed phrase each synopsis shows after `--phrase`. The CLI reads the phrase from the terminal itself, so no script or agent's shell can pipe the phrase in. `--phrase` works only when `confirm.require_tty` is false. `writer interview` reads every answer at the terminal, and Enter keeps a suggestion.
 
-| Command | Phrase |
-|---|---|
-| `unlock` | `unlock` |
-| `confirm approve` | `approve` |
-| `routine enable` | `enable` |
-| `routine run` | `run` |
-| `routine approve` | `approve` |
-| `writer interview` | every answer typed at the terminal, Enter keeps a suggestion |
-| `writer finish` | `save` |
-| `file confirm` | `confirm` |
-| `limits set`, to widen a limit | `confirm` |
-| `risk set`, to lower a level | `confirm` |
-| `runs caps`, to raise a cap | `confirm` |
-
-Where no phrase can be typed, a wider limit or a lower level becomes a pending change for `confirm approve`.
+Widening a limit, lowering a risk level and raising a run cap take the phrase `confirm`. Where no phrase can be typed, a wider limit or a lower level becomes a pending change for `confirm approve`.
 
 ## Setup
 
@@ -368,7 +354,7 @@ At a terminal, `init` sets up the config folder, token and sample, then prompts 
 
 Found devices become device files with every limit marked `suggested: true` and every confirmation dropped. A library match gets the address discovery found, and an `openhal-firmware` board or an ESPHome node supplies its own description over read-only commands. Init prints how many targets sit at each risk level. A device that already has a file is skipped. `--driver` limits discovery to some drivers, and `--device` adds a self-describing device at a known address, such as `openhal-firmware=/dev/ttyACM0`.
 
-Init keeps an agent token that works and has the requested scope. Client setup runs `openhal mcp --token-file ~/.openhal/agent.token` with the full path to `openhal`. Claude Code is found by the `claude` program on PATH and gets `claude mcp add openhal --scope user` after a backup of `~/.claude.json`. Claude Desktop and Cursor are found by their app or config folder. `--client claude-desktop`, `claude-code` or `cursor` adds a client init didn't find. `--no-clients` changes no client and still prints the setup. Each edited config file is first copied to `NAME.openhal-backup-DATE` and keeps its other entries and mode. A file that isn't valid JSON is left alone, and init exits 1 if a requested step failed.
+Init keeps a working agent token with the requested scope. Client setup runs `openhal mcp --token-file ~/.openhal/agent.token` with the full path to `openhal`. Claude Code is found by the `claude` program on PATH and gets `claude mcp add openhal --scope user` after a backup of `~/.claude.json`. Claude Desktop and Cursor are found by their app or config folder. `--client claude-desktop`, `claude-code` or `cursor` adds a client init didn't find. `--no-clients` changes no client and still prints the setup. Each edited config file is first copied to `NAME.openhal-backup-DATE` and keeps its other entries and mode. Invalid JSON is left alone, and init exits 1 if a requested step failed.
 
 ### openhal service
 

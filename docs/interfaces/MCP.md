@@ -6,19 +6,17 @@
 
 1. Run `openhal init` once for `~/.openhal`, the human token and a simulated sample device.
 2. Run `openhal start`, then `openhal status` to check the hub.
-3. Create an agent token for the client.
+3. Create an agent token for each client, so the audit log names the client and one token can be revoked alone.
 
 ```sh
 openhal token create --agent --scope control_low --name claude
 ```
 
-The token prints once. `read` allows reads only, `control_low` low hazard devices and `control_medium` low and medium hazard devices. Commands to a high hazard device are always held for a person. Give each client its own token, so the audit log names the client and one token can be revoked alone.
+The token prints once. `read` allows reads only, `control_low` low hazard devices and `control_medium` low and medium hazard devices. Commands to a high hazard device are always held for a person.
 
 ## Token
 
-The server reads `OPENHAL_TOKEN` or the file given with `--token-file`. The hub treats a human's command as confirmed, so the server never reads `~/.openhal/human.token` and exits at start when given a human token.
-
-With no token, the server starts and lists its tools, and each call returns an error naming `openhal init` and `openhal start`. With no running hub, each call returns an error naming `openhal start`.
+The server reads `OPENHAL_TOKEN` or the `--token-file` file. The hub treats a human's command as confirmed, so the server never reads `~/.openhal/human.token` and exits at start when given a human token. With no token, the server still starts and lists its tools, and every call returns an error naming `openhal init` and `openhal start`. With no hub, every call returns an error naming `openhal start`.
 
 A token file keeps the token out of client configs that may be shared.
 
@@ -43,7 +41,7 @@ Edit `claude_desktop_config.json` in `~/Library/Application Support/Claude/` on 
 }
 ```
 
-Claude Desktop doesn't use your shell's `PATH`, so put the full path from `which openhal` in `command` if Claude Desktop can't find `openhal`. Restart Claude Desktop after editing.
+Claude Desktop doesn't use your shell's `PATH`, so `command` may need the full path from `which openhal`. Restart Claude Desktop after editing.
 
 ## Claude Code
 
@@ -61,7 +59,7 @@ claude mcp add openhal --scope user -- openhal mcp --token-file ~/.openhal/claud
 
 ### The /openhal command
 
-When `openhal init` adds OpenHAL to Claude Code, init also saves the `/openhal` command at `~/.claude/skills/openhal/SKILL.md`, backing up a differing file first. The plugin in `plugins/openhal` ships the same command as `/openhal:openhal`.
+`openhal init` saves the `/openhal` command at `~/.claude/skills/openhal/SKILL.md` when adding OpenHAL to Claude Code, backing up a differing file first. The plugin in `plugins/openhal` ships the same command as `/openhal:openhal`.
 
 | You type | Claude does |
 |---|---|
@@ -100,7 +98,7 @@ Use `~/.cursor/mcp.json` for every project, or `.cursor/mcp.json` for one.
 
 ## When the hub is not running
 
-If no hub responds at start, `openhal mcp` runs `openhal start` in the background once, logging to `~/.openhal/openhal.log`, and allows the hub 8 seconds. With `--no-start` or a failed start, the server still runs, and every tool returns an error with the command that starts the hub. Messages for people go to stderr, since stdout carries MCP.
+If no hub responds at start, `openhal mcp` runs `openhal start` in the background once, logging to `~/.openhal/openhal.log`, and allows the hub 8 seconds. With `--no-start` or a failed start, every tool returns an error with the command that starts the hub. Messages for people go to stderr, since stdout carries MCP.
 
 ## Tools
 
@@ -159,7 +157,7 @@ Schemas live in `openhal/mcp/tools.py`. A blocked result carries a stable code, 
 
 The hub checks the run as a plan first and runs nothing if a step would be blocked. Each command then goes through the kernel as a single `write` or `action` call does, and the run stops at the first step that isn't done, with the step, the code and the reason. A step that needs a person ends the run as `pending` with its `request_id`. [Runs of steps](../SAFETY.md#runs-of-steps) has every rule.
 
-A run belongs to the token that started the run, so another agent's `get_run` and `cancel_run` find nothing. A condition uses the routine expression language with `device.channel` names, such as `<device>.<channel> > 30 degC`. `wait_until` and `sample` hold the call for their duration, so keep those calls under a minute and put longer waits in a run.
+A run belongs to the token that started the run, so another agent's `get_run` and `cancel_run` find nothing. Conditions use the routine expression language, such as `<device>.<channel> > 30 degC`. `wait_until` and `sample` hold the call for their duration, so keep those calls under a minute and put longer waits in a run.
 
 The caps in `config.yaml` are 200 steps per run, 600 seconds per run, wait or sample, and 2 runs, waits and samples going at once per token. Only a person changes the caps, with `openhal runs caps`. ADR 0019 has the run model.
 
@@ -184,6 +182,6 @@ Only a person with the human token, in the CLI or the dashboard, can do these.
 
 ## Device text is data
 
-Text from devices, device files, sketches, manuals and routine sources reaches the model inside `<device-data source="...">` blocks marked as data. The hub wraps device notes and routine sources, and the MCP server also wraps string readings and driver error messages. Nothing inside a block can change a limit or approve anything.
+Text from devices, device files, sketches, manuals and routine sources reaches the model inside `<device-data source="...">` blocks marked as data. The hub wraps device notes and routine sources, and the MCP server also wraps string readings and driver errors. Nothing inside a block can change a limit or approve anything.
 
 A camera frame from `read` is an MCP image block, after a short `<device-data>` block marking the image as device data. The structured result carries `mimeType`, `bytes`, `width` and `height` without the pixels. A frame over 2 MB returns DRIVER_ERROR with a reason naming the camera settings to lower.

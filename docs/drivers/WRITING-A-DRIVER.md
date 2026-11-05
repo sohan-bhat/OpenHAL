@@ -59,11 +59,11 @@ class ScpiDriver(Driver):
 
 ## Tests
 
-Tests cover normal operation for every supported channel type, disconnects, timeouts, malformed responses and every error path. The conformance case passes, and `tests/conformance/test_conformance.py` picks up the case. No test touches real hardware.
+Tests cover normal operation for every supported channel type, disconnects, timeouts, malformed responses and every error path. The conformance case must pass, and `tests/conformance/test_conformance.py` picks up the case on its own. No test touches real hardware.
 
 ## Docs page
 
-`docs/drivers/<name>.md` covers what the driver supports, setup, an example device file, known limitations, hazard defaults and the protocol sources.
+`docs/drivers/<name>.md` covers support, setup, an example device file, known limitations, hazard defaults and the protocol sources.
 
 ## Hardware test plan
 

@@ -1,6 +1,6 @@
 # Python library
 
-`openhal.client` is the sync and async client of the hub's local API v1 that scripts, the CLI and the MCP server use. Safety checks run in the hub's kernel, and a blocked command comes back as a `Decision`.
+`openhal.client` is the sync and async client of the hub's local API v1, used by scripts, the CLI and the MCP server. Safety checks run in the hub's kernel, and a blocked command comes back as a `Decision`.
 
 ```sh
 uv pip install "halkit @ git+https://github.com/sohan-bhat/OpenHAL"
@@ -69,7 +69,7 @@ Every exception derives from `openhal.client.OpenHALError`, with `message`, `sta
 | `limit` | The blocking limit, with its unit |
 | `request_id` | Set when a person has to approve |
 
-`decision.ok` is true for done and allowed. `decision.pending` is true when the request is held for a person.
+`decision.ok` is true for done and allowed, and `decision.pending` when the request is held for a person.
 
 ```python
 decision = hub.write("printer", "extruder_target", 300, "degC")
@@ -83,7 +83,7 @@ The request for a nozzle temperature of 300 degC prints `above_max {'max': 260.0
 
 ## Images
 
-An image channel, such as a camera frame, reads as an `Image` with `mime_type`, `bytes`, `width` and `height`. `content()` gives the image.
+An image channel, such as a camera frame, reads as an `Image` with `mime_type`, `bytes`, `width`, `height` and `content()`.
 
 ```python
 frame = hub.read("printer-cam", "frame").value
@@ -154,7 +154,7 @@ for match in hub.find("current", kind="readable").matches:
     print(match.target, match.value, match.unit)
 ```
 
-`wait_until` reads the condition's channels until the condition holds or the timeout passes. `sample` reads channels at an interval and returns each series with min, max and mean. Every reading goes through the kernel into the audit log.
+`wait_until` reads until the condition holds or the timeout passes. `sample` reads channels at an interval and returns each series with min, max and mean. Every reading goes through the kernel into the audit log.
 
 ```python
 result = hub.wait_until("led-strip.current_draw < 1 A", timeout_s=30)
