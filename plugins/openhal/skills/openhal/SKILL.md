@@ -1,6 +1,6 @@
 ---
 name: openhal
-description: Check OpenHAL and control hardware through the OpenHAL MCP tools. Use when the person types /openhal, asks what an agent may do on a device, or asks to read, set, move or watch a device that OpenHAL connects.
+description: Read and control any hardware through OpenHAL, the open protocol that describes every device in one file with its units, limits and risk levels, with one hub that checks every agent command against that file. Use when the person types /openhal, asks what an agent may do on a device, or asks to read, set, move or watch a device, or to set up a new one.
 argument-hint: "[a task, or limits, setup or routine]"
 ---
 
@@ -8,7 +8,9 @@ argument-hint: "[a task, or limits, setup or routine]"
 
 The person typed /openhal $ARGUMENTS
 
-OpenHAL puts one hub with a safety kernel between agents and hardware. Every device is reached through the OpenHAL MCP tools, whose names start with mcp__openhal__.
+OpenHAL is an open protocol for agents to control hardware. Every device, from a microcontroller to a printer, a robot arm or a microscope, is described by one device file with its channels, units, limits and risk levels, whichever driver connects the device. One hub checks every command against that file, so the same rules hold for every device and every agent.
+
+Agents reach the hub through MCP, the openhal command line, the Python client or the hub protocol, and all four paths go through the same checks. In Claude Code this command works through the MCP tools, whose names start with mcp__openhal__.
 
 ## Check the connection first
 
