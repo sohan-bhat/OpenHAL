@@ -6,6 +6,10 @@ Rigol DP800 programming guide closely enough for tests, accepts short and long S
 case, and keeps an IEEE 488.2 error queue read with `SYST:ERR?`.
 
 `PYVISA_SIM_DMM` is a pyvisa-sim definition of a simple multimeter, for the `@sim` backend.
+
+`serve(kind)` starts one shared instrument of a kind in this process, `supply` for the bench
+supply or `scope` for the oscilloscope in scope.py, which a device file reaches with
+`resource: sim:<kind>`. `reset(kind)` puts a fresh instrument behind the same port.
 """
 
 from __future__ import annotations
@@ -17,6 +21,7 @@ import socketserver
 import threading
 import time
 from pathlib import Path
+from typing import Any, Protocol
 
 LONG_FORMS = {
     "MEASURE": "MEAS",
@@ -33,15 +38,19 @@ LONG_FORMS = {
 RATINGS = {1: (30.0, 3.0), 2: (30.0, 3.0), 3: (5.0, 3.0)}
 
 
-def canonical(header: str) -> str:
+def canonical(header: str, forms: dict[str, str] = LONG_FORMS) -> str:
     parts = []
     for part in header.upper().lstrip(":").split(":"):
         query = part.endswith("?")
         word = part.rstrip("?")
         number = re.match(r"^([A-Z*]+?)(\d*)$", word)
         base, suffix = (number.group(1), number.group(2)) if number else (word, "")
-        parts.append(LONG_FORMS.get(base, base) + suffix + ("?" if query else ""))
+        parts.append(forms.get(base, base) + suffix + ("?" if query else ""))
     return ":".join(parts)
+
+
+class Instrument(Protocol):
+    def answer(self, line: str) -> str | bytes | None: ...
 
 
 class BenchSupply:
@@ -158,8 +167,8 @@ class BenchSupply:
 class ScpiServer:
     """Serves one instrument model on a local TCP port, one line per command."""
 
-    def __init__(self, model: BenchSupply | None = None) -> None:
-        self.model = model or BenchSupply()
+    def __init__(self, model: Instrument | None = None) -> None:
+        self.model: Instrument = model or BenchSupply()
         self.latency_s = 0.0
         self.garble = False
         self.connections: list[socket.socket] = []
@@ -178,9 +187,10 @@ class ScpiServer:
                             continue
                         if outer.latency_s:
                             time.sleep(outer.latency_s)
+                        data = reply if isinstance(reply, bytes) else reply.encode("ascii")
                         if outer.garble:
-                            reply = "#~" + reply[::-1]
-                        self.wfile.write((reply + "\n").encode("ascii"))
+                            data = b"#~" + data[::-1]
+                        self.wfile.write(data + b"\n")
 
         class Server(socketserver.ThreadingTCPServer):
             daemon_threads = True
@@ -205,6 +215,41 @@ class ScpiServer:
         self.drop_connections()
         self._server.shutdown()
         self._server.server_close()
+
+
+KINDS = ("supply", "scope")
+_SERVERS: dict[str, ScpiServer] = {}
+_SERVING = threading.Lock()
+
+
+def _make(kind: str, **state: Any) -> Instrument:
+    if kind == "scope":
+        from openhal.drivers.scpi.scope import BenchScope
+
+        return BenchScope(**state)
+    if kind == "supply":
+        return BenchSupply()
+    raise ValueError(f"There is no simulated {kind!r}. Use one of {', '.join(KINDS)}.")
+
+
+def serve(kind: str) -> ScpiServer:
+    """The shared simulated instrument of a kind in this process, served on a free loopback port."""
+    with _SERVING:
+        if kind not in _SERVERS:
+            _SERVERS[kind] = ScpiServer(_make(kind))
+        return _SERVERS[kind]
+
+
+def instrument(kind: str) -> Any:
+    """The shared instrument of a kind, for reading its state beside the hub."""
+    return serve(kind).model
+
+
+def reset(kind: str, **state: Any) -> Any:
+    """Put a fresh instrument of a kind behind its shared port, and return it."""
+    server = serve(kind)
+    server.model = _make(kind, **state)
+    return server.model
 
 
 PYVISA_SIM_DMM = """
