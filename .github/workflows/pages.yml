@@ -34,12 +34,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Install Chromium for the social images and icons
         run: pnpm exec playwright install --with-deps chromium
-      - name: Build for https://sohan-bhat.github.io/OpenHAL/
+      - name: Build for https://sohanbhat.me/OpenHAL/
         run: pnpm exec astro build
         env:
-          OPENHAL_SITE: https://sohan-bhat.github.io
+          OPENHAL_SITE: https://sohanbhat.me
       - run: node scripts/check-links.mjs dist
-      - run: node scripts/rebase.mjs dist /OpenHAL https://sohan-bhat.github.io
+      - run: node scripts/rebase.mjs dist /OpenHAL https://sohanbhat.me
       - name: Build the search index for the rebased site
         run: node scripts/search-index.mjs dist /OpenHAL
       - name: Stamp the build with its commit

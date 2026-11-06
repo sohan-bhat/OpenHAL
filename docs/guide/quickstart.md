@@ -8,13 +8,13 @@ Run the demo of an agent watching a simulated 3D print, then a [Hub](glossary:hu
 On macOS and Linux, run this command in a terminal.
 
 ```text
-curl -LsSf https://sohan-bhat.github.io/OpenHAL/install.sh | sh
+curl -LsSf https://sohanbhat.me/OpenHAL/install.sh | sh
 ```
 
 On Windows, run this command in PowerShell.
 
 ```text
-irm https://sohan-bhat.github.io/OpenHAL/install.ps1 | iex
+irm https://sohanbhat.me/OpenHAL/install.ps1 | iex
 ```
 <!-- install:end -->
 

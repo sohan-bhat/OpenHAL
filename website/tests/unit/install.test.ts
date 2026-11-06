@@ -20,7 +20,7 @@ describe("the install commands", () => {
   });
 
   it("point at installers the site serves, which name the same site", () => {
-    expect(INSTALL_SITE).toBe("https://sohan-bhat.github.io/OpenHAL");
+    expect(INSTALL_SITE).toBe("https://sohanbhat.me/OpenHAL");
     for (const name of ["install.sh", "install.ps1"]) expect(existsSync(publicFile(name)), name).toBe(true);
     expect(readFileSync(publicFile("install.sh"), "utf8")).toContain(`SITE="${INSTALL_SITE}"`);
   });
@@ -44,6 +44,6 @@ describe("the install commands", () => {
       expect(pieces.map((word) => word.join("")).join(" ")).toBe(command);
       for (const word of pieces) for (const piece of word) expect(piece.startsWith("/"), `${command} ${piece}`).toBe(false);
     }
-    expect(commandPieces(`curl -LsSf ${INSTALL_SITE}/install.sh | sh`)).toEqual([["curl"], ["-LsSf"], ["https://", "sohan-bhat.github.io/", "OpenHAL/", "install.sh"], ["| sh"]]);
+    expect(commandPieces(`curl -LsSf ${INSTALL_SITE}/install.sh | sh`)).toEqual([["curl"], ["-LsSf"], ["https://", "sohanbhat.me/", "OpenHAL/", "install.sh"], ["| sh"]]);
   });
 });

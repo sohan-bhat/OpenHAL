@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        One driver covers a whole protocol family, so check `openhal driver list` and the [drivers page](https://sohan-bhat.github.io/OpenHAL/drivers/) first. A device that uses a protocol an existing driver covers needs a device file instead, and the device file request form is for that.
+        One driver covers a whole protocol family, so check `openhal driver list` and the [drivers page](https://sohanbhat.me/OpenHAL/drivers/) first. A device that uses a protocol an existing driver covers needs a device file instead, and the device file request form is for that.
   - type: input
     id: protocol
     attributes:

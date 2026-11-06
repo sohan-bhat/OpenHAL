@@ -23,13 +23,13 @@ An open-source protocol for AI agents to control hardware.
 On macOS and Linux, run this command in a terminal.
 
 ```text
-curl -LsSf https://sohan-bhat.github.io/OpenHAL/install.sh | sh
+curl -LsSf https://sohanbhat.me/OpenHAL/install.sh | sh
 ```
 
 On Windows, run this command in PowerShell.
 
 ```text
-irm https://sohan-bhat.github.io/OpenHAL/install.ps1 | iex
+irm https://sohanbhat.me/OpenHAL/install.ps1 | iex
 ```
 <!-- install:end -->
 
@@ -133,8 +133,8 @@ Any other MCP client runs `openhal mcp` over stdio with a separate agent token, 
 
 ## Docs and specification
 
-- [Documentation](https://sohan-bhat.github.io/OpenHAL/docs/)
-- [Specification](https://sohan-bhat.github.io/OpenHAL/spec/), also in [spec/](spec/SPEC.md)
+- [Documentation](https://sohanbhat.me/OpenHAL/docs/)
+- [Specification](https://sohanbhat.me/OpenHAL/spec/), also in [spec/](spec/SPEC.md)
 - [The demo step by step](docs/QUICKSTART.md), with the simulated [printer and camera](examples/print-babysitter/)
 - [Mapping to Anthropic's MHS](spec/MHS-MAPPING.md). OpenHAL is not affiliated with Anthropic or the Model Hardware Standard.
 

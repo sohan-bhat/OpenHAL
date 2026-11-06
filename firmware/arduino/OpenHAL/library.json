@@ -16,7 +16,7 @@
     }
   ],
   "license": "Apache-2.0",
-  "homepage": "https://sohan-bhat.github.io/OpenHAL/",
+  "homepage": "https://sohanbhat.me/OpenHAL/",
   "frameworks": ["arduino"],
   "platforms": ["*"],
   "headers": ["OpenHAL.h"],

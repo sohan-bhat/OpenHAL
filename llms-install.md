@@ -7,13 +7,13 @@ Run each command in a terminal on the person's computer. OpenHAL controls real h
 On macOS and Linux, run this command.
 
 ```sh
-curl -LsSf https://sohan-bhat.github.io/OpenHAL/install.sh | sh
+curl -LsSf https://sohanbhat.me/OpenHAL/install.sh | sh
 ```
 
 On Windows, run this command in PowerShell.
 
 ```powershell
-irm https://sohan-bhat.github.io/OpenHAL/install.ps1 | iex
+irm https://sohanbhat.me/OpenHAL/install.ps1 | iex
 ```
 
 The installer puts `openhal` in `~/.local/bin`, and `openhal --version` checks the install. If `openhal` isn't on PATH, run the PATH line the installer printed and open a new terminal.

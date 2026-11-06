@@ -13,7 +13,7 @@ function files(dir) {
   });
 }
 
-export function rebase(text, rawBase = "/OpenHAL", host = "https://sohan-bhat.github.io") {
+export function rebase(text, rawBase = "/OpenHAL", host = "https://sohanbhat.me") {
   const base = `/${rawBase.replace(/^\/+|\/+$/g, "")}`;
   const notBase = `(?!${literal(base.slice(1))}(?:[/"'?#]|$))`;
   const prefix = (path) => (path.startsWith(`${base}/`) || path === base ? path : `${base}${path}`);
@@ -38,7 +38,7 @@ export function rebase(text, rawBase = "/OpenHAL", host = "https://sohan-bhat.gi
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const [dist = "dist", rawBase = "/OpenHAL", host = "https://sohan-bhat.github.io"] = process.argv.slice(2);
+  const [dist = "dist", rawBase = "/OpenHAL", host = "https://sohanbhat.me"] = process.argv.slice(2);
   const base = `/${rawBase.replace(/^\/+|\/+$/g, "")}`;
   let changed = 0;
   for (const file of files(dist)) {

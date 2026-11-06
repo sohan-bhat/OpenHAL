@@ -3,7 +3,7 @@ set -eu
 
 DISTRIBUTION="halkit"
 REPOSITORY="https://github.com/sohan-bhat/OpenHAL"
-SITE="https://sohan-bhat.github.io/OpenHAL"
+SITE="https://sohanbhat.me/OpenHAL"
 UV_VERSION="0.13.5"
 PYTHON_VERSION="3.12"
 

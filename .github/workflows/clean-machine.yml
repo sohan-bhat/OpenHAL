@@ -21,7 +21,7 @@ jobs:
     env:
       REPO: https://github.com/${{ github.repository }}
       SHA: ${{ github.sha }}
-      SITE: https://sohan-bhat.github.io/OpenHAL
+      SITE: https://sohanbhat.me/OpenHAL
     steps:
       - name: Write the timing helper
         if: runner.os != 'Windows'

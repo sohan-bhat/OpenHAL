@@ -86,7 +86,7 @@ pnpm --dir dashboard test
 
 ## Open an issue
 
-A bug report, a driver request and a device file request each have their own form under [New issue](https://github.com/sohan-bhat/OpenHAL/issues/new/choose). Questions go to [Discussions](https://github.com/sohan-bhat/OpenHAL/discussions) or [the docs](https://sohan-bhat.github.io/OpenHAL/docs/). Issues labeled [good first issue](https://github.com/sohan-bhat/OpenHAL/labels/good%20first%20issue) are small, name the files involved and say when the work is done.
+A bug report, a driver request and a device file request each have their own form under [New issue](https://github.com/sohan-bhat/OpenHAL/issues/new/choose). Questions go to [Discussions](https://github.com/sohan-bhat/OpenHAL/discussions) or [the docs](https://sohanbhat.me/OpenHAL/docs/). Issues labeled [good first issue](https://github.com/sohan-bhat/OpenHAL/labels/good%20first%20issue) are small, name the files involved and say when the work is done.
 
 ## Contribute a driver
 
