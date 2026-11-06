@@ -39,6 +39,12 @@ Then run the demo. The demo uses simulated devices, so nothing touches real hard
 ```text
 openhal demo
 ```
+
+With uv installed, you can also run the demo without installing OpenHAL.
+
+```text
+uvx halkit demo
+```
 <!-- demo:end -->
 
 <!-- outcome:start -->

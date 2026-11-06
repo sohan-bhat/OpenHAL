@@ -27,11 +27,11 @@ Then run `openhal init` and `openhal start`, as [Set up](#set-up) describes.
 `uv tool install` and `pipx install` put `openhal` on your PATH. OpenHAL runs on Python 3.12, 3.13, 3.14 and 3.15.
 
 <!-- tools:start -->
-OpenHAL isn't on PyPI yet, so uv and pipx install OpenHAL from GitHub, which needs git.
+With uv or pipx already installed, install `halkit` from PyPI.
 
 ```text
-uv tool install git+https://github.com/sohan-bhat/OpenHAL
-pipx install git+https://github.com/sohan-bhat/OpenHAL
+uv tool install halkit
+pipx install halkit
 ```
 <!-- tools:end -->
 
