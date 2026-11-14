@@ -34,7 +34,8 @@ export function rebase(text, rawBase = "/OpenHAL", host = "https://sohanbhat.me"
     .replace(/\bbaseUrl:([`"'])\/\1/g, `baseUrl:$1${base}/$1`)
     .replace(/\breturn([`"'])\/\1\+/g, `return$1${base}/$1+`)
     .replace(new RegExp(`"(src|start_url|scope|href_matches)":\\s*"/(?!/)${notBase}`, "g"), `"$1": "${base}/`)
-    .replace(new RegExp(`${literal(host)}/${notBase}`, "g"), `${host}${base}/`);
+    // The author's links name the host's own home page, so they stay on it.
+    .replace(new RegExp(`(rel="author" href="[^"]*"|"author":\\{[^}]*\\})|${literal(host)}/${notBase}`, "g"), (_, author) => author ?? `${host}${base}/`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

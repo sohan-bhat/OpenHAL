@@ -40,4 +40,14 @@ describe("moving a build under /OpenHAL/", () => {
     const moved = rebase('<source srcset="/captures/inspector-device-dark-843.avif 843w, /captures/inspector-device-dark-992.avif 992w" sizes="(min-width: 1024px) 992px">');
     expect(moved).toContain('srcset="/OpenHAL/captures/inspector-device-dark-843.avif 843w, /OpenHAL/captures/inspector-device-dark-992.avif 992w"');
   });
+
+  it("moves the home page's own links and leaves the author's on the host's home page", () => {
+    const author = '{"@type":"Person","@id":"https://sohanbhat.me/#person","name":"Sohan Bhat","url":"https://sohanbhat.me/"}';
+    const page = `<link rel="canonical" href="https://sohanbhat.me/"><link rel="author" href="https://sohanbhat.me/"><script type="application/ld+json">{"url":"https://sohanbhat.me/","author":${author}}</script><a rel="author" href="https://sohanbhat.me/" class="astro-x">Sohan Bhat</a>`;
+    const moved = rebase(page);
+    expect(moved).toContain('<link rel="canonical" href="https://sohanbhat.me/OpenHAL/">');
+    expect(moved).toContain(`{"url":"https://sohanbhat.me/OpenHAL/","author":${author}}`);
+    expect(moved.match(/rel="author" href="https:\/\/sohanbhat\.me\/"/g)).toHaveLength(2);
+    expect(rebase(moved)).toBe(moved);
+  });
 });

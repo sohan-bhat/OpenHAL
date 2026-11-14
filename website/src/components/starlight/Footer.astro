@@ -12,7 +12,7 @@ const latest = latestVersion();
 
 {meta && <Default />}
 <div class="oh-site-footer">
-  <p><strong>{PRODUCT_NAME}</strong> <span class="muted">is an open protocol, released under Apache 2.0.</span></p>
+  <p><strong>{PRODUCT_NAME}</strong> <span class="muted">is an open protocol by <a rel="author" href="https://sohanbhat.me/">Sohan Bhat</a>, released under Apache 2.0.</span></p>
   <p class="muted">{PRODUCT_NAME} is not affiliated with Anthropic or MHS.</p>
   <p><a href={REPOSITORY_URL} rel="noopener">Source on GitHub</a></p>
   {latest && <p><a href={`${specBase(latest)}#versions`}>Specification {versionLabel(latest)}</a></p>}
