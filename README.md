@@ -5,7 +5,7 @@
 
 An open-source protocol for AI agents to control hardware.
 
-[![License](https://img.shields.io/github/license/sohan-bhat/OpenHAL?color=555)](LICENSE) [![CI](https://img.shields.io/github/actions/workflow/status/sohan-bhat/OpenHAL/ci.yml?branch=main&label=CI)](https://github.com/sohan-bhat/OpenHAL/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/sohan-bhat/OpenHAL?color=555)](LICENSE) [![CI](https://img.shields.io/github/actions/workflow/status/sohan-bhat/OpenHAL/ci.yml?branch=main&label=CI)](https://github.com/sohan-bhat/OpenHAL/actions/workflows/ci.yml) [![sohan-bhat/OpenHAL MCP server](https://glama.ai/mcp/servers/sohan-bhat/OpenHAL/badges/score.svg)](https://glama.ai/mcp/servers/sohan-bhat/OpenHAL)
 
 <!-- demo-gif:start -->
 <!-- demo-gif:end -->
